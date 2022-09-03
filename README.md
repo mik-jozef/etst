@@ -1,4 +1,4 @@
-# Source code for (Towards a) Boolean Set Theory in a Three-valued Logic
+# Source code for (Ta)BSTiaT-vL
 
 This repository contains the Latex source code for the document.
 To compile the pdf at [Overleaf](overleaf.com), copy the files `bib.bib`
