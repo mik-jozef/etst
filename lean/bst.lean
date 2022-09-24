@@ -1,6 +1,14 @@
 /-
+  # (Towards a) Boolean Set Theory in a Three-valued Logic: formalized in Lean 4
+  ==============================================================================
+  
+  This is a formalized version of the document of the same name.
+  I recommend reading this document alongside/after the other one.
+  You can find more at https://github.com/mik-jozef/bst.
+  
   Code style: prefer no tactics.
 -/
+
 
 open Classical
 
@@ -12,8 +20,8 @@ noncomputable def choiceEx {P: T → Prop} (ex: ∃ t: T, P t): { t: T // P t } 
 
 
 
--- # Chapter 0: Sets and other basic definitions
--- =============================================
+-- ## Chapter 0: Sets and other basic definitions
+-- ==============================================
 
 -- The square less-equal relation: `x ⊑ y`.
 class SqLE (α : Type u) where
@@ -84,6 +92,9 @@ instance: PartialOrder (Set D) where
   ltIffLeNotEq _ _ := Iff.intro id id
 
 namespace Set
+  def empty {D: Type}: Set D := fun _ => False  
+  def full  {D: Type}: Set D := fun _ => True
+  
   def isFinite (s: Set D): Prop := ∃ l: List D, ∀ t: D, t ∈ s → t ∈ l
   
   def isSubset (a b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
@@ -101,16 +112,16 @@ namespace Set
   
   def binaryUnion (a b: Set D): Set D := fun d: D => a d ∨ b d
   def binaryIntersection (a b: Set D): Set D := fun d: D => a d ∧ b d
+  def complement (a: Set D): Set D := fun d: D => ¬ a d
 end Set
 
 infix:50 " ⊆ " => Set.isSubset
 infix:60 " ∪ " => Set.binaryUnion
 infix:60 " ∩ " => Set.binaryIntersection
+prefix:100 "~ " => Set.complement
 
-
-
--- # Chapter 1: Well-founded collections
--- =====================================
+-- ## Chapter 1: Well-founded collections
+-- ======================================
 
 structure Set3 (D: Type) where
   defMem: Set D
@@ -125,6 +136,12 @@ protected def Set3.eq:
   a = b
 -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1747
 | ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl => rfl
+
+namespace Set3
+  def empty {D: Type}: Set3 D := ⟨Set.empty, Set.empty, PartialOrder.refl _⟩
+  
+  def undetermined {D: Type}: Set3 D := ⟨Set.empty, Set.full, fun _ => False.elim⟩
+end Set3
 
 
 instance: LE (Set3 D) where
@@ -192,7 +209,7 @@ inductive NatOp
   | succ
   | plus
 
-def natAr: NatOp → Type
+@[reducible] def natAr: NatOp → Type
   | NatOp.zero => ArityZero
   | NatOp.succ => ArityOne
   | NatOp.plus => ArityTwo
@@ -312,9 +329,7 @@ theorem widenExprEq
       show Expr.Ir x body = Expr.Ir x (widenExpr body (addVar Var x) _) from
         (widenExprEq body) ▸ rfl
 
--- Coe.coe, why u no work?
--- Family of sxpressions.
-def FamExpr (s: Signature) (Var: VarSet) := { x: Variable // Var x } → Expr s Var
+@[reducible] def FamExpr (s: Signature) (Var: VarSet) := ↑Var → Expr s Var
 
 namespace FamExpr
   def isFinite (_: FamExpr s Var): Prop := Set.isFinite Var
@@ -334,7 +349,7 @@ namespace FamExpr
     fun vProp: ↑(Set.union V) =>
       match vProp with
       | ⟨v, vVar⟩ =>
-        let exSomeI: ∃i: Index, v ∈ V i := vVar;
+        let exSomeI: ∃ i: Index, v ∈ V i := vVar;
         let iProp: { i: Index // v ∈ V i} := choiceEx exSomeI;
         match iProp with
         | ⟨i, prop⟩ =>
@@ -366,39 +381,271 @@ structure DefList (s: Signature) (Var: VarSet) where
 
 
 
-structure Algebra (s: Signature) where
-  D: Type
-  I: (op: Op s) → (arity op ⟨s, rfl⟩) → D
+-- ## Chapter 2: Semantics of WFC
+-- ==============================
+
+-- For our purposes, algebras act on sets of elements,
+-- monotonically.
+structure Algebra (s: Signature) (D: Type) where
+  I: (op: Op s) → (arity op ⟨s, rfl⟩ → Set D) → Set D
+  isMonotonic
+    (op: Op s)
+    (args0 args1: arity op ⟨s, rfl⟩ → Set D)
+    (le: ∀ arg: arity op ⟨s, rfl⟩, args0 arg ≤ args1 arg)
+  :
+    I op args0 ≤ I op args1
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+namespace natAlg
+  def I: (op: NatOp) → (args: natAr op → Set Nat) → Set Nat
+  | NatOp.zero => fun _ n => n = 0
+  | NatOp.succ => fun args n => ∃ a: ↑(args ArityOne.zth), n = a + 1
+  | NatOp.plus => fun args n =>
+      ∃ (a: ↑(args ArityTwo.zth)) (b: ↑(args ArityTwo.fst)), n = a + b
   
+  theorem monotonic
+    (op: NatOp)
+    (args0 args1: natAr op → Set Nat)
+    (le: ∀ arg: natAr op, args0 arg ≤ args1 arg)
+  :
+    I op args0 ≤ I op args1
+  :=
+    match op with
+      | NatOp.zero => PartialOrder.refl _
+      | NatOp.succ =>
+          fun (n: Nat) (nInArgs0) =>
+            let exArgs0: ∃ a: ↑(args0 ArityOne.zth), n = a + 1 := nInArgs0
+            
+            let exArgs1: ∃ a: ↑(args1 ArityOne.zth), n = a + 1 :=
+              exArgs0.elim fun a nASucc =>
+                ⟨⟨a.val, le ArityOne.zth _ a.property⟩, nASucc⟩
+            
+            show n ∈ I NatOp.succ args1 from exArgs1
+      | NatOp.plus =>
+          fun (n: Nat) (nInArgs0) =>
+            let exArgs0:
+              ∃ (a: ↑(args0 ArityTwo.zth)) (b: ↑(args0 ArityTwo.fst)),
+                n = a + b := nInArgs0
+            
+            let exArgs1:
+              ∃ (a: ↑(args1 ArityTwo.zth)) (b: ↑(args1 ArityTwo.fst)), n = a + b
+            :=
+              exArgs0.elim fun a bEx =>
+                bEx.elim fun b nab => ⟨
+                  ⟨a.val, le ArityTwo.zth _ a.property⟩,
+                  ⟨⟨b.val, le ArityTwo.fst _ b.property⟩, nab⟩
+                ⟩
+            
+            show n ∈ I NatOp.plus args1 from exArgs1
+end natAlg
+
+def natAlg: Algebra natSig Nat := ⟨natAlg.I, natAlg.monotonic⟩
+
+
+inductive Pair where
+  | zero: Pair -- Zero is considered an improper pair
+  | pair (a b: Pair): Pair
+
+namespace pairAlg
+  def I: (op: PairOp) → (args: pairAr op → Set Pair) → Set Pair
+    | PairOp.zero => fun _ p => p = Pair.zero
+    | PairOp.pair => fun args p =>
+        ∃ (a: ↑(args ArityTwo.zth)) (b: ↑(args ArityTwo.fst)), p = Pair.pair a b
+  
+  theorem monotonic
+    (op: PairOp)
+    (args0 args1: pairAr op → Set Pair)
+    (le: ∀ arg: pairAr op, args0 arg ≤ args1 arg)
+  :
+    I op args0 ≤ I op args1
+  :=
+    match op with
+      | PairOp.zero => PartialOrder.refl _
+      | PairOp.pair =>
+          fun _ pInArgs0 =>
+            pInArgs0.elim fun a bEx =>
+              bEx.elim fun b nab => ⟨
+                ⟨a.val, le ArityTwo.zth _ a.property⟩,
+                ⟨⟨b.val, le ArityTwo.fst _ b.property⟩, nab⟩
+              ⟩
+end pairAlg
+
+def pairAlg: Algebra pairSig Pair := ⟨pairAlg.I, pairAlg.monotonic⟩
+
+
+inductive MPair.Ret
+  | isZero
+  | isPair
+  | isNull
+
+structure MPair where
+  f: List ArityTwo → MPair.Ret
+  rootNotNull: f [] ≠ MPair.Ret.isNull
+  pairHasMem (s: List ArityTwo) (i: ArityTwo):
+    f s = MPair.Ret.isPair ↔ f (s ++ [i]) ≠ MPair.Ret.isNull
+
+namespace MPair
+  @[reducible] def zeroF: List ArityTwo → MPair.Ret :=
+    fun list: List ArityTwo =>
+      match list with
+      | List.nil => MPair.Ret.isZero
+      | _ :: _ => MPair.Ret.isNull
+  
+  def zero: MPair := ⟨
+    zeroF,
+    by simp,
+    -- AAAAAAAAAAAaaaAAAAAAAAAAa ..... Why does such a simple thing
+    -- have to be so complicated?
+    fun (s: List ArityTwo) (i: ArityTwo) =>
+      let eqL: zeroF s ≠ MPair.Ret.isPair :=
+        match s with
+        | [] => by simp
+        | hd :: rest =>
+          let isNull: zeroF (hd :: rest) = MPair.Ret.isNull := rfl
+          isNull ▸ by simp
+      let eqR: zeroF (s ++ [i]) = MPair.Ret.isNull :=
+        match list: s ++ [i] with
+        | [] =>
+          let nope: s ++ [i] ≠ [] := by cases s <;> simp
+          False.elim (nope list)
+        | hd :: rest => rfl
+      Iff.intro
+        (fun ff => False.elim (eqL ff))
+        (fun ff => False.elim (ff eqR))
+  ⟩
+  
+  @[reducible] def pairF (a b: MPair): List ArityTwo → MPair.Ret
+    | [] => MPair.Ret.isPair
+    | ArityTwo.zth :: rest => a.f rest
+    | ArityTwo.fst :: rest => b.f rest
+  
+  def pair (a b: MPair): MPair := ⟨
+    pairF a b,
+    let eq: pairF a b [] = MPair.Ret.isPair := rfl;
+    by rw [eq] simp, -- How can I do this without tactics?
+    fun s i => Iff.intro (
+        fun isP => match s, i with
+          | [], ArityTwo.zth => a.rootNotNull
+          | [], ArityTwo.fst => b.rootNotNull
+          | ArityTwo.zth :: rest, i => (a.pairHasMem rest i).mp isP
+          | ArityTwo.fst :: rest, i => (b.pairHasMem rest i).mp isP
+      ) (
+        fun isNotNull => match s with
+          | [] => rfl
+          | ArityTwo.zth :: rest => (a.pairHasMem rest i).mpr isNotNull
+          | ArityTwo.fst :: rest => (b.pairHasMem rest i).mpr isNotNull
+      )
+  ⟩
+end MPair
+
+namespace mpairAlg
+  def I: (op: PairOp) → (args: pairAr op → Set MPair) → Set MPair
+    | PairOp.zero => fun _ p => p = MPair.zero
+    | PairOp.pair => fun args p =>
+        ∃ (a: ↑(args ArityTwo.zth)) (b: ↑(args ArityTwo.fst)), p = MPair.pair a b
+  
+  theorem monotonic
+    (op: PairOp)
+    (args0 args1: pairAr op → Set MPair)
+    (le: ∀ arg: pairAr op, args0 arg ≤ args1 arg)
+  :
+    I op args0 ≤ I op args1
+  :=
+    match op with
+      | PairOp.zero => PartialOrder.refl _
+      | PairOp.pair =>
+          fun _ pInArgs0 =>
+            pInArgs0.elim fun a bEx =>
+              bEx.elim fun b nab => ⟨
+                ⟨a.val, le ArityTwo.zth _ a.property⟩,
+                ⟨⟨b.val, le ArityTwo.fst _ b.property⟩, nab⟩
+              ⟩
+end mpairAlg
+
+def mpairAlg: Algebra pairSig MPair := ⟨mpairAlg.I, mpairAlg.monotonic⟩
+
+
+
+@[reducible] def Valuation (Var: VarSet) (D: Type) := ↑Var → Set3 D
+
+namespace Valuation
+  def empty: Valuation Var D := fun _ => Set3.empty
+  
+  def undetermined: Valuation Var D := fun _ => Set3.undetermined
+end Valuation
+
+instance: PartialOrder (Valuation Var D) where
+  le a b := ∀ v: ↑Var, a v ≤ b v
+  
+  refl a := fun v => PartialOrder.refl (a v)
+  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
+  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
+  
+  ltIffLeNotEq := fun _ _ => Iff.intro id id
+
+instance: PartialOrderSq (Valuation Var D) where
+  le a b := ∀ v: ↑Var, a v ≤ b v
+  
+  refl a := fun v => PartialOrder.refl (a v)
+  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
+  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
+  
+  ltIffLeNotEq := fun _ _ => Iff.intro id id
+
+
+def I (alg: Algebra s D) (b c: Valuation Var D): (Expr s Var) → Set3 D
+| Expr.var a => c a
+| Expr.opApp op exprs =>
+    let defArgs := fun arg => (I alg b c (exprs arg)).defMem
+    let posArgs := fun arg => (I alg b c (exprs arg)).posMem
+    ⟨
+      alg.I op defArgs,
+      alg.I op posArgs,
+      
+      alg.isMonotonic
+        op
+        defArgs
+        posArgs
+        fun arg => (I alg b c (exprs arg)).defLePos
+    ⟩
+| Expr.un e0 e1 =>
+    let iE0 := I alg b c e0
+    let iE1 := I alg b c e1
+    ⟨
+      iE0.defMem ∪ iE1.defMem,
+      iE0.posMem ∪ iE1.posMem,
+      
+      fun d dDef =>
+        Or.elim (dDef: d ∈ iE0.defMem ∨ d ∈ iE1.defMem)
+          (fun dIE0 => Or.inl (iE0.defLePos d dIE0))
+          (fun dIE1 => Or.inr (iE1.defLePos d dIE1))
+    ⟩
+| Expr.ir e0 e1 =>
+    let iE0 := I alg b c e0
+    let iE1 := I alg b c e1
+    ⟨
+      iE0.defMem ∩ iE1.defMem,
+      iE0.posMem ∩ iE1.posMem,
+      
+      fun d dDef =>
+        And.intro (iE0.defLePos d dDef.left) (iE1.defLePos d dDef.right)
+    ⟩
+| Expr.cpl e =>
+    let ie := (I alg b b e)
+    ⟨
+      ~ ie.posMem,
+      ~ ie.defMem,
+      
+      fun d dInNPos =>
+        show d ∉ ie.defMem from fun dInDef => dInNPos (ie.defLePos d dInDef)
+    ⟩
+| Expr.Un x body => sorry
+| Expr.Ir x body => sorry
+
+
+
+
+
 
 
 
