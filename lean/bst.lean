@@ -4,6 +4,12 @@
 
 open Classical
 
+noncomputable def choiceEx {P: T → Prop} (ex: ∃ t: T, P t): { t: T // P t } :=
+  let nonempty: Nonempty { t: T // P t } :=
+    match ex with
+    | ⟨t, prop⟩ => ⟨t, prop⟩
+  choice nonempty
+
 
 
 -- # Chapter 0: Sets and other basic definitions
@@ -29,7 +35,7 @@ class PartialOrder (T: Type) extends LE T, LT T where
   lt (a b: T) := a ≤ b  ∧  ¬ a = b
   ltIffLeNotEq (a b: T): a < b  ↔  a ≤ b ∧ ¬ a = b
 
--- TODO Can I combine PartialOrder with PartialOrderSq into one definition?
+-- Can I combine PartialOrder with PartialOrderSq into one definition?
 class PartialOrderSq (T: Type) extends SqLE T, SqLT T where
   refl (t: T): t ⊑ t
   antisymm (a b: T): a ⊑ b  →  b ⊑ a  →  a = b
@@ -91,7 +97,7 @@ namespace Set
   :
     isSubset (family i) (union family)
   :=
-    sorry
+    fun (d: D) (dfi: d ∈ family i) => ⟨i, dfi⟩
   
   def binaryUnion (a b: Set D): Set D := fun d: D => a d ∨ b d
   def binaryIntersection (a b: Set D): Set D := fun d: D => a d ∧ b d
@@ -213,7 +219,17 @@ def Variable := Nat
 def addVar (Var: VarSet) (x: Variable): VarSet :=
   fun z => Var z ∨ z = x
 
-def addVarPreservesIsWider
+def addVarMono (Var: VarSet) (x: Variable): Var ⊆ addVar Var x :=
+  fun (v: Variable) (vVar: v ∈ Var) => Or.inl vVar
+
+def addVarId (Var: VarSet) (x: Variable) (xInVar: x ∈ Var): addVar Var x = Var :=
+  Set.ext fun v: Variable =>
+    Iff.intro
+      (fun vInAddVar => Or.elim vInAddVar id (fun vx => vx ▸ xInVar))
+      ((addVarMono Var x) v)
+  
+
+def addVarIsWider
   (Var: VarSet)
   (WiderVar: VarSet)
   (isWider: Var ⊆ WiderVar)
@@ -256,33 +272,55 @@ def widenExpr
   | Expr.ir a b => Expr.ir (widenExpr a WiderVar isWider) (widenExpr b WiderVar isWider)
   | Expr.cpl a => Expr.cpl (widenExpr a WiderVar isWider)
   | Expr.Un x body =>
-      Expr.Un
-        x
-        (widenExpr
-          body
-          (addVar WiderVar x)
-          (addVarPreservesIsWider Var WiderVar isWider x)
-        )
+      Expr.Un x (widenExpr body (addVar WiderVar x) (addVarIsWider Var WiderVar isWider x))
   | Expr.Ir x body =>
-      Expr.Ir
-        x
-        (widenExpr
-          body
-          (addVar WiderVar x)
-          (addVarPreservesIsWider Var WiderVar isWider x)
-        )
+      Expr.Ir x (widenExpr body (addVar WiderVar x) (addVarIsWider Var WiderVar isWider x))
 
+-- Why does this not hold by definitional equality? Why can't I just use rfl?
+-- Oh the answer is recursion, right? TODO make *your* proof assistant handle it.
+-- Oh, the answer probably is that I need funext *and* recursion...
+-- Also I am sure there's like a three-line tactic for this.
+theorem widenExprEq
+  (expr: Expr s Var)
+:
+  expr = widenExpr expr Var (fun _ => id)
+:=
+  match expr with
+  | Expr.var _ => rfl
+  | Expr.opApp op exprs => -- Yay for readability!
+      let exprsEq: exprs = (fun ar => widenExpr (exprs ar) Var _) :=
+        funext fun ar => widenExprEq (exprs ar)
+      
+      show Expr.opApp op exprs = Expr.opApp op (fun ar => widenExpr (exprs ar) Var _) from
+        exprsEq ▸ rfl
+  
+  | Expr.un a b =>
+      show Expr.un a b = Expr.un (widenExpr a Var _) (widenExpr b Var _) from
+        (widenExprEq a) ▸ (widenExprEq b) ▸ rfl
+  
+  | Expr.ir a b =>
+      show Expr.ir a b = Expr.ir (widenExpr a Var _) (widenExpr b Var _) from
+        (widenExprEq a) ▸ (widenExprEq b) ▸ rfl
+  
+  | Expr.cpl a => show Expr.cpl a = Expr.cpl (widenExpr a Var _) from (widenExprEq a) ▸ rfl
+  
+  | Expr.Un x body =>
+      show Expr.Un x body = Expr.Un x (widenExpr body (addVar Var x) _) from
+        (widenExprEq body) ▸ rfl
+  
+  | Expr.Ir x body =>
+      show Expr.Ir x body = Expr.Ir x (widenExpr body (addVar Var x) _) from
+        (widenExprEq body) ▸ rfl
 
 -- Coe.coe, why u no work?
 -- Family of sxpressions.
-def FamExpr (s: Signature) (Var: VarSet) := { v: Variable // Var v } → Expr s Var
+def FamExpr (s: Signature) (Var: VarSet) := { x: Variable // Var x } → Expr s Var
 
 namespace FamExpr
   def isFinite (_: FamExpr s Var): Prop := Set.isFinite Var
   
-  structure FamFamExpr (s: Signature) (Index: Type) (V: Index → VarSet) where
+  structure Fam (s: Signature) (Index: Type) (V: Index → VarSet) where
     family: (i: Index) → FamExpr s (V i)
-    -- TODO fix
     exprsCompatible
       (i j: Index)
       (v: Variable)
@@ -292,43 +330,45 @@ namespace FamExpr
       widenExpr (family i ⟨v, vVi⟩) (Set.union V) (Set.unionIsWider V i) =
       widenExpr (family j ⟨v, vVj⟩) (Set.union V) (Set.unionIsWider V j)
   
-  noncomputable def union (family: FamFamExpr s Index V): FamExpr s (Set.union V) :=
+  noncomputable def union (family: Fam s Index V): FamExpr s (Set.union V) :=
     fun vProp: ↑(Set.union V) =>
       match vProp with
       | ⟨v, vVar⟩ =>
-        let _: ∃i: Index, v ∈ V i := vVar;
-        let nonempty: Nonempty { i: Index // v ∈ V i} :=
-          match vVar with
-          | ⟨i, h⟩ => ⟨i, h⟩;
-        let iProp: { i: Index // v ∈ V i} := choice nonempty;
+        let exSomeI: ∃i: Index, v ∈ V i := vVar;
+        let iProp: { i: Index // v ∈ V i} := choiceEx exSomeI;
         match iProp with
         | ⟨i, prop⟩ =>
           widenExpr (family.family i ⟨v, prop⟩) (Set.union V) (Set.unionIsWider V i)
   
   theorem unionIsWider
-    (family: FamFamExpr s Index V)
+    (family: Fam s Index V)
     (i: Index)
     (v: ↑(Set.union V))
     (vVi: v.val ∈ V i)
   :
     union family v = widenExpr (family.family i ⟨v, vVi⟩) (Set.union V) (Set.unionIsWider V i)
   :=
-    sorry
+    let exSomeI: ∃ (someI: Index), v.val ∈ V someI := v.property
+    let someI := choiceEx exSomeI
+    family.exprsCompatible i someI v.val _ _ ▸ rfl
   
   def Set.union {Index: Type} {D: Type} (family: Index → Set D): Set D :=
     fun (d: D) => ∃ i: Index, family i d
 end FamExpr
 
-structure DefList (s: Signature) (Var: VarSet)
-    -- {fin: ∀ i: Index, Set.isFinite (V i)}
+structure DefList (s: Signature) (Var: VarSet) where
+  famExpr: FamExpr s Var
+  unFin: ∃
+    (fam: FamExpr.Fam s Index V)
+    (varFam: Var = Set.union V),
+      famExpr = varFam ▸ (FamExpr.union fam)  ∧
+      ∀ i: Index, Set.isFinite (V i)
 
 
 
-
-def StructInterpretation (D: Type) (s: Signature) :=
-  (op: Op s) → Vector D (arity op ⟨s, rfl⟩)
-
-def Structure := (D: Type) × (s: Signature) × StructInterpretation D s
+structure Algebra (s: Signature) where
+  D: Type
+  I: (op: Op s) → (arity op ⟨s, rfl⟩) → D
 
 
 
