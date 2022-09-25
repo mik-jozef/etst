@@ -75,6 +75,7 @@ instance: PartialOrder (Set D) where
 namespace Set
   def empty {D: Type}: Set D := fun _ => False  
   def full  {D: Type}: Set D := fun _ => True
+  def just  {D: Type} (d: D): Set D := fun x => x = d
   
   def isFinite (s: Set D): Prop := ∃ l: List D, ∀ t: D, t ∈ s → t ∈ l
   
@@ -123,6 +124,8 @@ namespace Set3
   def empty {D: Type}: Set3 D := ⟨Set.empty, Set.empty, PartialOrder.refl _⟩
   
   def undetermined {D: Type}: Set3 D := ⟨Set.empty, Set.full, fun _ => False.elim⟩
+  
+  def just {D: Type} (d: D): Set3 D := ⟨Set.just d, Set.just d, PartialOrder.refl _⟩
 end Set3
 
 
@@ -182,8 +185,11 @@ inductive ArityTwo | zth | fst
 
 
 def Variable := Nat
+instance: DecidableEq Variable := Nat.decEq
+
 -- Why tf is "reducible" even required? Lean, this is stupid.
 @[reducible] def VarSet := Set Variable
+
 
 def addVar (Var: VarSet) (x: Variable): VarSet :=
   fun z => Var z ∨ z = x
@@ -320,7 +326,7 @@ namespace Expr
                 (Set.union V)
                 (Set.union.isWider V i)
     
-    theorem unionIsWider
+    theorem union.isWider
       (family: Fam s Index V)
       (i: Index)
       (v: ↑(Set.union V))
@@ -400,6 +406,23 @@ instance: PartialOrderSq (Valuation Var D) where
   ltIffLeNotEq := fun _ _ => Iff.intro id id
 
 
+def updateValuation
+  (val: Valuation Var D)
+  (x: Variable)
+  (d: D)
+:
+  Valuation (addVar Var x) D
+:=
+  fun v: ↑(addVar Var x) =>
+    if vx: v = x then
+      Set3.just d
+    else
+      let vxVal: v.val ∈ Var ∨ v = x := v.property
+      let vVar: v.val ∈ Var := vxVal.elim id fun nope => False.elim (vx nope)
+      
+      val ⟨v.val, vVar⟩
+
+
 def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
 | Expr.var a => c a
 | Expr.opApp op exprs =>
@@ -446,8 +469,26 @@ def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
       fun d dInNPos =>
         show d ∉ ie.defMem from fun dInDef => dInNPos (ie.defLePos d dInDef)
     ⟩
-| Expr.Un x body => sorry
-| Expr.Ir x body => sorry
+| Expr.Un x body =>
+    let iBody (iX: alg.D): Set3 alg.D :=
+      (I alg (updateValuation b x iX) (updateValuation c x iX) body)
+    
+    ⟨
+      fun d => ∃ iX: alg.D, d ∈ (iBody iX).defMem,
+      fun d => ∃ iX: alg.D, d ∈ (iBody iX).posMem,
+      
+      fun d dDef => dDef.elim fun iX iXDef => ⟨iX, (iBody iX).defLePos d iXDef⟩
+    ⟩
+| Expr.Ir x body =>
+    let iBody (iX: alg.D): Set3 alg.D :=
+      (I alg (updateValuation b x iX) (updateValuation c x iX) body)
+    
+    ⟨
+      fun d => ∃ iX: alg.D, d ∈ (iBody iX).defMem,
+      fun d => ∃ iX: alg.D, d ∈ (iBody iX).posMem,
+      
+      fun d dDef => dDef.elim fun iX iXDef => ⟨iX, (iBody iX).defLePos d iXDef⟩
+    ⟩
 
 
 
