@@ -40,13 +40,15 @@ instance: Membership T (Set T) where
 instance: Coe (Set T) Type where
   coe s := { t: T // t ∈ s }
 
+instance: LE (Set D) where
+  le (a: Set D) (b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
+
+infix:50 " ⊆ " => LE.le
+
 
 theorem Set.ext {a b : Set D} (h : ∀ x, x ∈ a ↔ x ∈ b) : a = b :=
   funext (fun x => propext (h x))
 
-
-instance: LE (Set D) where
-  le (a: Set D) (b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
 
 instance: PartialOrder (Set D) where
   le (a: Set D) (b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
@@ -85,7 +87,7 @@ namespace Set
     (family: Index → Set D)
     (i: Index)
   :
-    isSubset (family i) (union family)
+    (family i) ⊆ (union family)
   :=
     fun (d: D) (dfi: d ∈ family i) => ⟨i, dfi⟩
   
@@ -94,7 +96,6 @@ namespace Set
   def complement (a: Set D): Set D := fun d: D => ¬ a d
 end Set
 
-infix:50 " ⊆ " => Set.isSubset
 infix:60 " ∪ " => Set.binaryUnion
 infix:60 " ∩ " => Set.binaryIntersection
 prefix:100 "~ " => Set.complement
