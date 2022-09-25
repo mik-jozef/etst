@@ -9,48 +9,27 @@
   Code style: prefer no tactics.
 -/
 
+import PartialOrder
 
 open Classical
+
+
+
+/-
+  ## Chapter 0: Introduction
+  ==============================================
+  
+  The chapters in this document follow the structure of the other
+  document. There is no math in the Introduction chapter of the
+  other document, but in Lean, I still need to define some basics,
+  so I'll put that here.
+-/
 
 noncomputable def choiceEx {P: T → Prop} (ex: ∃ t: T, P t): { t: T // P t } :=
   let nonempty: Nonempty { t: T // P t } :=
     match ex with
     | ⟨t, prop⟩ => ⟨t, prop⟩
   choice nonempty
-
-
-
--- ## Chapter 0: Sets and other basic definitions
--- ==============================================
-
--- The square less-equal relation: `x ⊑ y`.
-class SqLE (α : Type u) where
-  le : α → α → Prop
-
--- The square less-equal relation: `x ⊏ y`.
-class SqLT (α : Type u) where
-  lt : α → α → Prop
-
-infix:50 " ⊑ " => SqLE.le
-infix:50 " ⊏ " => SqLT.lt
-
-
-class PartialOrder (T: Type) extends LE T, LT T where
-  refl (t: T): t ≤ t
-  antisymm (a b: T): a ≤ b  →  b ≤ a  →  a = b
-  trans (a b c: T): a ≤ b  →  b ≤ c  →  a ≤ c
-  
-  lt (a b: T) := a ≤ b  ∧  ¬ a = b
-  ltIffLeNotEq (a b: T): a < b  ↔  a ≤ b ∧ ¬ a = b
-
--- Can I combine PartialOrder with PartialOrderSq into one definition?
-class PartialOrderSq (T: Type) extends SqLE T, SqLT T where
-  refl (t: T): t ⊑ t
-  antisymm (a b: T): a ⊑ b  →  b ⊑ a  →  a = b
-  trans (a b c: T): a ⊑ b  →  b ⊑ c  →  a ⊑ c
-  
-  lt (a b: T) := a ⊑ b  ∧  ¬ a = b
-  ltIffLeNotEq (a b: T): a ⊏ b  ↔  a ⊑ b ∧ ¬ a = b
 
 
 def Set (T : Type) := T → Prop
@@ -102,7 +81,7 @@ namespace Set
   def union {Index: Type} {D: Type} (family: Index → Set D): Set D :=
     fun (d: D) => ∃ i: Index, family i d
   
-  theorem unionIsWider
+  theorem union.isWider
     (family: Index → Set D)
     (i: Index)
   :
@@ -120,6 +99,8 @@ infix:60 " ∪ " => Set.binaryUnion
 infix:60 " ∩ " => Set.binaryIntersection
 prefix:100 "~ " => Set.complement
 
+
+
 -- ## Chapter 1: Well-founded collections
 -- ======================================
 
@@ -128,16 +109,16 @@ structure Set3 (D: Type) where
   posMem: Set D
   defLePos: defMem ≤ posMem
 
-protected def Set3.eq:
-  (a b: Set3 D) →
-  a.defMem = b.defMem →
-  a.posMem = b.posMem
-→
-  a = b
--- Thanks to answerers of https://proofassistants.stackexchange.com/q/1747
-| ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl => rfl
-
 namespace Set3
+  protected def eq:
+    (a b: Set3 D) →
+    a.defMem = b.defMem →
+    a.posMem = b.posMem
+  →
+    a = b
+  -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1747
+  | ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl => rfl
+  
   def empty {D: Type}: Set3 D := ⟨Set.empty, Set.empty, PartialOrder.refl _⟩
   
   def undetermined {D: Type}: Set3 D := ⟨Set.empty, Set.full, fun _ => False.elim⟩
@@ -190,19 +171,294 @@ instance: PartialOrderSq (Set3 D) where
 
 
 -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1740
+-- TODO perhaps change to a structure?
 def Signature := (Op: Type) × (Op → Type)
 def Op (s: Signature) := s.fst
 
 def SigOp (Op: Type) := { s: Signature // s.fst = Op }
 def arity {Op: Type} (op: Op) (s: SigOp Op): Type := s.val.snd (cast s.property.symm op)
 
-
 inductive ArityZero
-inductive ArityOne
-| zth
-inductive ArityTwo
-| zth
-| fst
+inductive ArityOne | zth
+inductive ArityTwo | zth | fst
+
+
+def Variable := Nat
+-- Why tf is "reducible" even required? Lean, this is stupid.
+@[reducible] def VarSet := Set Variable
+
+def addVar (Var: VarSet) (x: Variable): VarSet :=
+  fun z => Var z ∨ z = x
+
+namespace addVar
+  theorem monotonic (Var: VarSet) (x: Variable): Var ⊆ addVar Var x :=
+    fun (v: Variable) (vVar: v ∈ Var) => Or.inl vVar
+  
+  theorem xInVarIsId
+    (Var: VarSet)
+    (x: Variable)
+    (xInVar: x ∈ Var)
+  :
+    addVar Var x = Var
+  :=
+    Set.ext fun v: Variable =>
+      Iff.intro
+        (fun vInAddVar => Or.elim vInAddVar id (fun vx => vx ▸ xInVar))
+        ((monotonic Var x) v)  
+  
+  theorem isWider
+    (Var: VarSet)
+    (WiderVar: VarSet)
+    (isWider: Var ⊆ WiderVar)
+    (x: Variable)
+  :
+    addVar Var x ⊆ addVar WiderVar x
+  :=
+    fun (v: Variable) (avx: v ∈ addVar Var x) =>
+      Or.elim avx
+        (fun vVar: Var v => Or.inl (isWider v vVar))
+        (fun vx: v = x => Or.inr vx)
+end addVar
+
+
+inductive Expr (s: Signature): (Var: VarSet) → Type
+  | var: { x: Variable // Var x } → Expr s Var
+  | opApp:
+      (op: s.fst) →
+      (arity op ⟨s, _⟩ → Expr s Var) →
+      Expr s Var
+  | un: Expr s Var → Expr s Var → Expr s Var
+  | ir: Expr s Var → Expr s Var → Expr s Var
+  | cpl: Expr s Var → Expr s Var
+  | Un: (x: Variable) → Expr s (addVar Var x) → Expr s Var
+  | Ir: (x: Variable) → Expr s (addVar Var x) → Expr s Var
+
+
+namespace Expr
+  -- This is horrendous. Please tell me I just suck at Lean
+  -- and there is a much better way of doing this.
+  def widen
+    (expr: Expr s Var)
+    (WiderVar: VarSet)
+    (isWider: Var ⊆ WiderVar)
+  :
+    Expr s WiderVar
+  :=
+    match expr with
+    | Expr.var ⟨x, xInVar⟩ => Expr.var ⟨x, isWider x xInVar⟩
+    | Expr.opApp op exprs => Expr.opApp op (fun ar => widen (exprs ar) WiderVar isWider)
+    | Expr.un a b => Expr.un (widen a WiderVar isWider) (widen b WiderVar isWider)
+    | Expr.ir a b => Expr.ir (widen a WiderVar isWider) (widen b WiderVar isWider)
+    | Expr.cpl a => Expr.cpl (widen a WiderVar isWider)
+    | Expr.Un x body =>
+        Expr.Un x (widen body (addVar WiderVar x) (addVar.isWider Var WiderVar isWider x))
+    | Expr.Ir x body =>
+        Expr.Ir x (widen body (addVar WiderVar x) (addVar.isWider Var WiderVar isWider x))
+  
+  -- Why does this not hold by definitional equality? Why can't I just use rfl?
+  -- Oh the answer is recursion, right? TODO make *your* proof assistant handle it.
+  -- Oh, the answer probably is that I need funext *and* recursion...
+  -- Also I am sure there's like a three-line tactic for this.
+  theorem widen.eq
+    (expr: Expr s Var)
+  :
+    expr = widen expr Var (fun _ => id)
+  :=
+    match expr with
+    | Expr.var _ => rfl
+    | Expr.opApp op exprs => -- Yay for readability! /s
+        let exprsEq: exprs = (fun ar => widen (exprs ar) Var _) :=
+          funext fun ar => widen.eq (exprs ar)
+        
+        show Expr.opApp op exprs = Expr.opApp op (fun ar => widen (exprs ar) Var _) from
+          exprsEq ▸ rfl
+    
+    | Expr.un a b =>
+        show Expr.un a b = Expr.un (widen a Var _) (widen b Var _) from
+          (widen.eq a) ▸ (widen.eq b) ▸ rfl
+    
+    | Expr.ir a b =>
+        show Expr.ir a b = Expr.ir (widen a Var _) (widen b Var _) from
+          (widen.eq a) ▸ (widen.eq b) ▸ rfl
+    
+    | Expr.cpl a => show Expr.cpl a = Expr.cpl (widen a Var _) from (widen.eq a) ▸ rfl
+    
+    | Expr.Un x body =>
+        show Expr.Un x body = Expr.Un x (widen body (addVar Var x) _) from
+          (widen.eq body) ▸ rfl
+    
+    | Expr.Ir x body =>
+        show Expr.Ir x body = Expr.Ir x (widen body (addVar Var x) _) from
+          (widen.eq body) ▸ rfl
+  
+  
+  @[reducible] def Fam (s: Signature) (Var: VarSet) := ↑Var → Expr s Var
+  
+  namespace Fam
+    def isFinite (_: Expr.Fam s Var): Prop := Set.isFinite Var
+    
+    -- Family of families of expressions.
+    structure Fam (s: Signature) (Index: Type) (V: Index → VarSet) where
+      family: (i: Index) → Expr.Fam s (V i)
+      exprsCompatible
+        (i j: Index)
+        (v: Variable)
+        (vVi: v ∈ V i)
+        (vVj: v ∈ V j)
+      :
+        Expr.widen (family i ⟨v, vVi⟩) (Set.union V) (Set.union.isWider V i) =
+        Expr.widen (family j ⟨v, vVj⟩) (Set.union V) (Set.union.isWider V j)
+    
+    noncomputable def union (family: Fam s Index V): Expr.Fam s (Set.union V) :=
+      fun vProp: ↑(Set.union V) =>
+        match vProp with
+        | ⟨v, vVar⟩ =>
+          let exSomeI: ∃ i: Index, v ∈ V i := vVar;
+          let iProp: { i: Index // v ∈ V i} := choiceEx exSomeI;
+          match iProp with
+          | ⟨i, prop⟩ =>
+              Expr.widen
+                (family.family i ⟨v, prop⟩)
+                (Set.union V)
+                (Set.union.isWider V i)
+    
+    theorem unionIsWider
+      (family: Fam s Index V)
+      (i: Index)
+      (v: ↑(Set.union V))
+      (vVi: v.val ∈ V i)
+    :
+      union family v =
+        Expr.widen
+          (family.family i ⟨v, vVi⟩)
+          (Set.union V)
+          (Set.union.isWider V i)
+    :=
+      let exSomeI: ∃ (someI: Index), v.val ∈ V someI := v.property
+      let someI := choiceEx exSomeI
+      family.exprsCompatible i someI v.val _ _ ▸ rfl
+    
+    def Set.union {Index: Type} {D: Type} (family: Index → Set D): Set D :=
+      fun (d: D) => ∃ i: Index, family i d
+  end Fam
+end Expr
+
+structure DefList (s: Signature) (Var: VarSet) where
+  fam: Expr.Fam s Var
+  unFin: ∃
+    (famFam: Expr.Fam.Fam s Index V)
+    (varEq: Var = Set.union V),
+      fam = varEq ▸ (Expr.Fam.union famFam)  ∧
+      ∀ i: Index, Set.isFinite (V i)
+
+
+
+-- ## Chapter 2: Semantics of WFC
+-- ==============================
+
+/-
+  For our purposes, algebras act on sets of elements,
+  monotonically.
+  The other document refers to algebras as 'structures',
+  because of these differences. I've not yet decided
+  which name I want to keep.
+-/
+structure Algebra (s: Signature) (D: Type) where
+  I: (op: Op s) → (arity op ⟨s, rfl⟩ → Set D) → Set D
+  isMonotonic
+    (op: Op s)
+    (args0 args1: arity op ⟨s, rfl⟩ → Set D)
+    (le: ∀ arg: arity op ⟨s, rfl⟩, args0 arg ≤ args1 arg)
+  :
+    I op args0 ≤ I op args1
+
+
+
+
+@[reducible] def Valuation (Var: VarSet) (D: Type) := ↑Var → Set3 D
+
+namespace Valuation
+  def empty: Valuation Var D := fun _ => Set3.empty
+  
+  def undetermined: Valuation Var D := fun _ => Set3.undetermined
+end Valuation
+
+instance: PartialOrder (Valuation Var D) where
+  le a b := ∀ v: ↑Var, a v ≤ b v
+  
+  refl a := fun v => PartialOrder.refl (a v)
+  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
+  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
+  
+  ltIffLeNotEq := fun _ _ => Iff.intro id id
+
+instance: PartialOrderSq (Valuation Var D) where
+  le a b := ∀ v: ↑Var, a v ≤ b v
+  
+  refl a := fun v => PartialOrder.refl (a v)
+  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
+  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
+  
+  ltIffLeNotEq := fun _ _ => Iff.intro id id
+
+
+def I (alg: Algebra s D) (b c: Valuation Var D): (Expr s Var) → Set3 D
+| Expr.var a => c a
+| Expr.opApp op exprs =>
+    let defArgs := fun arg => (I alg b c (exprs arg)).defMem
+    let posArgs := fun arg => (I alg b c (exprs arg)).posMem
+    ⟨
+      alg.I op defArgs,
+      alg.I op posArgs,
+      
+      alg.isMonotonic
+        op
+        defArgs
+        posArgs
+        fun arg => (I alg b c (exprs arg)).defLePos
+    ⟩
+| Expr.un e0 e1 =>
+    let iE0 := I alg b c e0
+    let iE1 := I alg b c e1
+    ⟨
+      iE0.defMem ∪ iE1.defMem,
+      iE0.posMem ∪ iE1.posMem,
+      
+      fun d dDef =>
+        Or.elim (dDef: d ∈ iE0.defMem ∨ d ∈ iE1.defMem)
+          (fun dIE0 => Or.inl (iE0.defLePos d dIE0))
+          (fun dIE1 => Or.inr (iE1.defLePos d dIE1))
+    ⟩
+| Expr.ir e0 e1 =>
+    let iE0 := I alg b c e0
+    let iE1 := I alg b c e1
+    ⟨
+      iE0.defMem ∩ iE1.defMem,
+      iE0.posMem ∩ iE1.posMem,
+      
+      fun d dDef =>
+        And.intro (iE0.defLePos d dDef.left) (iE1.defLePos d dDef.right)
+    ⟩
+| Expr.cpl e =>
+    let ie := (I alg b b e)
+    ⟨
+      ~ ie.posMem,
+      ~ ie.defMem,
+      
+      fun d dInNPos =>
+        show d ∉ ie.defMem from fun dInDef => dInNPos (ie.defLePos d dInDef)
+    ⟩
+| Expr.Un x body => sorry
+| Expr.Ir x body => sorry
+
+
+
+
+
+
+-- ## Chapter 4: Example WFCs
+-- ==========================
+
 
 inductive NatOp
   | zero
@@ -227,173 +483,6 @@ def pairAr: PairOp → Type
 
 def pairSig: Signature := ⟨PairOp, pairAr⟩
 
-
-
-def Variable := Nat
--- Why tf is "reducible" even required? Lean, this is so fucking retarded.
-@[reducible] def VarSet := Set Variable
-
-def addVar (Var: VarSet) (x: Variable): VarSet :=
-  fun z => Var z ∨ z = x
-
-def addVarMono (Var: VarSet) (x: Variable): Var ⊆ addVar Var x :=
-  fun (v: Variable) (vVar: v ∈ Var) => Or.inl vVar
-
-def addVarId (Var: VarSet) (x: Variable) (xInVar: x ∈ Var): addVar Var x = Var :=
-  Set.ext fun v: Variable =>
-    Iff.intro
-      (fun vInAddVar => Or.elim vInAddVar id (fun vx => vx ▸ xInVar))
-      ((addVarMono Var x) v)
-  
-
-def addVarIsWider
-  (Var: VarSet)
-  (WiderVar: VarSet)
-  (isWider: Var ⊆ WiderVar)
-  (x: Variable)
-:
-  addVar Var x ⊆ addVar WiderVar x
-:=
-  fun (v: Variable) (avx: v ∈ addVar Var x) =>
-    Or.elim avx
-      (fun vVar: Var v => Or.inl (isWider v vVar))
-      (fun vx: v = x => Or.inr vx)
-
-
-inductive Expr (s: Signature): (Var: VarSet) → Type
-  | var: { x: Variable // Var x } → Expr s Var
-  | opApp:
-      (op: s.fst) →
-      (arity op ⟨s, _⟩ → Expr s Var) →
-      Expr s Var
-  | un: Expr s Var → Expr s Var → Expr s Var
-  | ir: Expr s Var → Expr s Var → Expr s Var
-  | cpl: Expr s Var → Expr s Var
-  | Un: (x: Variable) → Expr s (addVar Var x) → Expr s Var
-  | Ir: (x: Variable) → Expr s (addVar Var x) → Expr s Var
-
-
--- This is horrendous. Please tell me I just suck at Lean
--- and there is a much better way of doing this.
-def widenExpr
-  (expr: Expr s Var)
-  (WiderVar: VarSet)
-  (isWider: Var ⊆ WiderVar)
-:
-  Expr s WiderVar
-:=
-  match expr with
-  | Expr.var ⟨x, xInVar⟩ => Expr.var ⟨x, isWider x xInVar⟩
-  | Expr.opApp op exprs => Expr.opApp op (fun ar => widenExpr (exprs ar) WiderVar isWider)
-  | Expr.un a b => Expr.un (widenExpr a WiderVar isWider) (widenExpr b WiderVar isWider)
-  | Expr.ir a b => Expr.ir (widenExpr a WiderVar isWider) (widenExpr b WiderVar isWider)
-  | Expr.cpl a => Expr.cpl (widenExpr a WiderVar isWider)
-  | Expr.Un x body =>
-      Expr.Un x (widenExpr body (addVar WiderVar x) (addVarIsWider Var WiderVar isWider x))
-  | Expr.Ir x body =>
-      Expr.Ir x (widenExpr body (addVar WiderVar x) (addVarIsWider Var WiderVar isWider x))
-
--- Why does this not hold by definitional equality? Why can't I just use rfl?
--- Oh the answer is recursion, right? TODO make *your* proof assistant handle it.
--- Oh, the answer probably is that I need funext *and* recursion...
--- Also I am sure there's like a three-line tactic for this.
-theorem widenExprEq
-  (expr: Expr s Var)
-:
-  expr = widenExpr expr Var (fun _ => id)
-:=
-  match expr with
-  | Expr.var _ => rfl
-  | Expr.opApp op exprs => -- Yay for readability!
-      let exprsEq: exprs = (fun ar => widenExpr (exprs ar) Var _) :=
-        funext fun ar => widenExprEq (exprs ar)
-      
-      show Expr.opApp op exprs = Expr.opApp op (fun ar => widenExpr (exprs ar) Var _) from
-        exprsEq ▸ rfl
-  
-  | Expr.un a b =>
-      show Expr.un a b = Expr.un (widenExpr a Var _) (widenExpr b Var _) from
-        (widenExprEq a) ▸ (widenExprEq b) ▸ rfl
-  
-  | Expr.ir a b =>
-      show Expr.ir a b = Expr.ir (widenExpr a Var _) (widenExpr b Var _) from
-        (widenExprEq a) ▸ (widenExprEq b) ▸ rfl
-  
-  | Expr.cpl a => show Expr.cpl a = Expr.cpl (widenExpr a Var _) from (widenExprEq a) ▸ rfl
-  
-  | Expr.Un x body =>
-      show Expr.Un x body = Expr.Un x (widenExpr body (addVar Var x) _) from
-        (widenExprEq body) ▸ rfl
-  
-  | Expr.Ir x body =>
-      show Expr.Ir x body = Expr.Ir x (widenExpr body (addVar Var x) _) from
-        (widenExprEq body) ▸ rfl
-
-@[reducible] def FamExpr (s: Signature) (Var: VarSet) := ↑Var → Expr s Var
-
-namespace FamExpr
-  def isFinite (_: FamExpr s Var): Prop := Set.isFinite Var
-  
-  structure Fam (s: Signature) (Index: Type) (V: Index → VarSet) where
-    family: (i: Index) → FamExpr s (V i)
-    exprsCompatible
-      (i j: Index)
-      (v: Variable)
-      (vVi: v ∈ V i)
-      (vVj: v ∈ V j)
-    :
-      widenExpr (family i ⟨v, vVi⟩) (Set.union V) (Set.unionIsWider V i) =
-      widenExpr (family j ⟨v, vVj⟩) (Set.union V) (Set.unionIsWider V j)
-  
-  noncomputable def union (family: Fam s Index V): FamExpr s (Set.union V) :=
-    fun vProp: ↑(Set.union V) =>
-      match vProp with
-      | ⟨v, vVar⟩ =>
-        let exSomeI: ∃ i: Index, v ∈ V i := vVar;
-        let iProp: { i: Index // v ∈ V i} := choiceEx exSomeI;
-        match iProp with
-        | ⟨i, prop⟩ =>
-          widenExpr (family.family i ⟨v, prop⟩) (Set.union V) (Set.unionIsWider V i)
-  
-  theorem unionIsWider
-    (family: Fam s Index V)
-    (i: Index)
-    (v: ↑(Set.union V))
-    (vVi: v.val ∈ V i)
-  :
-    union family v = widenExpr (family.family i ⟨v, vVi⟩) (Set.union V) (Set.unionIsWider V i)
-  :=
-    let exSomeI: ∃ (someI: Index), v.val ∈ V someI := v.property
-    let someI := choiceEx exSomeI
-    family.exprsCompatible i someI v.val _ _ ▸ rfl
-  
-  def Set.union {Index: Type} {D: Type} (family: Index → Set D): Set D :=
-    fun (d: D) => ∃ i: Index, family i d
-end FamExpr
-
-structure DefList (s: Signature) (Var: VarSet) where
-  famExpr: FamExpr s Var
-  unFin: ∃
-    (fam: FamExpr.Fam s Index V)
-    (varFam: Var = Set.union V),
-      famExpr = varFam ▸ (FamExpr.union fam)  ∧
-      ∀ i: Index, Set.isFinite (V i)
-
-
-
--- ## Chapter 2: Semantics of WFC
--- ==============================
-
--- For our purposes, algebras act on sets of elements,
--- monotonically.
-structure Algebra (s: Signature) (D: Type) where
-  I: (op: Op s) → (arity op ⟨s, rfl⟩ → Set D) → Set D
-  isMonotonic
-    (op: Op s)
-    (args0 args1: arity op ⟨s, rfl⟩ → Set D)
-    (le: ∀ arg: arity op ⟨s, rfl⟩, args0 arg ≤ args1 arg)
-  :
-    I op args0 ≤ I op args1
 
 
 namespace natAlg
@@ -563,89 +652,3 @@ namespace mpairAlg
 end mpairAlg
 
 def mpairAlg: Algebra pairSig MPair := ⟨mpairAlg.I, mpairAlg.monotonic⟩
-
-
-
-@[reducible] def Valuation (Var: VarSet) (D: Type) := ↑Var → Set3 D
-
-namespace Valuation
-  def empty: Valuation Var D := fun _ => Set3.empty
-  
-  def undetermined: Valuation Var D := fun _ => Set3.undetermined
-end Valuation
-
-instance: PartialOrder (Valuation Var D) where
-  le a b := ∀ v: ↑Var, a v ≤ b v
-  
-  refl a := fun v => PartialOrder.refl (a v)
-  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
-  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
-  
-  ltIffLeNotEq := fun _ _ => Iff.intro id id
-
-instance: PartialOrderSq (Valuation Var D) where
-  le a b := ∀ v: ↑Var, a v ≤ b v
-  
-  refl a := fun v => PartialOrder.refl (a v)
-  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
-  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
-  
-  ltIffLeNotEq := fun _ _ => Iff.intro id id
-
-
-def I (alg: Algebra s D) (b c: Valuation Var D): (Expr s Var) → Set3 D
-| Expr.var a => c a
-| Expr.opApp op exprs =>
-    let defArgs := fun arg => (I alg b c (exprs arg)).defMem
-    let posArgs := fun arg => (I alg b c (exprs arg)).posMem
-    ⟨
-      alg.I op defArgs,
-      alg.I op posArgs,
-      
-      alg.isMonotonic
-        op
-        defArgs
-        posArgs
-        fun arg => (I alg b c (exprs arg)).defLePos
-    ⟩
-| Expr.un e0 e1 =>
-    let iE0 := I alg b c e0
-    let iE1 := I alg b c e1
-    ⟨
-      iE0.defMem ∪ iE1.defMem,
-      iE0.posMem ∪ iE1.posMem,
-      
-      fun d dDef =>
-        Or.elim (dDef: d ∈ iE0.defMem ∨ d ∈ iE1.defMem)
-          (fun dIE0 => Or.inl (iE0.defLePos d dIE0))
-          (fun dIE1 => Or.inr (iE1.defLePos d dIE1))
-    ⟩
-| Expr.ir e0 e1 =>
-    let iE0 := I alg b c e0
-    let iE1 := I alg b c e1
-    ⟨
-      iE0.defMem ∩ iE1.defMem,
-      iE0.posMem ∩ iE1.posMem,
-      
-      fun d dDef =>
-        And.intro (iE0.defLePos d dDef.left) (iE1.defLePos d dDef.right)
-    ⟩
-| Expr.cpl e =>
-    let ie := (I alg b b e)
-    ⟨
-      ~ ie.posMem,
-      ~ ie.defMem,
-      
-      fun d dInNPos =>
-        show d ∉ ie.defMem from fun dInDef => dInNPos (ie.defLePos d dInDef)
-    ⟩
-| Expr.Un x body => sorry
-| Expr.Ir x body => sorry
-
-
-
-
-
-
-
-
