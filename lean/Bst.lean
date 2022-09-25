@@ -171,12 +171,9 @@ instance: PartialOrderSq (Set3 D) where
 
 
 -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1740
--- TODO perhaps change to a structure?
-def Signature := (Op: Type) × (Op → Type)
-def Op (s: Signature) := s.fst
-
-def SigOp (Op: Type) := { s: Signature // s.fst = Op }
-def arity {Op: Type} (op: Op) (s: SigOp Op): Type := s.val.snd (cast s.property.symm op)
+structure Signature where
+  Op: Type
+  arity: Op → Type
 
 inductive ArityZero
 inductive ArityOne | zth
@@ -224,8 +221,8 @@ end addVar
 inductive Expr (s: Signature): (Var: VarSet) → Type
   | var: { x: Variable // Var x } → Expr s Var
   | opApp:
-      (op: s.fst) →
-      (arity op ⟨s, _⟩ → Expr s Var) →
+      (op: s.Op) →
+      (s.arity op → Expr s Var) →
       Expr s Var
   | un: Expr s Var → Expr s Var → Expr s Var
   | ir: Expr s Var → Expr s Var → Expr s Var
@@ -266,11 +263,11 @@ namespace Expr
   :=
     match expr with
     | Expr.var _ => rfl
-    | Expr.opApp op exprs => -- Yay for readability! /s
-        let exprsEq: exprs = (fun ar => widen (exprs ar) Var _) :=
+    | Expr.opApp op exprs =>
+        let exprsEq: exprs = (fun arg => widen (exprs arg) Var _) :=
           funext fun ar => widen.eq (exprs ar)
         
-        show Expr.opApp op exprs = Expr.opApp op (fun ar => widen (exprs ar) Var _) from
+        show Expr.opApp op exprs = Expr.opApp op (fun arg => widen (exprs arg) Var _) from
           exprsEq ▸ rfl
     
     | Expr.un a b =>
@@ -359,20 +356,20 @@ structure DefList (s: Signature) (Var: VarSet) where
 /-
   For our purposes, algebras act on sets of elements,
   monotonically.
-  The other document refers to algebras as 'structures',
+  
+  The other document refers to algebras as 'structures'
   because of these differences. I've not yet decided
   which name I want to keep.
 -/
-structure Algebra (s: Signature) (D: Type) where
-  I: (op: Op s) → (arity op ⟨s, rfl⟩ → Set D) → Set D
+structure Algebra (s: Signature) where
+  D: Type
+  I: (op: s.Op) → (s.arity op → Set D) → Set D
   isMonotonic
-    (op: Op s)
-    (args0 args1: arity op ⟨s, rfl⟩ → Set D)
-    (le: ∀ arg: arity op ⟨s, rfl⟩, args0 arg ≤ args1 arg)
+    (op: s.Op)
+    (args0 args1: s.arity op → Set D)
+    (le: ∀ arg: s.arity op, args0 arg ≤ args1 arg)
   :
     I op args0 ≤ I op args1
-
-
 
 
 @[reducible] def Valuation (Var: VarSet) (D: Type) := ↑Var → Set3 D
@@ -402,7 +399,7 @@ instance: PartialOrderSq (Valuation Var D) where
   ltIffLeNotEq := fun _ _ => Iff.intro id id
 
 
-def I (alg: Algebra s D) (b c: Valuation Var D): (Expr s Var) → Set3 D
+def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
 | Expr.var a => c a
 | Expr.opApp op exprs =>
     let defArgs := fun arg => (I alg b c (exprs arg)).defMem
@@ -454,6 +451,12 @@ def I (alg: Algebra s D) (b c: Valuation Var D): (Expr s Var) → Set3 D
 
 
 
+
+
+-- ## Chapter 4: Tracking undeterminedness
+-- =======================================
+
+-- TODO
 
 
 -- ## Chapter 4: Example WFCs
@@ -528,7 +531,7 @@ namespace natAlg
             show n ∈ I NatOp.plus args1 from exArgs1
 end natAlg
 
-def natAlg: Algebra natSig Nat := ⟨natAlg.I, natAlg.monotonic⟩
+def natAlg: Algebra natSig := ⟨Nat, natAlg.I, natAlg.monotonic⟩
 
 
 inductive Pair where
@@ -559,7 +562,7 @@ namespace pairAlg
               ⟩
 end pairAlg
 
-def pairAlg: Algebra pairSig Pair := ⟨pairAlg.I, pairAlg.monotonic⟩
+def pairAlg: Algebra pairSig := ⟨Pair, pairAlg.I, pairAlg.monotonic⟩
 
 
 inductive MPair.Ret
@@ -651,4 +654,4 @@ namespace mpairAlg
               ⟩
 end mpairAlg
 
-def mpairAlg: Algebra pairSig MPair := ⟨mpairAlg.I, mpairAlg.monotonic⟩
+def mpairAlg: Algebra pairSig := ⟨MPair, mpairAlg.I, mpairAlg.monotonic⟩
