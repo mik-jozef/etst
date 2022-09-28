@@ -13,8 +13,6 @@ import Ordinal
 import PartialOrder
 import Set
 
-open Classical
-
 
 
 /-
@@ -23,14 +21,8 @@ open Classical
   
   The chapters in this document follow the structure of the other
   document. There is no math in the Introduction chapter of the
-  other document, so this chapter is (almost) empty.
+  other document, so this chapter is empty.
 -/
-
-noncomputable def choiceEx {P: T → Prop} (ex: ∃ t: T, P t): { t: T // P t } :=
-  let nonempty: Nonempty { t: T // P t } :=
-    match ex with
-    | ⟨t, prop⟩ => ⟨t, prop⟩
-  choice nonempty
 
 
 
