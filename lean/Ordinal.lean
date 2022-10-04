@@ -9,21 +9,216 @@ import Set
 open Classical
 
 
+def subtypeWellfounded
+  {T: Type}
+  (s: Set T)
+  [wf : WellFoundedRelation T]
+:
+  WellFoundedRelation s
+:=
+  invImage Subtype.val wf
+
+
+-- Should be called minimal, I guess.
+def Least (s: Set T) (lt: T → T → Prop): Type :=
+  { t: T // t ∈ s ∧ ∀ tt: T, lt tt t → tt ∉ s }
+
+noncomputable def least
+  {T: Type}
+  [wf: WellFoundedRelation T]
+  (s: Set T)
+  (nonempty: ↑s)
+:
+  Least s wf.rel
+:= (
+  WellFounded.fix (subtypeWellfounded s).wf fun
+    (t: ↑s)
+    (rc: (tt: ↑s) → wf.rel tt t → Least s wf.rel)
+  =>
+    if h: ∃ tt: ↑s, wf.rel tt t then
+      let tt := choiceEx h
+      rc tt tt.property
+    else
+      let nh: ∀ tt: T, wf.rel tt t → tt ∉ s :=
+        fun tt ttLtT ttInS =>
+          h ⟨⟨tt, ttInS⟩, ttLtT⟩
+      ⟨t, And.intro t.property nh⟩
+) nonempty
+
+
+def wfRel.irefl [wf: WellFoundedRelation T] (a: T):
+  ¬ wf.rel a a
+:=
+  -- The following crashes Lean:
+  -- https://github.com/leanprover/lean4/issues/1673
+  --
+  -- fun aLtA => False.elim ((wfRel.irefl a) aLtA)
+  -- termination_by wfRel.irefl a => a
+  let A := { t: T // t = a }
+  let wfSub := subtypeWellfounded (fun t => t = a)
+  
+  fun aLtA =>
+    let f := WellFounded.fix wfSub.wf fun
+      (x: A)
+      (rc: (xx: A) → wf.rel xx x → ¬ wf.rel a a)
+    =>
+      match h: x with
+        | ⟨xVal, eqA⟩ =>
+            rc ⟨a, rfl⟩ (eqA ▸ aLtA)
+    
+    f ⟨a, rfl⟩ aLtA
+
+def wfRel.antisymm [wf: WellFoundedRelation T] {a b: T}:
+  wf.rel a b → wf.rel b a → a = b
+:=
+  let AOrB := { t: T // t = a ∨ t = b }
+  let wfSub := subtypeWellfounded (fun t => t = a ∨ t = b)
+  
+  fun aLtB bLtA =>
+    let f := WellFounded.fix wfSub.wf fun
+      (x: AOrB)
+      (rc: (xx: AOrB) → wf.rel xx x → a = b)
+    =>
+      match h: x with
+        | ⟨xVal, Or.inl eqA⟩ =>
+            rc ⟨b, Or.inr rfl⟩ (eqA ▸ bLtA)
+        | ⟨xVal, Or.inr eqB⟩ =>
+            rc ⟨a, Or.inl rfl⟩ (eqB ▸ aLtB)
+    
+    f ⟨a, Or.inl rfl⟩
+
+
+
 structure WellOrder where
-  T: Type -- How can I make you an instance of LE?
+  T: Type
   lt: T → T → Prop
   
   total: ∀ a b: T, lt a b ∨ lt b a ∨ a = b
   wf: WellFounded lt
-  
-  -- This is the definition that I know, but it surely is equivalent. (Right?)
-  -- wf: ∀ s: Set T, s = Set.empty ∨ ∃ tL: ↑s, ∀ t: ↑s, le tL t
 
 instance (w: WellOrder): WellFoundedRelation w.T where
   rel := w.lt
   wf := w.wf
 
+instance (w: WellOrder): LT w.T where
+  lt := w.lt
+
 namespace WellOrder
+  structure Morphism (wa wb: WellOrder) where
+    f: wa.T → wb.T
+    
+    ordPres: ∀ a b: wa.T, a < b ↔ f a < f b
+  
+  namespace Morphism
+    def free (m: Morphism wa wb) (b: wb.T): Prop :=
+      ∀ aa: wa.T, b ≠ m.f aa
+    
+    -- No idea if the terminology corresponds to category
+    -- theory. An initial morphism picks the least elements possible.
+    def isInitial (m: Morphism wa wb): Prop :=
+      ∀ a: wa.T, ∀ b: wb.T, b < m.f a → ∃ aa: wa.T, b = m.f aa
+    
+    def nInitial.helperHelper
+      (m: Morphism wa wb)
+      (a: wa.T)
+      (prop: ¬ (b < m.f a ∧ ∀ aa: wa.T, b ≠ m.f aa))
+    :
+      b < m.f a → ∃ aa: wa.T, b = m.f aa
+    :=
+      fun bLtMfA =>
+        let notAll: ¬ ∀ aa: wa.T, b ≠ m.f aa := fun all =>
+          prop (And.intro bLtMfA all)
+        
+        byContradiction fun nope =>
+          let ini: ∀ aa: wa.T, b ≠ m.f aa :=
+            fun aa => fun p => nope ⟨aa, p⟩
+          notAll ini
+    
+    def nInitial.helper
+      (m: Morphism wa wb)
+      (a: wa.T)
+      (prop: ¬ ∃ b: wb.T, b < m.f a ∧ ∀ aa: wa.T, b ≠ m.f aa)
+    :
+      ∀ b: wb.T, b < m.f a → ∃ aa: wa.T, b = m.f aa
+    :=
+      fun b => nInitial.helperHelper m a fun p => prop ⟨b, p⟩
+    
+    def nInitial
+      (m: Morphism wa wb)
+      (nIni: ¬ isInitial m)
+    :
+      ∃ a: wa.T, ∃ b: wb.T, b < m.f a ∧ (free m b)
+    :=
+      byContradiction fun nope =>
+        let ini: ∀ a: wa.T, ∀ b: wb.T, b < m.f a → ∃ aa: wa.T, b = m.f aa :=
+          fun a => nInitial.helper m a fun ex => nope ⟨a, ex⟩
+        nIni ini
+    
+    
+    def lt (m0 m1: Morphism wa wb): Prop :=
+      if h1: isInitial m1 then
+        False
+      else if h0: isInitial m0 then
+        True
+      else
+        let exA0 := choiceEx (nInitial m0 h0)
+        let exA1 := choiceEx (nInitial m1 h1)
+        
+        let exB0 := choiceEx exA0.property
+        let exB1 := choiceEx exA1.property
+        
+        let lst0: Least (free m0) wb.lt :=
+          least (free m0) ⟨exB0.val, exB0.property.right⟩
+        
+        let lst1: Least (free m1) wb.lt :=
+          least (free m1) ⟨exB1.val, exB1.property.right⟩
+        
+        wb.lt lst0.val lst1.val
+    
+    instance: WellFoundedRelation (Morphism wa wb) where
+      rel := lt
+      wf := sorry
+    
+    @[reducible] def Initial (wa wb: WellOrder) :=
+      { m: Morphism wa wb // isInitial m }
+    
+    def initial (m: Morphism wa wb): Initial wa wb
+    :=
+      if h: isInitial m then
+        ⟨m, h⟩
+      else
+        let f := sorry
+        
+        
+        let mNext := {
+          f := f
+          ordPres := sorry
+        }
+        
+        have: lt m mNext := sorry
+        
+        initial mNext
+      termination_by initial m => m
+    
+    
+    def trans
+      (mab: Morphism wa wb)
+      (mbc: Morphism wb wc)
+    :
+      Morphism wa wc
+    := {
+      f := mbc.f ∘ mab.f
+      
+      ordPres := fun a b => Iff.intro (
+        fun waLtAB =>
+          (mbc.ordPres (mab.f a) (mab.f b)).mp ((mab.ordPres a b).mp waLtAB)
+      ) (
+        fun wbLtAB =>
+          (mab.ordPres a b).mpr ((mbc.ordPres (mab.f a) (mab.f b)).mpr wbLtAB)
+      )
+    }
+  end Morphism
+  
   structure Isomorphism (wa wb: WellOrder) where
     f: wa.T → wb.T
     g: wb.T → wa.T
@@ -31,68 +226,86 @@ namespace WellOrder
     bijA: ∀ a: wa.T, g (f a) = a
     bijB: ∀ b: wb.T, f (g b) = b
     
-    ordPres: ∀ a b: wa.T, wa.lt a b ↔ wb.lt (f a) (f b)
+    ordPres: ∀ a b: wa.T, a < b ↔ f a < f b
   
   def isIsomorphic (wa wb: WellOrder) := ∃ _: Isomorphism wa wb, True
   
-  def selfIsomorphism (x: WellOrder): Isomorphism x x := {
-    f := id
-    g := id
+  namespace Isomorphism
+    def morphismF (i: Isomorphism wa wb): Morphism wa wb := {
+      f := i.f
+      ordPres := i.ordPres
+    }
     
-    bijA := by simp
-    bijB := by simp
-    ordPres := by simp
-  }
-  
-  def Isomorphism.symm (iab: Isomorphism wa wb): Isomorphism wb wa := {
-    f := iab.g
-    g := iab.f
+    def morphismG (i: Isomorphism wa wb): Morphism wb wa := {
+      f := i.g
+      ordPres := fun (a b: wb.T) => Iff.intro (
+        fun ltAb =>
+          ((i.bijB a) ▸ (i.bijB b) ▸ (i.ordPres (i.g a) (i.g b)).mpr) ltAb
+      ) (
+        fun ltAb =>
+          ((i.bijB a) ▸ (i.bijB b) ▸ (i.ordPres (i.g a) (i.g b)).mp) ltAb
+      )
+    }
     
-    bijA := iab.bijB
-    bijB := iab.bijA
-    
-    ordPres := fun (a b: wb.T) => Iff.intro
-      (fun wbltAB =>
-        ((iab.bijB a) ▸ (iab.bijB b) ▸
-          (iab.ordPres (iab.g a) (iab.g b)).mpr) wbltAB)
-      (fun ltWaGaGb =>
-        ((iab.bijB a) ▸ (iab.bijB b) ▸
-          (iab.ordPres (iab.g a) (iab.g b)).mp) ltWaGaGb)
-  }
-  
-  def Isomorphism.trans
-    (iab: Isomorphism wa wb)
-    (ibc: Isomorphism wb wc)
-  :
-    Isomorphism wa wc
-  := {
-    f := ibc.f ∘ iab.f
-    g := iab.g ∘ ibc.g
-    
-    bijA := fun a: wa.T =>
-      let ibcGF: ibc.g ∘ ibc.f = id := funext ibc.bijA
-      let iabGF: iab.g ∘ iab.f = id := funext iab.bijA
+    def refl (x: WellOrder): Isomorphism x x := {
+      f := id
+      g := id
       
-      show (iab.g ∘ (ibc.g ∘ ibc.f) ∘ iab.f) a = a from ibcGF ▸ iabGF ▸ rfl
+      bijA := by simp
+      bijB := by simp
+      ordPres := by simp
+    }
     
-    bijB := fun a: wc.T =>
-      let ibcFG: ibc.f ∘ ibc.g = id := funext ibc.bijB
-      let iabFG: iab.f ∘ iab.g = id := funext iab.bijB
+    def symm (iab: Isomorphism wa wb): Isomorphism wb wa := {
+      f := iab.g
+      g := iab.f
       
-      show (ibc.f ∘ (iab.f ∘ iab.g) ∘ ibc.g) a = a from iabFG ▸ ibcFG ▸ rfl
+      bijA := iab.bijB
+      bijB := iab.bijA
+      
+      ordPres := fun (a b: wb.T) => Iff.intro
+        (fun wbltAB =>
+          ((iab.bijB a) ▸ (iab.bijB b) ▸
+            (iab.ordPres (iab.g a) (iab.g b)).mpr) wbltAB)
+        (fun ltWaGaGb =>
+          ((iab.bijB a) ▸ (iab.bijB b) ▸
+            (iab.ordPres (iab.g a) (iab.g b)).mp) ltWaGaGb)
+    }
     
-    ordPres := fun a b: wa.T =>
-      Iff.intro
-        (fun waltAB =>
-          let wbltAB := (iab.ordPres a b).mp waltAB
-          (ibc.ordPres (iab.f a) (iab.f b)).mp wbltAB)
-        (fun wcltAB =>
-          let wbltAB := (ibc.ordPres (iab.f a) (iab.f b)).mpr wcltAB
-          (iab.ordPres a b).mpr wbltAB)
-  }
+    def trans
+      (iab: Isomorphism wa wb)
+      (ibc: Isomorphism wb wc)
+    :
+      Isomorphism wa wc
+    := {
+      f := ibc.f ∘ iab.f
+      g := iab.g ∘ ibc.g
+      
+      bijA := fun a: wa.T =>
+        let ibcGF: ibc.g ∘ ibc.f = id := funext ibc.bijA
+        let iabGF: iab.g ∘ iab.f = id := funext iab.bijA
+        
+        show (iab.g ∘ (ibc.g ∘ ibc.f) ∘ iab.f) a = a from ibcGF ▸ iabGF ▸ rfl
+      
+      bijB := fun a: wc.T =>
+        let ibcFG: ibc.f ∘ ibc.g = id := funext ibc.bijB
+        let iabFG: iab.f ∘ iab.g = id := funext iab.bijB
+        
+        show (ibc.f ∘ (iab.f ∘ iab.g) ∘ ibc.g) a = a from iabFG ▸ ibcFG ▸ rfl
+      
+      ordPres := fun a b: wa.T =>
+        Iff.intro
+          (fun waltAB =>
+            let wbltAB := (iab.ordPres a b).mp waltAB
+            (ibc.ordPres (iab.f a) (iab.f b)).mp wbltAB)
+          (fun wcltAB =>
+            let wbltAB := (ibc.ordPres (iab.f a) (iab.f b)).mpr wcltAB
+            (iab.ordPres a b).mpr wbltAB)
+    }
+  end Isomorphism
   
   def isIsomorphic.refl: isIsomorphic wa wa :=
-     ⟨WellOrder.selfIsomorphism wa, trivial⟩
+     ⟨WellOrder.Isomorphism.refl wa, trivial⟩
   
   def isIsomorphic.symm (isIso: isIsomorphic wa wb): isIsomorphic wb wa :=
      isIso.elim fun iso _ => ⟨iso.symm, trivial⟩
@@ -107,20 +320,17 @@ namespace WellOrder
       isIsoBC.elim fun bc _ =>
        ⟨Isomorphism.trans ab bc, trivial⟩
   
+  
   @[reducible] def succ.lt (w: WellOrder): (a b: Option w.T) → Prop
     | none, _ => False
     | some _, none => True
-    | some a, some b => w.lt a b
+    | some a, some b => a < b
   
   def succ.wf (w: WellOrder) (a: w.T): Acc (succ.lt w) (some a) :=
       Acc.intro (some a) fun (b: Option w.T) ltB =>
         match b with
         | none => False.elim ltB
-        | some c =>
-            let wLtAC: w.lt c a = lt w (some c) (some a) := rfl
-            have: w.lt c a := wLtAC ▸ ltB
-            have: WellFounded w.lt := w.wf
-            succ.wf w c
+        | some c => succ.wf w c
   termination_by succ.wf w a => a
   
   def succ (w: WellOrder): WellOrder :=
@@ -135,8 +345,8 @@ namespace WellOrder
         match b with
         | none => False.elim ltB
         | some c =>
-            let wLtAC: w.lt c a = lt (some c) (some a) := rfl
-            have: w.lt c a := wLtAC ▸ ltB
+            let wLtAC: c < a = lt (some c) (some a) := rfl
+            have: c < a := wLtAC ▸ ltB
             wf c
     ) -- It's also a shame that you have significant whitespace.
      wf a
@@ -154,8 +364,8 @@ namespace WellOrder
             let whyUNoDoItUrself: succ.lt w (some x) none = True := rfl
             by simp [whyUNoDoItUrself, rfl ▸ trivial]
         | some x, some y =>
-            let a: w.lt x y = succ.lt w (some x) (some y) := rfl
-            let b: w.lt y x = succ.lt w (some y) (some x) := rfl
+            let a: (x < y) = succ.lt w (some x) (some y) := rfl
+            let b: (y < x) = succ.lt w (some y) (some x) := rfl
             let c := a ▸ b ▸ w.total x y
             c.elim
               (fun a => Or.inl a)
@@ -174,7 +384,137 @@ namespace WellOrder
       ⟩
     }
   
-  def isGreatest (w: WellOrder) (gst: w.T) := ∀ t: w.T, t = gst ∨ w.lt t gst
+  def succ.morphism (w: WellOrder): Morphism w w.succ := {
+    f := fun a => some a
+    
+    -- This is another trivial statement that your theorem
+    -- prover should be able to derive on its own.
+    ordPres := fun _ _ => Iff.intro id id
+  }
+  
+  
+  def succ.f
+   {wa wb: WellOrder}
+   (f: wa.T → wb.T)
+  :
+    wa.succ.T → wb.succ.T
+  :=
+    fun a: wa.succ.T =>
+      match a with
+        | none => none
+        | some a => some (f a)
+  
+  
+  def lt.trans {w: WellOrder} {a b c: w.T}:
+    a < b → b < c → a < c
+  := (
+    WellFounded.fix w.wf fun
+      (c: w.T)
+      (rc:
+        (cc: w.T) →
+        w.lt cc c →
+        ∀ a b: w.T, a < b → b < cc → a < cc
+      )
+    =>
+      fun (a b: w.T) aLtB bLtC =>
+        (w.total a c).elim id (
+          fun cLtAOrCEqA =>
+            let cLtB: c < b := cLtAOrCEqA.elim
+              (fun cLtA =>rc b bLtC c a cLtA aLtB)
+              (fun aEqC => aEqC ▸ aLtB)
+            let bEqC: b = c := wfRel.antisymm bLtC cLtB
+            let bLtB: b < b := bEqC ▸ cLtB
+            let bNLtB: ¬ b < b := wfRel.irefl b
+            False.elim (bNLtB bLtB)
+        )
+  ) c a b
+  
+  
+  structure PreIsomorphism -- TODO do I even need you?
+    (wa wb: WellOrder)
+    (a: wa.succ.T)
+    (fOrig: wa.T → wb.T)
+  where
+    f: wa.T → wb.T
+    g: wb.T → wa.T
+    
+    fLe: ∀ a: wa.T, f a < fOrig a ∨ f a = fOrig a
+    
+    bijA: ∀ aa: wa.T, wa.succ.lt (some aa) a              → g (f aa) = aa
+    bijB: ∀ bb: wb.T, wb.succ.lt (some bb) ((succ.f f) a) → f (g bb) = bb
+    
+    ordPres: ∀ a b: wa.T, a < b ↔ f a < f b
+  
+  noncomputable def Isomorphism.fromMorphisms -- TODO do I even need you?
+    {wa wb: WellOrder}
+    (ma: Morphism wa wb)
+    (mb: Morphism wb wa)
+  :
+    Isomorphism wa wb
+  :=
+    let preIso: PreIsomorphism wa wb none ma.f
+    := (
+      WellFounded.fix wa.succ.wf fun
+        (aSucc: wa.succ.T)
+        (rc:
+          (aaSucc: wa.succ.T) →
+          wa.succ.lt aaSucc aSucc →
+          PreIsomorphism wa wb aaSucc ma.f)
+      =>
+        let f := fun a => if h0: wa.succ.lt (some a) aSucc then
+          (rc (some a) h0).f a
+        else if h1: some a = aSucc then
+          (
+            least (
+              fun b: wb.T =>
+                ∀ aa: wa.T,
+                  (h: wa.lt aa a) →
+                  wb.lt ((rc (some aa) (by rw [h1.symm]; exact h)).f aa) b
+            ) ⟨
+              ma.f a,
+              fun aa aaLtA =>
+                let prevPreIso: PreIsomorphism wa wb (some aa) ma.f :=
+                  (rc (some aa) (by rw [h1.symm]; exact aaLtA))
+                
+                let fAaLeFOrigAa:
+                  prevPreIso.f aa < ma.f aa ∨ prevPreIso.f aa = ma.f aa
+                :=
+                  prevPreIso.fLe aa
+                
+                let fAaLeFOrigA: prevPreIso.f aa < ma.f a :=
+                  fAaLeFOrigAa.elim (
+                    fun lt =>
+                      WellOrder.lt.trans lt ((ma.ordPres aa a).mp aaLtA)
+                  ) (
+                    fun eq => eq ▸ ((ma.ordPres aa a).mp aaLtA)
+                  )
+                
+                let asdf := ma.ordPres
+                sorry
+            ⟩
+          ).val
+        else sorry
+        
+        let g := sorry
+        
+        {
+          f := f
+          g := g
+        }
+    ) none
+    
+    {
+      f := preIso.f
+      g := preIso.g
+      
+      bijA := fun a => (preIso.bijA a) trivial
+      bijB := fun b => (preIso.bijB b) trivial
+      
+      ordPres := preIso.ordPres
+    }
+  
+  
+  def isGreatest (w: WellOrder) (gst: w.T) := ∀ t: w.T, t = gst ∨ t < gst
   
   def greatestIso
     (wa wb: WellOrder)
@@ -212,11 +552,32 @@ namespace WellOrder
       a.property ((isoAB.bijA a) ▸ aGst.property)
   ⟩
   
+  -- TODO do I need you?
+  def succ.nIso (w: WellOrder): ¬ ∃ _: Isomorphism w w.succ, True :=
+    fun isoEx =>
+      let iso: Isomorphism w w.succ := choiceEx isoEx
+      
+      let succGst: { s: w.succ.T // isGreatest w.succ s } := ⟨
+        none,
+        fun s0 =>
+          match h: s0 with
+            | none => Or.inl rfl
+            | some a => Or.inr trivial
+      ⟩
+      
+      let wGst: { s: w.T // isGreatest w s } :=
+        greatestIso w.succ w iso.symm succGst
+      
+      let succGstNope: w.succ.T := some wGst
+    
+    sorry
+  
+  
   @[reducible] def pred.lt
     (w: WellOrder)
     (t0 t1: { t: w.T // ¬ isGreatest w t })
   :=
-    w.lt t0.val t1.val
+    t0.val < t1.val
   
   @[reducible] def pred.wf
     (w: WellOrder)
@@ -373,23 +734,105 @@ namespace WellOrder
       waPredEq ▸ wbPredEq ▸ ⟨predNoOpt.iso wa wb ⟨isoAB, trivial⟩, trivial⟩
     
     ⟨wbPred, And.intro wbPred.property isoPred⟩
+  
+  
+  noncomputable def ordIn (m: Morphism wa wb): wb.succ.T
+  := (
+    least
+      (fun bSucc => ∀ b: wb.T, bSucc = some b → m.free b)
+      ⟨none, fun _ nope => False.elim (Option.noConfusion nope)⟩
+  ).val
+  
+  def metaLt (wa wb: WellOrder): Prop :=
+    ¬ isIsomorphic wa wb ∧ ∃ _: Morphism wa wb, True
+  
+  def ordInEqIff
+    {wa wb wc: WellOrder}
+    (mac: Morphism.Initial wa wc)
+    (mbc: Morphism.Initial wb wc)
+  :
+    ordIn mac.val = ordIn mbc.val ↔ isIsomorphic wa ab
+  :=
+    sorry
+  
+  def ordInLtIff
+    {wa wb wc: WellOrder}
+    (mac: Morphism.Initial wa wc)
+    (mbc: Morphism.Initial wb wc)
+  :
+    ordIn mac.val < ordIn mbc.val ↔ metaLt wa wb
+  :=
+    sorry
+  
+  
+  def metaWf (wc: WellOrder): Acc metaLt wc :=
+    -- The syntax `wc.succ.morphism` should be a shorthand
+    -- for `WellOrder.succ.morphism wc`.
+    -- Also, what's a normal way of proving this from `ordInLtIff`?
+    
+    let fix := WellFounded.fix wc.succ.wf fun
+      (tSucc: wc.succ.T)
+      (rc:
+        (ttSucc: wc.succ.T) →
+        wc.succ.lt ttSucc tSucc →
+        (wa: { wa: WellOrder //
+          ∃ m: Morphism wa wc, Morphism.isInitial m ∧
+            (ordIn m < ttSucc ∨ ordIn m = ttSucc) }) →
+        Acc metaLt wa)
+      =>
+        fun wb => Acc.intro wb.val fun wa waLtWb =>
+          let mbc := choiceEx wb.property
+          let mbcIni: Morphism.Initial wb wc := ⟨mbc.val, mbc.property.left⟩
+          
+          let mbtOrd: ordIn mbc.val < tSucc ∨ ordIn mbc.val = tSucc :=
+            mbc.property.right
+          
+          let mab: Morphism wa wb := choiceEx waLtWb.right
+          let mabIni := Morphism.initial mab
+          
+          let mac := mabIni.val.trans mbc.val
+          let macIni := Morphism.initial mac
+          
+          let mabOrdLt: (ordIn macIni.val) < (ordIn mbc.val) :=
+            (ordInLtIff macIni mbcIni).mpr waLtWb
+          
+          let macOrdLtTSucc: (ordIn macIni.val) < tSucc := mbtOrd.elim
+            (fun lt => WellOrder.lt.trans mabOrdLt lt)
+            (fun eq => eq ▸ mabOrdLt)
+          
+          let ex: ∃ m: Morphism wa wc, Morphism.isInitial m ∧
+            (ordIn m < ordIn macIni.val ∨ ordIn m = ordIn macIni.val)
+          :=
+            ⟨macIni, And.intro macIni.property (Or.inr rfl)⟩
+          
+          rc (ordIn macIni.val) macOrdLtTSucc ⟨wa, ex⟩
+    
+    fix none ⟨
+      wc,
+      ⟨(WellOrder.Isomorphism.refl wc).morphismF, And.intro sorry sorry⟩
+    ⟩
+  
 end WellOrder
+
+
+instance: WellFoundedRelation WellOrder where
+  rel := WellOrder.metaLt
+  wf := ⟨WellOrder.metaWf⟩
 
 
 instance wellOrderSetoid: Setoid WellOrder where
   r (a b: WellOrder) := WellOrder.isIsomorphic a b
   iseqv := {
-    -- When `selfIsomorphism` is renamed to `Isomorphism.refl`, this
-    -- should work >:(
-    -- 
-    -- refl := fun x => ⟨x.Isomorphism.refl, trivial⟩
-    refl := fun x => ⟨x.selfIsomorphism, trivial⟩
+    -- `refl := fun x => ⟨x.Isomorphism.refl, trivial⟩` should work >:( 
+    refl := fun x => ⟨WellOrder.Isomorphism.refl x, trivial⟩
     symm := fun isIsm => isIsm.elim fun i _ => ⟨i.symm, trivial⟩
     trans := fun ab bc =>
       ab.elim fun iab _ =>
         bc.elim fun ibc _ =>
           ⟨WellOrder.Isomorphism.trans iab ibc, trivial⟩
   }
+
+
 
 
 def Ordinal := Quotient wellOrderSetoid
@@ -412,31 +855,31 @@ namespace Ordinal
   :
     WellOrder.Isomorphism wa.succ wb.succ
   := {
-        f := fun a =>
-          match a with
-            | none => none
-            | some a => some (iso.f a)
-        g := fun b => 
-          match b with
-            | none => none
-            | some b => some (iso.g b)
-        
-        -- I hate to admit it, but I'm starting to like tactics.
-        -- But only because Lean needs better symbolic execution instead!!! ;)
-        bijA := fun a => by cases a <;> simp [iso.bijA],
-        bijB := fun b => by cases b <;> simp [iso.bijB],
-        
-        ordPres := fun a b =>
-          match a, b with
-            -- Lean's 'by simp' has issues if it cannot come up with
-            -- the zeroth three.
-            | none, none => Iff.intro id id
-            | some a, none => Iff.intro id id
-            | none, some a => Iff.intro id id
-            | some a, some b => Iff.intro
-                (fun succLtAB => (iso.ordPres a b).mp succLtAB)
-                (fun succLtAB => (iso.ordPres a b).mpr succLtAB)
-      }
+    f := fun a =>
+      match a with
+        | none => none
+        | some a => some (iso.f a)
+    g := fun b => 
+      match b with
+        | none => none
+        | some b => some (iso.g b)
+    
+    -- I hate to admit it, but I'm starting to like tactics.
+    -- But only because Lean needs better symbolic execution instead!!! ;)
+    bijA := fun a => by cases a <;> simp [iso.bijA],
+    bijB := fun b => by cases b <;> simp [iso.bijB],
+    
+    ordPres := fun a b => -- asdf
+      match a, b with
+        -- Lean's 'by simp' has issues if it cannot come up with
+        -- the zeroth three.
+        | none, none => Iff.intro id id
+        | some a, none => Iff.intro id id
+        | none, some a => Iff.intro id id
+        | some a, some b => Iff.intro
+            (fun succLtAB => (iso.ordPres a b).mp succLtAB)
+            (fun succLtAB => (iso.ordPres a b).mpr succLtAB)
+  }
   
   def succ: Ordinal → Ordinal := Quotient.lift (fun w => Ordinal.mk w.succ)
     fun (wa wb: WellOrder) (asimb: wa ≈ wb) =>
