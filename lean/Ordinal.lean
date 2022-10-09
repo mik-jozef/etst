@@ -2,6 +2,9 @@
   Defines ordinals. Takes heavy inspiration from mathlib
   (I guess -- I wrote this comment before defining them).
   Update: so I guess I freestyle a lot.
+  
+  Don't look inside. It's embarrassing. (And also supposed
+  to be write-once, forget and don't ever read again.)
 -/
 
 import Set
@@ -19,21 +22,20 @@ def subtypeWellfounded
   invImage Subtype.val wf
 
 
--- Should be called minimal, I guess.
-def Least (s: Set T) (lt: T → T → Prop): Type :=
+def Minimal (s: Set T) (lt: T → T → Prop): Type :=
   { t: T // t ∈ s ∧ ∀ tt: T, lt tt t → tt ∉ s }
 
-noncomputable def least
+noncomputable def minimal
   {T: Type}
   [wf: WellFoundedRelation T]
   (s: Set T)
   (nonempty: ↑s)
 :
-  Least s wf.rel
+  Minimal s wf.rel
 := (
   WellFounded.fix (subtypeWellfounded s).wf fun
     (t: ↑s)
-    (rc: (tt: ↑s) → wf.rel tt t → Least s wf.rel)
+    (rc: (tt: ↑s) → wf.rel tt t → Minimal s wf.rel)
   =>
     if h: ∃ tt: ↑s, wf.rel tt t then
       let tt := choiceEx h
@@ -44,6 +46,10 @@ noncomputable def least
           h ⟨⟨tt, ttInS⟩, ttLtT⟩
       ⟨t, And.intro t.property nh⟩
 ) nonempty
+
+-- TODO do I need you?
+def Least (s: Set T) (lt: T → T → Prop): Type :=
+  { t: T // t ∈ s ∧ ∀ tt: T, tt ∈ s → lt t tt ∨ t = tt }
 
 
 def wfRel.irefl [wf: WellFoundedRelation T] (a: T):
@@ -138,47 +144,25 @@ namespace WellOrder
     def free (m: Morphism wa wb) (b: wb.T): Prop :=
       ∀ aa: wa.T, b ≠ m.f aa
     
+    def bound (m: Morphism wa wb) (b: wb.T): Prop :=
+      ∃ aa: wa.T, b = m.f aa
+    
+    def freeBound {p: Prop}
+      (f: free m b)
+      (b: bound m b)
+    :
+      p
+    :=
+      let aa := choiceEx b
+      False.elim (f aa aa.property)
+    
+    
     -- Not sure if the terminology corresponds to category
-    -- theory. An initial morphism picks the least elements possible.
+    -- theory. An initial morphism picks the least elements
+    -- possible. (In other words, it maps onto the initial
+    -- segment of the target well-order.)
     def isInitial (m: Morphism wa wb): Prop :=
-      ∀ a: wa.T, ∀ b: wb.T, b < m.f a → ∃ aa: wa.T, b = m.f aa
-    
-    def nInitial.helperHelper
-      (m: Morphism wa wb)
-      (a: wa.T)
-      (prop: ¬ (b < m.f a ∧ ∀ aa: wa.T, b ≠ m.f aa))
-    :
-      b < m.f a → ∃ aa: wa.T, b = m.f aa
-    :=
-      fun bLtMfA =>
-        let notAll: ¬ ∀ aa: wa.T, b ≠ m.f aa := fun all =>
-          prop (And.intro bLtMfA all)
-        
-        byContradiction fun nope =>
-          let ini: ∀ aa: wa.T, b ≠ m.f aa :=
-            fun aa => fun p => nope ⟨aa, p⟩
-          notAll ini
-    
-    def nInitial.helper
-      (m: Morphism wa wb)
-      (a: wa.T)
-      (prop: ¬ ∃ b: wb.T, b < m.f a ∧ ∀ aa: wa.T, b ≠ m.f aa)
-    :
-      ∀ b: wb.T, b < m.f a → ∃ aa: wa.T, b = m.f aa
-    :=
-      fun b => nInitial.helperHelper m a fun p => prop ⟨b, p⟩
-    
-    def nInitial
-      {m: Morphism wa wb}
-      (nIni: ¬ isInitial m)
-    :
-      ∃ a: wa.T, ∃ b: wb.T, b < m.f a ∧ (free m b)
-    :=
-      byContradiction fun nope =>
-        let ini: ∀ a: wa.T, ∀ b: wb.T, b < m.f a → ∃ aa: wa.T, b = m.f aa :=
-          fun a => nInitial.helper m a fun ex => nope ⟨a, ex⟩
-        nIni ini
-    
+      ∀ a: wa.T, ∀ b: wb.T, b < m.f a → bound m b
     
     @[reducible] def Initial (wa wb: WellOrder) :=
       { m: Morphism wa wb // isInitial m }
@@ -337,25 +321,6 @@ namespace WellOrder
   termination_by succ.wf w a => a
   
   def succ (w: WellOrder): WellOrder :=
-    /-
-    -- Lean, it's a shame that:
-    -- 0. I have to repeat `let (rec)? wf (a: w.T)`,
-    -- 1. termination_by seemingly cannot be put in anywhere.
-    -- 2. While we are bashing Lean, I would expect local namespaces
-    --    to work as well :D
-    let wf (a: w.T) := let rec wf (a: w.T): Acc (succ.lt w) (some a) := (
-      Acc.intro (some a) fun (b: Option w.T) ltB =>
-        match b with
-        | none => False.elim ltB
-        | some c =>
-            let wLtAC: c < a = lt (some c) (some a) := rfl
-            have: c < a := wLtAC ▸ ltB
-            wf c
-    ) -- It's also a shame that you have significant whitespace.
-     wf a
-    termination_by succ.wf w a => a
-    -/
-    
     {
       T := Option w.T,
       lt := succ.lt w,
@@ -395,7 +360,6 @@ namespace WellOrder
     ordPres := fun _ _ => Iff.intro id id
   }
   
-  
   def succ.f
    {wa wb: WellOrder}
    (f: wa.T → wb.T)
@@ -408,228 +372,127 @@ namespace WellOrder
         | some a => some (f a)
   
   
-  def Morphism.helperOut
-    {wa: WellOrder}
-    (fA: wa.T)
-    (aSucc: wa.succ.T)
-    (aa: wa.T)
-    (a: aSucc = some fA)
-    (b: wa.succ.lt (some aa) aSucc)
-  := a ▸ b
-  
-  noncomputable def Morphism.initial.helper
+  noncomputable def Morphism.initial.f
     (m: Morphism wa wb)
-    (aSucc: wa.succ.T)
+    (a: wa.T)
   :
-    { mi: Morphism wa wb //
-      (∀ a: wa.T, mi.f a < m.f a ∨ mi.f a = m.f a) ∧
-      ∀ (a: wa.T) (b: wb.T),
-        wa.succ.lt (some a) aSucc →
-        b < mi.f a ∨ b = mi.f a →
-        ¬ Morphism.free mi b
-    }
+    { b: wb.T // b < m.f a ∨ b = m.f a }
+    --Minimal (fun b: wb.T => ∀ aa: wa.T, aa < a → Morphism.initial.f m aa < b) wb.lt
   :=
-    let rc (aa: { aa: wa.T // wa.succ.lt (some aa) aSucc }) :=
-      let wf: wa.succ.lt (some aa.val) aSucc := aa.property
-      initial.helper m (some aa)
+    let gtBefore (b: wb.T) := ∀ aa: wa.T, aa < a → Morphism.initial.f m aa < b
     
-    let leEq (fA: wa.T) (b: wb.T) :=
-      ∃ aa: { aa: wa.T // wa.succ.lt (some aa) aSucc }, (rc aa).val.f fA = b
+    let mfaGt: gtBefore (m.f a) :=
+      fun aa aaLtA =>
+        (Morphism.initial.f m aa).property.elim
+         (fun lt => WellOrder.lt.trans lt ((m.ordPres aa a).mp aaLtA))
+         (fun eq => eq.symm ▸ ((m.ordPres aa a).mp aaLtA))
     
-    let leNeq (b: wb.T) :=
-      ∀ aa: { aa: wa.T // wa.succ.lt (some aa) aSucc }, (rc aa).val.f aa ≠ b
+    let minimalGt := (minimal gtBefore ⟨m.f a, mfaGt⟩)
     
+    ⟨minimalGt.val, (wb.total minimalGt.val (m.f a)).elim
+      (fun lt => Or.inl lt)
+      (fun gtOrEq => gtOrEq.elim
+        (fun gt => False.elim (minimalGt.property.right (m.f a) gt mfaGt))
+        (fun eq => Or.inr eq))⟩
+    termination_by Morphism.initial.f m a => a
+  
+  noncomputable def Morphism.initial.f.monotonic
+    (m: Morphism wa wb)
+    (a0 a1: wa.T)
+    (ltAA: a0 < a1)
+  :
+    (f m a0).val < (f m a1).val
+  :=
+    -- I have to put parts of the implementation of `Morphism.initial.f`
+    -- here, because Lean cannot mention the function in its return type.
+    let gtBefore (b: wb.T) := ∀ aa: wa.T, aa < a1 → Morphism.initial.f m aa < b
+    let mfaGt: gtBefore (m.f a1) :=
+      fun aa aaLtA =>
+        (Morphism.initial.f m aa).property.elim
+         (fun lt => WellOrder.lt.trans lt ((m.ordPres aa a1).mp aaLtA))
+         (fun eq => eq.symm ▸ ((m.ordPres aa a1).mp aaLtA))
+    let minimalGt := (minimal gtBefore ⟨m.f a1, mfaGt⟩)
     
-    let partLt (fA: wa.T) (hLt: wa.succ.lt (some fA) aSucc) :=
-      least (leEq fA) ⟨(rc ⟨fA, hLt⟩).val.f fA, ⟨⟨fA, hLt⟩, rfl⟩⟩
+    let eq: minimalGt.val = Morphism.initial.f m a1 := by unfold f; rfl
     
-    let partEq (fA: wa.T) (hEq: some fA = aSucc) :=
-      least leNeq
-        ⟨
-          m.f fA,
-          fun aa eq =>
-            let aaLtA: aa < fA := Morphism.helperOut fA aSucc aa hEq.symm aa.property
-            let prevF := (rc aa).val.f
-            
-            let prevFAaLeMfA: prevF aa < m.f aa ∨ prevF aa = m.f aa :=
-              (rc aa).property.left aa
-            
-            let mfAaLtMfFA: m.f aa < m.f fA := (m.ordPres aa fA).mp aaLtA
-            
-            let prevFAaLtFFA: prevF aa < m.f fA := prevFAaLeMfA.elim
-              (fun lt => WellOrder.lt.trans lt mfAaLtMfFA)
-              (fun eq => eq ▸ mfAaLtMfFA)
-            
-            wfRel.irefl (m.f fA) (eq ▸ prevFAaLtFFA)
-        ⟩
-    
-    
-    let f (fA: wa.T): wb.T :=
-      if hLt: wa.succ.lt (some fA) aSucc then
-        (partLt fA hLt).val
-      else if hEq: some fA = aSucc then
-        (partEq fA hEq).val
-      else m.f fA
-    
-    
-    let mi: Morphism wa wb := {
-      f := f
-      ordPres := fun a0 a1 => Iff.intro (
-        fun a0LtA1 =>
-          let ifLtASucc: wa.succ.lt (some a1) aSucc → f a0 < f a1 :=
-            fun ltA1 =>
-              let ltSomeA0: wa.succ.lt (some a0) (some a1) := a0LtA1
-              let ltA0: wa.succ.lt (some a0) aSucc :=
-                lt.trans ltSomeA0 ltA1
-              
-              let fA0Prop: Least (leEq a0) wb.lt := partLt a0 ltA0
-              let eqA0: fA0Prop.val = f a0 := (if_pos ltA0).symm
-              
-              let fA1Prop: Least (leEq a1) wb.lt := partLt a1 ltA1
-              let eqA1: fA1Prop.val = f a1 := (if_pos ltA1).symm
-              
-              let aDefA1 := choiceEx fA1Prop.property.left
-              let mid := (rc aDefA1).val.f a0
-              
-              let ltEqLeft: f a0 < mid ∨ f a0 = mid :=
-                let leEqMid: leEq a0 mid := ⟨aDefA1, rfl⟩
-                let fA0PropLtAll:
-                  fA0Prop.val < mid ∨ fA0Prop.val = mid
-                :=
-                  (wb.total mid fA0Prop.val).elim
-                    (fun ltMid =>
-                      let nLeEqMid := fA0Prop.property.right mid ltMid
-                      False.elim (nLeEqMid leEqMid))
-                    (fun eqOrGt => eqOrGt.elim
-                      (fun gtMid => Or.inl gtMid)
-                      (fun eq => Or.inr eq.symm))
-                eqA0 ▸ fA0PropLtAll
-              let eqRight: (rc aDefA1).val.f a1 = f a1 :=
-                aDefA1.property.trans eqA1
-              
-              let ltMidTmp: mid < (rc aDefA1).val.f a1 :=
-                ((rc aDefA1).val.ordPres a0 a1).mp a0LtA1
-              let ltMid: mid < f a1 :=
-                eqRight ▸ ltMidTmp
-              
-              ltEqLeft.elim
-                (fun ltLeft => lt.trans ltLeft ltMid)
-                (fun eqLeft => eqLeft ▸ ltMid)
-          
-          let ifEqASucc: some a1 = aSucc → f a0 < f a1 :=
-            fun eqFA =>
-              sorry
-          
-          let ifGtASucc:  wa.succ.lt aSucc (some a1) → f a0 < f a1 :=
-            fun gtFA =>
-              sorry
-          
-          (wa.succ.total (some a1) aSucc).elim
-            ifLtASucc (fun ge => ge.elim ifGtASucc ifEqASucc)
-        ) (
-          fun fALtFB => sorry
-        )
-    }
-    
-    ⟨mi, sorry⟩
-    termination_by initial.helper m a => a
+    eq ▸ minimalGt.property.left a0 ltAA
+  
+  noncomputable def Morphism.initial.f.initial
+    (m: Morphism wa wb)
+    (a: wa.T)
+    (b: wb.T)
+    (ltBFA: b < f m a)
+  :
+    ∃ aa: wa.T, b = f m aa
+  :=
+    if hGt: ∃ aa: wa.T, aa < a ∧ b < f m aa then
+      let aa := choiceEx hGt
+      have: aa < a := aa.property.left
+      initial m aa b aa.property.right
+    else
+      let gtBefore (b: wb.T) := ∀ aa: wa.T, aa < a → f m aa < b
+      let mfaGt: gtBefore (m.f a) :=
+        fun aa aaLtA =>
+          (f m aa).property.elim
+          (fun lt => WellOrder.lt.trans lt ((m.ordPres aa a).mp aaLtA))
+          (fun eq => eq.symm ▸ ((m.ordPres aa a).mp aaLtA))
+      let minimalGt := (minimal gtBefore ⟨m.f a, mfaGt⟩)
+      
+      let eq: minimalGt.val = f m a := by unfold f; rfl
+      
+      if hEq: ∃ aa: wa.T, aa < a ∧ b = f m aa then
+        let aa := choiceEx hEq
+        ⟨aa, aa.property.right⟩
+      else
+        let bGt: gtBefore b :=
+          fun aa aaLtA =>
+            (wb.total (f m aa) b).elim id
+              fun geOrEq => geOrEq.elim
+                (fun bLtFAa => False.elim (hGt ⟨aa, And.intro aaLtA bLtFAa⟩))
+                fun eq => False.elim (hEq ⟨aa, And.intro aaLtA eq.symm⟩)
+        
+        let bNGt := minimalGt.property.right b (eq ▸ ltBFA)
+        
+        False.elim (bNGt bGt)
+  termination_by Morphism.initial.f.initial m a b ltBFA => a
   
   noncomputable def Morphism.initial (m: Morphism wa wb): Morphism.Initial wa wb :=
-    let mIni := Morphism.initial.helper m none
+    let f := fun a => (Morphism.initial.f m a).val
+    let mi := {
+      f := f
+      
+      ordPres :=
+        fun a0 a1 => Iff.intro
+          (initial.f.monotonic m a0 a1)
+          -- This is a proof that the inverse of a monotonic function
+          -- is monotonic. This comment is here so that you can Ctrl+Find
+          -- "inverse" if you ever need it anywhere else.
+          (fun ltFA => (wa.total a0 a1).elim id
+            (fun gtOrEq =>
+              let eq: f a0 = f a1 := gtOrEq.elim
+                (fun gt =>
+                  let gtFA := (initial.f.monotonic m a1 a0) gt
+                  wfRel.antisymm ltFA gtFA)
+                fun eq => congr rfl eq
+              let irefl: f a0 < f a0 := eq ▸ ltFA
+              False.elim (wfRel.irefl (f a0) irefl)))
+    }
     ⟨
-      mIni,
-      fun a b bLt =>
-        let bNotFree := mIni.property.right a b trivial (Or.inl bLt)
-        
-        byContradiction fun nope =>
-          let ini: ∀ aa: wa.T, b ≠ mIni.val.f aa :=
-            fun aa => fun p => nope ⟨aa, p⟩
-          bNotFree ini
+      mi,
+      fun a b (bLtFa: b < mi.f a) =>
+        let eqFa: Morphism.initial.f m a = mi.f a := by simp
+        Morphism.initial.f.initial m a b (eqFa ▸ bLtFa)
     ⟩
   
   
-  structure PreIsomorphism -- TODO do I even need you?
-    (wa wb: WellOrder)
-    (a: wa.succ.T)
-    (fOrig: wa.T → wb.T)
-  where
-    f: wa.T → wb.T
-    g: wb.T → wa.T
-    
-    fLe: ∀ a: wa.T, f a < fOrig a ∨ f a = fOrig a
-    
-    bijA: ∀ aa: wa.T, wa.succ.lt (some aa) a              → g (f aa) = aa
-    bijB: ∀ bb: wb.T, wb.succ.lt (some bb) ((succ.f f) a) → f (g bb) = bb
-    
-    ordPres: ∀ a b: wa.T, a < b ↔ f a < f b
-  
-  noncomputable def Isomorphism.fromMorphisms -- TODO do I even need you?
+  /-noncomputable def Isomorphism.fromMorphisms -- TODO do I even need you?
     {wa wb: WellOrder}
     (ma: Morphism wa wb)
     (mb: Morphism wb wa)
   :
     Isomorphism wa wb
   :=
-    let preIso: PreIsomorphism wa wb none ma.f
-    := (
-      WellFounded.fix wa.succ.wf fun
-        (aSucc: wa.succ.T)
-        (rc:
-          (aaSucc: wa.succ.T) →
-          wa.succ.lt aaSucc aSucc →
-          PreIsomorphism wa wb aaSucc ma.f)
-      =>
-        let f := fun a => if h0: wa.succ.lt (some a) aSucc then
-          (rc (some a) h0).f a
-        else if h1: some a = aSucc then
-          (
-            least (
-              fun b: wb.T =>
-                ∀ aa: wa.T,
-                  (h: wa.lt aa a) →
-                  wb.lt ((rc (some aa) (by rw [h1.symm]; exact h)).f aa) b
-            ) ⟨
-              ma.f a,
-              fun aa aaLtA =>
-                let prevPreIso: PreIsomorphism wa wb (some aa) ma.f :=
-                  (rc (some aa) (by rw [h1.symm]; exact aaLtA))
-                
-                let fAaLeFOrigAa:
-                  prevPreIso.f aa < ma.f aa ∨ prevPreIso.f aa = ma.f aa
-                :=
-                  prevPreIso.fLe aa
-                
-                let fAaLeFOrigA: prevPreIso.f aa < ma.f a :=
-                  fAaLeFOrigAa.elim (
-                    fun lt =>
-                      WellOrder.lt.trans lt ((ma.ordPres aa a).mp aaLtA)
-                  ) (
-                    fun eq => eq ▸ ((ma.ordPres aa a).mp aaLtA)
-                  )
-                
-                let asdf := ma.ordPres
-                sorry
-            ⟩
-          ).val
-        else sorry
-        
-        let g := sorry
-        
-        {
-          f := f
-          g := g
-        }
-    ) none
-    
-    {
-      f := preIso.f
-      g := preIso.g
-      
-      bijA := fun a => (preIso.bijA a) trivial
-      bijB := fun b => (preIso.bijB b) trivial
-      
-      ordPres := preIso.ordPres
-    }
+    sorry-/
   
   
   def isGreatest (w: WellOrder) (gst: w.T) := ∀ t: w.T, t = gst ∨ t < gst
@@ -670,7 +533,7 @@ namespace WellOrder
       a.property ((isoAB.bijA a) ▸ aGst.property)
   ⟩
   
-  -- TODO do I need you?
+  /- TODO do I need you?
   def succ.nIso (w: WellOrder): ¬ ∃ _: Isomorphism w w.succ, True :=
     fun isoEx =>
       let iso: Isomorphism w w.succ := choiceEx isoEx
@@ -688,7 +551,7 @@ namespace WellOrder
       
       let succGstNope: w.succ.T := some wGst
     
-    sorry
+    sorry-/
   
   
   @[reducible] def pred.lt
@@ -857,11 +720,11 @@ namespace WellOrder
   noncomputable def ordInProp
     (m: Morphism wa wb)
   :
-    Least
+    Minimal
       (fun bSucc: wb.succ.T => ∀ b: wb.T, bSucc = some b → m.free b)
       wb.succ.lt
   :=
-    @least wb.succ.T (wfWT wb.succ)
+    @minimal wb.succ.T (wfWT wb.succ)
       (fun bSucc => ∀ b: wb.T, bSucc = some b → m.free b)
       ⟨none, fun _ nope => False.elim (Option.noConfusion nope)⟩
   
@@ -872,7 +735,17 @@ namespace WellOrder
   def metaLt (wa wb: WellOrder): Prop :=
     ¬ isIsomorphic wa wb ∧ ∃ _: Morphism wa wb, True
   
-  def ordInEqIff
+  def isIsoEqOrdIn
+    {wa wb wc: WellOrder}
+    (mac: Morphism.Initial wa wc)
+    (mbc: Morphism.Initial wb wc)
+    (ordInEq: ordIn mac.val = ordIn mbc.val)
+  :
+    isIsomorphic wa wb
+  :=
+    sorry
+  
+  def ordInEqIff -- TODO do I need you?
     {wa wb wc: WellOrder}
     (mac: Morphism.Initial wa wc)
     (mbc: Morphism.Initial wb wc)
@@ -881,13 +754,44 @@ namespace WellOrder
   :=
     sorry
   
-  def ordInLtIff
+  def ltOrdIn
     {wa wb wc: WellOrder}
     (mac: Morphism.Initial wa wc)
     (mbc: Morphism.Initial wb wc)
+    (mlt: metaLt wa wb)
   :
-    ordIn mac.val < ordIn mbc.val ↔ metaLt wa wb
+    ordIn mac.val < ordIn mbc.val
   :=
+    let mab: Morphism.Initial wa wb := Morphism.initial (choiceEx mlt.right)
+    let mbb: Morphism.Initial wb wb := ⟨
+      (Isomorphism.refl wb).morphismF,
+      Isomorphism.morphismF.isInitial (Isomorphism.refl wb)
+    ⟩
+    
+    let mbbOrd := ordInProp mbb.val
+    let mbbOrdEq: (ordInProp mbb.val).val = ordIn mbb.val := rfl
+    
+    let mbbOrdNone: ordIn mbb.val = none :=
+      match h: ordInProp mbb.val with
+        | ⟨none, _⟩ => mbbOrdEq ▸ (congr rfl h)
+        | ⟨some b, prop⟩ =>
+          let bFree := prop.left b rfl
+          let bNFree: mbb.val.bound b := ⟨b, rfl⟩
+          Morphism.freeBound bFree bNFree
+    
+    let mabOrdSome: ordIn mab.val ≠ none :=
+      fun eqTmp =>
+        let eq: ordIn mab.val = ordIn mbb.val := mbbOrdNone ▸ eqTmp
+        let isIso := isIsoEqOrdIn mab mbb eq
+        mlt.left isIso
+    
+    let mabLtMbb: ordIn mab.val < ordIn mbb.val :=
+      let ltNone: ordIn mab.val < none := 
+        match h: ordIn mab.val with
+          | none => mabOrdSome h
+          | some b => trivial
+      mbbOrdNone ▸ ltNone
+    
     sorry
   
   
@@ -920,7 +824,7 @@ namespace WellOrder
           let macIni := Morphism.initial mac
           
           let mabOrdLt: (ordIn macIni.val) < (ordIn mbc.val) :=
-            (ordInLtIff macIni mbcIni).mpr waLtWb
+            (ltOrdIn macIni mbcIni) waLtWb
           
           let macOrdLtTSucc: (ordIn macIni.val) < tSucc := mbtOrd.elim
             (fun lt => WellOrder.lt.trans mabOrdLt lt)
@@ -1018,7 +922,7 @@ namespace Ordinal
     bijA := fun a => by cases a <;> simp [iso.bijA],
     bijB := fun b => by cases b <;> simp [iso.bijB],
     
-    ordPres := fun a b => -- asdf
+    ordPres := fun a b =>
       match a, b with
         -- Lean's 'by simp' has issues if it cannot come up with
         -- the zeroth three.
