@@ -141,6 +141,20 @@ namespace WellOrder
     ordPres: ∀ a b: wa.T, a < b ↔ f a < f b
   
   namespace Morphism
+    def ordPresEq (m: Morphism wa wb) {a b: wa.T}:
+      m.f a = m.f b → a = b
+    :=
+      fun eq =>
+        let nope {p: Prop} {a b: wa.T} (lt: a < b) (eq: m.f a = m.f b): p :=
+          let ltFAB := (m.ordPres a b).mp lt
+          False.elim (wfRel.irefl (m.f a) (eq ▸ ltFAB))
+        
+        (wa.total a b).elim
+          (fun lt => nope lt eq)
+          (fun gtOrEq => gtOrEq.elim
+            (fun gt => nope gt eq.symm)
+            id)
+    
     def free (m: Morphism wa wb) (b: wb.T): Prop :=
       ∀ aa: wa.T, b ≠ m.f aa
     
@@ -155,6 +169,14 @@ namespace WellOrder
     :=
       let aa := choiceEx b
       False.elim (f aa aa.property)
+    
+    def nFreeBound {p: Prop}
+      (f: ¬ free m b)
+      (b: ¬ bound m b)
+    :
+      p
+    :=
+      False.elim (f fun a neq => b ⟨a, neq⟩)
     
     
     -- Not sure if the terminology corresponds to category
@@ -308,6 +330,12 @@ namespace WellOrder
        ⟨Isomorphism.trans ab bc, trivial⟩
   
   
+  def Morphism.refl (w: WellOrder): Morphism.Initial w w := ⟨
+    (Isomorphism.refl w).morphismF,
+    Isomorphism.morphismF.isInitial (Isomorphism.refl w)
+  ⟩
+  
+  
   @[reducible] def succ.lt (w: WellOrder): (a b: Option w.T) → Prop
     | none, _ => False
     | some _, none => True
@@ -352,6 +380,7 @@ namespace WellOrder
       ⟩
     }
   
+  -- TODO do I need you
   def succ.morphism (w: WellOrder): Morphism w w.succ := {
     f := fun a => some a
     
@@ -370,6 +399,17 @@ namespace WellOrder
       match a with
         | none => none
         | some a => some (f a)
+  
+  def Morphism.succ (mab: Morphism wa wb):
+    Morphism wa.succ wb.succ
+  := {
+    f := succ.f mab.f
+    ordPres := fun a b =>
+      match a, b with
+        | none, _ => Iff.intro False.elim False.elim
+        | some _, none => Iff.intro id id
+        | some a, some b => mab.ordPres a b
+  }
   
   
   noncomputable def Morphism.initial.f
@@ -484,15 +524,74 @@ namespace WellOrder
         Morphism.initial.f.initial m a b (eqFa ▸ bLtFa)
     ⟩
   
-  
-  /-noncomputable def Isomorphism.fromMorphisms -- TODO do I even need you?
-    {wa wb: WellOrder}
-    (ma: Morphism wa wb)
-    (mb: Morphism wb wa)
+  def initial.trans.eq.helper
+    (mab: Morphism.Initial wa wb)
+    (mbc: Morphism.Initial wb wc)
+    (mac: Morphism.Initial wa wc)
+    (a: wa.T)
   :
-    Isomorphism wa wb
+    (mab.val.trans mbc.val).f a = mac.val.f a
   :=
-    sorry-/
+    let rc (aa: wa.T) (lt: aa < a) :=
+      initial.trans.eq.helper mab mbc mac aa
+    
+    let mtr := (mab.val.trans mbc.val)
+    
+    let abc := mtr.f a
+    let ac := mac.val.f a
+    
+    (wc.total abc ac).elim
+      (fun lt =>
+        let abcBound: mac.val.bound abc := mac.property a abc lt
+        let abcNBound: ¬ mac.val.bound abc :=
+          fun isBound =>
+            let bound := choiceEx isBound
+            let boundAC := mac.val.f bound
+            let boundABC := mtr.f bound
+            (wa.total bound.val a).elim
+              (fun ltB =>
+                let eqBound: boundABC = boundAC := rc bound ltB
+                let eq: boundABC = abc := eqBound.trans bound.property.symm
+                let lt: boundABC < abc := (mtr.ordPres bound a).mp ltB
+                wfRel.irefl abc (eq ▸ lt))
+              (fun gtOrEq => gtOrEq.elim
+                (fun gt =>
+                  let acLtAbc: ac < abc :=
+                    bound.property ▸ (mac.val.ordPres a bound).mp gt
+                  let eq: ac = abc := wfRel.antisymm acLtAbc lt
+                  wfRel.irefl abc (eq ▸ lt))
+                (fun eq =>
+                  -- So much for the definitional equality of variables
+                  -- with their bodies.
+                  let eq1: ac = abc := show mac.val.f a = abc from
+                    eq ▸ bound.property ▸ congr rfl rfl
+                  wfRel.irefl abc (eq1 ▸ lt)))
+        False.elim (abcNBound abcBound))
+      (fun gtOrEq => gtOrEq.elim
+        (fun gt => sorry) id)
+  termination_by initial.trans.eq.helper mab mbc mac a => a
+  
+  def initial.trans.eq
+    (mab: Morphism.Initial wa wb)
+    (mbc: Morphism.Initial wb wc)
+    (mac: Morphism.Initial wa wc)
+  :
+    mab.val.trans mbc.val = mac.val
+  :=
+    let fEq: (mab.val.trans mbc.val).f = mac.val.f :=
+      funext fun a: wa.T => eq.helper mab mbc mac a
+    match mab.val.trans mbc.val, mac.val, fEq with
+      | ⟨_,_⟩, ⟨_,_⟩, rfl => rfl
+  
+  noncomputable def Morphism.self.initial.eqId
+    (m: Morphism.Initial w w)
+  :
+    m.val.f = id
+  :=
+    let mwId: Morphism.Initial w w := Morphism.refl w
+    let eq: mwId.val.trans mwId.val = m := initial.trans.eq mwId mwId m
+    let leftId: (mwId.val.trans mwId.val).f = id := rfl
+    eq ▸ leftId
   
   
   def isGreatest (w: WellOrder) (gst: w.T) := ∀ t: w.T, t = gst ∨ t < gst
@@ -721,6 +820,8 @@ namespace WellOrder
     (m: Morphism wa wb)
   :
     Minimal
+      -- Should have been `some b < bSucc → m.bound b`,
+      -- but I don't wanna touch certain code below again.
       (fun bSucc: wb.succ.T => ∀ b: wb.T, bSucc = some b → m.free b)
       wb.succ.lt
   :=
@@ -735,7 +836,7 @@ namespace WellOrder
   def metaLt (wa wb: WellOrder): Prop :=
     ¬ isIsomorphic wa wb ∧ ∃ _: Morphism wa wb, True
   
-  def isIsoEqOrdIn
+  def ordIn.eqIsIso
     {wa wb wc: WellOrder}
     (mac: Morphism.Initial wa wc)
     (mbc: Morphism.Initial wb wc)
@@ -745,14 +846,18 @@ namespace WellOrder
   :=
     sorry
   
-  def ordInEqIff -- TODO do I need you?
-    {wa wb wc: WellOrder}
-    (mac: Morphism.Initial wa wc)
-    (mbc: Morphism.Initial wb wc)
-  :
-    ordIn mac.val = ordIn mbc.val ↔ isIsomorphic wa ab
-  :=
-    sorry
+  -- TODO do I need you?
+  def ordIn.self.eqNone (m: Morphism.Initial w w): ordIn m.val = none :=
+    let mOrdEq: (ordInProp m.val).val = ordIn m.val := rfl
+    match h: ordInProp m.val with
+      | ⟨none, _⟩ => mOrdEq ▸ (congr rfl h)
+      | ⟨some b, prop⟩ =>
+        let bFree := prop.left b rfl
+        let bNFree: m.val.bound b := ⟨
+          b,
+          (Morphism.self.initial.eqId m) ▸ rfl
+        ⟩
+        Morphism.freeBound bFree bNFree
   
   def ltOrdIn
     {wa wb wc: WellOrder}
@@ -763,12 +868,8 @@ namespace WellOrder
     ordIn mac.val < ordIn mbc.val
   :=
     let mab: Morphism.Initial wa wb := Morphism.initial (choiceEx mlt.right)
-    let mbb: Morphism.Initial wb wb := ⟨
-      (Isomorphism.refl wb).morphismF,
-      Isomorphism.morphismF.isInitial (Isomorphism.refl wb)
-    ⟩
+    let mbb: Morphism.Initial wb wb := Morphism.refl wb
     
-    let mbbOrd := ordInProp mbb.val
     let mbbOrdEq: (ordInProp mbb.val).val = ordIn mbb.val := rfl
     
     let mbbOrdNone: ordIn mbb.val = none :=
@@ -782,24 +883,95 @@ namespace WellOrder
     let mabOrdSome: ordIn mab.val ≠ none :=
       fun eqTmp =>
         let eq: ordIn mab.val = ordIn mbb.val := mbbOrdNone ▸ eqTmp
-        let isIso := isIsoEqOrdIn mab mbb eq
+        let isIso := ordIn.eqIsIso mab mbb eq
         mlt.left isIso
     
-    let mabLtMbb: ordIn mab.val < ordIn mbb.val :=
-      let ltNone: ordIn mab.val < none := 
-        match h: ordIn mab.val with
-          | none => mabOrdSome h
-          | some b => trivial
-      mbbOrdNone ▸ ltNone
+    let mabOrd: { b: wb.T // some b = ordIn mab.val } :=
+      match h: ordIn mab.val with
+        | none => False.elim (mabOrdSome h)
+        | some a => ⟨a, rfl⟩
     
-    sorry
+    let mabOrdC := (mbc.val.f mabOrd.val)
+    
+    let mabOrdBoundInMbc: mbc.val.bound mabOrdC :=
+      ⟨mabOrd.val, rfl⟩
+    
+    let mabOrdNBoundInMac: ¬ mac.val.bound mabOrdC :=
+      fun bound =>
+        let a := choiceEx bound
+        let mabA := mab.val.f a
+        let mabBoundA: mab.val.bound mabA := ⟨a, rfl⟩
+        (wb.total mabA mabOrd.val).elim
+          (fun lt =>
+            let eqTmpTmp: mac.val.f a.val = mbc.val.f (mabA) :=
+              (initial.trans.eq.helper mab mbc mac a).symm
+            let eqTmp: mabOrdC = mbc.val.f (mabA) :=
+              a.property ▸ eqTmpTmp
+            let eq: mabOrd.val = mabA := mbc.val.ordPresEq eqTmp
+            wfRel.irefl mabA (eq ▸ lt))
+          fun gtOrEq =>
+            let mabOrdBound: mab.val.bound mabOrd := gtOrEq.elim
+              (fun gt => mab.property a mabOrd.val gt)
+              (fun eq => eq ▸ mabBoundA)
+            let mabOrdFree: mab.val.free mabOrd :=
+              (ordInProp mab.val).property.left mabOrd mabOrd.property.symm
+            Morphism.freeBound mabOrdFree mabOrdBound
+    
+    let ordMbcGtMabOrdC:
+      wc.succ.lt (some mabOrdC) (ordInProp mbc.val).val
+    :=
+      match h: (ordInProp mbc.val).val with
+        | none => trivial
+        | some obc =>
+            (wc.total mabOrdC obc).elim id
+              fun gtOrEq =>
+                let obcFree: mbc.val.free obc := (ordInProp mbc.val).property.left
+                  obc h
+                let obcBound: mbc.val.bound obc :=
+                  gtOrEq.elim
+                    (fun gt => mbc.property mabOrd.val obc gt)
+                    (fun eq => eq ▸ mabOrdBoundInMbc)
+                Morphism.freeBound obcFree obcBound
+    
+    
+    let ordMacLtMabOrdC:
+      wc.succ.lt (ordIn mac.val) (some mabOrdC) ∨ ordIn mac.val = some mabOrdC
+    :=
+      (wc.succ.total (ordIn mac.val) (some mabOrdC)).elim
+        (fun lt => Or.inl lt)
+        fun gtOrEq => gtOrEq.elim
+          (fun gt =>
+            let notAll: ¬ ∀ c: wc.T,
+              some mabOrdC = some c → Morphism.free mac.val c :=
+            (ordInProp mac.val).property.right (some mabOrdC) gt
+            
+            let exTmp: ∃ c: wc.T,
+              ¬ (some mabOrdC = some c → Morphism.free mac.val c)
+              --some mabOrdC = some c ∧ ¬ Morphism.free mac.val c
+            :=
+              ⟨mabOrdC, fun p => notAll
+                fun _ eqSome => Option.noConfusion eqSome id ▸ (p rfl)⟩
+            
+            let mabOrdCNFree: ¬ Morphism.free mac.val mabOrdC
+            :=
+              exTmp.elim fun c p =>
+                -- All hail classical logic.
+                if hRight: Morphism.free mac.val c then
+                  False.elim (p fun _ => hRight)
+                else if hLeft: some mabOrdC = some c then
+                  Option.noConfusion hLeft fun eq => eq ▸ hRight
+                else False.elim (p fun left => False.elim (hLeft left))
+            
+            Morphism.nFreeBound mabOrdCNFree mabOrdNBoundInMac)
+        (fun eq => Or.inr eq)
+      
+    
+    ordMacLtMabOrdC.elim
+      (fun lt => WellOrder.lt.trans lt ordMbcGtMabOrdC)
+      (fun eq => eq ▸ ordMbcGtMabOrdC)
   
   
   def metaWf (wc: WellOrder): Acc metaLt wc :=
-    -- The syntax `wc.succ.morphism` should be a shorthand
-    -- for `WellOrder.succ.morphism wc`.
-    -- Also, what's a normal way of proving this from `ordInLtIff`?
-    
     let fix := WellFounded.fix wc.succ.wf fun
       (tSucc: wc.succ.T)
       (rc:
