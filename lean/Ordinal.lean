@@ -436,6 +436,33 @@ namespace WellOrder
         (fun eq => Or.inr eq))⟩
     termination_by Morphism.initial.f m a => a
   
+  -- TODO do I need you? This is probably useless, because
+  -- an initial morphism does not have to be a one constructed
+  -- using this functino.
+  noncomputable def Morphism.initial.f.properType
+    (m: Morphism wa wb)
+    (a: wa.T)
+  :
+    Minimal (fun b: wb.T => ∀ aa: wa.T, aa < a → Morphism.initial.f m aa < b) wb.lt
+  :=
+    -- I have to put parts of the implementation of `Morphism.initial.f`
+    -- here, because Lean cannot mention the function in its return type.
+    -- Or is there a better way?
+    let gtBefore (b: wb.T) := ∀ aa: wa.T, aa < a → Morphism.initial.f m aa < b
+    let mfaGt: gtBefore (m.f a) :=
+      fun aa aaLtA =>
+        (Morphism.initial.f m aa).property.elim
+         (fun lt => WellOrder.lt.trans lt ((m.ordPres aa a).mp aaLtA))
+         (fun eq => eq.symm ▸ ((m.ordPres aa a).mp aaLtA))
+    let minimalGt := (minimal gtBefore ⟨m.f a, mfaGt⟩)
+    -- I think I need to return this to make use of definitional equality.
+    let ret := (Morphism.initial.f m a).val
+    let eq: minimalGt.val = ret :=
+      -- Definitional equality having a break?
+      show minimalGt.val = (Morphism.initial.f m a) from by unfold f; rfl
+    
+    ⟨ret, eq ▸ minimalGt.property⟩
+  
   noncomputable def Morphism.initial.f.monotonic
     (m: Morphism wa wb)
     (a0 a1: wa.T)
@@ -443,8 +470,6 @@ namespace WellOrder
   :
     (f m a0).val < (f m a1).val
   :=
-    -- I have to put parts of the implementation of `Morphism.initial.f`
-    -- here, because Lean cannot mention the function in its return type.
     let gtBefore (b: wb.T) := ∀ aa: wa.T, aa < a1 → Morphism.initial.f m aa < b
     let mfaGt: gtBefore (m.f a1) :=
       fun aa aaLtA =>
@@ -532,7 +557,7 @@ namespace WellOrder
   :
     (mab.val.trans mbc.val).f a = mac.val.f a
   :=
-    let rc (aa: wa.T) (lt: aa < a) :=
+    let rc (aa: wa.T) (_: aa < a) :=
       initial.trans.eq.helper mab mbc mac aa
     
     let mtr := (mab.val.trans mbc.val)
@@ -568,7 +593,34 @@ namespace WellOrder
                   wfRel.irefl abc (eq1 ▸ lt)))
         False.elim (abcNBound abcBound))
       (fun gtOrEq => gtOrEq.elim
-        (fun gt => sorry) id)
+        (fun gt =>
+          let ab := mab.val.f a
+          let ltAc (aa: wa.T) (aaLtA: aa < a): mtr.f aa < ac :=
+            let eq: mtr.f aa = mac.val.f aa := rc aa aaLtA
+            let lt: mac.val.f aa < mac.val.f a :=
+              (mac.val.ordPres aa a).mp aaLtA
+            eq ▸ lt
+          let ltBA (bb: wb.T) (bbLtB: bb < ab):
+            mbc.val.f bb < ac
+          :=
+            let bbBound: mab.val.bound bb := mab.property a bb bbLtB
+            let bA := choiceEx bbBound
+            let bALtA: bA < a := (mab.val.ordPres bA a).mpr (bA.property ▸ bbLtB)
+            let ltMtrBaAc := ltAc bA bALtA
+            let mtrEqLeft: mtr.f bA = mbc.val.f (mab.val.f bA.val) := rfl
+            let mtrEqRight: mbc.val.f (mab.val.f bA.val) = mbc.val.f bb :=
+              congr rfl bA.property.symm
+            let mtrEq: mtr.f bA = mbc.val.f bb := mtrEqLeft.trans mtrEqRight
+            mtrEq ▸ ltMtrBaAc
+          let acBoundEx: mbc.val.bound ac := mbc.property ab ac gt
+          let acBound := choiceEx acBoundEx
+          let acBoundLtAb: acBound < ab :=
+            (mbc.val.ordPres acBound ab).mpr (acBound.property ▸ gt)
+          let acBoundLtAc: mbc.val.f acBound < ac := ltBA acBound acBoundLtAb
+          let selfLt: mbc.val.f acBound < mbc.val.f acBound :=
+            acBound.property ▸ acBoundLtAc
+          False.elim (wfRel.irefl (mbc.val.f acBound) selfLt))
+        id)
   termination_by initial.trans.eq.helper mab mbc mac a => a
   
   def initial.trans.eq
