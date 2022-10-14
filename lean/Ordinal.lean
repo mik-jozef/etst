@@ -1296,7 +1296,6 @@ namespace Ordinal
   
   def succ: Ordinal → Ordinal := Quotient.lift (fun w => Ordinal.mk w.succ)
     fun (wa wb: WellOrder) (asimb: wa ≈ wb) =>
-      
       let iso: WellOrder.Isomorphism wa wb := choiceEx asimb
       
       Quotient.sound ⟨succ.iso wa wb iso, trivial⟩
@@ -1345,9 +1344,57 @@ namespace Ordinal
               waEq ▸ wbEq ▸ mkSomeAB
   
   def isLimit (o: Ordinal): Prop := o.pred = none
+  
+  def lt: Ordinal → Ordinal → Prop :=
+    Quotient.lift₂ WellOrder.metaLt
+      fun
+        (wa0 wb0 wa1 wb1: WellOrder)
+        (simA: wa0 ≈ wa1)
+        (simB: wb0 ≈ wb1)
+      =>
+        let mp
+          (wx0 wy0 wx1 wy1: WellOrder)
+          (simX: wx0 ≈ wx1)
+          (simY: wy0 ≈ wy1)
+        :
+          wx0.metaLt wy0 → wx1.metaLt wy1
+        :=
+          fun lt0 =>
+            let xyNIso0: ¬ WellOrder.isIsomorphic wx0 wy0 := lt0.left
+            let xyNIso1: ¬ WellOrder.isIsomorphic wx1 wy1 :=
+              fun iso1 => xyNIso0 ((simX.trans iso1).trans simY.symm)
+                
+            let isoX: WellOrder.Isomorphism wx0 wx1 := choiceEx simX
+            let isoY: WellOrder.Isomorphism wy0 wy1 := choiceEx simY
+            
+            let mxy0: WellOrder.Morphism wx0 wy0 := choiceEx lt0.right
+            let mxy1: WellOrder.Morphism wx1 wy1 :=
+              (isoX.morphismG.trans mxy0).trans isoY.morphismF
+            
+            And.intro xyNIso1 ⟨mxy1, trivial⟩
+        
+        let iff: wa0.metaLt wb0 ↔ wa1.metaLt wb1 :=
+          Iff.intro
+            (mp wa0 wb0 wa1 wb1 simA simB)
+            (mp wa1 wb1 wa0 wb0 simA.symm simB.symm)
+        
+        propext iff
+  
+  def wfLt (w: WellOrder): Acc lt (Ordinal.mk w) :=
+    Acc.intro (Ordinal.mk w) fun wwOrd wwLtW =>
+      let ww := choiceEx (Quotient.exists_rep wwOrd)
+      
+      let eq: wwOrd = Ordinal.mk ww := ww.property.symm
+      
+      let lt: lt (Ordinal.mk ww) (Ordinal.mk w) := eq ▸ wwLtW
+      
+      have: WellOrder.metaLt ww w := lt
+      ww.property ▸ wfLt ww
+    termination_by wfLt w => w
+  
+  def wf (o: Ordinal): Acc lt o := Quotient.ind wfLt o
 end Ordinal
 
 instance: WellFoundedRelation Ordinal where
-  rel := sorry
-  wf := sorry
-
+  rel := Ordinal.lt
+  wf := ⟨Ordinal.wf⟩
