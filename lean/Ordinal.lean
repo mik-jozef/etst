@@ -12,6 +12,40 @@ import Set
 open Classical
 
 
+-- When I try to inline this, I get errors ¯\_(ツ)_/¯
+def Quotient.lift.eq {s: Setoid T}
+  (f: T → R)
+  (respects: ∀ a b, a ≈ b → f a = f b)
+  (t: T)
+  (q: Quotient s)
+  (tq: q = Quotient.mk s t)
+:
+  Quotient.lift f respects q = f t
+:=
+  tq ▸ rfl
+
+def Quotient.delift {s: Setoid T}
+  (f: T → R)
+  (respects: ∀ a b, a ≈ b → f a = f b)
+  (t: T)
+  (q: Quotient s)
+  (tq: q = Quotient.mk s t)
+:
+  Quotient.lift f respects q = f t
+:=
+  let ind (tt: T):
+    Quotient.mk' tt = q →
+    Quotient.lift f respects (Quotient.mk' tt) = f t
+  :=
+    fun eqIn =>
+      let eq: Quotient.mk' tt = Quotient.mk' t := eqIn.trans tq
+      eq ▸ rfl
+  
+  let motive (qq: Quotient s) := qq = q → Quotient.lift f respects qq = f t
+  
+  (@Quotient.ind T s motive ind q) rfl
+
+
 def subtypeWellfounded
   {T: Type}
   (s: Set T)
@@ -46,10 +80,6 @@ noncomputable def minimal
           h ⟨⟨tt, ttInS⟩, ttLtT⟩
       ⟨t, And.intro t.property nh⟩
 ) nonempty
-
--- TODO do I need you?
-def Least (s: Set T) (lt: T → T → Prop): Type :=
-  { t: T // t ∈ s ∧ ∀ tt: T, tt ∈ s → lt t tt ∨ t = tt }
 
 
 def wfRel.irefl [wf: WellFoundedRelation T] (a: T):
@@ -95,7 +125,7 @@ def wfRel.antisymm [wf: WellFoundedRelation T] {a b: T}:
 
 
 def monoInvMono
-  {f: A → B}
+  (f: A → B)
   (a0 a1: A)
   [aOrd: WellFoundedRelation A]
   [bOrd: WellFoundedRelation B]
@@ -648,7 +678,7 @@ namespace WellOrder
     let fEq: (mab.val.trans mbc.val).f = mac.val.f :=
       funext fun a: wa.T => eq.helper mab mbc mac a
     match mab.val.trans mbc.val, mac.val, fEq with
-      | ⟨_,_⟩, ⟨_,_⟩, rfl => rfl
+      | ⟨_, _⟩, ⟨_, _⟩, rfl => rfl
   
   noncomputable def Morphism.self.initial.eqId
     (m: Morphism.Initial w w)
@@ -662,6 +692,26 @@ namespace WellOrder
   
   
   def isGreatest (w: WellOrder) (gst: w.T) := ∀ t: w.T, t = gst ∨ t < gst
+  
+  def isGreatest.nLt {w: WellOrder} {a: w.T} {b: w.T}
+    (gstA: isGreatest w a)
+    (aLtB: a < b)
+  :
+    a = b
+  :=
+    (gstA b).elim
+      (fun eq => eq.symm)
+      (fun bLtA => wfRel.antisymm aLtB bLtA)
+  
+  def isGreatest.eq {w: WellOrder} {a: w.T} {b: w.T}
+    (gstA: isGreatest w a)
+    (gstB: isGreatest w b)
+  :
+    a = b
+  :=
+    (w.total a b).elim
+      (fun aLtB => nLt gstA aLtB)
+      (fun gtOrEq => gtOrEq.elim (fun gt => (nLt gstB gt).symm) id)
   
   def greatestIso
     (wa wb: WellOrder)
@@ -765,14 +815,120 @@ namespace WellOrder
   
   | ⟨_, _⟩, ⟨_, _⟩, rfl => rfl
   
+  noncomputable def predProp (w: WellOrder):
+    { wPredOpt: Option WellOrder //
+      ∀ wPred, wPredOpt = some wPred → wPred.succ.isIsomorphic w }
+  :=
+    if h: ∃ gst: w.T, isGreatest w gst then
+      ⟨
+        some (predNoOpt w),
+        fun wPred wPredEqSome => ⟨
+          let wPredEq: predNoOpt w = wPred := Option.noConfusion wPredEqSome id
+          
+          let A := (predNoOpt w).succ.T
+          let B := w.T
+          let gst := choiceEx h
+          
+          let f: A → B
+            | none => gst
+            | some a => a.val
+          
+          let g (t: B): A :=
+            if h: t = gst.val then
+              none
+            else
+              some ⟨
+                t,
+                fun isGst => h (isGreatest.eq isGst gst.property)
+              ⟩
+          
+          let predNGreatest (aa: (predNoOpt w).T):
+            aa.val ≠ gst.val
+          :=
+            fun eq =>
+              let aaNGreatest := aa.property
+              let gstGreatest := gst.property
+              let gstNGreatest := eq ▸ aaNGreatest
+              gstNGreatest gstGreatest
+          
+          let fMono :=
+            fun a b =>
+              (fun aLtB =>
+                match a, b with
+                  | none, _ => False.elim aLtB
+                  | some aa, none =>
+                      let aNeqGst: f (some aa) ≠ gst :=
+                        let fEq: f (some aa) = aa.val := rfl
+                        let aNegGst: aa.val ≠ gst := predNGreatest aa
+                        fun eq => aNegGst (fEq.symm.trans eq)
+                      (gst.property (f (some aa))).elim
+                        (fun eq => False.elim (aNeqGst eq)) id
+                  | some _, some _ => aLtB)
+          
+          wPredEq ▸ {
+            f := f
+            g := g
+            
+            bijA := fun a =>
+              match a with
+                | none =>
+                    let eqF: f none = gst := rfl
+                    let eqG: g gst = none :=
+                      dif_pos (show gst.val = gst.val from rfl)
+                    eqF ▸ eqG
+                | some aa =>
+                    let eqF: f (some aa) = aa.val := rfl
+                    let eqG: g aa.val = (some aa) := dif_neg (predNGreatest aa)
+                    eqF.symm ▸ eqG
+            
+            bijB := fun b =>
+              if h: b = gst then
+                let eqG: g b = none := dif_pos h
+                let eqF: f none = b := h ▸ rfl
+                eqG ▸ eqF
+              else
+                -- Thanks o Mighty Lean that you can infer the
+                -- values of the underscores here. I bashed you
+                -- in other comments, but now I must praise you instead.
+                let eqG: g b = some ⟨b, _⟩ := dif_neg h
+                let eqF: f (some ⟨b, _⟩) = b := rfl
+                eqG ▸ eqF
+            
+            ordPres := fun a b => Iff.intro
+              (fMono a b)
+              fun ltFA => (@monoInvMono A B f a b
+                (wfWT (predNoOpt w).succ) (wfWT w)
+                ltFA (predNoOpt w).succ.total fMono)
+          },
+          trivial
+        ⟩
+      ⟩
+    else
+      ⟨none, fun _ nope => Option.noConfusion nope⟩
+  
   noncomputable def pred (w: WellOrder): Option WellOrder :=
     if ∃ gst: w.T, isGreatest w gst then
       some (predNoOpt w)
     else
       none
   
-  -- What's a normal way of proving X from `(if X then A else B) = A`?
-  -- TODO ask on proofassistants.
+  def pred.eqPredProp (w: WellOrder): w.pred = w.predProp :=
+    if h: ∃ gst: w.T, isGreatest w gst then
+      let wPredEq: w.pred = some (predNoOpt w) := if_pos h
+      let wPredPropEq: w.predProp = ⟨some (predNoOpt w), _⟩ := dif_pos h
+      let wPredPropValEq: w.predProp.val = some (predNoOpt w) :=
+        congr rfl wPredPropEq
+      
+      wPredEq.trans wPredPropValEq.symm
+    else
+      let wPredEq: w.pred = none := if_neg h
+      let wPredPropEq: w.predProp = ⟨none, _⟩ := dif_neg h
+      let wPredPropValEq: w.predProp.val = none :=
+        congr rfl wPredPropEq
+      
+      wPredEq.trans wPredPropValEq.symm
+  
+  
   def ifPred.hasGreatest
     (w: WellOrder)
     (pred: { pred: WellOrder // w.pred = some pred })
@@ -782,11 +938,7 @@ namespace WellOrder
     if h: ∃ gst: w.T, isGreatest w gst then
       h
     else
-      let nope: w.pred = none := by
-        conv =>
-          lhs
-          unfold WellOrder.pred
-          simp [h]
+      let nope: w.pred = none := if_neg h
       False.elim (Option.noConfusion (pred.property ▸ nope))
     
   
@@ -837,12 +989,12 @@ namespace WellOrder
     let wbPred: { wbPred: WellOrder // wb.pred = some wbPred }
     :=
       if h: ∃ gst, isGreatest wb gst then
-        match nope: wb.pred with
+        match hh: wb.pred with
           | none =>
               let eq: wb.pred = some wb.predNoOpt := by
                 unfold pred
                 simp [h]
-              Option.noConfusion (nope ▸ eq)
+              Option.noConfusion (hh ▸ eq)
           | some wbp => ⟨wbp, rfl⟩
       else
         let waGst := choiceEx (ifPred.hasGreatest wa waPred)
@@ -1247,6 +1399,13 @@ instance wellOrderSetoid: Setoid WellOrder where
 
 
 
+@[reducible] noncomputable def getRep
+  {s: Setoid T}
+  (q: Quotient s)
+:
+  { t: T // Quotient.mk s t = q }
+:=
+  choiceEx (@Quotient.exists_rep T s q)
 
 def Ordinal := Quotient wellOrderSetoid
 
@@ -1300,50 +1459,200 @@ namespace Ordinal
       
       Quotient.sound ⟨succ.iso wa wb iso, trivial⟩
   
-  noncomputable def predOrd (w: WellOrder): Option Ordinal :=
+  noncomputable def pred.mid (w: WellOrder): Option Ordinal :=
     match w.pred with
       | none => none
       | some a => some (Ordinal.mk a)
   
+  def predRespects
+    (wa wb: WellOrder)
+    (asimb: wa ≈ wb)
+  :
+    pred.mid wa = pred.mid wb
+  :=    
+    match wap: wa.pred, wbp: wb.pred with
+      | none, none => by unfold pred.mid; simp [wap, wbp]
+      | none, some b =>
+          let waPred := WellOrder.pred.iso wb wa asimb.symm ⟨b, wbp⟩
+          let nope: none = some waPred.val := wap ▸ waPred.property.left
+          Option.noConfusion nope
+      | some a, none =>
+          let wbPred := WellOrder.pred.iso wa wb asimb ⟨a, wap⟩
+          let nope: none = some wbPred.val := wbp ▸ wbPred.property.left
+          Option.noConfusion nope
+      | some a, some b =>
+          let wbPred := WellOrder.pred.iso wa wb asimb ⟨a, wap⟩
+          
+          let isoAB: WellOrder.isIsomorphic a b :=
+            WellOrder.isIsomorphic.trans
+              wbPred.property.right
+              (
+                let someEq: some b = some wbPred.val := wbp ▸ wbPred.property.left
+                let bEq: b = wbPred.val := Option.noConfusion someEq id
+                bEq ▸ WellOrder.isIsomorphic.refl
+              )
+          
+          let eqMkAB: mk a = mk b := Quotient.sound isoAB
+          
+          let waEq: pred.mid wa = some (Ordinal.mk a) := by
+            unfold pred.mid
+            rw [wap]
+          let wbEq: pred.mid wb = some (Ordinal.mk b) := by
+            unfold pred.mid
+            rw [wbp]
+          let mkSomeAB: some (mk a) = some (mk b) := congr rfl eqMkAB
+          waEq ▸ wbEq ▸ mkSomeAB
+  
   noncomputable def pred: Ordinal → Option Ordinal :=
-    Quotient.lift
-      predOrd
-      fun (wa wb: WellOrder) (asimb: wa ≈ wb) =>
-        
-        match wap: wa.pred, wbp: wb.pred with
-          | none, none => by unfold predOrd; simp [wap, wbp]
-          | none, some b =>
-              let waPred := WellOrder.pred.iso wb wa asimb.symm ⟨b, wbp⟩
-              let nope: none = some waPred.val := wap ▸ waPred.property.left
-              Option.noConfusion nope
-          | some a, none =>
-              let wbPred := WellOrder.pred.iso wa wb asimb ⟨a, wap⟩
-              let nope: none = some wbPred.val := wbp ▸ wbPred.property.left
-              Option.noConfusion nope
-          | some a, some b =>
-              let wbPred := WellOrder.pred.iso wa wb asimb ⟨a, wap⟩
-              
-              let isoAB: WellOrder.isIsomorphic a b :=
-                WellOrder.isIsomorphic.trans
-                  wbPred.property.right
-                  (
-                    let someEq: some b = some wbPred.val := wbp ▸ wbPred.property.left
-                    let bEq: b = wbPred.val := Option.noConfusion someEq id
-                    bEq ▸ WellOrder.isIsomorphic.refl
-                  )
-              
-              let eqMkAB: mk a = mk b := Quotient.sound isoAB
-              
-              let waEq: predOrd wa = some (Ordinal.mk a) := by
-                unfold predOrd
-                rw [wap]
-              let wbEq: predOrd wb = some (Ordinal.mk b) := by
-                unfold predOrd
-                rw [wbp]
-              let mkSomeAB: some (mk a) = some (mk b) := congr rfl eqMkAB
-              waEq ▸ wbEq ▸ mkSomeAB
+    Quotient.lift pred.mid predRespects
+  
+  /-noncomputable def predProp.mid (w: WellOrder):
+    { nPredOpt: Option Ordinal //
+      ∀ nPred, nPredOpt = some nPred → nPred.succ = mk w }
+  :=
+    match h: w.predProp.val with
+      | none => ⟨none, fun _ nope => Option.noConfusion nope⟩
+      | some pred => ⟨some (Ordinal.mk pred),
+          fun p eq =>
+            let pEqMkPred: p = Ordinal.mk pred :=
+              (Option.noConfusion eq id).symm
+            let succPredIsoW := w.predProp.property pred h
+            let succMkPredEq: succ (mk pred) = mk w :=
+              Quotient.sound succPredIsoW
+            pEqMkPred ▸ succMkPredEq⟩
+  
+  def predProp.helperNone (w: WellOrder) (eq: w.predProp.val = none):
+    predProp.mid w = ⟨none, fun _ nope => Option.noConfusion nope⟩
+  :=
+    sorry
+  
+  
+  def predProp.helperSome (w a: WellOrder) (eqW: w.predProp.val = some a):
+    predProp.mid w = ⟨some (mk a), fun p eq =>
+            let pEqMkPred: p = Ordinal.mk a :=
+              (Option.noConfusion eq id).symm
+            let succPredIsoW := w.predProp.property a eqW
+            let succMkPredEq: succ (mk a) = mk w :=
+              Quotient.sound succPredIsoW
+            pEqMkPred ▸ succMkPredEq⟩
+  :=
+    sorry
+  
+  /-noncomputable def pred.eqPredProp (n: Ordinal): n.pred = n.predProp :=
+    { nPredOpt: Option Ordinal //
+      ∀ nPred, nPredOpt = some nPred → nPred.succ = n }
+  :=
+    Quotient.rec predProp.mid fun wa wb (simAB: wa ≈ wb) =>-/
+  
+  noncomputable def predProp (n: Ordinal):
+    { nPredOpt: Option Ordinal //
+      ∀ nPred, nPredOpt = some nPred → nPred.succ = n }
+  :=
+    Quotient.hrecOn n predProp.mid fun wa wb (simAB: wa ≈ wb) =>
+      let nEq: mk wa = mk wb := Quotient.sound simAB
+      
+      let predMidEq: pred.mid wa = pred.mid wb := predRespects wa wb simAB
+      
+      let predEqPropMid (wa: WellOrder): pred.mid wa = predProp.mid wa :=
+        let aPredEqProp: wa.pred = wa.predProp.val := WellOrder.pred.eqPredProp wa
+        match h: wa.pred with
+          | none =>
+              let predMidWaNone: pred.mid wa = none :=
+                by unfold pred.mid; simp [h]
+              let waPredPropNone: (wa.predProp).val = none := aPredEqProp ▸ h
+              let propNone: predProp.mid wa = ⟨none, _⟩ :=
+                predProp.helperNone wa waPredPropNone
+              let propNoneVal: (predProp.mid wa).val = none := congr rfl propNone
+              predMidWaNone.trans propNoneVal.symm
+          | some a =>
+              let predMidWaNone: pred.mid wa = some (mk a) :=
+                by unfold pred.mid; simp [h]
+              let waPredPropNone: (wa.predProp).val = (some a) :=
+                aPredEqProp ▸ h
+              let propNone: predProp.mid wa = ⟨some (mk a), _⟩ :=
+                predProp.helperSome wa a waPredPropNone
+              let propNoneVal: (predProp.mid wa).val = some (mk a) :=
+                congr rfl propNone
+              predMidWaNone.trans propNoneVal.symm
+      
+      let aPredEqPropMid: pred.mid wa = predProp.mid wa := predEqPropMid wa
+      let bPredEqPropMid: pred.mid wb = predProp.mid wb := predEqPropMid wb
+      
+      let predPropEq: (predProp.mid wa).val = (predProp.mid wb).val :=
+        (aPredEqPropMid.symm.trans predMidEq).trans bPredEqPropMid
+      
+      sorry-/
   
   def isLimit (o: Ordinal): Prop := o.pred = none
+  
+  
+  noncomputable def predProp (n: Ordinal):
+    { nPredOpt: Option Ordinal //
+      ∀ nPred: Ordinal, nPredOpt = some nPred → nPred.succ = n }
+  :=
+    if isLimit n then
+      ⟨none, by simp⟩
+    else ⟨
+      n.pred,
+      fun pred eqNPred =>
+        let nRep := getRep n
+        let predRep := getRep pred
+        
+        let eqNPredMid: Ordinal.pred n = Ordinal.pred.mid nRep.val :=
+          Quotient.lift.eq Ordinal.pred.mid predRespects
+            nRep.val n nRep.property.symm
+        
+        let eqPredMid: Ordinal.pred.mid nRep.val = some pred :=
+          eqNPred ▸ eqNPredMid.symm
+        
+        match h: nRep.val.pred with
+          | none =>
+              let midSimp: Ordinal.pred.mid nRep.val = none :=
+                by unfold pred.mid; rw [h]
+              let nope: Ordinal.pred n = none := nRep.property ▸ midSimp
+              
+              False.elim (Option.noConfusion (eqNPred ▸ nope))
+          | some nRepPred =>
+              let midSimp: Ordinal.pred.mid nRep.val = some (mk nRepPred) :=
+                by unfold pred.mid; rw [h]
+              
+              let someEq: some (mk nRepPred) = some pred :=
+                midSimp.symm.trans eqPredMid
+              
+              let mkEq: mk nRepPred = mk predRep :=
+                Option.noConfusion someEq
+                  fun eq => eq.trans predRep.property.symm
+              
+              let isoPred: WellOrder.isIsomorphic nRepPred predRep.val :=
+                Quotient.exact mkEq
+              
+              let eqProp: nRep.val.pred = nRep.val.predProp :=
+                WellOrder.pred.eqPredProp nRep
+              
+              let hh: nRep.val.predProp = some nRepPred := eqProp ▸ h
+              
+              let isIsoNRepPred: WellOrder.isIsomorphic nRepPred.succ nRep :=
+                nRep.val.predProp.property nRepPred (eqProp ▸ hh ▸ eqProp)
+              
+              let isIsoPredRep:
+                WellOrder.isIsomorphic predRep.val.succ nRepPred.succ
+              := ⟨
+                succ.iso predRep.val nRepPred (choiceEx isoPred).val.symm,
+                trivial
+              ⟩
+              
+              let isIso: WellOrder.isIsomorphic predRep.val.succ nRep :=
+                isIsoPredRep.trans isIsoNRepPred
+              
+              predRep.property ▸ nRep.property ▸ Quotient.sound isIso
+    ⟩
+  
+  def predSucc (n: Ordinal) (nLim: ¬ isLimit n):
+    { pred: Ordinal // pred.succ = n }
+  :=
+    match hh: n.predProp with
+      | none => False.elim (nLim hh)
+      | some nn => nn
   
   def lt: Ordinal → Ordinal → Prop :=
     Quotient.lift₂ WellOrder.metaLt
@@ -1395,6 +1704,12 @@ namespace Ordinal
   def wf (o: Ordinal): Acc lt o := Quotient.ind wfLt o
 end Ordinal
 
+instance: LT Ordinal where
+  lt := Ordinal.lt
+
 instance: WellFoundedRelation Ordinal where
   rel := Ordinal.lt
   wf := ⟨Ordinal.wf⟩
+
+instance: Coe (Ordinal) (Type 1) where
+  coe o := { oo: Ordinal // oo < o }
