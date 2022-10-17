@@ -12,6 +12,11 @@ import Set
 open Classical
 
 
+theorem dne {p : Prop} (h : ¬¬p) : p :=
+  Or.elim (em p)
+    (fun hp : p => hp)
+    (fun hnp : ¬p => absurd hnp h)
+
 -- When I try to inline this, I get errors ¯\_(ツ)_/¯
 def Quotient.lift.eq {s: Setoid T}
   (f: T → R)
@@ -493,7 +498,7 @@ namespace WellOrder
   
   -- TODO do I need you? This is probably useless, because
   -- an initial morphism does not have to be a one constructed
-  -- using this functino.
+  -- using this function.
   noncomputable def Morphism.initial.f.properType
     (m: Morphism wa wb)
     (a: wa.T)
@@ -749,25 +754,92 @@ namespace WellOrder
       a.property ((isoAB.bijA a) ▸ aGst.property)
   ⟩
   
-  /- TODO do I need you?
   def succ.nIso (w: WellOrder): ¬ ∃ _: Isomorphism w w.succ, True :=
     fun isoEx =>
       let iso: Isomorphism w w.succ := choiceEx isoEx
       
-      let succGst: { s: w.succ.T // isGreatest w.succ s } := ⟨
-        none,
-        fun s0 =>
-          match h: s0 with
-            | none => Or.inl rfl
-            | some a => Or.inr trivial
-      ⟩
-      
-      let wGst: { s: w.T // isGreatest w s } :=
-        greatestIso w.succ w iso.symm succGst
-      
-      let succGstNope: w.succ.T := some wGst
-    
-    sorry-/
+      if h: ∃ t: w.T, iso.f t ≠ some t then
+        let lstT: Minimal (fun t => iso.f t ≠ some t) w.lt :=
+          minimal (fun t => iso.f t ≠ some t) (choiceEx h)
+        
+        (w.succ.total (iso.f lstT.val) (some lstT.val)).elim
+          (fun lt =>
+            let fLstT: { t: w.T // some t = iso.f lstT.val } :=
+              match hh: iso.f lstT.val with
+                | none =>
+                    let ltNone: w.succ.lt none (some lstT.val) := hh ▸ lt
+                    False.elim ltNone
+                | some a => ⟨a, rfl⟩
+            
+            let ltWSucc: w.succ.lt (some fLstT) (some lstT.val) :=
+              fLstT.property.symm ▸ lt
+            let ltW: w.lt fLstT lstT.val := ltWSucc
+            
+            let notNotId := lstT.property.right fLstT ltW
+            
+            let ff: iso.f fLstT.val = some fLstT.val :=
+              dne notNotId
+            
+            let lt0: w.succ.lt (iso.f fLstT.val) (iso.f lstT.val) :=
+              (iso.ordPres fLstT lstT.val).mp ltW
+            
+            let lt1: w.succ.lt (some fLstT.val) (iso.f lstT.val) :=
+              ff ▸ lt0
+            
+            let lt2: w.succ.lt (some fLstT.val) (some fLstT.val) :=
+              by conv =>
+                rhs
+                rw [fLstT.property]; exact lt1
+            
+            @wfRel.irefl w.succ.T (wfWT w.succ) (some fLstT.val) lt2)
+          (fun gtOrEq => gtOrEq.elim
+            (fun gt =>
+              let gLst := iso.g (some lstT.val)
+              let fgLst := iso.f gLst
+              let fgLstEq: fgLst = some lstT.val :=
+                iso.bijB (some lstT.val)
+              
+              (w.total gLst lstT.val).elim
+                (fun lt =>
+                  let ltSucc: w.succ.lt (some gLst) (some lstT.val) := lt
+                  let gEq0: w.succ.lt (iso.f gLst) (some lstT.val) :=
+                    (dne (lstT.property.right gLst lt)) ▸ ltSucc
+                  let gEq1: w.succ.lt (iso.f gLst) fgLst :=
+                    fgLstEq ▸ gEq0
+                  let gEq1: w.succ.lt fgLst fgLst := gEq1
+                  
+                  wfRel.irefl fgLst gEq1)
+                fun gtOrEq => gtOrEq.elim
+                  (fun gtInner =>
+                    let lt0: iso.f lstT.val < fgLst :=
+                      (iso.ordPres lstT.val gLst).mp gtInner
+                    let lt1: w.succ.lt (iso.f lstT.val) (some lstT.val) :=
+                      fgLstEq ▸ lt0
+                    let eq0: iso.f lstT.val = some lstT.val :=
+                      wfRel.antisymm lt1 gt
+                    let lt2: w.succ.lt (iso.f lstT.val) (iso.f lstT.val) :=
+                      by conv =>
+                        rhs
+                        rw [eq0]; exact lt1
+                    wfRel.irefl (iso.f lstT.val) lt2)
+                  fun eq =>
+                    let eq0: iso.f lstT.val = fgLst := congr rfl eq.symm
+                    let eq1: iso.f lstT.val = some lstT.val := fgLstEq ▸ eq0
+                    let lt: iso.f lstT.val < iso.f lstT.val := eq1 ▸ gt
+                    wfRel.irefl (iso.f lstT.val) lt)
+            fun eq => lstT.property.left eq)
+      else
+        let allId t: iso.f t = some t :=
+          if hh: iso.f t = some t then
+            hh
+          else
+            False.elim (h ⟨t, fun nope => hh nope⟩)
+        
+        let gNone := iso.g none
+        let fgNone := iso.f gNone
+        let fgNoneNone: fgNone = none := iso.bijB none
+        let fgNoneSome: fgNone = some _ := allId gNone
+        Option.noConfusion (fgNoneNone.symm.trans fgNoneSome)
   
   
   @[reducible] def pred.lt
@@ -1647,12 +1719,24 @@ namespace Ordinal
               predRep.property ▸ nRep.property ▸ Quotient.sound isIso
     ⟩
   
-  def predSucc (n: Ordinal) (nLim: ¬ isLimit n):
+  noncomputable def pred.eqPredProp (n: Ordinal): n.pred = n.predProp :=
+    if h: n.isLimit then
+      let nPredPropEq: n.predProp = ⟨none, _⟩ := if_pos h
+      let nPredPropEqVal: n.predProp.val = none := congr rfl nPredPropEq
+      let nPredEq: n.pred = none := h
+      nPredEq.trans nPredPropEqVal.symm
+    else
+      let nPredPropEq: ⟨n.pred, _⟩ = n.predProp := (if_neg h).symm
+      congr (show Subtype.val = Subtype.val from rfl) nPredPropEq
+  
+  noncomputable def predSucc (n: Ordinal) (isSucc: ¬ isLimit n):
     { pred: Ordinal // pred.succ = n }
   :=
     match hh: n.predProp with
-      | none => False.elim (nLim hh)
-      | some nn => nn
+      | ⟨none, _⟩ =>
+          let predPropNone: n.predProp.val = none := congr rfl hh
+          False.elim (isSucc ((pred.eqPredProp n).trans predPropNone))
+      | ⟨some nn, succN⟩ => ⟨nn, succN nn rfl⟩
   
   def lt: Ordinal → Ordinal → Prop :=
     Quotient.lift₂ WellOrder.metaLt
