@@ -29,27 +29,6 @@ def Quotient.lift.eq {s: Setoid T}
 :=
   tq ▸ rfl
 
-def Quotient.delift {s: Setoid T}
-  (f: T → R)
-  (respects: ∀ a b, a ≈ b → f a = f b)
-  (t: T)
-  (q: Quotient s)
-  (tq: q = Quotient.mk s t)
-:
-  Quotient.lift f respects q = f t
-:=
-  let ind (tt: T):
-    Quotient.mk' tt = q →
-    Quotient.lift f respects (Quotient.mk' tt) = f t
-  :=
-    fun eqIn =>
-      let eq: Quotient.mk' tt = Quotient.mk' t := eqIn.trans tq
-      eq ▸ rfl
-  
-  let motive (qq: Quotient s) := qq = q → Quotient.lift f respects qq = f t
-  
-  (@Quotient.ind T s motive ind q) rfl
-
 
 def subtypeWellfounded
   {T: Type}
@@ -440,7 +419,6 @@ namespace WellOrder
       ⟩
     }
   
-  -- TODO do I need you
   def succ.morphism (w: WellOrder): Morphism w w.succ := {
     f := fun a => some a
     
@@ -718,8 +696,8 @@ namespace WellOrder
       (fun aLtB => nLt gstA aLtB)
       (fun gtOrEq => gtOrEq.elim (fun gt => (nLt gstB gt).symm) id)
   
-  def greatestIso
-    (wa wb: WellOrder)
+  def isGreatest.iso
+    {wa wb: WellOrder}
     (isoAB: Isomorphism wa wb)
     (waGst: { t: wa.T // isGreatest wa t })
   :
@@ -741,7 +719,7 @@ namespace WellOrder
           ))
   ⟩
   
-  def nGreatestIso
+  def isNotGreatest.iso
     (wa wb: WellOrder)
     (isoAB: Isomorphism wa wb)
     (a: { t: wa.T // ¬ isGreatest wa t })
@@ -750,9 +728,161 @@ namespace WellOrder
   := ⟨
     isoAB.f a.val,
     fun nope =>
-      let aGst := (greatestIso wb wa isoAB.symm ⟨isoAB.f a, nope⟩)
+      let aGst := (isGreatest.iso isoAB.symm ⟨isoAB.f a, nope⟩)
       a.property ((isoAB.bijA a) ▸ aGst.property)
   ⟩
+  
+  def succ.iso
+    (wa wb: WellOrder)
+    (iso: WellOrder.Isomorphism wa wb)
+  :
+    WellOrder.Isomorphism wa.succ wb.succ
+  := {
+    f := fun a =>
+      match a with
+        | none => none
+        | some a => some (iso.f a)
+    g := fun b => 
+      match b with
+        | none => none
+        | some b => some (iso.g b)
+    
+    -- I hate to admit it, but I'm starting to like tactics.
+    -- But only because Lean needs better symbolic execution instead!!! ;)
+    bijA := fun a => by cases a <;> simp [iso.bijA],
+    bijB := fun b => by cases b <;> simp [iso.bijB],
+    
+    ordPres := fun a b =>
+      match a, b with
+        -- Lean's 'by simp' has issues if it cannot come up with
+        -- the zeroth three.
+        | none, none => Iff.intro id id
+        | some a, none => Iff.intro id id
+        | none, some a => Iff.intro id id
+        | some a, some b => Iff.intro
+            (fun succLtAB => (iso.ordPres a b).mp succLtAB)
+            (fun succLtAB => (iso.ordPres a b).mpr succLtAB)
+  }
+  
+  def succ.none.isGreatest {w: WellOrder}: isGreatest w.succ none
+    | none => Or.inl rfl
+    | some _ => Or.inr trivial
+  
+  def succ.isoFNone
+    {wa wb: WellOrder}
+    {iso: Isomorphism wa.succ wb.succ}
+  :
+    iso.f none = none
+  :=
+    let gstA: isGreatest wa.succ none := succ.none.isGreatest
+    let gstB: isGreatest wb.succ none := succ.none.isGreatest
+    
+    let gstF: isGreatest wb.succ (iso.f none) :=
+      (isGreatest.iso iso ⟨none, gstA⟩).property
+    
+    isGreatest.eq gstF gstB
+  
+  def succ.isoGNone
+    {wa wb: WellOrder}
+    {iso: Isomorphism wa.succ wb.succ}
+  :
+    iso.g none = none
+  :=
+    let gstA: isGreatest wa.succ none := succ.none.isGreatest
+    let gstB: isGreatest wb.succ none := succ.none.isGreatest
+    
+    let gstG: isGreatest wa.succ (iso.g none) :=
+      (isGreatest.iso iso.symm ⟨none, gstB⟩).property
+    
+    isGreatest.eq gstG gstA
+  
+  def succ.isoFSome
+    {wa wb: WellOrder}
+    {iso: Isomorphism wa.succ wb.succ}
+    (a: wa.T)
+  :
+    iso.f (some a) ≠ none
+  :=
+    fun eq =>
+        let eqNope: iso.morphismF.f none = iso.morphismF.f (some a) :=
+          succ.isoFNone.trans eq.symm
+        Option.noConfusion (iso.morphismF.ordPresEq eqNope)
+  
+  def succ.isoGSome
+    {wa wb: WellOrder}
+    {iso: Isomorphism wa.succ wb.succ}
+    (b: wb.T)
+  :
+    iso.g (some b) ≠ none
+  :=
+    fun eq =>
+        let eqNope: iso.morphismG.f none = iso.morphismG.f (some b) :=
+          succ.isoGNone.trans eq.symm
+        Option.noConfusion (iso.morphismG.ordPresEq eqNope)
+  
+  def succ.isoInv
+    (wa wb: WellOrder)
+    (iso: Isomorphism wa.succ wb.succ)
+  :
+    Isomorphism wa wb
+  :=
+    let f (a: wa.T): { b: wb.T // some b = iso.f (some a) } :=
+      match h: iso.f (some a) with
+        | none => False.elim (succ.isoFSome a h)
+        | some b => ⟨b, rfl⟩
+    
+    let g (b: wb.T): { a: wa.T // some a = iso.g (some b) } :=
+      match h: iso.g (some b) with
+        | none => False.elim (succ.isoGSome b h)
+        | some b => ⟨b, rfl⟩
+    
+    let fMono (a0 a1: wa.T) (lta: a0 < a1): (f a0).val < (f a1).val :=
+      let isoFALt: iso.f (some a0) < iso.f (some a1) :=
+        (iso.ordPres (some a0) (some a1)).mp lta
+      let a0Eq: iso.f (some a0) = some (f a0).val := (f a0).property.symm
+      let a1Eq: iso.f (some a1) = some (f a1).val := (f a1).property.symm
+      
+      show wb.succ.lt (some (f a0).val) (some (f a1).val) from
+        a0Eq ▸ a1Eq ▸ isoFALt
+    
+    {
+      f := fun a => f a
+      g := fun b => g b
+      
+      bijA := fun a =>
+        let isoFSA: wb.succ.T := iso.f (some a)
+        let someFA: wb.succ.T := some (f a).val
+        let someGFA: wa.succ.T := some (g ((f a).val)).val
+        
+        let fEq: isoFSA = someFA := (f a).property.symm
+        let gEq: iso.g someFA = someGFA := (g (f a).val).property.symm
+        
+        let gfEq: iso.g isoFSA = someGFA := by rw [fEq]; exact gEq
+        -- One shame point for lean. Cannot do in one step.
+        let gfEq: iso.g (iso.f (some a)) = some (g ((f a).val)).val := gfEq
+        let bijA: iso.g (iso.f (some a)) = some a := iso.bijA (some a)
+        
+        Option.noConfusion (gfEq.symm.trans bijA) id
+      
+      bijB := fun b =>
+        let isoGSA: wa.succ.T := iso.g (some b)
+        let someGA: wa.succ.T := some (g b).val
+        let someFGA: wb.succ.T := some (f ((g b).val)).val
+        
+        let gEq: isoGSA = someGA := (g b).property.symm
+        let fEq: iso.f someGA = someFGA := (f (g b).val).property.symm
+        
+        let fgEq: iso.f isoGSA = someFGA := by rw [gEq]; exact fEq
+        -- One shame point for lean. Cannot do in one step.
+        let fgEq: iso.f (iso.g (some b)) = some (f ((g b).val)).val := fgEq
+        let bijB: iso.f (iso.g (some b)) = some b := iso.bijB (some b)
+        
+        Option.noConfusion (fgEq.symm.trans bijB) id
+      
+      ordPres := fun a0 a1 => Iff.intro (fMono a0 a1)
+        fun ltf => (@monoInvMono wa.T wb.T (fun a => f a) a0 a1
+          (wfWT wa) (wfWT wb) ltf wa.total fMono)
+    }
   
   def succ.nIso (w: WellOrder): ¬ ∃ _: Isomorphism w w.succ, True :=
     fun isoEx =>
@@ -1022,8 +1152,10 @@ namespace WellOrder
   :=
     let isoAB := (choiceEx isIsoAB).val
     
-    let f (a: wa.predNoOpt.T): wb.predNoOpt.T := nGreatestIso wa wb isoAB a
-    let g (b: wb.predNoOpt.T): wa.predNoOpt.T := nGreatestIso wb wa isoAB.symm b
+    let f (a: wa.predNoOpt.T): wb.predNoOpt.T :=
+      isNotGreatest.iso wa wb isoAB a
+    let g (b: wb.predNoOpt.T): wa.predNoOpt.T :=
+      isNotGreatest.iso wb wa isoAB.symm b
     
     {
       f := f
@@ -1070,7 +1202,7 @@ namespace WellOrder
           | some wbp => ⟨wbp, rfl⟩
       else
         let waGst := choiceEx (ifPred.hasGreatest wa waPred)
-        let wbGst := greatestIso wa wb isoAB waGst
+        let wbGst := isGreatest.iso isoAB waGst
         let nope: False := h ⟨wbGst, wbGst.property⟩
         -- How can I do this without choice?
         let nopeEx: ∃ wbPred: WellOrder, _ := False.elim nope
@@ -1449,6 +1581,21 @@ namespace WellOrder
       ⟩
     ⟩
   
+  def succGt (w: WellOrder): metaLt w w.succ :=
+    And.intro (succ.nIso w) ⟨succ.morphism w, trivial⟩
+  
+  def succIsoGt
+    (w wSucc: WellOrder)
+    (iso: Isomorphism wSucc w.succ)
+  :
+    metaLt w wSucc
+  :=
+    let nIso: ¬ ∃ _: Isomorphism w wSucc, True :=
+      fun iEx =>
+        let i := (choiceEx iEx).val
+        (succ.nIso w) ⟨i.trans iso, trivial⟩
+    
+    And.intro nIso ⟨(succ.morphism w).trans iso.morphismG, trivial⟩
 end WellOrder
 
 
@@ -1479,7 +1626,7 @@ instance wellOrderSetoid: Setoid WellOrder where
 :=
   choiceEx (@Quotient.exists_rep T s q)
 
-def Ordinal := Quotient wellOrderSetoid
+@[reducible] def Ordinal := Quotient wellOrderSetoid
 
 namespace Ordinal
   def mk (w: WellOrder) := Quotient.mk' w
@@ -1493,43 +1640,43 @@ namespace Ordinal
     wf := ⟨fun nope => ZeroT.rec nope⟩
   }
   
-  def succ.iso
-    (wa wb: WellOrder)
-    (iso: WellOrder.Isomorphism wa wb)
-  :
-    WellOrder.Isomorphism wa.succ wb.succ
-  := {
-    f := fun a =>
-      match a with
-        | none => none
-        | some a => some (iso.f a)
-    g := fun b => 
-      match b with
-        | none => none
-        | some b => some (iso.g b)
-    
-    -- I hate to admit it, but I'm starting to like tactics.
-    -- But only because Lean needs better symbolic execution instead!!! ;)
-    bijA := fun a => by cases a <;> simp [iso.bijA],
-    bijB := fun b => by cases b <;> simp [iso.bijB],
-    
-    ordPres := fun a b =>
-      match a, b with
-        -- Lean's 'by simp' has issues if it cannot come up with
-        -- the zeroth three.
-        | none, none => Iff.intro id id
-        | some a, none => Iff.intro id id
-        | none, some a => Iff.intro id id
-        | some a, some b => Iff.intro
-            (fun succLtAB => (iso.ordPres a b).mp succLtAB)
-            (fun succLtAB => (iso.ordPres a b).mpr succLtAB)
-  }
+  def succ.mid (w: WellOrder) := Ordinal.mk w.succ
   
-  def succ: Ordinal → Ordinal := Quotient.lift (fun w => Ordinal.mk w.succ)
+  def succ: Ordinal → Ordinal := Quotient.lift succ.mid
     fun (wa wb: WellOrder) (asimb: wa ≈ wb) =>
       let iso: WellOrder.Isomorphism wa wb := choiceEx asimb
       
-      Quotient.sound ⟨succ.iso wa wb iso, trivial⟩
+      Quotient.sound ⟨WellOrder.succ.iso wa wb iso, trivial⟩
+  
+  def succ.inj
+    (na nb: Ordinal)
+    (eq: succ na = succ nb)
+  :
+    na = nb
+  :=
+    let naRep := getRep na
+    let nbRep := getRep nb
+    
+    let naEq: mk naRep = na := naRep.property
+    let nbEq: mk nbRep = nb := nbRep.property
+    
+    let succEqOrd: succ (mk naRep) = succ (mk nbRep) :=
+      by rw [naEq, nbEq]; exact eq
+    
+    let succEqMid: succ.mid naRep = succ.mid nbRep := succEqOrd
+    
+    let succEqW: mk naRep.val.succ = mk nbRep.val.succ := succEqMid
+    
+    let isoExSuccW: WellOrder.isIsomorphic naRep.val.succ nbRep.val.succ :=
+      Quotient.exact succEqW
+    
+    let isoSuccW: WellOrder.Isomorphism naRep.val.succ nbRep.val.succ :=
+      choiceEx isoExSuccW
+    
+    let isoW := WellOrder.succ.isoInv naRep.val nbRep.val isoSuccW
+    
+    naRep.property ▸ nbRep.property ▸ (Quotient.sound ⟨isoW, trivial⟩)
+  
   
   noncomputable def pred.mid (w: WellOrder): Option Ordinal :=
     match w.pred with
@@ -1657,6 +1804,10 @@ namespace Ordinal
   
   def isLimit (o: Ordinal): Prop := o.pred = none
   
+  def isNotLimit (o oPred: Ordinal) (eq: o.pred = oPred): ¬ o.isLimit
+  :=
+    fun isLimit => Option.noConfusion (isLimit ▸ eq)
+    
   
   noncomputable def predProp (n: Ordinal):
     { nPredOpt: Option Ordinal //
@@ -1709,7 +1860,7 @@ namespace Ordinal
               let isIsoPredRep:
                 WellOrder.isIsomorphic predRep.val.succ nRepPred.succ
               := ⟨
-                succ.iso predRep.val nRepPred (choiceEx isoPred).val.symm,
+                WellOrder.succ.iso predRep.val nRepPred (choiceEx isoPred).val.symm,
                 trivial
               ⟩
               
@@ -1729,7 +1880,7 @@ namespace Ordinal
       let nPredPropEq: ⟨n.pred, _⟩ = n.predProp := (if_neg h).symm
       congr (show Subtype.val = Subtype.val from rfl) nPredPropEq
   
-  noncomputable def predSucc (n: Ordinal) (isSucc: ¬ isLimit n):
+  noncomputable def nLimitPred (n: Ordinal) (isSucc: ¬ isLimit n):
     { pred: Ordinal // pred.succ = n }
   :=
     match hh: n.predProp with
@@ -1773,23 +1924,64 @@ namespace Ordinal
         
         propext iff
   
+  instance: LT Ordinal where
+    lt := Ordinal.lt
+  
   def wfLt (w: WellOrder): Acc lt (Ordinal.mk w) :=
     Acc.intro (Ordinal.mk w) fun wwOrd wwLtW =>
       let ww := choiceEx (Quotient.exists_rep wwOrd)
       
       let eq: wwOrd = Ordinal.mk ww := ww.property.symm
       
-      let lt: lt (Ordinal.mk ww) (Ordinal.mk w) := eq ▸ wwLtW
+      let lt: Ordinal.mk ww < Ordinal.mk w := eq ▸ wwLtW
       
       have: WellOrder.metaLt ww w := lt
       ww.property ▸ wfLt ww
     termination_by wfLt w => w
   
   def wf (o: Ordinal): Acc lt o := Quotient.ind wfLt o
+  
+  
+  def succGt (n: Ordinal): n < n.succ :=
+    let nRep := getRep n
+    let nSuccRep := getRep n.succ
+    
+    let eq0: Ordinal.succ (mk nRep.val) = succ.mid nRep := rfl
+    let eq1: Ordinal.succ (mk nRep.val) = Ordinal.mk nRep.val.succ := eq0
+    let eq2: Ordinal.succ (mk nRep.val) = Ordinal.succ n := congr rfl nRep.property
+    let eq3: Ordinal.succ (mk nRep.val) = mk nSuccRep :=
+      eq2.trans nSuccRep.property.symm
+    
+    let eq: mk nSuccRep = mk nRep.val.succ := eq3.symm.trans eq1
+    
+    let isoEx: WellOrder.isIsomorphic nSuccRep.val nRep.val.succ :=
+      Quotient.exact eq
+    
+    let lt0: WellOrder.metaLt nRep nSuccRep :=
+      WellOrder.succIsoGt nRep.val nSuccRep (choiceEx isoEx).val
+    
+    let lt1: mk nRep.val < mk nSuccRep.val := lt0
+    
+    let lt2: n < mk nSuccRep.val :=
+      by conv =>
+        lhs
+        rw [nRep.property.symm]; exact lt1
+    
+    nSuccRep.property ▸ lt2
+  
+  def predSuccEq (n nPred: Ordinal) (eq: n.pred = some nPred):
+    nPred.succ = n
+  :=
+    let eq0: n.predProp = n.pred := (pred.eqPredProp n).symm
+    (predProp n).property nPred (eq0.trans eq)
+  
+  def predLt (n nPred: Ordinal) (eq: n.pred = some nPred):
+    lt nPred n
+  :=
+    let ltSucc: nPred < nPred.succ := succGt nPred
+    (predSuccEq n nPred eq) ▸ ltSucc
+  
 end Ordinal
-
-instance: LT Ordinal where
-  lt := Ordinal.lt
 
 instance: WellFoundedRelation Ordinal where
   rel := Ordinal.lt
