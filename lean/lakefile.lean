@@ -6,6 +6,8 @@ package Bst {
 }
 
 lean_lib Bst {}
+lean_lib Fixpoint {}
+lean_lib ITTM {}
 lean_lib Ordinal {}
 lean_lib PartialOrder {}
 lean_lib Set {}

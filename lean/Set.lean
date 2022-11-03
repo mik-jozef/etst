@@ -14,7 +14,7 @@ noncomputable def choiceEx {P: T → Prop} (ex: ∃ t: T, P t): { t: T // P t } 
   choice nonempty
 
 
-def Set (T : Type) := T → Prop
+def Set.{u} (T : Type u) := T → Prop
 
 instance: Membership T (Set T) where
   mem := fun (t: T) (s: Set T) => s t
