@@ -1,7 +1,5 @@
 /-
-  Defines ordinals. Takes heavy inspiration from mathlib
-  (I guess -- I wrote this comment before defining them).
-  Update: so I guess I freestyle a lot.
+  Defines ordinals and some well-known facts about them.
   
   Don't look inside. It's embarrassing. (And also supposed
   to be write-once, forget and don't ever read again.)
@@ -11,6 +9,9 @@ import Set
 
 open Classical
 
+
+theorem Or.symm {a b: Prop} (aob: a ∨ b): b ∨ a :=
+  aob.elim (fun a => Or.inr a) (fun b => Or.inl b)
 
 theorem dne {p : Prop} (h : ¬¬p) : p :=
   Or.elim (em p)
@@ -709,7 +710,7 @@ namespace WellOrder
     match mab.val.trans mbc.val, mac.val, fEq with
       | ⟨_, _⟩, ⟨_, _⟩, rfl => rfl
   
-  noncomputable def Morphism.self.initial.eqId
+  noncomputable def Morphism.Initial.self.eqId
     (m: Morphism.Initial w w)
   :
     m.val.f = id
@@ -719,9 +720,9 @@ namespace WellOrder
     let leftId: (mwId.val.trans mwId.val).f = id := rfl
     eq ▸ leftId
   
-  def initial.eq
-    (mab0: Morphism.Initial wa wb)
-    (mab1: Morphism.Initial wa wb)
+  def Morphism.Initial.eq
+    {mab0: Morphism.Initial wa wb}
+    {mab1: Morphism.Initial wa wb}
   :
     mab0 = mab1
   :=
@@ -1616,6 +1617,30 @@ namespace WellOrder
     :=
       ⟨eqIso mac mbc ordInEq, trivial⟩
     
+    noncomputable def isoLE
+      {wa wb wc: WellOrder}
+      (mac: Morphism.Initial wa wc)
+      (mbc: Morphism.Initial wb wc)
+      (mab: Morphism.Initial wa wb)
+      (c: wc.T)
+      (isBoundAC: mac.val.bound c)
+    :
+      mbc.val.bound c
+    :=
+      let mabc: Morphism.Initial wa wc :=
+        Morphism.Initial.trans mab mbc
+      let mEq: mac = mabc := Morphism.Initial.eq
+      
+      let boundAC: { a: wa.T // c = mac.val.f a } := choiceEx isBoundAC
+      let boundBC: wb.T := mab.val.f boundAC.val
+      
+      -- Definitional equality showing its limitations once again.. >:
+      -- Rewriting `(mab.val.f boundAC.val)` to `boundBC` causes an error.
+      let isBoundABC: c = mbc.val.f (mab.val.f boundAC.val) :=
+        mEq ▸ boundAC.property
+      
+      ⟨boundBC, isBoundABC⟩
+    
     noncomputable def isoEq
       {wa wb wc: WellOrder}
       (mac: Morphism.Initial wa wc)
@@ -1624,15 +1649,8 @@ namespace WellOrder
     :
       ordIn mac.val = ordIn mbc.val
     :=
-      let mabc: Morphism.Initial wa wc :=
-        Morphism.Initial.trans iab.morphismF mbc
-      sorry
-      /-ordIn.eq (ordIn.set.eq (fun c => Iff.intro
-        (fun isBound =>
-          let bound := choiceEx isBound
-          let fBound := iab.f bound.val
-          sorry)
-        (fun isBound => sorry)))-/
+      ordIn.eq (ordIn.set.eq (fun c => Iff.intro
+        (isoLE mac mbc iab.morphismF c) (isoLE mbc mac iab.morphismG c)))
     
     def self.eqNone (m: Morphism.Initial w w): ordIn m.val = none :=
       let mOrdEq: (ordIn.prop m.val).val = ordIn m.val := rfl
@@ -1642,7 +1660,7 @@ namespace WellOrder
           let bFree := prop.left b rfl
           let bNFree: m.val.bound b := ⟨
             b,
-            (Morphism.self.initial.eqId m) ▸ rfl
+            (Morphism.Initial.self.eqId m) ▸ rfl
           ⟩
           Morphism.freeBound bFree bNFree
     
@@ -1897,37 +1915,37 @@ namespace WellOrder
     wf := ⟨WellOrder.metaWf⟩
   
   
-  noncomputable def isIsomorphic.fromMorphisms.helper
+  noncomputable def Morphism.ltOrEq
     {wa wb: WellOrder}
-    (mba: Morphism.Initial wb wa)
+    (mab: Morphism wa wb)
   :
-    (isIsomorphic wa wb) ∨ (metaLt wb wa)
+    metaLt wa wb ∨ isIsomorphic wa wb
   :=
-    let wc := wa.succ;
+    let wc := wb.succ;
     
-    let iniMac: Morphism.Initial wa wc := succ.morphism wa
-    let iniMba: Morphism.Initial wb wa := Morphism.initial mba
-    let iniMbc: Morphism.Initial wb wc := Morphism.Initial.trans iniMba iniMac
+    let iniMbc: Morphism.Initial wb wc := succ.morphism wb
+    let iniMab: Morphism.Initial wa wb := Morphism.initial mab
+    let iniMac: Morphism.Initial wa wc := Morphism.Initial.trans iniMab iniMbc
     
-    let ordANone: ordIn iniMac.val = some none := ordIn.succ.eqSomeNone
+    let ordBNone: ordIn iniMbc.val = some none := ordIn.succ.eqSomeNone
     
-    match h: ordIn iniMbc.val with
+    match h: ordIn iniMac.val with
       | none =>
           let mcc: Morphism.Initial wc wc := Morphism.refl wc
           let cOrdIn: ordIn mcc.val = none := ordIn.self.eqNone mcc
-          let isoCB: Isomorphism wc wb :=
-            ordIn.eqIso mcc iniMbc (cOrdIn.trans h.symm)
-          let mca: Morphism wc wa :=
-            isoCB.morphismF.trans mba
-          False.elim (succ.noMorphismBack wa ⟨mca, trivial⟩)
+          let isoCA: Isomorphism wc wa :=
+            ordIn.eqIso mcc iniMac (cOrdIn.trans h.symm)
+          let mcb: Morphism wc wb :=
+            isoCA.morphismF.trans iniMab
+          False.elim (succ.noMorphismBack wb ⟨mcb, trivial⟩)
       | some none =>
           let ordEq: ordIn iniMac.val = ordIn iniMbc.val
-            := ordANone.trans h.symm
-          Or.inl ⟨ordIn.eqIso iniMac iniMbc ordEq, trivial⟩
+            := h.trans ordBNone.symm
+          Or.inr ⟨ordIn.eqIso iniMac iniMbc ordEq, trivial⟩
       | some (some _) =>
-          let ordLt: ordIn iniMbc.val < ordIn iniMac.val :=
-            ordANone ▸ h ▸ trivial
-          Or.inr (ordIn.metaLtIfLt iniMbc iniMac ordLt)
+          let ordLt: ordIn iniMac.val < ordIn iniMbc.val :=
+            ordBNone ▸ h ▸ trivial
+          Or.inl (ordIn.metaLtIfLt iniMac iniMbc ordLt)
   
   noncomputable def isIsomorphic.fromMorphisms
     {wa wb: WellOrder}
@@ -1936,17 +1954,12 @@ namespace WellOrder
   :
     isIsomorphic wa wb
   :=
-    let iniMab := Morphism.initial mab
-    let iniMba := Morphism.initial mba
-    
-    let aIsoLt := fromMorphisms.helper iniMba
-    let bIsoLt := fromMorphisms.helper iniMab
-    
-    aIsoLt.elim id fun ltBA =>
-      bIsoLt.elim (fun isIso => isIso.symm)
-      fun ltAB =>
-        let eqAB: wa = wb := wfRel.antisymm ltAB ltBA
-        eqAB ▸ isIsomorphic.refl
+    mab.ltOrEq.symm.elim id fun ltAB =>
+      mba.ltOrEq.symm.elim
+        (fun isIso => isIso.symm)
+        fun ltBA =>
+          let eqAB: wa = wb := wfRel.antisymm ltAB ltBA
+          eqAB ▸ isIsomorphic.refl
   
   noncomputable def Isomorphism.fromMorphisms
     {wa wb: WellOrder}
@@ -2088,25 +2101,15 @@ namespace WellOrder
           (fun gtOrEq => gtOrEq.elim (fun gt => False.elim (hBA gt)) id)
       Sum.inl (ordIn.eqIso iniAC iniBC eq).morphismF
   
-  noncomputable def Morphism.isoOrLt (wx wy: WellOrder) (mxy: Morphism wx wy):
-    metaLt wx wy ∨ wx.isIsomorphic wy
-  :=
-    if h: ∃ _: Morphism wy wx, True then
-      Or.inr ⟨Isomorphism.fromMorphisms mxy (choiceEx h).val, trivial⟩
-    else
-      Or.inl (And.intro
-        (fun isIso => h ⟨(choiceEx isIso).val.morphismG, trivial⟩)
-        ⟨mxy, trivial⟩)
-  
   def metaLt.total (wa wb: WellOrder):
     metaLt wa wb ∨ metaLt wb wa ∨ wa.isIsomorphic wb
   :=
     let eitherMorphism := Morphism.either wa wb
     
     match eitherMorphism with
-      | Sum.inl mab => (Morphism.isoOrLt wa wb mab).elim
+      | Sum.inl mab => (Morphism.ltOrEq mab).elim
           (fun lt => Or.inl lt) (fun iso => Or.inr (Or.inr iso))
-      | Sum.inr mba => (Morphism.isoOrLt wb wa mba).elim
+      | Sum.inr mba => (Morphism.ltOrEq mba).elim
           (fun lt => Or.inr (Or.inl lt)) (fun iso => Or.inr (Or.inr iso.symm))
   
 end WellOrder
@@ -2423,7 +2426,20 @@ namespace Ordinal
     
     show pVal < n from eq ▸ ltP
   
-  def lt.total (a b: Ordinal): a < b ∨ b < a ∨ a = b := sorry
+  def total.mid (a b: WellOrder):
+    Ordinal.mk a < Ordinal.mk b ∨
+    Ordinal.mk b < Ordinal.mk a ∨
+    Ordinal.mk a = Ordinal.mk b
+  :=
+    (WellOrder.metaLt.total a b).elim
+      (fun lt => Or.inl lt)
+      (fun gtOrEq =>
+        gtOrEq.elim
+          (fun gt => Or.inr (Or.inl gt))
+          (fun iso => Or.inr (Or.inr (Quotient.sound iso))))
+  
+  def total: (a b: Ordinal) → a < b ∨ b < a ∨ a = b :=
+    Quotient.ind₂ total.mid
     
 end Ordinal
 
