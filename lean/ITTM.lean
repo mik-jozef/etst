@@ -10,17 +10,15 @@ inductive Two
 def Nat2 := Nat → Two
 def Nat2.zeros: Nat2 := fun _ => Two.zero
 
-noncomputable def limSup (t: Tuple Nat2) (ifZero: Nat2): Nat2 :=
-  -- The limit is undefined in this case. (How convenient :P)
+noncomputable def limSup (t: Tuple Nat2) (ifUndefined: Nat2): Nat2 :=
   if t.length = Ordinal.zero then
-    ifZero
+    ifUndefined
   else
     fun n: Nat =>
       let eventuallyZero :=
-        ∃ inT: ↑t.length,
-          ∀ inTGe: ↑t.length,
-            inT.val = inTGe.val ∨ inT.val < inTGe.val →
-              t.elements inTGe n = Two.zero
+        ∃ lowerBound: ↑t.length,
+          ∀ i: ↑t.length,
+            lowerBound.val ≤ i.val → t.elements i n = Two.zero
       
       if eventuallyZero then Two.zero else Two.one
 
@@ -116,5 +114,5 @@ namespace Ittm
   def loops (tm: Ittm) (input: Nat2): Prop := tm.compute input = none
   
   def computable (fn: Nat2 → Nat2): Prop :=
-    ∃ tm: Ittm, ∀ arg: Nat2, tm.compute arg = fn arg
+    ∃ tm: Ittm, ∀ arg: Nat2, fn arg = tm.compute arg
 end Ittm
