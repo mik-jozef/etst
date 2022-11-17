@@ -3,6 +3,8 @@
   for the latter.
 -/
 
+open Classical
+
 -- The square less-equal relation: `x ⊑ y`.
 class SqLE (α : Type u) where
   le : α → α → Prop
@@ -48,6 +50,69 @@ namespace PartialOrder
           let cc: c < c := eqCB ▸ cb
           ((ltIffLeNotEq c c).mp cc).right rfl
       (ltIffLeNotEq a c).mpr (And.intro aLeC aNeqC)
+  
+  def leIffLtOrEq [PartialOrder T] (a b: T): a ≤ b ↔ a < b ∨ a = b :=
+    Iff.intro
+      (fun le =>
+        if h: a = b then
+          Or.inr h
+        else
+          Or.inl ((ltIffLeNotEq a b).mpr (And.intro le h)))
+      (fun ltOrEq =>
+        ltOrEq.elim
+          (fun lt => ((ltIffLeNotEq a b).mp lt).left)
+          (fun eq => eq ▸ (refl a)))
+  
+  
+  @[reducible] def Option.le (_: PartialOrder T): Option T → Option T → Prop
+    | none, none => True
+    | none, some _ => False
+    | some _, none => True
+    | some t0, some t1 => t0 ≤ t1
+  
+  instance option (ord: PartialOrder T): PartialOrder (Option T) where
+    le := Option.le ord
+    
+    refl
+      | none => trivial
+      | some t => ord.refl t
+    
+    antisymm
+      | none, none, _, _ => rfl
+      | none, some _, nope, _ => False.elim nope
+      | some _, none, _, nope => False.elim nope
+      | some a, some b, ab, ba => congr rfl (ord.antisymm a b ab ba)
+    
+    trans
+      | none, _, none, _, _ => trivial
+      | some _, _, none, _, _ => trivial
+      | none, none, some _, _, nope => False.elim nope
+      | none, some _, some _, nope, _ => False.elim nope
+      | some a, some b, some c, ab, bc => ord.trans a b c ab bc
+    
+    lt := fun (a b) => Option.le ord a b  ∧  ¬ a = b
+    ltIffLeNotEq := fun _ _ => Iff.intro id id
+  
+  def option.noneGe [ord: PartialOrder T] (t: Option T): ord.option.le t none :=
+    -- TODO: your theorem prover shouldn't need a switch.
+    match t with
+      | none => trivial
+      | some _ => trivial
+  
+  def option.lt.toOpt [ord: PartialOrder T] {t0 t1: T} (lt: t0 < t1):
+    ord.option.lt t0 t1
+  :=
+    let and := (ord.ltIffLeNotEq t0 t1).mp lt
+    And.intro and.left (fun n => Option.noConfusion n and.right)
+  
+  def option.lt.fromOpt [ord: PartialOrder T] {t0 t1: T} (lt: ord.option.lt t0 t1):
+    t0 < t1
+  :=
+    let le: ord.option.le t0 t1 ∧ some t0 ≠ some t1 :=
+      (ord.option.ltIffLeNotEq t0 t1).mp lt
+    let le: t0 ≤ t1 ∧ t0 ≠ t1 :=
+      And.intro le.left (fun eq => le.right (congr rfl eq))
+    (ord.ltIffLeNotEq t0 t1).mpr le
 end PartialOrder
 
 

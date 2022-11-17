@@ -34,7 +34,7 @@ def Quotient.lift.eq {s: Setoid T}
   tq ▸ rfl
 
 
-def subtypeWellfounded
+def subtypeWellFounded
   {T: Type u}
   (s: Set T)
   [wf : WellFoundedRelation T]
@@ -55,7 +55,7 @@ noncomputable def minimal
 :
   Minimal s wf.rel
 := (
-  WellFounded.fix (subtypeWellfounded s).wf fun
+  WellFounded.fix (subtypeWellFounded s).wf fun
     (t: ↑s)
     (rc: (tt: ↑s) → wf.rel tt t → Minimal s wf.rel)
   =>
@@ -109,7 +109,7 @@ def wfRel.irefl [wf: WellFoundedRelation T] (a: T):
   -- fun aLtA => False.elim ((wfRel.irefl a) aLtA)
   -- termination_by wfRel.irefl a => a
   let A := { t: T // t = a }
-  let wfSub := subtypeWellfounded (fun t => t = a)
+  let wfSub := subtypeWellFounded (fun t => t = a)
   
   fun aLtA =>
     let f := WellFounded.fix wfSub.wf fun
@@ -126,7 +126,7 @@ def wfRel.antisymm {T: Type u} [wf: WellFoundedRelation T] {a b: T}:
   wf.rel a b → wf.rel b a → a = b
 :=
   let AOrB := { t: T // t = a ∨ t = b }
-  let wfSub := subtypeWellfounded (fun t => t = a ∨ t = b)
+  let wfSub := subtypeWellFounded (fun t => t = a ∨ t = b)
   
   fun aLtB bLtA =>
     let f := WellFounded.fix wfSub.wf fun
@@ -221,7 +221,7 @@ namespace WellOrder
       (fun lt => Or.inl lt) (fun gtOrEq => gtOrEq.elim
         (fun gt => Or.inr (Or.inl gt))
         (fun eq => Or.inr (Or.inr (Subtype.eq eq))))
-    wf := (subtypeWellfounded s).wf
+    wf := (subtypeWellFounded s).wf
   }
   
   def lt.trans {w: WellOrder} {a b c: w.T}:
@@ -320,6 +320,22 @@ namespace WellOrder
         ordPres := fun _ _ => Iff.intro id id
       }
   end Morphism
+  
+  
+  inductive ZeroT
+  
+  def zero: WellOrder := {
+    T := ZeroT,
+    lt := fun _ _ => False,
+    total := fun nope _ => ZeroT.rec nope,
+    wf := ⟨fun nope => ZeroT.rec nope⟩
+  }
+  
+  noncomputable def zero.morphism (w: WellOrder): Morphism zero w := {
+    f := fun zt => ZeroT.rec zt
+    ordPres := fun zt _ => ZeroT.rec zt
+  }
+  
   
   structure Isomorphism (wa wb: WellOrder) where
     f: wa.T → wb.T
@@ -2254,14 +2270,7 @@ instance wellOrderSetoid: Setoid WellOrder where
 namespace Ordinal
   def mk (w: WellOrder): Ordinal := Quotient.mk' w
   
-  inductive ZeroT
-  
-  def zero: Ordinal := mk {
-    T := ZeroT,
-    lt := fun _ _ => False,
-    total := fun nope _ => ZeroT.rec nope,
-    wf := ⟨fun nope => ZeroT.rec nope⟩
-  }
+  def zero: Ordinal := mk WellOrder.zero
   
   def succ.mid (w: WellOrder) := Ordinal.mk w.succ
   
@@ -2529,6 +2538,8 @@ namespace Ordinal
           nspEq ▸ rfl
   
   def le (a b: Ordinal): Prop := lt a b ∨ a = b
+  def le.lt {a b: Ordinal} (leAB: le a b) (neq: a ≠ b): lt a b :=
+    leAB.elim id (fun eq => False.elim (neq eq))
   
   instance: LT Ordinal where
     lt := Ordinal.lt
@@ -2612,7 +2623,7 @@ namespace Ordinal
   def ofNat (n: Nat): Ordinal :=
     if n = 0 then Ordinal.zero else (Ordinal.ofNat (n - 1)).succ
   
-  instance: WellFoundedRelation Ordinal where
+  instance wfRel: WellFoundedRelation Ordinal where
     rel := Ordinal.lt
     wf := ⟨Ordinal.wf⟩
   
@@ -2620,6 +2631,33 @@ namespace Ordinal
     a < b → b < c → a < c
   := 
     wfRel.total.trans total
+  
+  def ltle.trans {a b c: Ordinal}:
+    a < b → b ≤ c → a < c
+  := 
+    fun ab bc =>
+      bc.elim
+        (fun bc => wfRel.total.trans total ab bc)
+        (fun eq => eq ▸ ab)
+  
+  def lelt.trans {a b c: Ordinal}:
+    a ≤ b → b < c → a < c
+  := 
+    fun ab bc =>
+      ab.elim
+        (fun ab => wfRel.total.trans total ab bc)
+        (fun eq => eq ▸ bc)
+  
+  def le.trans {a b c: Ordinal}:
+    a ≤ b → b ≤ c → a ≤ c
+  := 
+    fun ab bc =>
+      ab.elim
+        (fun ab =>
+          bc.elim
+            (fun bc => Or.inl (lt.trans ab bc))
+            (fun eq => Or.inl (eq ▸ ab)))
+        (fun eq => eq ▸ bc)
   
   def lt.succ.le.mid (wa wb: WellOrder):
     (abs: wa < wb.succ) → mk wa < mk wb ∨ mk wa = mk wb
@@ -2629,7 +2667,7 @@ namespace Ordinal
         (fun lt => Or.inl lt)
         (fun eq => Or.inr (Quotient.sound eq))
   
-  def lt.succ.le {na nb: Ordinal} (abs: na < nb.succ): na < nb ∨ na = nb :=
+  def lt.succ.le {na nb: Ordinal} (abs: na < nb.succ): na ≤ nb :=
     Quotient.ind₂ lt.succ.le.mid na nb abs
   
   def lt.noMiddle {p: Prop} {a b: Ordinal} (ab: a < b) (bas: b < a.succ): p :=
@@ -2637,15 +2675,54 @@ namespace Ordinal
       (fun ba => wfRel.antisymm.false ab ba)
       (fun eq => False.elim (wfRel.irefl a (eq ▸ ab)))
   
-  def succ.lt (n nn: Ordinal) (ltSucc: nn < n.succ): nn < n ∨ nn = n :=
+  /-
+    Duplicate of `lt.succ.le`. Was all the effort to define `fromMorphisms`
+    absolutely unnecessary afterall?
+  def succ.lt {n nn: Ordinal} (ltSucc: nn < n.succ): nn ≤ n :=
     (n.total nn).elim
       (fun ltNNn => lt.noMiddle ltNNn ltSucc)
       (fun gtOrEq =>
-        gtOrEq.elim (fun gt => Or.inl gt) fun eq => Or.inr eq.symm)
+        gtOrEq.elim (fun gt => Or.inl gt) fun eq => Or.inr eq.symm)-/
+  
+  def le.succ.lt {n nn: Ordinal} (ltSucc: nn ≤ n): nn < n.succ :=
+    Ordinal.lelt.trans ltSucc (Ordinal.succGt n)
+  
+  instance (n: Nat): OfNat Ordinal n where
+    ofNat := Ordinal.ofNat n
+  
+  def zero.least (n: Ordinal): 0 ≤ n :=
+    if h: zero = n then
+      Or.inr h
+    else
+      let nRep := getRep n
+      let mZeroN := WellOrder.zero.morphism nRep
+      let nIso: ¬ WellOrder.zero ≈ nRep :=
+        fun isIso =>
+          let eq: zero = n := nRep.property ▸ Quotient.sound isIso
+          h eq
+      let lt: WellOrder.zero < nRep := And.intro nIso ⟨mZeroN, trivial⟩
+      Or.inl (nRep.property ▸ lt)
+  
+  def zero.nGreater (n: Ordinal): ¬ n < 0 :=
+    fun zeroLt =>
+      (zero.least n).elim
+        (fun lt => wfRel.antisymm.false zeroLt lt)
+        (fun eq => wfRel.irefl n (eq ▸ zeroLt))
+  
+  def succ.ltLimit
+    {n nLim: Ordinal}
+    (nLt: n < nLim)
+    (isLimit: nLim.isLimit)
+  :
+    n.succ < nLim
+  :=
+    (total n.succ nLim).elim id (fun gtOrEq =>
+      gtOrEq.elim
+        (fun gt => lt.noMiddle nLt gt)
+        (fun eq =>
+          let hasPred: nLim.pred ≠ none := eq ▸ succ.hasPred n
+          False.elim (hasPred isLimit)))
 end Ordinal
 
 instance: Coe Ordinal (Type 1) where
   coe n := { nn: Ordinal // nn < n }
-
-instance (n: Nat): OfNat Ordinal n where
-  ofNat := Ordinal.ofNat n
