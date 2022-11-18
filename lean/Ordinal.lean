@@ -2359,7 +2359,7 @@ namespace Ordinal
   
   def isLimit (o: Ordinal): Prop := o.pred = none
   
-  def hasPred.isNotLimit (o oPred: Ordinal) (eq: o.pred = oPred): ¬ o.isLimit
+  def hasPred.isNotLimit (n nPred: Ordinal) (eq: n.pred = nPred): ¬ n.isLimit
   :=
     fun isLimit => Option.noConfusion (isLimit ▸ eq)
   
@@ -2433,7 +2433,7 @@ namespace Ordinal
       let nPredPropEq: ⟨n.pred, _⟩ = n.predProp := (if_neg h).symm
       congr (show Subtype.val = Subtype.val from rfl) nPredPropEq
   
-  noncomputable def pred.nLimit (n: Ordinal) (isSucc: ¬ isLimit n):
+  noncomputable def nLimit.pred (n: Ordinal) (isSucc: ¬ isLimit n):
     { pred: Ordinal // pred.succ = n }
   :=
     match hh: n.predProp with
@@ -2594,15 +2594,15 @@ namespace Ordinal
     let ltSucc: nPred < nPred.succ := succGt nPred
     (pred.succ.eq eq) ▸ ltSucc
   
-  def pred.nLimit.lt (n: Ordinal) (isSucc: ¬ isLimit n):
-    pred.nLimit n isSucc < n
+  def nLimit.pred.lt (n: Ordinal) (isSucc: ¬ isLimit n):
+    nLimit.pred n isSucc < n
   :=
-    let p := pred.nLimit n isSucc
+    let p := nLimit.pred n isSucc
+    
+    let ltP: p.val < p.val.succ := succGt p
+    let eq: p.val.succ = n := p.property
+    
     let pVal := p.val -- Why tf is this necessary, Lean?
-    
-    let ltP: pVal < p.val.succ := succGt p
-    let eq: pVal.succ = n := p.property
-    
     show pVal < n from eq ▸ ltP
   
   def total.mid (a b: WellOrder):
