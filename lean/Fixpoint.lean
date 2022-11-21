@@ -137,6 +137,7 @@ section ord
   def isSupremum (s: Set T) := isLeast (isUpperBound s)
   def Supremum (s: Set T) := Least (isUpperBound s)
   
+  
   def chainComplete (_: PartialOrder T): Prop :=
     ∀ ch: Chain T, ∃ t: T, isSupremum ch.val t
   

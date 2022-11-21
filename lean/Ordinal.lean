@@ -143,10 +143,19 @@ def wfRel.antisymm {T: Type u} [wf: WellFoundedRelation T] {a b: T}:
 
 -- I'd replace the former with this one, but it throws
 -- "typeclass instance problem is stuck" errors :shrug:
-def wfRel.antisymm.false
+def wfRel.antisymm.any
   {p: Prop} {T: Type u} [wf: WellFoundedRelation T] {a b: T}
 :
   wf.rel a b → wf.rel b a → p
+:=
+  fun ab ba => False.elim (wfRel.irefl a (wfRel.antisymm ab ba ▸ ab))
+
+-- I'd replace the former with this one, but it throws
+-- "typeclass instance problem is stuck" errors :shrug:
+def wfRel.antisymm.false
+  {T: Type u} [wf: WellFoundedRelation T] {a b: T}
+:
+  wf.rel a b → ¬ wf.rel b a
 :=
   fun ab ba => False.elim (wfRel.irefl a (wfRel.antisymm ab ba ▸ ab))
 
@@ -199,6 +208,7 @@ def monoInvMono
       False.elim (wfRel.irefl (f a0) irefl))
 
 
+
 structure WellOrder where
   T: Type
   lt: T → T → Prop
@@ -212,6 +222,7 @@ instance wfWT (w: WellOrder): WellFoundedRelation w.T where
 
 instance ltWLt (w: WellOrder): LT w.T where
   lt := w.lt
+
 
 namespace WellOrder
   def sub (w: WellOrder) (s: Set w.T): WellOrder := {
@@ -1401,24 +1412,24 @@ namespace WellOrder
         let eqL: some wa.predNoOpt = wa.pred := by
           unfold pred
           simp [h]
-        Option.noConfusion (Eq.trans eqL waPred.property) id
+        Option.noConfusion (eqL.trans waPred.property) id
       else
         let eq: none = wa.pred := by
           unfold pred
           simp [h]
-        Option.noConfusion (Eq.trans eq waPred.property)
+        Option.noConfusion (eq.trans waPred.property)
     
     let wbPredEq: wb.predNoOpt = wbPred.val :=
       if h: ∃ gst, isGreatest wb gst then
         let eqL: some wb.predNoOpt = wb.pred := by
           unfold pred
           simp [h]
-        Option.noConfusion (Eq.trans eqL wbPred.property) id
+        Option.noConfusion (eqL.trans wbPred.property) id
       else
         let eq: none = wb.pred := by
           unfold pred
           simp [h]
-        Option.noConfusion (Eq.trans eq wbPred.property)
+        Option.noConfusion (eq.trans wbPred.property)
     
     let isoPred: waPred.val ≈ wbPred.val :=
       waPredEq ▸ wbPredEq ▸ ⟨predNoOpt.iso wa wb ⟨isoAB, trivial⟩, trivial⟩
@@ -1977,11 +1988,16 @@ namespace WellOrder
     wf := ⟨WellOrder.metaWf⟩
   
   
-  noncomputable def Morphism.ltOrEq
+  def le (wa wb: WellOrder): Prop := wa < wb ∨ wa ≈ wb
+  
+  instance: LE WellOrder where
+    le := le
+  
+  noncomputable def Morphism.le
     {wa wb: WellOrder}
     (mab: Morphism wa wb)
   :
-    wa < wb ∨ wa ≈ wb
+    wa ≤ wb
   :=
     let wc := wb.succ;
     
@@ -2016,8 +2032,8 @@ namespace WellOrder
   :
     wa ≈ wb
   :=
-    mab.ltOrEq.symm.elim id fun ltAB =>
-      mba.ltOrEq.symm.elim
+    mab.le.symm.elim id fun ltAB =>
+      mba.le.symm.elim
         (fun isIso => isIso.symm)
         fun ltBA =>
           let eqAB: wa = wb := wfRel.antisymm ltAB ltBA
@@ -2081,7 +2097,7 @@ namespace WellOrder
                       a0 a1 (wfWT wa) (wfWT wb) ltFA wa.total fMono)
           }
   
-  def lt.succ.le {wa wb: WellOrder} (abs: wa < wb.succ): wa < wb ∨ wa ≈ wb :=
+  def lt.succ.le {wa wb: WellOrder} (abs: wa < wb.succ): wa ≤ wb :=
     let mab: Morphism wa wb := lt.succ.morphism abs
     
     if h: ∃ _: Morphism wb wa, True then
@@ -2235,10 +2251,70 @@ namespace WellOrder
     let eitherMorphism := Morphism.either wa wb
     
     match eitherMorphism with
-      | Sum.inl mab => (Morphism.ltOrEq mab).elim
+      | Sum.inl mab => (Morphism.le mab).elim
           (fun lt => Or.inl lt) (fun iso => Or.inr (Or.inr iso))
-      | Sum.inr mba => (Morphism.ltOrEq mba).elim
+      | Sum.inr mba => (Morphism.le mba).elim
           (fun lt => Or.inr (Or.inl lt)) (fun iso => Or.inr (Or.inr iso.symm))
+  
+  
+  def isIso.metaLt {wa wb wc: WellOrder}:
+    wa ≈ wb → wb < wc → wa < wc
+  :=
+    fun isIsoAB bc =>
+      let mab := (choiceEx isIsoAB).val.morphismF.val
+      let mbc := (choiceEx bc.right).val
+      
+      And.intro
+        (fun isIsoAC => bc.left (isIsoAB.symm.trans isIsoAC))
+        ⟨mab.trans mbc, trivial⟩
+  
+  def metaLt.isIso {wa wb wc: WellOrder}:
+    wa < wb → wb ≈ wc → wa < wc
+  :=
+    fun ab isIsoBC =>
+      let mab := (choiceEx ab.right).val
+      let mbc := (choiceEx isIsoBC).val.morphismF.val
+      
+      And.intro
+        (fun isIsoAC => ab.left (isIsoAC.trans isIsoBC.symm))
+        ⟨mab.trans mbc, trivial⟩
+    
+  
+  def metaLt.trans {wa wb wc: WellOrder}:
+    wa < wb → wb < wc → wa < wc
+  :=
+    fun ab bc =>
+      And.intro
+        (fun isIsoAC =>
+          ab.left
+            ⟨
+              Isomorphism.fromMorphisms
+                (choiceEx ab.right).val
+                (Morphism.trans
+                  (choiceEx bc.right).val
+                  (choiceEx isIsoAC).val.morphismG.val),
+              trivial
+            ⟩)
+        ⟨Morphism.trans
+          (choiceEx ab.right).val
+          (choiceEx bc.right).val,
+        trivial⟩
+  
+  def ltle.trans {a b c: WellOrder}:
+    a < b → b ≤ c → a < c
+  := 
+    fun ab bc =>
+      bc.elim
+        (fun bc => metaLt.trans ab bc)
+        (fun isIsoBC => metaLt.isIso ab isIsoBC)
+  
+  def lelt.trans {a b c: WellOrder}:
+    a ≤ b → b < c → a < c
+  := 
+    fun ab bc =>
+      ab.elim
+        (fun ab => metaLt.trans ab bc)
+        (fun isIsoAB => isIso.metaLt isIsoAB bc)
   
 end WellOrder
 
@@ -2547,6 +2623,13 @@ namespace Ordinal
   instance: LE Ordinal where
     le := Ordinal.le
   
+  def le.fromWO {wa wb: WellOrder} (le: wa ≤ wb):
+    Ordinal.mk wa ≤ Ordinal.mk wb
+  :=
+    le.elim
+      (fun lt => Or.inl lt)
+      (fun iso => Or.inr (Quotient.sound iso))
+  
   def wfLt (w: WellOrder): Acc lt (Ordinal.mk w) :=
     Acc.intro (Ordinal.mk w) fun wwOrd wwLtW =>
       let ww := choiceEx (Quotient.exists_rep wwOrd)
@@ -2623,7 +2706,7 @@ namespace Ordinal
   def ofNat (n: Nat): Ordinal :=
     if n = 0 then Ordinal.zero else (Ordinal.ofNat (n - 1)).succ
   
-  instance wfRel: WellFoundedRelation Ordinal where
+  instance wfOrd: WellFoundedRelation Ordinal where
     rel := Ordinal.lt
     wf := ⟨Ordinal.wf⟩
   
@@ -2660,7 +2743,7 @@ namespace Ordinal
         (fun eq => eq ▸ bc)
   
   def lt.succ.le.mid (wa wb: WellOrder):
-    (abs: wa < wb.succ) → mk wa < mk wb ∨ mk wa = mk wb
+    (abs: wa < wb.succ) → mk wa ≤ mk wb
   :=
     fun abs =>
       (WellOrder.lt.succ.le abs).elim
@@ -2672,17 +2755,16 @@ namespace Ordinal
   
   def lt.noMiddle {p: Prop} {a b: Ordinal} (ab: a < b) (bas: b < a.succ): p :=
     (lt.succ.le bas).elim
-      (fun ba => wfRel.antisymm.false ab ba)
+      (fun ba => wfRel.antisymm.any ab ba)
       (fun eq => False.elim (wfRel.irefl a (eq ▸ ab)))
   
-  /-
-    Duplicate of `lt.succ.le`. Was all the effort to define `fromMorphisms`
-    absolutely unnecessary afterall?
-  def succ.lt {n nn: Ordinal} (ltSucc: nn < n.succ): nn ≤ n :=
-    (n.total nn).elim
-      (fun ltNNn => lt.noMiddle ltNNn ltSucc)
+  def lt.succLe {a b: Ordinal} (asb: a < b): a.succ ≤ b :=
+    (a.succ.total b).elim
+      (fun lt => Or.inl lt)
       (fun gtOrEq =>
-        gtOrEq.elim (fun gt => Or.inl gt) fun eq => Or.inr eq.symm)-/
+        gtOrEq.elim
+          (fun gt => lt.noMiddle asb gt)
+          (fun eq => Or.inr (eq ▸ rfl)))
   
   def le.succ.lt {n nn: Ordinal} (ltSucc: nn ≤ n): nn < n.succ :=
     Ordinal.lelt.trans ltSucc (Ordinal.succGt n)
@@ -2722,6 +2804,51 @@ namespace Ordinal
         (fun eq =>
           let hasPred: nLim.pred ≠ none := eq ▸ succ.hasPred n
           False.elim (hasPred isLimit)))
+  
+  
+  def isLeast (s: Set Ordinal): Set Ordinal :=
+    fun n: Ordinal => n ∈ s ∧ ∀ nn: Ordinal, nn ∈ s → n ≤ nn
+  def Least (s: Set Ordinal) := { n: Ordinal // isLeast s n }
+  
+  
+  def isUpperBound (s: Set Ordinal): Set Ordinal :=
+    fun n: Ordinal => ∀ nn: { nn: Ordinal // s nn }, nn ≤ n
+  def UpperBound (s: Set Ordinal) := { n: Ordinal // isUpperBound s n }
+  
+  
+  def isSupremum (s: Set Ordinal) := isLeast (isUpperBound s)
+  def Supremum (s: Set Ordinal) := Least (isUpperBound s)
+  
+  def lt.set (n: Ordinal): Set Ordinal := fun nn => nn < n
+  
+  def never.lelt {p: Prop} {a b: Ordinal} (abLe: a ≤ b) (baLt: b < a): p :=
+    abLe.elim
+      (fun abLt =>
+        let eq := wfRel.antisymm abLt baLt
+        False.elim (wfRel.irefl a (eq ▸ baLt)))
+      (fun eq =>
+        False.elim (wfRel.irefl a (eq ▸ baLt)))
+  
+  def never.ltle {p: Prop} {a b: Ordinal} (abLt: a < b) (baLe: b ≤ a): p :=
+    never.lelt baLe abLt
+  
+  def limit.isSup (n: Ordinal) (isLimit: n.isLimit):
+    isSupremum (lt.set n) n
+  :=
+    And.intro
+      (fun nn => Or.inl nn.property)
+      (fun nOther nOtherUB =>
+        (n.total nOther).elim
+          (fun lt => Or.inl lt)
+          (fun gtOrEq =>
+            gtOrEq.elim
+              (fun gt =>
+                let nOtherSuccLtN: nOther.succ < n := succ.ltLimit gt isLimit
+                let nOtherSuccLeNOther: nOther.succ ≤ nOther :=
+                  nOtherUB ⟨nOther.succ, nOtherSuccLtN⟩
+                let nOtherSuccGtNOther: nOther < nOther.succ := succGt nOther
+                never.lelt nOtherSuccLeNOther nOtherSuccGtNOther)
+              (fun eq => Or.inr eq)))
 end Ordinal
 
 instance: Coe Ordinal (Type 1) where
