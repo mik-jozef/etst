@@ -2758,7 +2758,7 @@ namespace Ordinal
       (fun ba => wfRel.antisymm.any ab ba)
       (fun eq => False.elim (wfRel.irefl a (eq ▸ ab)))
   
-  def lt.succLe {a b: Ordinal} (asb: a < b): a.succ ≤ b :=
+  def succ.le {a b: Ordinal} (asb: a < b): a.succ ≤ b :=
     (a.succ.total b).elim
       (fun lt => Or.inl lt)
       (fun gtOrEq =>
@@ -2831,6 +2831,11 @@ namespace Ordinal
   
   def never.ltle {p: Prop} {a b: Ordinal} (abLt: a < b) (baLe: b ≤ a): p :=
     never.lelt baLe abLt
+  
+  def lele.eq {a b: Ordinal} (abLe: a ≤ b) (baLe: b ≤ a): a = b :=
+    abLe.elim
+      (fun abLt => never.lelt baLe abLt)
+      (fun eq => eq)
   
   def limit.isSup (n: Ordinal) (isLimit: n.isLimit):
     isSupremum (lt.set n) n

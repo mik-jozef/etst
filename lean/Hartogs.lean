@@ -324,7 +324,7 @@ def initialWellOrder.le
     
     let lt: nPred < iniOrd := Ordinal.lelt.trans le monoLt
     
-    let succLe: nPred.val.succ ≤ iniOrd := Ordinal.lt.succLe lt
+    let succLe: nPred.val.succ ≤ iniOrd := Ordinal.succ.le lt
     
     by conv =>
       lhs
@@ -458,13 +458,36 @@ def initiallyInjection.range.eq -- TODO do I need you?
 -/
 
 
-noncomputable def allOrdMapsRepeat
+noncomputable def allOrdMapsRepeat.ex
   (f: Ordinal → T)
 :
-  ∃ n0 n1: Ordinal, f n0 = f n1
+  ∃ n0 n1: Ordinal, f n0 = f n1 ∧ n0 ≠ n1
 :=
   if h: isInjection f then
     False.elim (ordinalMap.notInjection f h)
   else
     byContradiction fun nope =>
-      h (fun n0 n1 eq => False.elim (nope ⟨n0, ⟨n1, eq⟩⟩))
+      h (fun n0 n1 eq =>
+        if hh: n0 = n1 then
+          hh
+        else
+          False.elim (nope ⟨n0, ⟨n1, And.intro eq hh⟩⟩))
+
+noncomputable def allOrdMapsRepeat
+  (f: Ordinal → T)
+:
+  { p: Ordinal × Ordinal // f p.fst = f p.snd ∧ p.fst < p.snd }
+:=
+  let ex := allOrdMapsRepeat.ex f
+  let n0 := choiceEx ex
+  let n1 := choiceEx n0.property
+  
+  if lt: n0.val < n1.val then
+    ⟨⟨n0, n1⟩, And.intro n1.property.left lt⟩
+  else if gt: n1.val < n0.val then
+    ⟨⟨n1, n0⟩, And.intro n1.property.left.symm gt⟩
+  else
+    False.elim
+      ((n0.val.total n1).elim
+        lt
+        fun ge => ge.elim gt (fun eq => n1.property.right eq))

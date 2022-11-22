@@ -52,7 +52,8 @@ instance: PartialOrder (Set D) where
     --   fun (sa: d ∈ a) => bci (abi sa)
     fun (d: D) (sa: d ∈ a) => (bc d) ((ab d) sa)
   
-  ltIffLeNotEq _ _ := Iff.intro id id
+  ltToLeNeq := id
+  leNeqToLt := id
 
 namespace Set
   def empty {D: Type}: Set D := fun _ => False  

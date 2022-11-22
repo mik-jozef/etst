@@ -4,6 +4,7 @@
 
 import Set
 import Ordinal
+import Hartogs
 
 open Classical
 
@@ -126,7 +127,7 @@ section ord
   
   
   def isLeast (s: Set T): Set T :=
-    fun t: T => t ∈ s ∧ ∀ tt: T, tt ∈ s → t < tt ∨ t = tt
+    fun t: T => t ∈ s ∧ ∀ tt: T, tt ∈ s → t ≤ tt
   def Least (s: Set T) := { t: T // isLeast s t }
   
   
@@ -177,20 +178,16 @@ section ord
                   supChain.property.left ⟨t, tInChain⟩)
         fun upperBound ubIsUpperBound =>
           if h: none ∈ chainOpt.val then
-            match hh: upperBound with
-              | none => if_pos h ▸ (Or.inr (hh ▸ rfl))
+            match upperBound with
+              | none => if_pos h ▸ (ord.option.refl none)
               | some _ => False.elim (ubIsUpperBound ⟨none, h⟩)
           else
             if_neg h ▸ match upperBound with
-              | none =>
-                  Or.inl (And.intro trivial Option.noConfusion)
+              | none => trivial
               | some ub =>
                   let ubIsUB: isUpperBound chain.val ub :=
                     fun t => ubIsUpperBound ⟨t, t.property⟩
-                  let ubLT := supChain.property.right ub ubIsUB
-                  ubLT.elim
-                    (fun lt => Or.inl (PartialOrder.option.lt.toOpt lt))
-                    (fun eq => Or.inr (congr rfl eq))
+                  supChain.property.right ub ubIsUB
     ⟩
   
   def chainComplete.option (cc: chainComplete ord): chainComplete ord.option :=
@@ -205,11 +202,8 @@ section ord
   :
     a = b
   :=
-    let abLtEq := (a.property.right b.val b.property.left)
-    let baLtEq := (b.property.right a.val a.property.left)
-    
-    let abLe := (ord.leIffLtOrEq a.val b.val).mpr abLtEq
-    let baLe := (ord.leIffLtOrEq b.val a.val).mpr baLtEq
+    let abLe := a.property.right b.val b.property.left
+    let baLe := b.property.right a.val a.property.left
     
     Subtype.eq (PartialOrder.antisymm a.val b.val abLe baLe)
   
@@ -459,8 +453,7 @@ section ord
       
       let isMono: stageNn ≤ supPrevChain.val :=
         if h: nn = n then
-          (ord.option.leIffLtOrEq stageNn supPrevChain.val).mpr
-            (Or.inr (stageNEq ▸ h ▸ rfl))
+          ord.option.ltOrEqToLe (Or.inr (stageNEq ▸ h ▸ rfl))
         else
           let nn := ⟨nn, Ordinal.le.lt leNn h⟩
           let eqMono: prev.elements nn = Tuple.elements prevMono.val nn := rfl
@@ -615,8 +608,8 @@ section ord
                           PartialOrder.trans _ _ _ ltTtOpTt opLt
                 
                 let nPredLeStageN := predPrevSup.property.right stageN isUB
-                predPrevLUB ▸
-                  ((ord.option.leIffLtOrEq predPrevSup.val stageN).mpr nPredLeStageN)
+                
+                predPrevLUB ▸ nPredLeStageN
               else
                 let nPredPred: { nn // nn.succ = nPred.val } :=
                   Ordinal.nLimit.pred nPred hhh
@@ -835,9 +828,7 @@ section ord
                 
                 prevSup.property.left ⟨t, tIn⟩
       
-      let ltOrEq := chainOptSup.property.right prevSup.val isUB
-      
-      (PartialOrder.leIffLtOrEq chainOptSup.val prevSup.val).mpr ltOrEq
+      chainOptSup.property.right prevSup.val isUB
     
     let chainGe: some prevSup.val ≤ chainOptSup.val :=
       match h: chainOptSup.val with
@@ -873,9 +864,7 @@ section ord
                 
                 chainOptSupH.property.left ⟨t, tInChainOpt⟩
             
-            let ltOrEq := prevSup.property.right chOptSup isUB
-            
-            (PartialOrder.leIffLtOrEq prevSup.val chOptSup).mpr ltOrEq
+            prevSup.property.right chOptSup isUB
     
     let chainEq: chainOptSup.val = some prevSup.val :=
       ord.option.antisymm _ _ chainLe chainGe
@@ -892,9 +881,100 @@ section ord
   def isFixedPoint (op: T → T): Set T := fun t => t = op t
   def FixedPoint (op: T → T): Type := { t: T // isFixedPoint op t }
   
+  
+  noncomputable def lfp.stage.fixed.index
+    (cc: chainComplete ord)
+    (op: T → T)
+    (opMono: isMonotonic op)
+  :
+    { n: Ordinal // isFixedPoint op (stage cc op opMono n) }
+  :=
+    let stages := stage cc op opMono
+    
+    let pair := allOrdMapsRepeat stages
+    let nn := pair.val.fst
+    let n := pair.val.snd
+    
+    let stageN := stages n
+    let stageNn := stages nn
+    let stageNnSucc := stages nn.succ
+    
+    let stageEq: stageNn = stageN := pair.property.left
+    
+    let nnLeSucc: nn ≤ nn.succ := Or.inl (Ordinal.succGt nn)
+    let nnSuccLeN: nn.succ ≤ n := Ordinal.succ.le pair.property.right
+    
+    let stageNnLeSucc: stageNn ≤ stageNnSucc := isMono cc op opMono nnLeSucc
+    let stageNnSuccLe: stageNnSucc ≤ stageN := isMono cc op opMono nnSuccLeN
+    
+    let stageNnEqSucc: stageNn = stageNnSucc :=
+      ord.antisymm _ _ stageNnLeSucc (stageEq ▸ stageNnSuccLe)
+    
+    let stageNnSuccEq: stageNnSucc = op stageNn :=
+      succ cc op opMono nn.succ nn (Ordinal.succ.pred.eq rfl)
+    
+    let isFP: stageNn = op stageNn := stageNnSuccEq ▸ stageNnEqSucc
+    
+    ⟨nn, isFP⟩
+  
+  noncomputable def lfp.stage.fixed
+    (cc: chainComplete ord)
+    (op: T → T)
+    (opMono: isMonotonic op)
+  :
+    { t: T // isFixedPoint op (t) }
+  :=
+    let index := lfp.stage.fixed.index cc op opMono
+    
+    ⟨stage cc op opMono index, index.property⟩
+  
+  noncomputable def lfp.stage.leFp
+    (cc: chainComplete ord)
+    (op: T → T)
+    (opMono: isMonotonic op)
+    (n: Ordinal)
+    (fp: T)
+    (fpIsFp: isFixedPoint op fp)
+  :
+    stage cc op opMono n ≤ fp
+  :=
+    if h: n.isLimit then
+      let prev := lfp.stage.prevChain cc op opMono n
+      let prevSup := prev.sup cc
+      
+      let isUB: isUpperBound prev.val fp :=
+        fun tPrev =>
+          let tPrevIndex := choiceEx tPrev.property
+        
+          have: tPrevIndex.val < n := tPrevIndex.val.property
+          tPrevIndex.property ▸ leFp cc op opMono tPrevIndex.val fp fpIsFp
+      
+      let stageNEq: stage cc op opMono n = prevSup.val := limit cc op opMono h
+      
+      stageNEq ▸ prevSup.property.right fp isUB
+    else
+      let nPred := Ordinal.nLimit.pred n h
+      
+      let nPredEq: stage cc op opMono n = op (stage cc op opMono nPred) :=
+        succ cc op opMono n nPred (Ordinal.succ.pred.eq nPred.property)
+      
+      have := Ordinal.nLimit.pred.lt n h
+      let nPredLe := leFp cc op opMono nPred fp fpIsFp
+      
+      fpIsFp ▸ nPredEq ▸ opMono _ _ nPredLe
+  termination_by lfp.stage.leFp cc op opMono n fp fpIsFp => n
+  
+  
   def Lfp (op: T → T) := Least (isFixedPoint op)
-  def lfp (cc: chainComplete ord) (op: T → T):
+  noncomputable def lfp
+    (cc: chainComplete ord)
+    (op: T → T)
+    (opMono: isMonotonic op)
+  :
     Lfp op
   :=
-    sorry
+    let fpIndex := lfp.stage.fixed.index cc op opMono
+    let fp := lfp.stage.fixed cc op opMono
+    
+    ⟨fp.val, And.intro fp.property (lfp.stage.leFp cc op opMono fpIndex)⟩
 end ord
