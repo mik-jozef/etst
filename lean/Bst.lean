@@ -2,16 +2,17 @@
   # (Towards a) Boolean Set Theory in a Three-valued Logic: formalized in Lean 4
   ==============================================================================
   
-  This is a formalized version of the document of the same name.
-  I recommend reading this document alongside/after the other one.
-  You can find more at https://github.com/mik-jozef/bst.
-  
-  Code style: prefer no tactics.
+  This is a formalized version of a LaTeX document of the same name.
+  I recommend reading this (.lean) document alongside/after the other
+  one. You can find more at https://github.com/mik-jozef/bst.
 -/
 
 import Ordinal
 import PartialOrder
 import Set
+import Fixpoint
+
+open Classical
 
 
 
@@ -30,8 +31,8 @@ import Set
 -- ======================================
 
 structure Set3 (D: Type) where
-  defMem: Set D
-  posMem: Set D
+  defMem: Set D -- The definitive members
+  posMem: Set D -- The possible members
   defLePos: defMem ≤ posMem
 
 namespace Set3
@@ -59,7 +60,7 @@ instance: SqLE (Set3 D) where
   le (a b: Set3 D) := a.defMem ≤ b.defMem  ∧  b.posMem ≤ a.posMem
 
 
-instance: PartialOrder (Set3 D) where
+instance Set3.ord.standard (D: Type): PartialOrderSt (Set3 D) where
   refl (a: Set3 D) :=
     And.intro (PartialOrder.refl (a.defMem)) (PartialOrder.refl (a.posMem))
   
@@ -75,10 +76,45 @@ instance: PartialOrder (Set3 D) where
       (PartialOrder.trans a.defMem b.defMem c.defMem ab.left bc.left)
       (PartialOrder.trans a.posMem b.posMem c.posMem ab.right bc.right)
   
-  ltIffLeNotEq _ _ := Iff.intro id id
+  ltToLeNeq := id
+  leNeqToLt := id
+
+def Set3.ord.standard.sup (s: Set (Set3 D)): Supremum s :=
+  let sup := {
+    defMem := fun d => ∃s: ↑s, d ∈ s.val.defMem
+    posMem := fun d => ∃s: ↑s, d ∈ s.val.posMem
+    defLePos :=
+      fun d dDef =>
+        let s := choiceEx dDef
+        ⟨s, s.val.val.defLePos d s.property⟩
+  }
+  ⟨
+    sup,
+    And.intro
+      (fun s =>
+        And.intro
+          -- Why tf is this unfolding required???
+          (fun d dMem => by unfold defMem; exact ⟨s, dMem⟩)
+          (fun d dMem => by unfold posMem; exact ⟨s, dMem⟩))
+      fun ub ubIsUB =>
+        And.intro
+          (fun d dMemSupWtf =>
+            -- WHAT THE ACTUAL FLYING why is `by exact` necessary here???
+            let dMemSup: ∃s: ↑s, d ∈ s.val.defMem := by exact dMemSupWtf;
+            let s := choiceEx dMemSup
+            let sLeUb: s.val.val .≤ ub := ubIsUB s
+            let dInS: d ∈ s.val.val.defMem := s.property
+            sLeUb.left d dInS)
+          (fun d dMemSupWtf =>
+            let dMemSup: ∃s: ↑s, d ∈ s.val.posMem := by exact dMemSupWtf;
+            let s := choiceEx dMemSup
+            let sLeUb: s.val.val .≤ ub := ubIsUB s
+            let dInS: d ∈ s.val.val.posMem := s.property
+            sLeUb.right d dInS)
+  ⟩
 
 
-instance: PartialOrderSq (Set3 D) where
+instance Set3.ord.approximation (D: Type): PartialOrderSq (Set3 D) where
   refl (a: Set3 D) :=
     And.intro (PartialOrder.refl (a.defMem)) (PartialOrder.refl (a.posMem))
   
@@ -94,7 +130,51 @@ instance: PartialOrderSq (Set3 D) where
       (PartialOrder.trans a.defMem b.defMem c.defMem ab.left bc.left)
       (PartialOrder.trans c.posMem b.posMem a.posMem bc.right ab.right)
   
-  ltIffLeNotEq _ _ := Iff.intro id id
+  ltToLeNeq := id
+  leNeqToLt := id
+
+def Set3.ord.approximation.sup (ch: Chain (Set3 D)): Supremum ch.val :=
+  let sup: Set3 D := {
+    defMem := fun d => ∃s: ↑ch.val, d ∈ s.val.defMem
+    posMem := fun d => ∀s: ↑ch.val, d ∈ s.val.posMem
+    defLePos :=
+      fun d dDef s =>
+        let sOfD := choiceEx dDef
+        let sSOfDComparable := ch.property s sOfD
+        
+        sSOfDComparable.elim
+          (fun sLt =>
+            let dSOfDPos: d ∈ sOfD.val.val.posMem :=
+              sOfD.val.val.defLePos d sOfD.property
+            sLt.right d dSOfDPos)
+          (fun sGt =>
+            let dSDef: d ∈ s.val.defMem :=
+              sGt.left d sOfD.property
+            s.val.defLePos d dSDef)
+  }
+  ⟨
+    sup,
+    And.intro
+      (fun s =>
+        And.intro
+          (fun d dMem => ⟨s, dMem⟩)
+          (fun d dMemSup => dMemSup s))
+      fun ub ubIsUB =>
+        And.intro
+          (fun d dMemSupWtf =>
+            -- WHAT THE ACTUAL FLYING why is `by exact` necessary here???
+            let dMemSup: ∃s: ↑ch.val, d ∈ s.val.defMem := by exact dMemSupWtf;
+            let s := choiceEx dMemSup
+            let sLeUb: s.val.val .≤ ub := ubIsUB s
+            let dInS: d ∈ s.val.val.defMem := s.property
+            sLeUb.left d dInS)
+          (fun d dMemUBWtf =>
+            let dMemSup: ∃s: ↑ch.val, d ∈ s.val.posMem := by exact dMemUBWtf;
+            let s := choiceEx dMemSup
+            let sLeUb: s.val.val .≤ ub := ubIsUB s
+            let dInS: d ∈ s.val.val.posMem := s.property
+            sorry /-sLeUb.right d dInS-/)
+  ⟩
 
 
 -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1740
@@ -107,8 +187,7 @@ inductive ArityOne | zth
 inductive ArityTwo | zth | fst
 
 
-def Variable := Nat
-instance: DecidableEq Variable := Nat.decEq
+@[reducible] def Variable := Nat
 
 -- Why tf is "reducible" even required? Lean, this is stupid.
 @[reducible] def VarSet := Set Variable
@@ -219,14 +298,14 @@ namespace Expr
           (widen.eq body) ▸ rfl
   
   
-  @[reducible] def Fam (s: Signature) (Var: VarSet) := ↑Var → Expr s Var
+  @[reducible] def Family (s: Signature) (Var: VarSet) := ↑Var → Expr s Var
   
-  namespace Fam
-    def isFinite (_: Expr.Fam s Var): Prop := Set.isFinite Var
+  namespace Family
+    def isFinite (_: Expr.Family s Var): Prop := Set.isFinite Var
     
     -- Family of families of expressions.
-    structure Fam (s: Signature) (Index: Type) (V: Index → VarSet) where
-      family: (i: Index) → Expr.Fam s (V i)
+    structure FamFam (s: Signature) (Index: Type) (V: Index → VarSet) where
+      family: (i: Index) → Expr.Family s (V i)
       exprsCompatible
         (i j: Index)
         (v: Variable)
@@ -236,21 +315,20 @@ namespace Expr
         Expr.widen (family i ⟨v, vVi⟩) (Set.union V) (Set.union.isWider V i) =
         Expr.widen (family j ⟨v, vVj⟩) (Set.union V) (Set.union.isWider V j)
     
-    noncomputable def union (family: Fam s Index V): Expr.Fam s (Set.union V) :=
+    noncomputable def union (family: FamFam s Index V):
+      Expr.Family s (Set.union V)
+    :=
       fun vProp: ↑(Set.union V) =>
-        match vProp with
-        | ⟨v, vVar⟩ =>
-          let exSomeI: ∃ i: Index, v ∈ V i := vVar;
-          let iProp: { i: Index // v ∈ V i} := choiceEx exSomeI;
-          match iProp with
-          | ⟨i, prop⟩ =>
-              Expr.widen
-                (family.family i ⟨v, prop⟩)
-                (Set.union V)
-                (Set.union.isWider V i)
+        let exSomeI: ∃ i: Index, vProp.val ∈ V i := vProp.property;
+        let i: { i: Index // vProp.val ∈ V i} := choiceEx exSomeI;
+        
+        Expr.widen
+          (family.family i.val ⟨vProp.val, i.property⟩)
+          (Set.union V)
+          (Set.union.isWider V i.val)
     
     theorem union.isWider
-      (family: Fam s Index V)
+      (family: FamFam s Index V)
       (i: Index)
       (v: ↑(Set.union V))
       (vVi: v.val ∈ V i)
@@ -265,18 +343,21 @@ namespace Expr
       let someI := choiceEx exSomeI
       family.exprsCompatible i someI v.val _ _ ▸ rfl
     
-    def Set.union {Index: Type} {D: Type} (family: Index → Set D): Set D :=
-      fun (d: D) => ∃ i: Index, family i d
-  end Fam
+    -- TODO delete? not needed?
+    -- def Set.union {Index: Type} {D: Type} (family: Index → Set D): Set D :=
+    --   fun (d: D) => ∃ i: Index, family i d
+  end Family
 end Expr
 
 structure DefList (s: Signature) (Var: VarSet) where
-  fam: Expr.Fam s Var
-  unFin: ∃
-    (famFam: Expr.Fam.Fam s Index V)
-    (varEq: Var = Set.union V),
-      fam = varEq ▸ (Expr.Fam.union famFam)  ∧
-      ∀ i: Index, Set.isFinite (V i)
+  fam: Expr.Family s Var
+  unFin:
+    ∃
+      (famFam: Expr.Family.FamFam s Index V)
+      (varEq: Var = Set.union V)
+    ,
+      fam = varEq ▸ (Expr.Family.union famFam) ∧
+        ∀ i: Index, Set.isFinite (V i)
 
 
 
@@ -310,26 +391,56 @@ namespace Valuation
   def undetermined: Valuation Var D := fun _ => Set3.undetermined
 end Valuation
 
-instance: PartialOrder (Valuation Var D) where
-  le a b := ∀ v: ↑Var, a v ≤ b v
+instance Valuation.ord.standard (Var: VarSet) (D: Type)
+:
+  PartialOrderSt (Valuation Var D)
+where
+  le a b := ∀ v: ↑Var, a v .≤ b v
   
   refl a := fun v => PartialOrder.refl (a v)
   antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
   trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
   
-  ltIffLeNotEq := fun _ _ => Iff.intro id id
+  ltToLeNeq := id
+  leNeqToLt := id
 
-instance: PartialOrderSq (Valuation Var D) where
-  le a b := ∀ v: ↑Var, a v ≤ b v
+instance Valuation.ord.approximation (Var: VarSet) (D: Type)
+:
+  PartialOrderSq (Valuation Var D)
+where
+  le a b := ∀ v: ↑Var, a v .≤ b v
   
   refl a := fun v => PartialOrder.refl (a v)
   antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
   trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
   
-  ltIffLeNotEq := fun _ _ => Iff.intro id id
+  ltToLeNeq := id
+  leNeqToLt := id
 
 
-def updateValuation
+def Valuation.ord.standard.sup
+  (ch: @Chain (Valuation Var D) (Valuation.ord.standard Var D).toPartialOrder)
+:
+  Supremum ch.val
+:= ⟨
+  sorry,
+  sorry
+⟩
+
+def Valuation.ord.standard.isChainComplete (Var: VarSet) (D: Type)
+:
+  chainComplete (Valuation.ord.standard Var D).toPartialOrder
+:=
+  fun ch => sorry
+
+def Valuation.ord.approximation.isChainComplete (Var: VarSet) (D: Type)
+:
+  chainComplete (Valuation.ord.approximation Var D).toPartialOrder
+:=
+  sorry
+
+
+noncomputable def updateValuation
   (val: Valuation Var D)
   (x: Variable)
   (d: D)
@@ -413,6 +524,41 @@ def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
       fun d dDef => dDef.elim fun iX iXDef => ⟨iX, (iBody iX).defLePos d iXDef⟩
     ⟩
 
+-- Interpretation defined
+def DefList.I
+  (alg: Algebra s)
+  (b c: Valuation Var alg.D)
+  (dl: DefList s Var)
+:
+  Valuation Var alg.D
+:=
+  fun x =>
+    _root_.I alg b c (dl.fam x)
+
+
+def OpC {alg: Algebra s} (dl: DefList s Var) (b: Valuation Var alg.D):
+  Valuation Var alg.D → Valuation Var alg.D
+:=
+  fun c => DefList.I alg b c dl
+
+noncomputable def C
+  {alg: Algebra s}
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+  (n: Ordinal)
+:
+  Valuation Var alg.D
+:=
+  if (n.isLimit) then
+    lfp n fun x => sorry
+  else
+    sorry
+
+
+def OpB {alg: Algebra s} (dl: DefList s Var):
+  Valuation Var alg.D → Valuation Var alg.D
+:=
+  fun c => DefListI alg b c dl
 
 
 
@@ -422,11 +568,12 @@ def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
 -- =======================================
 
 -- TODO
+--
+-- :tumbleweed:
 
 
 -- ## Chapter 4: Example WFCs
 -- ==========================
-
 
 inductive NatOp
   | zero

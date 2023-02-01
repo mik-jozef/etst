@@ -112,7 +112,7 @@ end Tuple
 section ord
   variable [ord: PartialOrder T]
   
-  def isMonotonic (op: T → T): Prop := ∀ t0 t1: T, t0 ≤ t1 → op t0 ≤ op t1
+  def isMonotonic (op: T → T): Prop := ∀ t0 t1: T, t0 .≤ t1 → op t0 .≤ op t1
   
   def isChain (s: Set T): Prop := ∀ t0 t1: ↑s, ord.le t0 t1 ∨ ord.le t1 t0
   def Chain (T: Type) [_ord: PartialOrder T] := { ch: Set T // isChain ch }
@@ -127,11 +127,11 @@ section ord
   
   
   def isLeast (s: Set T): Set T :=
-    fun t: T => t ∈ s ∧ ∀ tt: T, tt ∈ s → t ≤ tt
+    fun t: T => t ∈ s ∧ ∀ tt: T, tt ∈ s → t .≤ tt
   def Least (s: Set T) := { t: T // isLeast s t }
   
   
-  def isUpperBound (s: Set T): Set T := fun t: T => ∀ tt: ↑s, tt ≤ t
+  def isUpperBound (s: Set T): Set T := fun t: T => ∀ tt: ↑s, tt.val .≤ t
   def UpperBound (s: Set T) := { t: T // isUpperBound s t }
   
   
@@ -298,10 +298,10 @@ section ord
     (step: (prev: Tuple T) → T)
     (stepMono:
       ∀ (tuple: Tuple T) (i: ↑tuple.length),
-        tuple.elements i ≤ step tuple)
+        tuple.elements i .≤ step tuple)
     (ltN: nn < n)
   :
-    ordinalRecursion step nn ≤ ordinalRecursion step n
+    ordinalRecursion step nn .≤ ordinalRecursion step n
   :=
     let nn: ↑n := ⟨nn, ltN⟩
     
@@ -313,7 +313,7 @@ section ord
     
     let eq: step tuple = ordinalRecursion step n :=
       by unfold ordinalRecursion; rfl
-    let mono: ordinalRecursion step nn ≤ step tuple := stepMono tuple nn
+    let mono: ordinalRecursion step nn .≤ step tuple := stepMono tuple nn
     eq ▸ mono
   
   noncomputable def lfp.option.step
@@ -451,7 +451,7 @@ section ord
           rfl
         stageNLeft.trans stepPrevEq
       
-      let isMono: stageNn ≤ supPrevChain.val :=
+      let isMono: stageNn .≤ supPrevChain.val :=
         if h: nn = n then
           ord.option.ltOrEqToLe (Or.inr (stageNEq ▸ h ▸ rfl))
         else
@@ -495,7 +495,7 @@ section ord
             let stageNEq: stage cc op n = op t :=
               stageNEqStep.trans stepPrevEq
             
-            let lePrev: stage cc op nPred ≤ stage cc op n :=
+            let lePrev: stage cc op nPred .≤ stage cc op n :=
               if hhh: nPred.val.isLimit then
                 let props := stages.props cc op opMono nPred nPred (Or.inr rfl)
                 
@@ -546,21 +546,21 @@ section ord
                             hhhh ▸ stageTtEqSomeTt
                           
                           let ltTtNPredStage:
-                            stage cc op ttIndex.val ≤ stage cc op nPred.val
+                            stage cc op ttIndex.val .≤ stage cc op nPred.val
                           :=
                             (
                               stages.props cc op opMono
                                 ttIndex.val nPred (Or.inl indexLt)
                             ).isMono
                           
-                          let ltTtNPredSome: some tt ≤ some t :=
+                          let ltTtNPredSome: some tt .≤ some t :=
                             hhhh ▸ stageTtEqSomeTt ▸ nPredEqT.symm ▸ ltTtNPredStage
                           
-                          let ltTtNPred: tt ≤ t := ltTtNPredSome
+                          let ltTtNPred: tt .≤ t := ltTtNPredSome
                           
-                          let opLt: op tt ≤ op t := opMono tt t ltTtNPred
+                          let opLt: op tt .≤ op t := opMono tt t ltTtNPred
                           
-                          let opLt: op tt ≤ stage cc op n := stageNEq ▸ opLt
+                          let opLt: some (op tt) .≤ stage cc op n := stageNEq ▸ opLt
                           
                           let ttSucNLimit: ¬ (ttIndex.val.val.succ).isLimit :=
                             Ordinal.succ.hasPred ttIndex.val.val
@@ -593,7 +593,7 @@ section ord
                               rw [ttSuccEq.symm]; exact opEqNLimit
                           
                           let ltTtOpTtStage:
-                            stage cc op ttIndex.val ≤
+                            stage cc op ttIndex.val .≤
                               opOption op (stage cc op ttIndex.val)
                           :=
                             opEq ▸ (
@@ -602,7 +602,7 @@ section ord
                                   (Or.inl (Ordinal.succGt ttIndex.val))
                             ).isMono
                           
-                          let ltTtOpTt: some tt ≤ opOption op tt :=
+                          let ltTtOpTt: some tt .≤ opOption op tt :=
                             stageTtEq ▸ ltTtOpTtStage
                           
                           PartialOrder.trans _ _ _ ltTtOpTt opLt
@@ -622,7 +622,7 @@ section ord
                   | none => False.elim (prevIsSome ⟨⟨nPredPred, ltNPred⟩, hhhh⟩)
                   | some tt =>
                       let predPredLt:
-                        stage cc op nPredPred ≤ stage cc op nPred
+                        stage cc op nPredPred .≤ stage cc op nPred
                       :=
                         (stages.props cc op opMono nPredPred nPred
                           (Or.inl ltNPredPred)).isMono
@@ -635,20 +635,20 @@ section ord
                           stages.props cc op opMono nPred nPred (Or.inr rfl)
                         ).succStep hhh
                       
-                      let ttLtTSome: some tt ≤ t :=
+                      let ttLtTSome: some tt .≤ t :=
                         nPredPredEqTT ▸ nPredEqT ▸ predPredLt
-                      let ttLtT: tt ≤ t := ttLtTSome
-                      let opLt: opOption op tt ≤ op t := opMono tt t ttLtT
+                      let ttLtT: tt .≤ t := ttLtTSome
+                      let opLt: opOption op tt .≤ op t := opMono tt t ttLtT
                       
                       stageNpredOptionEq ▸ stageNEq ▸ opLt
             
-            let isMono: stage cc op nn ≤ stage cc op n :=
+            let isMono: stage cc op nn .≤ stage cc op n :=
               leNn.elim
                 (fun ltNn =>
                   let leNPred: nn ≤ nPred :=
                     Ordinal.lt.succ.le (nPred.property.symm ▸ ltNn)
                   
-                  let leTNPred: stage cc op nn ≤ stage cc op nPred :=
+                  let leTNPred: stage cc op nn .≤ stage cc op nPred :=
                     (stages.props cc op opMono nn nPred leNPred).isMono
                   
                   PartialOrder.trans _ _ _ leTNPred lePrev)
@@ -718,12 +718,12 @@ section ord
     {nn n: Ordinal}
     (leN: nn ≤ n)
   :
-    stage cc op opMono nn ≤ stage cc op opMono n
+    stage cc op opMono nn .≤ stage cc op opMono n
   :=
     let _ := ord.option
     let props := lfp.option.stages.props cc op opMono nn n leN
     
-    let someLe: some (stage cc op opMono nn) ≤ some (stage cc op opMono n) :=
+    let someLe: some (stage cc op opMono nn) .≤ some (stage cc op opMono n) :=
       (eqOption cc op opMono nn) ▸
       (eqOption cc op opMono n) ▸
         props.isMono
@@ -830,7 +830,7 @@ section ord
       
       chainOptSup.property.right prevSup.val isUB
     
-    let chainGe: some prevSup.val ≤ chainOptSup.val :=
+    let chainGe: some prevSup.val .≤ chainOptSup.val :=
       match h: chainOptSup.val with
         | none => False.elim (sup.none.nHas cc chainOpt chainOpt.nHasNone h)
         | some chOptSup =>
@@ -904,8 +904,8 @@ section ord
     let nnLeSucc: nn ≤ nn.succ := Or.inl (Ordinal.succGt nn)
     let nnSuccLeN: nn.succ ≤ n := Ordinal.succ.le pair.property.right
     
-    let stageNnLeSucc: stageNn ≤ stageNnSucc := isMono cc op opMono nnLeSucc
-    let stageNnSuccLe: stageNnSucc ≤ stageN := isMono cc op opMono nnSuccLeN
+    let stageNnLeSucc: stageNn .≤ stageNnSucc := isMono cc op opMono nnLeSucc
+    let stageNnSuccLe: stageNnSucc .≤ stageN := isMono cc op opMono nnSuccLeN
     
     let stageNnEqSucc: stageNn = stageNnSucc :=
       ord.antisymm _ _ stageNnLeSucc (stageEq ▸ stageNnSuccLe)
@@ -936,7 +936,7 @@ section ord
     (fp: T)
     (fpIsFp: isFixedPoint op fp)
   :
-    stage cc op opMono n ≤ fp
+    stage cc op opMono n .≤ fp
   :=
     if h: n.isLimit then
       let prev := lfp.stage.prevChain cc op opMono n
