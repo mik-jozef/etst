@@ -139,20 +139,20 @@ section ord
   def Supremum (s: Set T) := Least (isUpperBound s)
   
   
-  def chainComplete (_: PartialOrder T): Prop :=
+  def isChainComplete (_: PartialOrder T): Prop :=
     ∀ ch: Chain T, ∃ t: T, isSupremum ch.val t
   
   noncomputable def Chain.sup
     (ch: Chain T)
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
   :
     Supremum ch.val
   :=
     choiceEx (cc ch)
   
   
-  noncomputable def chainComplete.option.chain.sup
-    (cc: chainComplete ord)
+  noncomputable def isChainComplete.option.chain.sup
+    (cc: isChainComplete ord)
     (chainOpt: @Chain (Option T) ord.option)
   :
     { t // @isSupremum (Option T) ord.option chainOpt.val t }
@@ -190,10 +190,10 @@ section ord
                   supChain.property.right ub ubIsUB
     ⟩
   
-  def chainComplete.option (cc: chainComplete ord): chainComplete ord.option :=
+  def isChainComplete.option (cc: isChainComplete ord): isChainComplete ord.option :=
     fun chainOpt => ⟨
-      chainComplete.option.chain.sup cc chainOpt,
-      (chainComplete.option.chain.sup cc chainOpt).property
+      isChainComplete.option.chain.sup cc chainOpt,
+      (isChainComplete.option.chain.sup cc chainOpt).property
     ⟩
   
   noncomputable def sup.eq
@@ -208,7 +208,7 @@ section ord
     Subtype.eq (PartialOrder.antisymm a.val b.val abLe baLe)
   
   def sup.none.has
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (chain: @Chain (Option T) ord.option)
     (hasNone: none ∈ chain.val)
   :
@@ -216,7 +216,7 @@ section ord
   :=
     let _ := ord.option
     
-    let chainSupCc := chainComplete.option.chain.sup cc chain
+    let chainSupCc := isChainComplete.option.chain.sup cc chain
     let chainSupSup := _root_.Chain.sup chain cc.option
     
     let eq := sup.eq chain chainSupSup chainSupCc
@@ -227,7 +227,7 @@ section ord
     eqVal.trans supNone
   
   def sup.none.nHas
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (ch: @Chain (Option T) ord.option)
     (noneFree: none ∉ ch.val)
   :
@@ -235,7 +235,7 @@ section ord
   :=
     let _ := ord.option
     
-    let chainSupCc := chainComplete.option.chain.sup cc ch
+    let chainSupCc := isChainComplete.option.chain.sup cc ch
     let chainSupSup := ch.sup cc.option
     
     let eq := sup.eq ch chainSupSup chainSupCc
@@ -317,7 +317,7 @@ section ord
     eq ▸ mono
   
   noncomputable def lfp.option.step
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (prev: Tuple (Option T))
   :
@@ -339,7 +339,7 @@ section ord
         | some t => op t
   
   noncomputable def lfp.option.stage
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (n: Ordinal)
   :
@@ -348,7 +348,7 @@ section ord
     ordinalRecursion (step cc op) n
   
   @[reducible] noncomputable def lfp.option.stage.prev
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (n: Ordinal)
   :
@@ -362,7 +362,7 @@ section ord
   }
   
   @[reducible] noncomputable def lfp.option.stage.prev.lengthEq
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (n: Ordinal)
   :
@@ -376,7 +376,7 @@ section ord
   
   
   structure lfp.option.stages.Props
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (nn n: Ordinal)
     (leNn: nn ≤ n)
@@ -404,7 +404,7 @@ section ord
   -- This is what happens when Lean does not allow a function
   -- to mention itself in its return type.
   noncomputable def lfp.option.stages.props
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     (nn n: Ordinal)
@@ -678,7 +678,7 @@ section ord
   
   
   noncomputable def lfp.stageProp
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     (n: Ordinal)
@@ -692,7 +692,7 @@ section ord
       | some t => ⟨t, rfl⟩
   
   noncomputable def lfp.stage
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     (n: Ordinal)
@@ -702,7 +702,7 @@ section ord
     stageProp cc op opMono n
   
   noncomputable def lfp.stage.eqOption
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     (n: Ordinal)
@@ -712,7 +712,7 @@ section ord
     (stageProp cc op opMono n).property
   
   def lfp.stage.isMono
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     {nn n: Ordinal}
@@ -731,7 +731,7 @@ section ord
     someLe
   
   def lfp.stage.succ
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     (n nPred: Ordinal)
@@ -759,7 +759,7 @@ section ord
     Option.noConfusion someEq (fun x => eqPred ▸ x)
   
   noncomputable def lfp.stage.prevTuple
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     (n: Ordinal)
@@ -771,7 +771,7 @@ section ord
   }
   
   def lfp.stage.prevChain
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     (n: Ordinal)
@@ -784,7 +784,7 @@ section ord
     ⟩
   
   def lfp.stage.limit
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     {n: Ordinal}
@@ -883,7 +883,7 @@ section ord
   
   
   noncomputable def lfp.stage.fixed.index
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
   :
@@ -918,7 +918,7 @@ section ord
     ⟨nn, isFP⟩
   
   noncomputable def lfp.stage.fixed
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
   :
@@ -929,7 +929,7 @@ section ord
     ⟨stage cc op opMono index, index.property⟩
   
   noncomputable def lfp.stage.leFp
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
     (n: Ordinal)
@@ -967,7 +967,7 @@ section ord
   
   def Lfp (op: T → T) := Least (isFixedPoint op)
   noncomputable def lfp
-    (cc: chainComplete ord)
+    (cc: isChainComplete ord)
     (op: T → T)
     (opMono: isMonotonic op)
   :

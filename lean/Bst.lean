@@ -157,24 +157,30 @@ def Set3.ord.approximation.sup (ch: Chain (Set3 D)): Supremum ch.val :=
     And.intro
       (fun s =>
         And.intro
-          (fun d dMem => ⟨s, dMem⟩)
-          (fun d dMemSup => dMemSup s))
+          (fun _ dMem => ⟨s, dMem⟩)
+          (fun _ dMemSup => dMemSup s))
       fun ub ubIsUB =>
         And.intro
-          (fun d dMemSupWtf =>
-            -- WHAT THE ACTUAL FLYING why is `by exact` necessary here???
-            let dMemSup: ∃s: ↑ch.val, d ∈ s.val.defMem := by exact dMemSupWtf;
+          (fun d dMemSup =>
             let s := choiceEx dMemSup
             let sLeUb: s.val.val .≤ ub := ubIsUB s
             let dInS: d ∈ s.val.val.defMem := s.property
             sLeUb.left d dInS)
-          (fun d dMemUBWtf =>
-            let dMemSup: ∃s: ↑ch.val, d ∈ s.val.posMem := by exact dMemUBWtf;
-            let s := choiceEx dMemSup
-            let sLeUb: s.val.val .≤ ub := ubIsUB s
-            let dInS: d ∈ s.val.val.posMem := s.property
-            sorry /-sLeUb.right d dInS-/)
+          (fun d dMemUB s =>
+            let sLeUb: s.val .≤ ub := ubIsUB s
+            sLeUb.right d dMemUB)
   ⟩
+
+
+def Set3.ord.standard.isChainComplete (D: Type):
+  isChainComplete (Set3.ord.standard D).toPartialOrder
+:=
+  fun ch => ⟨(sup ch.val).val, (sup ch.val).property⟩
+
+def Set3.ord.approximation.isChainComplete (D: Type):
+  isChainComplete (Set3.ord.approximation D).toPartialOrder
+:=
+  fun ch => ⟨(sup ch).val, (sup ch).property⟩
 
 
 -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1740
@@ -383,59 +389,126 @@ structure Algebra (s: Signature) where
     I op args0 ≤ I op args1
 
 
+instance PartialOrder.pointwise
+  (X Y: Type)
+  (_: PartialOrder Y)
+:
+  PartialOrder (X → Y)
+where
+  le a b := ∀ x: X, a x .≤ b x
+  
+  refl a := fun v => PartialOrder.refl (a v)
+  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
+  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
+  
+  ltToLeNeq := id
+  leNeqToLt := id
+
 @[reducible] def Valuation (Var: VarSet) (D: Type) := ↑Var → Set3 D
 
 namespace Valuation
   def empty: Valuation Var D := fun _ => Set3.empty
   
   def undetermined: Valuation Var D := fun _ => Set3.undetermined
+  
+  
+  instance ord.standard.helper (Var: VarSet) (D: Type)
+  :
+    PartialOrder (Valuation Var D)
+  :=
+    PartialOrder.pointwise Var (Set3 D) (Set3.ord.standard D).toPartialOrder
+  
+  instance ord.standard (Var: VarSet) (D: Type)
+  :
+    PartialOrderSt (Valuation Var D)
+  where
+    le        := (ord.standard.helper Var D).le
+    refl      := (ord.standard.helper Var D).refl
+    antisymm  := (ord.standard.helper Var D).antisymm
+    trans     := (ord.standard.helper Var D).trans
+    ltToLeNeq := (ord.standard.helper Var D).ltToLeNeq
+    leNeqToLt := (ord.standard.helper Var D).leNeqToLt
+  
+  
+  instance ord.approximation.helper (Var: VarSet) (D: Type)
+  :
+    PartialOrder (Valuation Var D)
+  :=
+    PartialOrder.pointwise Var (Set3 D) (Set3.ord.approximation D).toPartialOrder
+  
+  instance ord.approximation (Var: VarSet) (D: Type)
+  :
+    PartialOrderSq (Valuation Var D)
+  where
+    le        := (ord.approximation.helper Var D).le
+    refl      := (ord.approximation.helper Var D).refl
+    antisymm  := (ord.approximation.helper Var D).antisymm
+    trans     := (ord.approximation.helper Var D).trans
+    ltToLeNeq := (ord.approximation.helper Var D).ltToLeNeq
+    leNeqToLt := (ord.approximation.helper Var D).leNeqToLt
 end Valuation
 
-instance Valuation.ord.standard (Var: VarSet) (D: Type)
-:
-  PartialOrderSt (Valuation Var D)
-where
-  le a b := ∀ v: ↑Var, a v .≤ b v
-  
-  refl a := fun v => PartialOrder.refl (a v)
-  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
-  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
-  
-  ltToLeNeq := id
-  leNeqToLt := id
 
-instance Valuation.ord.approximation (Var: VarSet) (D: Type)
+noncomputable def pointwiseSup
+  [ord: PartialOrder D]
+  (cc: isChainComplete ord)
+  (ch: @Chain (I → D) (PartialOrder.pointwise I D ord))
 :
-  PartialOrderSq (Valuation Var D)
-where
-  le a b := ∀ v: ↑Var, a v .≤ b v
+  @Supremum (I → D) (PartialOrder.pointwise I D ord) ch.val
+:=
+  let chSet (i: I) := fun d => ∃ f: ↑ch.val, d = f.val i
   
-  refl a := fun v => PartialOrder.refl (a v)
-  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
-  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
-  
-  ltToLeNeq := id
-  leNeqToLt := id
+  let sup: (i: I) → (Supremum (chSet i)) := fun i =>
+    let chAtI: Chain D := ⟨
+      chSet i,
+      fun d0 d1 =>
+        let d0F := choiceEx d0.property
+        let d1F := choiceEx d1.property
+        
+        let fComparable := ch.property d0F d1F
+        
+        d0F.property ▸ d1F.property ▸ fComparable.elim
+          (fun le => Or.inl (le i))
+          (fun ge => Or.inr (ge i))
+    ⟩
+    choiceEx (cc chAtI)
+  let supUntyped: I → D := fun i => (sup i).val
+  ⟨
+    supUntyped,
+    And.intro
+      (fun (f: ↑ch.val) i => (sup i).property.left ⟨f.val i, ⟨f, rfl⟩⟩)
+      (fun f fUB i =>
+        let fiUB: f i ∈ isUpperBound (chSet i) :=
+          fun d =>
+            let ff := choiceEx d.property
+            ff.property ▸ fUB ff i
+        (sup i).property.right (f i) fiUB)
+  ⟩
 
 
 def Valuation.ord.standard.sup
-  (ch: @Chain (Valuation Var D) (Valuation.ord.standard Var D).toPartialOrder)
+  (sVal: Set (Valuation Var D))
+:
+  Supremum sVal
+:=
+  pointwiseSup (Set3.ord.standard.isChainComplete D) sVal
+
+noncomputable def Valuation.ord.approximation.sup
+  (ch: Chain (Valuation Var D))
 :
   Supremum ch.val
-:= ⟨
-  sorry,
-  sorry
-⟩
+:=
+  pointwiseSup (Set3.ord.approximation.isChainComplete D) ch
 
 def Valuation.ord.standard.isChainComplete (Var: VarSet) (D: Type)
 :
-  chainComplete (Valuation.ord.standard Var D).toPartialOrder
+  isChainComplete (Valuation.ord.standard Var D).toPartialOrder
 :=
   fun ch => sorry
 
 def Valuation.ord.approximation.isChainComplete (Var: VarSet) (D: Type)
 :
-  chainComplete (Valuation.ord.approximation Var D).toPartialOrder
+  isChainComplete (Valuation.ord.approximation Var D).toPartialOrder
 :=
   sorry
 
