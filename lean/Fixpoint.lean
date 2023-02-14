@@ -197,7 +197,7 @@ section ord
     ⟩
   
   noncomputable def sup.eq
-    (ch: Chain T)
+    {ch: Chain T}
     (a b: Supremum ch.val)
   :
     a = b
@@ -219,7 +219,7 @@ section ord
     let chainSupCc := isChainComplete.option.chain.sup cc chain
     let chainSupSup := _root_.Chain.sup chain cc.option
     
-    let eq := sup.eq chain chainSupSup chainSupCc
+    let eq := sup.eq chainSupSup chainSupCc
     let eqVal: chainSupSup.val = chainSupCc.val := congr rfl eq
     
     let supNone: chainSupCc.val = Option.none :=
@@ -238,7 +238,7 @@ section ord
     let chainSupCc := isChainComplete.option.chain.sup cc ch
     let chainSupSup := ch.sup cc.option
     
-    let eq := sup.eq ch chainSupSup chainSupCc
+    let eq := sup.eq chainSupSup chainSupCc
     let eqVal: chainSupSup.val = chainSupCc.val := congr rfl eq
     
     let supNotNone: chainSupCc.val ≠ Option.none :=

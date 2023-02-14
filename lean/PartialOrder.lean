@@ -32,6 +32,11 @@ namespace PartialOrder
         (ltToLeNeq ab).left
         (ltToLeNeq ba).left
   
+  def antisymmLt.p {p: Prop} [PartialOrder T] {a b: T}: lt a b  →  lt b a  →  p :=
+    fun ab ba =>
+      let eqAB := antisymmLt a b ab ba
+      False.elim (irefl a (eqAB ▸ ab))
+  
   def transLt [PartialOrder T] (a b c: T): lt a b  →  lt b c  →  lt a c :=
     fun ab bc =>
       let aLeC: le a c :=
@@ -57,6 +62,14 @@ namespace PartialOrder
         (fun lt => (ltToLeNeq lt).left)
         (fun eq => eq ▸ (refl a))
   
+  def ltToLe [PartialOrder T] {a b: T} (ab: lt a b): le a b := (ltToLeNeq ab).left
+  def eqToLe [PartialOrder T] {a b: T} (eq: a = b): le a b := eq ▸ refl a
+  
+  def ltNotGe [PartialOrder T] {a b: T} (ab: lt a b): ¬ le b a :=
+    fun leBA =>
+      (leToLtOrEq leBA).elim
+        (fun ba => antisymmLt.p ab ba)
+        (fun eq => irefl a (eq ▸ ab))
   
   @[reducible] def Option.le (ord: PartialOrder T): Option T → Option T → Prop
     | none, none => True

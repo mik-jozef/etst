@@ -7,10 +7,12 @@
   one. You can find more at https://github.com/mik-jozef/bst.
 -/
 
+import Arities
 import Ordinal
 import PartialOrder
 import Set
 import Fixpoint
+import Pointwise
 
 open Classical
 
@@ -79,6 +81,8 @@ instance Set3.ord.standard (D: Type): PartialOrderSt (Set3 D) where
   ltToLeNeq := id
   leNeqToLt := id
 
+def Set3.ord.standard.po (D: Type) := (Set3.ord.standard D).toPartialOrder
+
 def Set3.ord.standard.sup (s: Set (Set3 D)): Supremum s :=
   let sup := {
     defMem := fun d => ∃s: ↑s, d ∈ s.val.defMem
@@ -133,6 +137,8 @@ instance Set3.ord.approximation (D: Type): PartialOrderSq (Set3 D) where
   ltToLeNeq := id
   leNeqToLt := id
 
+def Set3.ord.approximation.po (D: Type) := (Set3.ord.approximation D).toPartialOrder
+
 def Set3.ord.approximation.sup (ch: Chain (Set3 D)): Supremum ch.val :=
   let sup: Set3 D := {
     defMem := fun d => ∃s: ↑ch.val, d ∈ s.val.defMem
@@ -173,24 +179,210 @@ def Set3.ord.approximation.sup (ch: Chain (Set3 D)): Supremum ch.val :=
 
 
 def Set3.ord.standard.isChainComplete (D: Type):
-  isChainComplete (Set3.ord.standard D).toPartialOrder
+  isChainComplete (Set3.ord.standard.po D)
 :=
   fun ch => ⟨(sup ch.val).val, (sup ch.val).property⟩
 
 def Set3.ord.approximation.isChainComplete (D: Type):
-  isChainComplete (Set3.ord.approximation D).toPartialOrder
+  isChainComplete (Set3.ord.approximation.po D)
 :=
   fun ch => ⟨(sup ch).val, (sup ch).property⟩
+
+
+def Set3.ninPos.ninDef {s: Set3 D} (dNin: d ∉ s.posMem): d ∉ s.defMem :=
+  fun dIn => dNin (s.defLePos d dIn)
+
+def Set3.without (s: Set3 D) (d: D): Set3 D := {
+  defMem := fun dd => dd ∈ s.defMem ∧ dd ≠ d
+  posMem := fun dd => dd ∈ s.posMem ∧ dd ≠ d
+  defLePos :=
+    fun d dDef =>
+      And.intro (s.defLePos d dDef.left) dDef.right
+}
+
+def Set3.without.ninPos (s: Set3 D) (d: D): d ∉ (s.without d).posMem :=
+  fun dIn => dIn.right rfl
+
+def Set3.without.ninDef (s: Set3 D) (d: D): d ∉ (s.without d).defMem :=
+  fun dIn => dIn.right rfl
+
+def Set3.without.lt (s: Set3 D) (d: D) (dInS: d ∈ s.posMem):
+  s.without d < s
+:=
+  And.intro
+    (And.intro (fun _ dIn => dIn.left) (fun _ dIn => dIn.left))
+    (fun eq =>
+      let dNinSWithout: d ∉ (s.without d).posMem := Set3.without.ninPos _ _
+      let dNinS: d ∉ s.posMem := eq ▸ dNinSWithout
+      dNinS dInS)
+
+
+def Set3.withoutDef (s: Set3 D) (d: D): Set3 D := {
+  defMem := fun dd => dd ∈ s.defMem ∧ dd ≠ d
+  posMem := fun dd => dd ∈ s.posMem
+  defLePos := fun d dDef => (s.defLePos d dDef.left)
+}
+
+def Set3.withoutDef.ninDef (s: Set3 D) (d: D): d ∉ (s.withoutDef d).defMem :=
+  fun dIn => dIn.right rfl
+
+def Set3.withoutDef.lt (s: Set3 D) (d: D) (dInS: d ∈ s.defMem):
+  s.withoutDef d < s
+:=
+  And.intro
+    (And.intro (fun _dd ddIn => ddIn.left) (fun _dd ddIn => ddIn))
+    (fun eq =>
+      let dNinSWithout: d ∉ (s.withoutDef d).defMem := Set3.withoutDef.ninDef _ _
+      let dNinS: d ∉ s.defMem := eq ▸ dNinSWithout
+      dNinS dInS)
+
+
+def Set3.ord.standard.inChain.inSup.defMem
+  (cc: _root_.isChainComplete (standard.po D))
+  (ch: @Chain (Set3 D) (standard.po D))
+  (s: ↑ch.val)
+  (d: D)
+  (dInSDef: d ∈ s.val.defMem)
+:
+  d ∈ (@Chain.sup (Set3 D) (standard.po D) ch cc).val.defMem
+:=
+  let sup := @Chain.sup (Set3 D) (standard.po D) ch cc
+  let supGeS := sup.property.left s
+  
+  supGeS.left d dInSDef
+
+
+def Set3.ord.standard.ninChain.ninSup.defMem
+  (cc: _root_.isChainComplete (standard.po D))
+  (ch: @Chain (Set3 D) (standard.po D))
+  (d: D)
+  (allNin: ∀ (s: ↑ch.val), d ∉ s.val.defMem)
+:
+  d ∉ (@Chain.sup (Set3 D) (standard.po D) ch cc).val.defMem
+:=
+  let sup := @Chain.sup (Set3 D) (standard.po D) ch cc
+  let supWithoutD := sup.val.withoutDef d;
+  
+  let withoutLe: supWithoutD ≤ sup.val :=
+    if h: d ∈ sup.val.defMem then
+      (Set3.withoutDef.lt sup.val d h).left
+    else
+      let eq: sup.val = supWithoutD :=
+        Set3.eq _ _
+          (funext (fun _dd => (propext (Iff.intro
+            (fun ddIn => And.intro ddIn (fun eq => h (eq ▸ ddIn)))
+            (fun ddIn => ddIn.left)))))
+          rfl
+      eq ▸ ((standard.po D).refl sup.val)
+  
+  let isUB: supWithoutD ∈ @isUpperBound (Set3 D) (standard.po D) ch.val :=
+    fun s =>
+      And.intro
+        (fun dd ddInS =>
+          let dInSup := (sup.property.left s).left dd ddInS
+          let dNinS := allNin s
+          And.intro dInSup (fun eq => dNinS (eq ▸ ddInS)))
+        (fun dd ddInS => (sup.property.left s).right dd ddInS)
+  
+  let withoutGe: sup.val ≤ supWithoutD := sup.property.right supWithoutD isUB
+  let eq: sup.val = supWithoutD :=
+    PartialOrder.antisymm sup.val supWithoutD withoutGe withoutLe
+  
+  eq ▸ (fun dIn => dIn.right rfl)
+
+def Set3.ord.standard.inSup.inChain.defMem.ex
+  (ch: @Chain (Set3 D) (standard.po D))
+  (d: D)
+  (dIn: d ∈ (@Chain.sup
+    (Set3 D) (standard.po D) ch (standard.isChainComplete D)).val.defMem)
+:
+  ∃ s: ↑ch.val, d ∈ s.val.defMem
+:=
+  byContradiction fun notEx =>
+    let allNin: ∀ s: ↑ch.val, d ∉ s.val.defMem :=
+      fun s =>
+        if h: d ∈ s.val.defMem then
+          False.elim (notEx ⟨s, h⟩)
+        else
+          h
+    
+    let ninSup := Set3.ord.standard.ninChain.ninSup.defMem
+      (standard.isChainComplete D) ch d allNin
+    
+    ninSup dIn
+
+
+def Set3.ord.standard.ninChain.ninSup.posMem
+  (cc: _root_.isChainComplete (standard.po D))
+  (ch: @Chain (Set3 D) (standard.po D))
+  (d: D)
+  (allNin: ∀ (s: ↑ch.val), d ∉ s.val.posMem)
+:
+  d ∉ (@Chain.sup (Set3 D) (standard.po D) ch cc).val.posMem
+:=
+  let sup := @Chain.sup (Set3 D) (standard.po D) ch cc
+  let supWithoutD := sup.val.without d;
+  
+  let withoutLe: supWithoutD ≤ sup.val :=
+    if h: d ∈ sup.val.posMem then
+      (Set3.without.lt sup.val d h).left
+    else
+      let eq: sup.val = supWithoutD :=
+        Set3.eq _ _
+          (funext (fun dd => (propext (Iff.intro
+            (fun ddIn => And.intro
+              ddIn (fun eq => h (eq ▸ (sup.val.defLePos dd ddIn))))
+            (fun ddIn => ddIn.left)))))
+          (funext (fun _dd => (propext (Iff.intro
+            (fun ddIn => And.intro
+              ddIn (fun eq => h (eq ▸ ddIn)))
+            (fun ddIn => ddIn.left)))))
+      eq ▸ ((standard.po D).refl sup.val)
+  
+  let isUB: supWithoutD ∈ @isUpperBound (Set3 D) (standard.po D) ch.val :=
+    fun s =>
+      And.intro
+        (fun dd ddInS =>
+          let dInSup := (sup.property.left s).left dd ddInS
+          let dNinS := allNin s
+          And.intro dInSup (fun eq => dNinS (eq ▸ (s.val.defLePos dd ddInS))))
+        (fun dd ddInS =>
+          let ddInSup := (sup.property.left s).right dd ddInS
+          let dNinS := allNin s
+          And.intro ddInSup (fun eq => dNinS (eq ▸ ddInS)))
+  
+  let withoutGe: sup.val ≤ supWithoutD := sup.property.right supWithoutD isUB
+  let eq: sup.val = supWithoutD :=
+    (standard.po D).antisymm sup.val supWithoutD withoutGe withoutLe
+  
+  eq ▸ (fun dIn => dIn.right rfl)
+
+def Set3.ord.standard.inSup.inChain.posMem.ex
+  (cc: _root_.isChainComplete (standard.po D))
+  (ch: @Chain (Set3 D) (standard.po D))
+  (d: D)
+  (dIn: d ∈ (@Chain.sup (Set3 D) (standard.po D) ch cc).val.posMem)
+:
+  ∃ s: ↑ch.val, d ∈ s.val.posMem
+:=
+  byContradiction fun notEx =>
+    let allNin: ∀ s: ↑ch.val, d ∉ s.val.posMem :=
+      fun s =>
+        if h: d ∈ s.val.posMem then
+          False.elim (notEx ⟨s, h⟩)
+        else
+          h
+    
+    let ninSup := Set3.ord.standard.ninChain.ninSup.posMem
+      cc ch d allNin
+    
+    ninSup dIn
 
 
 -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1740
 structure Signature where
   Op: Type
   arity: Op → Type
-
-inductive ArityZero
-inductive ArityOne | zth
-inductive ArityTwo | zth | fst
 
 
 @[reducible] def Variable := Nat
@@ -389,21 +581,6 @@ structure Algebra (s: Signature) where
     I op args0 ≤ I op args1
 
 
-instance PartialOrder.pointwise
-  (X Y: Type)
-  (_: PartialOrder Y)
-:
-  PartialOrder (X → Y)
-where
-  le a b := ∀ x: X, a x .≤ b x
-  
-  refl a := fun v => PartialOrder.refl (a v)
-  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
-  trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
-  
-  ltToLeNeq := id
-  leNeqToLt := id
-
 @[reducible] def Valuation (Var: VarSet) (D: Type) := ↑Var → Set3 D
 
 namespace Valuation
@@ -416,7 +593,7 @@ namespace Valuation
   :
     PartialOrder (Valuation Var D)
   :=
-    PartialOrder.pointwise Var (Set3 D) (Set3.ord.standard D).toPartialOrder
+    PartialOrder.pointwise Var (Set3 D) (Set3.ord.standard.po D)
   
   instance ord.standard.st (Var: VarSet) (D: Type)
   :
@@ -434,7 +611,7 @@ namespace Valuation
   :
     PartialOrder (Valuation Var D)
   :=
-    PartialOrder.pointwise Var (Set3 D) (Set3.ord.approximation D).toPartialOrder
+    PartialOrder.pointwise Var (Set3 D) (Set3.ord.approximation.po D)
   
   instance ord.approximation.sq (Var: VarSet) (D: Type)
   :
@@ -449,52 +626,15 @@ namespace Valuation
 end Valuation
 
 
-noncomputable def pointwiseSup
-  [ord: PartialOrder D]
-  (cc: isChainComplete ord)
-  (ch: @Chain (I → D) (PartialOrder.pointwise I D ord))
-:
-  @Supremum (I → D) (PartialOrder.pointwise I D ord) ch.val
-:=
-  let chSet (i: I) := fun d => ∃ f: ↑ch.val, d = f.val i
-  
-  let sup: (i: I) → (Supremum (chSet i)) := fun i =>
-    let chAtI: Chain D := ⟨
-      chSet i,
-      fun d0 d1 =>
-        let d0F := choiceEx d0.property
-        let d1F := choiceEx d1.property
-        
-        let fComparable := ch.property d0F d1F
-        
-        d0F.property ▸ d1F.property ▸ fComparable.elim
-          (fun le => Or.inl (le i))
-          (fun ge => Or.inr (ge i))
-    ⟩
-    choiceEx (cc chAtI)
-  let supUntyped: I → D := fun i => (sup i).val
-  ⟨
-    supUntyped,
-    And.intro
-      (fun (f: ↑ch.val) i => (sup i).property.left ⟨f.val i, ⟨f, rfl⟩⟩)
-      (fun f fUB i =>
-        let fiUB: f i ∈ isUpperBound (chSet i) :=
-          fun d =>
-            let ff := choiceEx d.property
-            ff.property ▸ fUB ff i
-        (sup i).property.right (f i) fiUB)
-  ⟩
-
-
 noncomputable def Valuation.ord.standard.sup
   (ch: @Chain (Valuation Var D) (standard Var D))
 :
   @Supremum (Valuation Var D) (standard Var D) ch.val
 :=
   @pointwiseSup
-    (Set3 D)
     Var
-    (Set3.ord.standard D).toPartialOrder
+    (Set3 D)
+    (Set3.ord.standard.po D)
     (Set3.ord.standard.isChainComplete D)
      ch
 
@@ -516,6 +656,9 @@ def Valuation.ord.approximation.isChainComplete (Var: VarSet) (D: Type)
   isChainComplete (Valuation.ord.approximation Var D)
 :=
   fun ch => ⟨(sup ch).val, (sup ch).property⟩
+
+
+-- TODO sup on valuations
 
 
 noncomputable def updateValuation
@@ -658,7 +801,6 @@ def I.isMonotonic.standard
 :
   I alg b c0 e ≤ I alg b c1 e
 :=
-  -- The proof is completely mechanical and boring. I advise to skip it.
   match e with
   | Expr.var a => And.intro
       (fun x xIn => (c0LeC1 a).left x xIn)
@@ -857,6 +999,25 @@ def I.isMonotonic.standard
         
         ⟨d, xInBody1⟩)
 
+def I.isMonotonic.approximation
+  (alg: Algebra s)
+  (e: Expr s Var)
+  (b0 b1 c0 c1: Valuation Var alg.D)
+  (b0LeB1: b0 ⊑ b1)
+  (c0LeC1: c0 ⊑ c1)
+:
+  I alg b0 c0 e ⊑ I alg b1 c1 e
+:=
+  match e with
+  | Expr.var a => And.intro sorry sorry
+  | Expr.opApp op args => And.intro sorry sorry
+  | Expr.un left rite => And.intro sorry sorry
+  | Expr.ir left rite => And.intro sorry sorry
+  | Expr.cpl a => And.intro sorry sorry
+  | Expr.Un var body => And.intro sorry sorry
+  | Expr.Ir var body => And.intro sorry sorry
+
+
 -- Interpretation on definition lists is defined pointwise.
 def DefList.I
   (alg: Algebra s)
@@ -869,50 +1030,167 @@ def DefList.I
     _root_.I alg b c (dl.fam x)
 
 
-def operatorC {alg: Algebra s} (dl: DefList s Var) (b: Valuation Var alg.D):
+def operatorC (alg: Algebra s) (dl: DefList s Var) (b: Valuation Var alg.D):
   Valuation Var alg.D → Valuation Var alg.D
 :=
   fun c => DefList.I alg b c dl
 
 def operatorC.isMonotonic
-  {alg: Algebra s}
+  (alg: Algebra s)
   (dl: DefList s Var)
   (b: Valuation Var alg.D)
 :
-  @isMonotonic _ (Valuation.ord.standard Var alg.D) (operatorC dl b)
+  @isMonotonic _ (Valuation.ord.standard Var alg.D) (operatorC alg dl b)
 :=
   fun c0 c1 c0LeC1 =>
-    fun _ => (I.isMonotonic.standard alg _ b c0 c1 c0LeC1)
+    fun x => I.isMonotonic.standard alg (dl.fam x) b c0 c1 c0LeC1
 
 noncomputable def operatorC.lfp
-  {alg: Algebra s}
+  (alg: Algebra s)
   (dl: DefList s Var)
   (b: Valuation Var alg.D)
 :
-  @Lfp (Valuation Var alg.D) (Valuation.ord.standard Var alg.D) (operatorC dl b)
+  @Lfp (Valuation Var alg.D) (Valuation.ord.standard Var alg.D) (operatorC alg dl b)
 :=
   @_root_.lfp
     (Valuation Var alg.D)
     (Valuation.ord.standard Var alg.D)
     (Valuation.ord.standard.isChainComplete Var alg.D)
-    (operatorC dl b)
-    (operatorC.isMonotonic dl b)
+    (operatorC alg dl b)
+    (operatorC.isMonotonic alg dl b)
+
 
 noncomputable def operatorC.stage
-  {alg: Algebra s}
+  (alg: Algebra s)
   (dl: DefList s Var)
   (b: Valuation Var alg.D)
   (n: Ordinal)
 :
   Valuation Var alg.D
 :=
-  sorry
+  @lfp.stage
+    (Valuation Var alg.D)
+    (Valuation.ord.standard Var alg.D)
+    (Valuation.ord.standard.isChainComplete Var alg.D)
+    (operatorC alg dl b)
+    (operatorC.isMonotonic alg dl b)
+    n
+
+noncomputable def operatorC.stage.fpIndex
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+:
+  { n: Ordinal // operatorC.stage alg dl b n = (operatorC.lfp alg dl b).val }
+:=
+  let index := @lfp.stage.fixed.index
+    (Valuation Var alg.D)
+    (Valuation.ord.standard Var alg.D)
+    (Valuation.ord.standard.isChainComplete Var alg.D)
+    (operatorC alg dl b)
+    (operatorC.isMonotonic alg dl b)
+  
+  ⟨index, rfl⟩
+
+def operatorC.stage.isMonotonic.approximation
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b0 b1: Valuation Var alg.D)
+  (b0LeB1: b0 ⊑ b1)
+  (n: Ordinal)
+:
+  operatorC.stage alg dl b0 n ⊑ operatorC.stage alg dl b1 n
+:=
+  let D.so := Set3.ord.standard alg.D
+  let D.soPo := Set3.ord.standard.po alg.D
+  let D.cc := Set3.ord.standard.isChainComplete alg.D
+  
+  let Val := (Valuation Var alg.D)
+  let Val.so := (Valuation.ord.standard Var alg.D)
+  let cc := (Valuation.ord.standard.isChainComplete Var alg.D)
+  
+  if h: n.isLimit then
+    let prevChain0 := @lfp.stage.prevChain Val Val.so cc
+      (operatorC alg dl b0)
+      (operatorC.isMonotonic alg dl b0)
+      n
+    
+    let prevChain1 := @lfp.stage.prevChain Val Val.so cc
+      (operatorC alg dl b1)
+      (operatorC.isMonotonic alg dl b1)
+      n
+    
+    let sup0 := prevChain0.sup cc
+    let sup1 := prevChain1.sup cc
+    
+    let sup0EqStage: operatorC.stage alg dl b0 n = sup0.val :=
+      lfp.stage.limit
+        cc
+        (operatorC alg dl b0)
+        (operatorC.isMonotonic alg dl b0)
+        h
+    
+    let sup1EqStage: operatorC.stage alg dl b1 n = sup1.val :=
+      lfp.stage.limit
+        cc
+        (operatorC alg dl b1)
+        (operatorC.isMonotonic alg dl b1)
+        h
+    
+    let sup0Pointwise :=
+      @pointwiseSup Var (Set3 alg.D) D.soPo D.cc prevChain0
+    
+    let sup0Pointwise.typed :=
+      @pointwiseSup.typed Var (Set3 alg.D) D.soPo D.cc prevChain0
+    
+    let sup0Pointwise.typed.eq :=
+      @pointwiseSup.eqTyped Var (Set3 alg.D) D.soPo D.cc prevChain0
+    
+    let sup0EqPointwiseSup: sup0 = sup0Pointwise := sup.eq _ _
+    let sup0EqPointwiseSup.var (var: ↑Var):
+      sup0.val var = sup0Pointwise.val var
+    :=
+      congr (congr rfl sup0EqPointwiseSup) rfl
+    
+    let sup0EqPointwiseSup.typed (var: ↑Var):
+      sup0.val var = (sup0Pointwise.typed var).val
+    :=
+      sup0EqPointwiseSup.var var
+    
+    let prevChainLeNn: sup0.val ⊑ sup1.val :=
+      fun x =>
+        let ch0At := pointwiseSup.atChain D.cc prevChain0 x
+        let sup0At := sup0Pointwise.typed x
+        
+        And.intro
+          (fun d dIn =>
+            let dIn.typed: d ∈ sup0At.val.defMem :=
+              sup0EqPointwiseSup.typed x ▸ dIn
+            
+            let exSCh0: ∃ sCh0: ↑ch0At.val, d ∈ sCh0.val.defMem :=
+              Set3.ord.standard.inSup.inChain.defMem.ex ch0At d dIn.typed
+            
+            let exVal: ∃ val: ↑prevChain0.val, d ∈ (val.val x).defMem :=
+              sorry
+            sorry)
+          sorry
+    
+    sup0EqStage ▸ sup1EqStage ▸ prevChainLeNn
+  else
+    sorry
 
 
-def operatorB {alg: Algebra s} (dl: DefList s Var):
+noncomputable def operatorB (alg: Algebra s) (dl: DefList s Var):
   Valuation Var alg.D → Valuation Var alg.D
 :=
-  fun c => DefList.I alg b c dl
+  fun b => (operatorC.lfp alg dl b).val
+
+def operatorB.isMonotonic {alg: Algebra s} (dl: DefList s Var):
+  isMonotonic (operatorB alg dl)
+:=
+  fun b0 b1 b0LeB1 =>
+    fun x =>
+      sorry
 
 
 
@@ -924,6 +1202,11 @@ def operatorB {alg: Algebra s} (dl: DefList s Var):
 -- TODO
 --
 -- :tumbleweed:
+-- 
+-- 
+-- See the chapter "Guaranteeing" classicalness in my magister thesis.
+-- This should be a generalization for any reasonable dependency relations,
+-- if I ever get to it.
 
 
 -- ## Chapter 4: Example WFCs
