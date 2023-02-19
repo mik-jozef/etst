@@ -13,6 +13,9 @@ noncomputable def choiceEx {P: T → Prop} (ex: ∃ t: T, P t): { t: T // P t } 
     | ⟨t, prop⟩ => ⟨t, prop⟩
   choice nonempty
 
+def contra (impl: a → b): ¬b → ¬a :=
+  fun nbProof => fun aProof => nbProof (impl aProof)
+
 
 def Set.{u} (T : Type u) := T → Prop
 

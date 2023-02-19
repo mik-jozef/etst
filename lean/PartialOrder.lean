@@ -141,3 +141,10 @@ infix:50 " ⊑ " => SqLE.le
 infix:50 " ⊏ " => SqLT.lt
 
 class PartialOrderSq (T: Type) extends PartialOrder T, SqLE T, SqLT T where
+
+def PartialOrderSq.le.fromPO
+  [ord: PartialOrderSq T]
+  (ab: ord.toPartialOrder.le a b):
+  a ⊑ b
+:=
+  ab

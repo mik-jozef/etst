@@ -192,12 +192,13 @@ def Set3.ord.approximation.isChainComplete (D: Type):
 def Set3.ninPos.ninDef {s: Set3 D} (dNin: d ∉ s.posMem): d ∉ s.defMem :=
   fun dIn => dNin (s.defLePos d dIn)
 
+
 def Set3.without (s: Set3 D) (d: D): Set3 D := {
   defMem := fun dd => dd ∈ s.defMem ∧ dd ≠ d
   posMem := fun dd => dd ∈ s.posMem ∧ dd ≠ d
   defLePos :=
-    fun d dDef =>
-      And.intro (s.defLePos d dDef.left) dDef.right
+    fun dd ddDef =>
+      And.intro (s.defLePos dd ddDef.left) ddDef.right
 }
 
 def Set3.without.ninPos (s: Set3 D) (d: D): d ∉ (s.without d).posMem :=
@@ -237,6 +238,53 @@ def Set3.withoutDef.lt (s: Set3 D) (d: D) (dInS: d ∈ s.defMem):
       dNinS dInS)
 
 
+def Set3.with (s: Set3 D) (d: D): Set3 D := {
+  defMem := fun dd => dd ∈ s.defMem ∨ dd = d
+  posMem := fun dd => dd ∈ s.posMem ∨ dd = d
+  defLePos :=
+    fun dd ddDef =>
+      ddDef.elim
+        (fun ddInS => Or.inl (s.defLePos dd ddInS))
+        (fun eq => Or.inr eq)
+}
+
+def Set3.with.inPos (s: Set3 D) (d: D): d ∈ (s.with d).posMem :=
+  Or.inr rfl
+
+def Set3.with.inDef (s: Set3 D) (d: D): d ∈ (s.with d).defMem :=
+  Or.inr rfl
+
+def Set3.with.gt (s: Set3 D) (d: D) (dNinS: d ∉ s.posMem):
+  s < s.with d
+:=
+  And.intro
+    (And.intro (fun _dd ddIn => Or.inl ddIn) (fun _dd ddIn => Or.inl ddIn))
+    (fun eq =>
+      let dInSWith: d ∈ (s.with d).posMem := Set3.with.inPos _ _
+      let dInS: d ∈ s.posMem := eq ▸ dInSWith
+      dNinS dInS)
+
+
+def Set3.withPos (s: Set3 D) (d: D): Set3 D := {
+  defMem := fun dd => dd ∈ s.defMem
+  posMem := fun dd => dd ∈ s.posMem ∨ dd = d
+  defLePos := fun dd ddDef => Or.inl (s.defLePos dd ddDef)
+}
+
+def Set3.withPos.inPos (s: Set3 D) (d: D): d ∈ (s.withPos d).posMem :=
+  Or.inr rfl
+
+def Set3.withPos.gt (s: Set3 D) (d: D) (dNinS: d ∉ s.posMem):
+  s < s.withPos d
+:=
+  And.intro
+    (And.intro (fun _dd ddIn => ddIn) (fun _dd ddIn => Or.inl ddIn))
+    (fun eq =>
+      let dInSWith: d ∈ (s.withPos d).posMem := Set3.withPos.inPos _ _
+      let dInS: d ∈ s.posMem := eq ▸ dInSWith
+      dNinS dInS)
+
+
 def Set3.ord.standard.inChain.inSup.defMem
   (cc: _root_.isChainComplete (standard.po D))
   (ch: @Chain (Set3 D) (standard.po D))
@@ -250,6 +298,20 @@ def Set3.ord.standard.inChain.inSup.defMem
   let supGeS := sup.property.left s
   
   supGeS.left d dInSDef
+
+def Set3.ord.standard.inChain.inSup.posMem
+  (cc: _root_.isChainComplete (standard.po D))
+  (ch: @Chain (Set3 D) (standard.po D))
+  (s: ↑ch.val)
+  (d: D)
+  (dInSDef: d ∈ s.val.posMem)
+:
+  d ∈ (@Chain.sup (Set3 D) (standard.po D) ch cc).val.posMem
+:=
+  let sup := @Chain.sup (Set3 D) (standard.po D) ch cc
+  let supGeS := sup.property.left s
+  
+  supGeS.right d dInSDef
 
 
 def Set3.ord.standard.ninChain.ninSup.defMem
@@ -358,13 +420,14 @@ def Set3.ord.standard.ninChain.ninSup.posMem
   eq ▸ (fun dIn => dIn.right rfl)
 
 def Set3.ord.standard.inSup.inChain.posMem.ex
-  (cc: _root_.isChainComplete (standard.po D))
   (ch: @Chain (Set3 D) (standard.po D))
   (d: D)
   (dIn: d ∈ (@Chain.sup (Set3 D) (standard.po D) ch cc).val.posMem)
 :
   ∃ s: ↑ch.val, d ∈ s.val.posMem
 :=
+  let cc := (standard.isChainComplete D)
+  
   byContradiction fun notEx =>
     let allNin: ∀ s: ↑ch.val, d ∉ s.val.posMem :=
       fun s =>
@@ -658,10 +721,7 @@ def Valuation.ord.approximation.isChainComplete (Var: VarSet) (D: Type)
   fun ch => ⟨(sup ch).val, (sup ch).property⟩
 
 
--- TODO sup on valuations
-
-
-noncomputable def updateValuation
+noncomputable def Valuation.update
   (val: Valuation Var D)
   (x: Variable)
   (d: D)
@@ -677,36 +737,32 @@ noncomputable def updateValuation
       
       val ⟨v.val, vVar⟩
 
-def updateValuation.isMonotonic.standard
+def Valuation.update.isMonotonic.standard
   (val0 val1: Valuation Var D)
   (le: val0 ≤ val1)
   (x: Variable)
   (d: D)
 :
-  updateValuation val0 x d ≤ updateValuation val1 x d
+  val0.update x d ≤ val1.update x d
 :=
   fun xx =>
     if h: xx = x then
       And.intro
         (fun _ ddIn =>
-          let val0Eq: updateValuation val0 x d xx = Set3.just d := dif_pos h
-          let val1Eq: updateValuation val1 x d xx = Set3.just d := dif_pos h
+          let val0Eq: val0.update x d xx = Set3.just d := dif_pos h
+          let val1Eq: val1.update x d xx = Set3.just d := dif_pos h
           
-          let valEq:
-            updateValuation val0 x d xx = updateValuation val1 x d xx
-          :=
+          let valEq: val0.update x d xx = val1.update x d xx :=
             val0Eq.trans val1Eq.symm
           
           valEq ▸ ddIn)
         -- This function is identical to the above, but has a different type.
         -- is there an easy way not to repeat oneself?
         (fun _ ddIn =>
-          let val0Eq: updateValuation val0 x d xx = Set3.just d := dif_pos h
-          let val1Eq: updateValuation val1 x d xx = Set3.just d := dif_pos h
+          let val0Eq: val0.update x d xx = Set3.just d := dif_pos h
+          let val1Eq: val1.update x d xx = Set3.just d := dif_pos h
           
-          let valEq:
-            updateValuation val0 x d xx = updateValuation val1 x d xx
-          :=
+          let valEq: val0.update x d xx = val1.update x d xx :=
             val0Eq.trans val1Eq.symm
           
           valEq ▸ ddIn)
@@ -716,14 +772,55 @@ def updateValuation.isMonotonic.standard
       
       let xxVar: ↑Var := ⟨xx, xxInVar⟩
       
-      -- this should work, Lean!
-      -- let val1Eq: val1Updated xx = val1 xxVar := dif_neg h
-      let val0Eq: updateValuation val0 x d xx = val0 xxVar := dif_neg h
-      let val1Eq: updateValuation val1 x d xx = val1 xxVar := dif_neg h
+      let val0Eq: val0.update x d xx = val0 xxVar := dif_neg h
+      let val1Eq: val1.update x d xx = val1 xxVar := dif_neg h
       
       And.intro
         (fun dd ddIn => val1Eq ▸ (le xxVar).left dd (val0Eq ▸ ddIn))
         (fun dd ddIn => val1Eq ▸ (le xxVar).right dd (val0Eq ▸ ddIn))
+
+def Valuation.update.isMonotonic.approximation
+  (val0 val1: Valuation Var D)
+  (le: val0 ⊑ val1)
+  (x: Variable)
+  (d: D)
+:
+  val0.update x d ⊑ val1.update x d
+:=
+  fun xx =>
+    if h: xx = x then
+      -- TODO move to a separate function and use it in .standard too.
+      And.intro
+        (fun _ ddIn =>
+          let val0Eq: val0.update x d xx = Set3.just d := dif_pos h
+          let val1Eq: val1.update x d xx = Set3.just d := dif_pos h
+          
+          let valEq: val0.update x d xx = val1.update x d xx :=
+            val0Eq.trans val1Eq.symm
+          
+          valEq ▸ ddIn)
+        -- This function is identical to the above, but has a different type.
+        -- is there an easy way not to repeat oneself?
+        (fun _ ddIn =>
+          let val0Eq: val0.update x d xx = Set3.just d := dif_pos h
+          let val1Eq: val1.update x d xx = Set3.just d := dif_pos h
+          
+          let valEq: val0.update x d xx = val1.update x d xx :=
+            val0Eq.trans val1Eq.symm
+          
+          valEq ▸ ddIn)
+    else
+      let xxInVar: xx.val ∈ Var := xx.property.elim
+        id (fun nope => False.elim (h nope))
+      
+      let xxVar: ↑Var := ⟨xx, xxInVar⟩
+      
+      let val0Eq: val0.update x d xx = val0 xxVar := dif_neg h
+      let val1Eq: val1.update x d xx = val1 xxVar := dif_neg h
+      
+      And.intro
+        (fun dd ddIn => val1Eq ▸ (le xxVar).left dd (val0Eq ▸ ddIn))
+        (fun dd ddIn => val0Eq ▸ (le xxVar).right dd (val1Eq ▸ ddIn))
 
 
 def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
@@ -774,7 +871,7 @@ def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
     ⟩
 | Expr.Un x body =>
     let body.I (iX: alg.D): Set3 alg.D :=
-      (I alg (updateValuation b x iX) (updateValuation c x iX) body)
+      (I alg (b.update x iX) (c.update x iX) body)
     
     ⟨
       fun d => ∃ iX: alg.D, d ∈ (body.I iX).defMem,
@@ -784,7 +881,7 @@ def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
     ⟩
 | Expr.Ir x body =>
     let iBody (iX: alg.D): Set3 alg.D :=
-      (I alg (updateValuation b x iX) (updateValuation c x iX) body)
+      (I alg (b.update x iX) (c.update x iX) body)
     
     ⟨
       fun d => ∃ iX: alg.D, d ∈ (iBody iX).defMem,
@@ -917,17 +1014,18 @@ def I.isMonotonic.standard
         -- An element st. body[var := d] contains x.
         let d := choiceEx xIn
         
-        let bUpdated := updateValuation b var d
-        let c0Updated := updateValuation c0 var d
-        let c1Updated := updateValuation c1 var d
+        let bUpdated := b.update var d
+        let c0Updated := c0.update var d
+        let c1Updated := c1.update var d
         
         let body.I0 := I alg bUpdated c0Updated body
         let body.I1 := I alg bUpdated c1Updated body
         
-        let cUpdatedLe := (updateValuation.isMonotonic.standard c0 c1 c0LeC1 var d)
+        let cUpdatedLe :=
+          (Valuation.update.isMonotonic.standard c0 c1 c0LeC1 var d)
         
-        let body.le: body.I0 ≤ body.I1 :=
-          I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
+        let body.le: body.I0 ≤ body.I1 := I.isMonotonic.standard
+          alg body bUpdated c0Updated c1Updated cUpdatedLe
         
         let xInBody0: x ∈ body.I0.defMem := d.property
         let xInBody1: x ∈ body.I1.defMem := body.le.left x xInBody0
@@ -938,14 +1036,15 @@ def I.isMonotonic.standard
         -- An element st. body[var := d] contains x.
         let d := choiceEx xIn
         
-        let bUpdated := updateValuation b var d
-        let c0Updated := updateValuation c0 var d
-        let c1Updated := updateValuation c1 var d
+        let bUpdated := b.update var d
+        let c0Updated := c0.update var d
+        let c1Updated := c1.update var d
         
         let body.I0 := I alg bUpdated c0Updated body
         let body.I1 := I alg bUpdated c1Updated body
         
-        let cUpdatedLe := (updateValuation.isMonotonic.standard c0 c1 c0LeC1 var d)
+        let cUpdatedLe :=
+          (Valuation.update.isMonotonic.standard c0 c1 c0LeC1 var d)
         
         let body.le: body.I0 ≤ body.I1 :=
           I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
@@ -961,14 +1060,15 @@ def I.isMonotonic.standard
         -- I thought the argument would have to be a little different.
         let d := choiceEx xIn
         
-        let bUpdated := updateValuation b var d
-        let c0Updated := updateValuation c0 var d
-        let c1Updated := updateValuation c1 var d
+        let bUpdated := b.update var d
+        let c0Updated := c0.update var d
+        let c1Updated := c1.update var d
         
         let body.I0 := I alg bUpdated c0Updated body
         let body.I1 := I alg bUpdated c1Updated body
         
-        let cUpdatedLe := (updateValuation.isMonotonic.standard c0 c1 c0LeC1 var d)
+        let cUpdatedLe :=
+          (Valuation.update.isMonotonic.standard c0 c1 c0LeC1 var d)
         
         let body.le: body.I0 ≤ body.I1 :=
           I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
@@ -982,14 +1082,15 @@ def I.isMonotonic.standard
         -- An element st. body[var := d] contains x.
         let d := choiceEx xIn
         
-        let bUpdated := updateValuation b var d
-        let c0Updated := updateValuation c0 var d
-        let c1Updated := updateValuation c1 var d
+        let bUpdated := b.update var d
+        let c0Updated := c0.update var d
+        let c1Updated := c1.update var d
         
         let body.I0 := I alg bUpdated c0Updated body
         let body.I1 := I alg bUpdated c1Updated body
         
-        let cUpdatedLe := (updateValuation.isMonotonic.standard c0 c1 c0LeC1 var d)
+        let cUpdatedLe :=
+          (Valuation.update.isMonotonic.standard c0 c1 c0LeC1 var d)
         
         let body.le: body.I0 ≤ body.I1 :=
           I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
@@ -1003,19 +1104,93 @@ def I.isMonotonic.approximation
   (alg: Algebra s)
   (e: Expr s Var)
   (b0 b1 c0 c1: Valuation Var alg.D)
-  (b0LeB1: b0 ⊑ b1)
-  (c0LeC1: c0 ⊑ c1)
+  (bLe: b0 ⊑ b1)
+  (cLe: c0 ⊑ c1)
 :
   I alg b0 c0 e ⊑ I alg b1 c1 e
 :=
   match e with
-  | Expr.var a => And.intro sorry sorry
-  | Expr.opApp op args => And.intro sorry sorry
-  | Expr.un left rite => And.intro sorry sorry
-  | Expr.ir left rite => And.intro sorry sorry
-  | Expr.cpl a => And.intro sorry sorry
-  | Expr.Un var body => And.intro sorry sorry
-  | Expr.Ir var body => And.intro sorry sorry
+  | Expr.var x => And.intro
+      (fun d dIn => (cLe x).left d dIn)
+      (fun d dIn => (cLe x).right d dIn)
+  | Expr.opApp op args =>
+      let ih (arg: s.arity op) :=
+        I.isMonotonic.approximation alg (args arg) b0 b1 c0 c1 bLe cLe
+      
+      And.intro
+        (fun d dIn =>
+          let defArgs0 arg := (I alg b0 c0 (args arg)).defMem
+          let defArgs1 arg := (I alg b1 c1 (args arg)).defMem
+          
+          let defArgsLe :=
+            alg.isMonotonic op defArgs0 defArgs1 (fun a => (ih a).left)
+          
+          defArgsLe d dIn)
+        (fun d dIn =>
+          let posArgs0 arg := (I alg b0 c0 (args arg)).posMem
+          let posArgs1 arg := (I alg b1 c1 (args arg)).posMem
+          
+          let posArgsLe :=
+            alg.isMonotonic op posArgs1 posArgs0 (fun a => (ih a).right)
+          
+          posArgsLe d dIn)
+  | Expr.un left rite =>
+      let ihL := I.isMonotonic.approximation alg left b0 b1 c0 c1 bLe cLe
+      let ihR := I.isMonotonic.approximation alg rite b0 b1 c0 c1 bLe cLe
+      
+      And.intro
+        (fun d dIn => dIn.elim
+          (fun inL => Or.inl (ihL.left d inL))
+          (fun inR => Or.inr (ihR.left d inR)))
+        (fun d dIn => dIn.elim
+          (fun inL => Or.inl (ihL.right d inL))
+          (fun inR => Or.inr (ihR.right d inR)))
+  | Expr.ir left rite =>
+      let ihL := I.isMonotonic.approximation alg left b0 b1 c0 c1 bLe cLe
+      let ihR := I.isMonotonic.approximation alg rite b0 b1 c0 c1 bLe cLe
+      
+      And.intro
+        (fun d dIn => And.intro (ihL.left d dIn.left) (ihR.left d dIn.right))
+        (fun d dIn => And.intro (ihL.right d dIn.left) (ihR.right d dIn.right))
+  | Expr.cpl expr =>
+      let ih := I.isMonotonic.approximation alg expr b0 b1 b0 b1 bLe bLe
+      And.intro
+        (fun d dIn => contra (ih.right d) dIn)
+        (fun d dIn => contra (ih.left d) dIn)
+  | Expr.Un var body =>
+      let ih d :=
+        I.isMonotonic.approximation alg body
+          (b0.update var d)
+          (b1.update var d)
+          (c0.update var d)
+          (c1.update var d)
+          (Valuation.update.isMonotonic.approximation b0 b1 bLe var d)
+          (Valuation.update.isMonotonic.approximation c0 c1 cLe var d)
+      
+      And.intro
+        (fun d dIn =>
+          let varD := choiceEx dIn
+          ⟨varD, (ih varD).left d varD.property⟩)
+        (fun d dIn =>
+          let varD := choiceEx dIn
+          ⟨varD, (ih varD).right d varD.property⟩)
+  | Expr.Ir var body =>
+      let ih d :=
+        I.isMonotonic.approximation alg body
+          (b0.update var d)
+          (b1.update var d)
+          (c0.update var d)
+          (c1.update var d)
+          (Valuation.update.isMonotonic.approximation b0 b1 bLe var d)
+          (Valuation.update.isMonotonic.approximation c0 c1 cLe var d)
+      
+      And.intro
+        (fun d dIn =>
+          let varD := choiceEx dIn
+          ⟨varD, (ih varD).left d varD.property⟩)
+        (fun d dIn =>
+          let varD := choiceEx dIn
+          ⟨varD, (ih varD).right d varD.property⟩)
 
 
 -- Interpretation on definition lists is defined pointwise.
@@ -1076,6 +1251,135 @@ noncomputable def operatorC.stage
     (operatorC.isMonotonic alg dl b)
     n
 
+noncomputable def operatorC.lfp.index
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+:
+  { n: Ordinal // operatorC.stage alg dl b n = (operatorC.lfp alg dl b).val }
+:= ⟨
+  @_root_.lfp.stage.fixed.index
+    (Valuation Var alg.D)
+    (Valuation.ord.standard Var alg.D)
+    (Valuation.ord.standard.isChainComplete Var alg.D)
+    (operatorC alg dl b)
+    (operatorC.isMonotonic alg dl b),
+    rfl
+⟩
+
+noncomputable def operatorC.stage.prevTuple
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+  (n: Ordinal)
+:
+  Tuple (Valuation Var alg.D)
+:=
+  @lfp.stage.prevTuple
+    (Valuation Var alg.D)
+    (Valuation.ord.standard Var alg.D)
+    (Valuation.ord.standard.isChainComplete Var alg.D)
+    (operatorC alg dl b)
+    (operatorC.isMonotonic alg dl b)
+    n
+
+def operatorC.stage.prevChain
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+  (n: Ordinal)
+:
+  @Chain (Valuation Var alg.D) (Valuation.ord.standard Var alg.D)
+:=
+  @lfp.stage.prevChain
+    (Valuation Var alg.D)
+    (Valuation.ord.standard Var alg.D)
+    (Valuation.ord.standard.isChainComplete Var alg.D)
+    (operatorC alg dl b)
+    (operatorC.isMonotonic alg dl b)
+    n
+
+noncomputable def operatorC.stage.prevChain.stage.in
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+  (n: Ordinal)
+  (nn: ↑n)
+:
+  operatorC.stage alg dl b nn ∈ (operatorC.stage.prevChain alg dl b n).val
+:=
+  ⟨nn, rfl⟩
+
+noncomputable def operatorC.stage.prevChain.in.index
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+  (n: Ordinal)
+  (val: Valuation Var alg.D)
+  (valInPrevChain: val ∈ (operatorC.stage.prevChain alg dl b n).val)
+:
+  { i: Ordinal // operatorC.stage alg dl b i = val }
+:=
+  let pT := operatorC.stage.prevTuple alg dl b n
+  
+  let i: { i: ↑n // Tuple.elements pT i = val } := choiceEx valInPrevChain
+  
+  ⟨i.val, i.property⟩
+
+def operatorC.stage.limit
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+  {n: Ordinal}
+  (nIsLimit: n.isLimit)
+:
+  operatorC.stage alg dl b n =
+    (@Chain.sup
+      (Valuation Var alg.D)
+      (Valuation.ord.standard Var alg.D)
+      (prevChain alg dl b n)
+      (Valuation.ord.standard.isChainComplete Var alg.D)).val
+:=
+  @lfp.stage.limit
+    (Valuation Var alg.D)
+    (Valuation.ord.standard Var alg.D)
+    (Valuation.ord.standard.isChainComplete Var alg.D)
+    (operatorC alg dl b)
+    (operatorC.isMonotonic alg dl b)
+    n
+    nIsLimit
+
+def operatorC.stage.succ
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+  (n nPred: Ordinal)
+  (nPredEq: n.pred = nPred)
+:
+  operatorC.stage alg dl b n =
+    (operatorC alg dl b) (operatorC.stage alg dl b nPred)
+:=
+  @lfp.stage.succ
+    (Valuation Var alg.D)
+    (Valuation.ord.standard Var alg.D)
+    (Valuation.ord.standard.isChainComplete Var alg.D)
+    (operatorC alg dl b)
+    (operatorC.isMonotonic alg dl b)
+    n nPred
+    nPredEq
+
+noncomputable def operatorC.stage.eqPrevN
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (b: Valuation Var alg.D)
+  (n: Ordinal)
+  (nn: ↑n)
+:
+  operatorC.stage alg dl b nn =
+    (operatorC.stage.prevTuple alg dl b n).elements nn
+:=
+  rfl
+
 noncomputable def operatorC.stage.fpIndex
   (alg: Algebra s)
   (dl: DefList s Var)
@@ -1092,6 +1396,7 @@ noncomputable def operatorC.stage.fpIndex
   
   ⟨index, rfl⟩
 
+-- Readability? Never heard of it.
 def operatorC.stage.isMonotonic.approximation
   (alg: Algebra s)
   (dl: DefList s Var)
@@ -1101,50 +1406,39 @@ def operatorC.stage.isMonotonic.approximation
 :
   operatorC.stage alg dl b0 n ⊑ operatorC.stage alg dl b1 n
 :=
-  let D.so := Set3.ord.standard alg.D
   let D.soPo := Set3.ord.standard.po alg.D
   let D.cc := Set3.ord.standard.isChainComplete alg.D
   
-  let Val := (Valuation Var alg.D)
-  let Val.so := (Valuation.ord.standard Var alg.D)
+  let _Val.so := (Valuation.ord.standard Var alg.D)
   let cc := (Valuation.ord.standard.isChainComplete Var alg.D)
   
+  let pt0 := operatorC.stage.prevTuple alg dl b0 n
+  let pt1 := operatorC.stage.prevTuple alg dl b1 n
+  
   if h: n.isLimit then
-    let prevChain0 := @lfp.stage.prevChain Val Val.so cc
-      (operatorC alg dl b0)
-      (operatorC.isMonotonic alg dl b0)
-      n
-    
-    let prevChain1 := @lfp.stage.prevChain Val Val.so cc
-      (operatorC alg dl b1)
-      (operatorC.isMonotonic alg dl b1)
-      n
+    let prevChain0 := operatorC.stage.prevChain alg dl b0 n
+    let prevChain1 := operatorC.stage.prevChain alg dl b1 n
     
     let sup0 := prevChain0.sup cc
     let sup1 := prevChain1.sup cc
     
     let sup0EqStage: operatorC.stage alg dl b0 n = sup0.val :=
-      lfp.stage.limit
-        cc
-        (operatorC alg dl b0)
-        (operatorC.isMonotonic alg dl b0)
-        h
+      operatorC.stage.limit alg dl b0 h
     
     let sup1EqStage: operatorC.stage alg dl b1 n = sup1.val :=
-      lfp.stage.limit
-        cc
-        (operatorC alg dl b1)
-        (operatorC.isMonotonic alg dl b1)
-        h
+      operatorC.stage.limit alg dl b1 h
     
     let sup0Pointwise :=
       @pointwiseSup Var (Set3 alg.D) D.soPo D.cc prevChain0
     
+    let sup1Pointwise :=
+      @pointwiseSup Var (Set3 alg.D) D.soPo D.cc prevChain1
+    
     let sup0Pointwise.typed :=
       @pointwiseSup.typed Var (Set3 alg.D) D.soPo D.cc prevChain0
     
-    let sup0Pointwise.typed.eq :=
-      @pointwiseSup.eqTyped Var (Set3 alg.D) D.soPo D.cc prevChain0
+    let sup1Pointwise.typed :=
+      @pointwiseSup.typed Var (Set3 alg.D) D.soPo D.cc prevChain1
     
     let sup0EqPointwiseSup: sup0 = sup0Pointwise := sup.eq _ _
     let sup0EqPointwiseSup.var (var: ↑Var):
@@ -1157,27 +1451,160 @@ def operatorC.stage.isMonotonic.approximation
     :=
       sup0EqPointwiseSup.var var
     
+    let sup1EqPointwiseSup: sup1 = sup1Pointwise := sup.eq _ _
+    let sup1EqPointwiseSup.var (var: ↑Var):
+      sup1.val var = sup1Pointwise.val var
+    :=
+      congr (congr rfl sup1EqPointwiseSup) rfl
+    
+    let sup1EqPointwiseSup.typed (var: ↑Var):
+      sup1.val var = (sup1Pointwise.typed var).val
+    :=
+      sup1EqPointwiseSup.var var
+    
     let prevChainLeNn: sup0.val ⊑ sup1.val :=
       fun x =>
         let ch0At := pointwiseSup.atChain D.cc prevChain0 x
+        let ch1At := pointwiseSup.atChain D.cc prevChain1 x
+        
         let sup0At := sup0Pointwise.typed x
+        let sup1At := sup1Pointwise.typed x
         
         And.intro
           (fun d dIn =>
             let dIn.typed: d ∈ sup0At.val.defMem :=
               sup0EqPointwiseSup.typed x ▸ dIn
             
-            let exSCh0: ∃ sCh0: ↑ch0At.val, d ∈ sCh0.val.defMem :=
+            let exSCh0At: ∃ sCh0At: ↑ch0At.val, d ∈ sCh0At.val.defMem :=
               Set3.ord.standard.inSup.inChain.defMem.ex ch0At d dIn.typed
+            let sCh0At := choiceEx exSCh0At
             
-            let exVal: ∃ val: ↑prevChain0.val, d ∈ (val.val x).defMem :=
-              sorry
-            sorry)
-          sorry
+            let prevStage0:
+              {
+                prevStage:
+                  {
+                    prevStage: Valuation Var alg.D
+                  //
+                    prevStage ∈ prevChain0.val
+                  }
+              //
+                sCh0At.val.val = prevStage.val x
+              }
+            :=
+              choiceEx sCh0At.val.property
+            
+            let prevStage0.index.tmp:
+              { nn: ↑n // pt0.elements nn
+                = prevStage0.val.val }
+            :=
+              (choiceEx prevStage0.val.property)
+            
+            let prevStage.i:
+              { nn: ↑n // operatorC.stage alg dl b0 nn = prevStage0.val.val }
+            :=
+              ⟨prevStage0.index.tmp, prevStage0.index.tmp.property⟩
+            
+            let prevStage1 := operatorC.stage alg dl b1 prevStage.i.val
+            
+            let prevStage1.ge: prevStage0.val.val ⊑ prevStage1 :=
+              (prevStage.i.property) ▸
+              have: prevStage.i.val < n := prevStage.i.val.property
+              (operatorC.stage.isMonotonic.approximation alg dl b0 b1 b0LeB1
+                prevStage.i.val)
+            
+            let prevStage1.inChain: prevStage1 ∈ prevChain1.val :=
+              operatorC.stage.prevChain.stage.in alg dl b1 n prevStage.i
+            
+            let prevStage1.typed:
+              { t: Valuation Var alg.D // t ∈ prevChain1.val }
+            :=
+              ⟨prevStage1, prevStage1.inChain⟩
+            
+            let prevStage1.leSup1: prevStage1 ≤ sup1.val :=
+              sup1.property.left prevStage1.typed
+            
+            let dInPrevStage0: d ∈ (prevStage0.val.val x).defMem :=
+              prevStage0.property ▸ sCh0At.property
+            
+            let dInPrevStage1: d ∈ (prevStage1 x).defMem :=
+              (prevStage1.ge x).left d dInPrevStage0
+            
+            (prevStage1.leSup1 x).left d dInPrevStage1)
+          (fun d dIn =>
+            let dIn.typed: d ∈ sup1At.val.posMem :=
+              sup1EqPointwiseSup.typed x ▸ dIn
+            
+            let exSCh1At: ∃ sCh1At: ↑ch1At.val, d ∈ sCh1At.val.posMem :=
+              Set3.ord.standard.inSup.inChain.posMem.ex ch1At d dIn.typed
+            let sCh1At := choiceEx exSCh1At
+            
+            let prevStage1 := choiceEx sCh1At.val.property
+            
+            let prevStage1.index.tmp:
+              { nn: ↑n // pt1.elements nn
+                = prevStage1.val.val }
+            :=
+              (choiceEx prevStage1.val.property)
+            
+            let prevStage.i:
+              { nn: ↑n // operatorC.stage alg dl b1 nn = prevStage1.val.val }
+            :=
+              ⟨prevStage1.index.tmp, prevStage1.index.tmp.property⟩
+            
+            let prevStage0 := operatorC.stage alg dl b0 prevStage.i.val
+            
+            let prevStage0.le: prevStage0 ⊑ prevStage1.val.val :=
+              (prevStage.i.property) ▸
+              have: prevStage.i.val < n := prevStage.i.val.property
+              (operatorC.stage.isMonotonic.approximation alg dl b0 b1 b0LeB1
+                prevStage.i.val)
+            
+            let prevStage0.inChain: prevStage0 ∈ prevChain0.val :=
+              operatorC.stage.prevChain.stage.in alg dl b0 n prevStage.i
+            
+            let prevStage0.typed:
+              { t: Valuation Var alg.D // t ∈ prevChain0.val }
+            :=
+              ⟨prevStage0, prevStage0.inChain⟩
+            
+            let prevStage0.leSup0: prevStage0 ≤ sup0.val :=
+              sup0.property.left prevStage0.typed
+            
+            let dInPrevStage1: d ∈ (prevStage1.val.val x).posMem :=
+              prevStage1.property ▸ sCh1At.property
+            
+            let dInPrevStage0: d ∈ (prevStage0 x).posMem :=
+              (prevStage0.le x).right d dInPrevStage1
+            
+            (prevStage0.leSup0 x).right d dInPrevStage0)
     
     sup0EqStage ▸ sup1EqStage ▸ prevChainLeNn
   else
-    sorry
+    let nPred := Ordinal.nLimit.pred n h
+    
+    let opC0 := operatorC alg dl b0
+    let opC1 := operatorC alg dl b1
+    
+    let s0Pred := operatorC.stage alg dl b0 nPred
+    let s1Pred := operatorC.stage alg dl b1 nPred
+    
+    let s0Eq: operatorC.stage alg dl b0 n = opC0 s0Pred :=
+      operatorC.stage.succ alg dl b0 n nPred (Ordinal.succ.pred.eq nPred.property)
+    
+    let s1Eq: operatorC.stage alg dl b1 n = opC1 s1Pred :=
+      operatorC.stage.succ alg dl b1 n nPred (Ordinal.succ.pred.eq nPred.property)
+    
+    let s0PredLeS1Pred: s0Pred ⊑ s1Pred :=
+      have: nPred < n := Ordinal.nLimit.pred.lt n h
+      operatorC.stage.isMonotonic.approximation alg dl b0 b1 b0LeB1 nPred
+    
+    fun x =>
+      let ILe := I.isMonotonic.approximation
+        alg (dl.fam x) b0 b1 s0Pred s1Pred b0LeB1 s0PredLeS1Pred
+      
+      s0Eq ▸ s1Eq ▸ ILe
+termination_by operatorC.stage.isMonotonic.approximation alg dl b0 b1 b0LeB1 n
+  => n
 
 
 noncomputable def operatorB (alg: Algebra s) (dl: DefList s Var):
@@ -1185,12 +1612,73 @@ noncomputable def operatorB (alg: Algebra s) (dl: DefList s Var):
 :=
   fun b => (operatorC.lfp alg dl b).val
 
-def operatorB.isMonotonic {alg: Algebra s} (dl: DefList s Var):
+def operatorB.isMonotonic (alg: Algebra s) (dl: DefList s Var):
   isMonotonic (operatorB alg dl)
 :=
   fun b0 b1 b0LeB1 =>
     fun x =>
-      sorry
+      let lfpI0 := operatorC.lfp.index alg dl b0
+      let lfpI1 := operatorC.lfp.index alg dl b1
+      
+      let lfpI:
+        {
+          n: Ordinal
+        //
+          operatorC.stage alg dl b0 n = operatorB alg dl b0 ∧
+          operatorC.stage alg dl b1 n = operatorB alg dl b1
+        }
+      :=
+        if h: lfpI0.val ≤ lfpI1 then
+          let higher :=
+            @lfp.stage.fixed.index.higher
+              (Valuation Var alg.D)
+              (Valuation.ord.standard Var alg.D)
+              (Valuation.ord.standard.isChainComplete Var alg.D)
+              (operatorC alg dl b0)
+              (operatorC.isMonotonic alg dl b0)
+              (operatorC.lfp alg dl b0)
+              lfpI1
+              h
+          ⟨lfpI1, And.intro higher lfpI1.property⟩
+        else
+          let lt: lfpI1.val ≤ lfpI0 := (lfpI0.val.total lfpI1).elim
+            (fun nope => False.elim (h (Or.inl nope)))
+            (fun le =>
+              le.elim
+                (fun lt => (Or.inl lt))
+                (fun eq => (Or.inr eq.symm)))
+          
+          let higher :=
+            @lfp.stage.fixed.index.higher
+              (Valuation Var alg.D)
+              (Valuation.ord.standard Var alg.D)
+              (Valuation.ord.standard.isChainComplete Var alg.D)
+              (operatorC alg dl b1)
+              (operatorC.isMonotonic alg dl b1)
+              (operatorC.lfp alg dl b1)
+              lfpI0
+              lt
+          ⟨lfpI0, And.intro lfpI0.property higher⟩
+      
+      let le := operatorC.stage.isMonotonic.approximation
+        alg dl b0 b1 b0LeB1 lfpI
+      
+      (lfpI.property.left ▸ lfpI.property.right ▸ le) x
+
+noncomputable def operatorB.stage
+  (alg: Algebra s)
+  (dl: DefList s Var)
+  (n: Ordinal)
+:
+  Valuation Var alg.D
+:=
+  @lfp.stage
+    (Valuation Var alg.D)
+    (Valuation.ord.approximation Var alg.D)
+    (Valuation.ord.approximation.isChainComplete Var alg.D)
+    (operatorB alg dl)
+    (operatorB.isMonotonic alg dl)
+    n
 
 
 

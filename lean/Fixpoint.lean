@@ -977,4 +977,45 @@ section ord
     let fp := lfp.stage.fixed cc op opMono
     
     ⟨fp.val, And.intro fp.property (lfp.stage.leFp cc op opMono fpIndex)⟩
+  
+  def lfp.eq
+    {op: T → T}
+    (a b: Lfp op)
+  :
+    a = b
+  :=
+    let ab: a.val .≤ b.val := a.property.right b.val b.property.left
+    let ba: b.val .≤ a.val := b.property.right a.val a.property.left
+    
+    Subtype.eq (ord.antisymm a.val b.val ab ba)
+  
+  def lfp.stage.fixed.index.higher
+    (cc: isChainComplete ord)
+    (op: T → T)
+    (opMono: isMonotonic op)
+    (opLfp: Lfp op)
+    (n: Ordinal)
+    (nGe: index cc op opMono ≤ n)
+  :
+    stage cc op opMono n = opLfp.val
+  :=
+    let opLfp.standard := lfp cc op opMono
+    
+    let i := index cc op opMono
+    
+    let stageN := stage cc op opMono n
+    let stageI := stage cc op opMono i
+    
+    let eq.left: stageI = opLfp.standard.val := rfl
+    let eq.right: opLfp.standard.val = opLfp.val := congr rfl (lfp.eq _ _)
+    let eq.opLfp: stageI = opLfp.val := eq.left.trans eq.right
+    
+    let stageN.le: stageN .≤ stageI :=
+      lfp.stage.leFp cc op opMono n stageI i.property
+    
+    let stageN.ge: stageI .≤ stageN := lfp.stage.isMono cc op opMono nGe
+    
+    let eq.ni := ord.antisymm _ _ stageN.le stageN.ge
+    
+    eq.ni.trans eq.opLfp
 end ord
