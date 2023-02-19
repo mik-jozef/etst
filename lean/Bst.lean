@@ -497,8 +497,20 @@ inductive Expr (s: Signature): (Var: VarSet) → Type
   | un: Expr s Var → Expr s Var → Expr s Var
   | ir: Expr s Var → Expr s Var → Expr s Var
   | cpl: Expr s Var → Expr s Var
-  | Un: (x: Variable) → Expr s (addVar Var x) → Expr s Var
-  | Ir: (x: Variable) → Expr s (addVar Var x) → Expr s Var
+  | Un: (x: Variable) → Expr s Var → Expr s (addVar Var x) → Expr s Var
+  | Ir: (x: Variable) → Expr s Var → Expr s (addVar Var x) → Expr s Var
+
+inductive PosExpr (s: Signature): (Var: VarSet) → Type
+  | var: { x: Variable // Var x } → PosExpr s Var
+  | opApp:
+      (op: s.Op) →
+      (s.arity op → PosExpr s Var) →
+      PosExpr s Var
+  | un: PosExpr s Var → PosExpr s Var → PosExpr s Var
+  | ir: PosExpr s Var → PosExpr s Var → PosExpr s Var
+  | cond: PosExpr s Var → PosExpr s Var → PosExpr s Var
+  | Un: (x: Variable) → PosExpr s (addVar Var x) → PosExpr s Var
+  | Ir: (x: Variable) → PosExpr s (addVar Var x) → PosExpr s Var
 
 
 namespace Expr
@@ -517,10 +529,10 @@ namespace Expr
     | Expr.un a b => Expr.un (widen a WiderVar isWider) (widen b WiderVar isWider)
     | Expr.ir a b => Expr.ir (widen a WiderVar isWider) (widen b WiderVar isWider)
     | Expr.cpl a => Expr.cpl (widen a WiderVar isWider)
-    | Expr.Un x body =>
-        Expr.Un x (widen body (addVar WiderVar x) (addVar.isWider Var WiderVar isWider x))
-    | Expr.Ir x body =>
-        Expr.Ir x (widen body (addVar WiderVar x) (addVar.isWider Var WiderVar isWider x))
+    | Expr.Un x xDom body =>
+        Expr.Un x (widen xDom WiderVar isWider) (widen body (addVar WiderVar x) (addVar.isWider Var WiderVar isWider x))
+    | Expr.Ir x xDom body =>
+        Expr.Ir x (widen xDom WiderVar isWider) (widen body (addVar WiderVar x) (addVar.isWider Var WiderVar isWider x))
   
   -- Why does this not hold by definitional equality? Why can't I just use rfl?
   -- Oh the answer is recursion, right? TODO make *your* proof assistant handle it.
@@ -537,7 +549,9 @@ namespace Expr
         let exprsEq: exprs = (fun arg => widen (exprs arg) Var _) :=
           funext fun ar => widen.eq (exprs ar)
         
-        show Expr.opApp op exprs = Expr.opApp op (fun arg => widen (exprs arg) Var _) from
+        show Expr.opApp op exprs =
+          Expr.opApp op (fun arg => widen (exprs arg) Var _)
+        from
           exprsEq ▸ rfl
     
     | Expr.un a b =>
@@ -548,15 +562,20 @@ namespace Expr
         show Expr.ir a b = Expr.ir (widen a Var _) (widen b Var _) from
           (widen.eq a) ▸ (widen.eq b) ▸ rfl
     
-    | Expr.cpl a => show Expr.cpl a = Expr.cpl (widen a Var _) from (widen.eq a) ▸ rfl
+    | Expr.cpl a => show Expr.cpl a = Expr.cpl (widen a Var _) from
+     (widen.eq a) ▸ rfl
     
-    | Expr.Un x body =>
-        show Expr.Un x body = Expr.Un x (widen body (addVar Var x) _) from
-          (widen.eq body) ▸ rfl
+    | Expr.Un x xDom body =>
+        show Expr.Un x xDom body =
+          Expr.Un x (widen xDom Var _) (widen body (addVar Var x) _)
+        from
+          (widen.eq xDom) ▸ (widen.eq body) ▸ rfl
     
-    | Expr.Ir x body =>
-        show Expr.Ir x body = Expr.Ir x (widen body (addVar Var x) _) from
-          (widen.eq body) ▸ rfl
+    | Expr.Ir x xDom body =>
+        show Expr.Ir x xDom body =
+          Expr.Ir x (widen xDom Var _) (widen body (addVar Var x) _)
+        from
+          (widen.eq xDom) ▸ (widen.eq body) ▸ rfl
   
   
   @[reducible] def Family (s: Signature) (Var: VarSet) := ↑Var → Expr s Var
@@ -869,52 +888,62 @@ def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
       fun d dInNPos =>
         show d ∉ ie.defMem from fun dInDef => dInNPos (ie.defLePos d dInDef)
     ⟩
-| Expr.Un x body =>
+| Expr.Un x xDom body =>
+    let xDom.I: Set3 alg.D := I alg b c xDom
+    
     let body.I (iX: alg.D): Set3 alg.D :=
-      (I alg (b.update x iX) (c.update x iX) body)
+      I alg (b.update x iX) (c.update x iX) body
     
     ⟨
-      fun d => ∃ iX: alg.D, d ∈ (body.I iX).defMem,
-      fun d => ∃ iX: alg.D, d ∈ (body.I iX).posMem,
+      fun d => ∃ iX: ↑xDom.I.defMem, d ∈ (body.I iX).defMem,
+      fun d => ∃ iX: ↑xDom.I.posMem, d ∈ (body.I iX).posMem,
       
-      fun d dDef => dDef.elim fun iX iXDef => ⟨iX, (body.I iX).defLePos d iXDef⟩
+      fun d dDef => dDef.elim fun iX iXDef => ⟨
+        ⟨iX, xDom.I.defLePos iX iX.property⟩,
+        (body.I iX).defLePos d iXDef
+      ⟩
     ⟩
-| Expr.Ir x body =>
+| Expr.Ir x xDom body =>
+    -- Notice we're only using the background valuation.
+    let xDom.I: Set3 alg.D := I alg b b xDom
+    
     let iBody (iX: alg.D): Set3 alg.D :=
       (I alg (b.update x iX) (c.update x iX) body)
     
     ⟨
-      fun d => ∃ iX: alg.D, d ∈ (iBody iX).defMem,
-      fun d => ∃ iX: alg.D, d ∈ (iBody iX).posMem,
+      fun d => ∀ iX: ↑xDom.I.posMem, d ∈ (iBody iX).defMem,
+      fun d => ∀ iX: ↑xDom.I.defMem, d ∈ (iBody iX).posMem,
       
-      fun d dDef => dDef.elim fun iX iXDef => ⟨iX, (iBody iX).defLePos d iXDef⟩
+      fun d dDefBody xDDef =>
+        let dPos := ⟨xDDef, xDom.I.defLePos xDDef xDDef.property⟩
+        (iBody xDDef.val).defLePos d (dDefBody dPos)
     ⟩
 
 def I.isMonotonic.standard
   (alg: Algebra s)
   (e: Expr s Var)
   (b c0 c1: Valuation Var alg.D)
-  (c0LeC1: c0 ≤ c1)
+  (cLe: c0 ≤ c1)
 :
   I alg b c0 e ≤ I alg b c1 e
 :=
   match e with
   | Expr.var a => And.intro
-      (fun x xIn => (c0LeC1 a).left x xIn)
-      (fun x xIn => (c0LeC1 a).right x xIn)
+      (fun x xIn => (cLe a).left x xIn)
+      (fun x xIn => (cLe a).right x xIn)
   | Expr.opApp op args => And.intro
       (fun x xIn =>
         let argC0 (i: s.arity op) := (I alg b c0 (args i)).defMem
         let argC1 (i: s.arity op) := (I alg b c1 (args i)).defMem
         let argMono (i: s.arity op): argC0 i ≤ argC1 i :=
-          (I.isMonotonic.standard alg (args i) b c0 c1 c0LeC1).left
+          (I.isMonotonic.standard alg (args i) b c0 c1 cLe).left
         let isMono3 := alg.isMonotonic op argC0 argC1 argMono
         isMono3 x xIn)
       (fun x xIn =>
         let argC0 (i: s.arity op) := (I alg b c0 (args i)).posMem
         let argC1 (i: s.arity op) := (I alg b c1 (args i)).posMem
         let argMono (i: s.arity op): argC0 i ≤ argC1 i :=
-          (I.isMonotonic.standard alg (args i) b c0 c1 c0LeC1).right
+          (I.isMonotonic.standard alg (args i) b c0 c1 cLe).right
         let isMono3 := alg.isMonotonic op argC0 argC1 argMono
         isMono3 x xIn)
   -- "Right" is one letter too long.
@@ -927,10 +956,10 @@ def I.isMonotonic.standard
         let rite.I1 := (I alg b c1 rite).defMem
         
         let left.isMono: left.I0 ≤ left.I1 :=
-          (I.isMonotonic.standard alg left b c0 c1 c0LeC1).left
+          (I.isMonotonic.standard alg left b c0 c1 cLe).left
         
         let rite.isMono: rite.I0 ≤ rite.I1 :=
-          (I.isMonotonic.standard alg rite b c0 c1 c0LeC1).left
+          (I.isMonotonic.standard alg rite b c0 c1 cLe).left
         
         if hLeft: x ∈ left.I0 then
           let xInLeft1: x ∈ left.I1 := left.isMono x hLeft
@@ -949,10 +978,10 @@ def I.isMonotonic.standard
         let rite.I1 := (I alg b c1 rite).posMem
         
         let left.isMono: left.I0 ≤ left.I1 :=
-          (I.isMonotonic.standard alg left b c0 c1 c0LeC1).right
+          (I.isMonotonic.standard alg left b c0 c1 cLe).right
         
         let rite.isMono: rite.I0 ≤ rite.I1 :=
-          (I.isMonotonic.standard alg rite b c0 c1 c0LeC1).right
+          (I.isMonotonic.standard alg rite b c0 c1 cLe).right
         
         if hLeft: x ∈ left.I0 then
           let xInLeft1: x ∈ left.I1 := left.isMono x hLeft
@@ -971,10 +1000,10 @@ def I.isMonotonic.standard
         let rite.I1 := (I alg b c1 rite).defMem
         
         let left.isMono: left.I0 ≤ left.I1 :=
-          (I.isMonotonic.standard alg left b c0 c1 c0LeC1).left
+          (I.isMonotonic.standard alg left b c0 c1 cLe).left
         
         let rite.isMono: rite.I0 ≤ rite.I1 :=
-          (I.isMonotonic.standard alg rite b c0 c1 c0LeC1).left
+          (I.isMonotonic.standard alg rite b c0 c1 cLe).left
         
         if hLeft: x ∈ left.I0 then
           if hRite: x ∈ rite.I0 then
@@ -994,10 +1023,10 @@ def I.isMonotonic.standard
         let rite.I1 := (I alg b c1 rite).posMem
         
         let left.isMono: left.I0 ≤ left.I1 :=
-          (I.isMonotonic.standard alg left b c0 c1 c0LeC1).right
+          (I.isMonotonic.standard alg left b c0 c1 cLe).right
         
         let rite.isMono: rite.I0 ≤ rite.I1 :=
-          (I.isMonotonic.standard alg rite b c0 c1 c0LeC1).right
+          (I.isMonotonic.standard alg rite b c0 c1 cLe).right
         
         if hLeft: x ∈ left.I0 then
           if hRite: x ∈ rite.I0 then
@@ -1009,96 +1038,102 @@ def I.isMonotonic.standard
         else
           False.elim (hLeft xIn.left))
   | Expr.cpl _ => And.intro (fun _ xIn => xIn) (fun _ xIn => xIn)
-  | Expr.Un var body => And.intro
-      (fun x xIn =>
-        -- An element st. body[var := d] contains x.
-        let d := choiceEx xIn
+  | Expr.Un x xDom body => And.intro
+      (fun d dIn =>
+        let dX := choiceEx dIn
         
-        let bUpdated := b.update var d
-        let c0Updated := c0.update var d
-        let c1Updated := c1.update var d
+        let bUpdated := b.update x dX.val
+        let c0Updated := c0.update x dX.val
+        let c1Updated := c1.update x dX.val
+        
+        let dom.I0 := I alg b c0 xDom
+        let dom.I1 := I alg b c1 xDom
         
         let body.I0 := I alg bUpdated c0Updated body
         let body.I1 := I alg bUpdated c1Updated body
         
         let cUpdatedLe :=
-          (Valuation.update.isMonotonic.standard c0 c1 c0LeC1 var d)
+          (Valuation.update.isMonotonic.standard c0 c1 cLe x dX.val)
+        
+        let dom.le: dom.I0 ≤ dom.I1 := I.isMonotonic.standard
+          alg xDom b c0 c1 cLe
         
         let body.le: body.I0 ≤ body.I1 := I.isMonotonic.standard
           alg body bUpdated c0Updated c1Updated cUpdatedLe
         
-        let xInBody0: x ∈ body.I0.defMem := d.property
-        let xInBody1: x ∈ body.I1.defMem := body.le.left x xInBody0
+        let dXInDom0: dX.val.val ∈ dom.I0.defMem := dX.val.property
+        let dXInDom1: dX.val.val ∈ dom.I1.defMem := dom.le.left dX.val dXInDom0
         
-        ⟨d, xInBody1⟩)
+        let dInBody0: d ∈ body.I0.defMem := dX.property
+        let dInBody1: d ∈ body.I1.defMem := body.le.left d dInBody0
+        
+        ⟨⟨dX.val, dXInDom1⟩, dInBody1⟩)
       
-      (fun x xIn =>
-        -- An element st. body[var := d] contains x.
-        let d := choiceEx xIn
+      (fun d dIn =>
+        let dX := choiceEx dIn
         
-        let bUpdated := b.update var d
-        let c0Updated := c0.update var d
-        let c1Updated := c1.update var d
+        let bUpdated := b.update x dX.val
+        let c0Updated := c0.update x dX.val
+        let c1Updated := c1.update x dX.val
         
-        let body.I0 := I alg bUpdated c0Updated body
-        let body.I1 := I alg bUpdated c1Updated body
-        
-        let cUpdatedLe :=
-          (Valuation.update.isMonotonic.standard c0 c1 c0LeC1 var d)
-        
-        let body.le: body.I0 ≤ body.I1 :=
-          I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
-        
-        let xInBody0: x ∈ body.I0.posMem := d.property
-        let xInBody1: x ∈ body.I1.posMem := body.le.right x xInBody0
-        
-        ⟨d, xInBody1⟩)
-  | Expr.Ir var body => And.intro
-      (fun x xIn =>
-        -- An element st. body[var := d] contains x.
-        -- TODO why does this work? It is copypasted from Expr.Un,
-        -- I thought the argument would have to be a little different.
-        let d := choiceEx xIn
-        
-        let bUpdated := b.update var d
-        let c0Updated := c0.update var d
-        let c1Updated := c1.update var d
+        let dom.I0 := I alg b c0 xDom
+        let dom.I1 := I alg b c1 xDom
         
         let body.I0 := I alg bUpdated c0Updated body
         let body.I1 := I alg bUpdated c1Updated body
         
         let cUpdatedLe :=
-          (Valuation.update.isMonotonic.standard c0 c1 c0LeC1 var d)
+          (Valuation.update.isMonotonic.standard c0 c1 cLe x dX.val)
+        
+        let dom.le: dom.I0 ≤ dom.I1 := I.isMonotonic.standard
+          alg xDom b c0 c1 cLe
         
         let body.le: body.I0 ≤ body.I1 :=
           I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
         
-        let xInBody0: x ∈ body.I0.defMem := d.property
-        let xInBody1: x ∈ body.I1.defMem := body.le.left x xInBody0
+        let dXInDom0: dX.val.val ∈ dom.I0.posMem := dX.val.property
+        let dXInDom1: dX.val.val ∈ dom.I1.posMem := dom.le.right dX.val dXInDom0
         
-        ⟨d, xInBody1⟩)
+        let dInBody0: d ∈ body.I0.posMem := dX.property
+        let dInBody1: d ∈ body.I1.posMem := body.le.right d dInBody0
+        
+        ⟨⟨dX.val, dXInDom1⟩, dInBody1⟩)
+  | Expr.Ir x _xDom body => And.intro
+      (fun _d dIn xDDef =>
+        let dInXD := dIn xDDef
+        
+        let bUpdated := b.update x xDDef
+        let c0Updated := c0.update x xDDef
+        let c1Updated := c1.update x xDDef
+        
+        let body.I0 := I alg bUpdated c0Updated body
+        let body.I1 := I alg bUpdated c1Updated body
+        
+        let cUpdatedLe :=
+          (Valuation.update.isMonotonic.standard c0 c1 cLe x xDDef)
+        
+        let body.le: body.I0 ≤ body.I1 :=
+          I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
+        
+        body.le.left _ dInXD)
       
-      (fun x xIn =>
-        -- An element st. body[var := d] contains x.
-        let d := choiceEx xIn
+      (fun _d dIn xDDef =>
+        let dInXD := dIn xDDef
         
-        let bUpdated := b.update var d
-        let c0Updated := c0.update var d
-        let c1Updated := c1.update var d
+        let bUpdated := b.update x xDDef
+        let c0Updated := c0.update x xDDef
+        let c1Updated := c1.update x xDDef
         
         let body.I0 := I alg bUpdated c0Updated body
         let body.I1 := I alg bUpdated c1Updated body
         
         let cUpdatedLe :=
-          (Valuation.update.isMonotonic.standard c0 c1 c0LeC1 var d)
+          (Valuation.update.isMonotonic.standard c0 c1 cLe x xDDef)
         
         let body.le: body.I0 ≤ body.I1 :=
           I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
         
-        let xInBody0: x ∈ body.I0.posMem := d.property
-        let xInBody1: x ∈ body.I1.posMem := body.le.right x xInBody0
-        
-        ⟨d, xInBody1⟩)
+        body.le.right _ dInXD)
 
 def I.isMonotonic.approximation
   (alg: Algebra s)
@@ -1157,40 +1192,54 @@ def I.isMonotonic.approximation
       And.intro
         (fun d dIn => contra (ih.right d) dIn)
         (fun d dIn => contra (ih.left d) dIn)
-  | Expr.Un var body =>
-      let ih d :=
+  | Expr.Un x xDom body =>
+      let ihXDom :=
+        I.isMonotonic.approximation alg xDom b0 b1 c0 c1 bLe cLe
+      
+      let ihBody d :=
         I.isMonotonic.approximation alg body
-          (b0.update var d)
-          (b1.update var d)
-          (c0.update var d)
-          (c1.update var d)
-          (Valuation.update.isMonotonic.approximation b0 b1 bLe var d)
-          (Valuation.update.isMonotonic.approximation c0 c1 cLe var d)
+          (b0.update x d)
+          (b1.update x d)
+          (c0.update x d)
+          (c1.update x d)
+          (Valuation.update.isMonotonic.approximation b0 b1 bLe x d)
+          (Valuation.update.isMonotonic.approximation c0 c1 cLe x d)
       
       And.intro
         (fun d dIn =>
-          let varD := choiceEx dIn
-          ⟨varD, (ih varD).left d varD.property⟩)
+          let dX := choiceEx dIn
+          ⟨
+            ⟨dX.val, ihXDom.left _ dX.val.property⟩,
+            (ihBody dX.val).left d dX.property⟩
+          )
         (fun d dIn =>
-          let varD := choiceEx dIn
-          ⟨varD, (ih varD).right d varD.property⟩)
-  | Expr.Ir var body =>
+          let dX := choiceEx dIn
+          ⟨
+            ⟨dX.val, ihXDom.right _ dX.val.property⟩,
+            (ihBody dX.val).right d dX.property⟩
+          )
+  | Expr.Ir x xDom body =>
+      let ihXDom :=
+        I.isMonotonic.approximation alg xDom b0 b1 b0 b1 bLe bLe
+      
       let ih d :=
         I.isMonotonic.approximation alg body
-          (b0.update var d)
-          (b1.update var d)
-          (c0.update var d)
-          (c1.update var d)
-          (Valuation.update.isMonotonic.approximation b0 b1 bLe var d)
-          (Valuation.update.isMonotonic.approximation c0 c1 cLe var d)
+          (b0.update x d)
+          (b1.update x d)
+          (c0.update x d)
+          (c1.update x d)
+          (Valuation.update.isMonotonic.approximation b0 b1 bLe x d)
+          (Valuation.update.isMonotonic.approximation c0 c1 cLe x d)
       
       And.intro
-        (fun d dIn =>
-          let varD := choiceEx dIn
-          ⟨varD, (ih varD).left d varD.property⟩)
-        (fun d dIn =>
-          let varD := choiceEx dIn
-          ⟨varD, (ih varD).right d varD.property⟩)
+        (fun d dIn dXPos1 =>
+          let dXPos0: { d: alg.D // d ∈ (I alg b0 b0 xDom).posMem } :=
+            ⟨dXPos1, ihXDom.right dXPos1 dXPos1.property⟩
+          (ih dXPos1).left d (dIn dXPos0))
+        (fun d dIn dXPos0 =>
+          let dXPos1: { d: alg.D // d ∈ (I alg b1 b1 xDom).defMem } :=
+            ⟨dXPos0, ihXDom.left dXPos0 dXPos0.property⟩
+          (ih dXPos1).right d (dIn dXPos1))
 
 
 -- Interpretation on definition lists is defined pointwise.
@@ -1217,8 +1266,8 @@ def operatorC.isMonotonic
 :
   @isMonotonic _ (Valuation.ord.standard Var alg.D) (operatorC alg dl b)
 :=
-  fun c0 c1 c0LeC1 =>
-    fun x => I.isMonotonic.standard alg (dl.fam x) b c0 c1 c0LeC1
+  fun c0 c1 cLe =>
+    fun x => I.isMonotonic.standard alg (dl.fam x) b c0 c1 cLe
 
 noncomputable def operatorC.lfp
   (alg: Algebra s)
