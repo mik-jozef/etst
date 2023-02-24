@@ -148,3 +148,12 @@ def PartialOrderSq.le.fromPO
   a ⊑ b
 :=
   ab
+
+instance: PartialOrder Nat where
+  le := Nat.le
+  refl := by simp
+  antisymm := fun a b => Nat.le_antisymm
+  trans := fun a b c => Nat.le_trans
+  
+  ltToLeNeq := id
+  leNeqToLt := id

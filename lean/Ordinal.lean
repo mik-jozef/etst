@@ -44,7 +44,7 @@ def subtypeWellFounded
   invImage Subtype.val wf
 
 
-def Minimal (s: Set T) (lt: T → T → Prop): Type :=
+def Minimal.{u} (s: Set T) (lt: T → T → Prop): Type u :=
   { t: T // t ∈ s ∧ ∀ tt: T, lt tt t → tt ∉ s }
 
 noncomputable def minimal
@@ -2819,7 +2819,7 @@ namespace Ordinal
   def isSupremum (s: Set Ordinal) := isLeast (isUpperBound s)
   def Supremum (s: Set Ordinal) := Least (isUpperBound s)
   
-  def lt.set (n: Ordinal): Set Ordinal := fun nn => nn < n
+  def ltSet (n: Ordinal): Set Ordinal := fun nn => nn < n
   
   def never.lelt {p: Prop} {a b: Ordinal} (abLe: a ≤ b) (baLt: b < a): p :=
     abLe.elim
@@ -2838,7 +2838,7 @@ namespace Ordinal
       (fun eq => eq)
   
   def limit.isSup (n: Ordinal) (isLimit: n.isLimit):
-    isSupremum (lt.set n) n
+    isSupremum n.ltSet n
   :=
     And.intro
       (fun nn => Or.inl nn.property)
@@ -2858,3 +2858,29 @@ end Ordinal
 
 instance: Coe Ordinal (Type 1) where
   coe n := { nn: Ordinal // nn < n }
+
+def Nat.total (a b: Nat): a < b ∨ b < a ∨ a = b :=
+  (Nat.lt_or_ge a b).elim
+    (fun lt => Or.inl lt)
+    (fun ge => Or.inr
+      ((Nat.eq_or_lt_of_le ge).symm.elim
+        (fun x => Or.inl x)
+        (fun x => Or.inr x.symm)))
+
+namespace Ordinal
+  def omega: Ordinal := Ordinal.mk {
+    T := Nat
+    
+    lt := Nat.lt
+    total := Nat.total
+    
+    wf := Nat.lt_wfRel.wf
+  }
+  
+  def zero.ltOmega: zero < omega :=
+    And.intro
+      (fun isIso => ((choiceEx isIso).val.g 0).rec)
+      ⟨{ f := fun _ => 4, ordPres := fun a _ => a.rec }, trivial⟩
+  
+  def omega.lt.toNat (n: ↑Ordinal.omega): Nat := sorry
+end Ordinal

@@ -7,6 +7,8 @@ import PartialOrder
 open Classical
 
 
+inductive Null | null
+
 noncomputable def choiceEx {P: T → Prop} (ex: ∃ t: T, P t): { t: T // P t } :=
   let nonempty: Nonempty { t: T // P t } :=
     match ex with
