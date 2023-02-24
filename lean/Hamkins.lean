@@ -235,14 +235,14 @@ namespace Program
               | Location.rite loc => 2 * loc.address + 1
           | Layout.seq _ =>
               seqIndex location.seqN location.seqLoc.address
-      
-      -- TODO do I mneed this?
-      -- Typing in a bus is hard and weird.
-      def fromAddress: (layout: Layout) → (i: Nat) → layout.Location
-        | Layout.tape, i => Layout.Location.tape i
-        | Layout.pair a b, i => sorry
-        | Layout.seq f, i => sorry
     end Location
+    
+    -- TODO do I mneed this?
+    -- Typing in a bus is hard and weird.
+    def toLocation: (layout: Layout) → (i: Nat) → layout.Location
+      | Layout.tape, i => Layout.Location.tape i
+      | Layout.pair a b, i => sorry
+      | Layout.seq f, i => sorry
     
     def pop: Layout → Layout
       | tape => tape
@@ -253,11 +253,7 @@ namespace Program
     
     -- TODO do I need this?
     def Memory.toTape {layout: Layout} (m: layout.Memory): Nat2 :=
-      fun i =>
-        match layout with
-        | Layout.tape => sorry
-        | Layout.pair a b => sorry
-        | Layout.seq f => sorry
+      fun i => m (layout.toLocation i)
     
     structure MemSeq
       (layout: Layout)
