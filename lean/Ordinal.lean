@@ -2859,7 +2859,7 @@ end Ordinal
 instance: Coe Ordinal (Type 1) where
   coe n := { nn: Ordinal // nn < n }
 
-def Nat.total (a b: Nat): a < b ∨ b < a ∨ a = b :=
+def Nat.isTotal (a b: Nat): a < b ∨ b < a ∨ a = b :=
   (Nat.lt_or_ge a b).elim
     (fun lt => Or.inl lt)
     (fun ge => Or.inr
@@ -2872,7 +2872,7 @@ namespace Ordinal
     T := Nat
     
     lt := Nat.lt
-    total := Nat.total
+    total := Nat.isTotal
     
     wf := Nat.lt_wfRel.wf
   }
@@ -2881,6 +2881,4 @@ namespace Ordinal
     And.intro
       (fun isIso => ((choiceEx isIso).val.g 0).rec)
       ⟨{ f := fun _ => 4, ordPres := fun a _ => a.rec }, trivial⟩
-  
-  def omega.lt.toNat (n: ↑Ordinal.omega): Nat := sorry
 end Ordinal

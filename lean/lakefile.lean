@@ -6,6 +6,7 @@ package Bst {
 }
 
 lean_lib Arities {}
+lean_lib AssignState {}
 lean_lib Bst {}
 lean_lib Fixpoint {}
 lean_lib Hartogs {}

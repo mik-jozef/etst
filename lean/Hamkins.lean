@@ -1,3 +1,4 @@
+import AssignState
 import Fixpoint
 
 open Classical
@@ -64,16 +65,17 @@ structure HamkinsMachine.Move (State: Type) where
   symbol: Two
   dir: Dir
 
-def List.has (list: List T) (t: T): Prop :=
-  ∃ n: Fin list.length, list.get n = t
+def HamkinsMachine.Move.eq {State: Type}:
+  {m0 m1: HamkinsMachine.Move State} →
+  m0.state = m1.state →
+  m0.symbol = m1.symbol →
+  m0.dir = m1.dir →
+  m0 = m1
+  
+  | ⟨_,_,_⟩, ⟨_,_,_⟩, rfl, rfl, rfl => rfl
 
-def List.hasAll (list: List T): Prop :=
-  ∀ t: T, list.has t
-
-def Type.isFinite (T: Type): Prop :=
-  ∃ list: List T, list.hasAll
-
-def Type.IsFinite := { T: Type // Type.isFinite T }
+@[reducible] def HamkinsMachine.GetMove (State: Type) :=
+  State → Two → HamkinsMachine.Move State
 
 -- TODO do I need this?
 -- def Type.finite.cardinality (isF: Type.isFinite T):
@@ -81,15 +83,30 @@ def Type.IsFinite := { T: Type // Type.isFinite T }
 -- :=
 --   sorry
 
+/-
+  Infinite time Turing machine is too long. I hereby name you Hamkins
+  machine.
+  
+  Note: Unlike the original definition [0], here we only have one tape for
+  simplicity. In "Infinite time Turing machines with only one tape" [1],
+  the authors claim one-tape machines are [TL;DR: bad]. Well, it is their
+  definitions that are bad. A proper reaction to a move-left instruction
+  while head at zero is for the machine to crash and burn. Nevertheless,
+  thank you JDH for this awesome concept!
+  
+  0. https://arxiv.org/abs/math/9808093
+  1. https://arxiv.org/abs/math/9907044
+-/
 structure HamkinsMachine where
   State: Type
   
   isFinite: Type.isFinite State
   
+  initialState: State
   haltState: State
   limitState: State
   
-  getMove: State → Two → HamkinsMachine.Move State
+  getMove: HamkinsMachine.GetMove State
   
   haltHalts (two: Two): getMove haltState two = {
     state := haltState
@@ -104,9 +121,20 @@ namespace HamkinsMachine
     tape: Nat2
     head: Nat
   
-  def step (hm: HamkinsMachine) (config: Configuration tm): Configuration tm :=
-    let move := tm.getMove (config.state) (config.tape config.head)
-    let newHead := move.dir.shift config.head
+  def Configuration.eq: {a b: Configuration hm} →
+    (eqs: a.state = b.state) →
+    (eqt: a.tape = b.tape) →
+    (eqh: a.head = b.head) →
+    a = b
+  
+    | ⟨_,_,_⟩, ⟨_,_,_⟩, rfl, rfl, rfl => rfl
+  
+  def step (hm: HamkinsMachine) (config: Configuration hm): Configuration hm :=
+    let move := hm.getMove (config.state) (config.tape config.head)
+    -- With this, the `step.eq.X` proofs do not work. How to fix?
+    --let newHead := move.dir.shift config.head
+    let newHead :=
+      (hm.getMove (config.state) (config.tape config.head)).dir.shift config.head
     
     match newHead with
       | none => config
@@ -116,6 +144,33 @@ namespace HamkinsMachine
             tape := fun n => if n = config.head then move.symbol else config.tape n
             head := nh
           }
+  
+  def step.eq.none
+    (hm: HamkinsMachine)
+    (config: hm.Configuration)
+    (moveV: Move hm.State)
+    (moveEq: moveV = hm.getMove (config.state) (config.tape config.head))
+    (newHeadEq: none = moveV.dir.shift config.head)
+  :
+    hm.step config = config
+  :=
+    by unfold step rw [moveEq.symm] rw [newHeadEq.symm]
+  
+  def step.eq.some
+    (hm: HamkinsMachine)
+    (config: hm.Configuration)
+    (moveV: Move hm.State)
+    (moveEq: moveV = hm.getMove (config.state) (config.tape config.head))
+    (newHead: Nat)
+    (newHeadEq: some newHead = moveV.dir.shift config.head)
+  :
+    hm.step config = {
+      state := moveV.state
+      tape := fun n => if n = config.head then moveV.symbol else config.tape n
+      head := newHead
+    }
+  :=
+    by unfold step rw [moveEq.symm] rw [newHeadEq.symm]
   
   noncomputable def stage (hm: HamkinsMachine) (initial: Nat2) (n: Ordinal):
     Configuration hm
@@ -138,16 +193,29 @@ namespace HamkinsMachine
             hm.haltState
           else
             hm.limitState
+        -- If the machine halted, limSup is safe.
         tape := limSup prevStages initial
         head := 0
       }
     else
-      match hh: n.pred with
-        | none => False.elim (h hh)
-        | some pred =>
-            have: pred < n := n.predLt pred hh
-            step hm (stage hm initial pred)
+      let nPred := Ordinal.nLimit.pred n h
+      
+      have := Ordinal.nLimit.pred.lt n h
+      hm.step (hm.stage initial nPred)
     termination_by stage hm n => n
+  
+  def stage.eq.step
+    (hm: HamkinsMachine)
+    (initial: Nat2)
+    (n: Ordinal)
+    (nl: ¬n.isLimit)
+  :
+    hm.stage initial n = hm.step (hm.stage initial (Ordinal.nLimit.pred n nl))
+  :=
+    by conv =>
+      lhs
+      unfold stage
+      rw [dif_neg nl]
   
   def computes (hm: HamkinsMachine) (input output: Nat2): Prop :=
     ∃ n: Ordinal,
@@ -166,26 +234,28 @@ namespace HamkinsMachine
   def computable (fn: Nat2 → Option Nat2): Prop :=
     ∃ hm: HamkinsMachine, ∀ arg: Nat2, fn arg = hm.fn arg
   
+  def trivialMachine: HamkinsMachine := {
+    State := Null
+    isFinite := ⟨[Null.null], fun n => ⟨⟨0, by simp⟩, by simp⟩⟩
+    initialState := Null.null
+    haltState := Null.null
+    limitState := Null.null
+    getMove := fun state symbol => {
+      state := state
+      symbol := symbol
+      dir := Dir.none
+    }
+    haltHalts := by simp
+  }
+  
   
   def label: HamkinsMachine → Nat2 :=
     sorry
   
-  
   noncomputable def enumeration (nat2: Nat2): HamkinsMachine :=
     if h: ∃ hm: HamkinsMachine, hm.label = nat2 then
       choiceEx h
-    else {
-      State := Null
-      isFinite := ⟨[Null.null], fun n => ⟨⟨0, by simp⟩, by simp⟩⟩
-      haltState := Null.null
-      limitState := Null.null
-      getMove := fun state symbol => {
-        state := state
-        symbol := symbol
-        dir := Dir.none
-      }
-      haltHalts := by simp
-    }
+    else trivialMachine
 end HamkinsMachine
 
 
@@ -237,7 +307,7 @@ namespace Program
               seqIndex location.seqN location.seqLoc.address
     end Location
     
-    -- TODO do I mneed this?
+    -- TODO do I need this?
     -- Typing in a bus is hard and weird.
     def toLocation: (layout: Layout) → (i: Nat) → layout.Location
       | Layout.tape, i => Layout.Location.tape i
@@ -288,32 +358,33 @@ namespace Program
     
     noncomputable def Memory.assign
       {l: Layout}
-      (dest src: l.Location)
+      (src dest: l.Location)
       (m: l.Memory)
     :
       l.Memory
     :=
       fun loc => if loc = dest then m src else m loc
   end Layout
+end Program
 
-def Nat2.toMemory (tape: Nat2) {layout: Layout}: layout.Memory :=
+def Nat2.toMemory (tape: Nat2) {layout: Program.Layout}: layout.Memory :=
   fun loc => tape loc.address
 
 
 inductive Program:
-  (lIn lOut: Layout) →
+  (lIn lOut: Program.Layout) →
   (terminatesIf: Set lIn.Memory) →
   (precond: Set lIn.Memory) →
   (postcond: ↑precond → Set lOut.Memory) →
   Type
 where
   | assign
-      (dest src: layout.Location)
+      (src dest: layout.Location)
       
       (precond: Set layout.Memory)
       (postcond: ↑precond → Set layout.Memory)
       
-      (isSound: ∀ m: ↑precond, m.val.assign dest src ∈ postcond m)
+      (isSound: ∀ m: ↑precond, m.val.assign src dest ∈ postcond m)
     :
       Program layout layout terminatesIf precond postcond
   | ite
@@ -415,26 +486,946 @@ where
     :
       Program lIn lOut terminatesIf precond postcond
   | addPair
-      (additionalLayout: Layout)
+      (additionalLayout: Program.Layout)
       
       (precond: Set lIn.Memory)
     :
       Program lIn (lIn.pair additionalLayout) terminatesIf precond
         (fun mIn mOut =>
           (∀ loc: lIn.Location,
-            mOut (Layout.Location.left loc) = mIn.val loc) ∧
+            mOut (Program.Layout.Location.left loc) = mIn.val loc) ∧
           (∀ loc: additionalLayout.Location,
-            mOut (Layout.Location.rite loc) = Two.zero))
+            mOut (Program.Layout.Location.rite loc) = Two.zero))
   | pop
     : Program lIn lIn.pop terminatesIf precond (fun mIn mOut =>
         match lIn with
-          | Layout.tape => mOut = mIn.val
-          | Layout.pair a b =>
-              ∀ loc, mOut loc = mIn.val (Layout.Location.left loc)
-          | Layout.seq f =>
-              ∀ loc, mOut loc = mIn.val (Layout.Location.seq 0 loc))
+          | Program.Layout.tape => mOut = mIn.val
+          | Program.Layout.pair a b =>
+              ∀ loc, mOut loc = mIn.val (Program.Layout.Location.left loc)
+          | Program.Layout.seq f =>
+              ∀ loc, mOut loc = mIn.val (Program.Layout.Location.seq 0 loc))
 
 namespace Program
+  namespace Assign
+    def next.src {ub: Nat} (i: ↑(ub + 1)) (neq: i.val ≠ ub): ↑(ub + 1) := ⟨
+      i + 1,
+      (Nat.eq_or_lt_of_le i.property).elim
+        (fun eq => False.elim (neq (Nat.noConfusion eq id)))
+        id
+    ⟩
+    
+    def next.destDir (i dAddr: Nat) :=
+      if i = dAddr then
+        Dir.none
+      else if dAddr < i then
+        Dir.left
+      else
+        Dir.right
+    
+    def next.destDir.noneEq
+      (i dAddr: Nat)
+      (eqLeft: next.destDir i dAddr = Dir.none)
+    :
+      i = dAddr
+    :=
+      (Nat.isTotalLt i dAddr).elim
+        (fun lt =>
+          let neq: i ≠ dAddr := fun eq => Nat.lt_irrefl i (eq ▸ lt)
+          let ngt: dAddr ≮ i := fun gt => Nat.ltAntisymm gt lt
+          let eqRite: next.destDir i dAddr = Dir.right :=
+            (if_neg neq).trans (if_neg ngt)
+          Dir.noConfusion (eqRite.symm.trans eqLeft))
+        (fun geOrEq =>
+          (geOrEq.elim
+            (fun gt =>
+              let neq: i ≠ dAddr := fun eq => Nat.lt_irrefl i (eq ▸ gt)
+              let eqRite: next.destDir i dAddr = Dir.left :=
+                (if_neg neq).trans (if_pos gt)
+              Dir.noConfusion (eqRite.symm.trans eqLeft))
+            id))
+    
+    def next.destDir.leftIGtAddr
+      (i dAddr: Nat)
+      (eqLeft: next.destDir i dAddr = Dir.left)
+    :
+      dAddr < i
+    :=
+      (Nat.isTotalLt i dAddr).elim
+        (fun lt =>
+              let neq: i ≠ dAddr := fun eq => Nat.lt_irrefl i (eq ▸ lt)
+              let ngt: dAddr ≮ i := fun gt => Nat.ltAntisymm gt lt
+              let eqRite: next.destDir i dAddr = Dir.right :=
+                (if_neg neq).trans (if_neg ngt)
+              Dir.noConfusion (eqRite.symm.trans eqLeft))
+        (fun geOrEq =>
+          (geOrEq.elim
+            id
+            (fun eq =>
+              let eqNone: next.destDir i dAddr = Dir.none := (if_pos eq)
+              Dir.noConfusion (eqNone.symm.trans eqLeft))))
+    
+    def next.destDir.riteILtAddr
+      (i dAddr: Nat)
+      (eqLeft: next.destDir i dAddr = Dir.right)
+    :
+      i < dAddr
+    :=
+      (Nat.isTotalLt i dAddr).elim id
+        (fun geOrEq =>
+          (geOrEq.elim
+            (fun gt =>
+              let neq: i ≠ dAddr := fun eq => Nat.lt_irrefl i (eq ▸ gt)
+              let eqRite: next.destDir i dAddr = Dir.left :=
+                (if_neg neq).trans (if_pos gt)
+              Dir.noConfusion (eqRite.symm.trans eqLeft))
+            (fun eq =>
+              let eqNone: next.destDir i dAddr = Dir.none := (if_pos eq)
+              Dir.noConfusion (eqNone.symm.trans eqLeft))))
+    
+    def next.destDir.leftIPos
+      (i dAddr: Nat)
+      (eqLeft: next.destDir i dAddr = Dir.left)
+    :
+      0 < i
+    :=
+      let geAddr := next.destDir.leftIGtAddr i dAddr eqLeft
+      match h: dAddr with
+      | 0 => h.symm ▸ geAddr
+      | n+1 => Nat.lt_trans (Nat.succ_pos n) (h ▸ geAddr)
+    
+    def next.destAddr {sAddr dAddr: Nat} (i: ↑(sAddr + dAddr + 1)):
+      ↑(sAddr + dAddr + 1)
+    :=
+      if h: i < dAddr then
+        ⟨i + 1, Nat.add_lt_add_right (Nat.lt.addNatLeft h sAddr) 1⟩
+      else
+        ⟨
+          i - 1,
+          match h: i with
+          | ⟨Nat.zero, prop⟩ => prop
+          | ⟨Nat.succ n, _⟩ =>
+            let iH := Nat.succ n
+            let hVal: i.val = iH := congr rfl h
+            let predLt: iH - 1 < iH := Nat.le.refl
+            Nat.lt_trans predLt (hVal ▸ i.property)
+        ⟩
+    
+    
+    def srcAddressDest
+      {layout: Layout}
+      {src dest: layout.Location}
+    :
+      ↑(src.address + dest.address + 1)
+    := ⟨
+      src.address,
+      let srcLt: src.address < src.address + 1 := Nat.le.refl
+      let ltWrongOrder := Nat.lt.addNatLeft srcLt dest.address
+      (Nat.add_comm dest.address src.address) ▸ ltWrongOrder
+    ⟩
+    
+    def hm.getMove {layout: Layout} (src dest: layout.Location):
+      HamkinsMachine.GetMove (State src.address dest.address)
+    :=
+      fun state symbol =>
+        match state with
+        | State.goToSrc i => {
+            state :=
+              if h: i = src.address then
+                match symbol with
+                  | Two.zero => State.goToDest0 srcAddressDest
+                  | Two.one => State.goToDest1 srcAddressDest
+              else
+                State.goToSrc (next.src i h)
+            symbol := symbol
+            dir := if i = src.address then Dir.none else Dir.right
+          }
+        | State.goToDest0 i => {
+            state :=
+              if i = dest.address then
+                State.halt
+              else
+                State.goToDest0 (next.destAddr i)
+            symbol :=
+              if i = dest.address then
+                Two.zero
+              else
+                symbol
+            dir := next.destDir i dest.address
+          }
+        | State.goToDest1 i => {
+            state :=
+              if i = dest.address then
+                State.halt
+              else
+                State.goToDest1 (next.destAddr i)
+            symbol :=
+              if i = dest.address then
+                Two.one
+              else
+                symbol
+            dir := next.destDir i dest.address
+          }
+        | State.halt => {
+            state := state
+            symbol := symbol
+            dir := Dir.none
+          }
+    
+    def hm.getMove.eq.srcLt
+      {layout: Layout}
+      (src dest: layout.Location)
+      (i: ↑(src.address + 1))
+      (iNeq: i.val ≠ src.address)
+      (symbol: Two)
+    :
+      hm.getMove src dest (State.goToSrc i) symbol = {
+        state := State.goToSrc (next.src i iNeq)
+        symbol := symbol
+        dir := Dir.right
+      }
+    :=
+      let move := hm.getMove src dest (State.goToSrc i) symbol
+      
+      let stateEq: move.state = State.goToSrc (next.src i iNeq) := dif_neg iNeq
+      let symbolEq: move.symbol = symbol := rfl
+      let dirEq: move.dir = Dir.right := if_neg iNeq
+      
+      HamkinsMachine.Move.eq stateEq symbolEq dirEq
+    
+    def hm.getMove.eq.srcEq
+      {layout: Layout}
+      (src dest: layout.Location)
+      (i: ↑(src.address + 1))
+      (iEq: i.val = src.address)
+      (symbol: Two)
+    :
+      hm.getMove src dest (State.goToSrc i) symbol = {
+        state :=
+          match symbol with
+          | Two.zero => State.goToDest0 srcAddressDest
+          | Two.one => State.goToDest1 srcAddressDest
+        symbol := symbol
+        dir := Dir.none
+      }
+    :=
+      let move := hm.getMove src dest (State.goToSrc i) symbol
+      
+      let stateEq: move.state = 
+        match symbol with
+          | Two.zero => State.goToDest0 srcAddressDest
+          | Two.one => State.goToDest1 srcAddressDest
+      := dif_pos iEq
+      let symbolEq: move.symbol = symbol := rfl
+      let dirEq: move.dir = Dir.none := if_pos iEq
+      
+      HamkinsMachine.Move.eq stateEq symbolEq dirEq
+    
+    def hm.getMove.eq.dest0Lt
+      {layout: Layout}
+      (src dest: layout.Location)
+      (i: ↑(src.address + dest.address + 1))
+      (iNeq: i.val ≠ dest.address)
+      (symbol: Two)
+    :
+      hm.getMove src dest (State.goToDest0 i) symbol = {
+        state := State.goToDest0 (next.destAddr i)
+        symbol := symbol
+        dir := next.destDir i dest.address
+      }
+    :=
+      let move := hm.getMove src dest (State.goToDest0 i) symbol
+      
+      let stateEq: move.state = State.goToDest0 (next.destAddr i) := dif_neg iNeq
+      let symbolEq: move.symbol = symbol := dif_neg iNeq
+      let dirEq: move.dir = next.destDir i dest.address := rfl
+      
+      HamkinsMachine.Move.eq stateEq symbolEq dirEq
+    
+    def hm.getMove.eq.dest0Eq
+      {layout: Layout}
+      (src dest: layout.Location)
+      (i: ↑(src.address + dest.address + 1))
+      (iEq: i.val = dest.address)
+    :
+      hm.getMove src dest (State.goToDest0 i) symbol = {
+        state := State.halt
+        symbol := Two.zero
+        dir := Dir.none
+      }
+    :=
+      let move := hm.getMove src dest (State.goToDest0 i) symbol
+      
+      let stateEq: move.state = State.halt := dif_pos iEq
+      let symbolEq: move.symbol = Two.zero := dif_pos iEq
+      let dirEq: move.dir = Dir.none := if_pos iEq
+      
+      HamkinsMachine.Move.eq stateEq symbolEq dirEq
+    
+    def hm.getMove.eq.dest1Lt
+      {layout: Layout}
+      (src dest: layout.Location)
+      (i: ↑(src.address + dest.address + 1))
+      (iNeq: i.val ≠ dest.address)
+      (symbol: Two)
+    :
+      hm.getMove src dest (State.goToDest1 i) symbol = {
+        state := State.goToDest1 (next.destAddr i)
+        symbol := symbol
+        dir := next.destDir i dest.address
+      }
+    :=
+      let move := hm.getMove src dest (State.goToDest1 i) symbol
+      
+      let stateEq: move.state = State.goToDest1 (next.destAddr i) := dif_neg iNeq
+      let symbolEq: move.symbol = symbol := dif_neg iNeq
+      let dirEq: move.dir = next.destDir i dest.address := rfl
+      
+      HamkinsMachine.Move.eq stateEq symbolEq dirEq
+    
+    def hm.getMove.eq.dest1Eq
+      {layout: Layout}
+      (src dest: layout.Location)
+      (i: ↑(src.address + dest.address + 1))
+      (iEq: i.val = dest.address)
+    :
+      hm.getMove src dest (State.goToDest1 i) symbol = {
+        state := State.halt
+        symbol := Two.one
+        dir := Dir.none
+      }
+    :=
+      let move := hm.getMove src dest (State.goToDest1 i) symbol
+      
+      let stateEq: move.state = State.halt := dif_pos iEq
+      let symbolEq: move.symbol = Two.one := dif_pos iEq
+      let dirEq: move.dir = Dir.none := if_pos iEq
+      
+      HamkinsMachine.Move.eq stateEq symbolEq dirEq
+    
+    
+    def hm {layout: Layout} (src dest: layout.Location): HamkinsMachine := {
+      State := State src.address dest.address
+      isFinite := State.isFinite
+      
+      initialState := State.goToSrc ⟨0, Nat.succ_pos _⟩
+      haltState := State.halt
+      limitState := State.halt
+      
+      getMove := hm.getMove src dest
+      
+      haltHalts := fun _ => rfl
+    }
+    
+    def finalTape
+      {layout: Layout}
+      (src dest: layout.Location)
+      (initialTape: Nat2)
+    :
+      Nat2
+    :=
+      fun i => initialTape (if i = dest.address then src.address else i)
+    
+    def invariant
+      {layout: Layout}
+      (src dest: layout.Location)
+      (initialTape: Nat2)
+      (cnf: HamkinsMachine.Configuration (hm src dest))
+    :
+      Prop
+    :=
+      match cnf.state with
+      | State.goToSrc i => cnf.head = i ∧ cnf.tape = initialTape
+      | State.goToDest0 i => cnf.head = i ∧ cnf.tape = initialTape
+          ∧ initialTape src.address = Two.zero
+      | State.goToDest1 i => cnf.head = i ∧ cnf.tape = initialTape
+          ∧ initialTape src.address = Two.one
+      | State.halt => cnf.tape = (finalTape src dest initialTape)
+    
+    def invariantHolds
+      {layout: Layout}
+      (src dest: layout.Location)
+      (initialTape: Nat2)
+      (n: Ordinal)
+    :
+      invariant src dest initialTape ((hm src dest).stage initialTape n)
+    :=
+      let stageN := (hm src dest).stage initialTape n
+      let inv := invariant src dest initialTape stageN
+      
+      if h: n.isLimit then
+        sorry
+      else
+        let nPred := Ordinal.nLimit.pred n h
+        let nPred.lt := Ordinal.nLimit.pred.lt n h
+        
+        let hmSD := hm src dest
+        let stageNPred := hmSD.stage initialTape nPred
+        
+        let ih := invariantHolds src dest initialTape nPred
+        
+        let stageN.eq: stageN = hmSD.step stageNPred :=
+          HamkinsMachine.stage.eq.step _ _ _ _
+        
+        let stageN.eq.state: stageN.state = (hmSD.step stageNPred).state :=
+          congr rfl stageN.eq
+        
+        let stageN.eq.tape: stageN.tape = (hmSD.step stageNPred).tape :=
+          congr rfl stageN.eq
+        
+        let stageN.eq.head: stageN.head = (hmSD.step stageNPred).head :=
+          congr rfl stageN.eq
+        
+        match h: stageNPred.state with
+          | State.goToSrc i =>
+              let invPred:
+                stageNPred.head = i ∧ stageNPred.tape = initialTape
+              :=
+                -- In Lyo, `invPred.eq` should not be necessary.
+                let invPred.eq:
+                  invariant src dest initialTape stageNPred =
+                    (stageNPred.head = i ∧ stageNPred.tape = initialTape)
+                :=
+                  by conv => lhs unfold invariant rw [h] rfl
+                invPred.eq ▸ ih
+              
+              let stageNPred.eq:
+                stageNPred = ⟨State.goToSrc i, initialTape, i⟩
+              :=
+                HamkinsMachine.Configuration.eq h (invPred.right) (invPred.left)
+              
+              let move := hmSD.getMove (State.goToSrc i) (initialTape i)
+              
+              if hh: i = src.address then
+                let moveObj: HamkinsMachine.Move hmSD.State := {
+                  state :=
+                    match initialTape i with
+                      | Two.zero => State.goToDest0 srcAddressDest
+                      | Two.one => State.goToDest1 srcAddressDest
+                  symbol := initialTape i
+                  dir := Dir.none
+                }
+                
+                let stepObj: HamkinsMachine.Configuration (hmSD) := {
+                  state := moveObj.state
+                  tape := fun n =>
+                    if n = i then moveObj.symbol else initialTape n
+                  head := i
+                }
+                let stepObj.tapeEq: stepObj.tape = initialTape :=
+                  funext fun n =>
+                    if h: n = i then
+                      (if_pos h).trans (h ▸ rfl)
+                    else
+                      if_neg h
+                
+                let move.eq: move = moveObj :=
+                  hm.getMove.eq.srcEq src dest i hh (initialTape i)
+                
+                let stepEq: hmSD.step stageNPred = stepObj :=
+                  stageNPred.eq ▸ HamkinsMachine.step.eq.some
+                    hmSD
+                    ⟨State.goToSrc i, initialTape, i⟩
+                    moveObj
+                    move.eq.symm
+                    i
+                    rfl
+                
+                let stageN.eq.state: stageN.state =
+                  match initialTape i with
+                    | Two.zero => State.goToDest0 srcAddressDest
+                    | Two.one => State.goToDest1 srcAddressDest
+                :=
+                  stageN.eq.state.trans (congr rfl stepEq)
+                
+                let stageN.eq.tape: stageN.tape = initialTape :=
+                  stageN.eq.tape.trans (stepObj.tapeEq ▸ congr rfl stepEq)
+                
+                let stageN.eq.head: stageN.head = i :=
+                  stageN.eq.head.trans (congr rfl stepEq)
+                
+                match hhh: initialTape i.val with
+                | Two.zero =>
+                    let stageN.eq.state0:
+                      stageN.state = State.goToDest0 srcAddressDest
+                    := stageN.eq.state.trans (hhh ▸ rfl)
+                    
+                    let inv.eq:
+                      invariant src dest initialTape stageN =
+                        (stageN.head = srcAddressDest
+                          ∧ stageN.tape = initialTape
+                          ∧ initialTape src.address = Two.zero)
+                    :=
+                      by conv => lhs unfold invariant rw [stageN.eq.state0] rfl
+                    
+                    inv.eq ▸ And.intro
+                      (stageN.eq.head.trans hh)
+                      (And.intro stageN.eq.tape (hh ▸ hhh))
+                | Two.one =>
+                    let stageN.eq.state0:
+                      stageN.state = State.goToDest1 srcAddressDest
+                    := stageN.eq.state.trans (hhh ▸ rfl)
+                    
+                    let inv.eq:
+                      invariant src dest initialTape stageN =
+                        (stageN.head = srcAddressDest
+                          ∧ stageN.tape = initialTape
+                          ∧ initialTape src.address = Two.one)
+                    :=
+                      by conv => lhs unfold invariant rw [stageN.eq.state0] rfl
+                    
+                    inv.eq ▸ And.intro
+                      (stageN.eq.head.trans hh)
+                      (And.intro stageN.eq.tape (hh ▸ hhh))
+              else
+                let moveObj: HamkinsMachine.Move hmSD.State := {
+                  state := State.goToSrc (next.src i hh)
+                  symbol := initialTape i
+                  dir := Dir.right
+                }
+                
+                let stepObj: HamkinsMachine.Configuration (hmSD) := {
+                  state := moveObj.state
+                  tape := fun n =>
+                    if n = i then moveObj.symbol else initialTape n
+                  head := i + 1
+                }
+                let stepObj.tapeEq: stepObj.tape = initialTape :=
+                  funext fun n =>
+                    if h: n = i then
+                      (if_pos h).trans (h ▸ rfl)
+                    else
+                      if_neg h
+                
+                let move.eq: move = moveObj :=
+                  hm.getMove.eq.srcLt src dest i hh (initialTape i)
+                
+                let stepEq: hmSD.step stageNPred = stepObj :=
+                  stageNPred.eq ▸ HamkinsMachine.step.eq.some
+                    hmSD
+                    ⟨State.goToSrc i, initialTape, i⟩
+                    moveObj
+                    move.eq.symm
+                    (i + 1)
+                    rfl
+                
+                let stageN.eq.state: stageN.state = State.goToSrc (next.src i hh) :=
+                  stageN.eq.state.trans (congr rfl stepEq)
+                
+                let stageN.eq.tape: stageN.tape = initialTape :=
+                  stageN.eq.tape.trans (stepObj.tapeEq ▸ congr rfl stepEq)
+                
+                let stageN.eq.head: stageN.head = i + 1 :=
+                  stageN.eq.head.trans (congr rfl stepEq)
+                
+                let inv.eq:
+                  invariant src dest initialTape stageN =
+                    (stageN.head = (next.src i hh) ∧ stageN.tape = initialTape)
+                :=
+                  by conv => lhs unfold invariant rw [stageN.eq.state] rfl
+                
+                inv.eq ▸ stageN.eq.tape ▸ stageN.eq.head ▸ And.intro rfl rfl
+          | State.goToDest0 i =>
+              let invPred:
+                stageNPred.head = i
+                  ∧ stageNPred.tape = initialTape
+                  ∧ initialTape src.address = Two.zero
+              :=
+                let invPred.eq:
+                  invariant src dest initialTape stageNPred =
+                    (stageNPred.head = i
+                      ∧ stageNPred.tape = initialTape
+                      ∧ initialTape src.address = Two.zero)
+                :=
+                  by conv => lhs unfold invariant rw [h] rfl
+                invPred.eq ▸ ih
+              
+              let stageNPred.eq:
+                stageNPred = ⟨State.goToDest0 i, initialTape, i⟩
+              :=
+                HamkinsMachine.Configuration.eq
+                  h (invPred.right.left) (invPred.left)
+              
+              let move := hmSD.getMove (State.goToDest0 i) (initialTape i)
+              
+              if hh: i = dest.address then
+                let moveObj: HamkinsMachine.Move hmSD.State := {
+                  state := State.halt
+                  symbol := Two.zero
+                  dir := Dir.none
+                }
+                
+                let stepObj: HamkinsMachine.Configuration (hmSD) := {
+                  state := moveObj.state
+                  tape := fun n =>
+                    if n = i then moveObj.symbol else initialTape n
+                  head := i
+                }
+                let stepObj.tapeEq:
+                  stepObj.tape = finalTape src dest initialTape
+                :=
+                  funext fun n =>
+                    if hhh: n = i then
+                      let nEq: n = dest.address := hhh.trans hh
+                      let finEq:
+                        finalTape src dest initialTape dest.address
+                          = initialTape src.address
+                      :=
+                        by unfold finalTape exact congr rfl (if_pos rfl)
+                      (if_pos hhh).trans
+                        (nEq ▸ (invPred.right.right.symm.trans finEq.symm))
+                    else
+                      let nNeq: n ≠ dest.address :=
+                        fun eq => hhh (eq.trans hh.symm)
+                      (if_neg hhh).trans (by
+                        unfold finalTape;
+                        exact congr rfl (if_neg nNeq).symm)
+                
+                let move.eq: move = moveObj :=
+                  hm.getMove.eq.dest0Eq src dest i hh
+                
+                let stepEq: hmSD.step stageNPred = stepObj :=
+                  stageNPred.eq ▸ HamkinsMachine.step.eq.some
+                    hmSD
+                    ⟨State.goToDest0 i, initialTape, i⟩
+                    moveObj
+                    move.eq.symm
+                    i
+                    rfl
+                
+                let stageN.eq.state: stageN.state = State.halt :=
+                  stageN.eq.state.trans (congr rfl stepEq)
+                
+                let stageN.eq.tape:
+                  stageN.tape = finalTape src dest initialTape
+                :=
+                  stageN.eq.tape.trans (stepObj.tapeEq ▸ congr rfl stepEq)
+                
+                let stageN.eq.head: stageN.head = i :=
+                  stageN.eq.head.trans (congr rfl stepEq)
+                
+                let inv.eq:
+                  invariant src dest initialTape stageN =
+                    (stageN.tape = finalTape src dest initialTape)
+                :=
+                  by conv => lhs unfold invariant rw [stageN.eq.state] rfl
+                
+                inv.eq ▸ stageN.eq.tape
+              else
+                let moveObj: HamkinsMachine.Move hmSD.State := {
+                  state := State.goToDest0 (next.destAddr i)
+                  symbol := initialTape i
+                  dir := next.destDir i dest.address
+                }
+                
+                let stepObj: HamkinsMachine.Configuration (hmSD) := {
+                  state := moveObj.state
+                  tape := fun n =>
+                    if n = i then moveObj.symbol else initialTape n
+                  head := next.destAddr i
+                }
+                let stepObj.tapeEq: stepObj.tape = initialTape :=
+                  funext fun n =>
+                    if h: n = i then
+                      (if_pos h).trans (h ▸ rfl)
+                    else
+                      if_neg h
+                
+                let move.eq: move = moveObj :=
+                  hm.getMove.eq.dest0Lt src dest i hh (initialTape i)
+                
+                let stepEq: hmSD.step stageNPred = stepObj :=
+                  stageNPred.eq ▸ HamkinsMachine.step.eq.some
+                    hmSD
+                    ⟨State.goToDest0 i, initialTape, i⟩
+                    moveObj
+                    move.eq.symm
+                    (next.destAddr i)
+                    (match h: moveObj.dir with
+                      | Dir.left =>
+                          let iPos := next.destDir.leftIPos i dest.address h
+                          let iGt := next.destDir.leftIGtAddr i dest.address h
+                          let iNLt: i.val ≮ dest.address :=
+                            fun iLt => Nat.ltAntisymm iLt iGt
+                          
+                          match hh: i with
+                          | ⟨0, _⟩ =>
+                              let iValEq: i.val = 0 := congr rfl hh
+                              False.elim (Nat.lt_irrefl 0 (iValEq ▸ iPos))
+                          | ⟨ii+1, prop⟩ =>
+                              show (next.destAddr ⟨ii+1, prop⟩).val = some ii
+                              from congr rfl (congr rfl (dif_neg (hh ▸ iNLt)))
+                      | Dir.right =>
+                          let dirNLeft: next.destDir i dest.address ≠ Dir.left :=
+                            fun eq => Dir.noConfusion (eq.symm.trans h)
+                          let iLt := next.destDir.riteILtAddr i dest.address h
+                          show some (next.destAddr i).val = some (i.val + 1) from
+                             congr rfl (congr rfl (dif_pos iLt))
+                      | Dir.none =>
+                          let iEqDestAddr :=
+                            next.destDir.noneEq i dest.address h
+                          False.elim (hh iEqDestAddr))
+                
+                let stageN.eq.state:
+                  stageN.state = State.goToDest0 (next.destAddr i)
+                :=
+                  stageN.eq.state.trans (congr rfl stepEq)
+                
+                let stageN.eq.tape: stageN.tape = initialTape :=
+                  stageN.eq.tape.trans (stepObj.tapeEq ▸ congr rfl stepEq)
+                
+                let stageN.eq.head: stageN.head = (next.destAddr i) :=
+                  stageN.eq.head.trans (congr rfl stepEq)
+                
+                let inv.eq:
+                  invariant src dest initialTape stageN =
+                    (stageN.head = (next.destAddr i)
+                      ∧ stageN.tape = initialTape
+                      ∧ initialTape src.address = Two.zero)
+                :=
+                  by conv => lhs unfold invariant rw [stageN.eq.state] rfl
+                
+                inv.eq ▸ stageN.eq.head ▸ And.intro
+                  rfl (And.intro (stageN.eq.tape ▸ rfl) invPred.right.right)
+          | State.goToDest1 i =>
+              let invPred:
+                stageNPred.head = i
+                  ∧ stageNPred.tape = initialTape
+                  ∧ initialTape src.address = Two.one
+              :=
+                let invPred.eq:
+                  invariant src dest initialTape stageNPred =
+                    (stageNPred.head = i
+                      ∧ stageNPred.tape = initialTape
+                      ∧ initialTape src.address = Two.one)
+                :=
+                  by conv => lhs unfold invariant rw [h] rfl
+                invPred.eq ▸ ih
+              
+              let stageNPred.eq:
+                stageNPred = ⟨State.goToDest1 i, initialTape, i⟩
+              :=
+                HamkinsMachine.Configuration.eq
+                  h (invPred.right.left) (invPred.left)
+              
+              let move := hmSD.getMove (State.goToDest1 i) (initialTape i)
+              
+              if hh: i = dest.address then
+                let moveObj: HamkinsMachine.Move hmSD.State := {
+                  state := State.halt
+                  symbol := Two.one
+                  dir := Dir.none
+                }
+                
+                let stepObj: HamkinsMachine.Configuration (hmSD) := {
+                  state := moveObj.state
+                  tape := fun n =>
+                    if n = i then moveObj.symbol else initialTape n
+                  head := i
+                }
+                let stepObj.tapeEq:
+                  stepObj.tape = finalTape src dest initialTape
+                :=
+                  funext fun n =>
+                    if hhh: n = i then
+                      let nEq: n = dest.address := hhh.trans hh
+                      let finEq:
+                        finalTape src dest initialTape dest.address
+                          = initialTape src.address
+                      :=
+                        by unfold finalTape exact congr rfl (if_pos rfl)
+                      (if_pos hhh).trans
+                        (nEq ▸ (invPred.right.right.symm.trans finEq.symm))
+                    else
+                      let nNeq: n ≠ dest.address :=
+                        fun eq => hhh (eq.trans hh.symm)
+                      (if_neg hhh).trans (by
+                        unfold finalTape;
+                        exact congr rfl (if_neg nNeq).symm)
+                
+                let move.eq: move = moveObj :=
+                  hm.getMove.eq.dest1Eq src dest i hh
+                
+                let stepEq: hmSD.step stageNPred = stepObj :=
+                  stageNPred.eq ▸ HamkinsMachine.step.eq.some
+                    hmSD
+                    ⟨State.goToDest1 i, initialTape, i⟩
+                    moveObj
+                    move.eq.symm
+                    i
+                    rfl
+                
+                let stageN.eq.state: stageN.state = State.halt :=
+                  stageN.eq.state.trans (congr rfl stepEq)
+                
+                let stageN.eq.tape:
+                  stageN.tape = finalTape src dest initialTape
+                :=
+                  stageN.eq.tape.trans (stepObj.tapeEq ▸ congr rfl stepEq)
+                
+                let stageN.eq.head: stageN.head = i :=
+                  stageN.eq.head.trans (congr rfl stepEq)
+                
+                let inv.eq:
+                  invariant src dest initialTape stageN =
+                    (stageN.tape = finalTape src dest initialTape)
+                :=
+                  by conv => lhs unfold invariant rw [stageN.eq.state] rfl
+                
+                inv.eq ▸ stageN.eq.tape
+              else
+                let moveObj: HamkinsMachine.Move hmSD.State := {
+                  state := State.goToDest1 (next.destAddr i)
+                  symbol := initialTape i
+                  dir := next.destDir i dest.address
+                }
+                
+                let stepObj: HamkinsMachine.Configuration (hmSD) := {
+                  state := moveObj.state
+                  tape := fun n =>
+                    if n = i then moveObj.symbol else initialTape n
+                  head := next.destAddr i
+                }
+                let stepObj.tapeEq: stepObj.tape = initialTape :=
+                  funext fun n =>
+                    if h: n = i then
+                      (if_pos h).trans (h ▸ rfl)
+                    else
+                      if_neg h
+                
+                let move.eq: move = moveObj :=
+                  hm.getMove.eq.dest1Lt src dest i hh (initialTape i)
+                
+                let stepEq: hmSD.step stageNPred = stepObj :=
+                  stageNPred.eq ▸ HamkinsMachine.step.eq.some
+                    hmSD
+                    ⟨State.goToDest1 i, initialTape, i⟩
+                    moveObj
+                    move.eq.symm
+                    (next.destAddr i)
+                    (match h: moveObj.dir with
+                      | Dir.left =>
+                          let iPos := next.destDir.leftIPos i dest.address h
+                          let iGt := next.destDir.leftIGtAddr i dest.address h
+                          let iNLt: i.val ≮ dest.address :=
+                            fun iLt => Nat.ltAntisymm iLt iGt
+                          
+                          match hh: i with
+                          | ⟨0, _⟩ =>
+                              let iValEq: i.val = 0 := congr rfl hh
+                              False.elim (Nat.lt_irrefl 0 (iValEq ▸ iPos))
+                          | ⟨ii+1, prop⟩ =>
+                              show (next.destAddr ⟨ii+1, prop⟩).val = some ii
+                              from congr rfl (congr rfl (dif_neg (hh ▸ iNLt)))
+                      | Dir.right =>
+                          let dirNLeft: next.destDir i dest.address ≠ Dir.left :=
+                            fun eq => Dir.noConfusion (eq.symm.trans h)
+                          let iLt := next.destDir.riteILtAddr i dest.address h
+                          show some (next.destAddr i).val = some (i.val + 1) from
+                             congr rfl (congr rfl (dif_pos iLt))
+                      | Dir.none =>
+                          let iEqDestAddr :=
+                            next.destDir.noneEq i dest.address h
+                          False.elim (hh iEqDestAddr))
+                
+                let stageN.eq.state:
+                  stageN.state = State.goToDest1 (next.destAddr i)
+                :=
+                  stageN.eq.state.trans (congr rfl stepEq)
+                
+                let stageN.eq.tape: stageN.tape = initialTape :=
+                  stageN.eq.tape.trans (stepObj.tapeEq ▸ congr rfl stepEq)
+                
+                let stageN.eq.head: stageN.head = (next.destAddr i) :=
+                  stageN.eq.head.trans (congr rfl stepEq)
+                
+                let inv.eq:
+                  invariant src dest initialTape stageN =
+                    (stageN.head = (next.destAddr i)
+                      ∧ stageN.tape = initialTape
+                      ∧ initialTape src.address = Two.one)
+                :=
+                  by conv => lhs unfold invariant rw [stageN.eq.state] rfl
+                
+                inv.eq ▸ stageN.eq.head ▸ And.intro
+                  rfl (And.intro (stageN.eq.tape ▸ rfl) invPred.right.right)
+          | State.halt =>
+              let invPred:
+                stageNPred.tape = finalTape src dest initialTape
+              :=
+                let invPred.eq:
+                  invariant src dest initialTape stageNPred =
+                    (stageNPred.tape = finalTape src dest initialTape)
+                :=
+                  by conv => lhs unfold invariant rw [h] rfl
+                invPred.eq ▸ ih
+              
+              let symbol := stageNPred.tape stageNPred.head
+              
+              let moveObj: HamkinsMachine.Move hmSD.State := {
+                  state := State.halt
+                  symbol := symbol
+                  dir := Dir.none
+                }
+                
+                let stepObj: HamkinsMachine.Configuration (hmSD) := {
+                  state := moveObj.state
+                  tape := fun n =>
+                    if n = stageNPred.head
+                      then moveObj.symbol
+                      else stageNPred.tape n
+                  head := stageNPred.head
+                }
+                let stepObj.tapeEqLeft:
+                  stepObj.tape = stageNPred.tape
+                :=
+                  funext fun n =>
+                    if h: n = stageNPred.head then
+                      (if_pos h).trans (h ▸ rfl)
+                    else
+                      if_neg h
+                
+                let stepObj.tapeEq:
+                  stepObj.tape = finalTape src dest initialTape
+                :=
+                  stepObj.tapeEqLeft.trans invPred
+                
+                let move.eq: hmSD.getMove State.halt symbol = moveObj :=
+                  hmSD.haltHalts symbol
+                
+                let stageNPred.eq:
+                  stageNPred = ⟨State.halt, stageNPred.tape, stageNPred.head⟩
+                :=
+                  HamkinsMachine.Configuration.eq h rfl rfl
+                
+                let stepEq: hmSD.step stageNPred = stepObj :=
+                  stageNPred.eq ▸ HamkinsMachine.step.eq.some
+                    hmSD
+                    ⟨State.halt, stageNPred.tape, stageNPred.head⟩
+                    moveObj
+                    move.eq.symm
+                    stageNPred.head
+                    (rfl)
+                
+                let stageN.eq.state:
+                  stageN.state = State.halt
+                :=
+                  stageN.eq.state.trans (congr rfl stepEq)
+                
+                let stageN.eq.tape:
+                  stageN.tape = finalTape src dest initialTape
+                :=
+                  stageN.eq.tape.trans (stepObj.tapeEq ▸ congr rfl stepEq)
+                
+                let inv.eq:
+                  invariant src dest initialTape stageN =
+                    (stageN.tape = finalTape src dest initialTape)
+                :=
+                  by conv => lhs unfold invariant rw [stageN.eq.state] rfl
+                
+                inv.eq ▸ stageN.eq.tape
+    termination_by invariantHolds src dest initialTape n => n
+  end Assign
+  
   def compile: Program lIn lOut terminatesIf precond postcond →
     {
       hm: HamkinsMachine
@@ -456,7 +1447,16 @@ namespace Program
           | some tapeOut => Nat2.toMemory tapeOut ∈ postcond m)
     }
   
-    | assign dest src precond postcond isSound => sorry
+    | assign src dest precond postcond isSound =>
+        ⟨
+          Assign.hm src dest,
+          And.intro
+            (fun m tape tapeSound => ⟨
+              fun i => sorry,
+              sorry
+            ⟩)
+            (Assign.isSound src dest)
+        ⟩
     | ite cond a b precond postcond terminatesIf isSoundPrecond
         isSoundPostcondA isSoundPostcondB
         isSoundTerminatesA isSoundTerminatesB => sorry
