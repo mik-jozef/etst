@@ -34,17 +34,71 @@ def Nat2.fromNat (n: Nat) :=
           Nat2.fromNat (n / 2) iPrev
 
 
+def eventuallyZero (t: Tuple Nat2) (n: Nat): Prop :=
+  ∃ lowerBound: ↑t.length,
+    ∀ i: ↑t.length,
+      lowerBound.val ≤ i.val → t.elements i n = Two.zero
+
 noncomputable def limSup (t: Tuple Nat2) (ifUndefined: Nat2): Nat2 :=
   if t.length = Ordinal.zero then
     ifUndefined
   else
-    fun n: Nat =>
-      let eventuallyZero :=
-        ∃ lowerBound: ↑t.length,
-          ∀ i: ↑t.length,
-            lowerBound.val ≤ i.val → t.elements i n = Two.zero
-      
-      if eventuallyZero then Two.zero else Two.one
+    fun n: Nat => if eventuallyZero t n then Two.zero else Two.one
+
+def limSup.zero (t: Tuple Nat2) (ifU: Nat2) (tEmpty: t.length = 0):
+  limSup t ifU = ifU
+:=
+  if_pos tEmpty
+
+def limSup.eq
+  (t: Tuple Nat2)
+  (ifU: Nat2)
+  (isDefined: t.length ≠ Ordinal.zero)
+  (res: Nat2)
+  (resSound: ∀ n: Nat, eventuallyZero t n ↔ res n = Two.zero)
+:
+  limSup t ifU = res
+:=
+  by unfold limSup rw [if_neg isDefined] exact funext fun n =>
+    if h: eventuallyZero t n then
+      (if_pos h).trans ((resSound n).mp h).symm
+    else
+      match hh: res n with
+      | Two.zero => False.elim (((Iff.not (resSound n)).mp h) hh)
+      | Two.one => (if_neg h).trans rfl
+
+
+def limSup.eventuallyConstant
+  (t: Tuple Nat2)
+  (ifU: Nat2)
+  (lowerBound: ↑t.length)
+  (res: Nat2)
+  (constantAbove: ∀ i: ↑t.length, lowerBound.val ≤ i → t.elements i = res)
+:
+  limSup t ifU = res
+:=
+  let isDefined: t.length ≠ Ordinal.zero :=
+    fun eq =>
+      let ltZero: lowerBound < Ordinal.zero := eq ▸ lowerBound.property
+      Ordinal.zero.nGreater lowerBound.val ltZero
+  
+  limSup.eq t ifU isDefined res fun _n =>
+    Iff.intro
+      (fun evntZero =>
+        let lbN := choiceEx evntZero
+        let lbMax := Ordinal.max lowerBound lbN.val
+        let lbMaxOrd: ↑t.length :=
+          ⟨lbMax.n, lbMax.holds lowerBound.property lbN.val.property⟩
+        
+        let cAboveMax := constantAbove lbMaxOrd lbMax.geA
+        let eqZero := lbN.property lbMaxOrd lbMax.geB
+        
+        (congr cAboveMax.symm rfl).trans eqZero)
+      (fun eqZero =>
+        ⟨
+          lowerBound,
+          fun i geLb => (congr (constantAbove i geLb) rfl).trans eqZero
+        ⟩)
 
 
 inductive Dir
@@ -171,7 +225,59 @@ namespace HamkinsMachine
   :=
     by unfold step rw [moveEq.symm] rw [newHeadEq.symm]
   
-  noncomputable def stage (hm: HamkinsMachine) (initial: Nat2) (n: Ordinal):
+  def step.halt
+    (hm: HamkinsMachine)
+    (config: hm.Configuration)
+    (isHalt: config.state = hm.haltState)
+  :
+    hm.step config = config
+  :=
+    let symbol := config.tape config.head
+    
+    let moveObj: HamkinsMachine.Move hm.State := {
+      state := hm.haltState
+      symbol := symbol
+      dir := Dir.none
+    }
+    
+    let stepObj: HamkinsMachine.Configuration hm := {
+      state := moveObj.state
+      tape := fun n =>
+        if n = config.head
+          then moveObj.symbol
+          else config.tape n
+      head := config.head
+    }
+    let stepObj.tapeEq:
+      stepObj.tape = config.tape
+    :=
+      funext fun n =>
+        if h: n = config.head then
+          (if_pos h).trans (h ▸ rfl)
+        else
+          if_neg h
+    
+    let move.eq: hm.getMove hm.haltState symbol = moveObj :=
+      hm.haltHalts symbol
+    
+    let stageNPred.eq:
+      config = ⟨hm.haltState, config.tape, config.head⟩
+    :=
+      HamkinsMachine.Configuration.eq isHalt rfl rfl
+    
+    let stepEq: hm.step config = stepObj :=
+      stageNPred.eq ▸ HamkinsMachine.step.eq.some
+        hm
+        ⟨hm.haltState, config.tape, config.head⟩
+        moveObj
+        move.eq.symm
+        config.head
+        (rfl)
+    
+    stepEq.trans
+      (HamkinsMachine.Configuration.eq isHalt.symm stepObj.tapeEq rfl)
+  
+  noncomputable def stage (hm: HamkinsMachine) (input: Nat2) (n: Ordinal):
     Configuration hm
   :=
     if h: n.isLimit then
@@ -180,46 +286,246 @@ namespace HamkinsMachine
         elements :=
           fun nn =>
             have: nn < n := nn.property
-            (stage hm initial nn).tape
+            (stage hm input nn).tape
       }
       
       {
         state :=
           if ∃ nn: ↑n,
             have: nn < n := nn.property
-            (hm.stage initial nn).state = hm.haltState
+            (hm.stage input nn).state = hm.haltState
           then
             hm.haltState
           else
             hm.limitState
         -- If the machine halted, limSup is safe.
-        tape := limSup prevStages initial
+        tape := limSup prevStages input
         head := 0
       }
     else
       let nPred := Ordinal.nLimit.pred n h
       
       have := Ordinal.nLimit.pred.lt n h
-      hm.step (hm.stage initial nPred)
+      hm.step (hm.stage input nPred)
     termination_by stage hm n => n
+  
+  noncomputable def stage.prevStages
+    (hm: HamkinsMachine)
+    (input: Nat2)
+    (n: Ordinal)
+  :
+    Tuple Nat2
+  := {
+    length := n,
+    elements :=
+      fun nn => (stage hm input nn).tape
+  }
   
   def stage.eq.step
     (hm: HamkinsMachine)
-    (initial: Nat2)
+    (input: Nat2)
     (n: Ordinal)
     (nl: ¬n.isLimit)
   :
-    hm.stage initial n = hm.step (hm.stage initial (Ordinal.nLimit.pred n nl))
+    hm.stage input n = hm.step (hm.stage input (Ordinal.nLimit.pred n nl))
   :=
     by conv =>
       lhs
       unfold stage
       rw [dif_neg nl]
   
+  @[reducible] def stage.haltsAt
+    (hm: HamkinsMachine)
+    (input: Nat2)
+    (n: Ordinal)
+  : Prop :=
+    (stage hm input n).state = hm.haltState
+  
+  structure stage.eq.Limit
+    (hm: HamkinsMachine)
+    (input: Nat2)
+    (n: Ordinal)
+  where
+    (tapeEq: (hm.stage input n).tape = limSup (stage.prevStages hm input n) input)
+    (stateHalt: (∃ nn: ↑n, stage.haltsAt hm input nn)
+      → (hm.stage input n).state = hm.haltState)
+    (stateLimit: ¬(∃ nn: ↑n, stage.haltsAt hm input nn)
+      → (hm.stage input n).state = hm.limitState)
+    (head: (hm.stage input n).head = 0)
+  
+  def stage.eq.limit
+    (hm: HamkinsMachine)
+    (input: Nat2)
+    (n: Ordinal)
+    (nl: n.isLimit)
+  :
+    Limit hm input n
+  :=
+    {
+      tapeEq :=
+        by unfold HamkinsMachine.stage exact dif_pos nl ▸ rfl
+      stateHalt := fun ex =>
+        by unfold HamkinsMachine.stage exact dif_pos nl ▸ if_pos ex ▸ rfl
+      stateLimit := fun ex =>
+        by unfold HamkinsMachine.stage exact dif_pos nl ▸ if_neg ex ▸ rfl
+      head :=
+        by unfold HamkinsMachine.stage exact dif_pos nl ▸ rfl
+    }
+  
+  def stage.eq.step.succ
+    (hm: HamkinsMachine)
+    (input: Nat2)
+    (n: Ordinal)
+  :
+    hm.stage input n.succ = hm.step (hm.stage input n)
+  :=
+    let nSuccNLimit: ¬n.succ.isLimit := Ordinal.succ.hasPred n
+    
+    let nSuccPred := Ordinal.nLimit.pred n.succ nSuccNLimit
+    let nSuccPredEq: nSuccPred.val = n := Ordinal.succ.inj nSuccPred.property
+    
+    let eq: hm.stage input n.succ = hm.step (hm.stage input nSuccPred.val) :=
+      stage.eq.step hm input n.succ nSuccNLimit
+    
+    by conv => rhs rw [nSuccPredEq.symm] exact eq
+  
+  def stage.haltsAt.ge
+    (hAt: stage.haltsAt hm input n)
+    (ng: Ordinal)
+    (ngGe: n ≤ ng)
+  :
+    stage.haltsAt hm input ng
+  :=
+    if hEq: n = ng then
+      hEq ▸ hAt
+    else
+      let ngGt: n < ng := Ordinal.le.lt ngGe hEq
+      
+      if hLim: ng.isLimit then
+        let lim := stage.eq.limit hm input ng hLim
+        lim.stateHalt ⟨⟨n, ngGt⟩, hAt⟩
+      else
+        let ngPred := Ordinal.nLimit.pred ng hLim
+        have: ngPred < ng := Ordinal.nLimit.pred.lt ng hLim
+        
+        let ngGePred: n ≤ ngPred := Ordinal.lt.succ.le (ngPred.property.symm ▸ ngGt)
+        
+        let haltsAtPred := stage.haltsAt.ge hAt ngPred ngGePred
+        
+        let stepConstant := step.halt hm (stage hm input ngPred) haltsAtPred
+        
+        let stageNgEqStep := stage.eq.step hm input ng hLim
+        
+        let stageEq := stepConstant.symm.trans stageNgEqStep.symm
+        
+        by unfold haltsAt exact stageEq ▸ haltsAtPred
+  
+  termination_by stage.haltsAt.ge hAt ng ngGe => ng
+  
+  def stage.haltsAt.gt
+    (hAt: stage.haltsAt hm input n)
+    (ng: Ordinal)
+    (ngGt: n < ng)
+  :
+    stage.haltsAt hm input ng
+  :=
+    stage.haltsAt.ge hAt ng (Or.inl ngGt)
+  
+  def stage.haltsWith
+    (hm: HamkinsMachine)
+    (input output: Nat2)
+    (n: Ordinal)
+  :
+    Prop
+  :=
+    stage.haltsAt hm input n ∧ (stage hm input n).tape = output
+  
+  def stage.haltsConsistent.step
+    (hw0: stage.haltsWith hm input output0 n)
+    (hw1: stage.haltsWith hm input output1 n.succ)
+  :
+    output0 = output1
+  :=
+    let stage0 := hm.stage input n
+    let stage1 := hm.stage input n.succ
+    
+    let stage0.stateEq: stage0.state = hm.haltState := hw0.left
+    
+    let stage.eqL: stage1 = hm.step stage0 := stage.eq.step.succ hm input n
+    let stage.eqR: hm.step stage0 = stage0 := step.halt hm stage0 stage0.stateEq
+    let stage.eq: hm.stage input n = hm.stage input n.succ :=
+      (stage.eqL.trans stage.eqR).symm
+    
+    hw0.right.symm.trans (stage.eq ▸ hw1.right)
+  
+  def stage.haltsConsistent.le
+    {n0 n1: Ordinal}
+    (hw0: stage.haltsWith hm input output0 n0)
+    (hw1: stage.haltsWith hm input output1 n1)
+    (nLe: n0 ≤ n1)
+  :
+    output0 = output1
+  :=
+    if hEq: n0 = n1 then
+      hw0.right.symm.trans (hEq ▸ hw1.right)
+    else
+      let nLt: n0 < n1 := Ordinal.le.lt nLe hEq
+      
+      if h: n1.isLimit then
+        let prev := prevStages hm input n1
+        
+        let lim := stage.eq.limit hm input n1 h
+        let limTape := lim.tapeEq
+        
+        let limEq0 := limSup.eventuallyConstant prev input ⟨n0, nLt⟩ output0
+          fun nn1 n0LB =>
+            have: nn1 < n1 := nn1.property
+            
+            let outputMid := (hm.stage input nn1).tape
+            let hwMid: stage.haltsWith hm input outputMid nn1 :=
+              And.intro (stage.haltsAt.ge hw0.left nn1 n0LB) rfl
+            
+            (stage.haltsConsistent.le hw0 hwMid n0LB).symm
+        
+        limEq0.symm.trans (limTape.symm.trans hw1.right)
+      else
+        let nPred := Ordinal.nLimit.pred n1 h
+        have: nPred < n1 := Ordinal.nLimit.pred.lt n1 h
+        
+        let nLePred: n0 ≤ nPred := Ordinal.lt.succ.le (nPred.property.symm ▸ nLt)
+        
+        let tapeAtPred := (hm.stage input nPred).tape
+        let hwPred: stage.haltsWith hm input tapeAtPred nPred :=
+          And.intro (stage.haltsAt.ge hw0.left nPred nLePred) rfl
+        
+        nLePred.elim
+          (fun nLtPred =>
+            let eqR := stage.haltsConsistent.le hw0 hwPred (Or.inl nLtPred)
+            eqR.trans (stage.haltsConsistent.step
+              hwPred (nPred.property.symm ▸ hw1)))
+          (fun nEqPred =>
+            stage.haltsConsistent.step
+              (nEqPred ▸ hw0) (nPred.property.symm ▸ hw1))
+  termination_by stage.haltsConsistent.le n0 n1 hw0 hw1 nLt => n1
+
+  def stage.haltsConsistent
+    {n0 n1: Ordinal}
+    (hw0: stage.haltsWith hm input output0 n0)
+    (hw1: stage.haltsWith hm input output1 n1)
+  :
+    output0 = output1
+  :=
+    -- Without loss of generality, let's assume n0 is lesser.
+    -- Could this be made simpler in a theorem prover?
+    (n0.total n1).elim
+      (fun lt => stage.haltsConsistent.le hw0 hw1 (Or.inl lt))
+      (fun gtOrEq => gtOrEq.elim
+        (fun gt => (stage.haltsConsistent.le hw1 hw0 (Or.inl gt)).symm)
+        (fun eq => hw0.right.symm.trans (eq ▸ hw1.right)))
+  
   def computes (hm: HamkinsMachine) (input output: Nat2): Prop :=
     ∃ n: Ordinal,
-      (stage hm input n).state = hm.haltState ∧
-      (stage hm input n).tape = output
+      stage.haltsWith hm input output n
   
   noncomputable def fn (hm: HamkinsMachine) (input: Nat2): Option Nat2 :=
     if h: ∃ output: Nat2, hm.computes input output then
@@ -227,7 +533,26 @@ namespace HamkinsMachine
     else
       none
   
-  def halts (hm: HamkinsMachine) (input: Nat2): Prop := hm.fn input ≠ none
+  def haltsConsistent
+    (hm: HamkinsMachine)
+    (input output: Nat2)
+    (n: Ordinal)
+    (hw: stage.haltsWith hm input output n)
+  :
+    fn hm input = output
+  :=
+    let computes: hm.computes input output := ⟨n, hw⟩
+    let exOut: ∃ output: Nat2, hm.computes input output := ⟨output, computes⟩
+    let out := choiceEx exOut
+    let outN := choiceEx out.property
+    
+    let eqR: out.val = output := stage.haltsConsistent outN.property hw
+    let eqL: fn hm input = some out.val := dif_pos exOut
+    
+    eqL.trans (congr rfl eqR)
+  
+  def halts (hm: HamkinsMachine) (input: Nat2): Prop :=
+    ∃ n: Ordinal, (hm.stage input n).state = hm.haltState
   def loops (hm: HamkinsMachine) (input: Nat2): Prop := hm.fn input = none
   
   def computable (fn: Nat2 → Option Nat2): Prop :=

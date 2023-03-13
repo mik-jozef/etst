@@ -10,16 +10,10 @@ import Set
 open Classical
 
 
-theorem Or.symm {a b: Prop} (aob: a ∨ b): b ∨ a :=
-  aob.elim (fun a => Or.inr a) (fun b => Or.inl b)
-
 theorem dne {p : Prop} (h : ¬¬p) : p :=
   Or.elim (em p)
     (fun hp : p => hp)
     (fun hnp : ¬p => absurd hnp h)
-
-theorem converse {a b: Prop} (mp: a → b): ¬b → ¬a :=
-  fun notB exactA => notB (mp exactA)
 
 -- When I try to inline this, I get errors ¯\_(ツ)_/¯
 def Quotient.lift.eq {s: Setoid T}
@@ -1489,7 +1483,7 @@ namespace WellOrder
         let freeImpl: ∀ z: wz.T, myz.free z → mxz.free z :=
           fun z freeYZ =>
             let nBoundYZ: ¬ myz.bound z := myz.nBound freeYZ
-            let nBoundXZ := converse (boundImpl z) nBoundYZ
+            let nBoundXZ := contra (boundImpl z) nBoundYZ
             Morphism.nnFree nBoundXZ
         
         fun setY =>
@@ -2859,14 +2853,6 @@ end Ordinal
 instance: Coe Ordinal (Type 1) where
   coe n := { nn: Ordinal // nn < n }
 
-def Nat.isTotal (a b: Nat): a < b ∨ b < a ∨ a = b :=
-  (Nat.lt_or_ge a b).elim
-    (fun lt => Or.inl lt)
-    (fun ge => Or.inr
-      ((Nat.eq_or_lt_of_le ge).symm.elim
-        (fun x => Or.inl x)
-        (fun x => Or.inr x.symm)))
-
 namespace Ordinal
   def omega: Ordinal := Ordinal.mk {
     T := Nat
@@ -2881,4 +2867,51 @@ namespace Ordinal
     And.intro
       (fun isIso => ((choiceEx isIso).val.g 0).rec)
       ⟨{ f := fun _ => 4, ordPres := fun a _ => a.rec }, trivial⟩
+  
+  inductive EqOrAB (n a b: Ordinal) where
+    | eqA (gea: a = n)
+    | eqB (geb: b = n)
+  
+  structure Max (a b: Ordinal) where
+    n: Ordinal
+    geA: a ≤ n
+    geB: b ≤ n
+    eqAB: EqOrAB n a b
+  
+  noncomputable def max (a b: Ordinal): Max a b :=
+    (a.total b).Elim
+      (fun lt => ⟨b, Or.inl lt, Or.inr rfl, EqOrAB.eqB rfl⟩)
+      (fun gtOrEq => gtOrEq.Elim
+        (fun gt => ⟨a, Or.inr rfl, Or.inl gt, EqOrAB.eqA rfl⟩)
+        (fun eq => ⟨b, Or.inr eq, Or.inr rfl, EqOrAB.eqB rfl⟩))
+  
+  def Max.holds
+    (max: Max a b)
+    {p: Ordinal → Prop}
+    (aHolds: p a)
+    (bHolds: p b)
+  :
+    p max.n
+  :=
+    match max.eqAB with
+      | EqOrAB.eqA eqA => eqA ▸ aHolds
+      | EqOrAB.eqB eqB => eqB ▸ bHolds
+  
+  def isFinite (n: Ordinal): Prop :=
+    ∀ (limOrd: Ordinal) (_isLim: limOrd.isLimit), n < limOrd
+  
+  def isFinite.succ {n: Ordinal} (isFin: n.isFinite): n.succ.isFinite :=
+    fun limOrd isLim => Ordinal.succ.ltLimit (isFin limOrd isLim) isLim
+  
+  def isFinite.notLimit {n: Ordinal} (isFin: n.isFinite): ¬n.isLimit :=
+    fun isLim => wfRel.irefl n (isFin n isLim)
+  
+  def isFinite.pred {n: Ordinal} (isFin: n.isFinite):
+    (Ordinal.nLimit.pred n (isFinite.notLimit isFin)).val.isFinite
+  :=
+    let notLim := isFinite.notLimit isFin
+    let nPred.lt := Ordinal.nLimit.pred.lt n notLim
+    
+    fun lim isLim => Ordinal.lt.trans nPred.lt (isFin lim isLim)
+  
 end Ordinal
