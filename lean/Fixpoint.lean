@@ -42,7 +42,7 @@ namespace Tuple
     let i := Ordinal.nLimit.pred tuple.length nLimit
     tuple.elements ⟨
       i,
-      Ordinal.predLt tuple.length i (Ordinal.succ.pred.eq i.property)
+      Ordinal.pred.lt (Ordinal.succ.pred.eq i.property)
     ⟩
   
   def isElement (tuple: Tuple T): Set T := fun t: T => t ∈ tuple
@@ -455,7 +455,7 @@ section ord
         if h: nn = n then
           ord.option.ltOrEqToLe (Or.inr (stageNEq ▸ h ▸ rfl))
         else
-          let nn := ⟨nn, Ordinal.le.lt leNn h⟩
+          let nn := ⟨nn, leNn.toLt h⟩
           let eqMono: prev.elements nn = Tuple.elements prevMono.val nn := rfl
           supPrevChain.property.left
             ⟨stageNn, ⟨nn, eqMono ▸ (eq nn)⟩⟩
@@ -599,7 +599,7 @@ section ord
                             opEq ▸ (
                               stages.props cc op opMono
                                 ttIndex.val ttIndex.val.val.succ
-                                  (Or.inl (Ordinal.succGt ttIndex.val))
+                                  (Or.inl (Ordinal.succ.gt ttIndex.val))
                             ).isMono
                           
                           let ltTtOpTt: some tt .≤ opOption op tt :=
@@ -901,7 +901,7 @@ section ord
     
     let stageEq: stageNn = stageN := pair.property.left
     
-    let nnLeSucc: nn ≤ nn.succ := Or.inl (Ordinal.succGt nn)
+    let nnLeSucc: nn ≤ nn.succ := Or.inl (Ordinal.succ.gt nn)
     let nnSuccLeN: nn.succ ≤ n := Ordinal.succ.le pair.property.right
     
     let stageNnLeSucc: stageNn .≤ stageNnSucc := isMono cc op opMono nnLeSucc

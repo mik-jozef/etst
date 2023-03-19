@@ -296,6 +296,8 @@ namespace HamkinsMachine
             (hm.stage input nn).state = hm.haltState
           then
             hm.haltState
+          else if n = Ordinal.zero then
+            hm.initialState
           else
             hm.limitState
         -- If the machine halted, limSup is safe.
@@ -341,7 +343,44 @@ namespace HamkinsMachine
   : Prop :=
     (stage hm input n).state = hm.haltState
   
-  structure stage.eq.Limit
+  structure stage.eq.Zero
+    (hm: HamkinsMachine)
+    (input: Nat2)
+  where
+    (tapeEq: (hm.stage input Ordinal.zero).tape = input)
+    (stateEq: (hm.stage input Ordinal.zero).state = hm.initialState)
+    (headEq: (hm.stage input Ordinal.zero).head = 0)
+  
+  def stage.eq.zero
+    (hm: HamkinsMachine)
+    (input: Nat2)
+  :
+    Zero hm input
+  :=
+    let zeroIsLimit := Ordinal.zero.isLimit
+    
+    {
+      tapeEq :=
+        let prevStages := stage.prevStages hm input Ordinal.zero
+        
+        let eqLim:
+          (hm.stage input Ordinal.zero).tape = limSup prevStages input
+        := by
+          unfold HamkinsMachine.stage
+          exact dif_pos zeroIsLimit ▸ rfl
+        
+        eqLim.trans (limSup.zero prevStages input rfl)
+      stateEq :=
+        let nex := Ordinal.zero.nex _
+        
+        by
+          unfold HamkinsMachine.stage
+          exact dif_pos zeroIsLimit ▸ if_neg nex ▸ if_pos rfl ▸ rfl
+      headEq := 
+        by unfold HamkinsMachine.stage exact dif_pos zeroIsLimit ▸ rfl
+    }
+  
+  structure stage.eq.InfLimit
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
@@ -351,25 +390,29 @@ namespace HamkinsMachine
       → (hm.stage input n).state = hm.haltState)
     (stateLimit: ¬(∃ nn: ↑n, stage.haltsAt hm input nn)
       → (hm.stage input n).state = hm.limitState)
-    (head: (hm.stage input n).head = 0)
+    (headEq: (hm.stage input n).head = 0)
   
-  def stage.eq.limit
+  def stage.eq.infLimit
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
-    (nl: n.isLimit)
+    (nl: n.isInfLimit)
   :
-    Limit hm input n
+    InfLimit hm input n
   :=
     {
       tapeEq :=
-        by unfold HamkinsMachine.stage exact dif_pos nl ▸ rfl
+        by unfold HamkinsMachine.stage exact dif_pos nl.left ▸ rfl
       stateHalt := fun ex =>
-        by unfold HamkinsMachine.stage exact dif_pos nl ▸ if_pos ex ▸ rfl
-      stateLimit := fun ex =>
-        by unfold HamkinsMachine.stage exact dif_pos nl ▸ if_neg ex ▸ rfl
-      head :=
-        by unfold HamkinsMachine.stage exact dif_pos nl ▸ rfl
+        by
+          unfold HamkinsMachine.stage
+          exact dif_pos nl.left ▸ if_pos ex ▸ rfl
+      stateLimit := fun nex =>
+        by
+          unfold HamkinsMachine.stage
+          exact dif_pos nl.left ▸ if_neg nex ▸ if_neg nl.right ▸ rfl
+      headEq :=
+        by unfold HamkinsMachine.stage exact dif_pos nl.left ▸ rfl
     }
   
   def stage.eq.step.succ
@@ -399,10 +442,11 @@ namespace HamkinsMachine
     if hEq: n = ng then
       hEq ▸ hAt
     else
-      let ngGt: n < ng := Ordinal.le.lt ngGe hEq
+      let ngGt: n < ng := ngGe.toLt hEq
+      let ngNotZero: ¬ng.isZero := Ordinal.lt.notZero ngGt
       
       if hLim: ng.isLimit then
-        let lim := stage.eq.limit hm input ng hLim
+        let lim := stage.eq.infLimit hm input ng ⟨hLim, ngNotZero⟩
         lim.stateHalt ⟨⟨n, ngGt⟩, hAt⟩
       else
         let ngPred := Ordinal.nLimit.pred ng hLim
@@ -424,7 +468,7 @@ namespace HamkinsMachine
   
   def stage.haltsAt.gt
     (hAt: stage.haltsAt hm input n)
-    (ng: Ordinal)
+    {ng: Ordinal}
     (ngGt: n < ng)
   :
     stage.haltsAt hm input ng
@@ -469,15 +513,16 @@ namespace HamkinsMachine
     if hEq: n0 = n1 then
       hw0.right.symm.trans (hEq ▸ hw1.right)
     else
-      let nLt: n0 < n1 := Ordinal.le.lt nLe hEq
+      let n1.lt: n0 < n1 := nLe.toLt hEq
+      let n1.notZero: ¬n1.isZero := Ordinal.lt.notZero n1.lt
       
       if h: n1.isLimit then
         let prev := prevStages hm input n1
         
-        let lim := stage.eq.limit hm input n1 h
+        let lim := stage.eq.infLimit hm input n1 ⟨h, n1.notZero⟩
         let limTape := lim.tapeEq
         
-        let limEq0 := limSup.eventuallyConstant prev input ⟨n0, nLt⟩ output0
+        let limEq0 := limSup.eventuallyConstant prev input ⟨n0, n1.lt⟩ output0
           fun nn1 n0LB =>
             have: nn1 < n1 := nn1.property
             
@@ -489,23 +534,24 @@ namespace HamkinsMachine
         
         limEq0.symm.trans (limTape.symm.trans hw1.right)
       else
-        let nPred := Ordinal.nLimit.pred n1 h
-        have: nPred < n1 := Ordinal.nLimit.pred.lt n1 h
+        let n1Pred := Ordinal.nLimit.pred n1 h
+        have: n1Pred < n1 := Ordinal.nLimit.pred.lt n1 h
         
-        let nLePred: n0 ≤ nPred := Ordinal.lt.succ.le (nPred.property.symm ▸ nLt)
+        let nLePred: n0 ≤ n1Pred :=
+          Ordinal.lt.succ.le (n1Pred.property.symm ▸ n1.lt)
         
-        let tapeAtPred := (hm.stage input nPred).tape
-        let hwPred: stage.haltsWith hm input tapeAtPred nPred :=
-          And.intro (stage.haltsAt.ge hw0.left nPred nLePred) rfl
+        let tapeAtPred := (hm.stage input n1Pred).tape
+        let hwPred: stage.haltsWith hm input tapeAtPred n1Pred :=
+          And.intro (stage.haltsAt.ge hw0.left n1Pred nLePred) rfl
         
         nLePred.elim
           (fun nLtPred =>
             let eqR := stage.haltsConsistent.le hw0 hwPred (Or.inl nLtPred)
             eqR.trans (stage.haltsConsistent.step
-              hwPred (nPred.property.symm ▸ hw1)))
+              hwPred (n1Pred.property.symm ▸ hw1)))
           (fun nEqPred =>
             stage.haltsConsistent.step
-              (nEqPred ▸ hw0) (nPred.property.symm ▸ hw1))
+              (nEqPred ▸ hw0) (n1Pred.property.symm ▸ hw1))
   termination_by stage.haltsConsistent.le n0 n1 hw0 hw1 nLt => n1
 
   def stage.haltsConsistent

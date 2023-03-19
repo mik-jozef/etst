@@ -404,7 +404,7 @@ def hartogsNumber.lt
 :=
   let le := hartogsNumber.pred.le f fInj t
   let ltSucc: hartogsNumber.pred f < hartogsNumber f :=
-    Ordinal.succGt (hartogsNumber.pred f)
+    Ordinal.succ.gt (hartogsNumber.pred f)
   
   Ordinal.lelt.trans le ltSucc
 

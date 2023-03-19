@@ -18,6 +18,11 @@ noncomputable def choiceEx {P: T → Prop} (ex: ∃ t: T, P t): { t: T // P t } 
 def contra (impl: a → b): ¬b → ¬a :=
   fun nbProof => fun aProof => nbProof (impl aProof)
 
+theorem dne {p : Prop} (h : ¬¬p) : p :=
+  Or.elim (em p)
+    (fun hp : p => hp)
+    (fun hnp : ¬p => absurd hnp h)
+
 
 def Set.{u} (T : Type u) := T → Prop
 
@@ -235,6 +240,12 @@ def Nat.abs.ltle.rite {a b c: Nat} (ab: a < b) (bc: b ≤ c):
   let lt: c - b < c - a := Nat.ltle.subLt ab bc
   absBC ▸ absAC ▸ lt
 
+def Nat.le_pred_of_lt {a b: Nat} (ab: a < b): a ≤ b.pred :=
+  match b with
+  | Nat.zero => Nat.le_of_lt ab -- No appeal to contradiction. Crazy!
+  | Nat.succ _ => Nat.le_of_succ_le_succ ab
+
+
 def List.has (list: List T) (t: T): Prop :=
   ∃ n: Fin list.length, list.get n = t
 
@@ -290,3 +301,20 @@ noncomputable def Or.Elim
     ifA h
   else
     ifB (or.elim (fun isA => False.elim (h isA)) id)
+
+def notEx.all {p npi: T → Prop}
+  (na: ¬(∃ t: T, p t))
+  (nptImpl: ∀ t, ¬p t → npi t)
+:
+  ∀ t: T, npi t
+:=
+  fun t =>  nptImpl t (byContradiction fun nnpt => na ⟨t, dne nnpt⟩)
+
+def notAll.ex {p npi: T → Prop}
+  (na: ¬(∀ t: T, p t))
+  (nptImpl: ∀ t, ¬p t → npi t)
+:
+  ∃ t: T, npi t
+:=
+  byContradiction fun nex =>
+    na (fun t => byContradiction fun npt => nex ⟨t, nptImpl t npt⟩)

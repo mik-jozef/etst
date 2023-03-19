@@ -39,27 +39,27 @@ namespace Program
                   let configN.stateEq: configN.state = Assign.State.halt :=
                     haltN.property
                   
-                  let inv.eq: Assign.invariant src dest tape configN =
-                    (configN.tape = (Assign.finalTape src dest tape))
-                  :=-- Why does this not work??
-                    -- by unfold Assign.invariant rw [configN.stateEq] rfl
-                    by unfold Assign.invariant exact configN.stateEq ▸ rfl
-                  let inv: configN.tape = (Assign.finalTape src dest tape) :=
-                    inv.eq ▸ Assign.invariantHolds src dest tape haltN
+                  let output := Assign.finalTape src dest tape
                   
-                  let isSoundM:
-                    Layout.Memory.assign src dest m.val ∈ postcond m
-                  :=
-                    isSound m
+                  let inv: configN.tape = output :=
+                    (Assign.invariantsHold src dest tape haltN).left.invHalt
+                       configN.stateEq
+                  
+                  let hc := HamkinsMachine.haltsConsistent
+                    (Assign.hm src dest) tape output haltN
+                    (And.intro haltN.property inv)
+                  
+                  let tapeEq: tapeOut = output :=
+                    Option.noConfusion (h.symm.trans hc) id
                   
                   let mEq:
-                    Layout.Memory.assign src dest m.val = Nat2.toMemory tapeOut
+                    Layout.Memory.assign src dest m.val = Nat2.toMemory output
                   :=
                     funext fun i =>
                       sorry
                   
-                  show Nat2.toMemory tapeOut ∈ postcond m from
-                    mEq ▸ isSoundM)
+                  tapeEq ▸ show Nat2.toMemory output ∈ postcond m from
+                    mEq ▸ isSound m)
         ⟩
     | ite cond a b precond postcond terminatesIf isSoundPrecond
         isSoundPostcondA isSoundPostcondB

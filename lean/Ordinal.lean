@@ -10,11 +10,6 @@ import Set
 open Classical
 
 
-theorem dne {p : Prop} (h : ¬¬p) : p :=
-  Or.elim (em p)
-    (fun hp : p => hp)
-    (fun hnp : ¬p => absurd hnp h)
-
 -- When I try to inline this, I get errors ¯\_(ツ)_/¯
 def Quotient.lift.eq {s: Setoid T}
   (f: T → R)
@@ -2342,6 +2337,8 @@ namespace Ordinal
   
   def zero: Ordinal := mk WellOrder.zero
   
+  def isZero (n: Ordinal): Prop := n = Ordinal.zero
+  
   def succ.mid (w: WellOrder) := Ordinal.mk w.succ
   
   def succ: Ordinal → Ordinal := Quotient.lift succ.mid
@@ -2427,7 +2424,9 @@ namespace Ordinal
   noncomputable def pred: Ordinal → Option Ordinal :=
     Quotient.lift pred.mid predRespects
   
-  def isLimit (o: Ordinal): Prop := o.pred = none
+  def isLimit (n: Ordinal): Prop := n.pred = none
+  
+  def isInfLimit (n: Ordinal): Prop := n.isLimit ∧ ¬n.isZero
   
   def hasPred.isNotLimit (n nPred: Ordinal) (eq: n.pred = nPred): ¬ n.isLimit
   :=
@@ -2608,8 +2607,10 @@ namespace Ordinal
           nspEq ▸ rfl
   
   def le (a b: Ordinal): Prop := lt a b ∨ a = b
-  def le.lt {a b: Ordinal} (leAB: le a b) (neq: a ≠ b): lt a b :=
+  def le.toLt {a b: Ordinal} (leAB: le a b) (neq: a ≠ b): lt a b :=
     leAB.elim id (fun eq => False.elim (neq eq))
+  def lt.toLe {a b: Ordinal} (ltAB: lt a b): le a b :=
+    Or.inl ltAB
   
   instance: LT Ordinal where
     lt := Ordinal.lt
@@ -2639,7 +2640,7 @@ namespace Ordinal
   def wf (o: Ordinal): Acc lt o := Quotient.ind wfLt o
   
   
-  def succGt (n: Ordinal): n < n.succ :=
+  def succ.gt (n: Ordinal): n < n.succ :=
     let nRep := getRep n
     let nSuccRep := getRep n.succ
     
@@ -2665,10 +2666,12 @@ namespace Ordinal
     
     nSuccRep.property ▸ lt2
   
-  def predLt (n nPred: Ordinal) (eq: n.pred = some nPred):
+  def succ.ge (n: Ordinal): n ≤ n.succ := Or.inl (succ.gt n)
+  
+  def pred.lt {n nPred: Ordinal} (eq: n.pred = some nPred):
     lt nPred n
   :=
-    let ltSucc: nPred < nPred.succ := succGt nPred
+    let ltSucc: nPred < nPred.succ := succ.gt nPred
     (pred.succ.eq eq) ▸ ltSucc
   
   def nLimit.pred.lt (n: Ordinal) (isSucc: ¬ isLimit n):
@@ -2676,7 +2679,7 @@ namespace Ordinal
   :=
     let p := nLimit.pred n isSucc
     
-    let ltP: p.val < p.val.succ := succGt p
+    let ltP: p.val < p.val.succ := succ.gt p
     let eq: p.val.succ = n := p.property
     
     let pVal := p.val -- Why tf is this necessary, Lean?
@@ -2761,7 +2764,7 @@ namespace Ordinal
           (fun eq => Or.inr (eq ▸ rfl)))
   
   def le.succ.lt {n nn: Ordinal} (ltSucc: nn ≤ n): nn < n.succ :=
-    Ordinal.lelt.trans ltSucc (Ordinal.succGt n)
+    Ordinal.lelt.trans ltSucc (succ.gt n)
   
   instance (n: Nat): OfNat Ordinal n where
     ofNat := Ordinal.ofNat n
@@ -2779,11 +2782,21 @@ namespace Ordinal
       let lt: WellOrder.zero < nRep := And.intro nIso ⟨mZeroN, trivial⟩
       Or.inl (nRep.property ▸ lt)
   
-  def zero.nGreater (n: Ordinal): ¬ n < 0 :=
+  def zero.nGreater (n: Ordinal): ¬ n < zero :=
     fun zeroLt =>
       (zero.least n).elim
         (fun lt => wfRel.antisymm.false zeroLt lt)
         (fun eq => wfRel.irefl n (eq ▸ zeroLt))
+  
+  def lt.notZero {a b: Ordinal} (ab: a < b): ¬b.isZero :=
+    fun eq => zero.nGreater a (eq.symm ▸ ab)
+  
+  def zero.isLimit: zero.isLimit :=
+    match h: zero.pred with
+    | none => h
+    | some zeroPred =>
+        let predLt: zeroPred < zero := pred.lt h
+        False.elim (zero.nGreater _ predLt)
   
   def succ.ltLimit
     {n nLim: Ordinal}
@@ -2798,6 +2811,11 @@ namespace Ordinal
         (fun eq =>
           let hasPred: nLim.pred ≠ none := eq ▸ succ.hasPred n
           False.elim (hasPred isLimit)))
+  
+  def succ.notLimit {n: Ordinal}: ¬n.succ.isLimit :=
+    fun isSuccLim =>
+      let nSuccPred.eq: n.succ.pred = n := succ.pred.eq rfl
+      Option.noConfusion (isSuccLim.symm.trans nSuccPred.eq)
   
   
   def isLeast (s: Set Ordinal): Set Ordinal :=
@@ -2831,6 +2849,25 @@ namespace Ordinal
       (fun abLt => never.lelt baLe abLt)
       (fun eq => eq)
   
+  def notLe.gt {a b: Ordinal} (nle: ¬ a ≤ b): b < a :=
+    (b.total a).elim id
+      (fun ltOrEq => False.elim (ltOrEq.elim
+        (fun lt => (nle lt.toLe))
+        (fun eq => (eq ▸ nle) (Or.inr rfl))))
+  
+  def notLt.ge {a b: Ordinal} (nlt: ¬ a < b): b ≤ a :=
+    (b.total a).elim (fun ba => Or.inl ba)
+      (fun ltOrEq => (ltOrEq.elim
+        (fun lt => False.elim (nlt lt))
+        (fun eq => (eq ▸ (Or.inr rfl)))))
+  
+  def zero.notSucc (n: Ordinal): n.succ ≠ Ordinal.zero :=
+    fun eq =>
+      let succLeN: n.succ ≤ n := eq ▸ zero.least n
+      let succGeN: n < n.succ := succ.gt n
+      
+      never.lelt succLeN succGeN
+  
   def limit.isSup (n: Ordinal) (isLimit: n.isLimit):
     isSupremum n.ltSet n
   :=
@@ -2845,7 +2882,7 @@ namespace Ordinal
                 let nOtherSuccLtN: nOther.succ < n := succ.ltLimit gt isLimit
                 let nOtherSuccLeNOther: nOther.succ ≤ nOther :=
                   nOtherUB ⟨nOther.succ, nOtherSuccLtN⟩
-                let nOtherSuccGtNOther: nOther < nOther.succ := succGt nOther
+                let nOtherSuccGtNOther: nOther < nOther.succ := succ.gt nOther
                 never.lelt nOtherSuccLeNOther nOtherSuccGtNOther)
               (fun eq => Or.inr eq)))
 end Ordinal
@@ -2898,20 +2935,132 @@ namespace Ordinal
       | EqOrAB.eqB eqB => eqB ▸ bHolds
   
   def isFinite (n: Ordinal): Prop :=
-    ∀ (limOrd: Ordinal) (_isLim: limOrd.isLimit), n < limOrd
+    ∀ (limOrd: Ordinal)
+      (_isLim: limOrd.isLimit)
+      (_notZero: limOrd ≠ Ordinal.zero)
+    ,
+      n < limOrd
+  
+  def isFinite.zero: zero.isFinite :=
+    fun lim _ nz =>
+      let leLim := zero.least lim
+      leLim.toLt nz.symm
   
   def isFinite.succ {n: Ordinal} (isFin: n.isFinite): n.succ.isFinite :=
-    fun limOrd isLim => Ordinal.succ.ltLimit (isFin limOrd isLim) isLim
+    fun limOrd isLim notZero =>
+      Ordinal.succ.ltLimit (isFin limOrd isLim notZero) isLim
   
-  def isFinite.notLimit {n: Ordinal} (isFin: n.isFinite): ¬n.isLimit :=
-    fun isLim => wfRel.irefl n (isFin n isLim)
-  
-  def isFinite.pred {n: Ordinal} (isFin: n.isFinite):
-    (Ordinal.nLimit.pred n (isFinite.notLimit isFin)).val.isFinite
+  def isFinite.ltFinite {a b: Ordinal}
+    (ab: a < b)
+    (bFin: b.isFinite)
+  :
+    a.isFinite
   :=
-    let notLim := isFinite.notLimit isFin
+    fun n nLim nNotZero => Ordinal.lt.trans ab (bFin n nLim nNotZero)
+  
+  def isFinite.leFinite {a b: Ordinal}
+    (ab: a ≤ b)
+    (bFin: b.isFinite)
+  :
+    a.isFinite
+  :=
+    ab.elim (fun ab => isFinite.ltFinite ab bFin) (fun eq => eq ▸ bFin)
+  
+  def notFinite.gtNotFinite {a b: Ordinal}
+    (ab: a < b)
+    (aNotFin: ¬ a.isFinite)
+  :
+    ¬ b.isFinite
+  :=
+    fun bFin => aNotFin (isFinite.ltFinite ab bFin)
+  
+  def isFinite.zeroOrNotLimit {n: Ordinal} (isFin: n.isFinite):
+    n = Ordinal.zero ∨ ¬n.isLimit
+  :=
+    if h: n = Ordinal.zero then
+      Or.inl h
+    else
+      Or.inr fun isLim => wfRel.irefl n (isFin n isLim h)
+  
+  def isFinite.pos.notLimit {n: Ordinal} (isFin: n.isFinite) (notZero: n ≠ 0):
+    ¬n.isLimit
+  :=
+    (isFinite.zeroOrNotLimit isFin).elim
+      (fun isZero => False.elim (notZero isZero)) id
+  
+  def isFinite.pred {n: Ordinal} (isFin: n.isFinite) (notZero: n ≠ 0):
+    (Ordinal.nLimit.pred n (isFinite.pos.notLimit isFin notZero)).val.isFinite
+  :=
+    let notLim := isFinite.pos.notLimit isFin notZero
     let nPred.lt := Ordinal.nLimit.pred.lt n notLim
     
-    fun lim isLim => Ordinal.lt.trans nPred.lt (isFin lim isLim)
+    fun lim isLim notZero =>
+      Ordinal.lt.trans nPred.lt (isFin lim isLim notZero)
+  
+  def isFinite.ltInfLim {n lim: Ordinal}
+    (isFin: n.isFinite)
+    (limInfLim: lim.isInfLimit)
+  :
+    n < lim
+  :=
+    isFin lim limInfLim.left limInfLim.right
+  
+  noncomputable def notFinite.geInfLim {n: Ordinal} (notFin: ¬n.isFinite):
+    { lim: Ordinal // lim.isInfLimit ∧ lim ≤ n }
+  :=
+    let exLim:
+      ∃ (limOrd: Ordinal)
+        (_isLim: limOrd.isLimit)
+        (_notZero: limOrd ≠ Ordinal.zero)
+      ,
+        limOrd ≤ n
+      := -- Would be cool to have a function that does this
+         -- to an arbitrary proposition.
+        notAll.ex notFin
+          (fun _ p => notAll.ex p
+            (fun _ p => notAll.ex p
+              (fun _ p => notLt.ge p)))
+    
+    let ⟨lim, prop⟩ := choiceEx exLim
+    
+    ⟨
+      lim,
+      prop.elim
+        (fun isLim exNotZero =>
+          exNotZero.elim (fun notZero leN =>
+            And.intro (And.intro isLim notZero) leN))
+    ⟩
+  
+  def isFinite.ltNotFin {nFin nNotFin: Ordinal}
+    (isFin: nFin.isFinite)
+    (isNotFin: ¬nNotFin.isFinite)
+  :
+    nFin < nNotFin
+  :=
+    let ⟨lim, isLim, limLe⟩ := notFinite.geInfLim isNotFin
+    ltle.trans (isFin lim isLim.left isLim.right) limLe
+  
+  def notFinite.predNotFinite {n nPred: Ordinal}
+    (nNotFin: ¬ n.isFinite)
+    (nPredEq: nPred.succ = n)
+  :
+    ¬nPred.isFinite
+  :=
+    fun nPredFin => nNotFin (nPredEq ▸ isFinite.succ nPredFin)
+  
+  def notFinite.predGtFinite {fin n nPred: Ordinal}
+    (finFin: fin.isFinite)
+    (nNotFin: ¬ n.isFinite)
+    (nPredEq: nPred.succ = n)
+  :
+    fin < nPred
+  :=
+    let nPred.notFin := notFinite.predNotFinite nNotFin nPredEq
+    
+    isFinite.ltNotFin finFin nPred.notFin
+  
+  def zero.nex (p: ↑zero → Prop): ¬∃ n: ↑zero, p n :=
+    fun ex => ex.elim fun ltZero =>
+      never.lelt (zero.least ltZero) ltZero.property
   
 end Ordinal
