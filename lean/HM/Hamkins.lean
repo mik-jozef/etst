@@ -677,12 +677,12 @@ namespace Program
               seqIndex location.seqN location.seqLoc.address
     end Location
     
-    -- TODO do I need this?
+    /- TODO do I need this?
     -- Typing in a bus is hard and weird.
     def toLocation: (layout: Layout) → (i: Nat) → layout.Location
       | Layout.tape, i => Layout.Location.tape i
       | Layout.pair a b, i => sorry
-      | Layout.seq f, i => sorry
+      | Layout.seq f, i => sorry-/
     
     def pop: Layout → Layout
       | tape => tape
@@ -691,9 +691,9 @@ namespace Program
     
     def Memory (layout: Layout) := layout.Location → Two
     
-    -- TODO do I need this?
+    /- TODO do I need this?
     def Memory.toTape {layout: Layout} (m: layout.Memory): Nat2 :=
-      fun i => m (layout.toLocation i)
+      fun i => m (layout.toLocation i)-/
     
     structure MemSeq
       (layout: Layout)
@@ -895,9 +895,11 @@ namespace HM
       -- If cond is inhabited, then expr, else empty.
     | cond (cond expr: PosExpr Var)
       -- Arbitrary union / existential quantifier.
-    | Un (n: Nat) (expr: PosExpr Var)
+      -- Nc is a complement of n.
+    | Un (n nc: Nat) (expr: PosExpr Var)
       -- Arbitrary intersection / universal quantifier.
-    | Ir (n: Nat) (expr: PosExpr Var)
+      -- Nc is a complement of n.
+    | Ir (n nc: Nat) (expr: PosExpr Var)
   
   structure DefList
     (Var: Type)
@@ -918,6 +920,6 @@ namespace HM
     | PosExpr.cond cond expr => sorry
     | PosExpr.un a b => sorry
     | PosExpr.ir a b => sorry
-    | PosExpr.Un var body => sorry
-    | PosExpr.Ir var body => sorry
+    | PosExpr.Un var cVar body => sorry
+    | PosExpr.Ir var cVar body => sorry
 end HM

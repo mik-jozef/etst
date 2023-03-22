@@ -56,7 +56,11 @@ namespace Program
                     Layout.Memory.assign src dest m.val = Nat2.toMemory output
                   :=
                     funext fun i =>
-                      sorry
+                      let asdf:
+                        Layout.Memory.assign src dest m i = output i.address
+                      :=
+                        sorry
+                      asdf
                   
                   tapeEq ▸ show Nat2.toMemory output ∈ postcond m from
                     mEq ▸ isSound m)

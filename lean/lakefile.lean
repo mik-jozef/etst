@@ -16,6 +16,7 @@ lean_lib Pointwise {}
 lean_lib Set {}
 
 lean_lib HM.Assign {}
+lean_lib HM.Compile {}
 lean_lib HM.Hamkins {}
 
 lean_lib FOL {}
