@@ -34,8 +34,8 @@ namespace FOL
   
   structure Structure (sig: Signature) where
     Domain: Type
-    fns: (fn: sig.Fn) → (args: sig.arityFn fn → Domain) → Domain
-    rels: (rel: sig.Rel) → (args: sig.arityRel rel → Domain) → Bool
+    functions: (fn: sig.Fn) → (args: sig.arityFn fn → Domain) → Domain
+    relations: (rel: sig.Rel) → (args: sig.arityRel rel → Domain) → Bool
   
   
   def Valuation (sre: Structure sig) := Variable → sre.Domain
@@ -65,7 +65,7 @@ namespace FOL
     match term with
     | Term.var v => val v
     | Term.fn op args =>
-        sre.fns op (fun arg => (args arg).interpretation sre val)
+        sre.functions op (fun arg => (args arg).interpretation sre val)
   
   noncomputable def Formula.interpretation
     {sig: Signature}
@@ -79,7 +79,7 @@ namespace FOL
     | Formula.eq left rite =>
         left.interpretation sre val = rite.interpretation sre val
     | Formula.rel r args =>
-        sre.rels r (fun arg => (args arg).interpretation sre val)
+        sre.relations r (fun arg => (args arg).interpretation sre val)
     | Formula.and left rite =>
         left.interpretation sre val ∧ rite.interpretation sre val
     | Formula.or left rite =>

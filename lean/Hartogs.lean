@@ -77,7 +77,7 @@ def initialWellOrder.wfRel
   let tInRange: t.val ∈ range f := ⟨tInv.val, tInv.property⟩
   inverse f ⟨t, tInRange⟩
 
-invImage toOrdinal Ordinal.wfOrd
+invImage toOrdinal Ordinal.wellFounded
 
 def initialWellOrder
   (f: Ordinal → T)
@@ -146,7 +146,7 @@ def initialWellOrder
         let tInRange: t.val ∈ range f := ⟨tInv.val, tInv.property⟩
         inverse f ⟨t, tInRange⟩
       
-      (invImage toOrdinal Ordinal.wfOrd).wf
+      (invImage toOrdinal Ordinal.wellFounded).wf
   }
 
 def initialWellOrder.monoSucc
@@ -350,7 +350,7 @@ def hartogsNumber.pred.wellOrder (f: Ordinal → T): WellOrder :=
               Or.inr (Or.inr (inverse.inj f t0 t1 eq))))
     
     wf := (
-      invImage (fun t: ↑R => inverse f t) Ordinal.wfOrd
+      invImage (fun t: ↑R => inverse f t) Ordinal.wellFounded
     ).wf
   }
 

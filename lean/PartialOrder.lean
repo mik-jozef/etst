@@ -8,7 +8,7 @@ open Classical
 notation:50 lhs:51 " ≰ " rhs:51 => ¬ LE.le lhs rhs
 notation:50 lhs:51 " ≮ " rhs:51 => ¬ LT.lt lhs rhs
 
-class PartialOrder (T: Type) where
+class PartialOrder (T: Type u) where
   le : T → T → Prop
   refl (t: T): le t t
   antisymm (a b: T): le a b  →  le b a  →  a = b
@@ -129,6 +129,14 @@ end PartialOrder
 
 class PartialOrderSt (T: Type) extends PartialOrder T, LE T, LT T where
 
+def PartialOrderSt.le.fromPO
+  [ord: PartialOrderSt T]
+  (ab: ord.toPartialOrder.le a b):
+  a ≤ b
+:=
+  ab
+
+
 -- The square less-equal relation: `x ⊑ y`.
 class SqLE (α : Type u) where
   le : α → α → Prop
@@ -140,6 +148,7 @@ class SqLT (α : Type u) where
 infix:50 " ⊑ " => SqLE.le
 infix:50 " ⊏ " => SqLT.lt
 
+
 class PartialOrderSq (T: Type) extends PartialOrder T, SqLE T, SqLT T where
 
 def PartialOrderSq.le.fromPO
@@ -148,6 +157,7 @@ def PartialOrderSq.le.fromPO
   a ⊑ b
 :=
   ab
+
 
 instance: PartialOrder Nat where
   le := Nat.le

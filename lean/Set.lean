@@ -38,11 +38,11 @@ instance: LE (Set D) where
 infix:50 " ⊆ " => LE.le
 
 
-theorem Set.ext {a b : Set D} (h : ∀ x, x ∈ a ↔ x ∈ b) : a = b :=
+theorem Set.eq {a b : Set D} (h : ∀ x, x ∈ a ↔ x ∈ b) : a = b :=
   funext (fun x => propext (h x))
 
 
-instance: PartialOrder (Set D) where
+instance Set.ord: PartialOrder (Set D) where
   le (a: Set D) (b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
   
   refl (_: Set D) := fun _: D => id
@@ -50,7 +50,7 @@ instance: PartialOrder (Set D) where
   antisymm (a b: Set D) :=
     fun (ab: a ≤ b) (ba: ∀ d: D, d ∈ b → d ∈ a) =>
       let abElem: ∀ d: D, d ∈ a ↔ d ∈ b := fun (s: D) => Iff.intro (ab s) (ba s);
-      Set.ext abElem
+      Set.eq abElem
   
   trans (a b c: Set D) := fun (ab: a ≤ b) (bc: b ≤ c) =>
     -- In general, do I prefer long and incremental and explicit proofs,
@@ -318,3 +318,23 @@ def notAll.ex {p npi: T → Prop}
 :=
   byContradiction fun nex =>
     na (fun t => byContradiction fun npt => nex ⟨t, nptImpl t npt⟩)
+
+def all.notEx {p pi: T → Prop}
+  (allP: ∀ t: T, p t)
+  (ptImpl: ∀ t, p t → ¬pi t)
+:
+  ¬∃ t: T, pi t
+:=
+  fun ex =>
+    let t := choiceEx ex
+    ptImpl t (allP t) t.property
+
+def ex.notAll {p pi: T → Prop}
+  (exP: ∃ t: T, p t)
+  (ptImpl: ∀ t, p t → ¬pi t)
+:
+  ¬∀ t: T, pi t
+:=
+  fun all =>
+    let t := choiceEx exP
+    ptImpl t t.property (all t)

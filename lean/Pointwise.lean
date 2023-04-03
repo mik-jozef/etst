@@ -7,7 +7,8 @@ import Fixpoint
 open Classical
 
 instance PartialOrder.pointwise
-  (X Y: Type)
+  (X: Type)
+  {Y: Type}
   (_: PartialOrder Y)
 :
   PartialOrder (X → Y)
@@ -15,7 +16,8 @@ where
   le a b := ∀ x: X, a x .≤ b x
   
   refl a := fun v => PartialOrder.refl (a v)
-  antisymm _ _ := fun ab ba => funext fun v => PartialOrder.antisymm _ _ (ab v) (ba v)
+  antisymm _ _ := fun ab ba => funext fun v =>
+    PartialOrder.antisymm _ _ (ab v) (ba v)
   trans _ _ _ := fun ab bc v => PartialOrder.trans _ _ _ (ab v) (bc v)
   
   ltToLeNeq := id
@@ -23,9 +25,8 @@ where
 
 
 def pointwiseSup.at
-  [ord: PartialOrder D]
-  (cc: isChainComplete ord)
-  (ch: @Chain (I → D) (PartialOrder.pointwise I D ord))
+  (ord: PartialOrder D)
+  (ch: Chain (ord.pointwise I))
   (i: I)
 :
   Set D
@@ -33,14 +34,13 @@ def pointwiseSup.at
   fun d => ∃ f: ↑ch.val, d = f.val i
 
 def pointwiseSup.atChain
-  [ord: PartialOrder D]
-  (cc: isChainComplete ord)
-  (ch: @Chain (I → D) (PartialOrder.pointwise I D ord))
+  (ord: PartialOrder D)
+  (ch: Chain (ord.pointwise I))
   (i: I)
 :
-  Chain D
+  Chain ord
 := ⟨
-  pointwiseSup.at cc ch i,
+  pointwiseSup.at ord ch i,
   fun d0 d1 =>
     let d0F := choiceEx d0.property
     let d1F := choiceEx d1.property
@@ -52,27 +52,47 @@ def pointwiseSup.atChain
       (fun ge => Or.inr (ge i))
 ⟩
 
+def pointwiseSup.atChain.inCh
+  (ord: PartialOrder D)
+  (ch: Chain (ord.pointwise I))
+  (dIn: d ∈ (pointwiseSup.atChain ord ch i).val)
+:
+  ∃ f: ↑ch.val, d = f.val i
+:=
+  let f := choiceEx dIn
+  ⟨f, f.property⟩
+
+def pointwiseSup.inCh.atChain
+  (ord: PartialOrder D)
+  (ch: Chain (ord.pointwise I))
+  {f: ↑ch.val}
+  (dIn: d = f.val i)
+:
+  d ∈ (pointwiseSup.atChain ord ch i).val
+:=
+  ⟨f, dIn⟩
+
 noncomputable def pointwiseSup.typed
   {I D: Type}
-  [ord: PartialOrder D]
+  (ord: PartialOrder D)
   (cc: isChainComplete ord)
-  (ch: @Chain (I → D) (PartialOrder.pointwise I D ord))
+  (ch: Chain (ord.pointwise I))
 :
-  (i: I) → (Supremum (pointwiseSup.at cc ch i))
+  (i: I) → (Supremum ord (pointwiseSup.at ord ch i))
 :=
   fun i =>
-    let chAtI: Chain D := pointwiseSup.atChain cc ch i
+    let chAtI: Chain ord := pointwiseSup.atChain ord ch i
     choiceEx (cc chAtI)
 
 noncomputable def pointwiseSup
   {I D: Type}
-  [ord: PartialOrder D]
+  (ord: PartialOrder D)
   (cc: isChainComplete ord)
-  (ch: @Chain (I → D) (PartialOrder.pointwise I D ord))
+  (ch: Chain (ord.pointwise I))
 :
-  @Supremum (I → D) (PartialOrder.pointwise I D ord) ch.val
+  Supremum (ord.pointwise I) ch.val
 :=
-  let sup := pointwiseSup.typed cc ch
+  let sup := pointwiseSup.typed ord cc ch
   let supUntyped: I → D := fun i => (sup i).val
   
   ⟨
@@ -80,7 +100,7 @@ noncomputable def pointwiseSup
     And.intro
       (fun (f: ↑ch.val) i => (sup i).property.left ⟨f.val i, ⟨f, rfl⟩⟩)
       (fun f fUB i =>
-        let fiUB: f i ∈ isUpperBound (pointwiseSup.at cc ch i) :=
+        let fiUB: f i ∈ isUpperBound ord (pointwiseSup.at ord ch i) :=
           fun d =>
             let ff := choiceEx d.property
             ff.property ▸ fUB ff i
@@ -89,31 +109,46 @@ noncomputable def pointwiseSup
 
 noncomputable def pointwiseSup.eqTyped
   {I D: Type}
-  [ord: PartialOrder D]
+  (ord: PartialOrder D)
   (cc: isChainComplete ord)
-  (ch: @Chain (I → D) (PartialOrder.pointwise I D ord))
+  (ch: Chain (ord.pointwise I))
   (i: I)
 :
-  (pointwiseSup.typed cc ch i).val = (pointwiseSup cc ch).val i
+  (pointwiseSup.typed ord cc ch i).val = (pointwiseSup ord cc ch).val i
 :=
   rfl
 
-
-def PartialOrder.pointwise.isChainComplete
-  {X Y: Type}
-  [ord: PartialOrder Y]
+def isChainComplete.pointwise
   (cc: isChainComplete ord)
 :
-  isChainComplete (PartialOrder.pointwise X Y ord)
+  isChainComplete (ord.pointwise I)
 :=
-  fun ch => ⟨(pointwiseSup cc ch).val, (pointwiseSup cc ch).property⟩
+  fun ch =>
+    let sup := pointwiseSup ord cc ch
+    ⟨sup.val, sup.property⟩
+
+def pointwiseSup.eqAt.pointwiseSup
+  (ord: PartialOrder T)
+  (cc: isChainComplete ord)
+  (ch: Chain (ord.pointwise I))
+  (i: I)
+:
+  (pointwiseSup ord cc ch).val i =
+    (Chain.sup ord cc (pointwiseSup.atChain ord ch i)).val
+:=
+  rfl
 
 def pointwiseSup.eqAt
-  [ord: PartialOrder T]
+  (ord: PartialOrder T)
   (cc: isChainComplete ord)
-  (ch: @Chain (I → T) (PartialOrder.pointwise I T ord))
+  (ch: Chain (ord.pointwise I))
   (i: I)
 :
-  (pointwiseSup cc ch).val i = (Chain.sup (pointwiseSup.atChain cc ch i) cc).val
+  (ch.sup (ord.pointwise I) cc.pointwise).val i =
+    (Chain.sup ord cc (pointwiseSup.atChain ord ch i)).val
 :=
-  rfl
+  let pSup := pointwiseSup ord cc ch
+  --let chSup := ch.sup (ord.pointwise I) cc.pointwise
+  let supEq: ch.sup (ord.pointwise I) cc.pointwise = pSup := sup.eq _ _ _
+  
+  supEq ▸ pointwiseSup.eqAt.pointwiseSup ord cc ch i

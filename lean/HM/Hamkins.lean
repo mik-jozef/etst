@@ -1,4 +1,5 @@
 import Fixpoint
+import Set3
 
 open Classical
 
@@ -452,7 +453,8 @@ namespace HamkinsMachine
         let ngPred := Ordinal.nLimit.pred ng hLim
         have: ngPred < ng := Ordinal.nLimit.pred.lt ng hLim
         
-        let ngGePred: n ≤ ngPred := Ordinal.lt.succ.le (ngPred.property.symm ▸ ngGt)
+        let ngGePred: n ≤ ngPred :=
+          Ordinal.ltSucc.le (ngPred.property.symm ▸ ngGt)
         
         let haltsAtPred := stage.haltsAt.ge hAt ngPred ngGePred
         
@@ -538,7 +540,7 @@ namespace HamkinsMachine
         have: n1Pred < n1 := Ordinal.nLimit.pred.lt n1 h
         
         let nLePred: n0 ≤ n1Pred :=
-          Ordinal.lt.succ.le (n1Pred.property.symm ▸ n1.lt)
+          Ordinal.ltSucc.le (n1Pred.property.symm ▸ n1.lt)
         
         let tapeAtPred := (hm.stage input n1Pred).tape
         let hwPred: stage.haltsWith hm input tapeAtPred n1Pred :=
@@ -630,79 +632,13 @@ end HamkinsMachine
 
 
 namespace Program
-  -- Memory layout. Allows storing multiple variables on
-  -- a single tape.
-  inductive Layout
-    | tape
-    | pair (a b: Layout)
-    | seq (f: Nat → Layout)
-  
-  namespace Layout
-    inductive Location: (layout: Layout) → Type
-      | tape (index: Nat): Location Layout.tape
-      | left (_: Location a): Location (Layout.pair a b)
-      | rite (_: Location b): Location (Layout.pair a b)
-      | seq (n: Nat) (_: Location (f n)): Location (Layout.seq f)
-    
-    namespace Location
-      def index: (l: Location Layout.tape) → Nat
-        | Location.tape n => n
-      
-      def isLeft: (l: Location (Layout.pair a b)) → Bool
-        | Location.left _ => true
-        | Location.rite _ => false
-      
-      def seqN: (l: Location (Layout.seq f)) → Nat
-        | Location.seq i _ => i
-      
-      def seqLoc: (l: Location (Layout.seq f)) → Location (f (l.seqN))
-        | Location.seq _ loc => loc
-      
-      -- TODO feel free to replace with any other bijection
-      -- if it makes your life more comfortable.
-      def seqIndex (tapeIndex indexInTape: Nat): Nat :=
-        if tapeIndex = 0 then
-          2 * indexInTape
-        else
-          2 * (seqIndex (tapeIndex - 1) indexInTape) + 1
-      
-      def address {layout: Layout} (location: layout.Location): Nat :=
-        match layout with
-          | Layout.tape => location.index
-          | pair _ _ =>
-              match location with
-              | Location.left loc => 2 * loc.address
-              | Location.rite loc => 2 * loc.address + 1
-          | Layout.seq _ =>
-              seqIndex location.seqN location.seqLoc.address
-    end Location
-    
-    /- TODO do I need this?
-    -- Typing in a bus is hard and weird.
-    def toLocation: (layout: Layout) → (i: Nat) → layout.Location
-      | Layout.tape, i => Layout.Location.tape i
-      | Layout.pair a b, i => sorry
-      | Layout.seq f, i => sorry-/
-    
-    def pop: Layout → Layout
-      | tape => tape
-      | pair a _ => a
-      | seq f => f 0
-    
-    def Memory (layout: Layout) := layout.Location → Two
-    
-    /- TODO do I need this?
-    def Memory.toTape {layout: Layout} (m: layout.Memory): Nat2 :=
-      fun i => m (layout.toLocation i)-/
-    
-    structure MemSeq
-      (layout: Layout)
-      (cond: layout.Location)
-      {domain: Set layout.Memory}
-      {codomain: Set layout.Memory}
-      (seqZero: layout.Memory)
+    structure TapeSeq
+      (cond: Nat)
+      {domain: Set Nat2}
+      {codomain: Set Nat2}
+      (seqZero: Nat2)
       (loopCompatible: ∀ m: ↑codomain, m.val cond = Two.one → m.val ∈ domain)
-      (stepFn: ↑domain → Set layout.Memory)
+      (stepFn: ↑domain → Set Nat2)
     where
       
       seq: Nat → ↑codomain
@@ -714,10 +650,10 @@ namespace Program
       
       condF: ∀ n, (seq n).val cond = Two.zero → seq (n + 1) = (seq n)
     
-    -- Why not just extend Tuple in MemSeq? And use the already defined limsup?
+    -- Why not just extend Tuple in TapeSeq? And use the already defined limsup?
     -- Well, you deal with all the typecasts between Ordinal.omega and .length!
     -- Also, who wants to convert between Nat and Ordinal? Not me.
-    noncomputable def MemSeq.limSup (m: MemSeq layout c s lC sF): layout.Memory :=
+    noncomputable def TapeSeq.limSup (m: TapeSeq c s lC sF): Nat2 :=
       fun loc =>
         if h: ∃ lowerBound: Nat, ∀ n: Nat,
           lowerBound ≤ n → (m.seq lowerBound).val loc = (m.seq n).val loc
@@ -725,155 +661,98 @@ namespace Program
           (m.seq (choiceEx h)).val loc
         else
           Two.one
-    
-    noncomputable def Memory.assign
-      {l: Layout}
-      (src dest: l.Location)
-      (m: l.Memory)
-    :
-      l.Memory
-    :=
-      fun loc => if loc = dest then m src else m loc
-  end Layout
-end Program
-
-def Nat2.toMemory (tape: Nat2) {layout: Program.Layout}: layout.Memory :=
-  fun loc => tape loc.address
-
+    end Program
 
 inductive Program:
-  (lIn lOut: Program.Layout) →
-  (terminatesIf: Set lIn.Memory) →
-  (precond: Set lIn.Memory) →
-  (postcond: ↑precond → Set lOut.Memory) →
-  Type
+  (terminatesIf: Set Nat2) →
+  (precond: Set Nat2) →
+  (postcond: ↑precond → Set Nat2) →
+  Type 1
 where
-  | assign
-      (src dest: layout.Location)
+  | hm
+      (hm: HamkinsMachine)
       
-      (precond: Set layout.Memory)
-      (postcond: ↑precond → Set layout.Memory)
+      (precond: Set Nat2)
+      (postcond: ↑precond → Set Nat2)
       
-      (isSound: ∀ m: ↑precond, m.val.assign src dest ∈ postcond m)
+      (isSound: ∀ (input: ↑precond) (output: Nat2),
+        hm.fn input = output → output ∈ postcond input)
+      
+      (isSoundTerminates: ∀ input: ↑precond, hm.fn input ≠ none)
     :
-      Program layout layout terminatesIf precond postcond
+      Program terminatesIf precond postcond
   | ite
-      (cond: layout.Location)
-      (a: Program layout layout aTerminates aPrecond aPostcond)
-      (b: Program layout layout bTerminates bPrecond bPostcond)
+      (cond: Nat)
+      (a: Program aTerminates aPrecond aPostcond)
+      (b: Program bTerminates bPrecond bPostcond)
       
-      (precond: Set layout.Memory)
-      (postcond: ↑precond → Set layout.Memory)
+      (precond: Set Nat2)
+      (postcond: ↑precond → Set Nat2)
       
-      (terminatesIf: Set layout.Memory)
+      (terminatesIf: Set Nat2)
       
       (isSoundPrecond:
-        ∀ m: ↑precond,
-          (m.val cond = Two.one → aPrecond m) ∧
-          (m.val cond = Two.zero → bPrecond m))
+        ∀ input: ↑precond,
+          (input.val cond = Two.one → aPrecond input) ∧
+          (input.val cond = Two.zero → bPrecond input))
       
       (isSoundPostcondA:
-        ∀ m: ↑precond,
-          (condTrue: m.val cond = Two.one) →
-            let apr: aPrecond m := (isSoundPrecond m).left condTrue
-            aPostcond ⟨m, apr⟩ ⊆ postcond m)
+        ∀ input: ↑precond,
+          (condTrue: input.val cond = Two.one) →
+            let apr: aPrecond input := (isSoundPrecond input).left condTrue
+            aPostcond ⟨input, apr⟩ ⊆ postcond input)
       
       (isSoundPostcondB:
-        ∀ m: ↑precond,
-          (condFalse: m.val cond = Two.zero) →
-            let bpr: bPrecond m := (isSoundPrecond m).right condFalse
-            bPostcond ⟨m, bpr⟩ ⊆ postcond m)
+        ∀ input: ↑precond,
+          (condFalse: input.val cond = Two.zero) →
+            let bpr: bPrecond input := (isSoundPrecond input).right condFalse
+            bPostcond ⟨input, bpr⟩ ⊆ postcond input)
       
-      (isSoundTerminatesA: ∀ m: ↑precond,
-        terminatesIf m → m.val cond = Two.one → aTerminates m)
+      (isSoundTerminatesA: ∀ input: ↑precond,
+        terminatesIf input → input.val cond = Two.one → aTerminates input)
       
-      (isSoundTerminatesB: ∀ m: ↑precond,
-        terminatesIf m → m.val cond = Two.zero → bTerminates m)
+      (isSoundTerminatesB: ∀ input: ↑precond,
+        terminatesIf input → input.val cond = Two.zero → bTerminates input)
     :
-      Program layout layout terminatesIf precond postcond
+      Program terminatesIf precond postcond
   | while
-      (cond: layout.Location)
-      (body: Program layout layout bTerminates bPrecond bPostcond)
+      (cond: Nat)
+      (body: Program bTerminates bPrecond bPostcond)
       
-      (precond: Set layout.Memory)
-      (postcond: ↑precond → Set layout.Memory)
+      (precond: Set Nat2)
+      (postcond: ↑precond → Set Nat2)
       
-      (terminatesIf: Set layout.Memory)
+      (terminatesIf: Set Nat2)
       
-      (variant: (a b: layout.Memory) → Prop)
+      (variant: (a b: Nat2) → Prop)
       (variantTransitive:
         (ab: variant a b) →
         (bc: variant b c) →
         variant a c)
       
-      (isSoundPrecond: ∀ m: ↑precond, m.val cond = Two.one → bPrecond m)
+      (isSoundPrecond: ∀ input: ↑precond,
+        input.val cond = Two.one → bPrecond input)
       
       (isSoundPostcondStep:
-        ∀ m: ↑precond,
-          (condTrue: m.val cond = Two.one) →
-          let bpr := isSoundPrecond m condTrue
-          bPostcond ⟨m, bpr⟩ ⊆ precond)
+        ∀ input: ↑precond,
+          (condTrue: input.val cond = Two.one) →
+          let bpr := isSoundPrecond input condTrue
+          bPostcond ⟨input, bpr⟩ ⊆ precond)
       
       (isSoundPostcondLim:
-        ∀ (m: ↑precond)
-          (seq: layout.MemSeq cond m.val isSoundPrecond bPostcond)
+        ∀ (input: ↑precond)
+          (seq: Program.TapeSeq cond input isSoundPrecond bPostcond)
         ,
           (seq.limSup ∈ precond))
       
       (isSoundTerminates:
-        ∀ (mIn: ↑precond)
-           (condT: mIn.val cond = Two.one)
-           (mOut: ↑(bPostcond ⟨mIn, isSoundPrecond mIn condT⟩))
+        ∀ (input: ↑precond)
+           (condT: input.val cond = Two.one)
+           (output: ↑(bPostcond ⟨input, isSoundPrecond input condT⟩))
           ,
-           variant mIn mOut)
+           variant input output)
     :
-      Program layout layout terminatesIf precond postcond
-  | seq
-      (a: Program lIn lMid aTerminates aPrecond aPostcond)
-      (b: Program lMid lOut bTerminates bPrecond bPostcond)
-      
-      (precond: Set lIn.Memory)
-      (postcond: ↑precond → Set lOut.Memory)
-      
-      (terminatesIf: Set lIn.Memory)
-      
-      (isSoundPrecondA: ∀ m: ↑precond, aPrecond m)
-      
-      (isSoundPrecondB:
-        ∀ (m: ↑precond) (mid: lMid.Memory),
-          mid ∈ aPostcond ⟨m, isSoundPrecondA m⟩ → bPrecond mid)
-      
-      (isSoundPostcond:
-        ∀ (mA: ↑precond) (mB: ↑(aPostcond ⟨mA, isSoundPrecondA mA⟩)),
-          bPostcond ⟨mB, isSoundPrecondB mA mB mB.property⟩ ⊆ postcond mA)
-      
-      (isSoundTerminatesA:
-        ∀ m: ↑precond, terminatesIf m → aTerminates m)
-      
-      (isSoundTerminatesB:
-        ∀ (m: ↑precond) (mid: lMid.Memory), terminatesIf m →
-          mid ∈ aPostcond ⟨m, isSoundPrecondA m⟩ → bTerminates mid)
-    :
-      Program lIn lOut terminatesIf precond postcond
-  | addPair
-      (additionalLayout: Program.Layout)
-      
-      (precond: Set lIn.Memory)
-    :
-      Program lIn (lIn.pair additionalLayout) terminatesIf precond
-        (fun mIn mOut =>
-          (∀ loc: lIn.Location,
-            mOut (Program.Layout.Location.left loc) = mIn.val loc) ∧
-          (∀ loc: additionalLayout.Location,
-            mOut (Program.Layout.Location.rite loc) = Two.zero))
-  | pop
-    : Program lIn lIn.pop terminatesIf precond (fun mIn mOut =>
-        match lIn with
-          | Program.Layout.tape => mOut = mIn.val
-          | Program.Layout.pair a b =>
-              ∀ loc, mOut loc = mIn.val (Program.Layout.Location.left loc)
-          | Program.Layout.seq f =>
-              ∀ loc, mOut loc = mIn.val (Program.Layout.Location.seq 0 loc))
+      Program terminatesIf precond postcond
 
 
 namespace HM
@@ -909,10 +788,10 @@ namespace HM
     isFinite: ∃ list: List Var, ∀ v: ↑Var, v ∈ list
   
   structure Valuation (Var: Type) :=
-    var: ↑Var → HamkinsMachine
-    nat: Nat → HamkinsMachine
+    var: ↑Var → Set3 HamkinsMachine
+    nat: Nat → Set3 HamkinsMachine
   
-  def I (vlt: Valuation Var): PosExpr Var → HamkinsMachine
+  def I (vlt: Valuation Var): PosExpr Var → Set3 HamkinsMachine
     | PosExpr.varVar v => vlt.var v
     | PosExpr.varNat v => vlt.nat v
     | PosExpr.subs a => sorry

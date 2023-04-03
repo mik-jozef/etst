@@ -565,58 +565,57 @@ namespace Program
     
     
     def srcAddressDest
-      {layout: Layout}
-      {src dest: layout.Location}
+      {srcAddress destAddress: Nat}
     :
-      ↑(src.address + dest.address + 1)
+      ↑(srcAddress + destAddress + 1)
     := ⟨
-      src.address,
-      let srcLt: src.address < src.address + 1 := Nat.le.refl
-      let ltWrongOrder := Nat.lt.addNatLeft srcLt dest.address
-      (Nat.add_comm dest.address src.address) ▸ ltWrongOrder
+      srcAddress,
+      let srcLt: srcAddress < srcAddress + 1 := Nat.le.refl
+      let ltWrongOrder := Nat.lt.addNatLeft srcLt destAddress
+      (Nat.add_comm destAddress srcAddress) ▸ ltWrongOrder
     ⟩
     
-    def hm.getMove {layout: Layout} (src dest: layout.Location):
-      HamkinsMachine.GetMove (State src.address dest.address)
+    def hm.getMove (srcAddress destAddress: Nat):
+      HamkinsMachine.GetMove (State srcAddress destAddress)
     :=
       fun state symbol =>
         match state with
         | State.goToSrc i => {
             state :=
-              if h: i = src.address then
+              if h: i = srcAddress then
                 match symbol with
                   | Two.zero => State.goToDest0 srcAddressDest
                   | Two.one => State.goToDest1 srcAddressDest
               else
                 State.goToSrc (next.src h)
             symbol := symbol
-            dir := if i = src.address then Dir.none else Dir.right
+            dir := if i = srcAddress then Dir.none else Dir.right
           }
         | State.goToDest0 i => {
             state :=
-              if i = dest.address then
+              if i = destAddress then
                 State.halt
               else
                 State.goToDest0 (next.destAddr i)
             symbol :=
-              if i = dest.address then
+              if i = destAddress then
                 Two.zero
               else
                 symbol
-            dir := next.destDir i dest.address
+            dir := next.destDir i destAddress
           }
         | State.goToDest1 i => {
             state :=
-              if i = dest.address then
+              if i = destAddress then
                 State.halt
               else
                 State.goToDest1 (next.destAddr i)
             symbol :=
-              if i = dest.address then
+              if i = destAddress then
                 Two.one
               else
                 symbol
-            dir := next.destDir i dest.address
+            dir := next.destDir i destAddress
           }
         | State.halt => {
             state := state
@@ -625,19 +624,18 @@ namespace Program
           }
     
     def hm.getMove.eq.srcLt
-      {layout: Layout}
-      (src dest: layout.Location)
-      (i: ↑(src.address + 1))
-      (iNeq: i.val ≠ src.address)
+      (srcAddress destAddress: Nat)
+      (i: ↑(srcAddress + 1))
+      (iNeq: i.val ≠ srcAddress)
       (symbol: Two)
     :
-      hm.getMove src dest (State.goToSrc i) symbol = {
+      hm.getMove srcAddress destAddress (State.goToSrc i) symbol = {
         state := State.goToSrc (next.src iNeq)
         symbol := symbol
         dir := Dir.right
       }
     :=
-      let move := hm.getMove src dest (State.goToSrc i) symbol
+      let move := hm.getMove srcAddress destAddress (State.goToSrc i) symbol
       
       let stateEq: move.state = State.goToSrc (next.src iNeq) := dif_neg iNeq
       let symbolEq: move.symbol = symbol := rfl
@@ -646,13 +644,12 @@ namespace Program
       HamkinsMachine.Move.eq stateEq symbolEq dirEq
     
     def hm.getMove.eq.srcEq
-      {layout: Layout}
-      (src dest: layout.Location)
-      (i: ↑(src.address + 1))
-      (iEq: i.val = src.address)
+      (srcAddress destAddress: Nat)
+      (i: ↑(srcAddress + 1))
+      (iEq: i.val = srcAddress)
       (symbol: Two)
     :
-      hm.getMove src dest (State.goToSrc i) symbol = {
+      hm.getMove srcAddress destAddress (State.goToSrc i) symbol = {
         state :=
           match symbol with
           | Two.zero => State.goToDest0 srcAddressDest
@@ -661,7 +658,7 @@ namespace Program
         dir := Dir.none
       }
     :=
-      let move := hm.getMove src dest (State.goToSrc i) symbol
+      let move := hm.getMove srcAddress destAddress (State.goToSrc i) symbol
       
       let stateEq: move.state = 
         match symbol with
@@ -674,39 +671,37 @@ namespace Program
       HamkinsMachine.Move.eq stateEq symbolEq dirEq
     
     def hm.getMove.eq.dest0Lt
-      {layout: Layout}
-      (src dest: layout.Location)
-      (i: ↑(src.address + dest.address + 1))
-      (iNeq: i.val ≠ dest.address)
+      (srcAddress destAddress: Nat)
+      (i: ↑(srcAddress + destAddress + 1))
+      (iNeq: i.val ≠ destAddress)
       (symbol: Two)
     :
-      hm.getMove src dest (State.goToDest0 i) symbol = {
+      hm.getMove srcAddress destAddress (State.goToDest0 i) symbol = {
         state := State.goToDest0 (next.destAddr i)
         symbol := symbol
-        dir := next.destDir i dest.address
+        dir := next.destDir i destAddress
       }
     :=
-      let move := hm.getMove src dest (State.goToDest0 i) symbol
+      let move := hm.getMove srcAddress destAddress (State.goToDest0 i) symbol
       
       let stateEq: move.state = State.goToDest0 (next.destAddr i) := dif_neg iNeq
       let symbolEq: move.symbol = symbol := dif_neg iNeq
-      let dirEq: move.dir = next.destDir i dest.address := rfl
+      let dirEq: move.dir = next.destDir i destAddress := rfl
       
       HamkinsMachine.Move.eq stateEq symbolEq dirEq
     
     def hm.getMove.eq.dest0Eq
-      {layout: Layout}
-      (src dest: layout.Location)
-      (i: ↑(src.address + dest.address + 1))
-      (iEq: i.val = dest.address)
+      (srcAddress destAddress: Nat)
+      (i: ↑(srcAddress + destAddress + 1))
+      (iEq: i.val = destAddress)
     :
-      hm.getMove src dest (State.goToDest0 i) symbol = {
+      hm.getMove srcAddress destAddress (State.goToDest0 i) symbol = {
         state := State.halt
         symbol := Two.zero
         dir := Dir.none
       }
     :=
-      let move := hm.getMove src dest (State.goToDest0 i) symbol
+      let move := hm.getMove srcAddress destAddress (State.goToDest0 i) symbol
       
       let stateEq: move.state = State.halt := dif_pos iEq
       let symbolEq: move.symbol = Two.zero := dif_pos iEq
@@ -715,39 +710,37 @@ namespace Program
       HamkinsMachine.Move.eq stateEq symbolEq dirEq
     
     def hm.getMove.eq.dest1Lt
-      {layout: Layout}
-      (src dest: layout.Location)
-      (i: ↑(src.address + dest.address + 1))
-      (iNeq: i.val ≠ dest.address)
+      (srcAddress destAddress: Nat)
+      (i: ↑(srcAddress + destAddress + 1))
+      (iNeq: i.val ≠ destAddress)
       (symbol: Two)
     :
-      hm.getMove src dest (State.goToDest1 i) symbol = {
+      hm.getMove srcAddress destAddress (State.goToDest1 i) symbol = {
         state := State.goToDest1 (next.destAddr i)
         symbol := symbol
-        dir := next.destDir i dest.address
+        dir := next.destDir i destAddress
       }
     :=
-      let move := hm.getMove src dest (State.goToDest1 i) symbol
+      let move := hm.getMove srcAddress destAddress (State.goToDest1 i) symbol
       
       let stateEq: move.state = State.goToDest1 (next.destAddr i) := dif_neg iNeq
       let symbolEq: move.symbol = symbol := dif_neg iNeq
-      let dirEq: move.dir = next.destDir i dest.address := rfl
+      let dirEq: move.dir = next.destDir i destAddress := rfl
       
       HamkinsMachine.Move.eq stateEq symbolEq dirEq
     
     def hm.getMove.eq.dest1Eq
-      {layout: Layout}
-      (src dest: layout.Location)
-      (i: ↑(src.address + dest.address + 1))
-      (iEq: i.val = dest.address)
+      (srcAddress destAddress: Nat)
+      (i: ↑(srcAddress + destAddress + 1))
+      (iEq: i.val = destAddress)
     :
-      hm.getMove src dest (State.goToDest1 i) symbol = {
+      hm.getMove srcAddress destAddress (State.goToDest1 i) symbol = {
         state := State.halt
         symbol := Two.one
         dir := Dir.none
       }
     :=
-      let move := hm.getMove src dest (State.goToDest1 i) symbol
+      let move := hm.getMove srcAddress destAddress (State.goToDest1 i) symbol
       
       let stateEq: move.state = State.halt := dif_pos iEq
       let symbolEq: move.symbol = Two.one := dif_pos iEq
@@ -756,33 +749,31 @@ namespace Program
       HamkinsMachine.Move.eq stateEq symbolEq dirEq
     
     
-    def hm {layout: Layout} (src dest: layout.Location): HamkinsMachine := {
-      State := State src.address dest.address
+    def hm (srcAddress destAddress: Nat): HamkinsMachine := {
+      State := State srcAddress destAddress
       isFinite := State.isFinite
       
       initialState := State.initial
       haltState := State.halt
       limitState := State.halt
       
-      getMove := hm.getMove src dest
+      getMove := hm.getMove srcAddress destAddress
       
       haltHalts := fun _ => rfl
     }
     
     def finalTape
-      {layout: Layout}
-      (src dest: layout.Location)
+      (srcAddress destAddress: Nat)
       (input: Nat2)
     :
       Nat2
     :=
-      fun i => input (if i = dest.address then src.address else i)
+      fun i => input (if i = destAddress then srcAddress else i)
     
     structure Invariant
-      {layout: Layout}
-      (src dest: layout.Location)
+      (srcAddress destAddress: Nat)
       (input: Nat2)
-      (config: HamkinsMachine.Configuration (hm src dest))
+      (config: HamkinsMachine.Configuration (hm srcAddress destAddress))
     :
       Prop
     where
@@ -790,55 +781,54 @@ namespace Program
           config.head = i ∧ config.tape = input)
       (invDest0 (i: _): config.state = State.goToDest0 i →
           config.head = i ∧ config.tape = input
-          ∧ input src.address = Two.zero)
+          ∧ input srcAddress = Two.zero)
       (invDest1 (i: _): config.state = State.goToDest1 i →
           config.head = i ∧ config.tape = input
-          ∧ input src.address = Two.one)
+          ∧ input srcAddress = Two.one)
       (invHalt: config.state = State.halt →
-        config.tape = (finalTape src dest input))
+        config.tape = (finalTape srcAddress destAddress input))
     
     structure InvariantNext
-      {layout: Layout}
-      (src dest: layout.Location)
+      (srcAddress destAddress: Nat)
       (input: Nat2)
-      (config: HamkinsMachine.Configuration (hm src dest))
+      (config: HamkinsMachine.Configuration (hm srcAddress destAddress))
     :
       Prop
     where
       (invSrcLt (i: _):
         config.state = State.goToSrc i →
-        (h: i.val ≠ src.address) →
-          ((hm src dest).step config).state = State.goToSrc (next.src h))
+        (h: i.val ≠ srcAddress) →
+          ((hm srcAddress destAddress).step config).state = State.goToSrc (next.src h))
       
       (invSrcEq0 (i: _):
         config.state = State.goToSrc i →
-        i = src.address → config.tape config.head = Two.zero →
-          ((hm src dest).step config).state = State.goToDest0 srcAddressDest)
+        i = srcAddress → config.tape config.head = Two.zero →
+          ((hm srcAddress destAddress).step config).state = State.goToDest0 srcAddressDest)
       
       (invSrcEq1 (i: _):
         config.state = State.goToSrc i →
-        i = src.address → config.tape config.head = Two.one →
-          ((hm src dest).step config).state = State.goToDest1 srcAddressDest)
+        i = srcAddress → config.tape config.head = Two.one →
+          ((hm srcAddress destAddress).step config).state = State.goToDest1 srcAddressDest)
       
       (invDest0Lt (i: _):
         config.state = State.goToDest0 i →
-        (h: i.val ≠ dest.address) →
-          ((hm src dest).step config).state = State.goToDest0 (next.destAddr i))
+        (h: i.val ≠ destAddress) →
+          ((hm srcAddress destAddress).step config).state = State.goToDest0 (next.destAddr i))
       
       (invDest0Eq (i: _):
         config.state = State.goToDest0 i →
-        i = dest.address →
-          ((hm src dest).step config).state = State.halt)
+        i = destAddress →
+          ((hm srcAddress destAddress).step config).state = State.halt)
       
       (invDest1Lt (i: _):
         config.state = State.goToDest1 i →
-        (h: i.val ≠ dest.address) →
-          ((hm src dest).step config).state = State.goToDest1 (next.destAddr i))
+        (h: i.val ≠ destAddress) →
+          ((hm srcAddress destAddress).step config).state = State.goToDest1 (next.destAddr i))
       
       (invDest1Eq (i: _):
         config.state = State.goToDest1 i →
-        i = dest.address →
-          ((hm src dest).step config).state = State.halt)
+        i = destAddress →
+          ((hm srcAddress destAddress).step config).state = State.halt)
     
     /-
       This should be easier to work with. The casts shoudln't
@@ -846,43 +836,41 @@ namespace Program
       finite ordinals in git history.)
     -/
     def invariant
-      {layout: Layout}
-      (src dest: layout.Location)
+      (srcAddress destAddress: Nat)
       (input: Nat2)
-      (config: HamkinsMachine.Configuration (hm src dest))
+      (config: HamkinsMachine.Configuration (hm srcAddress destAddress))
     :
       Prop
     :=
       match config.state with
       | State.goToSrc i => config.head = i ∧ config.tape = input
       | State.goToDest0 i => config.head = i ∧ config.tape = input
-          ∧ input src.address = Two.zero
+          ∧ input srcAddress = Two.zero
       | State.goToDest1 i => config.head = i ∧ config.tape = input
-          ∧ input src.address = Two.one
-      | State.halt => config.tape = (finalTape src dest input)
+          ∧ input srcAddress = Two.one
+      | State.halt => config.tape = (finalTape srcAddress destAddress input)
     
     def invariantsHold.fin
-      {layout: Layout}
-      (src dest: layout.Location)
+      (srcAddress destAddress: Nat)
       (input: Nat2)
       (n: Ordinal)
       (nFin: n.isFinite)
     :
       And
-        (Invariant src dest input ((hm src dest).stage input n))
+        (Invariant srcAddress destAddress input ((hm srcAddress destAddress).stage input n))
         ((notLim: ¬n.isLimit) →
           let nPred := Ordinal.nLimit.pred n notLim
-          InvariantNext src dest input
-            ((hm src dest).stage input nPred))
+          InvariantNext srcAddress destAddress input
+            ((hm srcAddress destAddress).stage input nPred))
     :=
-      let stageN := (hm src dest).stage input n
+      let stageN := (hm srcAddress destAddress).stage input n
       
       if h: n = Ordinal.zero then
-        let eqZero := HamkinsMachine.stage.eq.zero (hm src dest) input
+        let eqZero := HamkinsMachine.stage.eq.zero (hm srcAddress destAddress) input
         
         let stateEq: stageN.state = State.initial :=
           show
-            ((hm src dest).stage input n).state = State.initial
+            ((hm srcAddress destAddress).stage input n).state = State.initial
           from
             h ▸ (eqZero.stateEq)
         
@@ -907,11 +895,11 @@ namespace Program
         let nPred := Ordinal.nLimit.pred n notLim
         let _nPred.lt := Ordinal.nLimit.pred.lt n notLim
         
-        let hmSD := hm src dest
+        let hmSD := hm srcAddress destAddress
         let stageNPred := hmSD.stage input nPred
         
         let ih := invariantsHold.fin
-          src dest input nPred (Ordinal.isFinite.pred nFin h)
+          srcAddress destAddress input nPred (Ordinal.isFinite.pred nFin h)
         
         let ih.inv := ih.left
         
@@ -941,7 +929,7 @@ namespace Program
               
               let move := hmSD.getMove (State.goToSrc i) (input i)
               
-              if hh: i = src.address then
+              if hh: i = srcAddress then
                 let moveObj: HamkinsMachine.Move hmSD.State := {
                   state :=
                     match input i with
@@ -965,7 +953,7 @@ namespace Program
                       if_neg h
                 
                 let move.eq: move = moveObj :=
-                  hm.getMove.eq.srcEq src dest i hh (input i)
+                  hm.getMove.eq.srcEq srcAddress destAddress i hh (input i)
                 
                 let stepEq: hmSD.step stageNPred = stepObj :=
                   stageNPred.eq ▸ HamkinsMachine.step.eq.some
@@ -1085,7 +1073,7 @@ namespace Program
                       if_neg h
                 
                 let move.eq: move = moveObj :=
-                  hm.getMove.eq.srcLt src dest i hh (input i)
+                  hm.getMove.eq.srcLt srcAddress destAddress i hh (input i)
                 
                 let stepEq: hmSD.step stageNPred = stepObj :=
                   stageNPred.eq ▸ HamkinsMachine.step.eq.some
@@ -1150,7 +1138,7 @@ namespace Program
               let ⟨invHead, invTape, invSymbol⟩:
                 stageNPred.head = i
                   ∧ stageNPred.tape = input
-                  ∧ input src.address = Two.zero
+                  ∧ input srcAddress = Two.zero
               :=
                 ih.inv.invDest0 i h
               
@@ -1161,7 +1149,7 @@ namespace Program
               
               let move := hmSD.getMove (State.goToDest0 i) (input i)
               
-              if hh: i = dest.address then
+              if hh: i = destAddress then
                 let moveObj: HamkinsMachine.Move hmSD.State := {
                   state := State.halt
                   symbol := Two.zero
@@ -1175,27 +1163,27 @@ namespace Program
                   head := i
                 }
                 let stepObj.tapeEq:
-                  stepObj.tape = finalTape src dest input
+                  stepObj.tape = finalTape srcAddress destAddress input
                 :=
                   funext fun n =>
                     if hhh: n = i then
-                      let nEq: n = dest.address := hhh.trans hh
+                      let nEq: n = destAddress := hhh.trans hh
                       let finEq:
-                        finalTape src dest input dest.address
-                          = input src.address
+                        finalTape srcAddress destAddress input destAddress
+                          = input srcAddress
                       :=
                         by unfold finalTape exact congr rfl (if_pos rfl)
                       (if_pos hhh).trans
-                        (nEq ▸ (invSymbol.symm.trans finEq.symm))
+                        (invSymbol.symm.trans (nEq ▸ finEq.symm))
                     else
-                      let nNeq: n ≠ dest.address :=
+                      let nNeq: n ≠ destAddress :=
                         fun eq => hhh (eq.trans hh.symm)
                       (if_neg hhh).trans (by
                         unfold finalTape;
                         exact congr rfl (if_neg nNeq).symm)
                 
                 let move.eq: move = moveObj :=
-                  hm.getMove.eq.dest0Eq src dest i hh
+                  hm.getMove.eq.dest0Eq srcAddress destAddress i hh
                 
                 let stepEq: hmSD.step stageNPred = stepObj :=
                   stageNPred.eq ▸ HamkinsMachine.step.eq.some
@@ -1210,7 +1198,7 @@ namespace Program
                   stageN.eq.state.trans (congr rfl stepEq)
                 
                 let stageN.eq0.tape:
-                  stageN.tape = finalTape src dest input
+                  stageN.tape = finalTape srcAddress destAddress input
                 :=
                   stageN.eq.tape.trans (stepObj.tapeEq ▸ congr rfl stepEq)
                 
@@ -1238,7 +1226,7 @@ namespace Program
                 let moveObj: HamkinsMachine.Move hmSD.State := {
                   state := State.goToDest0 (next.destAddr i)
                   symbol := input i
-                  dir := next.destDir i dest.address
+                  dir := next.destDir i destAddress
                 }
                 
                 let stepObj: HamkinsMachine.Configuration (hmSD) := {
@@ -1255,7 +1243,7 @@ namespace Program
                       if_neg h
                 
                 let move.eq: move = moveObj :=
-                  hm.getMove.eq.dest0Lt src dest i hh (input i)
+                  hm.getMove.eq.dest0Lt srcAddress destAddress i hh (input i)
                 
                 let stepEq: hmSD.step stageNPred = stepObj :=
                   stageNPred.eq ▸ HamkinsMachine.step.eq.some
@@ -1266,9 +1254,9 @@ namespace Program
                     (next.destAddr i)
                     (match h: moveObj.dir with
                       | Dir.left =>
-                          let iPos := next.destDir.leftIPos i dest.address h
-                          let iGt := next.destDir.leftIGtAddr i dest.address h
-                          let iNLt: i.val ≮ dest.address :=
+                          let iPos := next.destDir.leftIPos i destAddress h
+                          let iGt := next.destDir.leftIGtAddr i destAddress h
+                          let iNLt: i.val ≮ destAddress :=
                             fun iLt => Nat.ltAntisymm iLt iGt
                           
                           match hh: i with
@@ -1279,12 +1267,12 @@ namespace Program
                               show (next.destAddr ⟨ii+1, prop⟩).val = some ii
                               from congr rfl (congr rfl (dif_neg (hh ▸ iNLt)))
                       | Dir.right =>
-                          let iLt := next.destDir.riteILtAddr i dest.address h
+                          let iLt := next.destDir.riteILtAddr i destAddress h
                           show some (next.destAddr i).val = some (i.val + 1) from
                               congr rfl (congr rfl (dif_pos iLt))
                       | Dir.none =>
                           let iEqDestAddr :=
-                            next.destDir.noneEq i dest.address h
+                            next.destDir.noneEq i destAddress h
                           False.elim (hh iEqDestAddr))
                 
                 let stageN.eq.state:
@@ -1329,7 +1317,7 @@ namespace Program
               let ⟨invHead, invTape, invSymbol⟩:
                 stageNPred.head = i
                   ∧ stageNPred.tape = input
-                  ∧ input src.address = Two.one
+                  ∧ input srcAddress = Two.one
               :=
                 ih.inv.invDest1 i h
               
@@ -1340,7 +1328,7 @@ namespace Program
               
               let move := hmSD.getMove (State.goToDest1 i) (input i)
               
-              if hh: i = dest.address then
+              if hh: i = destAddress then
                 let moveObj: HamkinsMachine.Move hmSD.State := {
                   state := State.halt
                   symbol := Two.one
@@ -1354,27 +1342,27 @@ namespace Program
                   head := i
                 }
                 let stepObj.tapeEq:
-                  stepObj.tape = finalTape src dest input
+                  stepObj.tape = finalTape srcAddress destAddress input
                 :=
                   funext fun n =>
                     if hhh: n = i then
-                      let nEq: n = dest.address := hhh.trans hh
+                      let nEq: n = destAddress := hhh.trans hh
                       let finEq:
-                        finalTape src dest input dest.address
-                          = input src.address
+                        finalTape srcAddress destAddress input destAddress
+                          = input srcAddress
                       :=
                         by unfold finalTape exact congr rfl (if_pos rfl)
                       (if_pos hhh).trans
-                        (nEq ▸ (invSymbol.symm.trans finEq.symm))
+                        (invSymbol.symm.trans (nEq ▸ finEq.symm))
                     else
-                      let nNeq: n ≠ dest.address :=
+                      let nNeq: n ≠ destAddress :=
                         fun eq => hhh (eq.trans hh.symm)
                       (if_neg hhh).trans (by
                         unfold finalTape;
                         exact congr rfl (if_neg nNeq).symm)
                 
                 let move.eq: move = moveObj :=
-                  hm.getMove.eq.dest1Eq src dest i hh
+                  hm.getMove.eq.dest1Eq srcAddress destAddress i hh
                 
                 let stepEq: hmSD.step stageNPred = stepObj :=
                   stageNPred.eq ▸ HamkinsMachine.step.eq.some
@@ -1389,7 +1377,7 @@ namespace Program
                   stageN.eq.state.trans (congr rfl stepEq)
                 
                 let stageN.eq.tape:
-                  stageN.tape = finalTape src dest input
+                  stageN.tape = finalTape srcAddress destAddress input
                 :=
                   stageN.eq.tape.trans (stepObj.tapeEq ▸ congr rfl stepEq)
                 
@@ -1417,7 +1405,7 @@ namespace Program
                 let moveObj: HamkinsMachine.Move hmSD.State := {
                   state := State.goToDest1 (next.destAddr i)
                   symbol := input i
-                  dir := next.destDir i dest.address
+                  dir := next.destDir i destAddress
                 }
                 
                 let stepObj: HamkinsMachine.Configuration (hmSD) := {
@@ -1434,7 +1422,7 @@ namespace Program
                       if_neg h
                 
                 let move.eq: move = moveObj :=
-                  hm.getMove.eq.dest1Lt src dest i hh (input i)
+                  hm.getMove.eq.dest1Lt srcAddress destAddress i hh (input i)
                 
                 let stepEq: hmSD.step stageNPred = stepObj :=
                   stageNPred.eq ▸ HamkinsMachine.step.eq.some
@@ -1445,9 +1433,9 @@ namespace Program
                     (next.destAddr i)
                     (match h: moveObj.dir with
                       | Dir.left =>
-                          let iPos := next.destDir.leftIPos i dest.address h
-                          let iGt := next.destDir.leftIGtAddr i dest.address h
-                          let iNLt: i.val ≮ dest.address :=
+                          let iPos := next.destDir.leftIPos i destAddress h
+                          let iGt := next.destDir.leftIGtAddr i destAddress h
+                          let iNLt: i.val ≮ destAddress :=
                             fun iLt => Nat.ltAntisymm iLt iGt
                           
                           match hh: i with
@@ -1458,12 +1446,12 @@ namespace Program
                               show (next.destAddr ⟨ii+1, prop⟩).val = some ii
                               from congr rfl (congr rfl (dif_neg (hh ▸ iNLt)))
                       | Dir.right =>
-                          let iLt := next.destDir.riteILtAddr i dest.address h
+                          let iLt := next.destDir.riteILtAddr i destAddress h
                           show some (next.destAddr i).val = some (i.val + 1) from
                               congr rfl (congr rfl (dif_pos iLt))
                       | Dir.none =>
                           let iEqDestAddr :=
-                            next.destDir.noneEq i dest.address h
+                            next.destDir.noneEq i destAddress h
                           False.elim (hh iEqDestAddr))
                 
                 let stageN.eq.state:
@@ -1506,7 +1494,7 @@ namespace Program
                 }
           | State.halt =>
               let invPred:
-                stageNPred.tape = finalTape src dest input
+                stageNPred.tape = finalTape srcAddress destAddress input
               :=
                 ih.inv.invHalt h
               
@@ -1518,7 +1506,7 @@ namespace Program
                 stageN.eqPred ▸ h
               
               let stageN.eq.tape:
-                stageN.tape = finalTape src dest input
+                stageN.tape = finalTape srcAddress destAddress input
               :=
                 stageN.eqPred ▸ invPred
               
@@ -1539,33 +1527,31 @@ namespace Program
                 invDest1Lt := fun _ eq _ => State.noConfusion (h.symm.trans eq)
                 invDest1Eq := fun _ eq _ => State.noConfusion (h.symm.trans eq)
               }
-    termination_by invariantsHold.fin src dest input n nFin => n
+    termination_by invariantsHold.fin srcAddress destAddress input n nFin => n
     
     structure TerminatesLow
-      {l: Layout}
-      (src dest: l.Location)
+      (srcAddress destAddress: Nat)
       (input: Nat2)
     where
       n: Ordinal
       isFinite: n.isFinite
-      haltsAtN: HamkinsMachine.stage.haltsAt (hm src dest) input n
+      haltsAtN: HamkinsMachine.stage.haltsAt (hm srcAddress destAddress) input n
     
     noncomputable def hm.terminatesLow
-      {l: Layout}
-      {src dest: l.Location}
+      {srcAddress destAddress: Nat}
       {input: Nat2}
       
       (n: Ordinal)
       (nFin: n.isFinite)
       
       -- This is to prove termination
-      (state: State src.address dest.address)
-      (stateAt: ((hm src dest).stage input n).state = state)
+      (state: State srcAddress destAddress)
+      (stateAt: ((hm srcAddress destAddress).stage input n).state = state)
       
     :
-      TerminatesLow src dest input
+      TerminatesLow srcAddress destAddress input
     :=
-      if hHalt: state = (hm src dest).haltState then
+      if hHalt: state = (hm srcAddress destAddress).haltState then
         {
           n := n
           isFinite := nFin
@@ -1579,22 +1565,22 @@ namespace Program
         let succPredEq: nSuccPred = n :=
           Ordinal.succ.inj nSuccPred.property
         
-        let stageN := (hm src dest).stage input n
-        let nextStage := (hm src dest).step ((hm src dest).stage input n)
+        let stageN := (hm srcAddress destAddress).stage input n
+        let nextStage := (hm srcAddress destAddress).step ((hm srcAddress destAddress).stage input n)
         
         let nextState := nextStage.state
         
         let inv:
-          InvariantNext src dest input ((hm src dest).stage input n)
+          InvariantNext srcAddress destAddress input ((hm srcAddress destAddress).stage input n)
         :=
           succPredEq ▸ (
-            invariantsHold.fin src dest input n.succ nFin.succ
+            invariantsHold.fin srcAddress destAddress input n.succ nFin.succ
           ).right succNotLim
         
         have: State.wfRel nextState state :=
           match h: state with
           | State.goToSrc i =>
-              if hAddr: i = src.address then
+              if hAddr: i = srcAddress then
                 match hSymbol: stageN.tape stageN.head with
                 | Two.zero =>
                     let nextEq: nextState = State.goToDest0 srcAddressDest :=
@@ -1612,7 +1598,7 @@ namespace Program
                 
                 nextEq ▸ Nat.le.refl
           | State.goToDest0 i =>
-              if hAddr: i = dest.address then
+              if hAddr: i = destAddress then
                 let nextEq: nextState = State.halt :=
                   inv.invDest0Eq i stateAt hAddr
                 
@@ -1623,7 +1609,7 @@ namespace Program
                 :=
                   inv.invDest0Lt i stateAt hAddr
                 
-                nextEq ▸ (i.val.isTotal dest.address).elim
+                nextEq ▸ (i.val.isTotal destAddress).elim
                   (fun lt =>
                     Or.inl (And.intro
                       (next.destAddr.upLt lt)
@@ -1637,7 +1623,7 @@ namespace Program
                         (next.destAddr.downGt gt)))
                       (fun eq => False.elim (hAddr eq)))
           | State.goToDest1 i =>
-              if hAddr: i = dest.address then
+              if hAddr: i = destAddress then
                 let nextEq: nextState = State.halt :=
                   inv.invDest1Eq i stateAt hAddr
                 
@@ -1648,7 +1634,7 @@ namespace Program
                 :=
                   inv.invDest1Lt i stateAt hAddr
                 
-                nextEq ▸ (i.val.isTotal dest.address).elim
+                nextEq ▸ (i.val.isTotal destAddress).elim
                   (fun lt =>
                     Or.inl (And.intro
                       (next.destAddr.upLt lt)
@@ -1667,14 +1653,14 @@ namespace Program
           n.succ
           (Ordinal.isFinite.succ nFin)
           nextState
-          (congr rfl (HamkinsMachine.stage.eq.step.succ (hm src dest) input n))
+          (congr rfl (HamkinsMachine.stage.eq.step.succ (hm srcAddress destAddress) input n))
     
     termination_by hm.terminatesLow n nFin state stateAt => state
     
-    def hm.terminates {l: Layout} (src dest: l.Location) (input: Nat2):
-      (hm src dest).halts input
+    def hm.terminates (srcAddress destAddress: Nat) (input: Nat2):
+      (hm srcAddress destAddress).halts input
     :=
-      let eqZero := HamkinsMachine.stage.eq.zero (hm src dest) input
+      let eqZero := HamkinsMachine.stage.eq.zero (hm srcAddress destAddress) input
       
       let tl := hm.terminatesLow Ordinal.zero Ordinal.isFinite.zero
         State.initial eqZero.stateEq
@@ -1682,22 +1668,21 @@ namespace Program
       ⟨tl.n, tl.haltsAtN⟩
     
     def invariantsHold
-      {layout: Layout}
-      (src dest: layout.Location)
+      (srcAddress destAddress: Nat)
       (input: Nat2)
       (n: Ordinal)
     :
       And
-        (Invariant src dest input ((hm src dest).stage input n))
+        (Invariant srcAddress destAddress input ((hm srcAddress destAddress).stage input n))
         ((notLim: ¬n.isLimit) →
           let nPred := Ordinal.nLimit.pred n notLim
-          InvariantNext src dest input
-            ((hm src dest).stage input nPred))
+          InvariantNext srcAddress destAddress input
+            ((hm srcAddress destAddress).stage input nPred))
     :=
       if hFin: n.isFinite then
-        invariantsHold.fin src dest input n hFin
+        invariantsHold.fin srcAddress destAddress input n hFin
       else
-        let eqZero := HamkinsMachine.stage.eq.zero (hm src dest) input
+        let eqZero := HamkinsMachine.stage.eq.zero (hm srcAddress destAddress) input
         
         let tl := hm.terminatesLow Ordinal.zero Ordinal.isFinite.zero
           State.initial eqZero.stateEq
@@ -1707,19 +1692,19 @@ namespace Program
         let haltsAtN := HamkinsMachine.stage.haltsAt.gt tl.haltsAtN tl.nLt
         
         let invTln := (
-          invariantsHold.fin src dest input tl.n tl.isFinite
+          invariantsHold.fin srcAddress destAddress input tl.n tl.isFinite
         ).left.invHalt tl.haltsAtN
         
-        let tapeFinal := (finalTape src dest input)
-        let tapeAtN := (HamkinsMachine.stage (hm src dest) input n).tape
+        let tapeFinal := (finalTape srcAddress destAddress input)
+        let tapeAtN := (HamkinsMachine.stage (hm srcAddress destAddress) input n).tape
         
         let haltsWithTln:
-          HamkinsMachine.stage.haltsWith (hm src dest) input tapeFinal tl.n
+          HamkinsMachine.stage.haltsWith (hm srcAddress destAddress) input tapeFinal tl.n
         :=
           And.intro tl.haltsAtN invTln
         
         let haltsWithN:
-          HamkinsMachine.stage.haltsWith (hm src dest) input tapeAtN n
+          HamkinsMachine.stage.haltsWith (hm srcAddress destAddress) input tapeAtN n
         :=
           And.intro haltsAtN rfl
         
