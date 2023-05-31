@@ -739,6 +739,9 @@ where
           let bpr := isSoundPrecond input condTrue
           bPostcond ⟨input, bpr⟩ ⊆ precond)
       
+      -- TODO I think this is wrong. It's not just
+      -- omega-sequences that must have sound limits,
+      -- any sequence must.
       (isSoundPostcondLim:
         ∀ (input: ↑precond)
           (seq: Program.TapeSeq cond input isSoundPrecond bPostcond)

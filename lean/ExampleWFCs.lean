@@ -106,37 +106,37 @@ end pairAlg
 def pairAlg: Algebra pairSig := ⟨Pair, pairAlg.I, pairAlg.monotonic⟩
 
 
-inductive InfPair.Ret
+inductive SPair.Ret
   | isZero
   | isPair
   | isNull
 
-structure InfPair where
-  f: List ArityTwo → InfPair.Ret
-  rootNotNull: f [] ≠ InfPair.Ret.isNull
+structure SPair where
+  f: List ArityTwo → SPair.Ret
+  rootNotNull: f [] ≠ SPair.Ret.isNull
   pairHasMem (s: List ArityTwo) (i: ArityTwo):
-    f s = InfPair.Ret.isPair ↔ f (s ++ [i]) ≠ InfPair.Ret.isNull
+    f s = SPair.Ret.isPair ↔ f (s ++ [i]) ≠ SPair.Ret.isNull
 
-namespace InfPair
-  @[reducible] def zeroF: List ArityTwo → InfPair.Ret :=
+namespace SPair
+  @[reducible] def zeroF: List ArityTwo → SPair.Ret :=
     fun list: List ArityTwo =>
       match list with
-      | List.nil => InfPair.Ret.isZero
-      | _ :: _ => InfPair.Ret.isNull
+      | List.nil => SPair.Ret.isZero
+      | _ :: _ => SPair.Ret.isNull
   
-  def zero: InfPair := ⟨
+  def zero: SPair := ⟨
     zeroF,
     by simp,
     -- AAAAAAAAAAAaaaAAAAAAAAAAa ..... Why does such a simple thing
     -- have to be so complicated?
     fun (s: List ArityTwo) (i: ArityTwo) =>
-      let eqL: zeroF s ≠ InfPair.Ret.isPair :=
+      let eqL: zeroF s ≠ SPair.Ret.isPair :=
         match s with
         | [] => by simp
         | hd :: rest =>
-          let isNull: zeroF (hd :: rest) = InfPair.Ret.isNull := rfl
+          let isNull: zeroF (hd :: rest) = SPair.Ret.isNull := rfl
           isNull ▸ by simp
-      let eqR: zeroF (s ++ [i]) = InfPair.Ret.isNull :=
+      let eqR: zeroF (s ++ [i]) = SPair.Ret.isNull :=
         match list: s ++ [i] with
         | [] =>
           let nope: s ++ [i] ≠ [] := by cases s <;> simp
@@ -147,14 +147,14 @@ namespace InfPair
         (fun ff => False.elim (ff eqR))
   ⟩
   
-  @[reducible] def pairF (a b: InfPair): List ArityTwo → InfPair.Ret
-    | [] => InfPair.Ret.isPair
+  @[reducible] def pairF (a b: SPair): List ArityTwo → SPair.Ret
+    | [] => SPair.Ret.isPair
     | ArityTwo.zth :: rest => a.f rest
     | ArityTwo.fst :: rest => b.f rest
   
-  def pair (a b: InfPair): InfPair := ⟨
+  def pair (a b: SPair): SPair := ⟨
     pairF a b,
-    let eq: pairF a b [] = InfPair.Ret.isPair := rfl;
+    let eq: pairF a b [] = SPair.Ret.isPair := rfl;
     by rw [eq] simp, -- How can I do this without tactics?
     fun s i => Iff.intro (
         fun isP => match s, i with
@@ -169,17 +169,17 @@ namespace InfPair
           | ArityTwo.fst :: rest => (b.pairHasMem rest i).mpr isNotNull
       )
   ⟩
-end InfPair
+end SPair
 
-namespace infPairAlg
-  def I: (op: PairOp) → (args: pairAr op → Set InfPair) → Set InfPair
-    | PairOp.zero => fun _ p => p = InfPair.zero
+namespace sPairAlg
+  def I: (op: PairOp) → (args: pairAr op → Set SPair) → Set SPair
+    | PairOp.zero => fun _ p => p = SPair.zero
     | PairOp.pair => fun args p =>
-        ∃ (a: ↑(args ArityTwo.zth)) (b: ↑(args ArityTwo.fst)), p = InfPair.pair a b
+        ∃ (a: ↑(args ArityTwo.zth)) (b: ↑(args ArityTwo.fst)), p = SPair.pair a b
   
   theorem monotonic
     (op: PairOp)
-    (args0 args1: pairAr op → Set InfPair)
+    (args0 args1: pairAr op → Set SPair)
     (le: ∀ arg: pairAr op, args0 arg ≤ args1 arg)
   :
     I op args0 ≤ I op args1
@@ -193,7 +193,7 @@ namespace infPairAlg
                 ⟨a.val, le ArityTwo.zth _ a.property⟩,
                 ⟨⟨b.val, le ArityTwo.fst _ b.property⟩, nab⟩
               ⟩
-end infPairAlg
+end sPairAlg
 
-def infPairAlg: Algebra pairSig :=
-  ⟨InfPair, infPairAlg.I, infPairAlg.monotonic⟩
+def sPairAlg: Algebra pairSig :=
+  ⟨SPair, sPairAlg.I, sPairAlg.monotonic⟩
