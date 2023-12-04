@@ -1,2 +1,5 @@
 build/
+.lake
+.vscode
+
 junk.lean

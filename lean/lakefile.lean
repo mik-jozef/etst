@@ -2,9 +2,7 @@ import Lake
 open Lake DSL
 
 -- Boolean Set Theory
-package Bst {
-  isLeanOnly := true
-}
+package Bst {}
 
 lean_lib Logic.FO {}
 
@@ -27,3 +25,6 @@ lean_lib Pointwise {}
 lean_lib Set {}
 lean_lib Set3 {}
 lean_lib Valuation {}
+
+require mathlib from git
+  "https://github.com/leanprover-community/mathlib4"
