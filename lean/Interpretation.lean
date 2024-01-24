@@ -5,289 +5,248 @@ open Classical
 
 -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1740
 structure Signature where
-  Op: Type
-  arity: Op → Type
+  Op: Type u
+  Params: Op → Type v
 
 
-inductive Expr (s: Signature) (Var: Type) where
-  | var (v: Var)
-  | varBound (v: Nat)
-  | opApp (op: s.Op) (args: s.arity op → Expr s Var)
-  | un (left rite: Expr s Var)
-  | ir (left rite: Expr s Var)
-  | cpl (expr: Expr s Var)
-  | ifThen (cond expr: Expr s Var)
-  | Un (x: Var) (body: Expr s Var)
-  | Ir (x: Var) (body: Expr s Var)
+inductive Expr (s: Signature) where
+  | var (v: Nat)
+  | opApp (op: s.Op) (args: s.Params op → Expr s)
+  | un (left rite: Expr s)
+  | ir (left rite: Expr s)
+  | cpl (expr: Expr s)
+  | ifThen (cond expr: Expr s)
+  | Un (x: Nat) (body: Expr s)
+  | Ir (x: Nat) (body: Expr s)
 
 namespace Expr
-  instance: Coe Nat (Expr s Var) where
-    coe := fun n => Expr.varBound n
+  instance: Coe Nat (Expr s) where
+    coe := fun n => Expr.var n
   
-  instance (n: Nat): OfNat (Expr s Var) n where
-    ofNat := Expr.varBound n
+  instance (n: Nat): OfNat (Expr s) n where
+    ofNat := Expr.var n
   
-  def any: Expr s Var := Expr.un 0 (Expr.cpl 0)
-  
-  def isPos: Expr s Var → Prop
-    | var _ => True
-    | varBound _ => True
-    | opApp op args => ∀ arg: s.arity op, (args arg).isPos
-    | un left rite => left.isPos ∧ rite.isPos
-    | ir left rite => left.isPos ∧ rite.isPos
-    | cpl expr => ∃ x, expr = Expr.varBound x
-    | ifThen cond expr => cond.isPos ∧ expr.isPos
-    | Un _ body => body.isPos
-    | Ir _ body => body.isPos
+  def any: Expr s := Expr.un 0 (Expr.cpl 0)
 end Expr
 
-/- TODO delete?
-inductive PosExpr (s: Signature) (Var: Type) where
-  | var (v: Var)
-  | varBound (v: Nat)
-  | opApp (op: s.Op) (args: s.arity op → PosExpr s Var)
-  | un (left: PosExpr s Var) (rite: PosExpr s Var)
-  | ir (left: PosExpr s Var) (rite: PosExpr s Var)
-  | ifThen (cond ifYes: PosExpr s Var)
-  | Un (x xc: Var) (body: PosExpr s Var)
-  | Ir (x xc: Var) (body: PosExpr s Var)
-
-namespace PosExpr
-  def ComplementsMap := Nat → Option Nat
-  
-  def replace (cm: ComplementsMap) (x xc: Nat): ComplementsMap :=
-    fun xx => if xx = x then none else if xx = xc then x
-  
-  def toExpr (cm: ComplementsMap): PosExpr s Var → Expr s Var
-  | PosExpr.var x => Expr.var x
-  | PosExpr.varBound x => Expr.varBound x
-  | PosExpr.opApp op args => Expr.opApp op (fun arg => (args arg).toExpr cm)
-  | PosExpr.un a b => Expr.un (a.toExpr cm) (b.toExpr cm)
-  | PosExpr.ir a b => Expr.un (a.toExpr cm) (b.toExpr cm)
-  | PosExpr.ifThen a b => Expr.un (a.toExpr cm) (b.toExpr cm)
-  | PosExpr.Un x xc body => Expr.Un x (body.toExpr (cm.replace xc x))
-  | PosExpr.Ir x xc body => sorry
-
-end PosExpr-/
+inductive PosExpr (s: Signature) where
+  | var (v: Nat)
+  | opApp (op: s.Op) (args: s.Params op → PosExpr s)
+  | un (left: PosExpr s) (rite: PosExpr s)
+  | ir (left: PosExpr s) (rite: PosExpr s)
+  | ifThen (cond ifYes: PosExpr s)
+  | Un (x xc: Var) (body: PosExpr s)
+  | Ir (x xc: Var) (body: PosExpr s)
 
 
-structure DefList (s: Signature) (Var: Type) where
-  isFinite: Type.isFinite Var
-  getDef: Var → Expr s Var
-
-/- TODO delete?
-structure PosDefList (s: Signature) (Var: Type) where
-  isFinite: Type.isFinite Var
-  getDef: Var → PosExpr s Var-/
-
+def Args
+  (s: Signature)
+  (op: s.Op)
+  (D: Type u)
+:=
+  s.Params op → Set D
 
 /-
-  For our purposes, algebras act on sets of elements,
-  monotonically.
-  
-  The other document refers to algebras as 'structures'
-  because of these differences. I've not yet decided
-  which name I want to keep.
+  Salgebras act not on elements themselves (like algebras
+  do), but on sets of elements, monotonically.
 -/
-structure Algebra (s: Signature) where
-  D: Type
-  I: (op: s.Op) → (s.arity op → Set D) → Set D
+structure Salgebra (s: Signature) where
+  D: Type u
+  I: (op: s.Op) → Args s op D → Set D
   isMonotonic
     (op: s.Op)
-    (args0 args1: s.arity op → Set D)
-    (le: ∀ arg: s.arity op, args0 arg ≤ args1 arg)
+    (args0 args1: Args s op D)
+    (le: ∀ arg: s.Params op, args0 arg ≤ args1 arg)
   :
     I op args0 ≤ I op args1
 
 
-def I (alg: Algebra s) (b c: Valuation Var alg.D): (Expr s Var) → Set3 alg.D
-| Expr.var a => c (Sum.inl a)
-| Expr.varBound a => c (Sum.inr a)
+def interpretation
+  (salg: Salgebra s)
+  (b c: Valuation salg.D)
+:
+  (Expr s) → Set3 salg.D
+
+| Expr.var a => c a
 | Expr.opApp op exprs =>
-    let defArgs := fun arg => (I alg b c (exprs arg)).defMem
-    let posArgs := fun arg => (I alg b c (exprs arg)).posMem
+    let defArgs := fun arg =>
+      (interpretation salg b c (exprs arg)).defMem
+    let posArgs := fun arg =>
+      (interpretation salg b c (exprs arg)).posMem
     ⟨
-      alg.I op defArgs,
-      alg.I op posArgs,
+      salg.I op defArgs,
+      salg.I op posArgs,
       
-      alg.isMonotonic
+      salg.isMonotonic
         op
         defArgs
         posArgs
-        fun arg => (I alg b c (exprs arg)).defLePos
+        fun arg => (interpretation salg b c (exprs arg)).defLePos
     ⟩
 | Expr.un e0 e1 =>
-    let iE0 := I alg b c e0
-    let iE1 := I alg b c e1
+    let iE0 := interpretation salg b c e0
+    let iE1 := interpretation salg b c e1
     ⟨
       iE0.defMem ∪ iE1.defMem,
       iE0.posMem ∪ iE1.posMem,
       
       fun d dDef =>
         Or.elim (dDef: d ∈ iE0.defMem ∨ d ∈ iE1.defMem)
-          (fun dIE0 => Or.inl (iE0.defLePos d dIE0))
-          (fun dIE1 => Or.inr (iE1.defLePos d dIE1))
+          (fun dIE0 => Or.inl (iE0.defLePos dIE0))
+          (fun dIE1 => Or.inr (iE1.defLePos dIE1))
     ⟩
 | Expr.ir e0 e1 =>
-    let iE0 := I alg b c e0
-    let iE1 := I alg b c e1
+    let iE0 := interpretation salg b c e0
+    let iE1 := interpretation salg b c e1
     ⟨
       iE0.defMem ∩ iE1.defMem,
       iE0.posMem ∩ iE1.posMem,
       
-      fun d dDef =>
-        And.intro (iE0.defLePos d dDef.left) (iE1.defLePos d dDef.right)
+      fun _d dDef =>
+        And.intro (iE0.defLePos dDef.left) (iE1.defLePos dDef.right)
     ⟩
 | Expr.cpl e =>
-    let ie := (I alg b b e)
+    let ie := (interpretation salg b b e)
     ⟨
-      ~ ie.posMem,
-      ~ ie.defMem,
+      ie.posMemᶜ,
+      ie.defMemᶜ,
       
       fun d dInNPos =>
-        show d ∉ ie.defMem from fun dInDef => dInNPos (ie.defLePos d dInDef)
+        show d ∉ ie.defMem from fun dInDef => dInNPos (ie.defLePos dInDef)
     ⟩
 | Expr.ifThen cond expr =>
-    let cond.I: Set3 alg.D := I alg b c cond
-    let expr.I: Set3 alg.D := I alg b c expr
+    let cond.I: Set3 salg.D := interpretation salg b c cond
+    let expr.I: Set3 salg.D := interpretation salg b c expr
     
     ⟨
       fun d => (∃ dC, dC ∈ cond.I.defMem) ∧ d ∈ expr.I.defMem,
       fun d => (∃ dC, dC ∈ cond.I.posMem) ∧ d ∈ expr.I.posMem,
       
-      fun d dIn =>
-        let dC := choiceEx dIn.left
+      fun _d dIn =>
+        let dC := dIn.left.unwrap
         And.intro
-          ⟨dC, cond.I.defLePos dC dC.property⟩
-          (expr.I.defLePos d dIn.right)
+          ⟨dC, cond.I.defLePos dC.property⟩
+          (expr.I.defLePos dIn.right)
     ⟩
 | Expr.Un x body =>
-    let body.I (iX: alg.D): Set3 alg.D :=
-      I alg (b.update (Sum.inl x) iX) (c.update (Sum.inl x) iX) body
+    let body.I (iX: salg.D): Set3 salg.D :=
+      interpretation salg (b.update x iX) (c.update x iX) body
     
     ⟨
       fun d => ∃ iX, d ∈ (body.I iX).defMem,
       fun d => ∃ iX, d ∈ (body.I iX).posMem,
       
-      fun d dDef => dDef.elim fun iX iXDef =>
-        ⟨iX, (body.I iX).defLePos d iXDef⟩
+      fun _d dDef => dDef.elim fun iX iXDef =>
+        ⟨iX, (body.I iX).defLePos iXDef⟩
     ⟩
 | Expr.Ir x body =>
-    let body.I (iX: alg.D): Set3 alg.D :=
-      (I alg (b.update (Sum.inl x) iX) (c.update (Sum.inl x) iX) body)
+    let body.I (iX: salg.D): Set3 salg.D :=
+      (interpretation salg (b.update x iX) (c.update x iX) body)
     
     ⟨
       fun d => ∀ iX, d ∈ (body.I iX).defMem,
       fun d => ∀ iX, d ∈ (body.I iX).posMem,
       
-      fun d dDefBody xDDef =>
-        (body.I xDDef).defLePos d (dDefBody xDDef)
+      fun _d dDefBody xDDef =>
+        (body.I xDDef).defLePos (dDefBody xDDef)
     ⟩
 
-/- TODO delete?
-def PosI (alg: Algebra s) (c: Valuation Var alg.D): (PosExpr s Var) → Set3 alg.D
-| PosExpr.var x => sorry
-| PosExpr.varBound x => sorry
-| PosExpr.opApp op args => sorry
-| PosExpr.un a b => sorry
-| PosExpr.ir a b => sorry
-| PosExpr.ifThen a b => sorry
-| PosExpr.Un x xc body => sorry
-| PosExpr.Ir x xc body => sorry-/
 
-def I.isMonotonic.standard
-  (alg: Algebra s)
-  (e: Expr s Var)
-  (b c0 c1: Valuation Var alg.D)
+def interpretation.isMonotonic.standard
+  (salg: Salgebra s)
+  (e: Expr s)
+  (b: Valuation salg.D)
+  {c0 c1: Valuation salg.D}
   (cLe: c0 ≤ c1)
 :
-  I alg b c0 e ≤ I alg b c1 e
+  interpretation salg b c0 e ≤ interpretation salg b c1 e
 :=
   match e with
-  | Expr.var a => And.intro
-      (fun x xIn => (cLe (Sum.inl a)).left x xIn)
-      (fun x xIn => (cLe (Sum.inl a)).right x xIn)
-  | Expr.varBound a => And.intro
-      (fun x xIn => (cLe (Sum.inr a)).left x xIn)
-      (fun x xIn => (cLe (Sum.inr a)).right x xIn)
-  | Expr.opApp op args => And.intro
-      (fun x xIn =>
-        let argC0 (i: s.arity op) := (I alg b c0 (args i)).defMem
-        let argC1 (i: s.arity op) := (I alg b c1 (args i)).defMem
-        let argMono (i: s.arity op): argC0 i ≤ argC1 i :=
-          (I.isMonotonic.standard alg (args i) b c0 c1 cLe).left
-        let isMono3 := alg.isMonotonic op argC0 argC1 argMono
-        isMono3 x xIn)
-      (fun x xIn =>
-        let argC0 (i: s.arity op) := (I alg b c0 (args i)).posMem
-        let argC1 (i: s.arity op) := (I alg b c1 (args i)).posMem
-        let argMono (i: s.arity op): argC0 i ≤ argC1 i :=
-          (I.isMonotonic.standard alg (args i) b c0 c1 cLe).right
-        let isMono3 := alg.isMonotonic op argC0 argC1 argMono
-        isMono3 x xIn)
+  | Expr.var a => Set3.LeStd.intro
+      (fun _x xIn => (cLe a).defLe xIn)
+      (fun _x xIn => (cLe a).posLe xIn)
+  | Expr.opApp op args => Set3.LeStd.intro
+      (fun _x xIn =>
+        let argC0 (i: s.Params op) :=
+          (interpretation salg b c0 (args i)).defMem
+        let argC1 (i: s.Params op) :=
+          (interpretation salg b c1 (args i)).defMem
+        let argMono (i: s.Params op): argC0 i ≤ argC1 i :=
+          (interpretation.isMonotonic.standard salg (args i) b cLe).defLe
+        let isMono3 := salg.isMonotonic op argC0 argC1 argMono
+        isMono3 xIn)
+      (fun _x xIn =>
+        let argC0 (i: s.Params op) :=
+          (interpretation salg b c0 (args i)).posMem
+        let argC1 (i: s.Params op) :=
+          (interpretation salg b c1 (args i)).posMem
+        let argMono (i: s.Params op): argC0 i ≤ argC1 i :=
+          (interpretation.isMonotonic.standard salg (args i) b cLe).posLe
+        let isMono3 := salg.isMonotonic op argC0 argC1 argMono
+        isMono3 xIn)
   -- "Right" is one letter too long.
-  | Expr.un left rite => And.intro
+  | Expr.un left rite => Set3.LeStd.intro
       (fun x xIn =>
-        let left.I0 := (I alg b c0 left).defMem
-        let left.I1 := (I alg b c1 left).defMem
+        let left.I0 := (interpretation salg b c0 left).defMem
+        let left.I1 := (interpretation salg b c1 left).defMem
         
-        let rite.I0 := (I alg b c0 rite).defMem
-        let rite.I1 := (I alg b c1 rite).defMem
+        let rite.I0 := (interpretation salg b c0 rite).defMem
+        let rite.I1 := (interpretation salg b c1 rite).defMem
         
         let left.isMono: left.I0 ≤ left.I1 :=
-          (I.isMonotonic.standard alg left b c0 c1 cLe).left
+          (interpretation.isMonotonic.standard salg left b cLe).defLe
         
         let rite.isMono: rite.I0 ≤ rite.I1 :=
-          (I.isMonotonic.standard alg rite b c0 c1 cLe).left
+          (interpretation.isMonotonic.standard salg rite b cLe).defLe
         
         if hLeft: x ∈ left.I0 then
-          let xInLeft1: x ∈ left.I1 := left.isMono x hLeft
+          let xInLeft1: x ∈ left.I1 := left.isMono hLeft
           Or.inl xInLeft1
         else if hRite: x ∈ rite.I0 then
-          let xInRite1: x ∈ rite.I1 := rite.isMono x hRite
+          let xInRite1: x ∈ rite.I1 := rite.isMono hRite
           Or.inr xInRite1
         else
           False.elim (xIn.elim (fun xInL => hLeft xInL) (fun xInR => hRite xInR)))
       
       (fun x xIn =>
-        let left.I0 := (I alg b c0 left).posMem
-        let left.I1 := (I alg b c1 left).posMem
+        let left.I0 := (interpretation salg b c0 left).posMem
+        let left.I1 := (interpretation salg b c1 left).posMem
         
-        let rite.I0 := (I alg b c0 rite).posMem
-        let rite.I1 := (I alg b c1 rite).posMem
+        let rite.I0 := (interpretation salg b c0 rite).posMem
+        let rite.I1 := (interpretation salg b c1 rite).posMem
         
         let left.isMono: left.I0 ≤ left.I1 :=
-          (I.isMonotonic.standard alg left b c0 c1 cLe).right
+          (interpretation.isMonotonic.standard salg left b cLe).posLe
         
         let rite.isMono: rite.I0 ≤ rite.I1 :=
-          (I.isMonotonic.standard alg rite b c0 c1 cLe).right
+          (interpretation.isMonotonic.standard salg rite b cLe).posLe
         
         if hLeft: x ∈ left.I0 then
-          let xInLeft1: x ∈ left.I1 := left.isMono x hLeft
+          let xInLeft1: x ∈ left.I1 := left.isMono hLeft
           Or.inl xInLeft1
         else if hRite: x ∈ rite.I0 then
-          let xInRite1: x ∈ rite.I1 := rite.isMono x hRite
+          let xInRite1: x ∈ rite.I1 := rite.isMono hRite
           Or.inr xInRite1
         else
           False.elim (xIn.elim (fun xInL => hLeft xInL) (fun xInR => hRite xInR)))
-  | Expr.ir left rite => And.intro
+  | Expr.ir left rite => Set3.LeStd.intro
       (fun x xIn =>
-        let left.I0 := (I alg b c0 left).defMem
-        let left.I1 := (I alg b c1 left).defMem
+        let left.I0 := (interpretation salg b c0 left).defMem
+        let left.I1 := (interpretation salg b c1 left).defMem
         
-        let rite.I0 := (I alg b c0 rite).defMem
-        let rite.I1 := (I alg b c1 rite).defMem
+        let rite.I0 := (interpretation salg b c0 rite).defMem
+        let rite.I1 := (interpretation salg b c1 rite).defMem
         
         let left.isMono: left.I0 ≤ left.I1 :=
-          (I.isMonotonic.standard alg left b c0 c1 cLe).left
+          (interpretation.isMonotonic.standard salg left b cLe).defLe
         
         let rite.isMono: rite.I0 ≤ rite.I1 :=
-          (I.isMonotonic.standard alg rite b c0 c1 cLe).left
+          (interpretation.isMonotonic.standard salg rite b cLe).defLe
         
         if hLeft: x ∈ left.I0 then
           if hRite: x ∈ rite.I0 then
-            let xInLeft1: x ∈ left.I1 := left.isMono x hLeft
-            let xInRite1: x ∈ rite.I1 := rite.isMono x hRite
+            let xInLeft1: x ∈ left.I1 := left.isMono hLeft
+            let xInRite1: x ∈ rite.I1 := rite.isMono hRite
             And.intro xInLeft1 xInRite1
           else
             False.elim (hRite xIn.right)
@@ -295,264 +254,269 @@ def I.isMonotonic.standard
           False.elim (hLeft xIn.left))
       
       (fun x xIn =>
-        let left.I0 := (I alg b c0 left).posMem
-        let left.I1 := (I alg b c1 left).posMem
+        let left.I0 := (interpretation salg b c0 left).posMem
+        let left.I1 := (interpretation salg b c1 left).posMem
         
-        let rite.I0 := (I alg b c0 rite).posMem
-        let rite.I1 := (I alg b c1 rite).posMem
+        let rite.I0 := (interpretation salg b c0 rite).posMem
+        let rite.I1 := (interpretation salg b c1 rite).posMem
         
         let left.isMono: left.I0 ≤ left.I1 :=
-          (I.isMonotonic.standard alg left b c0 c1 cLe).right
+          (interpretation.isMonotonic.standard salg left b cLe).posLe
         
         let rite.isMono: rite.I0 ≤ rite.I1 :=
-          (I.isMonotonic.standard alg rite b c0 c1 cLe).right
+          (interpretation.isMonotonic.standard salg rite b cLe).posLe
         
         if hLeft: x ∈ left.I0 then
           if hRite: x ∈ rite.I0 then
-            let xInLeft1: x ∈ left.I1 := left.isMono x hLeft
-            let xInRite1: x ∈ rite.I1 := rite.isMono x hRite
+            let xInLeft1: x ∈ left.I1 := left.isMono hLeft
+            let xInRite1: x ∈ rite.I1 := rite.isMono hRite
             And.intro xInLeft1 xInRite1
           else
             False.elim (hRite xIn.right)
         else
           False.elim (hLeft xIn.left))
-  | Expr.cpl _ => And.intro (fun _ xIn => xIn) (fun _ xIn => xIn)
-  | Expr.ifThen cond expr => And.intro
-      (fun d dIn =>
-        let dC := choiceEx dIn.left
+  | Expr.cpl _ => Set3.LeStd.intro (fun _ xIn => xIn) (fun _ xIn => xIn)
+  | Expr.ifThen cond expr => Set3.LeStd.intro
+      (fun _d dIn =>
+        let dC := dIn.left.unwrap
         
-        let hC := I.isMonotonic.standard alg cond b c0 c1 cLe
-        let hE := I.isMonotonic.standard alg expr b c0 c1 cLe
-        
-        And.intro
-          ⟨dC, hC.left dC dC.property⟩
-          (hE.left d dIn.right))
-      (fun d dIn =>
-        let dC := choiceEx dIn.left
-        
-        let hC := I.isMonotonic.standard alg cond b c0 c1 cLe
-        let hE := I.isMonotonic.standard alg expr b c0 c1 cLe
+        let hC := interpretation.isMonotonic.standard salg cond b cLe
+        let hE := interpretation.isMonotonic.standard salg expr b cLe
         
         And.intro
-          ⟨dC, hC.right dC dC.property⟩
-          (hE.right d dIn.right))
-  | Expr.Un x body => And.intro
+          ⟨dC, hC.defLe dC.property⟩
+          (hE.defLe dIn.right))
+      (fun _d dIn =>
+        let dC := dIn.left.unwrap
+        
+        let hC := interpretation.isMonotonic.standard salg cond b cLe
+        let hE := interpretation.isMonotonic.standard salg expr b cLe
+        
+        And.intro
+          ⟨dC, hC.posLe dC.property⟩
+          (hE.posLe dIn.right))
+  | Expr.Un x body => Set3.LeStd.intro
       (fun d dIn =>
-        let dX := choiceEx dIn
+        let dX := dIn.unwrap
         
-        let bUpdated := b.update (Sum.inl x) dX.val
-        let c0Updated := c0.update (Sum.inl x) dX.val
-        let c1Updated := c1.update (Sum.inl x) dX.val
+        let bUpdated := b.update x dX.val
+        let c0Updated := c0.update x dX.val
+        let c1Updated := c1.update x dX.val
         
-        let body.I0 := I alg bUpdated c0Updated body
-        let body.I1 := I alg bUpdated c1Updated body
+        let body.I0 := interpretation salg bUpdated c0Updated body
+        let body.I1 := interpretation salg bUpdated c1Updated body
         
         let cUpdatedLe := Valuation.update.isMonotonic.standard
-           c0 c1 cLe (Sum.inl x) dX.val
+           c0 c1 cLe x dX.val
         
-        let body.le: body.I0 ≤ body.I1 := I.isMonotonic.standard
-          alg body bUpdated c0Updated c1Updated cUpdatedLe
+        let bodyLe: body.I0 ≤ body.I1 := interpretation.isMonotonic.standard
+          salg body bUpdated cUpdatedLe
         
         let dInBody0: d ∈ body.I0.defMem := dX.property
-        let dInBody1: d ∈ body.I1.defMem := body.le.left d dInBody0
+        let dInBody1: d ∈ body.I1.defMem := bodyLe.defLe dInBody0
         
         ⟨dX.val, dInBody1⟩)
       
       (fun d dIn =>
-        let dX := choiceEx dIn
+        let dX := dIn.unwrap
         
-        let bUpdated := b.update (Sum.inl x) dX.val
-        let c0Updated := c0.update (Sum.inl x) dX.val
-        let c1Updated := c1.update (Sum.inl x) dX.val
+        let bUpdated := b.update x dX.val
+        let c0Updated := c0.update x dX.val
+        let c1Updated := c1.update x dX.val
         
-        let body.I0 := I alg bUpdated c0Updated body
-        let body.I1 := I alg bUpdated c1Updated body
+        let body.I0 := interpretation salg bUpdated c0Updated body
+        let body.I1 := interpretation salg bUpdated c1Updated body
         
         let cUpdatedLe := Valuation.update.isMonotonic.standard
-          c0 c1 cLe (Sum.inl x) dX.val
+          c0 c1 cLe x dX.val
         
-        let body.le: body.I0 ≤ body.I1 := I.isMonotonic.standard
-          alg body bUpdated c0Updated c1Updated cUpdatedLe
+        let bodyLe: body.I0 ≤ body.I1 := interpretation.isMonotonic.standard
+          salg body bUpdated cUpdatedLe
         
         let dInBody0: d ∈ body.I0.posMem := dX.property
-        let dInBody1: d ∈ body.I1.posMem := body.le.right d dInBody0
+        let dInBody1: d ∈ body.I1.posMem := bodyLe.posLe dInBody0
         
         ⟨dX.val, dInBody1⟩)
-  | Expr.Ir x body => And.intro
+  | Expr.Ir x body => Set3.LeStd.intro
       (fun _d dIn xDDef =>
         let dInXD := dIn xDDef
         
-        let bUpdated := b.update (Sum.inl x) xDDef
-        let c0Updated := c0.update (Sum.inl x) xDDef
-        let c1Updated := c1.update (Sum.inl x) xDDef
+        let bUpdated := b.update x xDDef
+        let c0Updated := c0.update x xDDef
+        let c1Updated := c1.update x xDDef
         
-        let body.I0 := I alg bUpdated c0Updated body
-        let body.I1 := I alg bUpdated c1Updated body
+        let body.I0 := interpretation salg bUpdated c0Updated body
+        let body.I1 := interpretation salg bUpdated c1Updated body
         
         let cUpdatedLe := Valuation.update.isMonotonic.standard
-          c0 c1 cLe (Sum.inl x) xDDef
+          c0 c1 cLe x xDDef
         
-        let body.le: body.I0 ≤ body.I1 :=
-          I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
+        let bodyLe: body.I0 ≤ body.I1 :=
+          interpretation.isMonotonic.standard salg body bUpdated cUpdatedLe
         
-        body.le.left _ dInXD)
+        bodyLe.defLe dInXD)
       
       (fun _d dIn xDDef =>
         let dInXD := dIn xDDef
         
-        let bUpdated := b.update (Sum.inl x) xDDef
-        let c0Updated := c0.update (Sum.inl x) xDDef
-        let c1Updated := c1.update (Sum.inl x) xDDef
+        let bUpdated := b.update x xDDef
+        let c0Updated := c0.update x xDDef
+        let c1Updated := c1.update x xDDef
         
-        let body.I0 := I alg bUpdated c0Updated body
-        let body.I1 := I alg bUpdated c1Updated body
+        let body.I0 := interpretation salg bUpdated c0Updated body
+        let body.I1 := interpretation salg bUpdated c1Updated body
         
         let cUpdatedLe := Valuation.update.isMonotonic.standard
-          c0 c1 cLe (Sum.inl x) xDDef
+          c0 c1 cLe x xDDef
         
-        let body.le: body.I0 ≤ body.I1 :=
-          I.isMonotonic.standard alg body bUpdated c0Updated c1Updated cUpdatedLe
+        let bodyLe: body.I0 ≤ body.I1 :=
+          interpretation.isMonotonic.standard salg body bUpdated cUpdatedLe
         
-        body.le.right _ dInXD)
+        bodyLe.posLe dInXD)
 
-def I.isMonotonic.approximation
-  (alg: Algebra s)
-  (e: Expr s Var)
-  (b0 b1 c0 c1: Valuation Var alg.D)
+def interpretation.isMonotonic.approximation
+  (salg: Salgebra s)
+  (e: Expr s)
+  (b0 b1 c0 c1: Valuation salg.D)
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
-  I alg b0 c0 e ⊑ I alg b1 c1 e
+  interpretation salg b0 c0 e ⊑ interpretation salg b1 c1 e
 :=
   match e with
-  | Expr.var x => And.intro
-      (fun d dIn => (cLe (Sum.inl x)).left d dIn)
-      (fun d dIn => (cLe (Sum.inl x)).right d dIn)
-  | Expr.varBound x => And.intro
-      (fun d dIn => (cLe (Sum.inr x)).left d dIn)
-      (fun d dIn => (cLe (Sum.inr x)).right d dIn)
+  | Expr.var x => Set3.LeApx.intro
+      (fun _d dIn => (cLe x).defLe dIn)
+      (fun _d dIn => (cLe x).posLe dIn)
   | Expr.opApp op args =>
-      let ih (arg: s.arity op) :=
-        I.isMonotonic.approximation alg (args arg) b0 b1 c0 c1 bLe cLe
+      let ih (arg: s.Params op) :=
+        interpretation.isMonotonic.approximation
+          salg (args arg) b0 b1 c0 c1 bLe cLe
       
-      And.intro
-        (fun d dIn =>
-          let defArgs0 arg := (I alg b0 c0 (args arg)).defMem
-          let defArgs1 arg := (I alg b1 c1 (args arg)).defMem
+      Set3.LeApx.intro
+        (fun _d dIn =>
+          let defArgs0 arg :=
+            (interpretation salg b0 c0 (args arg)).defMem
+          let defArgs1 arg :=
+            (interpretation salg b1 c1 (args arg)).defMem
           
-          let defArgsLe :=
-            alg.isMonotonic op defArgs0 defArgs1 (fun a => (ih a).left)
+          let defArgsLe := salg.isMonotonic
+            op defArgs0 defArgs1 (fun a => (ih a).defLe)
           
-          defArgsLe d dIn)
-        (fun d dIn =>
-          let posArgs0 arg := (I alg b0 c0 (args arg)).posMem
-          let posArgs1 arg := (I alg b1 c1 (args arg)).posMem
+          defArgsLe dIn)
+        (fun _d dIn =>
+          let posArgs0 arg :=
+            (interpretation salg b0 c0 (args arg)).posMem
+          let posArgs1 arg :=
+            (interpretation salg b1 c1 (args arg)).posMem
           
-          let posArgsLe :=
-            alg.isMonotonic op posArgs1 posArgs0 (fun a => (ih a).right)
+          let posArgsLe := salg.isMonotonic
+            op posArgs1 posArgs0 (fun a => (ih a).posLe)
           
-          posArgsLe d dIn)
+          posArgsLe dIn)
   | Expr.un left rite =>
-      let ihL := I.isMonotonic.approximation alg left b0 b1 c0 c1 bLe cLe
-      let ihR := I.isMonotonic.approximation alg rite b0 b1 c0 c1 bLe cLe
+      let ihL := interpretation.isMonotonic.approximation
+        salg left b0 b1 c0 c1 bLe cLe
+      let ihR := interpretation.isMonotonic.approximation
+        salg rite b0 b1 c0 c1 bLe cLe
       
-      And.intro
-        (fun d dIn => dIn.elim
-          (fun inL => Or.inl (ihL.left d inL))
-          (fun inR => Or.inr (ihR.left d inR)))
-        (fun d dIn => dIn.elim
-          (fun inL => Or.inl (ihL.right d inL))
-          (fun inR => Or.inr (ihR.right d inR)))
+      Set3.LeApx.intro
+        (fun _d dIn => dIn.elim
+          (fun inL => Or.inl (ihL.defLe inL))
+          (fun inR => Or.inr (ihR.defLe inR)))
+        (fun _d dIn => dIn.elim
+          (fun inL => Or.inl (ihL.posLe inL))
+          (fun inR => Or.inr (ihR.posLe inR)))
   | Expr.ir left rite =>
-      let ihL := I.isMonotonic.approximation alg left b0 b1 c0 c1 bLe cLe
-      let ihR := I.isMonotonic.approximation alg rite b0 b1 c0 c1 bLe cLe
+      let ihL := interpretation.isMonotonic.approximation
+        salg left b0 b1 c0 c1 bLe cLe
+      let ihR := interpretation.isMonotonic.approximation
+        salg rite b0 b1 c0 c1 bLe cLe
       
-      And.intro
-        (fun d dIn => And.intro (ihL.left d dIn.left) (ihR.left d dIn.right))
-        (fun d dIn => And.intro (ihL.right d dIn.left) (ihR.right d dIn.right))
+      Set3.LeApx.intro
+        (fun _d dIn =>
+          And.intro (ihL.defLe dIn.left) (ihR.defLe dIn.right))
+        (fun _d dIn =>
+          And.intro (ihL.posLe dIn.left) (ihR.posLe dIn.right))
   | Expr.cpl expr =>
-      let ih := I.isMonotonic.approximation alg expr b0 b1 b0 b1 bLe bLe
-      And.intro
-        (fun d dIn => contra (ih.right d) dIn)
-        (fun d dIn => contra (ih.left d) dIn)
-  | Expr.ifThen cond expr => And.intro
-      (fun d dIn =>
-        let dC := choiceEx dIn.left
+      let ih := interpretation.isMonotonic.approximation
+        salg expr b0 b1 b0 b1 bLe bLe
+      Set3.LeApx.intro
+        (fun d dIn =>
+          let tmp: (d: salg.D) → _ → _ := ih.posLe
+          Function.contra (tmp d) dIn)
+        (fun d dIn =>
+          let tmp: (d: salg.D) → _ → _ := ih.defLe
+          Function.contra (tmp d) dIn)
+  | Expr.ifThen cond expr => Set3.LeApx.intro
+      (fun _d dIn =>
+        let dC := dIn.left.unwrap
         
-        let hC := I.isMonotonic.approximation
-          alg cond b0 b1 c0 c1 bLe cLe
-        let hE := I.isMonotonic.approximation
-          alg expr b0 b1 c0 c1 bLe cLe
-        
-        And.intro
-          ⟨dC, hC.left dC dC.property⟩
-          (hE.left d dIn.right))
-      (fun d dIn =>
-        let dC := choiceEx dIn.left
-        
-        let hC := I.isMonotonic.approximation
-          alg cond b0 b1 c0 c1 bLe cLe
-        let hE := I.isMonotonic.approximation
-          alg expr b0 b1 c0 c1 bLe cLe
+        let hC := interpretation.isMonotonic.approximation
+          salg cond b0 b1 c0 c1 bLe cLe
+        let hE := interpretation.isMonotonic.approximation
+          salg expr b0 b1 c0 c1 bLe cLe
         
         And.intro
-          ⟨dC, hC.right dC dC.property⟩
-          (hE.right d dIn.right))
+          ⟨dC, hC.defLe dC.property⟩
+          (hE.defLe dIn.right))
+      (fun _d dIn =>
+        let dC := dIn.left.unwrap
+        
+        let hC := interpretation.isMonotonic.approximation
+          salg cond b0 b1 c0 c1 bLe cLe
+        let hE := interpretation.isMonotonic.approximation
+          salg expr b0 b1 c0 c1 bLe cLe
+        
+        And.intro
+          ⟨dC, hC.posLe dC.property⟩
+          (hE.posLe dIn.right))
   | Expr.Un x body =>
       let ihBody d :=
-        I.isMonotonic.approximation alg body
-          (b0.update (Sum.inl x) d)
-          (b1.update (Sum.inl x) d)
-          (c0.update (Sum.inl x) d)
-          (c1.update (Sum.inl x) d)
-          (Valuation.update.isMonotonic.approximation b0 b1 bLe (Sum.inl x) d)
-          (Valuation.update.isMonotonic.approximation c0 c1 cLe (Sum.inl x) d)
+        interpretation.isMonotonic.approximation salg body
+          (b0.update x d)
+          (b1.update x d)
+          (c0.update x d)
+          (c1.update x d)
+          (Valuation.update.isMonotonic.approximation b0 b1 bLe x d)
+          (Valuation.update.isMonotonic.approximation c0 c1 cLe x d)
       
-      And.intro
-        (fun d dIn =>
-          let dX := choiceEx dIn
+      Set3.LeApx.intro
+        (fun _d dIn =>
+          let dX := dIn.unwrap
           ⟨
             dX.val,
-            (ihBody dX.val).left d dX.property⟩
+            (ihBody dX.val).defLe dX.property⟩
           )
-        (fun d dIn =>
-          let dX := choiceEx dIn
+        (fun _d dIn =>
+          let dX := dIn.unwrap
           ⟨
             dX.val,
-            (ihBody dX.val).right d dX.property⟩
+            (ihBody dX.val).posLe dX.property⟩
           )
   | Expr.Ir x body =>
       let ih d :=
-        I.isMonotonic.approximation alg body
-          (b0.update (Sum.inl x) d)
-          (b1.update (Sum.inl x) d)
-          (c0.update (Sum.inl x) d)
-          (c1.update (Sum.inl x) d)
-          (Valuation.update.isMonotonic.approximation b0 b1 bLe (Sum.inl x) d)
-          (Valuation.update.isMonotonic.approximation c0 c1 cLe (Sum.inl x) d)
+        interpretation.isMonotonic.approximation salg body
+          (b0.update x d)
+          (b1.update x d)
+          (c0.update x d)
+          (c1.update x d)
+          (Valuation.update.isMonotonic.approximation b0 b1 bLe x d)
+          (Valuation.update.isMonotonic.approximation c0 c1 cLe x d)
       
-      And.intro
-        (fun d dIn dXPos1 => (ih dXPos1).left d (dIn dXPos1))
-        (fun d dIn dXPos0 => (ih dXPos0).right d (dIn dXPos0))
+      Set3.LeApx.intro
+        (fun _d dIn dXPos1 => (ih dXPos1).defLe (dIn dXPos1))
+        (fun _d dIn dXPos0 => (ih dXPos0).posLe (dIn dXPos0))
 
+
+structure DefList (s: Signature) where
+  getDef: Nat → Expr s
 
 -- Interpretation on definition lists is defined pointwise.
 def DefList.I
-  (alg: Algebra s)
-  (b c: Valuation Var alg.D)
-  (dl: DefList s Var)
+  (salg: Salgebra s)
+  (b c: Valuation salg.D)
+  (dl: DefList s)
 :
-  Valuation Var alg.D
+  Valuation salg.D
 :=
-  fun x =>
-    match x with
-    | Sum.inl x => _root_.I alg b c (dl.getDef x)
-    | Sum.inr _ =>
-        /-
-          These are only used by the interpretation of expressions,
-          because there are no global bound variables. I could
-          theoretically split Valuation into two types (one with bound
-          vars and one without, I guess that would result in duplicated
-          work.)
-        -/
-        Set3.empty
+  fun x => interpretation salg b c (dl.getDef x)

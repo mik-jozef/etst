@@ -3,167 +3,148 @@
   for the latter.
 -/
 
+import Mathlib.Init.Order.Defs
+
 open Classical
 
-notation:50 lhs:51 " ≰ " rhs:51 => ¬ LE.le lhs rhs
-notation:50 lhs:51 " ≮ " rhs:51 => ¬ LT.lt lhs rhs
-
-class PartialOrder (T: Type u) where
-  le : T → T → Prop
-  refl (t: T): le t t
-  antisymm (a b: T): le a b  →  le b a  →  a = b
-  trans (a b c: T): le a b  →  le b c  →  le a c
-  
-  lt (a b: T) := le a b  ∧  ¬ a = b
-  
-  ltToLeNeq {a b: T}: lt a b → le a b ∧ ¬ a = b
-  leNeqToLt {a b: T}: le a b ∧ ¬ a = b → lt a b
-
-infix:50 " .≤ " => PartialOrder.le
-infix:50 " .< " => PartialOrder.lt
-
 namespace PartialOrder
-  def irefl [PartialOrder T] (a: T): ¬ lt a a :=
-    fun aa: lt a a => (ltToLeNeq aa).right rfl
-  
-  def antisymmLt [PartialOrder T] (a b: T): lt a b  →  lt b a  →  a = b :=
-    fun ab ba =>
-      antisymm a b
-        (ltToLeNeq ab).left
-        (ltToLeNeq ba).left
-  
-  def antisymmLt.p {p: Prop} [PartialOrder T] {a b: T}: lt a b  →  lt b a  →  p :=
-    fun ab ba =>
-      let eqAB := antisymmLt a b ab ba
-      False.elim (irefl a (eqAB ▸ ab))
-  
-  def transLt [PartialOrder T] (a b c: T): lt a b  →  lt b c  →  lt a c :=
-    fun ab bc =>
-      let aLeC: le a c :=
-        (trans a b c
-          (ltToLeNeq ab).left
-          (ltToLeNeq bc).left)
-      let aNeqC: a ≠ c :=
-        fun eqAC =>
-          let cb: lt c b := eqAC ▸ ab
-          let eqCB: c = b := antisymmLt c b cb bc
-          let cc: lt c c := eqCB ▸ cb
-          (ltToLeNeq cc).right rfl
-      leNeqToLt (And.intro aLeC aNeqC)
-  
-  def leToLtOrEq [PartialOrder T] {a b: T} (ab: le a b): lt a b ∨ a = b :=
-    if h: a = b then
-          Or.inr h
-        else
-          Or.inl (leNeqToLt (And.intro ab h))
-  
-  def ltOrEqToLe [PartialOrder T] {a b: T} (ab: lt a b ∨ a = b): le a b :=
-      ab.elim
-        (fun lt => (ltToLeNeq lt).left)
-        (fun eq => eq ▸ (refl a))
-  
-  def ltToLe [PartialOrder T] {a b: T} (ab: lt a b): le a b := (ltToLeNeq ab).left
-  def eqToLe [PartialOrder T] {a b: T} (eq: a = b): le a b := eq ▸ refl a
-  
-  def ltNotGe [PartialOrder T] {a b: T} (ab: lt a b): ¬ le b a :=
-    fun leBA =>
-      (leToLtOrEq leBA).elim
-        (fun ba => antisymmLt.p ab ba)
-        (fun eq => irefl a (eq ▸ ab))
-  
-  @[reducible] def Option.le (ord: PartialOrder T): Option T → Option T → Prop
+  def Option.Le (ord: PartialOrder T): Option T → Option T → Prop
     | none, none => True
     | none, some _ => False
     | some _, none => True
     | some t0, some t1 => ord.le t0 t1
   
-  instance option (ord: PartialOrder T): PartialOrder (Option T) where
-    le := Option.le ord
+  def Option.Lt (ord: PartialOrder T): Option T → Option T → Prop
+    | none, none => False
+    | none, some _ => False
+    | some _, none => True
+    | some t0, some t1 => ord.lt t0 t1
+  
+  def Option.Le.toLt
+    (lt: Option.Le ord a b)
+    (neq: a ≠ b)
+  :
+    Option.Lt ord a b
+  :=
+    match a, b with
+    | none, none => False.elim (neq rfl)
+    | none, some _ => False.elim lt
+    | some _, none => trivial
+    | some _, some _ => lt_of_le_of_ne lt fun eq => neq (congr rfl eq)
+  
+  def Option.Lt.toLe (lt: Option.Lt ord a b): Option.Le ord a b :=
+    match a, b with
+    | none, none => False.elim lt
+    | none, some _ => False.elim lt
+    | some _, none => trivial
+    | some _, some _ => le_of_lt lt
+  
+  def Option.Lt.toNeq (lt: Option.Lt ord a b): a ≠ b :=
+    match a, b with
+    | none, none => False.elim lt
+    | none, some _ => False.elim lt
+    | some _, none => Option.noConfusion
+    | some _, some _ =>
+        fun eq => ne_of_lt lt (Option.noConfusion eq id)
+  
+  def optionTop.leAntisymmSome {ord: PartialOrder T}
+    {a b: T}
+    (ab: Option.Le ord (some a) (some b))
+    (ba: Option.Le ord (some b) (some a))
+  :
+    some a = some b
+  :=
+    congr rfl (ord.le_antisymm a b ab ba)
+  
+  instance optionTop (ord: PartialOrder T): PartialOrder (Option T) where
+    le := Option.Le ord
     
-    refl
+    le_refl
       | none => trivial
-      | some t => ord.refl t
+      | some t => ord.le_refl t
     
-    antisymm
+    le_antisymm
       | none, none, _, _ => rfl
       | none, some _, nope, _ => False.elim nope
       | some _, none, _, nope => False.elim nope
-      | some a, some b, ab, ba => congr rfl (ord.antisymm a b ab ba)
+      | some _, some _, ab, ba => optionTop.leAntisymmSome ab ba
     
-    trans
+    le_trans
       | none, _, none, _, _ => trivial
       | some _, _, none, _, _ => trivial
       | none, none, some _, _, nope => False.elim nope
       | none, some _, some _, nope, _ => False.elim nope
-      | some a, some b, some c, ab, bc => ord.trans a b c ab bc
+      | some a, some b, some c, ab, bc => ord.le_trans a b c ab bc
     
-    lt := fun (a b) => Option.le ord a b  ∧  ¬ a = b
-    ltToLeNeq := id
-    leNeqToLt := id
+    lt := Option.Lt ord
+    
+    lt_iff_le_not_le
+      | none, none =>
+          Iff.intro
+            (fun nn => False.elim nn)
+            (fun ⟨_,nn⟩ => False.elim (nn trivial))
+      | none, some _ =>
+          Iff.intro
+            (fun nope => False.elim nope)
+            (fun ⟨nope,_⟩ => False.elim nope)
+      | some _, none =>
+          Iff.intro
+            (fun _ => ⟨trivial, False.elim⟩)
+            (fun _ => trivial)
+      | some _, some _ =>
+          Iff.intro (
+            fun ab => ⟨
+              ab.toLe,
+              fun ba =>
+                False.elim (
+                  ab.toNeq (optionTop.leAntisymmSome ab.toLe ba)
+                ),
+          ⟩) (
+            fun ⟨le, neLe⟩ => le.toLt fun eq => neLe (eq ▸ le)
+          )
   
-  def option.noneGe [ord: PartialOrder T] (t: Option T): ord.option.le t none :=
+  def optionTop.noneGreatest
+    {ord: PartialOrder T}
+    (t: Option T)
+  :
+    ord.optionTop.le t none
+  :=
     -- TODO: your theorem prover shouldn't need a switch.
     match t with
       | none => trivial
       | some _ => trivial
   
-  def option.lt.toOpt [ord: PartialOrder T] {t0 t1: T} (ltT: lt t0 t1):
-    ord.option.lt t0 t1
-  :=
-    let and := ord.ltToLeNeq ltT
-    And.intro and.left (fun n => Option.noConfusion n and.right)
-  
-  def option.lt.fromOpt
-    [ord: PartialOrder T]
-    {t0 t1: T}
-    (ltT: ord.option.lt t0 t1)
+  def optionTop.greatestNone
+    {ord: PartialOrder T}
+    {t: Option T}
+    (tGreatest: ∀ tt: Option T, ord.optionTop.le tt t)
   :
-    lt t0 t1
+    t = none
   :=
-    let leT: ord.option.le t0 t1 ∧ some t0 ≠ some t1 :=
-      ord.option.ltToLeNeq ltT
-    let leT: le t0 t1 ∧ t0 ≠ t1 :=
-      And.intro leT.left (fun eq => leT.right (congr rfl eq))
-    ord.leNeqToLt leT
+    byContradiction fun neqNone =>
+      match t with
+        | none => neqNone rfl
+        | some _ => tGreatest none
+  
+  def optionTop.noneLeToEqNone
+    {ord: PartialOrder T}
+    {t: Option T}
+    (noneLe: ord.optionTop.le none t)
+  :
+    t = none
+  :=
+    ord.optionTop.le_antisymm _ _ (noneGreatest t) noneLe
+  
 end PartialOrder
 
-class PartialOrderSt (T: Type) extends PartialOrder T, LE T, LT T where
 
-def PartialOrderSt.le.fromPO
-  [ord: PartialOrderSt T]
-  (ab: ord.toPartialOrder.le a b):
-  a ≤ b
-:=
-  ab
+-- The square le relation: `x ⊑ y`.
+class SqLE (T : Type u) where
+  le : T → T → Prop
 
-
--- The square less-equal relation: `x ⊑ y`.
-class SqLE (α : Type u) where
-  le : α → α → Prop
-
--- The square less-equal relation: `x ⊏ y`.
-class SqLT (α : Type u) where
-  lt : α → α → Prop
+-- The square lt relation: `x ⊏ y`.
+class SqLT (T : Type u) where
+  lt : T → T → Prop
 
 infix:50 " ⊑ " => SqLE.le
 infix:50 " ⊏ " => SqLT.lt
-
-
-class PartialOrderSq (T: Type) extends PartialOrder T, SqLE T, SqLT T where
-
-def PartialOrderSq.le.fromPO
-  [ord: PartialOrderSq T]
-  (ab: ord.toPartialOrder.le a b):
-  a ⊑ b
-:=
-  ab
-
-
-instance: PartialOrder Nat where
-  le := Nat.le
-  refl := by simp
-  antisymm := fun a b => Nat.le_antisymm
-  trans := fun a b c => Nat.le_trans
-  
-  ltToLeNeq := id
-  leNeqToLt := id

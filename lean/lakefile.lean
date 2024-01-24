@@ -12,18 +12,21 @@ lean_lib HM.Hamkins {}
 lean_lib HM.Uhm {}
 
 lean_lib Arities {}
-lean_lib Bst {}
+lean_lib Bst {} -- TODO rename to Etst
+lean_lib Chain {}
 lean_lib Setun {}
-lean_lib Fixpoint {}
-lean_lib Hartogs {}
+lean_lib Fixpoint {} -- TODO delete
 lean_lib Interpretation {}
 lean_lib ITTM {}
+lean_lib Lfp {}
 lean_lib Operators {}
 lean_lib Ordinal {}
+lean_lib OrdMap {}
 lean_lib PartialOrder {}
 lean_lib Pointwise {}
 lean_lib Set {}
 lean_lib Set3 {}
+lean_lib Tuple {}
 lean_lib Valuation {}
 
 require mathlib from git

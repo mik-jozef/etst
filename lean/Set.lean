@@ -3,96 +3,71 @@
 -/
 
 import PartialOrder
+import Mathlib.Init.Set
+import Mathlib.Data.Set.Basic
 
-open Classical
+-- Mathlib.Data.Set.Basic exports 'em', so cannot `open Classical`. Fck this.
+def byContradiction {P: Prop} := @Classical.byContradiction P
+noncomputable instance propDecidable (P: Prop): Decidable P :=
+  Classical.propDecidable P
 
 
 inductive Null | null
 
-noncomputable def choiceEx {P: T → Prop} (ex: ∃ t: T, P t): { t: T // P t } :=
+noncomputable def Exists.unwrap
+  {P: T → Prop}
+  (ex: ∃ t: T, P t)
+:
+  { t: T // P t }
+:=
   let nonempty: Nonempty { t: T // P t } :=
     match ex with
     | ⟨t, prop⟩ => ⟨t, prop⟩
-  choice nonempty
+  Classical.choice nonempty
 
-def contra (impl: a → b): ¬b → ¬a :=
-  fun nbProof => fun aProof => nbProof (impl aProof)
+def Function.contra (ab: A → B): ¬B → ¬A :=
+  fun nb => fun a => nb (ab a)
 
-theorem dne {p : Prop} (h : ¬¬p) : p :=
-  Or.elim (em p)
-    (fun hp : p => hp)
-    (fun hnp : ¬p => absurd hnp h)
-
-
-def Set.{u} (T : Type u) := T → Prop
-
-instance: Membership T (Set T) where
-  mem := fun (t: T) (s: Set T) => s t
-
-instance: Coe (Set T) Type where
-  coe s := { t: T // t ∈ s }
-
-instance: LE (Set D) where
-  le (a: Set D) (b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
-
-infix:50 " ⊆ " => LE.le
-
-
-theorem Set.eq {a b : Set D} (h : ∀ x, x ∈ a ↔ x ∈ b) : a = b :=
-  funext (fun x => propext (h x))
+theorem Not.dne {P: Prop} (h: ¬¬P): P :=
+  Or.elim (em P)
+    (fun p: P => p)
+    (fun np: ¬P => absurd np h)
 
 
 instance Set.ord: PartialOrder (Set D) where
   le (a: Set D) (b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
-  
-  refl (_: Set D) := fun _: D => id
-  
-  antisymm (a b: Set D) :=
+
+  le_refl (_: Set D) := fun _: D => id
+
+  le_antisymm (a b: Set D) :=
     fun (ab: a ≤ b) (ba: ∀ d: D, d ∈ b → d ∈ a) =>
-      let abElem: ∀ d: D, d ∈ a ↔ d ∈ b := fun (s: D) => Iff.intro (ab s) (ba s);
-      Set.eq abElem
-  
-  trans (a b c: Set D) := fun (ab: a ≤ b) (bc: b ≤ c) =>
-    -- In general, do I prefer long and incremental and explicit proofs,
-    -- or terse and unreadable monsters? I think I prefer the former.
-    --
-    -- fun (d: D) =>
-    --   let abi: d ∈ a → d ∈ b := ab s
-    --   let bci: d ∈ b → d ∈ c := bc s
-    --   fun (sa: d ∈ a) => bci (abi sa)
-    fun (d: D) (sa: d ∈ a) => (bc d) ((ab d) sa)
-  
-  ltToLeNeq := id
-  leNeqToLt := id
+      let abElem: ∀ d: D, d ∈ a ↔ d ∈ b :=
+        fun (s: D) => Iff.intro (@ab s) (@ba s);
+      Set.ext abElem
+
+  le_trans (a b c: Set D) := fun (ab: a ≤ b) (bc: b ≤ c) =>
+    fun (d: D) (da: d ∈ a) => (@bc d) ((@ab d) da)
 
 namespace Set
-  def empty {D: Type}: Set D := fun _ => False  
+  def empty {D: Type}: Set D := fun _ => False
   def full  {D: Type}: Set D := fun _ => True
   def just  {D: Type} (d: D): Set D := fun x => x = d
-  
+
   def isFinite (s: Set D): Prop := ∃ l: List D, ∀ t: D, t ∈ s → t ∈ l
-  
+
   def isSubset (a b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
-  
-  def union {Index: Type} {D: Type} (family: Index → Set D): Set D :=
+
+  def indexUnion {Index: Type} {D: Type} (family: Index → Set D): Set D :=
     fun (d: D) => ∃ i: Index, family i d
-  
-  theorem union.isWider
+
+  theorem indexUnion.isWider
     (family: Index → Set D)
     (i: Index)
   :
-    (family i) ⊆ (union family)
+    (family i) ⊆ (indexUnion family)
   :=
     fun (d: D) (dfi: d ∈ family i) => ⟨i, dfi⟩
-  
-  def binaryUnion (a b: Set D): Set D := fun d: D => a d ∨ b d
-  def binaryIntersection (a b: Set D): Set D := fun d: D => a d ∧ b d
-  def complement (a: Set D): Set D := fun d: D => ¬ a d
 end Set
-
-infix:60 " ∪ " => Set.binaryUnion
-infix:60 " ∩ " => Set.binaryIntersection
-prefix:100 "~ " => Set.complement
 
 instance: Coe Nat Type where
   coe := fun n => { nn: Nat // nn < n }
@@ -100,37 +75,33 @@ instance: Coe Nat Type where
 
 -- Some things that (imho) should be a part of the standard library.
 -- (or are they?).
+-- Meh. I suppose I should look and replace, but ¯\_(ツ)_/¯
+-- Note: If you wanna outdo Lean (pipe dreams hello!), efficient
+-- search of already proven things could be a killer feature.
 
-theorem Or.symm {a b: Prop} (aob: a ∨ b): b ∨ a :=
-  aob.elim (fun a => Or.inr a) (fun b => Or.inl b)
+def Eq.transLe
+  {_ord: PartialOrder T}
+  {a b c: T}
+  (ab: a = b)
+  (bc: b ≤ c)
+:
+  a ≤ c
+:=
+  ab ▸ bc
 
 def Nat.lt.addNatRite (ab: a < b) (k: Nat): a < b + k :=
-  match k with
-  | 0 => ab
-  | Nat.succ x =>
-      let gtZero: 0 < Nat.succ x := Nat.succ_pos _
-      Nat.lt_trans ab (Nat.add_lt_add_left gtZero b)
+  Nat.lt_add_right _ _ _ ab
 
 def Nat.lt.addNatLeft (ab: a < b) (k: Nat): a < k + b :=
-  match k with
-  | 0 => (Nat.zero_add _) ▸ ab
-  | Nat.succ x =>
-      let gtZero: 0 < Nat.succ x := Nat.succ_pos _
-      let lt := by conv =>
-        lhs rw [(Nat.zero_add b).symm] exact (Nat.add_lt_add_right gtZero b)
-      Nat.lt_trans ab lt
+  (Nat.add_comm b k) ▸ (Nat.lt_add_right _ _ k ab)
 
 def Nat.lt.addNat (ab: a < b) (left rite: Nat): a < left + b + rite :=
   Nat.lt.addNatRite (Nat.lt.addNatLeft ab left) rite
 
 def Nat.lt.zero.ifNotZero {n: Nat} (nNotZero: n ≠ 0): 0 < n :=
-  match n with
-  | 0 => False.elim (nNotZero rfl)
-  | Nat.succ n => Nat.succ_pos n
+  zero_lt_of_ne_zero nNotZero
 
-def Nat.le.zero: (n: Nat) → 0 ≤ n
-  | Nat.zero => Nat.le.refl
-  | Nat.succ n => Nat.le_of_lt (Nat.succ_pos n)
+def Nat.le.zero (n: Nat): 0 ≤ n := zero_le n
 
 def Nat.letTrans {a b c: Nat} (ab: a ≤ b) (bc: b < c): a < c :=
   (Nat.eq_or_lt_of_le ab).elim
@@ -188,7 +159,7 @@ def Nat.abs.eq.ltAB {a b: Nat} (ab: a < b): Nat.abs a b = b - a :=
 
 def Nat.abs.eq.ltBA {a b: Nat} (ba: b < a): Nat.abs a b = a - b :=
   let eqZero: b - a = 0 := Nat.sub_eq_zero_of_le (Nat.le_of_lt ba)
-  
+
   if h: a - b = 0 then
     (if_pos (h ▸ eqZero ▸ Nat.le.refl)).trans (eqZero.trans h.symm)
   else
@@ -214,8 +185,13 @@ def Nat.abs.symm (a b: Nat): Nat.abs a b = Nat.abs b a :=
 
 def Nat.ltle.subLt {a b c: Nat} (ab: a < b) (bc: b ≤ c): c - b < c - a :=
   let eqBB: c - b + b = c := Nat.sub_add_cancel bc
-  let ltC: c - b + a < c :=
-    by conv => rhs rw [eqBB.symm] exact Nat.add_lt_add_left ab (c - b)
+  let ltBB: c - b + a < c - b + b := Nat.add_lt_add_left ab (c - b)
+  let ltCEq: (c - b + a < c) = (c - b + a < c - b + b) :=
+    by conv =>
+      rhs
+      rw [eqBB]
+      rfl
+  let ltC: c - b + a < c := ltCEq ▸ ltBB
   Nat.lt_sub_of_add_lt ltC
 
 def Nat.lelt.ltSub {a b c: Nat} (ab: a ≤ b) (bc: b < c): b - a < c - a :=
@@ -227,7 +203,7 @@ def Nat.abs.lelt.left {a b c: Nat} (ab: a ≤ b) (bc: b < c):
 :=
   let absBC: Nat.abs a b = b - a := Nat.abs.eq.leAB ab
   let absAC: Nat.abs a c = c - a := Nat.abs.eq.ltAB (Nat.letTrans ab bc)
-  
+
   let lt: b - a < c - a := Nat.lelt.ltSub ab bc
   absBC ▸ absAC ▸ lt
 
@@ -236,30 +212,25 @@ def Nat.abs.ltle.rite {a b c: Nat} (ab: a < b) (bc: b ≤ c):
 :=
   let absBC: Nat.abs b c = c - b := Nat.abs.eq.leAB bc
   let absAC: Nat.abs a c = c - a := Nat.abs.eq.ltAB (Nat.lteTrans ab bc)
-  
+
   let lt: c - b < c - a := Nat.ltle.subLt ab bc
   absBC ▸ absAC ▸ lt
 
-def Nat.le_pred_of_lt {a b: Nat} (ab: a < b): a ≤ b.pred :=
-  match b with
-  | Nat.zero => Nat.le_of_lt ab -- No appeal to contradiction. Crazy!
-  | Nat.succ _ => Nat.le_of_succ_le_succ ab
 
-
-def List.has (list: List T) (t: T): Prop :=
+def List.Has (list: List T) (t: T): Prop :=
   ∃ n: Fin list.length, list.get n = t
 
-def List.hasAll (list: List T): Prop :=
-  ∀ t: T, list.has t
+def List.HasAll (list: List T): Prop :=
+  ∀ t: T, list.Has t
 
-def Type.isFinite (T: Type): Prop :=
-  ∃ list: List T, list.hasAll
+def Type.IsFinite (T: Type u): Prop :=
+  ∃ list: List T, list.HasAll
 
-def Type.IsFinite := { T: Type // Type.isFinite T }
+def Type.Finite := { T: Type // Type.IsFinite T }
 
-def List.has.toMem (lh: List.has list t): t ∈ list :=
-  let tIndex := choiceEx lh
-  
+def List.Has.toMem (lh: List.Has list t): t ∈ list :=
+  let tIndex := lh.unwrap
+
   match tIndex, hL: list with
   | ⟨⟨Nat.zero, fin⟩, tIn⟩, [] =>
       let finL: 0 < length [] := hL ▸ fin
@@ -267,74 +238,85 @@ def List.has.toMem (lh: List.has list t): t ∈ list :=
   | ⟨⟨Nat.zero, fin⟩, tIn⟩, a::la =>
       let tInAla: (a::la).get ⟨0, hL ▸ fin⟩ = t := hL ▸ tIn
       let taEq: t = a := tInAla.symm
-      taEq ▸ Mem.head t la
+      taEq ▸ Mem.head la
   | ⟨⟨Nat.succ n, fin⟩, tIn⟩, [] =>
       let finL: Nat.succ n < length [] := hL ▸ fin
       False.elim (Nat.not_lt_zero _ finL)
   | ⟨⟨Nat.succ n, fin⟩, tIn⟩, a::la =>
       let tInAla: (a::la).get ⟨Nat.succ n, hL ▸ fin⟩ = t := hL ▸ tIn
-      let laHasT: la.has t := ⟨⟨n, _⟩, tInAla⟩
-      let laHas := List.has.toMem laHasT
+      let laHasT: la.Has t := ⟨⟨n, _⟩, tInAla⟩
+      let laHas := List.Has.toMem laHasT
       Mem.tail a laHas
 
-def List.has.fromMem (tIn: t ∈ list): List.has list t :=
+def List.has.fromMem (tIn: t ∈ list): List.Has list t :=
   match tIn with
-  | Mem.head _head rest => ⟨⟨0, Nat.succ_pos _⟩, rfl⟩
+  | Mem.head rest => ⟨⟨0, Nat.succ_pos _⟩, rfl⟩
   | Mem.tail _head memRest =>
       let restHas := List.has.fromMem memRest
-      let i := choiceEx restHas
+      let i := restHas.unwrap
       ⟨i.val.succ, i.property⟩
 
-def Iff.not (iff: a ↔ b): ¬a ↔ ¬b :=
-  Iff.intro
-    (contra iff.mpr)
-    (contra iff.mp)
 
-noncomputable def Or.Elim
-  (or: a ∨ b)
-  (ifA: a → Ret)
-  (ifB: b → Ret)
+def Option.neqConfusion (neq: a ≠ b): some a ≠ some b :=
+  fun eqSome => neq (Option.noConfusion eqSome id)
+
+
+def Not.toAll {P ImpliedByNotP: T → Prop}
+  (nEx: ¬(∃ t: T, P t))
+  (nptImpl: ∀ t, ¬P t → ImpliedByNotP t)
 :
-  Ret
+  ∀ t: T, ImpliedByNotP t
 :=
-  if h: a then
-    ifA h
-  else
-    ifB (or.elim (fun isA => False.elim (h isA)) id)
+  fun t =>  nptImpl t (byContradiction fun nnpt => nEx ⟨t, nnpt.dne⟩)
 
-def notEx.all {p npi: T → Prop}
-  (na: ¬(∃ t: T, p t))
-  (nptImpl: ∀ t, ¬p t → npi t)
+def Not.toEx {P ImpliedByNotP: T → Prop}
+  (nAll: ¬(∀ t: T, P t))
+  (nptImpl: ∀ t, ¬P t → ImpliedByNotP t)
 :
-  ∀ t: T, npi t
+  ∃ t: T, ImpliedByNotP t
 :=
-  fun t =>  nptImpl t (byContradiction fun nnpt => na ⟨t, dne nnpt⟩)
+  byContradiction fun nEx =>
+    nAll (fun t => byContradiction fun npt => nEx ⟨t, nptImpl t npt⟩)
 
-def notAll.ex {p npi: T → Prop}
-  (na: ¬(∀ t: T, p t))
-  (nptImpl: ∀ t, ¬p t → npi t)
+def all.notEx {P ContradictsP: T → Prop}
+  (allP: ∀ t: T, P t)
+  (ptImpl: ∀ t, P t → ¬ContradictsP t)
 :
-  ∃ t: T, npi t
-:=
-  byContradiction fun nex =>
-    na (fun t => byContradiction fun npt => nex ⟨t, nptImpl t npt⟩)
-
-def all.notEx {p pi: T → Prop}
-  (allP: ∀ t: T, p t)
-  (ptImpl: ∀ t, p t → ¬pi t)
-:
-  ¬∃ t: T, pi t
+  ¬∃ t: T, ContradictsP t
 :=
   fun ex =>
-    let t := choiceEx ex
+    let t := ex.unwrap
     ptImpl t (allP t) t.property
 
-def ex.notAll {p pi: T → Prop}
-  (exP: ∃ t: T, p t)
-  (ptImpl: ∀ t, p t → ¬pi t)
+def ex.notAll {P ContradictsP: T → Prop}
+  (exP: ∃ t: T, P t)
+  (ptImpl: ∀ t, P t → ¬ContradictsP t)
 :
-  ¬∀ t: T, pi t
+  ¬∀ t: T, ContradictsP t
 :=
   fun all =>
-    let t := choiceEx exP
+    let t := exP.unwrap
     ptImpl t t.property (all t)
+
+def Not.implToAnd {A B: Prop} (ab: ¬(A → B)): A ∧ ¬B :=
+  if hA: A then
+    And.intro hA (if hB: B then False.elim (ab fun _ => hB) else hB)
+  else
+    False.elim (ab ((fun a => False.elim (hA a))))
+
+
+noncomputable def existsDistinctOfNotInjective
+  {f: A → B}
+  (nInj: ¬f.Injective)
+:
+  { p: A × A // f p.fst = f p.snd ∧ p.fst ≠ p.snd }
+:=
+  let ex :=
+    nInj.toEx fun _a0 a0In =>
+      a0In.toEx fun _a1 a1In =>
+        a1In.implToAnd
+
+  let a0 := ex.unwrap
+  let a1 := a0.property.unwrap
+
+  ⟨⟨a0, a1⟩, a1.property⟩

@@ -1,8 +1,8 @@
 
 inductive Truth3 where
-  | false
-  | true
-  | undetermined
+| false
+| true
+| undetermined
 
 structure Trisets where
   Set3: Type

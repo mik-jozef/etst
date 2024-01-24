@@ -2,139 +2,111 @@ import Set3
 import PartialOrder
 import Pointwise
 
-open Classical
 
-
-@[reducible] def Valuation (Var: Type) (D: Type) := Sum Var Nat → Set3 D
+@[reducible] def Valuation (D: Type u) := Nat → Set3 D
 
 namespace Valuation
-  def empty: Valuation Var D := fun _ => Set3.empty
+  def empty: Valuation D := fun _ => Set3.empty
   
-  def undetermined: Valuation Var D := fun _ => Set3.undetermined
+  def undetermined: Valuation D := fun _ => Set3.undetermined
   
   
-  instance ord.standard (Var: Type) (D: Type)
-  :
-    PartialOrder (Valuation Var D)
+  instance ord.approximation (D: Type u):
+    PartialOrder (Valuation D)
   :=
-    PartialOrder.pointwise (Sum Var Nat) (Set3.ord.standard D)
+    PartialOrder.pointwise Nat (Set3.ord.approximation D)
   
-  instance ord.standard.st (Var: Type) (D: Type)
+  instance ord.standard (D: Type u)
   :
-    PartialOrderSt (Valuation Var D)
-  where
-    le        := (ord.standard Var D).le
-    refl      := (ord.standard Var D).refl
-    antisymm  := (ord.standard Var D).antisymm
-    trans     := (ord.standard Var D).trans
-    ltToLeNeq := (ord.standard Var D).ltToLeNeq
-    leNeqToLt := (ord.standard Var D).leNeqToLt
-  
-  
-  instance ord.approximation (Var: Type) (D: Type)
-  :
-    PartialOrder (Valuation Var D)
+    PartialOrder (Valuation D)
   :=
-    PartialOrder.pointwise (Sum Var Nat) (Set3.ord.approximation D)
+    PartialOrder.pointwise Nat (Set3.ord.standard D)
   
-  instance ord.approximation.sq (Var: Type) (D: Type)
-  :
-    PartialOrderSq (Valuation Var D)
-  where
-    le        := (ord.approximation Var D).le
-    refl      := (ord.approximation Var D).refl
-    antisymm  := (ord.approximation Var D).antisymm
-    trans     := (ord.approximation Var D).trans
-    ltToLeNeq := (ord.approximation Var D).ltToLeNeq
-    leNeqToLt := (ord.approximation Var D).leNeqToLt
+  instance Set3.sqle (D: Type u): SqLE (Valuation D) where
+    le := (ord.approximation D).le
+  
+  instance Set3.sqlt (D: Type u): SqLT (Valuation D) where
+    lt := (ord.approximation D).lt
   
   
-  def empty.isLeast: isLeast (ord.standard Var D) Set.full empty :=
-    And.intro trivial
-      (fun _val _valInFull _x => And.intro
+  def empty.isLeast: iIsLeast (ord.standard D) Set.full empty := {
+    isMember := trivial
+    isLeMember :=
+      (fun _val _valInFull _x => Set3.LeStd.intro
         (fun _t tInEmpty => False.elim tInEmpty)
         (fun _t tInEmpty => False.elim tInEmpty))
+  }
   
   def undetermined.isLeast:
-    isLeast (ord.approximation Var D) Set.full undetermined
-  :=
-    And.intro trivial
-      (fun _val _valInFull _x => And.intro
+    iIsLeast (ord.approximation D) Set.full undetermined
+  := {
+    isMember := trivial
+    isLeMember :=
+      (fun _val _valInFull _x => Set3.LeApx.intro
         (fun _t tInUndet => False.elim tInUndet)
         (fun _t _tInUndet => trivial))
-  
+  }
   
   noncomputable def ord.standard.sup
-    (ch: Chain (standard Var D))
+    {D: Type u}
+    (ch: Chain (standard D))
   :
-    Supremum (standard Var D) ch.val
+    Supremum (standard D) ch
   :=
-    pointwiseSup
-      (Set3.ord.standard D)
-      (Set3.ord.standard.isChainComplete D)
-      ch
+    ch.pointwiseSup (Set3.ord.standard.isChainComplete D)
   
   noncomputable def ord.approximation.sup
-    (ch: Chain (approximation Var D))
+    (ch: Chain (approximation D))
   :
-    Supremum (approximation Var D) ch.val
+    Supremum (approximation D) ch
   :=
-    pointwiseSup
-      (Set3.ord.approximation D)
-      (Set3.ord.approximation.isChainComplete D)
-      ch
+    ch.pointwiseSup (Set3.ord.approximation.isChainComplete D)
   
   
-  def ord.standard.isChainComplete (Var: Type) (D: Type)
+  def ord.standard.isChainComplete (D: Type u)
   :
-    isChainComplete (Valuation.ord.standard Var D)
-  :=
-    fun ch => ⟨(sup ch).val, (sup ch).property⟩
-
-  def ord.approximation.isChainComplete (Var: Type) (D: Type)
+    IsChainComplete (Valuation.ord.standard D)
+  := {
+    supExists := fun ch => ⟨(sup ch).val, (sup ch).property⟩
+  }
+  
+  def ord.approximation.isChainComplete (D: Type u)
   :
-    isChainComplete (Valuation.ord.approximation Var D)
-  :=
-    fun ch => ⟨(sup ch).val, (sup ch).property⟩
+    IsChainComplete (Valuation.ord.approximation D)
+  := {
+    supExists := fun ch => ⟨(sup ch).val, (sup ch).property⟩
+  }
   
   
   def ord.standard.sup.emptyChain
-    (ch: Chain (standard Var D))
-    (chEmpty: ch.isEmpty)
-    (chSup: Supremum (standard Var D) ch.val)
+    (ch: Chain (standard D))
+    (chEmpty: ch.IsEmpty)
+    (chSup: Supremum (standard D) ch)
   :
     chSup.val = Valuation.empty
   :=
-    isLeast.unique
-      (standard Var D)
-      Set.full
-      chSup.val
-      Valuation.empty
-      (Chain.sup.empty.isLeast _ ch chEmpty chSup)
+    iIsLeast.isUnique
+      (Chain.sup.empty.isLeast ch chEmpty chSup)
       empty.isLeast
   
   def ord.approximation.sup.emptyChain
-    (ch: Chain (approximation Var D))
-    (chEmpty: ch.isEmpty)
-    (chSup: Supremum (approximation Var D) ch.val)
+    (ch: Chain (approximation D))
+    (chEmpty: ch.IsEmpty)
+    (chSup: Supremum (approximation D) ch)
   :
     chSup.val = Valuation.undetermined
   :=
-    isLeast.unique
-      (approximation Var D)
-      Set.full
-      chSup.val
-      Valuation.undetermined
-      (Chain.sup.empty.isLeast _ ch chEmpty chSup)
+    iIsLeast.isUnique
+      (Chain.sup.empty.isLeast ch chEmpty chSup)
       undetermined.isLeast
   
   
   noncomputable def update
-    (val: Valuation Var D)
-    (x: Sum Var Nat)
+    (val: Valuation D)
+    (x: Nat)
     (d: D)
   :
-    Valuation Var D
+    Valuation D
   :=
     fun v =>
       if v = x then
@@ -143,16 +115,16 @@ namespace Valuation
         val v
   
   def update.isMonotonic.standard
-    (val0 val1: Valuation Var D)
+    (val0 val1: Valuation D)
     (le: val0 ≤ val1)
-    (x: Sum Var Nat)
+    (x: Nat)
     (d: D)
   :
     val0.update x d ≤ val1.update x d
   :=
     fun xx =>
       if h: xx = x then
-        And.intro
+        Set3.LeStd.intro
           (fun _ ddIn =>
             let val0Eq: val0.update x d xx = Set3.just d := dif_pos h
             let val1Eq: val1.update x d xx = Set3.just d := dif_pos h
@@ -175,22 +147,21 @@ namespace Valuation
         let val0Eq: val0.update x d xx = val0 xx := dif_neg h
         let val1Eq: val1.update x d xx = val1 xx := dif_neg h
         
-        And.intro
-          (fun dd ddIn => val1Eq ▸ (le xx).left dd (val0Eq ▸ ddIn))
-          (fun dd ddIn => val1Eq ▸ (le xx).right dd (val0Eq ▸ ddIn))
+        Set3.LeStd.intro
+          (fun _dd ddIn => val1Eq ▸ (le xx).defLe (val0Eq ▸ ddIn))
+          (fun _dd ddIn => val1Eq ▸ (le xx).posLe (val0Eq ▸ ddIn))
   
   def update.isMonotonic.approximation
-    (val0 val1: Valuation Var D)
+    (val0 val1: Valuation D)
     (le: val0 ⊑ val1)
-    (x: Sum Var Nat)
+    (x: Nat)
     (d: D)
   :
     val0.update x d ⊑ val1.update x d
   :=
     fun xx =>
       if h: xx = x then
-        -- TODO move to a separate function and use it in .standard too.
-        And.intro
+        Set3.LeApx.intro
           (fun _ ddIn =>
             let val0Eq: val0.update x d xx = Set3.just d := dif_pos h
             let val1Eq: val1.update x d xx = Set3.just d := dif_pos h
@@ -213,164 +184,269 @@ namespace Valuation
         let val0Eq: val0.update x d xx = val0 xx := dif_neg h
         let val1Eq: val1.update x d xx = val1 xx := dif_neg h
         
-        And.intro
-          (fun dd ddIn => val1Eq ▸ (le xx).left dd (val0Eq ▸ ddIn))
-          (fun dd ddIn => val0Eq ▸ (le xx).right dd (val1Eq ▸ ddIn))
+        Set3.LeApx.intro
+          (fun _dd ddIn => val1Eq ▸ (le xx).defLe (val0Eq ▸ ddIn))
+          (fun _dd ddIn => val0Eq ▸ (le xx).posLe (val1Eq ▸ ddIn))
   
-  def ord.standard.inChain.inSup.defMem
-    (ch: Chain (standard Var D))
-    (s: ↑ch.val)
-    (dInS: d ∈ (s.val x).defMem)
+  def ord.standard.inSet.inSup.defMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (standard D) set)
+    {valuation: set}
+    {x: Nat}
+    (dInS: d ∈ (valuation.val x).defMem)
   :
-    d ∈ ((ch.sup (standard Var D) cc).val x).defMem
+    d ∈ (sup.val x).defMem
   :=
-    let atCh := pointwiseSup.atChain (Set3.ord.standard D) ch x
-    
-    let supAtCh := atCh.sup
-      (Set3.ord.standard D)
-      (Set3.ord.standard.isChainComplete D)
-    
-    let supEq := pointwiseSup.eqAt
-      (Set3.ord.standard D)
-      (Set3.ord.standard.isChainComplete D)
-      ch x
-    
-    let sAtCh: ↑atCh.val := ⟨s.val x,
-      pointwiseSup.inCh.atChain (Set3.ord.standard D) ch rfl⟩
-    
-    let dInSupAtCh: d ∈ supAtCh.val.defMem :=
-      Set3.ord.standard.inChain.inSup.defMem atCh sAtCh d dInS
-    
-    supEq ▸ dInSupAtCh
+    (sup.property.isMember _ x).defLe dInS
   
-  def ord.standard.ninChain.ninSup.defMem
-    (ch: Chain (ord.standard Var D))
-    (x: Sum Var Nat)
-    (d: D)
-    (allNin: ∀ (s: ↑ch.val), d ∉ (s.val x).defMem)
+  def ord.standard.inSet.inSup.posMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (standard D) set)
+    {valuation: set}
+    {x: Nat}
+    (dInS: d ∈ (valuation.val x).posMem)
   :
-    d ∉ (
-      (ch.sup (ord.standard Var D) (ord.standard.isChainComplete Var D)).val x
-    ).defMem
+    d ∈ (sup.val x).posMem
   :=
-    fun din =>
-      let atCh := pointwiseSup.atChain (Set3.ord.standard D) ch x
-      
-      let supAtCh := atCh.sup
-        (Set3.ord.standard D)
-        (Set3.ord.standard.isChainComplete D)
-      
-      let supEq := pointwiseSup.eqAt
-        (Set3.ord.standard D)
-        (Set3.ord.standard.isChainComplete D)
-        ch x
-      
-      let allNinAt (s: ↑atCh.val) (dInS: d ∈ s.val.defMem) :=
-        let val := choiceEx s.property
-        let nin := allNin val
-        nin (val.property ▸ dInS)
-      
-      let dInSupAtCh: d ∈ supAtCh.val.defMem := supEq ▸ din
-      let dNinSupAtCh: d ∉ supAtCh.val.defMem :=
-        Set3.ord.standard.ninChain.ninSup.defMem atCh d allNinAt
-      
-      dNinSupAtCh dInSupAtCh
+    (sup.property.isMember _ x).posLe dInS
   
-  def ord.standard.ninChain.ninSup.posMem
-    (ch: Chain (ord.standard Var D))
-    (x: Sum Var Nat)
-    (d: D)
-    (allNin: ∀ (s: ↑ch.val), d ∉ (s.val x).posMem)
+  def ord.standard.ninSet.ninSup.defMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (standard D) set)
+    {x: Nat}
+    {d: D}
+    (allNin: ∀ (s: ↑set), d ∉ (s.val x).defMem)
   :
-    d ∉ (
-      (ch.sup (ord.standard Var D) (ord.standard.isChainComplete Var D)).val x
-    ).posMem
+    d ∉ (sup.val x).defMem
   :=
-    fun din =>
-      let atCh := pointwiseSup.atChain (Set3.ord.standard D) ch x
-      
-      let supAtCh := atCh.sup
-        (Set3.ord.standard D)
-        (Set3.ord.standard.isChainComplete D)
-      
-      let supEq := pointwiseSup.eqAt
-        (Set3.ord.standard D)
-        (Set3.ord.standard.isChainComplete D)
-        ch x
-      
-      let allNinAt (s: ↑atCh.val) (dInS: d ∈ s.val.posMem) :=
-        let val := choiceEx s.property
-        let nin := allNin val
-        nin (val.property ▸ dInS)
-      
-      let dInSupAtCh: d ∈ supAtCh.val.posMem := supEq ▸ din
-      let dNinSupAtCh: d ∉ supAtCh.val.posMem :=
-        Set3.ord.standard.ninChain.ninSup.posMem atCh d allNinAt
-      
-      dNinSupAtCh dInSupAtCh
+    let supAt := Set.pointwiseSup.supAt sup x
+    let withoutDAtX := Set3.withoutDef (sup.val x) d
+    
+    let dIsUB: IsUpperBound _ (set.pointwiseAt x) withoutDAtX :=
+      fun triset =>
+        let valOfTriset := triset.property.unwrap
+        
+        Set3.LeStd.intro
+          (fun dd ddIn =>
+            if h: dd = d then
+              False.elim
+                (allNin valOfTriset (valOfTriset.property ▸ h ▸ ddIn))
+            else
+              Set3.without.DefMem.intro
+                (ord.standard.inSet.inSup.defMem
+                  sup (valOfTriset.property ▸ ddIn))
+                h)
+          (fun _dd ddIn => ord.standard.inSet.inSup.posMem
+            sup (valOfTriset.property ▸ ddIn))
+    
+    let supAtLe := supAt.leUB dIsUB
+    
+    let ninSupAt: d ∉ supAt.val.defMem :=
+      fun dIn =>
+        let dInWithoutD := supAtLe.defLe dIn
+        dInWithoutD.neq rfl
+    
+    (Set.pointwiseSup.eqAt sup supAt) ▸ ninSupAt
   
-  def ord.approximation.ninChain.ninSup.defMem
-    (ch: Chain (ord.approximation Var D))
-    (x: Sum Var Nat)
-    (d: D)
-    (allNin: ∀ (s: ↑ch.val), d ∉ (s.val x).defMem)
-  :
-    d ∉ (
-      (ch.sup (ord.approximation Var D)
-        (ord.approximation.isChainComplete Var D)).val x
-    ).defMem
-  :=
-    fun din =>
-      let atCh := pointwiseSup.atChain (Set3.ord.approximation D) ch x
-      
-      let supAtCh := atCh.sup
-        (Set3.ord.approximation D)
-        (Set3.ord.approximation.isChainComplete D)
-      
-      let supEq := pointwiseSup.eqAt
-        (Set3.ord.approximation D)
-        (Set3.ord.approximation.isChainComplete D)
-        ch x
-      
-      let allNinAt (s: ↑atCh.val) (dInS: d ∈ s.val.defMem) :=
-        let val := choiceEx s.property
-        let nin := allNin val
-        nin (val.property ▸ dInS)
-      
-      let dInSupAtCh: d ∈ supAtCh.val.defMem := supEq ▸ din
-      let dNinSupAtCh: d ∉ supAtCh.val.defMem :=
-        Set3.ord.approximation.ninChain.ninSup.defMem atCh d allNinAt
-      
-      dNinSupAtCh dInSupAtCh
   
-  def ord.approximation.ninChain.ninSup.posMem
-    (ch: Chain (ord.approximation Var D))
-    (s: ↑ch.val)
-    (dNin: d ∉ (s.val x).posMem)
+  def ord.standard.inSup.inSomeSet.defMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (standard D) set)
+    {x: Nat}
+    (dInSup: d ∈ (sup.val x).defMem)
   :
-    d ∉ (
-      (ch.sup (ord.approximation Var D)
-        (ord.approximation.isChainComplete Var D)).val x
-    ).posMem
+    ∃ valuation: set, d ∈ (valuation.val x).defMem
   :=
-    fun din =>
-      let atCh := pointwiseSup.atChain (Set3.ord.approximation D) ch x
+    byContradiction fun nex =>
+      let allNin: ∀ v: set, d ∉ (v.val x).defMem :=
+        nex.toAll fun _ => id
       
-      let sAtX: ↑atCh.val := ⟨s.val x, ⟨s, rfl⟩⟩
+      let dNinSup := ninSet.ninSup.defMem sup allNin
       
-      let supAtCh := atCh.sup
-        (Set3.ord.approximation D)
-        (Set3.ord.approximation.isChainComplete D)
+      dNinSup dInSup
+  
+  def ord.standard.ninSet.ninSup.posMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (standard D) set)
+    {x: Nat}
+    {d: D}
+    (allNin: ∀ (s: set), d ∉ (s.val x).posMem)
+  :
+    d ∉ (sup.val x).posMem
+  :=
+    let withoutDAtX := Set3.without (sup.val x) d
+    let withoutD xx :=
+      if xx = x then withoutDAtX else sup.val xx
+    
+    fun dIn =>
+      let supWithoutDAtX:
+        Supremum (standard D) set
+      := ⟨
+        withoutD,
+        {
+          isMember := fun s3 xx =>
+            let s3Le := sup.property.isMember s3 xx
+            
+            if h: xx = x then
+              let eq: withoutD xx = withoutDAtX := if_pos h
+              eq ▸ Set3.LeStd.intro
+                (fun dd ddIn =>
+                  Set3.without.DefMem.intro
+                    (show dd ∈ (sup.val x).defMem from
+                      h ▸ s3Le.defLe ddIn)
+                    fun dEq => allNin s3
+                      (h ▸ dEq ▸ ((s3.val xx).defLePos ddIn)))
+                (fun dd ddIn =>
+                  Set3.without.PosMem.intro
+                    (show dd ∈ (sup.val x).posMem from
+                      h ▸ s3Le.posLe ddIn)
+                    (fun dEq => allNin s3 (h ▸ dEq ▸ ddIn)))
+            else
+              let eq: withoutD xx = sup.val xx := if_neg h
+              
+              eq ▸ s3Le
+          isLeMember :=
+            fun _v vIsUB =>
+              let withoutDLe: withoutD ≤ sup.val :=
+                fun xx =>
+                  if h: xx = x then
+                    let eq: withoutD xx = withoutDAtX := if_pos h
+                    eq ▸ h ▸ Set3.without.leStd _
+                  else
+                    let eq: withoutD xx = sup.val xx := if_neg h
+                    eq ▸ Preorder.le_refl _
+              
+              withoutDLe.trans (sup.property.isLeMember vIsUB)
+        }
+      ⟩
       
-      let supEq := pointwiseSup.eqAt
-        (Set3.ord.approximation D)
-        (Set3.ord.approximation.isChainComplete D)
-        ch x
+      let dNin: d ∉ (supWithoutDAtX.val x).posMem :=
+        let eq: supWithoutDAtX.val x = withoutDAtX := if_pos rfl
+        eq ▸ Set3.without.ninPos (sup.val x) d
       
-      let dInSupAtCh: d ∈ supAtCh.val.posMem := supEq ▸ din
-      let dNinSupAtCh: d ∉ supAtCh.val.posMem :=
-        Set3.ord.approximation.ninChain.ninSup.posMem atCh sAtX d dNin
+      dNin ((Supremum.eq sup supWithoutDAtX) ▸ dIn)
+  
+  def ord.standard.inSup.inSomeSet.posMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (standard D) set)
+    {x: Nat}
+    (dInSup: d ∈ (sup.val x).posMem)
+  :
+    ∃ valuation: set, d ∈ (valuation.val x).posMem
+  :=
+    byContradiction fun nex =>
+      let allNin: ∀ v: set, d ∉ (v.val x).posMem :=
+        nex.toAll fun _ => id
       
-      dNinSupAtCh dInSupAtCh
+      let dNinSup := ninSet.ninSup.posMem sup allNin
+      
+      dNinSup dInSup
+  
+  def ord.approximation.ninSet.ninSup.defMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (approximation D) set)
+    {x: Nat}
+    {d: D}
+    (allNin: ∀ (s: ↑set), d ∉ (s.val x).defMem)
+  :
+    d ∉ (sup.val x).defMem
+  :=
+    let withoutDAtX := Set3.withoutDef (sup.val x) d
+    let withoutD: Valuation D := fun xx =>
+      if xx = x then withoutDAtX else sup.val xx
+    
+    fun dIn =>
+      let supWithoutDAtX:
+        Supremum (approximation D) set
+      := ⟨
+        withoutD,
+        {
+          isMember := fun s3 xx =>
+            let s3Le := sup.property.isMember s3 xx
+            
+            if h: xx = x then
+              let eq: withoutD xx = withoutDAtX := if_pos h
+              eq ▸ Set3.LeApx.intro
+                (fun dd ddIn =>
+                  Set3.without.DefMem.intro
+                    (show dd ∈ (sup.val x).defMem from
+                      h ▸ s3Le.defLe ddIn)
+                    fun dEq => allNin s3 (h ▸ dEq ▸ ddIn))
+                (fun _dd ddIn =>
+                  let inPosX := (sup.property.isMember s3 x).posLe ddIn
+                  h ▸ inPosX)
+            else
+              let eq: withoutD xx = sup.val xx := if_neg h
+              
+              eq ▸ s3Le
+          isLeMember :=
+            fun _v vIsUB =>
+              let withoutDLe: withoutD ⊑ sup.val :=
+                fun xx =>
+                  if h: xx = x then
+                    let eq: withoutD xx = withoutDAtX := if_pos h
+                    eq ▸ h ▸ Set3.withoutDef.leApx _
+                  else
+                    let eq: withoutD xx = sup.val xx := if_neg h
+                    eq ▸ @Preorder.le_refl _ (approximation D).toPreorder _ _
+              
+              @le_trans _ (approximation D).toPreorder
+                _ _ _ withoutDLe (sup.property.isLeMember vIsUB)
+        }
+      ⟩
+      
+      let dNin: d ∉ (supWithoutDAtX.val x).defMem :=
+        let eq: supWithoutDAtX.val x = withoutDAtX := if_pos rfl
+        eq ▸ Set3.withoutDef.ninDef (sup.val x) d
+      
+      dNin ((Supremum.eq sup supWithoutDAtX) ▸ dIn)
+  
+  def ord.approximation.inSup.inSomeSet.defMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (approximation D) set)
+    {x: Nat}
+    {d: D}
+    (dInSup: d ∈ (sup.val x).defMem)
+  :
+    ∃ valuation: set, d ∈ (valuation.val x).defMem
+  :=
+    byContradiction fun nex =>
+      let allNin: ∀ v: set, d ∉ (v.val x).defMem :=
+        nex.toAll fun _ => id
+      
+      let dNinSup := ninSet.ninSup.defMem sup allNin
+      
+      dNinSup dInSup
+  
+  def ord.approximation.ninSet.ninSup.posMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (approximation D) set)
+    {valuation: set}
+    {x: Nat}
+    {d: D}
+    (dNinS: d ∉ (valuation.val x).posMem)
+  :
+    d ∉ (sup.val x).posMem
+  :=
+    let supLePos := (sup.property.isMember valuation x).posLe
+    
+    fun dIn => dNinS (supLePos dIn)
+  
+  def ord.approximation.inSup.inAllSets.posMem
+    {set: Set (Valuation D)}
+    (sup: Supremum (approximation D) set)
+    {x: Nat}
+    {d: D}
+    (dInSup: d ∈ (sup.val x).posMem)
+  :
+    ∀ valuation: set, d ∈ (valuation.val x).posMem
+  :=
+    byContradiction fun nall =>
+      let exNin: ∃ v: set, d ∉ (v.val x).posMem :=
+        nall.toEx fun _ => id
+      
+      let dNinSup := ninSet.ninSup.posMem sup exNin.unwrap.property
+      
+      dNinSup dInSup
   
 end Valuation

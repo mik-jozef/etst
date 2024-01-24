@@ -20,7 +20,7 @@ namespace Program
     def State.initial: State sa da := State.goToSrc ⟨0, Nat.succ_pos _⟩
     
     -- Ordered by number of steps till halts.
-    @[reducible] def State.wfRel: (sA sB: State sadr dadr) → Prop
+    def State.wfRel: (sA sB: State sadr dadr) → Prop
       | goToSrc a, goToSrc b => b.val < a.val
       | goToSrc _, goToDest0 _ => False
       | goToSrc _, goToDest1 _ => False

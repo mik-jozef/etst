@@ -1,7 +1,5 @@
 import Set
-import Fixpoint
-
-open Classical
+import Lfp
 
 
 structure Set3 (D: Type u) where
@@ -19,24 +17,27 @@ namespace Set3
   -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1747
   | ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl => rfl
   
-  def empty {D: Type}: Set3 D := ⟨Set.empty, Set.empty, PartialOrder.refl _⟩
+  def empty {D: Type}: Set3 D :=
+    ⟨Set.empty, Set.empty, Preorder.le_refl _⟩
   
-  def undetermined {D: Type}: Set3 D := ⟨Set.empty, Set.full, fun _ => False.elim⟩
+  def undetermined {D: Type}: Set3 D :=
+    ⟨Set.empty, Set.full, fun _ => False.elim⟩
   
-  def just {D: Type} (d: D): Set3 D := ⟨Set.just d, Set.just d, PartialOrder.refl _⟩
+  def just {D: Type} (d: D): Set3 D :=
+    ⟨Set.just d, Set.just d, Preorder.le_refl _⟩
   
   
   def empty.nin.def (d: D): d ∉ Set3.empty.defMem := False.elim
   def empty.nin.pos (d: D): d ∉ Set3.empty.posMem := False.elim
   
-  -- :( def empty.fromNoPos (noPos (d: D):)
+  -- :( def empty.fromNoPos (noPos (d: D): d ∉ s.posMem): ...
   def empty.fromNoPos (noPos: ∀ d: D, d ∉ s.posMem): s = Set3.empty :=
     Set3.eq
       (funext fun d =>
         propext
           (Iff.intro
             (fun dInSDef =>
-              let dInSPos := s.defLePos d dInSDef
+              let dInSPos := s.defLePos dInSDef
               noPos d dInSPos)
             (fun nope => False.elim nope)))
       (funext fun d =>
@@ -46,33 +47,126 @@ namespace Set3
             (fun nope => False.elim nope)))
   
   
-  instance: LE (Set3 D) where
-    le (a b: Set3 D) := a.defMem ≤ b.defMem  ∧  a.posMem ≤ b.posMem
+  structure LeStd (a b: Set3 D): Prop where
+    intro ::
+    defLe: a.defMem ≤ b.defMem
+    posLe: a.posMem ≤ b.posMem
   
-  instance: SqLE (Set3 D) where
-    le (a b: Set3 D) := a.defMem ≤ b.defMem  ∧  b.posMem ≤ a.posMem
+  structure LtStd (a b: Set3 D): Prop where
+    intro ::
+    defLe: a.defMem ≤ b.defMem
+    posLe: a.posMem ≤ b.posMem
+    neq: a ≠ b
+  
+  structure LeApx (a b: Set3 D): Prop where
+    intro ::
+    defLe: a.defMem ≤ b.defMem
+    posLe: b.posMem ≤ a.posMem
+  
+  structure LtApx (a b: Set3 D): Prop where
+    intro ::
+    defLe: a.defMem ≤ b.defMem
+    posLe: b.posMem ≤ a.posMem
+    neq: a ≠ b
+  
+  def LtStd.toLe (lt: LtStd a b): LeStd a b := {
+    defLe := lt.defLe
+    posLe := lt.posLe
+  }
+  
+  def LtApx.toLe (lt: LtApx a b): LeApx a b := {
+    defLe := lt.defLe
+    posLe := lt.posLe
+  }
+  
+  instance leInst: LE (Set3 D) where
+    le := LeStd
+  
+  instance sqleInst: SqLE (Set3 D) where
+    le := LeApx
+  
+  instance sqltInst: SqLT (Set3 D) where
+    lt := LtApx
   
   
-  instance ord.standard.st (D: Type): PartialOrderSt (Set3 D) where
-    refl (a: Set3 D) :=
-      And.intro (PartialOrder.refl (a.defMem)) (PartialOrder.refl (a.posMem))
-    
-    antisymm (a b: Set3 D) (ab: a ≤ b) (ba: b ≤ a) :=
+  def ord.approximation.le_antisymm
+    (a b: Set3 D)
+    (ab: a ⊑ b)
+    (ba: b ⊑ a)
+  :=
       let defEq: a.defMem = b.defMem :=
-        PartialOrder.antisymm a.defMem b.defMem ab.left ba.left;
+        PartialOrder.le_antisymm a.defMem b.defMem ab.defLe ba.defLe;
       let posEq: a.posMem = b.posMem :=
-        PartialOrder.antisymm a.posMem b.posMem ab.right ba.right;
+        PartialOrder.le_antisymm a.posMem b.posMem ba.posLe ab.posLe;
       Set3.eq defEq posEq
-    
-    trans (a b c: Set3 D) (ab: a ≤ b) (bc: b ≤ c) :=
-      And.intro
-        (PartialOrder.trans a.defMem b.defMem c.defMem ab.left bc.left)
-        (PartialOrder.trans a.posMem b.posMem c.posMem ab.right bc.right)
-    
-    ltToLeNeq := id
-    leNeqToLt := id
   
-  def ord.standard (D: Type) := (ord.standard.st D).toPartialOrder
+  -- Latter instances override former instances in priority.
+  -- How may I set the prio manually? `@[default_instance] x`
+  -- does not work
+  instance ord.approximation (D: Type u): PartialOrder (Set3 D) where
+    le := LeApx
+    lt := LtApx
+    
+    le_refl (a: Set3 D) :=
+      LeApx.intro
+        (Preorder.le_refl (a.defMem))
+        (Preorder.le_refl (a.posMem))
+    
+    le_antisymm := approximation.le_antisymm
+    
+    le_trans (a b c: Set3 D) (ab: a ⊑ b) (bc: b ⊑ c) :=
+      LeApx.intro
+        (Preorder.le_trans _ _ _ ab.defLe bc.defLe)
+        (Preorder.le_trans _ _ _ bc.posLe ab.posLe)
+    
+    lt_iff_le_not_le a b: a ⊏ b ↔ a ⊑ b ∧ ¬b ⊑ a :=
+      Iff.intro
+        (fun ab => And.intro
+          ab.toLe
+          fun ba =>
+            let abEq: a = b :=
+              approximation.le_antisymm _ _ ab.toLe ba
+            ab.neq abEq)
+        fun ⟨ab, nba⟩ =>
+          if h: a = b then
+            False.elim (nba (h ▸ ab))
+          else
+            ⟨ab.defLe, ab.posLe, h⟩
+  
+  
+  def ord.standard.le_antisymm (a b: Set3 D) (ab: a ≤ b) (ba: b ≤ a) :=
+    let defEq: a.defMem = b.defMem :=
+      PartialOrder.le_antisymm a.defMem b.defMem ab.defLe ba.defLe;
+    let posEq: a.posMem = b.posMem :=
+      PartialOrder.le_antisymm a.posMem b.posMem ab.posLe ba.posLe;
+    Set3.eq defEq posEq
+  
+  instance ord.standard (D: Type u): PartialOrder (Set3 D) where
+    le := LeStd
+    lt := LtStd
+    
+    le_refl (a: Set3 D) :=
+      LeStd.intro
+        (Preorder.le_refl (a.defMem))
+        (Preorder.le_refl (a.posMem))
+    
+    le_antisymm := standard.le_antisymm
+    
+    le_trans (a b c: Set3 D) (ab: a ≤ b) (bc: b ≤ c) :=
+      LeStd.intro
+        (Preorder.le_trans a.defMem b.defMem c.defMem ab.defLe bc.defLe)
+        (Preorder.le_trans a.posMem b.posMem c.posMem ab.posLe bc.posLe)
+    
+    lt_iff_le_not_le a b :=
+      Iff.intro
+        (fun ab => ⟨ab.toLe, fun ba =>
+          let eq := standard.le_antisymm _ _ ab.toLe ba
+          ab.neq eq⟩)
+        fun ⟨ab, nba⟩ =>
+          if h: a = b then
+            False.elim (nba (h ▸ ab))
+          else
+            ⟨ab.defLe, ab.posLe, h⟩
   
   def ord.standard.sup (s: Set (Set3 D)): Supremum (standard D) s :=
     let sup := {
@@ -80,174 +174,218 @@ namespace Set3
       posMem := fun d => ∃s: ↑s, d ∈ s.val.posMem
       defLePos :=
         fun d dDef =>
-          let s := choiceEx dDef
-          ⟨s, s.val.val.defLePos d s.property⟩
+          let s := dDef.unwrap
+          ⟨s, s.val.val.defLePos s.property⟩
     }
     ⟨
       sup,
-      And.intro
-        (fun s =>
-          And.intro
-            -- Why tf is this unfolding required???
-            (fun d dMem => by unfold defMem; exact ⟨s, dMem⟩)
-            (fun d dMem => by unfold posMem; exact ⟨s, dMem⟩))
-        fun ub ubIsUB =>
-          And.intro
-            (fun d dMemSupWtf =>
-              -- WHAT THE ACTUAL FLYING why is `by exact` necessary here???
-              let dMemSup: ∃s: ↑s, d ∈ s.val.defMem := by exact dMemSupWtf;
-              let s := choiceEx dMemSup
-              let sLeUb: s.val.val .≤ ub := ubIsUB s
-              let dInS: d ∈ s.val.val.defMem := s.property
-              sLeUb.left d dInS)
-            (fun d dMemSupWtf =>
-              let dMemSup: ∃s: ↑s, d ∈ s.val.posMem := by exact dMemSupWtf;
-              let s := choiceEx dMemSup
-              let sLeUb: s.val.val .≤ ub := ubIsUB s
-              let dInS: d ∈ s.val.val.posMem := s.property
-              sLeUb.right d dInS)
+      {
+        isMember :=
+          (fun s =>
+            LeStd.intro
+              -- Why tf is this unfolding required???
+              (fun d dMem => by unfold defMem; exact ⟨s, dMem⟩)
+              (fun d dMem => by unfold posMem; exact ⟨s, dMem⟩))
+        isLeMember :=
+          fun ub ubIsUB =>
+            LeStd.intro
+              (fun d dMemSupWtf =>
+                -- WHAT THE ACTUAL FLYING why is `by exact` necessary here???
+                let dMemSup: ∃s: ↑s, d ∈ s.val.defMem := by exact dMemSupWtf;
+                let s := dMemSup.unwrap
+                let sLeUb: s.val.val ≤ ub := ubIsUB s
+                let dInS: d ∈ s.val.val.defMem := s.property
+                sLeUb.defLe dInS)
+              (fun d dMemSupWtf =>
+                let dMemSup: ∃s: ↑s, d ∈ s.val.posMem := by exact dMemSupWtf;
+                let s := dMemSup.unwrap
+                let sLeUb: s.val.val ≤ ub := ubIsUB s
+                let dInS: d ∈ s.val.val.posMem := s.property
+                sLeUb.posLe dInS)
+      }
     ⟩
-  
-  
-  instance ord.approximation.sq (D: Type): PartialOrderSq (Set3 D) where
-    refl (a: Set3 D) :=
-      And.intro (PartialOrder.refl (a.defMem)) (PartialOrder.refl (a.posMem))
-    
-    antisymm (a b: Set3 D) (ab: a ⊑ b) (ba: b ⊑ a) :=
-      let defEq: a.defMem = b.defMem :=
-        PartialOrder.antisymm a.defMem b.defMem ab.left ba.left;
-      let posEq: a.posMem = b.posMem :=
-        PartialOrder.antisymm a.posMem b.posMem ba.right ab.right;
-      Set3.eq defEq posEq
-    
-    trans (a b c: Set3 D) (ab: a ⊑ b) (bc: b ⊑ c) :=
-      And.intro
-        (PartialOrder.trans a.defMem b.defMem c.defMem ab.left bc.left)
-        (PartialOrder.trans c.posMem b.posMem a.posMem bc.right ab.right)
-    
-    ltToLeNeq := id
-    leNeqToLt := id
-  
-  def ord.approximation (D: Type) := (ord.approximation.sq D).toPartialOrder
   
   def ord.approximation.sup (ch: Chain (approximation D)):
-    Supremum (approximation D) ch.val
+    Supremum (approximation D) ch
   :=
     let sup: Set3 D := {
-      defMem := fun d => ∃s: ↑ch.val, d ∈ s.val.defMem
-      posMem := fun d => ∀s: ↑ch.val, d ∈ s.val.posMem
+      defMem := fun d => ∃s: ↑ch, d ∈ s.val.defMem
+      posMem := fun d => ∀s: ↑ch, d ∈ s.val.posMem
       defLePos :=
         fun d dDef s =>
-          let sOfD := choiceEx dDef
-          let sSOfDComparable := ch.property s sOfD
+          let sOfD := dDef.unwrap
+          let sSOfDComparable := ch.isChain s.property sOfD.val.property
           
-          sSOfDComparable.elim
-            (fun sLt =>
-              let dSOfDPos: d ∈ sOfD.val.val.posMem :=
-                sOfD.val.val.defLePos d sOfD.property
-              sLt.right d dSOfDPos)
-            (fun sGt =>
-              let dSDef: d ∈ s.val.defMem :=
-                sGt.left d sOfD.property
-              s.val.defLePos d dSDef)
+          if h: s.val = sOfD then
+            let dPos := sOfD.val.val.defLePos sOfD.property
+            h ▸ dPos
+          else
+            (sSOfDComparable h).elim
+              (fun sLe =>
+                let dSOfDPos: d ∈ sOfD.val.val.posMem :=
+                  sOfD.val.val.defLePos sOfD.property
+                sLe.posLe dSOfDPos)
+              (fun sGe =>
+                let dSDef: d ∈ s.val.defMem :=
+                  sGe.defLe sOfD.property
+                s.val.defLePos dSDef)
     }
     ⟨
       sup,
-      And.intro
-        (fun s =>
-          And.intro
-            (fun _ dMem => ⟨s, dMem⟩)
-            (fun _ dMemSup => dMemSup s))
-        fun ub ubIsUB =>
-          And.intro
-            (fun d dMemSup =>
-              let s := choiceEx dMemSup
-              let sLeUb: s.val.val .≤ ub := ubIsUB s
-              let dInS: d ∈ s.val.val.defMem := s.property
-              sLeUb.left d dInS)
-            (fun d dMemUB s =>
-              let sLeUb: s.val .≤ ub := ubIsUB s
-              sLeUb.right d dMemUB)
+      {
+        isMember :=
+          (fun s =>
+            LeApx.intro
+              (fun _ dMem => ⟨s, dMem⟩)
+              (fun _ dMemSup => dMemSup s)),
+        isLeMember :=
+          fun ub ubIsUB =>
+            LeApx.intro
+              (fun d dMemSup =>
+                let s := dMemSup.unwrap
+                let sLeUb: s.val.val ⊑ ub := ubIsUB s
+                let dInS: d ∈ s.val.val.defMem := s.property
+                sLeUb.defLe dInS)
+              (fun _d dMemUB s =>
+                let sLeUb: s.val ⊑ ub := ubIsUB s
+                sLeUb.posLe dMemUB),
+      }
     ⟩
   
   
-  def ord.standard.isChainComplete (D: Type):
-    isChainComplete (ord.standard D)
-  :=
-    fun ch => ⟨(sup ch.val).val, (sup ch.val).property⟩
+  def ord.standard.isChainComplete (D: Type u):
+    IsChainComplete (ord.standard D)
+  := {
+    supExists :=
+      fun ch => ⟨(sup ch.set).val, (sup ch.set).property⟩
+  }
   
-  def ord.approximation.isChainComplete (D: Type):
-    isChainComplete (ord.approximation D)
-  :=
-    fun ch => ⟨(sup ch).val, (sup ch).property⟩
+  def ord.approximation.isChainComplete (D: Type u):
+    IsChainComplete (ord.approximation D)
+  := {
+    supExists :=
+      fun ch => ⟨(sup ch).val, (sup ch).property⟩
+  }
   
   
   def ninPos.ninDef {s: Set3 D} (dNin: d ∉ s.posMem): d ∉ s.defMem :=
-    fun dIn => dNin (s.defLePos d dIn)
+    fun dIn => dNin (s.defLePos dIn)
   
+  structure without.DefMem
+    (s: Set3 D)
+    (dWithout d: D)
+  : Prop where
+  intro ::
+    dIn: d ∈ s.defMem
+    neq: d ≠ dWithout
+  
+  structure without.PosMem
+    (s: Set3 D)
+    (dWithout d: D)
+  : Prop where
+  intro ::
+    dIn: d ∈ s.posMem
+    neq: d ≠ dWithout
   
   def without (s: Set3 D) (d: D): Set3 D := {
-    defMem := fun dd => dd ∈ s.defMem ∧ dd ≠ d
-    posMem := fun dd => dd ∈ s.posMem ∧ dd ≠ d
+    defMem := without.DefMem s d
+    posMem := without.PosMem s d
     defLePos :=
-      fun dd ddDef =>
-        And.intro (s.defLePos dd ddDef.left) ddDef.right
+      fun _dd ddDef => {
+        dIn := (s.defLePos ddDef.dIn)
+        neq := ddDef.neq
+      }
   }
   
   def without.ninPos (s: Set3 D) (d: D): d ∉ (s.without d).posMem :=
-    fun dIn => dIn.right rfl
+    fun dIn => dIn.neq rfl
   
   def without.ninDef (s: Set3 D) (d: D): d ∉ (s.without d).defMem :=
-    fun dIn => dIn.right rfl
+    fun dIn => dIn.neq rfl
   
-  def without.ltStd (s: Set3 D) (d: D) (dInS: d ∈ s.posMem):
-    s.without d < s
+  def without.ltStd {s: Set3 D} (dInS: d ∈ s.posMem):
+    (s.without d) < s
   :=
-    And.intro
-      (And.intro (fun _ dIn => dIn.left) (fun _ dIn => dIn.left))
+    LtStd.intro
+      (fun _dd ddIn => ddIn.dIn)
+      (fun _dd ddIn => ddIn.dIn)
       (fun eq =>
         let dNinSWithout: d ∉ (s.without d).posMem := Set3.without.ninPos _ _
         let dNinS: d ∉ s.posMem := eq ▸ dNinSWithout
         dNinS dInS)
   
+  def without.leStd (s: Set3 D):
+    (s.without d) ≤ s
+  :=
+    LeStd.intro
+      (fun _dd ddInDef => ddInDef.dIn)
+      (fun _dd ddInPos => ddInPos.dIn)
+  
   
   def withoutDef (s: Set3 D) (d: D): Set3 D := {
-    defMem := fun dd => dd ∈ s.defMem ∧ dd ≠ d
+    defMem := fun dd => without.DefMem s d dd
     posMem := fun dd => dd ∈ s.posMem
-    defLePos := fun d dDef => (s.defLePos d dDef.left)
+    defLePos := fun _d dDef => (s.defLePos dDef.dIn)
   }
   
   def withoutDef.ninDef (s: Set3 D) (d: D): d ∉ (s.withoutDef d).defMem :=
-    fun dIn => dIn.right rfl
+    fun dIn => dIn.neq rfl
   
-  def withoutDef.ltStd (s: Set3 D) (d: D) (dInS: d ∈ s.defMem):
+  def withoutDef.preservesPos
+    (s: Set3 D)
+    {d: D}
+    (dInPos: d ∈ s.posMem)
+  :
+    d ∈ (s.withoutDef d).posMem
+  :=
+    dInPos
+  
+  def withoutDef.ltStd {s: Set3 D} (dInS: d ∈ s.defMem):
     s.withoutDef d < s
   :=
-    And.intro
-      (And.intro (fun _dd ddIn => ddIn.left) (fun _dd ddIn => ddIn))
+    LtStd.intro
+      (fun _dd ddIn => ddIn.dIn)
+      (fun _dd ddIn => ddIn)
       (fun eq =>
-        let dNinSWithout: d ∉ (s.withoutDef d).defMem := Set3.withoutDef.ninDef _ _
+        let dNinSWithout: d ∉ (s.withoutDef d).defMem :=
+          Set3.withoutDef.ninDef _ _
         let dNinS: d ∉ s.defMem := eq ▸ dNinSWithout
         dNinS dInS)
   
-  def withoutDef.ltApx (s: Set3 D) (d: D) (dInS: d ∈ s.defMem):
+  def withoutDef.ltApx {s: Set3 D} {d: D} (dInS: d ∈ s.defMem):
     s.withoutDef d ⊏ s
   :=
-    And.intro
-      (And.intro (fun _dd ddIn => ddIn.left) (fun _dd ddIn => ddIn))
+    LtApx.intro
+      (fun _dd ddIn => ddIn.dIn)
+      (fun _dd ddIn => ddIn)
       (fun eq =>
-        let dNinSWithout: d ∉ (s.withoutDef d).defMem := Set3.withoutDef.ninDef _ _
+        let dNinSWithout: d ∉ (s.withoutDef d).defMem :=
+          Set3.withoutDef.ninDef _ _
         let dNinS: d ∉ s.defMem := eq ▸ dNinSWithout
         dNinS dInS)
+  
+  def withoutDef.leStd (s: Set3 D):
+    s.withoutDef d ≤ s
+  :=
+    LeStd.intro
+      (fun _dd ddInDef => ddInDef.dIn)
+      (fun _dd ddInPos => ddInPos)
+  
+  def withoutDef.leApx (s: Set3 D):
+    s.withoutDef d ⊑ s
+  :=
+    LeApx.intro
+      (fun _dd ddInDef => ddInDef.dIn)
+      (fun _dd ddInPos => ddInPos)
   
   
   def _root_.Set3.with (s: Set3 D) (d: D): Set3 D := {
     defMem := fun dd => dd ∈ s.defMem ∨ dd = d
     posMem := fun dd => dd ∈ s.posMem ∨ dd = d
     defLePos :=
-      fun dd ddDef =>
+      fun _dd ddDef =>
         ddDef.elim
-          (fun ddInS => Or.inl (s.defLePos dd ddInS))
+          (fun ddInS => Or.inl (s.defLePos ddInS))
           (fun eq => Or.inr eq)
   }
   
@@ -260,10 +398,12 @@ namespace Set3
   def with.gtStd (s: Set3 D) (d: D) (dNinS: d ∉ s.posMem):
     s < s.with d
   :=
-    And.intro
-      (And.intro (fun _dd ddIn => Or.inl ddIn) (fun _dd ddIn => Or.inl ddIn))
+    LtStd.intro
+        (fun _dd ddIn => Or.inl ddIn)
+        (fun _dd ddIn => Or.inl ddIn)
       (fun eq =>
-        let dInSWith: d ∈ (s.with d).posMem := Set3.with.inPos _ _
+        let dInSWith: d ∈ (s.with d).posMem :=
+          Set3.with.inPos _ _
         let dInS: d ∈ s.posMem := eq ▸ dInSWith
         dNinS dInS)
   
@@ -271,7 +411,7 @@ namespace Set3
   def withPos (s: Set3 D) (d: D): Set3 D := {
     defMem := fun dd => dd ∈ s.defMem
     posMem := fun dd => dd ∈ s.posMem ∨ dd = d
-    defLePos := fun dd ddDef => Or.inl (s.defLePos dd ddDef)
+    defLePos := fun _dd ddDef => Or.inl (s.defLePos ddDef)
   }
   
   def withPos.defMemEq (s: Set3 D) (d: D):
@@ -282,198 +422,207 @@ namespace Set3
   def withPos.inPos (s: Set3 D) (d: D): d ∈ (s.withPos d).posMem :=
     Or.inr rfl
   
-  def withPos.gtStd (s: Set3 D) (d: D) (dNinS: d ∉ s.posMem):
+  def withPos.gtStd {s: Set3 D} (dNinS: d ∉ s.posMem):
     s < s.withPos d
   :=
-    And.intro
-      (And.intro (fun _dd ddIn => ddIn) (fun _dd ddIn => Or.inl ddIn))
+    LtStd.intro
+      (fun _dd ddIn => ddIn)
+      (fun _dd ddIn => Or.inl ddIn)
       (fun eq =>
         let dInSWith: d ∈ (s.withPos d).posMem := Set3.withPos.inPos _ _
         let dInS: d ∈ s.posMem := eq ▸ dInSWith
         dNinS dInS)
   
-  def withPos.ltApx (s: Set3 D) (d: D) (dNinS: d ∉ s.posMem):
+  def withPos.ltApx {s: Set3 D} (dNinS: d ∉ s.posMem):
      s.withPos d ⊏ s
   :=
-    And.intro
-      (And.intro (fun _dd ddIn => ddIn) (fun _dd ddIn => Or.inl ddIn))
+    LtApx.intro
+        (fun _dd ddIn => ddIn)
+        (fun _dd ddIn => Or.inl ddIn)
       (fun eq =>
         let dInSWith: d ∈ (s.withPos d).posMem := Set3.withPos.inPos _ _
         let dInS: d ∈ s.posMem := eq ▸ dInSWith
         dNinS dInS)
   
   
-  def ord.standard.inChain.inSup.defMem
-    (ch: Chain (standard D))
-    (s: ↑ch.val)
-    (d: D)
-    (dInSDef: d ∈ s.val.defMem)
+  def ord.standard.inSet.inSup.defMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (standard D) set)
+    (s3: ↑set)
+    {d: D}
+    (dInSDef: d ∈ s3.val.defMem)
   :
-    d ∈ (ch.sup (standard D) cc).val.defMem
+    d ∈ sup.val.defMem
   :=
-    let sup := ch.sup (standard D) cc
-    let supGeS := sup.property.left s
+    let supGeS := sup.property.isMember s3
     
-    supGeS.left d dInSDef
+    supGeS.defLe dInSDef
   
-  def ord.standard.inChain.inSup.posMem
-    (ch: Chain (standard D))
-    (s: ↑ch.val)
-    (d: D)
-    (dInSDef: d ∈ s.val.posMem)
+  def ord.standard.inSet.inSup.posMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (standard D) set)
+    {s3: ↑set}
+    {d: D}
+    (dInSDef: d ∈ s3.val.posMem)
   :
-    d ∈ (ch.sup (standard D) cc).val.posMem
+    d ∈ sup.val.posMem
   :=
-    let sup := ch.sup (standard D) cc
-    let supGeS := sup.property.left s
+    let supGeS := sup.property.isMember s3
     
-    supGeS.right d dInSDef
+    supGeS.posLe dInSDef
   
   
-  def ord.standard.ninChain.ninSup.defMem
-    (ch: Chain (standard D))
-    (d: D)
-    (allNin: ∀ (s: ↑ch.val), d ∉ s.val.defMem)
+  def ord.standard.ninSet.ninSup.defMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (standard D) set)
+    {d: D}
+    (allNin: ∀ (s: ↑set), d ∉ s.val.defMem)
   :
-    d ∉ (ch.sup (standard D) cc).val.defMem
+    d ∉ sup.val.defMem
   :=
-    let sup := ch.sup (standard D) cc
     let supWithoutD := sup.val.withoutDef d;
     
     let withoutLe: supWithoutD ≤ sup.val :=
       if h: d ∈ sup.val.defMem then
-        (Set3.withoutDef.ltStd sup.val d h).left
+        (Set3.withoutDef.ltStd h).toLe
       else
         let eq: sup.val = supWithoutD :=
           Set3.eq
             (funext (fun _dd => (propext (Iff.intro
-              (fun ddIn => And.intro ddIn (fun eq => h (eq ▸ ddIn)))
-              (fun ddIn => ddIn.left)))))
+              (fun ddIn => {
+                dIn := ddIn,
+                neq := (fun eq => h (eq ▸ ddIn)),
+              })
+              (fun ddIn => ddIn.dIn)))))
             rfl
-        eq ▸ ((standard D).refl sup.val)
+        eq ▸ ((standard D).le_refl sup.val)
     
-    let isUB: supWithoutD ∈ isUpperBound (standard D) ch.val :=
+    let isUB: IsUpperBound (standard D) set supWithoutD :=
       fun s =>
-        And.intro
-          (fun dd ddInS =>
-            let dInSup := (sup.property.left s).left dd ddInS
+        LeStd.intro
+          (fun _dd ddInS =>
+            let dInSup := (sup.property.isMember s).defLe ddInS
             let dNinS := allNin s
-            And.intro dInSup (fun eq => dNinS (eq ▸ ddInS)))
-          (fun dd ddInS => (sup.property.left s).right dd ddInS)
+            without.DefMem.intro dInSup (fun eq => dNinS (eq ▸ ddInS)))
+          (fun _dd ddInS => (sup.property.isMember s).posLe ddInS)
     
-    let withoutGe: sup.val ≤ supWithoutD := sup.property.right supWithoutD isUB
+    let withoutGe: sup.val ≤ supWithoutD :=
+      sup.property.isLeMember isUB
     let eq: sup.val = supWithoutD :=
-      PartialOrder.antisymm sup.val supWithoutD withoutGe withoutLe
+      PartialOrder.le_antisymm sup.val supWithoutD withoutGe withoutLe
     
-    eq ▸ (fun dIn => dIn.right rfl)
+    eq ▸ (fun dIn => dIn.neq rfl)
   
 
-  def ord.standard.ninChain.ninSup.posMem
-    (ch: Chain (standard D))
-    (d: D)
-    (allNin: ∀ (s: ↑ch.val), d ∉ s.val.posMem)
+  def ord.standard.ninSet.ninSup.posMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (standard D) set)
+    {d: D}
+    (allNin: ∀ (s: ↑set), d ∉ s.val.posMem)
   :
-    d ∉ (ch.sup (standard D) cc).val.posMem
+    d ∉ sup.val.posMem
   :=
-    let sup := ch.sup (standard D) cc
     let supWithoutD := sup.val.without d;
     
     let withoutLe: supWithoutD ≤ sup.val :=
       if h: d ∈ sup.val.posMem then
-        (Set3.without.ltStd sup.val d h).left
+        (Set3.without.ltStd h).toLe
       else
         let eq: sup.val = supWithoutD :=
           Set3.eq
-            (funext (fun dd => (propext (Iff.intro
-              (fun ddIn => And.intro
-                ddIn (fun eq => h (eq ▸ (sup.val.defLePos dd ddIn))))
-              (fun ddIn => ddIn.left)))))
             (funext (fun _dd => (propext (Iff.intro
-              (fun ddIn => And.intro
+              (fun ddIn => without.DefMem.intro
+                ddIn (fun eq => h (eq ▸ (sup.val.defLePos ddIn))))
+              (fun ddIn => ddIn.dIn)))))
+            (funext (fun _dd => (propext (Iff.intro
+              (fun ddIn => without.PosMem.intro
                 ddIn (fun eq => h (eq ▸ ddIn)))
-              (fun ddIn => ddIn.left)))))
-        eq ▸ ((standard D).refl sup.val)
+              (fun ddIn => ddIn.dIn)))))
+        eq ▸ ((standard D).le_refl sup.val)
     
-    let isUB: supWithoutD ∈ isUpperBound (standard D) ch.val :=
+    let isUB: IsUpperBound (standard D) set supWithoutD :=
       fun s =>
-        And.intro
-          (fun dd ddInS =>
-            let dInSup := (sup.property.left s).left dd ddInS
+        LeStd.intro
+          (fun _dd ddInS =>
+            let dInSup := (sup.property.isMember s).defLe ddInS
             let dNinS := allNin s
-            And.intro dInSup (fun eq => dNinS (eq ▸ (s.val.defLePos dd ddInS))))
-          (fun dd ddInS =>
-            let ddInSup := (sup.property.left s).right dd ddInS
+            without.DefMem.intro
+              dInSup
+              (fun eq => dNinS (eq ▸ (s.val.defLePos ddInS))))
+          (fun _dd ddInS =>
+            let ddInSup := (sup.property.isMember s).posLe ddInS
             let dNinS := allNin s
-            And.intro ddInSup (fun eq => dNinS (eq ▸ ddInS)))
+            without.PosMem.intro
+              ddInSup
+              (fun eq => dNinS (eq ▸ ddInS)))
     
-    let withoutGe: sup.val ≤ supWithoutD := sup.property.right supWithoutD isUB
+    let withoutGe: sup.val ≤ supWithoutD :=
+      sup.property.isLeMember isUB
+    
     let eq: sup.val = supWithoutD :=
-      (standard D).antisymm sup.val supWithoutD withoutGe withoutLe
+      (standard D).le_antisymm sup.val supWithoutD withoutGe withoutLe
     
-    eq ▸ (fun dIn => dIn.right rfl)
+    eq ▸ (fun dIn => dIn.neq rfl)
   
   
-  def ord.standard.inSup.inChain.defMem.ex
-    (ch: Chain (standard D))
-    (d: D)
-    (dIn: d ∈ (ch.sup
-      (standard D) (standard.isChainComplete D)).val.defMem)
+  def ord.standard.inSup.inSomeSet.defMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (standard D) set)
+    {d: D}
+    (dIn: d ∈ sup.val.defMem)
   :
-    ∃ s: ↑ch.val, d ∈ s.val.defMem
+    ∃ s: ↑set, d ∈ s.val.defMem
   :=
     byContradiction fun notEx =>
-      let allNin: ∀ s: ↑ch.val, d ∉ s.val.defMem :=
+      let allNin: ∀ s: ↑set, d ∉ s.val.defMem :=
         fun s =>
           if h: d ∈ s.val.defMem then
             False.elim (notEx ⟨s, h⟩)
           else
             h
       
-      let ninSup := ord.standard.ninChain.ninSup.defMem ch d allNin
-      
-      ninSup dIn
+      ord.standard.ninSet.ninSup.defMem sup allNin dIn
 
-  def ord.standard.inSup.inChain.posMem.ex
-    (ch: Chain (standard D))
-    (d: D)
-    (dIn: d ∈ (ch.sup (standard D) cc).val.posMem)
+  def ord.standard.inSup.inSomeSet.posMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (standard D) set)
+    {d: D}
+    (dIn: d ∈ sup.val.posMem)
   :
-    ∃ s: ↑ch.val, d ∈ s.val.posMem
+    ∃ s: ↑set, d ∈ s.val.posMem
   :=
     byContradiction fun notEx =>
-      let allNin: ∀ s: ↑ch.val, d ∉ s.val.posMem :=
+      let allNin: ∀ s: ↑set, d ∉ s.val.posMem :=
         fun s =>
           if h: d ∈ s.val.posMem then
             False.elim (notEx ⟨s, h⟩)
           else
             h
       
-      let ninSup := ord.standard.ninChain.ninSup.posMem ch d allNin
-      
-      ninSup dIn
+      ord.standard.ninSet.ninSup.posMem sup allNin dIn
   
   
-  def ord.approximation.inChain.inSup.defMem
-    (ch: Chain (approximation D))
-    (s: ↑ch.val)
-    (d: D)
+  def ord.approximation.inSet.inSup.defMem
+    {set: Set (Set3 D)}
+    (s: ↑set)
+    {d: D}
     (dInSDef: d ∈ s.val.defMem)
+    (sup: Supremum (approximation D) set)
   :
-    d ∈ (ch.sup (approximation D) cc).val.defMem
+    d ∈ sup.val.defMem
   :=
-    let sup := ch.sup (approximation D) cc
-    let supGeS := sup.property.left s
+    let supGeS := sup.property.isMember s
     
-    supGeS.left d dInSDef
+    supGeS.defLe dInSDef
   
-  def ord.approximation.inChain.inSup.posMem
-    (ch: Chain (approximation D))
-    (d: D)
-    (allIn: ∀ s: ↑ch.val, d ∈ s.val.posMem)
+  def ord.approximation.inSet.inSup.posMem
+    {set: Set (Set3 D)}
+    {d: D}
+    (allIn: ∀ s: ↑set, d ∈ s.val.posMem)
+    (sup: Supremum (approximation D) set)
   :
-    d ∈ (ch.sup (approximation D) cc).val.posMem
+    d ∈ sup.val.posMem
   :=
-    let sup := ch.sup (approximation D) cc
     let supWithPosD := sup.val.withPos d;
     
     let withoutLe: supWithPosD ⊑ sup.val :=
@@ -484,73 +633,82 @@ namespace Set3
             (funext (fun _dd => (propext (Iff.intro
               (fun ddIn => Or.inl ddIn)
               (fun ddIn => ddIn.elim id (fun eq => eq ▸ h))))))
-        eq ▸ ((standard D).refl sup.val)
+        eq ▸ ((approximation D).le_refl sup.val)
       else
-        (Set3.withPos.ltApx sup.val d h).left
+        (Set3.withPos.ltApx h).toLe
     
-    let isUB: supWithPosD ∈ isUpperBound (approximation D) ch.val :=
+    let isUB: IsUpperBound (approximation D) set supWithPosD :=
       fun s =>
-        And.intro
-          (fun dd ddInS => (sup.property.left s).left dd ddInS)
-          (fun dd ddInSupPos => ddInSupPos.elim
-            (fun ddInSup => (sup.property.left s).right dd ddInSup)
+        LeApx.intro
+          (fun _dd ddInS => (sup.property.isMember s).defLe ddInS)
+          (fun _dd ddInSupPos => ddInSupPos.elim
+            (fun ddInSup => (sup.property.isMember s).posLe ddInSup)
             (fun eq => eq ▸ allIn s))
     
-    let withoutGe: sup.val ⊑ supWithPosD := sup.property.right supWithPosD isUB
+    let withoutGe: sup.val ⊑ supWithPosD :=
+      sup.property.isLeMember isUB
+    
     let eq: sup.val = supWithPosD :=
-      (approximation D).antisymm sup.val supWithPosD withoutGe withoutLe
+      (approximation D).le_antisymm sup.val supWithPosD withoutGe withoutLe
     
     eq ▸ (Or.inr rfl)
   
   
-  def ord.approximation.ninChain.ninSup.defMem
-    (ch: Chain (approximation D))
-    (d: D)
-    (allNin: ∀ (s: ↑ch.val), d ∉ s.val.defMem)
+  def ord.approximation.ninSet.ninSup.defMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (approximation D) set)
+    {d: D}
+    (allNin: ∀ (s: ↑set), d ∉ s.val.defMem)
   :
-    d ∉ (ch.sup (approximation D) cc).val.defMem
+    d ∉ sup.val.defMem
   :=
-    let sup := ch.sup (approximation D) cc
     let supWithoutD := sup.val.withoutDef d;
     
     let withoutLe: supWithoutD ⊑ sup.val :=
       if h: d ∈ sup.val.defMem then
-        (Set3.withoutDef.ltApx sup.val d h).left
+        (Set3.withoutDef.ltApx h).toLe
       else
         let eq: sup.val = supWithoutD :=
           Set3.eq
             (funext (fun _dd => (propext (Iff.intro
-              (fun ddIn => And.intro ddIn (fun eq => h (eq ▸ ddIn)))
-              (fun ddIn => ddIn.left)))))
+              (fun ddIn => without.DefMem.intro
+                ddIn
+                (fun eq => h (eq ▸ ddIn)))
+              (fun ddIn => ddIn.dIn)))))
             rfl
-        eq ▸ ((approximation D).refl sup.val)
+        eq ▸ ((approximation D).le_refl sup.val)
     
-    let isUB: supWithoutD ∈ isUpperBound (approximation D) ch.val :=
+    let isUB: IsUpperBound (approximation D) set supWithoutD :=
       fun s =>
-        And.intro
-          (fun dd ddInS =>
-            let dInSup := (sup.property.left s).left dd ddInS
+        LeApx.intro
+          (fun _dd ddInS =>
+            let dInSup := (sup.property.isMember s).defLe ddInS
             let dNinS := allNin s
-            And.intro dInSup (fun eq => dNinS (eq ▸ ddInS)))
-          (fun dd ddInS => (sup.property.left s).right dd ddInS)
+            without.DefMem.intro dInSup (fun eq => dNinS (eq ▸ ddInS)))
+          (fun _dd ddInS => (sup.property.isMember s).posLe ddInS)
     
-    let withoutGe: sup.val ⊑ supWithoutD := sup.property.right supWithoutD isUB
+    let withoutGe: sup.val ⊑ supWithoutD :=
+      sup.property.isLeMember isUB
+    
     let eq: sup.val = supWithoutD :=
-      PartialOrder.antisymm sup.val supWithoutD withoutGe withoutLe
+      @PartialOrder.le_antisymm _ (ord.approximation D)
+        _ _ withoutGe withoutLe
     
-    eq ▸ (fun dIn => dIn.right rfl)
+    eq ▸ (fun dIn => dIn.neq rfl)
   
-  def ord.approximation.ninChain.ninSup.posMem
-    (ch: Chain (approximation D))
-    (s: ↑ch.val)
-    (d: D)
+  def ord.approximation.ninSet.ninSup.posMem
+    {set: Set (Set3 D)}
+    (s: ↑set)
+    {d: D}
     (dNin: d ∉ s.val.posMem)
+    (sup: Supremum (approximation D) set)
   :
-    d ∉ (ch.sup (approximation D) cc).val.posMem
+    d ∉ sup.val.posMem
   :=
-    let sup := ch.sup (approximation D) cc
-    let supGeS := sup.property.left s
+    let supGeS := sup.property.isMember s
     
-    contra (supGeS.right d) dNin
+    let dSupS: (d: D) → d ∈ sup.val.posMem → d ∈ s.val.posMem := supGeS.posLe
+    
+    Function.contra (dSupS d) dNin
   
 end Set3
