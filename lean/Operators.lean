@@ -7,7 +7,7 @@ open Classical
 def operatorC (salg: Salgebra s) (dl: DefList s) (b: Valuation salg.D):
   Valuation salg.D → Valuation salg.D
 :=
-  fun c => DefList.I salg b c dl
+  fun c => dl.I salg b c
 
 def operatorC.isMonotonic
   (salg: Salgebra s)
@@ -400,8 +400,8 @@ def operatorB.stage.limit
     nIsLimit
 
 def operatorB.stage.succ
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (n: Ordinal)
 :
   operatorB.stage salg dl n.succ =
@@ -414,8 +414,8 @@ def operatorB.stage.succ
     n
 
 noncomputable def operatorB.stage.eqPrevN
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
   (n: Ordinal)
   (nn: ↑n)
@@ -426,8 +426,8 @@ noncomputable def operatorB.stage.eqPrevN
   rfl
 
 def operatorB.stage.isMonotonic
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   {n nn: Ordinal}
   (nnLt: nn ≤ n)
 :
@@ -438,3 +438,39 @@ def operatorB.stage.isMonotonic
     (operatorB salg dl)
     (operatorB.isMonotonic salg dl)
     (nnLt)
+
+def Valuation.IsModel
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  (v: Valuation salg.D)
+:
+  Prop
+:=
+  v = dl.I salg v v
+
+noncomputable def DefList.wellFoundedModel
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+:
+  Valuation salg.D
+:=
+  (operatorB.lfp salg dl).val
+
+def DefList.wellFoundedModel.isModel
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+:
+  (dl.wellFoundedModel salg).IsModel salg dl
+:=
+  let wfm := dl.wellFoundedModel salg
+  let clfp := (operatorC.lfp salg dl wfm).val
+  
+  let wfmEq: wfm = clfp :=
+    (operatorB.lfp salg dl).property.isMember
+  
+  let clfpEq: clfp = dl.I salg wfm wfm :=
+    let eq: clfp = dl.I salg wfm clfp :=
+      (operatorC.lfp salg dl wfm).property.isMember
+    wfmEq ▸ eq
+  
+  wfmEq.trans clfpEq

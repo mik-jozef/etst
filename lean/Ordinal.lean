@@ -190,4 +190,36 @@ namespace Ordinal
       False.elim (Ordinal.not_lt_zero nn (h ▸ nn.property))
     else
       (nIsLimit.toIsLimit h).succ_lt nn.property
+  
+  def max_either (a b: Ordinal):
+    max a b = a ∨ max a b = b
+  :=
+    if h: a ≤ b then
+      Or.inr (if_pos h)
+    else
+      Or.inl (if_neg h)
+  
+  def le_max_left (a b: Ordinal): a ≤ max a b :=
+    if h: a ≤ b then
+      let eqB: max a b = b := max_eq_right_iff.mpr h
+      
+      eqB.symm ▸ h
+    else
+      let eqA: max a b = a := max_eq_left_iff.mpr (le_of_not_le h)
+      
+      eqA.symm ▸ Preorder.le_refl _
+  
+  def le_max_rite (a b: Ordinal): b ≤ max a b :=
+    if h: a ≤ b then
+      let eqB: max a b = b := max_eq_right_iff.mpr h
+      
+      eqB.symm ▸ Preorder.le_refl _
+    else
+      let eqA: max a b = a := max_eq_left_iff.mpr (le_of_not_le h)
+      
+      eqA.symm ▸ (le_of_not_le h)
+  
+  def zero.isLimit: IsActualLimit 0 :=
+    fun n nLtZero => False.elim (Ordinal.not_lt_zero n nLtZero)
+  
 end Ordinal

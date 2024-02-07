@@ -1,4 +1,4 @@
-import Fixpoint
+import Lfp
 import Set3
 
 open Classical
@@ -18,58 +18,69 @@ instance: Coe Two Nat where
 def Nat2 := Nat → Two
 def Nat2.zeros: Nat2 := fun _ => Two.zero
 
-def Nat2.fromNat (n: Nat) :=
-  if h: n = 0 then
-    Nat2.zeros
-  else
-    let nGtZero: 0 < n :=
-      match n with
-        | Nat.zero => False.elim (h rfl)
-        | Nat.succ n => Nat.succ_pos n
+-- Converts a number to little endian binary format.
+def Nat2.fromNat (n: Nat): Nat2 :=
+  fun i =>
+    let d := Nat.pow 2 i
     
-    fun i =>
-      match i with
-      | Nat.zero => if n % 2 = 0 then Two.zero else Two.one
-      | Nat.succ iPrev =>
-          have: n / 2 < n := Nat.div_lt_self nGtZero Nat.le.refl
-          Nat2.fromNat (n / 2) iPrev
+    if n % (d * 2) >= d then Two.one else Two.zero
 
 
-def eventuallyZero (t: Tuple Nat2) (n: Nat): Prop :=
-  ∃ lowerBound: ↑t.length,
-    ∀ i: ↑t.length,
-      lowerBound.val ≤ i.val → t.elements i n = Two.zero
+def Tuple.Nat2.IsEventuallyZeroAtIndex
+  (tuple: Tuple Nat2)
+  (index: Nat)
+:
+  Prop
+:=
+  ∃ lowerBound: ↑tuple.length,
+    ∀ i: ↑tuple.length,
+      lowerBound.val ≤ i.val → tuple.elements i index = Two.zero
 
-noncomputable def limSup (t: Tuple Nat2) (ifUndefined: Nat2): Nat2 :=
-  if t.length = Ordinal.zero then
+noncomputable def Tuple.Nat2.limSup
+  (tuple: Tuple Nat2)
+  (ifUndefined: Nat2)
+:
+  Nat2
+:=
+  if tuple.length = 0 then
     ifUndefined
   else
-    fun n: Nat => if eventuallyZero t n then Two.zero else Two.one
+    fun n: Nat =>
+      if IsEventuallyZeroAtIndex tuple n then
+        Two.zero
+      else
+        Two.one
 
-def limSup.zero (t: Tuple Nat2) (ifU: Nat2) (tEmpty: t.length = 0):
-  limSup t ifU = ifU
+def Tuple.Nat2.limSup.zero
+  (tuple: Tuple Nat2)
+  (ifUndefined: Nat2)
+  (tEmpty: tuple.length = 0)
+:
+  limSup tuple ifUndefined = ifUndefined
 :=
   if_pos tEmpty
 
-def limSup.eq
-  (t: Tuple Nat2)
-  (ifU: Nat2)
-  (isDefined: t.length ≠ Ordinal.zero)
-  (res: Nat2)
-  (resSound: ∀ n: Nat, eventuallyZero t n ↔ res n = Two.zero)
+def Tuple.Nat2.limSup.eq
+  (tuple: Tuple Nat2)
+  (ifUndefined: Nat2)
+  (isDefined: tuple.length ≠ 0)
+  (result: Nat2)
+  (isResSound:
+    ∀ n: Nat,
+    IsEventuallyZeroAtIndex tuple n ↔ result n = Two.zero)
 :
-  limSup t ifU = res
+  limSup tuple ifUndefined = result
 :=
-  by unfold limSup rw [if_neg isDefined] exact funext fun n =>
-    if h: eventuallyZero t n then
-      (if_pos h).trans ((resSound n).mp h).symm
+  by unfold limSup; rw [if_neg isDefined]; exact funext fun n =>
+    if h: IsEventuallyZeroAtIndex tuple n then
+      (if_pos h).trans ((isResSound n).mp h).symm
     else
-      match hh: res n with
-      | Two.zero => False.elim (((Iff.not (resSound n)).mp h) hh)
+      match hh: result n with
+      | Two.zero => False.elim (((Iff.not (isResSound n)).mp h) hh)
       | Two.one => (if_neg h).trans rfl
 
 
-def limSup.eventuallyConstant
+def Tuple.Nat2.limSup.isEventuallyConstant
   (t: Tuple Nat2)
   (ifU: Nat2)
   (lowerBound: ↑t.length)
@@ -78,21 +89,22 @@ def limSup.eventuallyConstant
 :
   limSup t ifU = res
 :=
-  let isDefined: t.length ≠ Ordinal.zero :=
+  let isDefined: t.length ≠ 0 :=
     fun eq =>
-      let ltZero: lowerBound < Ordinal.zero := eq ▸ lowerBound.property
-      Ordinal.zero.nGreater lowerBound.val ltZero
+      let ltZero: lowerBound.val < 0 := eq ▸ lowerBound.property
+      Ordinal.not_lt_zero _ ltZero
   
   limSup.eq t ifU isDefined res fun _n =>
     Iff.intro
       (fun evntZero =>
-        let lbN := choiceEx evntZero
-        let lbMax := Ordinal.max lowerBound lbN.val
-        let lbMaxOrd: ↑t.length :=
-          ⟨lbMax.n, lbMax.holds lowerBound.property lbN.val.property⟩
+        let lbN := evntZero.unwrap
         
-        let cAboveMax := constantAbove lbMaxOrd lbMax.geA
-        let eqZero := lbN.property lbMaxOrd lbMax.geB
+        let lbMax: ↑t.length := max lowerBound lbN.val
+        let geLowerBound: lowerBound ≤ lbMax := Ordinal.le_max_left _ _
+        let geLbN: lbN.val ≤ lbMax := Ordinal.le_max_rite _ _
+        
+        let cAboveMax := constantAbove lbMax geLowerBound
+        let eqZero := lbN.property lbMax geLbN
         
         (congr cAboveMax.symm rfl).trans eqZero)
       (fun eqZero =>
@@ -131,12 +143,6 @@ def HamkinsMachine.Move.eq {State: Type}:
 @[reducible] def HamkinsMachine.GetMove (State: Type) :=
   State → Two → HamkinsMachine.Move State
 
--- TODO do I need this?
--- def Type.finite.cardinality (isF: Type.isFinite T):
---   Least (fun n: Nat => ∃ list: List T, list.hasAll ∧ list.length = n)
--- :=
---   sorry
-
 /-
   Infinite time Turing machine is too long. I hereby name you Hamkins
   machine.
@@ -154,7 +160,7 @@ def HamkinsMachine.Move.eq {State: Type}:
 structure HamkinsMachine where
   State: Type
   
-  isFinite: Type.isFinite State
+  isFinite: Type.IsFinite State
   
   initialState: State
   haltState: State
@@ -183,7 +189,12 @@ namespace HamkinsMachine
   
     | ⟨_,_,_⟩, ⟨_,_,_⟩, rfl, rfl, rfl => rfl
   
-  def step (hm: HamkinsMachine) (config: Configuration hm): Configuration hm :=
+  def step
+    (hm: HamkinsMachine)
+    (config: Configuration hm)
+  :
+    Configuration hm
+  :=
     let move := hm.getMove (config.state) (config.tape config.head)
     -- With this, the `step.eq.X` proofs do not work. How to fix?
     --let newHead := move.dir.shift config.head
@@ -208,7 +219,7 @@ namespace HamkinsMachine
   :
     hm.step config = config
   :=
-    by unfold step rw [moveEq.symm] rw [newHeadEq.symm]
+    by unfold step; rw [moveEq.symm]; rw [newHeadEq.symm]
   
   def step.eq.some
     (hm: HamkinsMachine)
@@ -224,7 +235,7 @@ namespace HamkinsMachine
       head := newHead
     }
   :=
-    by unfold step rw [moveEq.symm] rw [newHeadEq.symm]
+    by unfold step; rw [moveEq.symm]; rw [newHeadEq.symm]
   
   def step.halt
     (hm: HamkinsMachine)
@@ -281,7 +292,7 @@ namespace HamkinsMachine
   noncomputable def stage (hm: HamkinsMachine) (input: Nat2) (n: Ordinal):
     Configuration hm
   :=
-    if h: n.isLimit then
+    if h: n.IsActualLimit then
       let prevStages: Tuple Nat2 := {
         length := n,
         elements :=
@@ -297,19 +308,17 @@ namespace HamkinsMachine
             (hm.stage input nn).state = hm.haltState
           then
             hm.haltState
-          else if n = Ordinal.zero then
+          else if n = 0 then
             hm.initialState
           else
             hm.limitState
         -- If the machine halted, limSup is safe.
-        tape := limSup prevStages input
+        tape := Tuple.Nat2.limSup prevStages input
         head := 0
       }
     else
-      let nPred := Ordinal.nLimit.pred n h
-      
-      have := Ordinal.nLimit.pred.lt n h
-      hm.step (hm.stage input nPred)
+      have: n.pred < n := Ordinal.notLimitToPredLt h
+      hm.step (hm.stage input n.pred)
     termination_by stage hm n => n
   
   noncomputable def stage.prevStages
@@ -328,9 +337,9 @@ namespace HamkinsMachine
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
-    (nl: ¬n.isLimit)
+    (nl: ¬n.IsActualLimit)
   :
-    hm.stage input n = hm.step (hm.stage input (Ordinal.nLimit.pred n nl))
+    hm.stage input n = hm.step (hm.stage input n.pred)
   :=
     by conv =>
       lhs
@@ -348,9 +357,9 @@ namespace HamkinsMachine
     (hm: HamkinsMachine)
     (input: Nat2)
   where
-    (tapeEq: (hm.stage input Ordinal.zero).tape = input)
-    (stateEq: (hm.stage input Ordinal.zero).state = hm.initialState)
-    (headEq: (hm.stage input Ordinal.zero).head = 0)
+    (tapeEq: (hm.stage input 0).tape = input)
+    (stateEq: (hm.stage input 0).state = hm.initialState)
+    (headEq: (hm.stage input 0).head = 0)
   
   def stage.eq.zero
     (hm: HamkinsMachine)
@@ -358,27 +367,30 @@ namespace HamkinsMachine
   :
     Zero hm input
   :=
-    let zeroIsLimit := Ordinal.zero.isLimit
-    
     {
       tapeEq :=
-        let prevStages := stage.prevStages hm input Ordinal.zero
+        let prevStages := stage.prevStages hm input 0
         
         let eqLim:
-          (hm.stage input Ordinal.zero).tape = limSup prevStages input
+          (hm.stage input 0).tape = Tuple.Nat2.limSup prevStages input
         := by
           unfold HamkinsMachine.stage
-          exact dif_pos zeroIsLimit ▸ rfl
+          exact dif_pos Ordinal.zero.isLimit ▸ rfl
         
-        eqLim.trans (limSup.zero prevStages input rfl)
+        eqLim.trans (Tuple.Nat2.limSup.zero prevStages input rfl)
       stateEq :=
-        let nex := Ordinal.zero.nex _
+        let nex := all.notEx
+          (fun _ => trivial)
+          (fun (nLe0: { nn // nn < 0 }) _ =>
+            False.elim (Ordinal.not_lt_zero nLe0.val nLe0.property))
         
         by
           unfold HamkinsMachine.stage
-          exact dif_pos zeroIsLimit ▸ if_neg nex ▸ if_pos rfl ▸ rfl
+          exact dif_pos Ordinal.zero.isLimit ▸ if_neg nex ▸ if_pos rfl ▸ rfl
       headEq := 
-        by unfold HamkinsMachine.stage exact dif_pos zeroIsLimit ▸ rfl
+        by
+          unfold HamkinsMachine.stage;
+          exact dif_pos Ordinal.zero.isLimit ▸ rfl
     }
   
   structure stage.eq.InfLimit
@@ -386,18 +398,23 @@ namespace HamkinsMachine
     (input: Nat2)
     (n: Ordinal)
   where
-    (tapeEq: (hm.stage input n).tape = limSup (stage.prevStages hm input n) input)
+    (tapeEq:
+      (hm.stage input n).tape =
+        Tuple.Nat2.limSup (stage.prevStages hm input n) input)
+    
     (stateHalt: (∃ nn: ↑n, stage.haltsAt hm input nn)
       → (hm.stage input n).state = hm.haltState)
+    
     (stateLimit: ¬(∃ nn: ↑n, stage.haltsAt hm input nn)
       → (hm.stage input n).state = hm.limitState)
+    
     (headEq: (hm.stage input n).head = 0)
   
   def stage.eq.infLimit
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
-    (nl: n.isInfLimit)
+    (nl: n.IsInfLimit)
   :
     InfLimit hm input n
   :=

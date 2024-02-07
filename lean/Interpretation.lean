@@ -9,15 +9,15 @@ structure Signature where
   Params: Op → Type v
 
 
-inductive Expr (s: Signature) where
+inductive Expr (sig: Signature) where
   | var (v: Nat)
-  | opApp (op: s.Op) (args: s.Params op → Expr s)
-  | un (left rite: Expr s)
-  | ir (left rite: Expr s)
-  | cpl (expr: Expr s)
-  | ifThen (cond expr: Expr s)
-  | Un (x: Nat) (body: Expr s)
-  | Ir (x: Nat) (body: Expr s)
+  | op (op: sig.Op) (args: sig.Params op → Expr sig)
+  | un (left rite: Expr sig)
+  | ir (left rite: Expr sig)
+  | cpl (expr: Expr sig)
+  | ifThen (cond expr: Expr sig)
+  | Un (x: Nat) (body: Expr sig)
+  | Ir (x: Nat) (body: Expr sig)
 
 namespace Expr
   instance: Coe Nat (Expr s) where
@@ -28,6 +28,33 @@ namespace Expr
   
   def any: Expr s := Expr.un 0 (Expr.cpl 0)
 end Expr
+
+def Expr.IsFreeVar
+  (expr: Expr sig)
+  (boundVars: Set Nat)
+:
+  Set Nat
+:=
+  fun x =>
+    match expr with
+      | var v => x = v ∧ v ∉ boundVars
+      | op _ args => ∃ param, (args param).IsFreeVar boundVars x
+      | un left rite =>
+          Or
+            (left.IsFreeVar boundVars x)
+            (rite.IsFreeVar boundVars x)
+      | ir left rite =>
+          Or
+            (left.IsFreeVar boundVars x)
+            (rite.IsFreeVar boundVars x)
+      | cpl expr => expr.IsFreeVar boundVars x
+      | ifThen cond expr =>
+          Or
+            (cond.IsFreeVar boundVars x)
+            (expr.IsFreeVar boundVars x)
+      | Un x body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = x) x
+      | Ir x body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = x) x
+  
 
 inductive PosExpr (s: Signature) where
   | var (v: Nat)
@@ -68,7 +95,7 @@ def interpretation
   (Expr s) → Set3 salg.D
 
 | Expr.var a => c a
-| Expr.opApp op exprs =>
+| Expr.op op exprs =>
     let defArgs := fun arg =>
       (interpretation salg b c (exprs arg)).defMem
     let posArgs := fun arg =>
@@ -165,7 +192,7 @@ def interpretation.isMonotonic.standard
   | Expr.var a => Set3.LeStd.intro
       (fun _x xIn => (cLe a).defLe xIn)
       (fun _x xIn => (cLe a).posLe xIn)
-  | Expr.opApp op args => Set3.LeStd.intro
+  | Expr.op op args => Set3.LeStd.intro
       (fun _x xIn =>
         let argC0 (i: s.Params op) :=
           (interpretation salg b c0 (args i)).defMem
@@ -387,7 +414,7 @@ def interpretation.isMonotonic.approximation
   | Expr.var x => Set3.LeApx.intro
       (fun _d dIn => (cLe x).defLe dIn)
       (fun _d dIn => (cLe x).posLe dIn)
-  | Expr.opApp op args =>
+  | Expr.op op args =>
       let ih (arg: s.Params op) :=
         interpretation.isMonotonic.approximation
           salg (args arg) b0 b1 c0 c1 bLe cLe
@@ -508,8 +535,42 @@ def interpretation.isMonotonic.approximation
         (fun _d dIn dXPos0 => (ih dXPos0).posLe (dIn dXPos0))
 
 
-structure DefList (s: Signature) where
-  getDef: Nat → Expr s
+def DefList.GetDef (sig: Signature) := Nat → Expr sig
+
+/-
+  A definition list is finitely bounded iff every
+  definition only depends on finitely many other
+  definitions (transitively). This is to disallow
+  definition lists like
+  
+  ```
+    let def0 := def1
+    let def1 := def3
+    let def3 := def4
+    ...
+  ```
+-/
+structure DefList.FinBounds (getDef: DefList.GetDef sig) where
+  bounds: Nat → Set Nat
+  
+  -- Note: free variables refer to other definitions
+  -- of a definition list.
+  usedNamesInBounds:
+    ∀ (name: Nat)
+      (usedName: (getDef name).IsFreeVar Set.empty),
+    usedName.val ∈ bounds name
+  
+  boundsTransitive: ∀ a b c, bounds a b → bounds b c → bounds a c
+  
+  boundsFinite: ∀ name, (bounds name).IsFinite
+
+def DefList.IsFinBounded (gd: DefList.GetDef sig): Prop :=
+  ∃ _fb: FinBounds gd, True
+
+structure DefList (sig: Signature) where
+  getDef: Nat → Expr sig
+  
+  isFinBounded: DefList.IsFinBounded getDef
 
 -- Interpretation on definition lists is defined pointwise.
 def DefList.I

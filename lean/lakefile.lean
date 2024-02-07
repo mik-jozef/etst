@@ -1,8 +1,8 @@
 import Lake
 open Lake DSL
 
--- Boolean Set Theory
-package Bst {}
+-- (I forgot what it stands for.)
+package Etst {}
 
 lean_lib Logic.FO {}
 
@@ -12,10 +12,8 @@ lean_lib HM.Hamkins {}
 lean_lib HM.Uhm {}
 
 lean_lib Arities {}
-lean_lib Bst {} -- TODO rename to Etst
 lean_lib Chain {}
-lean_lib Setun {}
-lean_lib Fixpoint {} -- TODO delete
+lean_lib ExampleWFCs {}
 lean_lib Interpretation {}
 lean_lib ITTM {}
 lean_lib Lfp {}
@@ -26,6 +24,7 @@ lean_lib PartialOrder {}
 lean_lib Pointwise {}
 lean_lib Set {}
 lean_lib Set3 {}
+lean_lib Set3OfDefinable {}
 lean_lib Tuple {}
 lean_lib Valuation {}
 

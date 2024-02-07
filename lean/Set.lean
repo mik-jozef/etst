@@ -49,9 +49,9 @@ instance Set.ord: PartialOrder (Set D) where
     fun (d: D) (da: d ∈ a) => (@bc d) ((@ab d) da)
 
 namespace Set
-  def empty {D: Type}: Set D := fun _ => False
-  def full  {D: Type}: Set D := fun _ => True
-  def just  {D: Type} (d: D): Set D := fun x => x = d
+  def empty: Set D := fun _ => False
+  def full: Set D := fun _ => True
+  def just (d: D): Set D := fun x => x = d
 
   def isFinite (s: Set D): Prop := ∃ l: List D, ∀ t: D, t ∈ s → t ∈ l
 
@@ -320,3 +320,8 @@ noncomputable def existsDistinctOfNotInjective
   let a1 := a0.property.unwrap
 
   ⟨⟨a0, a1⟩, a1.property⟩
+
+def Set.IsFinite
+  (s: Set T)
+:=
+  ∃ list: List T, ∀ t: s, t.val ∈ list

@@ -21,12 +21,12 @@ def natSignature: Signature := {
 
 
 inductive pairSignature.Op where
-  | zero
-  | pair
+| zero
+| pair
 
 def pairSignature.Params: Op → Type
-  | Op.zero => ArityZero
-  | Op.pair => ArityTwo
+| Op.zero => ArityZero
+| Op.pair => ArityTwo
 
 def pairSignature: Signature := {
   Op := pairSignature.Op,
@@ -76,6 +76,7 @@ def natSalgebra: Salgebra natSignature :=
   ⟨Nat, natSalgebra.I, natSalgebra.I.isMonotonic⟩
 
 
+-- Ehhhm, should I rather call them binary trees?
 inductive Pair where
 | zero: Pair -- Zero is considered an improper pair.
 | pair (a b: Pair): Pair
