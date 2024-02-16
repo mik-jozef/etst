@@ -325,3 +325,132 @@ def Set.IsFinite
   (s: Set T)
 :=
   ∃ list: List T, ∀ t: s, t.val ∈ list
+
+
+def List.emptyNotMem (t: T):
+  t ∉ []
+:=
+  fun. -- WTF is this and how does it work? Why isn't it documented (or is it)?
+
+def List.appendUnique [DecidableEq T] (list: List T) (t: T) :=
+  if t ∈ list then
+    list
+  else
+    list ++ [ t ]
+
+def List.appendUnique.eqIfNotUnique
+  [DecidableEq T]
+  {list: List T}
+  (tInList: t ∈ list)
+:
+  appendUnique list t = list
+:=
+  if_pos tInList
+
+def List.appendUnique.eqIfUnique
+  [DecidableEq T]
+  {list: List T}
+  (tInList: t ∉ list)
+:
+  appendUnique list t = list ++ [ t ]
+:=
+  if_neg tInList
+
+def List.appendUnique.inToIn
+  [DecidableEq T]
+  (tToAppend: T)
+  {list: List T}
+  (tIn: tAlreadyIn ∈ list)
+:
+  tAlreadyIn ∈ appendUnique list tToAppend
+:= by
+  unfold appendUnique;
+  exact
+    if h: tToAppend ∈ list then
+      if_pos h ▸ tIn
+    else
+      if_neg h ▸ (List.mem_append_left [ tToAppend ] tIn)
+
+def List.appendUnique.eqToIn
+  [DecidableEq T]
+  (list: List T)
+  (t: T)
+:
+  t ∈ appendUnique list t
+:= by
+  unfold appendUnique;
+  exact
+    if h: t ∈ list then
+      if_pos h ▸ h
+    else
+      if_neg h ▸
+        let tIn: t ∈ [ t ] := Mem.head []
+        List.mem_append_right list tIn
+
+def List.appendUnique.inToOrInEq
+  [DecidableEq T]
+  {list: List T}
+  (isTIn: tIn ∈ appendUnique list t)
+:
+  tIn ∈ list ∨ tIn = t
+:=
+  if hIn: t ∈ list then
+    Or.inl (eqIfNotUnique hIn ▸ isTIn)
+  else
+    let tInConcat: tIn ∈ list ++ [ t ] := eqIfUnique hIn ▸ isTIn
+    let tInEq := mem_append_eq tIn list [ t ]
+    let tInEither := tInEq ▸ tInConcat
+    
+    tInEither.elim
+      (fun inList => Or.inl inList)
+      (fun inArrOfT => Or.inr (eq_of_mem_singleton inArrOfT))
+  
+
+def List.concatUnique
+  [DecidableEq T]
+  (listL listR: List T)
+:
+  List T
+:=
+  match listR with
+  | nil => listL
+  | cons head tail =>
+      concatUnique (appendUnique listL head) tail
+
+def List.concatUnique.inLeftToIn
+  [DecidableEq T]
+  {listL: List T}
+  (tInL: t ∈ listL)
+  (listR: List T)
+:
+  t ∈ concatUnique listL listR
+:=
+  match listR with
+  | nil => tInL
+  | cons head tail =>
+    by unfold concatUnique; exact
+      let tInAppend := appendUnique.inToIn head tInL
+      inLeftToIn tInAppend tail
+
+def List.concatUnique.inRiteToIn
+  [DecidableEq T]
+  (listL: List T)
+  {listR: List T}
+  (tInR: t ∈ listR)
+:
+  t ∈ concatUnique listL listR
+:=
+  match listR with
+  | nil => False.elim (emptyNotMem t tInR)
+  | cons head tail =>
+    by unfold concatUnique; exact
+      match tInR with
+      | Mem.head rest =>
+          let tInAppend := appendUnique.eqToIn listL t
+          inLeftToIn tInAppend rest
+      | Mem.tail head inTail =>
+        inRiteToIn (appendUnique listL head) inTail
+
+def List.flattenUnique: List (List T) → List T
+| nil => []
+| cons head tail => head ++ (flattenUnique tail)

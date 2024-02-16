@@ -52,8 +52,8 @@ def Expr.IsFreeVar
           Or
             (cond.IsFreeVar boundVars x)
             (expr.IsFreeVar boundVars x)
-      | Un x body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = x) x
-      | Ir x body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = x) x
+      | Un bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
+      | Ir bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
   
 
 inductive PosExpr (s: Signature) where
