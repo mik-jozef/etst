@@ -7,7 +7,7 @@ open Classical
 def operatorC (salg: Salgebra s) (dl: DefList s) (b: Valuation salg.D):
   Valuation salg.D → Valuation salg.D
 :=
-  fun c => dl.I salg b c
+  fun c => dl.interpretation salg b c
 
 def operatorC.isMonotonic
   (salg: Salgebra s)
@@ -20,7 +20,7 @@ def operatorC.isMonotonic
     (operatorC salg dl b)
 :=
   fun cLe x =>
-    interpretation.isMonotonic.standard
+    Expr.interpretation.isMonotonic.standard
       salg (dl.getDef x) b cLe
 
 noncomputable def operatorC.lfp
@@ -226,7 +226,7 @@ def operatorC.stage.isMonotonic.approximation
       operatorC.stage.isMonotonic.approximation salg dl b0LeB1 nPred
     
     fun x =>
-      let ILe := interpretation.isMonotonic.approximation
+      let ILe := Expr.interpretation.isMonotonic.approximation
         salg (dl.getDef x) b0 b1 s0Pred s1Pred b0LeB1 s0PredLeS1Pred
   
       s0Eq ▸ s1Eq ▸ ILe
@@ -446,7 +446,7 @@ def Valuation.IsModel
 :
   Prop
 :=
-  v = dl.I salg v v
+  v = dl.interpretation salg v v
 
 noncomputable def DefList.wellFoundedModel
   (salg: Salgebra sig)
@@ -468,8 +468,8 @@ def DefList.wellFoundedModel.isModel
   let wfmEq: wfm = clfp :=
     (operatorB.lfp salg dl).property.isMember
   
-  let clfpEq: clfp = dl.I salg wfm wfm :=
-    let eq: clfp = dl.I salg wfm clfp :=
+  let clfpEq: clfp = dl.interpretation salg wfm wfm :=
+    let eq: clfp = dl.interpretation salg wfm clfp :=
       (operatorC.lfp salg dl wfm).property.isMember
     wfmEq ▸ eq
   

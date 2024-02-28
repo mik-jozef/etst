@@ -3,7 +3,7 @@ import PartialOrder
 import Pointwise
 
 
-@[reducible] def Valuation (D: Type u) := Nat → Set3 D
+def Valuation (D: Type u) := Nat → Set3 D
 
 namespace Valuation
   def empty: Valuation D := fun _ => Set3.empty
@@ -113,6 +113,107 @@ namespace Valuation
         Set3.just d
       else
         val v
+  
+  def update.inEq.defMem
+    (val: Valuation D)
+    (x: Nat)
+    (d: D)
+  :
+    (val.update x d x).defMem d
+  :=
+    by unfold Valuation.update; rw [if_pos rfl]; exact rfl
+  
+  def update.inEq.posMem
+    (val: Valuation D)
+    (x: Nat)
+    (d: D)
+  :
+    (val.update x d x).posMem d
+  :=
+    by unfold Valuation.update; rw [if_pos rfl]; exact rfl
+  
+  def update.inDef.eq
+    (inUpdated: (update val x dBound x).defMem d)
+  :
+    d = dBound
+  :=
+    let eq:
+      Set.just dBound d
+        =
+      (update val x dBound x).defMem d
+    :=
+      by unfold update; rw [if_pos rfl]; unfold Set3.just; exact rfl
+    
+    show Set.just dBound d from eq ▸ inUpdated
+  
+  def update.inPos.eq
+    (inUpdated: (update val x dBound x).posMem d)
+  :
+    d = dBound
+  :=
+    let eq:
+      Set.just dBound d
+        =
+      (update val x dBound x).posMem d
+    :=
+      by unfold update; rw [if_pos rfl]; unfold Set3.just; exact rfl
+    
+    show Set.just dBound d from eq ▸ inUpdated
+  
+  def update.inNeq.defMem
+    (val: Valuation D)
+    {xBound xReq: Nat}
+    (xNeq: xBound ≠ xReq)
+    {d: D}
+    (dIn: d ∈ (val xReq).defMem)
+  :
+    (val.update xBound dBound xReq).defMem d
+  :=
+    by unfold Valuation.update; rw [if_neg xNeq.symm]; exact dIn
+
+  def update.inNeq.posMem
+    (val: Valuation D)
+    {xBound xReq: Nat}
+    (xNeq: xBound ≠ xReq)
+    {d: D}
+    (dIn: d ∈ (val xReq).posMem)
+  :
+    (val.update xBound dBound xReq).posMem d
+  :=
+    by unfold Valuation.update; rw [if_neg xNeq.symm]; exact dIn
+  
+  def update.inNeqElim.defMem
+    {val: Valuation D}
+    (inBound: (val.update xBound dBound xReq).defMem d)
+    (neq: xBound ≠ xReq)
+  :
+    (val xReq).defMem d
+  :=
+    let eq:
+      (val.update xBound dBound xReq).defMem d
+        =
+      (val xReq).defMem d
+    :=
+      by unfold update; rw [if_neg neq.symm]
+    
+    eq ▸ inBound
+  
+  def update.inNeqElim.posMem
+    {val: Valuation D}
+    (inBound: (val.update xBound dBound xReq).posMem d)
+    (neq: xBound ≠ xReq)
+  :
+    (val xReq).posMem d
+  :=
+    let eq:
+      (val.update xBound dBound xReq).posMem d
+        =
+      (val xReq).posMem d
+    :=
+      by unfold update; rw [if_neg neq.symm]
+    
+    eq ▸ inBound
+  
   
   def update.isMonotonic.standard
     (val0 val1: Valuation D)

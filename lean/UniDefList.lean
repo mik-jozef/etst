@@ -1,4 +1,8 @@
 import ExampleWFCs
+import PairFreeVars
+import LeN34
+import Operators
+import Wfm
 
 /-
   In this file, we define the triset of all definable
@@ -10,83 +14,42 @@ import ExampleWFCs
   We show that this triset is itself definable.
 -/
 
+def Nat.setLeN.isFinite (n: Nat):
+  Set.IsFinite (fun x => x ≤ n)
+:=
+  match n with
+  | zero => ⟨
+      [ 0 ],
+      fun m =>
+        let eqZero := Nat.le_zero.mp m.property
+        eqZero ▸ List.Mem.head []
+    ⟩
+  | succ pred =>
+      let isFinPred := isFinite pred
+      let listPred := isFinPred.unwrap
+      
+      ⟨
+        succ pred :: listPred,
+        fun m =>
+          let leOrEq := Nat.le_or_eq_of_le_succ m.property
+          leOrEq.elim
+            (fun le =>
+              let mInList := listPred.property ⟨m, le⟩
+              List.Mem.tail (succ pred) mInList)
+            (fun eq =>
+              by rewrite [eq]; exact List.Mem.head listPred.val),
+      ⟩
+
 namespace Pair
   open pairSignature
+  open Expr
+  open PairExpr
   
-  -- Convention: bound variables start at 500.
+  instance exprOfNat: (n: Nat) → OfNat Expr n :=
+    PairExpr.exprOfNat
   
-  def Expr := _root_.Expr pairSignature
-  
-  instance (n: Nat): OfNat Expr n where
-    ofNat := Expr.var n
-  
-  instance coe: Coe Nat Expr where
-    coe := fun n => Expr.var n
-  
-  
-  def zeroExpr: Expr :=
-    Expr.op Op.zero ArityZero.elim
-  
-  def pairExpr (left rite: Expr): Expr :=
-    Expr.op
-      Op.pair
-      fun arg =>
-        match arg with
-        | ArityTwo.zth => left
-        | ArityTwo.fst => rite
-  
-  def anyExpr: Expr := Expr.Un 0 0
-  def noneExpr: Expr := Expr.Ir 0 0
-  
-  -- Make sure n is not a free var in the domain expr.
-  def unionExpr (n: Nat) (domain body: Expr): Expr :=
-    Expr.Un n (Expr.ifThen (Expr.ir n domain) body)
-  
-  -- Make sure n is not a free var in the domain expr.
-  -- `All t: T, b` === `All t, b | (!(t & domain) then any)`.
-  def irsecExpr (n: Nat) (domain body: Expr): Expr :=
-    Expr.Ir
-      n
-      (Expr.un
-        body
-        (Expr.ifThen (Expr.cpl (Expr.ir n domain)) (anyExpr)))
-  
-  -- Make sure n is not a free var in the expr.
-  def zthMember (n: Nat) (expr: Expr): Expr :=
-    Expr.Un n (Expr.ifThen (Expr.ir (pairExpr n anyExpr) expr) n)
-  
-  -- Make sure n is not a free var in the expr.
-  def fstMember (n: Nat) (expr: Expr): Expr :=
-    Expr.Un n (Expr.ifThen (Expr.ir (pairExpr anyExpr n) expr) n)
-  
-  -- Make sure n is not a free var in the expr.
-  def callExpr (n: Nat) (fn arg: Expr): Expr :=
-    fstMember n (Expr.ir fn (pairExpr arg anyExpr))
-  
-  def succExpr (expr: Expr): Expr := pairExpr expr zeroExpr
-  
-  def finUnExpr: List Expr → Expr
-  | List.nil => noneExpr
-  | List.cons expr List.nil => expr
-  | List.cons expr0 (List.cons expr1 rest) =>
-      Expr.un expr0 (finUnExpr (expr1::rest))
-  
-  
-  def succ (pair: Pair): Pair := Pair.pair pair Pair.zero
-  
-  def fromNat: Nat → Pair
-  | Nat.zero => Pair.zero
-  | Nat.succ n => succ (fromNat n)
-  
-  instance ofNat n: OfNat Pair n where
-    ofNat := fromNat n
-  
-  def natExpr: Nat → Expr
-  | Nat.zero => zeroExpr
-  | Nat.succ pred => succExpr (natExpr pred)
-  
-  
-  namespace setOfAllDef
+    -- Convention: bound variables start at 500.
+    namespace uniDefList
     /-
       Contains exactly the pairs that encode natural numbers.
       nat = () | (nat, ())
@@ -193,12 +156,13 @@ namespace Pair
         pairExpr zeroExpr (pairExpr anyExpr anyExpr),
         unionExpr 500 pairDictLt
           (pairExpr
-            (pairExpr (zthMember 501 500) anyExpr)
-            (pairExpr (fstMember 501 500) anyExpr)),
+            (pairExpr (zthMember 502 500) anyExpr)
+            (pairExpr (fstMember 502 500) anyExpr)),
         unionExpr 500 pairDictLt
-          (pairExpr
-            (pairExpr 501 (zthMember 501 500))
-            (pairExpr 501 (fstMember 501 500))),
+          (Expr.Un 501
+            (pairExpr
+              (pairExpr 501 (zthMember 502 500))
+              (pairExpr 501 (fstMember 502 500)))),
       ]
     
     /-
@@ -230,7 +194,7 @@ namespace Pair
     -/
     def natLt: Nat := 11
     def natLt.expr: Expr :=
-      Expr.ir natLe (Expr.un 500 (Expr.cpl (pairExpr 500 500)))
+      Expr.ir natLe (Expr.Un 500 (Expr.cpl (pairExpr 500 500)))
     
     /-
       Contains (a, b) if a and b have the same depth.
@@ -363,12 +327,13 @@ namespace Pair
     def shiftDefEncoding.incrementExprs.expr: Expr :=
       Expr.un
         (pairExpr zeroExpr zeroExpr)
-        (unionExpr 501 exprEncoding
-          (pairExpr
-            (pairExpr 501 500)
+        (unionExpr 500 exprEncoding
+          (unionExpr 501 defEncoding
             (pairExpr
-              (callExpr 502 shiftExprEncoding 501)
-              (callExpr 502 shiftDefEncoding.incrementExprs 500))))
+              (pairExpr 500 501)
+              (pairExpr
+                (callExpr 502 shiftExprEncoding 500)
+                (callExpr 502 shiftDefEncoding.incrementExprs 501)))))
     
     /-
       (expr, (dlIn, dlOut)) where dlOut = [ expr, ...shift(dlIn) ]
@@ -720,10 +685,11 @@ namespace Pair
     | 32 => getBound.expr
     | 33 => interpretation.expr
     | 34 => theSet.expr
-    | rest + 35 =>
-        callExpr (rest + 36) theSet (natExpr rest)
-    
-    #reduce Expr.IsFreeVar (defList.getDef 0) Set.empty
+    | _rest + 35 =>
+      -- This would be nice, but proving `usedNamesInBounds`
+      -- below proved to be a pain.
+      -- callExpr (rest + 36) theSet (natExpr rest)
+      34
     
     def defList:
       DefList pairSignature
@@ -733,16 +699,77 @@ namespace Pair
       isFinBounded := ⟨{
         bounds := fun _ x => x ≤ 34,
         usedNamesInBounds :=
-          fun x xUsed =>
+          fun x usedByX =>
+            let prf
+              (defIndex: Nat)
+              (fv: List Nat)
+              (fvEq: (freeVars (defList.getDef defIndex)).val = fv)
+              (allLe: ∀ {x} (_: x ∈ fv), x ≤ 34)
+              (usedByX:
+                (Expr.IsFreeVar (defList.getDef defIndex) Set.empty))
+            :
+              usedByX.val ≤ 34
+            :=
+              let freeVars := freeVars (defList.getDef defIndex)
+              let xIn: ↑usedByX ∈ fv := fvEq ▸ freeVars.property usedByX
+              allLe xIn
+            
+            -- Here we are proving that each definition only
+            -- uses finitely many other definitions by enumerating
+            -- all used definitions of all definitions.
             match x with
-            | 0 =>
-              sorry
-            | rest => sorry
+            | 0 => prf 0 [ 0 ] rfl (by simp) usedByX
+            | 1 => prf 1 [ 0 ] rfl (by simp) usedByX
+            | 2 => prf 2 [ 1 ] rfl (by simp[le1]) usedByX
+            | 3 => prf 3 [ 0 ] rfl (by simp) usedByX
+            | 4 => prf 4 [] rfl (by simp) usedByX
+            | 5 => prf 5 [] rfl (by simp) usedByX
+            | 6 => prf 6 [] rfl (by simp) usedByX
+            | 7 => prf 7 [ 3, 4, 5, 6, 0 ] rfl (by simp[leN34]) usedByX
+            | 8 => prf 8 [ 8 ] rfl (by simp[leN34]) usedByX
+            | 9 => prf 9 [ 2 ] rfl (by simp[leN34]) usedByX
+            | 10 => prf 10 [ 0, 10, 9 ] rfl (by simp[leN34]) usedByX
+            | 11 => prf 11 [ 2 ] rfl (by simp[leN34]) usedByX
+            | 12 => prf 12 [ 0, 10 ] rfl (by simp[leN34]) usedByX
+            | 13 => prf 13 [ 12, 8, 11, 10 ] rfl (by simp[leN34]) usedByX
+            | 14 => prf 14 [ 13, 7 ] rfl (by simp[leN34]) usedByX
+            | 15 => prf 15 [ 14 ] rfl (by simp[leN34]) usedByX
+            | 16 => prf 16 [ 14, 15 ] rfl (by simp[leN34]) usedByX
+            | 17 => prf 17 [ 17, 16 ] rfl (by simp[leN34]) usedByX
+            | 18 => prf 18 [ 0 ] rfl (by simp[leN34]) usedByX
+            | 19 => prf 19 [ 18, 4, 6, 5, 19, 0 ] rfl (by simp[leN34]) usedByX
+            | 20 => prf 20 [ 6, 7, 19, 20 ] rfl (by simp[leN34]) usedByX
+            | 21 => prf 21 [ 6, 7, 20 ] rfl (by simp[leN34]) usedByX
+            | 22 => prf 22 [ 6 ] rfl (by simp[leN34]) usedByX
+            | 23 => prf 23 [ 22, 23, 6 ] rfl (by simp[leN34]) usedByX
+            | 24 => prf 24 [ 6, 24 ] rfl (by simp[leN34]) usedByX
+            | 25 => prf 25 [ 7 ] rfl (by simp[leN34]) usedByX
+            | 26 => prf 26 [ 25, 7, 26, 24, 21, 23 ] rfl (by simp[leN34]) usedByX
+            | 27 => prf 27 [ 0, 26, 27, 17 ] rfl (by simp[leN34]) usedByX
+            | 28 => prf 28 [ 6, 7, 0, 28 ] rfl (by simp[leN34]) usedByX
+            | 29 => prf 29 [ 0, 27 ] rfl (by simp[leN34]) usedByX
+            | 30 => prf 30 [ 29, 28 ] rfl (by simp[leN34]) usedByX
+            | 31 => prf 31 [ 0 ] rfl (by simp[leN34]) usedByX
+            | 32 => prf 32 [ 31, 0, 32 ] rfl (by simp[leN34]) usedByX
+            | 33 => prf 33 [ 0, 32, 34, 6, 33 ] rfl (by simp[leN34]) usedByX
+            | 34 => prf 34 [ 0, 33, 30 ] rfl (by simp[leN34]) usedByX
+            | rest + 35 =>
+              let expr: Expr := 34
+              
+              let freeVars := freeVars expr
+              let xIn: ↑usedByX ∈ [ 34 ] := freeVars.property usedByX
+              let xEq: usedByX.val = 34 := List.eq_of_mem_singleton xIn
+              let le34Self: 34 ≤ 34 := by simp
+              xEq ▸ le34Self
         ,
         
-        boundsFinite := sorry,
-        boundsTransitive := sorry,
+        boundsFinite := fun _ => Nat.setLeN.isFinite 34,
+        boundsTransitive := fun a b c _bLe cLe => cLe,
       }, trivial⟩
     }
-  end setOfAllDef
+    
+    noncomputable def wfModel :=
+      defList.wellFoundedModel pairSalgebra
+    
+  end uniDefList  
 end Pair

@@ -17,6 +17,7 @@ lean_lib ExampleWFCs {}
 lean_lib PairFreeVars {}
 lean_lib Interpretation {}
 lean_lib ITTM {}
+lean_lib LeN34 {}
 lean_lib Lfp {}
 lean_lib Operators {}
 lean_lib Ordinal {}
@@ -25,9 +26,11 @@ lean_lib PartialOrder {}
 lean_lib Pointwise {}
 lean_lib Set {}
 lean_lib Set3 {}
-lean_lib Set3OfDefinable {}
 lean_lib Tuple {}
+lean_lib UniDefList {}
+lean_lib UniSet3 {}
 lean_lib Valuation {}
+lean_lib Wfm {}
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4"

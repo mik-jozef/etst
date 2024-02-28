@@ -278,6 +278,32 @@ def Not.toEx {P ImpliedByNotP: T → Prop}
   byContradiction fun nEx =>
     nAll (fun t => byContradiction fun npt => nEx ⟨t, nptImpl t npt⟩)
 
+def Not.toOr {L R: Prop}
+  (nAnd: ¬(L ∧ R))
+:
+  ¬L ∨ ¬ R
+:=
+  if hL: L then
+    if hR: R then
+      False.elim (nAnd ⟨hL, hR⟩)
+    else
+      Or.inr hR
+  else
+    Or.inl hL
+
+def Not.toAnd {L R: Prop}
+  (nOr: ¬(L ∨ R))
+:
+  ¬L ∧ ¬ R
+:=
+  if hL: L then
+    False.elim (nOr (Or.inl hL))
+  else
+    if hR: R then
+      False.elim (nOr (Or.inr hR))
+    else
+      And.intro hL hR
+
 def all.notEx {P ContradictsP: T → Prop}
   (allP: ∀ t: T, P t)
   (ptImpl: ∀ t, P t → ¬ContradictsP t)

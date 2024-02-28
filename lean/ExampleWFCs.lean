@@ -81,6 +81,8 @@ inductive Pair where
 | zero: Pair -- Zero is considered an improper pair.
 | pair (a b: Pair): Pair
 
+def Pair.Expr := _root_.Expr pairSignature
+
 namespace pairSalgebra
   open pairSignature
   
@@ -130,6 +132,10 @@ inductive SPair.Ret
   indices, or null if the path is invalid. Invalid
   paths are those that try to access the contents
   of zero.
+  
+  Later note: this is dumb. I should have made spairs
+  equivalence classes of sequences of growing prefixes
+  of the infinite thing.
 -/
 structure SPair where
   f: List ArityTwo → SPair.Ret

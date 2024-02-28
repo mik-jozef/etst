@@ -1,13 +1,7 @@
 import Interpretation
 import ExampleWFCs
 
-def expr: Expr pairSignature :=
-  Expr.op pairSignature.Op.zero fun x => x.elim
-#reduce expr.IsFreeVar (fun x => x ∈ [])
-
 namespace Pair
-  def Expr := _root_.Expr pairSignature
-  
   /-
     This could be generalized for any signature with finite number
     of operators (and their arguments) -- only the op case would
@@ -16,7 +10,7 @@ namespace Pair
     I don't feel like coding it myself and it's basic enough
     that it should be in a standard library.
   -/
-  def freeVars
+  def freeVars.givenBounds
     (expr: Expr)
     (boundVars: List Nat)
   :
@@ -27,13 +21,17 @@ namespace Pair
     }
   :=
     match expr with
-    | Expr.var x => ⟨
-        [x],
-        fun freeVar =>
-          let eq: ↑freeVar = x := freeVar.property.left
-          let xIn: x ∈ [ x ] := List.Mem.head []
-          by rewrite [eq]; exact xIn
-      ⟩
+    | Expr.var x =>
+        let freeVars := if x ∈ boundVars then [] else [x]
+        ⟨
+          freeVars,
+          fun freeVar =>
+            let eqVar: ↑freeVar = x := freeVar.property.left
+            let ninBound: x ∉ boundVars := freeVar.property.right
+            let eqVars: freeVars = [ x ] := if_neg ninBound
+            let xIn: x ∈ [ x ] := List.Mem.head []
+            by rewrite [eqVar, eqVars]; exact xIn
+        ⟩
     | Expr.op pairSignature.Op.zero args => ⟨
         [],
         let expr: Expr := Expr.op pairSignature.Op.zero args
@@ -48,8 +46,8 @@ namespace Pair
           (eq ▸ freeVar).property.unwrap.val.elim,
       ⟩
     | Expr.op pairSignature.Op.pair args =>
-        let freeVarsZth := freeVars (args ArityTwo.zth) boundVars
-        let freeVarsFst := freeVars (args ArityTwo.fst) boundVars
+        let freeVarsZth := givenBounds (args ArityTwo.zth) boundVars
+        let freeVarsFst := givenBounds (args ArityTwo.fst) boundVars
         
         ⟨
           List.concatUnique freeVarsZth freeVarsFst,
@@ -87,8 +85,8 @@ namespace Pair
                 List.concatUnique.inRiteToIn freeVarsZth freeVarInVars
         ⟩
     | Expr.un left rite =>
-        let freeVarsLeft := freeVars left boundVars
-        let freeVarsRite := freeVars rite boundVars
+        let freeVarsLeft := givenBounds left boundVars
+        let freeVarsRite := givenBounds rite boundVars
         
         ⟨
           List.concatUnique freeVarsLeft freeVarsRite,
@@ -104,8 +102,8 @@ namespace Pair
                 List.concatUnique.inRiteToIn freeVarsLeft isInFreeVarsRite),
         ⟩
     | Expr.ir left rite =>
-        let freeVarsLeft := freeVars left boundVars
-        let freeVarsRite := freeVars rite boundVars
+        let freeVarsLeft := givenBounds left boundVars
+        let freeVarsRite := givenBounds rite boundVars
         
         ⟨
           List.concatUnique freeVarsLeft freeVarsRite,
@@ -120,10 +118,10 @@ namespace Pair
                   freeVarsRite.property ⟨freeVar, isFreeInRite⟩
                 List.concatUnique.inRiteToIn freeVarsLeft isInFreeVarsRite),
         ⟩
-    | Expr.cpl expr => freeVars expr boundVars
+    | Expr.cpl expr => givenBounds expr boundVars
     | Expr.ifThen cond expr =>
-        let freeVarsCond := freeVars cond boundVars
-        let freeVarsExpr := freeVars expr boundVars
+        let freeVarsCond := givenBounds cond boundVars
+        let freeVarsExpr := givenBounds expr boundVars
         
         ⟨
           List.concatUnique freeVarsCond freeVarsExpr,
@@ -139,7 +137,7 @@ namespace Pair
                 List.concatUnique.inRiteToIn freeVarsCond isInFreeVarsExpr),
         ⟩
     | Expr.Un x expr =>
-        let freeVarsExpr := freeVars expr (boundVars.appendUnique x)
+        let freeVarsExpr := givenBounds expr (boundVars.appendUnique x)
         ⟨
           freeVarsExpr,
           fun freeVar =>
@@ -164,7 +162,7 @@ namespace Pair
             freeVarsExpr.property ⟨freeVar, eq ▸ freeVar.property⟩,
         ⟩
     | Expr.Ir x expr =>
-        let freeVarsExpr := freeVars expr (boundVars.appendUnique x)
+        let freeVarsExpr := givenBounds expr (boundVars.appendUnique x)
         ⟨
           freeVarsExpr,
           fun freeVar =>
@@ -187,3 +185,26 @@ namespace Pair
             freeVarsExpr.property ⟨freeVar, eq ▸ freeVar.property⟩,
         ⟩
   
+  def freeVars (expr: Expr):
+    {
+      list: List Nat
+    //
+      ∀ x: expr.IsFreeVar Set.empty, x.val ∈ list
+    }
+  :=
+    let eq: Set.empty = fun x: Nat => x ∈ [] :=
+      funext fun x =>
+        (propext
+          (Iff.intro
+            (False.elim)
+            (fun inEmpty => List.emptyNotMem x inEmpty)))
+    
+    let fv := freeVars.givenBounds expr []
+    -- Using `eq ▸ fv` directly breaks `freeVars.eq` :(
+    ⟨fv.val, eq.symm ▸ fv.property⟩
+  
+  def freeVars.eq (expr: Expr):
+    (freeVars expr).val = freeVars.givenBounds expr []
+  :=
+    rfl
+end Pair
