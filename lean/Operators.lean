@@ -4,14 +4,14 @@ import Interpretation
 open Classical
 
 
-def operatorC (salg: Salgebra s) (dl: DefList s) (b: Valuation salg.D):
+def operatorC (salg: Salgebra sig) (dl: DefList sig) (b: Valuation salg.D):
   Valuation salg.D → Valuation salg.D
 :=
   fun c => dl.interpretation salg b c
 
 def operatorC.isMonotonic
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
 :
   IsMonotonic
@@ -24,8 +24,8 @@ def operatorC.isMonotonic
       salg (dl.getDef x) b cLe
 
 noncomputable def operatorC.lfp
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
 :
   Lfp (Valuation.ord.standard salg.D) (operatorC salg dl b)
@@ -37,8 +37,8 @@ noncomputable def operatorC.lfp
 
 
 noncomputable def operatorC.stage
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
   (n: Ordinal)
 :
@@ -51,8 +51,8 @@ noncomputable def operatorC.stage
     n
 
 noncomputable def operatorC.fixedStage
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
 :
   { n: Ordinal //
@@ -68,8 +68,8 @@ noncomputable def operatorC.fixedStage
     (operatorC.isMonotonic salg dl b)
 
 noncomputable def operatorC.stage.previous
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
   (n: Ordinal)
 :
@@ -82,8 +82,8 @@ noncomputable def operatorC.stage.previous
     n
 
 def operatorC.stage.limit
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
   {n: Ordinal}
   (nIsLimit: n.IsActualLimit)
@@ -100,8 +100,8 @@ def operatorC.stage.limit
     nIsLimit
 
 def operatorC.stage.succ
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
   (n: Ordinal)
 :
@@ -115,8 +115,8 @@ def operatorC.stage.succ
     n
 
 def operatorC.stage.pred
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
   {n: Ordinal}
   (nNotLim: ¬n.IsActualLimit)
@@ -134,8 +134,8 @@ def operatorC.stage.pred
   stageEq.symm.trans (succ salg dl b n.pred)
 
 noncomputable def operatorC.stage.eqPrevN
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b: Valuation salg.D)
   {n: Ordinal}
   (nn: ↑n)
@@ -147,8 +147,8 @@ noncomputable def operatorC.stage.eqPrevN
 
 
 def operatorC.stage.isMonotonic.approximation
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   {b0 b1: Valuation salg.D}
   (b0LeB1: b0 ⊑ b1)
   (n: Ordinal)
@@ -234,7 +234,7 @@ termination_by operatorC.stage.isMonotonic.approximation
   alg dl b0 b1 b0LeB1 n => n
 
 
-noncomputable def operatorB (salg: Salgebra s) (dl: DefList s):
+noncomputable def operatorB (salg: Salgebra sig) (dl: DefList sig):
   Valuation salg.D → Valuation salg.D
 :=
   fun b => (operatorC.lfp salg dl b).val
@@ -251,8 +251,8 @@ def operatorB.eqLfpC
 
 
 noncomputable def operatorB.isMonotonic.commonFixedStage
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (b0 b1: Valuation salg.D)
 :
   {
@@ -316,7 +316,7 @@ noncomputable def operatorB.isMonotonic.commonFixedStage
         ⟩)
     ⟩
 
-def operatorB.isMonotonic (salg: Salgebra s) (dl: DefList s):
+def operatorB.isMonotonic (salg: Salgebra sig) (dl: DefList sig):
   IsMonotonic
     (Valuation.ord.approximation salg.D)
     (Valuation.ord.approximation salg.D)
@@ -332,8 +332,8 @@ def operatorB.isMonotonic (salg: Salgebra s) (dl: DefList s):
       (lfpI.property.left ▸ lfpI.property.right ▸ le) x
 
 noncomputable def operatorB.lfp
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
 :
   Lfp (Valuation.ord.approximation salg.D) (operatorB salg dl)
 :=
@@ -344,8 +344,8 @@ noncomputable def operatorB.lfp
 
 
 noncomputable def operatorB.stage
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (n: Ordinal)
 :
   Valuation salg.D
@@ -357,8 +357,8 @@ noncomputable def operatorB.stage
     n
 
 noncomputable def operatorB.fixedIndex
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
 :
   { n: Ordinal // operatorB.stage salg dl n = (operatorB.lfp salg dl).val }
 := ⟨
@@ -370,8 +370,8 @@ noncomputable def operatorB.fixedIndex
 ⟩
 
 noncomputable def operatorB.stage.previous
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   (n: Ordinal)
 :
   Tuple (Valuation salg.D)
@@ -383,8 +383,8 @@ noncomputable def operatorB.stage.previous
     n
 
 def operatorB.stage.limit
-  (salg: Salgebra s)
-  (dl: DefList s)
+  (salg: Salgebra sig)
+  (dl: DefList sig)
   {n: Ordinal}
   (nIsLimit: n.IsActualLimit)
 :

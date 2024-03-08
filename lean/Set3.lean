@@ -8,7 +8,7 @@ structure Set3 (D: Type u) where
   defLePos: defMem ≤ posMem
 
 namespace Set3
-  protected def Eq:
+  protected def eq:
     {a b: Set3 D} →
     a.defMem = b.defMem →
     a.posMem = b.posMem
@@ -17,7 +17,7 @@ namespace Set3
   -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1747
   | ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl => rfl
   
-  structure Eq2
+  structure eq2
     (s3: Set3 D)
     (s2: Set D): Prop
   where
@@ -33,13 +33,33 @@ namespace Set3
   def just {D: Type} (d: D): Set3 D :=
     ⟨Set.just d, Set.just d, Preorder.le_refl _⟩
   
+  def just.inDefToEq
+    {a b: D}
+    (d: D)
+    (aIn: a ∈ (just d).defMem)
+    (bIn: b ∈ (just d).defMem)
+  :
+    a = b
+  :=
+    aIn.trans bIn.symm
+  
+  def just.inPosToEq
+    {a b: D}
+    (d: D)
+    (aIn: a ∈ (just d).posMem)
+    (bIn: b ∈ (just d).posMem)
+  :
+    a = b
+  :=
+    aIn.trans bIn.symm
+  
   
   def empty.nin.def (d: D): d ∉ Set3.empty.defMem := False.elim
   def empty.nin.pos (d: D): d ∉ Set3.empty.posMem := False.elim
   
   -- :( def empty.fromNoPos (noPos (d: D): d ∉ s.posMem): ...
   def empty.fromNoPos (noPos: ∀ d: D, d ∉ s.posMem): s = Set3.empty :=
-    Set3.Eq
+    Set3.eq
       (funext fun d =>
         propext
           (Iff.intro
@@ -105,7 +125,7 @@ namespace Set3
         PartialOrder.le_antisymm a.defMem b.defMem ab.defLe ba.defLe;
       let posEq: a.posMem = b.posMem :=
         PartialOrder.le_antisymm a.posMem b.posMem ba.posLe ab.posLe;
-      Set3.Eq defEq posEq
+      Set3.eq defEq posEq
   
   -- Latter instances override former instances in priority.
   -- How may I set the prio manually? `@[default_instance] x`
@@ -146,7 +166,7 @@ namespace Set3
       PartialOrder.le_antisymm a.defMem b.defMem ab.defLe ba.defLe;
     let posEq: a.posMem = b.posMem :=
       PartialOrder.le_antisymm a.posMem b.posMem ab.posLe ba.posLe;
-    Set3.Eq defEq posEq
+    Set3.eq defEq posEq
   
   instance ord.standard (D: Type u): PartialOrder (Set3 D) where
     le := LeStd
@@ -494,7 +514,7 @@ namespace Set3
         (Set3.withoutDef.ltStd h).toLe
       else
         let eq: sup.val = supWithoutD :=
-          Set3.Eq
+          Set3.eq
             (funext (fun _dd => (propext (Iff.intro
               (fun ddIn => {
                 dIn := ddIn,
@@ -536,7 +556,7 @@ namespace Set3
         (Set3.without.ltStd h).toLe
       else
         let eq: sup.val = supWithoutD :=
-          Set3.Eq
+          Set3.eq
             (funext (fun _dd => (propext (Iff.intro
               (fun ddIn => without.DefMem.intro
                 ddIn (fun eq => h (eq ▸ (sup.val.defLePos ddIn))))
@@ -635,7 +655,7 @@ namespace Set3
     let withoutLe: supWithPosD ⊑ sup.val :=
       if h: d ∈ sup.val.posMem then
         let eq: sup.val = supWithPosD :=
-          Set3.Eq
+          Set3.eq
             (Set3.withPos.defMemEq sup.val d)
             (funext (fun _dd => (propext (Iff.intro
               (fun ddIn => Or.inl ddIn)
@@ -676,7 +696,7 @@ namespace Set3
         (Set3.withoutDef.ltApx h).toLe
       else
         let eq: sup.val = supWithoutD :=
-          Set3.Eq
+          Set3.eq
             (funext (fun _dd => (propext (Iff.intro
               (fun ddIn => without.DefMem.intro
                 ddIn

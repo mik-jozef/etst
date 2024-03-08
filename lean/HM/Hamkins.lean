@@ -18,7 +18,7 @@ instance: Coe Two Nat where
 def Nat2 := Nat → Two
 def Nat2.zeros: Nat2 := fun _ => Two.zero
 
--- Converts a number to little endian binary format.
+-- Converts a number to little endian.
 def Nat2.fromNat (n: Nat): Nat2 :=
   fun i =>
     let d := Nat.pow 2 i
@@ -393,7 +393,7 @@ namespace HamkinsMachine
           exact dif_pos Ordinal.zero.isLimit ▸ rfl
     }
   
-  structure stage.eq.InfLimit
+  structure stage.eq.Limit
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
@@ -405,8 +405,9 @@ namespace HamkinsMachine
     (stateHalt: (∃ nn: ↑n, stage.haltsAt hm input nn)
       → (hm.stage input n).state = hm.haltState)
     
-    (stateLimit: ¬(∃ nn: ↑n, stage.haltsAt hm input nn)
-      → (hm.stage input n).state = hm.limitState)
+    (stateLimit: n = 0 ∨
+      (¬(∃ nn: ↑n, stage.haltsAt hm input nn)
+        → (hm.stage input n).state = hm.limitState))
     
     (headEq: (hm.stage input n).head = 0)
   
@@ -414,23 +415,27 @@ namespace HamkinsMachine
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
-    (nl: n.IsInfLimit)
+    (nl: n.IsActualLimit)
   :
-    InfLimit hm input n
+    Limit hm input n
   :=
     {
       tapeEq :=
-        by unfold HamkinsMachine.stage exact dif_pos nl.left ▸ rfl
+        by unfold HamkinsMachine.stage; exact dif_pos nl ▸ rfl
       stateHalt := fun ex =>
         by
           unfold HamkinsMachine.stage
-          exact dif_pos nl.left ▸ if_pos ex ▸ rfl
-      stateLimit := fun nex =>
-        by
-          unfold HamkinsMachine.stage
-          exact dif_pos nl.left ▸ if_neg nex ▸ if_neg nl.right ▸ rfl
+          exact dif_pos nl ▸ if_pos ex ▸ rfl
+      stateLimit :=
+        if h: n = 0 then
+          Or.inl h
+        else
+          Or.inr fun nex =>
+          by
+            unfold HamkinsMachine.stage
+            exact dif_pos nl ▸ if_neg nex ▸ if_neg h ▸ rfl
       headEq :=
-        by unfold HamkinsMachine.stage exact dif_pos nl.left ▸ rfl
+        by unfold HamkinsMachine.stage; exact dif_pos nl ▸ rfl
     }
   
   def stage.eq.step.succ
@@ -440,15 +445,17 @@ namespace HamkinsMachine
   :
     hm.stage input n.succ = hm.step (hm.stage input n)
   :=
-    let nSuccNLimit: ¬n.succ.isLimit := Ordinal.succ.hasPred n
+    let nSuccPredEq: n.succ.pred = n := Ordinal.pred_succ n
     
-    let nSuccPred := Ordinal.nLimit.pred n.succ nSuccNLimit
-    let nSuccPredEq: nSuccPred.val = n := Ordinal.succ.inj nSuccPred.property
+    let eqSucc:
+      hm.stage input n.succ = hm.step (hm.stage input n.succ.pred)
+    :=
+      stage.eq.step hm input n.succ (Ordinal.succ_not_limit n)
     
-    let eq: hm.stage input n.succ = hm.step (hm.stage input nSuccPred.val) :=
-      stage.eq.step hm input n.succ nSuccNLimit
+    let eq: hm.stage input n.succ.pred = hm.stage input n :=
+      congr rfl nSuccPredEq
     
-    by conv => rhs rw [nSuccPredEq.symm] exact eq
+    eq ▸ eqSucc
   
   def stage.haltsAt.ge
     (hAt: stage.haltsAt hm input n)
@@ -460,10 +467,10 @@ namespace HamkinsMachine
     if hEq: n = ng then
       hEq ▸ hAt
     else
-      let ngGt: n < ng := ngGe.toLt hEq
-      let ngNotZero: ¬ng.isZero := Ordinal.lt.notZero ngGt
+      let ngGt: n < ng := lt_of_le_of_ne ngGe hEq
+      let ngNotZero: ¬ng.IsZero := Ordinal.lt.notZero ngGt
       
-      if hLim: ng.isLimit then
+      if hLim: ng.IsActualLimit then
         let lim := stage.eq.infLimit hm input ng ⟨hLim, ngNotZero⟩
         lim.stateHalt ⟨⟨n, ngGt⟩, hAt⟩
       else
@@ -643,7 +650,7 @@ namespace HamkinsMachine
   
   noncomputable def enumeration (nat2: Nat2): HamkinsMachine :=
     if h: ∃ hm: HamkinsMachine, hm.label = nat2 then
-      choiceEx h
+      h.unwrap
     else trivialMachine
 end HamkinsMachine
 
@@ -675,7 +682,7 @@ namespace Program
         if h: ∃ lowerBound: Nat, ∀ n: Nat,
           lowerBound ≤ n → (m.seq lowerBound).val loc = (m.seq n).val loc
         then
-          (m.seq (choiceEx h)).val loc
+          (m.seq (h.unwrap)).val loc
         else
           Two.one
     end Program
@@ -802,7 +809,7 @@ namespace HM
   
   structure DefList
     (Var: Type)
-    (fin: Type.isFinite Var)
+    (fin: Type.IsFinite Var)
   where
     rules: ↑Var → PosExpr Var
     isFinite: ∃ list: List Var, ∀ v: ↑Var, v ∈ list

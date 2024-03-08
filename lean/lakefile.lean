@@ -13,6 +13,7 @@ lean_lib HM.Uhm {}
 
 lean_lib Arities {}
 lean_lib Chain {}
+lean_lib EqSwappedUnusedVar {}
 lean_lib ExampleWFCs {}
 lean_lib PairFreeVars {}
 lean_lib Interpretation {}

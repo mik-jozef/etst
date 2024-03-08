@@ -62,6 +62,7 @@ inductive PosExpr (s: Signature) where
   | un (left: PosExpr s) (rite: PosExpr s)
   | ir (left: PosExpr s) (rite: PosExpr s)
   | ifThen (cond ifYes: PosExpr s)
+    -- Complementing a bound variable is OK.
   | Un (x xc: Var) (body: PosExpr s)
   | Ir (x xc: Var) (body: PosExpr s)
 
@@ -89,10 +90,10 @@ structure Salgebra (s: Signature) where
 
 
 def Expr.interpretation
-  (salg: Salgebra s)
+  (salg: Salgebra sig)
   (b c: Valuation salg.D)
 :
-  (Expr s) → Set3 salg.D
+  (Expr sig) → Set3 salg.D
 
 | Expr.var a => c a
 | Expr.op opr exprs =>
@@ -156,23 +157,23 @@ def Expr.interpretation
           (expr.I.defLePos dIn.right)
     ⟩
 | Expr.Un x body =>
-    let body.I (iX: salg.D): Set3 salg.D :=
-      interpretation salg (b.update x iX) (c.update x iX) body
+    let body.I (dX: salg.D): Set3 salg.D :=
+      interpretation salg (b.update x dX) (c.update x dX) body
     
     ⟨
-      fun d => ∃ iX, d ∈ (body.I iX).defMem,
-      fun d => ∃ iX, d ∈ (body.I iX).posMem,
+      fun d => ∃ dX, d ∈ (body.I dX).defMem,
+      fun d => ∃ dX, d ∈ (body.I dX).posMem,
       
-      fun _d dDef => dDef.elim fun iX iXDef =>
-        ⟨iX, (body.I iX).defLePos iXDef⟩
+      fun _d dDef => dDef.elim fun dX iXDef =>
+        ⟨dX, (body.I dX).defLePos iXDef⟩
     ⟩
 | Expr.Ir x body =>
-    let body.I (iX: salg.D): Set3 salg.D :=
-      (interpretation salg (b.update x iX) (c.update x iX) body)
+    let body.I (dX: salg.D): Set3 salg.D :=
+      (interpretation salg (b.update x dX) (c.update x dX) body)
     
     ⟨
-      fun d => ∀ iX, d ∈ (body.I iX).defMem,
-      fun d => ∀ iX, d ∈ (body.I iX).posMem,
+      fun d => ∀ dX, d ∈ (body.I dX).defMem,
+      fun d => ∀ dX, d ∈ (body.I dX).posMem,
       
       fun _d dDefBody xDDef =>
         (body.I xDDef).defLePos (dDefBody xDDef)
@@ -180,8 +181,8 @@ def Expr.interpretation
 
 
 def Expr.interpretation.isMonotonic.standard
-  (salg: Salgebra s)
-  (e: Expr s)
+  (salg: Salgebra sig)
+  (e: Expr sig)
   (b: Valuation salg.D)
   {c0 c1: Valuation salg.D}
   (cLe: c0 ≤ c1)
@@ -194,20 +195,20 @@ def Expr.interpretation.isMonotonic.standard
       (fun _x xIn => (cLe a).posLe xIn)
   | Expr.op opr args => Set3.LeStd.intro
       (fun _x xIn =>
-        let argC0 (i: s.Params opr) :=
+        let argC0 (i: sig.Params opr) :=
           (interpretation salg b c0 (args i)).defMem
-        let argC1 (i: s.Params opr) :=
+        let argC1 (i: sig.Params opr) :=
           (interpretation salg b c1 (args i)).defMem
-        let argMono (i: s.Params opr): argC0 i ≤ argC1 i :=
+        let argMono (i: sig.Params opr): argC0 i ≤ argC1 i :=
           (interpretation.isMonotonic.standard salg (args i) b cLe).defLe
         let isMono3 := salg.isMonotonic opr argC0 argC1 argMono
         isMono3 xIn)
       (fun _x xIn =>
-        let argC0 (i: s.Params opr) :=
+        let argC0 (i: sig.Params opr) :=
           (interpretation salg b c0 (args i)).posMem
-        let argC1 (i: s.Params opr) :=
+        let argC1 (i: sig.Params opr) :=
           (interpretation salg b c1 (args i)).posMem
-        let argMono (i: s.Params opr): argC0 i ≤ argC1 i :=
+        let argMono (i: sig.Params opr): argC0 i ≤ argC1 i :=
           (interpretation.isMonotonic.standard salg (args i) b cLe).posLe
         let isMono3 := salg.isMonotonic opr argC0 argC1 argMono
         isMono3 xIn)
@@ -402,8 +403,8 @@ def Expr.interpretation.isMonotonic.standard
         bodyLe.posLe dInXD)
 
 def Expr.interpretation.isMonotonic.approximation
-  (salg: Salgebra s)
-  (e: Expr s)
+  (salg: Salgebra sig)
+  (e: Expr sig)
   (b0 b1 c0 c1: Valuation salg.D)
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
@@ -415,7 +416,7 @@ def Expr.interpretation.isMonotonic.approximation
       (fun _d dIn => (cLe x).defLe dIn)
       (fun _d dIn => (cLe x).posLe dIn)
   | Expr.op opr args =>
-      let ih (arg: s.Params opr) :=
+      let ih (arg: sig.Params opr) :=
         interpretation.isMonotonic.approximation
           salg (args arg) b0 b1 c0 c1 bLe cLe
       
@@ -574,9 +575,9 @@ structure DefList (sig: Signature) where
 
 -- Interpretation on definition lists is defined pointwise.
 def DefList.interpretation
-  (salg: Salgebra s)
+  (salg: Salgebra sig)
   (b c: Valuation salg.D)
-  (dl: DefList s)
+  (dl: DefList sig)
 :
   Valuation salg.D
 :=

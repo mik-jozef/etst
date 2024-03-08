@@ -72,7 +72,7 @@ namespace Pair
     def natLe.expr :=
       Expr.un
         natPairAA
-        (unionExpr 500 natPairAA
+        (unionExpr 500 natLe
           (pairExpr
             (zthMember 501 500)
             (succExpr (fstMember 501 500))))
@@ -720,7 +720,7 @@ namespace Pair
             match x with
             | 0 => prf 0 [ 0 ] rfl (by simp) usedByX
             | 1 => prf 1 [ 0 ] rfl (by simp) usedByX
-            | 2 => prf 2 [ 1 ] rfl (by simp[le1]) usedByX
+            | 2 => prf 2 [ 1, 2 ] rfl (by simp[leN34]) usedByX
             | 3 => prf 3 [ 0 ] rfl (by simp) usedByX
             | 4 => prf 4 [] rfl (by simp) usedByX
             | 5 => prf 5 [] rfl (by simp) usedByX

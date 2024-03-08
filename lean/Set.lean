@@ -324,6 +324,16 @@ def ex.notAll {P ContradictsP: T → Prop}
     let t := exP.unwrap
     ptImpl t t.property (all t)
 
+def And.toNor (p: ¬L ∧ ¬R): ¬(L ∨ R) :=
+  fun lr => lr.elim
+    (fun l => p.left l)
+    (fun r => p.right r)
+
+def Or.toNand (p: ¬L ∨ ¬R): ¬(L ∧ R) :=
+  fun lr => p.elim
+    (fun nl => nl lr.left)
+    (fun nr => nr lr.right)
+
 def Not.implToAnd {A B: Prop} (ab: ¬(A → B)): A ∧ ¬B :=
   if hA: A then
     And.intro hA (if hB: B then False.elim (ab fun _ => hB) else hB)
