@@ -18,7 +18,7 @@ lean_lib ExampleWFCs {}
 lean_lib PairFreeVars {}
 lean_lib Interpretation {}
 lean_lib ITTM {}
-lean_lib LeN34 {}
+lean_lib LeN35 {}
 lean_lib Lfp {}
 lean_lib Operators {}
 lean_lib Ordinal {}

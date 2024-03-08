@@ -343,6 +343,22 @@ namespace PairExpr
   :=
     (insZeroIff v Pair.zero).mpr rfl
   
+  def insZeroElim v
+    (s: ins pairSalgebra v zeroExpr p)
+    a b
+  :
+    p ≠ Pair.pair a b
+  :=
+    fun eq =>
+      Pair.noConfusion (((insZeroIff v p).mp s).symm.trans eq)
+  
+  def insZeroElim.nope v
+    (s: ins pairSalgebra v zeroExpr (Pair.pair a b))
+  :
+    P
+  :=
+    False.elim (insZeroElim v s a b rfl)
+  
   def inwZero v:
     inw pairSalgebra v zeroExpr = Set.just Pair.zero
   :=
@@ -352,6 +368,22 @@ namespace PairExpr
     inw pairSalgebra v zeroExpr d ↔ d = Pair.zero
   :=
     Iff.of_eq (inwZero v ▸ rfl)
+  
+  def inwZeroElim v
+    (s: inw pairSalgebra v zeroExpr p)
+    a b
+  :
+    p ≠ Pair.pair a b
+  :=
+    fun eq =>
+      Pair.noConfusion (((insZeroIff v p).mp s).symm.trans eq)
+  
+  def inwZeroElim.nope v
+    (s: inw pairSalgebra v zeroExpr (Pair.pair a b))
+  :
+    P
+  :=
+    False.elim (insZeroElim v s a b rfl)
   
   
   def insPair
@@ -500,7 +532,7 @@ namespace PairExpr
   def inwPairElim.nope v
     (w: inw pairSalgebra v (pairExpr exprL exprR) Pair.zero)
   :
-    p
+    P
   :=
     (notZero v w rfl).elim
   

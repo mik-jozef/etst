@@ -163,6 +163,7 @@ namespace Pair
     | pair a b => IsNatLe.Pair a b
     
     def nat501Neq500: 501 ≠ 500 := by simp
+    def nat500Neq0: 500 ≠ 0 := by simp
     def nat500Neq2: 500 ≠ 2 := by simp
     def insNatLe.abEq (isNatLe: IsNatLe (pair a b)): ins natLe (pair a b) :=
       let ⟨isNatA, isNatB, abLe⟩ := isNatLe
@@ -278,5 +279,37 @@ namespace Pair
           | zero => False.elim (inwPairElim.notZero _ inwBody rfl)
           | pair _ _ => isNatLe.abEq w)
     
+    def IsExprEncoding.Var: Pair → Prop
+    | Pair.zero => False
+    | Pair.pair (Pair.pair _ _) _ => False
+    | Pair.pair zero x => IsNatEncoding x
+    
+    def insExprEncoding.var (isEEV: IsExprEncoding.Var p):
+      ins exprEncoding.var p
+    :=
+      match p with
+      | Pair.zero => False.elim isEEV
+      | Pair.pair (Pair.pair _ _) _ => False.elim isEEV
+      | Pair.pair zero _ =>
+        wfm.insWfmDef.toInsWfm
+          (insUnDom
+            (insFree (insNat isEEV) nat500Neq0)
+            (insPair (insZero _) insBound))
+    
+    def inwExprEncoding.var.IsExprEncoding.var
+      (w: inw exprEncoding.var p)
+    :
+      IsExprEncoding.Var p
+    :=
+      let ⟨_pBound, ⟨inwNatPBound, inwPairP⟩⟩ :=
+        inwUnDomElim (wfm.inwWfm.toInwWfmDef w)
+      match p with
+      | zero => inwPairElim.nope _ inwPairP
+      | pair (pair _ _) _ =>
+        inwZeroElim.nope _ (inwPairElim _ inwPairP).inwL
+      | pair zero _b =>
+        let ⟨_, bInw500⟩ := inwPairElim _ inwPairP
+        let eq := inwBoundEq bInw500
+        eq ▸ (inwNat.isNatEncoding inwNatPBound)
   end uniSet
 end Pair
