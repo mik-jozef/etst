@@ -34,7 +34,7 @@ namespace Expr
   
   
   -- "in strong". `d "∈s" t` iff `d ∈ t.defMem`. See also `inw`.
-  def ins
+  def Ins
     (salg: Salgebra sig)
     (v: Valuation salg.D)
     (expr: Expr sig)
@@ -45,7 +45,7 @@ namespace Expr
     d ∈ (expr.interpretation salg v v).defMem
   
   -- "in weak". `d "∈s" t` iff `d ∈ t.posMem`. See also `ins`.
-  def inw
+  def Inw
     (salg: Salgebra sig)
     (v: Valuation salg.D)
     (expr: Expr sig)
@@ -55,62 +55,62 @@ namespace Expr
   :=
     d ∈ (expr.interpretation salg v v).posMem
   
-  def ins.toInw (s: ins salg v expr d):
-    inw salg v expr d
+  def Ins.toInw (s: Ins salg v expr d):
+    Inw salg v expr d
   :=
     (Expr.interpretation salg v v expr).defLePos s
   
   
   def insUnL
     {exprL: Expr sig}
-    (s: ins salg v exprL d)
+    (s: Ins salg v exprL d)
     (exprR: Expr sig)
   :
-    ins salg v (Expr.un exprL exprR) d
+    Ins salg v (Expr.un exprL exprR) d
   :=
     Or.inl s
   
   def insUnR
     {exprR: Expr sig}
     (exprL: Expr sig)
-    (s: ins salg v exprR d)
+    (s: Ins salg v exprR d)
   :
-    ins salg v (Expr.un exprL exprR) d
+    Ins salg v (Expr.un exprL exprR) d
   :=
     Or.inr s
   
   def insUnElim
-    (s: ins salg v (Expr.un exprL exprR) d)
+    (s: Ins salg v (Expr.un exprL exprR) d)
   :
     Or
-      (ins salg v exprL d)
-      (ins salg v exprR d)
+      (Ins salg v exprL d)
+      (Ins salg v exprR d)
   :=
     s
   
   def insArbUn
-    (s: ins salg (v.update x dBound) body d)
+    (s: Ins salg (v.update x dBound) body d)
   :
-    ins salg v (Expr.Un x body) d
+    Ins salg v (Expr.Un x body) d
   :=
     ⟨dBound, s⟩
   
   def insArbUnElim
-    (s: ins salg v (Expr.Un x body) d)
+    (s: Ins salg v (Expr.Un x body) d)
   :
-    ∃ dBound, ins salg (v.update x dBound) body d
+    ∃ dBound, Ins salg (v.update x dBound) body d
   :=
     s
   
   
   def insBound {v: Valuation salg.D}:
-    ins salg (v.update x dBound) (var x) dBound
+    Ins salg (v.update x dBound) (var x) dBound
   :=
     Valuation.update.inEq.defMem v x dBound
   
   def insBoundEq
     {v: Valuation salg.D}
-    (s: ins salg (v.update x dBound) (var x) d)
+    (s: Ins salg (v.update x dBound) (var x) d)
   :
     d = dBound
   :=
@@ -118,7 +118,7 @@ namespace Expr
   
   def inwBoundEq
     {v: Valuation salg.D}
-    (w: inw salg (v.update x dBound) (var x) d)
+    (w: Inw salg (v.update x dBound) (var x) d)
   :
     d = dBound
   :=
@@ -130,7 +130,7 @@ namespace Expr
     (isDef: (v x).defMem d)
     (neq: xB ≠ x)
   :
-    ins salg (v.update xB dBound) (var x) d
+    Ins salg (v.update xB dBound) (var x) d
   :=
     Valuation.update.inNeq.defMem v neq isDef
   
@@ -140,28 +140,28 @@ namespace Expr
     (isPos: (v x).posMem d)
     (neq: xB ≠ x)
   :
-    inw salg (v.update xB dBound) (var x) d
+    Inw salg (v.update xB dBound) (var x) d
   :=
     Valuation.update.inNeq.posMem v neq isPos
   
   def insFreeElim
-    (s: ins salg (v.update xB dBound) (var x) d)
+    (s: Ins salg (v.update xB dBound) (var x) d)
     (neq: xB ≠ x)
   :
-    ins salg v (var x) d
+    Ins salg v (var x) d
   :=
     Valuation.update.inNeqElim.defMem s neq
   
   def inwFreeElim
-    (w: inw salg (v.update xB dBound) (var x) d)
+    (w: Inw salg (v.update xB dBound) (var x) d)
     (neq: xB ≠ x)
   :
-    inw salg v (var x) d
+    Inw salg v (var x) d
   :=
     Valuation.update.inNeqElim.posMem w neq
   
   
-  def insAny: ins salg v anyExpr d := insArbUn insBound
+  def insAny: Ins salg v anyExpr d := insArbUn insBound
   
   
   /-
@@ -171,10 +171,10 @@ namespace Expr
     of `unionExpr` to see for yourself.
   -/
   def insUnDom
-    (insDomain: ins salg (v.update x dBound) domain dBound)
-    (insBody: ins salg (v.update x dBound) body d)
+    (insDomain: Ins salg (v.update x dBound) domain dBound)
+    (insBody: Ins salg (v.update x dBound) body d)
   :
-    ins salg v (unionExpr x domain body) d
+    Ins salg v (unionExpr x domain body) d
   :=
     let inUpdated: ((v.update x dBound) x).defMem dBound :=
       Valuation.update.inEq.defMem v x dBound
@@ -194,11 +194,11 @@ namespace Expr
     (domain body: Expr sig)
     (d: salg.D): Prop
   where
-    insDomain: ins salg (v.update x dBound) domain dBound
-    insBody: ins salg (v.update x dBound) body d
+    insDomain: Ins salg (v.update x dBound) domain dBound
+    insBody: Ins salg (v.update x dBound) body d
   
   def insUnDomElim
-    (insUnDom: ins salg v (unionExpr x domain body) d)
+    (insUnDom: Ins salg v (unionExpr x domain body) d)
   :
     ∃ dBound, insUnDomElim.Str salg v x dBound domain body d
   :=
@@ -211,7 +211,7 @@ namespace Expr
       insBoundEq dInIr.property.left
     
     let insDomain:
-      ins salg vUpdated domain dBound.val
+      Ins salg vUpdated domain dBound.val
     :=
       dEq ▸ dInIr.property.right
     
@@ -231,11 +231,11 @@ namespace Expr
     (domain body: Expr sig)
     (d: salg.D): Prop
   where
-    insDomain: inw salg (v.update x dBound) domain dBound
-    insBody: inw salg (v.update x dBound) body d
+    insDomain: Inw salg (v.update x dBound) domain dBound
+    insBody: Inw salg (v.update x dBound) body d
   
   def inwUnDomElim
-    (insUnDom: inw salg v (unionExpr x domain body) d)
+    (insUnDom: Inw salg v (unionExpr x domain body) d)
   :
     ∃ dBound, inwUnDomElim.Str salg v x dBound domain body d
   :=
@@ -248,7 +248,7 @@ namespace Expr
       inwBoundEq dInIr.property.left
     
     let insDomain:
-      inw salg vUpdated domain dBound.val
+      Inw salg vUpdated domain dBound.val
     :=
       dEq ▸ dInIr.property.right
     
@@ -267,7 +267,7 @@ namespace Expr
     {d: salg.D}
     (s: (v x).defMem d)
   :
-    ins salg v (var x) d
+    Ins salg v (var x) d
   :=
     s
   
@@ -329,22 +329,29 @@ namespace PairExpr
   
   
   def insZeroEq v:
-    ins pairSalgebra v zeroExpr = Set.just Pair.zero
+    Ins pairSalgebra v zeroExpr = Set.just Pair.zero
   :=
     rfl
   
   def insZeroIff v d:
-    ins pairSalgebra v zeroExpr d ↔ d = Pair.zero
+    Ins pairSalgebra v zeroExpr d ↔ d = Pair.zero
   :=
     Iff.of_eq (insZeroEq v ▸ rfl)
   
   def insZero v:
-    ins pairSalgebra v zeroExpr Pair.zero
+    Ins pairSalgebra v zeroExpr Pair.zero
   :=
     (insZeroIff v Pair.zero).mpr rfl
   
   def insZeroElim v
-    (s: ins pairSalgebra v zeroExpr p)
+    (s: Ins pairSalgebra v zeroExpr p)
+  :
+    p = Pair.zero
+  :=
+    (insZeroIff v p).mp s
+  
+  def insZeroElim.neq v
+    (s: Ins pairSalgebra v zeroExpr p)
     a b
   :
     p ≠ Pair.pair a b
@@ -353,24 +360,31 @@ namespace PairExpr
       Pair.noConfusion (((insZeroIff v p).mp s).symm.trans eq)
   
   def insZeroElim.nope v
-    (s: ins pairSalgebra v zeroExpr (Pair.pair a b))
+    (s: Ins pairSalgebra v zeroExpr (Pair.pair a b))
   :
     P
   :=
-    False.elim (insZeroElim v s a b rfl)
+    False.elim (insZeroElim.neq v s a b rfl)
   
   def inwZero v:
-    inw pairSalgebra v zeroExpr = Set.just Pair.zero
+    Inw pairSalgebra v zeroExpr = Set.just Pair.zero
   :=
     rfl
   
   def inwZeroIff v d:
-    inw pairSalgebra v zeroExpr d ↔ d = Pair.zero
+    Inw pairSalgebra v zeroExpr d ↔ d = Pair.zero
   :=
     Iff.of_eq (inwZero v ▸ rfl)
   
   def inwZeroElim v
-    (s: inw pairSalgebra v zeroExpr p)
+    (s: Inw pairSalgebra v zeroExpr p)
+  :
+    p = Pair.zero
+  :=
+    (insZeroIff v p).mp s
+  
+  def inwZeroElim.neq v
+    (s: Inw pairSalgebra v zeroExpr p)
     a b
   :
     p ≠ Pair.pair a b
@@ -379,26 +393,26 @@ namespace PairExpr
       Pair.noConfusion (((insZeroIff v p).mp s).symm.trans eq)
   
   def inwZeroElim.nope v
-    (s: inw pairSalgebra v zeroExpr (Pair.pair a b))
+    (s: Inw pairSalgebra v zeroExpr (Pair.pair a b))
   :
     P
   :=
-    False.elim (insZeroElim v s a b rfl)
+    False.elim (insZeroElim.neq v s a b rfl)
   
   
   def insPair
-    (insL: ins pairSalgebra v exprL pairL)
-    (insR: ins pairSalgebra v exprR pairR)
+    (insL: Ins pairSalgebra v exprL pairL)
+    (insR: Ins pairSalgebra v exprR pairR)
   :
-    ins pairSalgebra v (pairExpr exprL exprR) (Pair.pair pairL pairR)
+    Ins pairSalgebra v (pairExpr exprL exprR) (Pair.pair pairL pairR)
   :=
     ⟨⟨pairL, insL⟩, ⟨pairR, insR⟩, rfl⟩
   
   def inwPair
-    (insL: inw pairSalgebra v exprL pairL)
-    (insR: inw pairSalgebra v exprR pairR)
+    (insL: Inw pairSalgebra v exprL pairL)
+    (insR: Inw pairSalgebra v exprR pairR)
   :
-    inw pairSalgebra v (pairExpr exprL exprR) (Pair.pair pairL pairR)
+    Inw pairSalgebra v (pairExpr exprL exprR) (Pair.pair pairL pairR)
   :=
     ⟨⟨pairL, insL⟩, ⟨pairR, insR⟩, rfl⟩
   
@@ -408,11 +422,11 @@ namespace PairExpr
     (exprL exprR: Expr)
     (pairL pairR: Pair): Prop
   where
-    insL: ins pairSalgebra v exprL pairL
-    insR: ins pairSalgebra v exprR pairR
+    insL: Ins pairSalgebra v exprL pairL
+    insR: Ins pairSalgebra v exprR pairR
   
   def insPairElim v
-    (s: ins pairSalgebra v (pairExpr exprL exprR) (Pair.pair pairL pairR))
+    (s: Ins pairSalgebra v (pairExpr exprL exprR) (Pair.pair pairL pairR))
   :
     InsPairElim v exprL exprR pairL pairR
   :=
@@ -435,11 +449,11 @@ namespace PairExpr
     (pair pairL pairR: Pair): Prop
   where
     eq: pair = Pair.pair pairL pairR
-    insL: ins pairSalgebra v exprL pairL
-    insR: ins pairSalgebra v exprR pairR
+    insL: Ins pairSalgebra v exprL pairL
+    insR: Ins pairSalgebra v exprR pairR
   
   def insPairElim.ex v
-    (s: ins pairSalgebra v (pairExpr exprL exprR) pair)
+    (s: Ins pairSalgebra v (pairExpr exprL exprR) pair)
   :
     ∃ pairL pairR: Pair, InsPairElim.Ex v exprL exprR pair pairL pairR
   :=
@@ -453,7 +467,7 @@ namespace PairExpr
       }⟩
   
   def insPairElim.notZero v
-    (s: ins pairSalgebra v (pairExpr exprL exprR) pair)
+    (s: Ins pairSalgebra v (pairExpr exprL exprR) pair)
   :
     pair ≠ Pair.zero
   :=
@@ -463,7 +477,7 @@ namespace PairExpr
     prop.eq ▸ Pair.noConfusion
   
   def insPairElim.nope v
-    (s: ins pairSalgebra v (pairExpr exprL exprR) Pair.zero)
+    (s: Ins pairSalgebra v (pairExpr exprL exprR) Pair.zero)
   :
     p
   :=
@@ -475,11 +489,11 @@ namespace PairExpr
     (exprL exprR: Expr)
     (pairL pairR: Pair): Prop
   where
-    inwL: inw pairSalgebra v exprL pairL
-    inwR: inw pairSalgebra v exprR pairR
+    inwL: Inw pairSalgebra v exprL pairL
+    inwR: Inw pairSalgebra v exprR pairR
   
   def inwPairElim v
-    (w: inw pairSalgebra v (pairExpr exprL exprR) (Pair.pair pairL pairR))
+    (w: Inw pairSalgebra v (pairExpr exprL exprR) (Pair.pair pairL pairR))
   :
     InwPairElim v exprL exprR pairL pairR
   :=
@@ -502,11 +516,11 @@ namespace PairExpr
     (pair pairL pairR: Pair): Prop
   where
     eq: pair = Pair.pair pairL pairR
-    insL: inw pairSalgebra v exprL pairL
-    insR: inw pairSalgebra v exprR pairR
+    insL: Inw pairSalgebra v exprL pairL
+    insR: Inw pairSalgebra v exprR pairR
   
   def inwPairElim.ex v
-    (w: inw pairSalgebra v (pairExpr exprL exprR) pair)
+    (w: Inw pairSalgebra v (pairExpr exprL exprR) pair)
   :
     ∃ pairL pairR: Pair, InwPairElim.Ex v exprL exprR pair pairL pairR
   :=
@@ -520,7 +534,7 @@ namespace PairExpr
       }⟩
   
   def inwPairElim.notZero v
-    (w: inw pairSalgebra v (pairExpr exprL exprR) pair)
+    (w: Inw pairSalgebra v (pairExpr exprL exprR) pair)
   :
     pair ≠ Pair.zero
   :=
@@ -530,7 +544,7 @@ namespace PairExpr
     prop.eq ▸ Pair.noConfusion
   
   def inwPairElim.nope v
-    (w: inw pairSalgebra v (pairExpr exprL exprR) Pair.zero)
+    (w: Inw pairSalgebra v (pairExpr exprL exprR) Pair.zero)
   :
     P
   :=
@@ -538,18 +552,18 @@ namespace PairExpr
   
   
   def insZthMember
-    (s: ins pairSalgebra v expr (Pair.pair a b))
+    (s: Ins pairSalgebra v expr (Pair.pair a b))
     (xNotFree: ¬expr.IsFreeVar Set.empty x)
   :
-    ins pairSalgebra v (zthMember x expr) a
+    Ins pairSalgebra v (zthMember x expr) a
   :=
     let eqUpdated := Expr.interpretation.eqSwappedUnused
       pairSalgebra v v expr xNotFree a
     
     let sUpd:
-      ins pairSalgebra (v.update x a) expr (Pair.pair a b)
+      Ins pairSalgebra (v.update x a) expr (Pair.pair a b)
     :=
-      by unfold ins; exact eqUpdated ▸ s
+      by unfold Ins; exact eqUpdated ▸ s
     
     insArbUn ⟨
       ⟨Pair.pair a b,
@@ -558,18 +572,18 @@ namespace PairExpr
     ⟩
   
   def insFstMember
-    (s: ins pairSalgebra v expr (Pair.pair a b))
+    (s: Ins pairSalgebra v expr (Pair.pair a b))
     (xNotFree: ¬expr.IsFreeVar Set.empty x)
   :
-    ins pairSalgebra v (fstMember x expr) b
+    Ins pairSalgebra v (fstMember x expr) b
   :=
     let eqUpdated := Expr.interpretation.eqSwappedUnused
       pairSalgebra v v expr xNotFree b
     
     let sUpd:
-      ins pairSalgebra (v.update x b) expr (Pair.pair a b)
+      Ins pairSalgebra (v.update x b) expr (Pair.pair a b)
     :=
-      by unfold ins; exact eqUpdated ▸ s
+      by unfold Ins; exact eqUpdated ▸ s
     
     insArbUn ⟨
       ⟨Pair.pair a b,
@@ -578,14 +592,14 @@ namespace PairExpr
     ⟩
   
   def insZthMemberElim
-    (s: ins pairSalgebra v (zthMember xA (var xB)) zth)
+    (s: Ins pairSalgebra v (zthMember xA (var xB)) zth)
     (neq: xA ≠ xB)
   :
-    ∃ fst, ins pairSalgebra v xB (Pair.pair zth fst)
+    ∃ fst, Ins pairSalgebra v xB (Pair.pair zth fst)
   :=
     let ⟨pZth, ⟨insCond, insBody⟩⟩ := s
     let ⟨pCond, ⟨insPairXaAny, pCondInsXbUpdated⟩⟩ := insCond
-    let pCondInsXb: ins pairSalgebra v xB pCond :=
+    let pCondInsXb: Ins pairSalgebra v xB pCond :=
       insFreeElim pCondInsXbUpdated neq
     
     match h: pCond with
@@ -598,14 +612,14 @@ namespace PairExpr
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInsXb⟩
   
   def inwZthMemberElim
-    (s: inw pairSalgebra v (zthMember xA (var xB)) zth)
+    (s: Inw pairSalgebra v (zthMember xA (var xB)) zth)
     (neq: xA ≠ xB)
   :
-    ∃ fst, inw pairSalgebra v xB (Pair.pair zth fst)
+    ∃ fst, Inw pairSalgebra v xB (Pair.pair zth fst)
   :=
     let ⟨pZth, ⟨inwCond, inwBody⟩⟩ := s
     let ⟨pCond, ⟨inwPairXaAny, pCondInwXbUpdated⟩⟩ := inwCond
-    let pCondInwXb: inw pairSalgebra v xB pCond :=
+    let pCondInwXb: Inw pairSalgebra v xB pCond :=
       inwFreeElim pCondInwXbUpdated neq
     
     match h: pCond with
@@ -618,14 +632,14 @@ namespace PairExpr
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInwXb⟩
   
   def insFstMemberElim
-    (s: ins pairSalgebra v (fstMember xA (var xB)) fst)
+    (s: Ins pairSalgebra v (fstMember xA (var xB)) fst)
     (neq: xA ≠ xB)
   :
-    ∃ zth, ins pairSalgebra v xB (Pair.pair zth fst)
+    ∃ zth, Ins pairSalgebra v xB (Pair.pair zth fst)
   :=
     let ⟨pFst, ⟨insCond, insBody⟩⟩ := s
     let ⟨pCond, ⟨insPairAnyXa, pCondInsXbUpdated⟩⟩ := insCond
-    let pCondInsXb: ins pairSalgebra v xB pCond :=
+    let pCondInsXb: Ins pairSalgebra v xB pCond :=
       insFreeElim pCondInsXbUpdated neq
     
     match h: pCond with
@@ -638,14 +652,14 @@ namespace PairExpr
       ⟨pCondZth, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInsXb⟩
   
   def inwFstMemberElim
-    (s: inw pairSalgebra v (fstMember xA (var xB)) fst)
+    (s: Inw pairSalgebra v (fstMember xA (var xB)) fst)
     (neq: xA ≠ xB)
   :
-    ∃ zth, inw pairSalgebra v xB (Pair.pair zth fst)
+    ∃ zth, Inw pairSalgebra v xB (Pair.pair zth fst)
   :=
     let ⟨pFst, ⟨inwCond, inwBody⟩⟩ := s
     let ⟨pCond, ⟨inwPairAnyXa, pCondInwXbUpdated⟩⟩ := inwCond
-    let pCondInsXb: inw pairSalgebra v xB pCond :=
+    let pCondInsXb: Inw pairSalgebra v xB pCond :=
       inwFreeElim pCondInwXbUpdated neq
     
     match h: pCond with
@@ -659,12 +673,12 @@ namespace PairExpr
   
   
   def insZthFstElim v
-    (insZth: ins pairSalgebra v (zthMember xA (var xB)) zth)
-    (insFst: ins pairSalgebra v (fstMember xA (var xB)) fst)
+    (insZth: Ins pairSalgebra v (zthMember xA (var xB)) zth)
+    (insFst: Ins pairSalgebra v (fstMember xA (var xB)) fst)
     (neq: xA ≠ xB)
     (isUnit: v xB = Set3.just d)
   :
-    ins pairSalgebra v xB (Pair.pair zth fst)
+    Ins pairSalgebra v xB (Pair.pair zth fst)
   :=
     let ⟨chosenFst, insChosenFst⟩ := insZthMemberElim insZth neq
     let ⟨chosenZth, insChosenZth⟩ := insFstMemberElim insFst neq
@@ -681,12 +695,12 @@ namespace PairExpr
     eqR ▸ insChosenZth
   
   def inwZthFstElim v
-    (inwZth: inw pairSalgebra v (zthMember xA (var xB)) zth)
-    (inwFst: inw pairSalgebra v (fstMember xA (var xB)) fst)
+    (inwZth: Inw pairSalgebra v (zthMember xA (var xB)) zth)
+    (inwFst: Inw pairSalgebra v (fstMember xA (var xB)) fst)
     (neq: xA ≠ xB)
     (isUnit: v xB = Set3.just d)
   :
-    inw pairSalgebra v xB (Pair.pair zth fst)
+    Inw pairSalgebra v xB (Pair.pair zth fst)
   :=
     let ⟨chosenFst, inwChosenFst⟩ := inwZthMemberElim inwZth neq
     let ⟨chosenZth, inwChosenZth⟩ := inwFstMemberElim inwFst neq
@@ -705,7 +719,7 @@ end PairExpr
 
 
 namespace wfm
-  def insWfm
+  def InsWfm
     (salg: Salgebra sig)
     (dl: DefList sig)
     (expr: Expr sig)
@@ -713,9 +727,9 @@ namespace wfm
   :
     Prop
   :=
-    expr.ins salg (dl.wellFoundedModel salg) d
+    expr.Ins salg (dl.wellFoundedModel salg) d
   
-  def inwWfm
+  def InwWfm
     (salg: Salgebra sig)
     (dl: DefList sig)
     (expr: Expr sig)
@@ -723,21 +737,21 @@ namespace wfm
   :
     Prop
   :=
-    expr.inw salg (dl.wellFoundedModel salg) d
+    expr.Inw salg (dl.wellFoundedModel salg) d
   
   def insWfmDef.toInsWfm
-    (s: insWfm salg dl (dl.getDef n) d)
+    (s: InsWfm salg dl (dl.getDef n) d)
   :
-    insWfm salg dl n d
+    InsWfm salg dl n d
   := by
-    unfold insWfm;
+    unfold InsWfm;
     exact (DefList.wellFoundedModel.isModel salg dl) ▸ s
   
   def insWfm.toInsWfmDef
     {n: Nat}
-    (s: insWfm salg dl n d)
+    (s: InsWfm salg dl n d)
   :
-    insWfm salg dl (dl.getDef n) d
+    InsWfm salg dl (dl.getDef n) d
   :=
     let v := dl.wellFoundedModel salg
     
@@ -749,18 +763,18 @@ namespace wfm
     show (dl.interpretation salg v v n).defMem d from eqAtN ▸ s
   
   def inwWfmDef.toInwWfm
-    (w: inwWfm salg dl (dl.getDef n) d)
+    (w: InwWfm salg dl (dl.getDef n) d)
   :
-    inwWfm salg dl n d
+    InwWfm salg dl n d
   := by
-    unfold inwWfm;
+    unfold InwWfm;
     exact (DefList.wellFoundedModel.isModel salg dl) ▸ w
   
   def inwWfm.toInwWfmDef
     {n: Nat}
-    (w: inwWfm salg dl n d)
+    (w: InwWfm salg dl n d)
   :
-    inwWfm salg dl (dl.getDef n) d
+    InwWfm salg dl (dl.getDef n) d
   :=
     let v := dl.wellFoundedModel salg
     
