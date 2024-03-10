@@ -431,6 +431,42 @@ namespace Expr
         (fun insHead insHeadToP =>
           insFinUnElim.retOfP tail (insHeadToP insHead))
         (fun insTail _ => insFinUnElim insTail)
+  
+  
+  def inwFinUnElim.Ret
+    (salg: Salgebra sig)
+    (v: Valuation salg.D)
+    (d: salg.D)
+    (P: Prop)
+  :
+    List (Expr sig) → Prop
+  | List.nil => P
+  | List.cons head tail =>
+    (Inw salg v head d → P) → Ret salg v d P tail
+  
+  def inwFinUnElim.retOfP
+    (list: List (Expr sig))
+    (p: P)
+  :
+    inwFinUnElim.Ret salg v d P list
+  :=
+    match list with
+    | List.nil => p
+    | List.cons _head tail => fun _ => retOfP tail p
+  
+  def inwFinUnElim
+    (s: Inw salg v (finUnExpr list) d)
+  :
+    inwFinUnElim.Ret salg v d P list
+  :=
+    match list with
+    | List.nil => False.elim (ninwNone s)
+    | List.cons _head tail =>
+      (inwUnElim s).elim
+        (fun inwHead insHeadToP =>
+          inwFinUnElim.retOfP tail (insHeadToP inwHead))
+        (fun insTail _ => inwFinUnElim insTail)
+  
 end Expr
 
 
@@ -971,7 +1007,7 @@ namespace PairExpr
     | Nat.zero => insZero v
     | Nat.succ pred => inwPair (inwNatExpr v pred) (inwZero v)
   
-  def inwNatElim
+  def inwNatExprElim
     (w: Inw pairSalgebra v (natExpr n) p)
   :
     p = fromNat n
@@ -981,14 +1017,14 @@ namespace PairExpr
     | Nat.succ _, zero => inwPairElim.nope v w
     | Nat.succ _, pair _ _ =>
       let ⟨l, r⟩ := inwPairElim _ w
-      (inwNatElim l) ▸ (inwZeroElim _ r) ▸ rfl
+      (inwNatExprElim l) ▸ (inwZeroElim _ r) ▸ rfl
   
-  def insNatElim
+  def insNatExprElim
     (s: Ins pairSalgebra v (natExpr n) p)
   :
     p = fromNat n
   :=
-    inwNatElim s.toInw
+    inwNatExprElim s.toInw
   
   def inwNatExprElimDecode
     (w: Inw pairSalgebra v (natExpr n) p)

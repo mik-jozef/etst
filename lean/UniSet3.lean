@@ -1,5 +1,6 @@
 import UniDefList
 import Wfm
+import PairDictOrder
 
 namespace Pair
   namespace uniSet
@@ -419,5 +420,50 @@ namespace Pair
                 (Inw.toIsExprEncoding.Quantifier inwL)
                 (Inw.toIsNatEncoding rInwL)
                 (Inw.toIsExprEncoding rInwR))
+    
+    
+    -- Encodes a prefix of a definition list
+    def IsDefEncoding: Pair → Prop
+    | Pair.zero => True
+    | Pair.pair a b => IsExprEncoding a ∧ IsDefEncoding b
+    
+    def insDefEncoding (isDefEnc: IsDefEncoding p):
+      Ins defEncoding p
+    :=
+      wfm.insWfmDef.toInsWfm
+        (match p with
+        | Pair.zero =>
+          insUnL (insZero _) _
+        | Pair.pair _ _ =>
+          insUnR
+            _
+            (insPair
+              (insExprEncoding isDefEnc.left)
+              (insDefEncoding isDefEnc.right)))
+    
+    def Inw.toIsDefEncoding (w: Inw defEncoding p):
+      IsDefEncoding p
+    :=
+      match p with
+      | Pair.zero => trivial
+      | Pair.pair _ _ =>
+        (wfm.inwWfm.toInwWfmDef w).elim
+          (fun inwL => inwZeroElim.nope _ inwL)
+          (fun inwR =>
+            let ⟨l, r⟩ := inwPairElim _ inwR
+            
+            And.intro
+              (Inw.toIsExprEncoding l)
+              (Inw.toIsDefEncoding r))
+    
+    
+    def insPairDictLt.eqAb
+      {a b: Pair}
+      (ab: a < b)
+    :
+      Ins pairDictLt (pair a b)
+    :=
+      sorry
+    
   end uniSet
 end Pair

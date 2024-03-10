@@ -159,18 +159,25 @@ namespace Pair
       in the dictionary order. Base case: () < (a, b).
     -/
     def pairDictLt: Nat := 9
+    def pairDictLt.zeroPair: Expr :=
+      pairExpr zeroExpr (pairExpr anyExpr anyExpr)
+    def pairDictLt.ltLeft: Expr :=
+      unionExpr 500 pairDictLt
+        (pairExpr
+          (pairExpr (zthMember 502 500) anyExpr)
+          (pairExpr (fstMember 502 500) anyExpr))
+    def pairDictLt.eqLeft: Expr :=
+      unionExpr 500 pairDictLt
+        (Expr.Un 501
+          (pairExpr
+            (pairExpr 501 (zthMember 502 500))
+            (pairExpr 501 (fstMember 502 500))))
+    
     def pairDictLt.expr: Expr :=
       finUnExpr [
-        pairExpr zeroExpr (pairExpr anyExpr anyExpr),
-        unionExpr 500 pairDictLt
-          (pairExpr
-            (pairExpr (zthMember 502 500) anyExpr)
-            (pairExpr (fstMember 502 500) anyExpr)),
-        unionExpr 500 pairDictLt
-          (Expr.Un 501
-            (pairExpr
-              (pairExpr 501 (zthMember 502 500))
-              (pairExpr 501 (fstMember 502 500)))),
+        zeroPair,
+        ltLeft,
+        eqLeft,
       ]
     
     /-
