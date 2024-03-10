@@ -24,6 +24,8 @@ namespace Pair
         (fun lt => ltIrefl lt)
         (fun ⟨_eq, lt⟩ => ltIrefl lt)
   
+  def dictOrder.leRefl a: Le a a := Or.inl rfl
+  
   def dictOrder.ltAntisymm
     (ab: Lt a b)
     (ba: Lt b a)
@@ -98,8 +100,47 @@ namespace Pair
           (fun eq => eq ▸ ab)
           (fun bcLt => Or.inr (ltTrans abLt bcLt)))
   
+  inductive dictOrder.LtTotal (a b: Pair): Prop where
+  | IsLt: Lt a b → LtTotal a b
+  | IsGt: Lt b a → LtTotal a b
+  | IsEq: a = b → LtTotal a b
   
-  instance Pair.dictOrder: PartialOrder Pair where
+  def dictOrder.ltTotal
+    (a b: Pair)
+  :
+    LtTotal a b
+  :=
+    open LtTotal in
+    match a, b with
+    | zero, zero => IsEq rfl
+    | zero, pair _ _ => IsLt trivial
+    | pair _ _, zero => IsGt trivial
+    | pair aA aB, pair bA bB =>
+      match ltTotal aA bA with
+      | IsLt aLtAB => IsLt (Or.inl aLtAB)
+      | IsGt aLtBA => IsGt (Or.inl aLtBA)
+      | IsEq aEqAB =>
+        match ltTotal aB bB with
+        | IsLt bLtAB =>
+            IsLt (Or.inr (And.intro aEqAB bLtAB))
+        | IsGt bLtBA =>
+            IsGt (Or.inr (And.intro aEqAB.symm bLtBA))
+        | IsEq bEqAB =>
+            IsEq (congr (congr rfl aEqAB) bEqAB)
+  
+  def dictOrder.leTotal
+    (a b: Pair)
+  :
+    Le a b ∨ Le b a
+  :=
+    open LtTotal in
+    match ltTotal a b with
+    | IsLt ab => Or.inl (Or.inr ab)
+    | IsGt ba => Or.inr (Or.inr ba)
+    | IsEq eq => eq ▸ Or.inl (leRefl _)
+  
+  
+  noncomputable instance Pair.dictOrder: LinearOrder Pair where
     le := dictOrder.Le
     lt := dictOrder.Lt
     
@@ -122,4 +163,8 @@ namespace Pair
     le_antisymm _ _ := dictOrder.leAntisymm
     
     le_trans _ _ _ := dictOrder.leTrans
+    
+    le_total := dictOrder.leTotal
+    
+    decidableLE := inferInstance
 end Pair

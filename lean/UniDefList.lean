@@ -172,13 +172,14 @@ namespace Pair
           (pairExpr
             (pairExpr 501 (zthMember 502 500))
             (pairExpr 501 (fstMember 502 500))))
+    def pairDictLt.list: List Expr := [
+      zeroPair,
+      ltLeft,
+      eqLeft,
+    ]
     
     def pairDictLt.expr: Expr :=
-      finUnExpr [
-        zeroPair,
-        ltLeft,
-        eqLeft,
-      ]
+      finUnExpr list
     
     /-
       Contains (n, m) such that m ≤ n.
