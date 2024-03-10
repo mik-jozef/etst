@@ -260,12 +260,12 @@ namespace Pair
     :=
       open IsExprEncoding.Bin in
       (wfm.inwWfm.toInwWfmDef w).elim
-        (fun inwNatExpr2 => Is2 (inwNatElim inwNatExpr2))
+        (fun inwNatExpr2 => Is2 (inwNatExprElim inwNatExpr2))
         (fun un => un.elim
-          (fun inwNatExpr3 => Is3 (inwNatElim inwNatExpr3))
+          (fun inwNatExpr3 => Is3 (inwNatExprElim inwNatExpr3))
           (fun un => un.elim
-            (fun inwNatExpr4 => Is4 (inwNatElim inwNatExpr4))
-            (fun inwNatExpr6 => Is6 (inwNatElim inwNatExpr6))))
+            (fun inwNatExpr4 => Is4 (inwNatExprElim inwNatExpr4))
+            (fun inwNatExpr6 => Is6 (inwNatExprElim inwNatExpr6))))
     
     
     inductive IsExprEncoding.Quantifier (p: Pair): Prop :=
@@ -288,8 +288,8 @@ namespace Pair
     :=
       open IsExprEncoding.Quantifier in
       (wfm.inwWfm.toInwWfmDef w).elim
-        (fun inwNatExpr7 => Is7 (inwNatElim inwNatExpr7))
-        (fun inwNatExpr8 => Is8 (inwNatElim inwNatExpr8))
+        (fun inwNatExpr7 => Is7 (inwNatExprElim inwNatExpr7))
+        (fun inwNatExpr8 => Is8 (inwNatExprElim inwNatExpr8))
     
     
     inductive IsExprEncoding: Pair → Prop where
@@ -361,6 +361,63 @@ namespace Pair
               (insExprEncoding.Quantifier isQ)
               (insPair (insNat isNat) (insExprEncoding isExpr))))
     
-    
+    def Inw.toIsExprEncoding
+      (w: Inw exprEncoding p)
+    :
+      IsExprEncoding p
+    :=
+      open IsExprEncoding in
+      inwFinUnElim (wfm.inwWfm.toInwWfmDef w)
+        (fun inwVar =>
+          match p with
+          | Pair.zero =>
+            let isVar := Inw.toIsExprEncoding.Var inwVar
+            False.elim isVar
+          | Pair.pair (Pair.pair _ _) _ =>
+            let isVar := Inw.toIsExprEncoding.Var inwVar
+            False.elim isVar
+          | Pair.pair zero _ =>
+            IsVar (Inw.toIsExprEncoding.Var inwVar))
+        (fun inwZero =>
+          let ⟨_l, _r, ⟨eq, inwL, inwR⟩⟩ :=
+            inwPairElim.ex _ (wfm.inwWfm.toInwWfmDef inwZero)
+          
+          eq ▸ (inwNatExprElim inwL) ▸ (inwZeroElim _ inwR) ▸ IsZero)
+        (fun inwBin =>
+          match p with
+          | Pair.zero => inwPairElim.nope _ inwBin
+          | Pair.pair _l r =>
+            let ⟨inwL, inwR⟩ := inwPairElim _ inwBin
+            
+            match r with
+            | Pair.zero => inwPairElim.nope _ inwR
+            | Pair.pair _ _ =>
+              let ⟨rInwL, rInwR⟩ := inwPairElim _ inwR
+              
+              IsBin
+                (Inw.toIsExprEncoding.Binary inwL)
+                (Inw.toIsExprEncoding rInwL)
+                (Inw.toIsExprEncoding rInwR))
+        (fun inwCpl =>
+          match p with
+          | Pair.zero => inwPairElim.nope _ inwCpl
+          | Pair.pair _ _ =>
+            let ⟨l, r⟩ := inwPairElim _ inwCpl
+            (inwNatExprElim l) ▸ IsCpl (toIsExprEncoding r))
+        (fun inwQuant =>
+          match p with
+          | Pair.zero => inwPairElim.nope _ inwQuant
+          | Pair.pair _l r =>
+            let ⟨inwL, inwR⟩ := inwPairElim _ inwQuant
+            
+            match r with
+            | Pair.zero => inwPairElim.nope _ inwR
+            | Pair.pair _ _ =>
+              let ⟨rInwL, rInwR⟩ := inwPairElim _ inwR
+              
+              IsQuantifier
+                (Inw.toIsExprEncoding.Quantifier inwL)
+                (Inw.toIsNatEncoding rInwL)
+                (Inw.toIsExprEncoding rInwR))
   end uniSet
 end Pair
