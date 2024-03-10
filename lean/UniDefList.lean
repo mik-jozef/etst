@@ -98,10 +98,10 @@ namespace Pair
     def exprEncoding.binary: Nat := 5
     def exprEncoding.binary.expr: Expr :=
       Expr.un
-        (natExpr 1)
+        (natExpr 2)
         (Expr.un
-          (natExpr 2)
-          ((Expr.un (natExpr 3) (natExpr 5))))
+          (natExpr 3)
+          ((Expr.un (natExpr 4) (natExpr 6))))
     
     /-
       Contains the triset { 7, 8 }.
@@ -109,6 +109,18 @@ namespace Pair
     def exprEncoding.quantifier: Nat := 6
     def exprEncoding.quantifier.expr: Expr :=
       Expr.un (natExpr 7) (natExpr 8)
+    
+    def exprEncoding: Nat := 7
+    def exprEncoding.binExpr :=
+      pairExpr
+        exprEncoding.binary
+        (pairExpr exprEncoding exprEncoding)
+    def exprEncoding.cplExpr :=
+      pairExpr (natExpr 5) exprEncoding
+    def exprEncoding.quantifierExpr :=
+      pairExpr
+        exprEncoding.quantifier
+        (pairExpr nat exprEncoding)
     
     /-
       Contains all pairs that encode an expression.
@@ -124,19 +136,15 @@ namespace Pair
       | Un (x: Nat) (body: Expr sig) => (7, (x, body))
       | Ir (x: Nat) (body: Expr sig) => (8, (x, body))
     -/
-    def exprEncoding: Nat := 7
-    def exprEncoding.expr: Expr :=
-      finUnExpr [
-        exprEncoding.var,
-        exprEncoding.zero,
-        pairExpr
-          exprEncoding.binary
-          (pairExpr exprEncoding exprEncoding),
-        pairExpr (natExpr 5) exprEncoding,
-        pairExpr
-          exprEncoding.quantifier
-          (pairExpr nat exprEncoding),
+    def exprEncoding.exprList: List Expr :=
+      [
+        Expr.var exprEncoding.var,
+        Expr.var exprEncoding.zero,
+        binExpr,
+        cplExpr,
+        quantifierExpr,
       ]
+    def exprEncoding.expr := finUnExpr exprList
     
     /-
       Contains all pairs that encode a finite prefix of

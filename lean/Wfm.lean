@@ -4,7 +4,7 @@ import EqSwappedUnusedVar
 
 namespace Expr
   def anyExpr: Expr sig := Expr.Un 0 0
-  def noneExpr: Expr sig := Expr.Ir 0 0
+  def noneExpr: Expr sig := Expr.cpl anyExpr
   
   -- Make sure n is not a free var in the domain expr.
   def unionExpr (n: Nat) (domain body: Expr sig): Expr sig :=
@@ -21,9 +21,8 @@ namespace Expr
   
   def finUnExpr: List (Expr sig) → (Expr sig)
   | List.nil => noneExpr
-  | List.cons expr List.nil => expr
-  | List.cons expr0 (List.cons expr1 rest) =>
-      Expr.un expr0 (finUnExpr (expr1::rest))
+  | List.cons expr tail =>
+    Expr.un expr (finUnExpr (tail))
   
   
   instance exprOfNat (n: Nat): OfNat (Expr sig) n where
@@ -70,6 +69,16 @@ namespace Expr
   :=
     Or.inl s
   
+  def inwUnL
+    {exprL: Expr sig}
+    (w: Inw salg v exprL d)
+    (exprR: Expr sig)
+  :
+    Inw salg v (Expr.un exprL exprR) d
+  :=
+    Or.inl w
+  
+  
   def insUnR
     {exprR: Expr sig}
     (exprL: Expr sig)
@@ -78,6 +87,16 @@ namespace Expr
     Ins salg v (Expr.un exprL exprR) d
   :=
     Or.inr s
+  
+  def inwUnR
+    {exprR: Expr sig}
+    (exprL: Expr sig)
+    (w: Inw salg v exprR d)
+  :
+    Inw salg v (Expr.un exprL exprR) d
+  :=
+    Or.inr w
+  
   
   def insUnElim
     (s: Ins salg v (Expr.un exprL exprR) d)
@@ -88,12 +107,30 @@ namespace Expr
   :=
     s
   
+  def inwUnElim
+    (s: Inw salg v (Expr.un exprL exprR) d)
+  :
+    Or
+      (Inw salg v exprL d)
+      (Inw salg v exprR d)
+  :=
+    s
+  
+  
   def insArbUn
     (s: Ins salg (v.update x dBound) body d)
   :
     Ins salg v (Expr.Un x body) d
   :=
     ⟨dBound, s⟩
+  
+  def inwArbUn
+    (s: Inw salg (v.update x dBound) body d)
+  :
+    Inw salg v (Expr.Un x body) d
+  :=
+    ⟨dBound, s⟩
+  
   
   def insArbUnElim
     (s: Ins salg v (Expr.Un x body) d)
@@ -102,11 +139,67 @@ namespace Expr
   :=
     s
   
+  def inwArbUnElim
+    (s: Inw salg v (Expr.Un x body) d)
+  :
+    ∃ dBound, Inw salg (v.update x dBound) body d
+  :=
+    s
+  
+  
+  def insCpl
+    (w: ¬Inw salg v expr d)
+  :
+    Ins salg v (Expr.cpl expr) d
+  :=
+    w
+  
+  def inwCpl
+    (s: ¬Ins salg v expr d)
+  :
+    Inw salg v (Expr.cpl expr) d
+  :=
+    s
+  
+  def insCplElim
+    (s: Ins salg v (Expr.cpl expr) d)
+  :
+    ¬Inw salg v expr d
+  :=
+    s
+  
+  def inwCplElim
+    (w: Inw salg v (Expr.cpl expr) d)
+  :
+    ¬Ins salg v expr d
+  :=
+    w
+  
+  
+  def ninsCpl
+    (w: Inw salg v expr d)
+  :
+    ¬Ins salg v (Expr.cpl expr) d
+  :=
+    fun ins => ins w
+  
+  def ninwCpl
+    (s: Ins salg v expr d)
+  :
+    ¬Inw salg v (Expr.cpl expr) d
+  :=
+    fun inw => inw s
+  
   
   def insBound {v: Valuation salg.D}:
     Ins salg (v.update x dBound) (var x) dBound
   :=
     Valuation.update.inEq.defMem v x dBound
+  
+  def inwBound {v: Valuation salg.D}:
+    Inw salg (v.update x dBound) (var x) dBound
+  :=
+    Valuation.update.inEq.posMem v x dBound
   
   def insBoundEq
     {v: Valuation salg.D}
@@ -162,6 +255,10 @@ namespace Expr
   
   
   def insAny: Ins salg v anyExpr d := insArbUn insBound
+  def inwAny: Inw salg v anyExpr d := inwArbUn inwBound
+  
+  def ninsNone: ¬Ins salg v noneExpr d := ninsCpl inwAny
+  def ninwNone: ¬Inw salg v noneExpr d := ninwCpl insAny
   
   
   /-
@@ -271,6 +368,69 @@ namespace Expr
   :=
     s
   
+  
+  def insFinUn
+    {list: List (Expr sig)}
+    (exprIn: expr ∈ list)
+    (s: Ins salg v expr p)
+  :
+    Ins salg v (finUnExpr list) p
+  :=
+    match list with
+    | List.nil => List.Mem.nope exprIn
+    | List.cons _e0 _rest =>
+      exprIn.elim
+        (fun eq => eq ▸ insUnL s _)
+        (fun inRest => insUnR _ (insFinUn inRest s))
+  
+  def inwFinUn
+    {list: List (Expr sig)}
+    (exprIn: expr ∈ list)
+    (w: Inw salg v expr p)
+  :
+    Inw salg v (finUnExpr list) p
+  :=
+    match list with
+    | List.nil => List.Mem.nope exprIn
+    | List.cons _e0 _rest =>
+      exprIn.elim
+        (fun eq => eq ▸ inwUnL w _)
+        (fun inRest => inwUnR _ (inwFinUn inRest w))
+  
+  
+  def insFinUnElim.Ret
+    (salg: Salgebra sig)
+    (v: Valuation salg.D)
+    (d: salg.D)
+    (P: Prop)
+  :
+    List (Expr sig) → Prop
+  | List.nil => P
+  | List.cons head tail =>
+    (Ins salg v head d → P) → Ret salg v d P tail
+  
+  def insFinUnElim.retOfP
+    (list: List (Expr sig))
+    (p: P)
+  :
+    insFinUnElim.Ret salg v d P list
+  :=
+    match list with
+    | List.nil => p
+    | List.cons _head tail => fun _ => retOfP tail p
+  
+  def insFinUnElim
+    (s: Ins salg v (finUnExpr list) d)
+  :
+    insFinUnElim.Ret salg v d P list
+  :=
+    match list with
+    | List.nil => False.elim (ninsNone s)
+    | List.cons _head tail =>
+      (insUnElim s).elim
+        (fun insHead insHeadToP =>
+          insFinUnElim.retOfP tail (insHeadToP insHead))
+        (fun insTail _ => insFinUnElim insTail)
 end Expr
 
 
@@ -366,7 +526,7 @@ namespace PairExpr
   :=
     False.elim (insZeroElim.neq v s a b rfl)
   
-  def inwZero v:
+  def inwZeroEq v:
     Inw pairSalgebra v zeroExpr = Set.just Pair.zero
   :=
     rfl
@@ -374,7 +534,13 @@ namespace PairExpr
   def inwZeroIff v d:
     Inw pairSalgebra v zeroExpr d ↔ d = Pair.zero
   :=
-    Iff.of_eq (inwZero v ▸ rfl)
+    Iff.of_eq (inwZeroEq v ▸ rfl)
+  
+  def inwZero v:
+    Inw pairSalgebra v zeroExpr Pair.zero
+  :=
+    (inwZeroIff v Pair.zero).mpr rfl
+  
   
   def inwZeroElim v
     (s: Inw pairSalgebra v zeroExpr p)
@@ -715,6 +881,133 @@ namespace PairExpr
     let eqR: zth = chosenZth := Pair.noConfusion eq fun eq _ => eq
     
     eqR ▸ inwChosenZth
+end PairExpr
+
+namespace Pair
+  def IsNatEncoding: Set Pair
+  | zero => True
+  | pair a b => (IsNatEncoding a) ∧ b = zero
+  
+  def NatEncoding := { p // IsNatEncoding p }
+  
+  def natDecode: (p: Pair) → Nat
+  | zero => 0
+  | pair a _ => Nat.succ (natDecode a)
+  
+  def natDecode.zeroEq: natDecode Pair.zero = 0 := rfl
+  def natDecode.eqZero (eqZ: p = Pair.zero):
+    natDecode p = 0
+  :=
+    eqZ ▸ natDecode.zeroEq
+  
+  def natDecode.succPredEq
+    (a b: Pair)
+  :
+    natDecode (pair a b)
+      =
+    Nat.succ (natDecode a)
+  :=
+    rfl
+  
+  def natDecode.injEq
+    (isNatA: IsNatEncoding a)
+    (isNatB: IsNatEncoding b)
+    (eq: natDecode a = natDecode b)
+  :
+    a = b
+  :=
+    match a, b with
+    | zero, zero => rfl
+    | zero, pair bA bB =>
+      let eqL: 0 = natDecode (pair bA bB) :=
+        natDecode.zeroEq.symm.trans eq
+      let eqR := natDecode.succPredEq bA bB
+      
+      Nat.noConfusion (eqL.trans eqR)
+    | pair aA aB, zero =>
+      let eqL: 0 = natDecode (pair aA aB) :=
+        natDecode.zeroEq.symm.trans eq.symm
+      let eqR := natDecode.succPredEq aA aB
+      
+      Nat.noConfusion (eqL.trans eqR)
+    | pair aA aB, pair bA bB =>
+      let eqPred: natDecode aA = natDecode bA :=
+        Nat.noConfusion eq id
+      let eqA: aA = bA :=
+        natDecode.injEq isNatA.left isNatB.left eqPred
+      let eqB: aB = bB :=
+        isNatA.right.trans isNatB.right.symm
+      
+      congr (congr rfl eqA) eqB
+  
+  def natDecode.injNeq
+    (isNatA: IsNatEncoding a)
+    (isNatB: IsNatEncoding b)
+    (neq: a ≠ b)
+  :
+    natDecode a ≠ natDecode b
+  :=
+    (natDecode.injEq isNatA isNatB).contra neq
+end Pair
+
+namespace PairExpr
+  open Pair
+  open Expr
+  open pairSignature
+  
+  def insNatExpr v n
+  :
+    Ins pairSalgebra v (natExpr n) (fromNat n)
+  :=
+    match n with
+    | Nat.zero => insZero v
+    | Nat.succ pred => insPair (insNatExpr v pred) (insZero v)
+  
+  def inwNatExpr v n
+  :
+    Inw pairSalgebra v (natExpr n) (fromNat n)
+  :=
+    match n with
+    | Nat.zero => insZero v
+    | Nat.succ pred => inwPair (inwNatExpr v pred) (inwZero v)
+  
+  def inwNatElim
+    (w: Inw pairSalgebra v (natExpr n) p)
+  :
+    p = fromNat n
+  :=
+    match n, p with
+    | 0, _ => insZeroElim v w ▸ rfl
+    | Nat.succ _, zero => inwPairElim.nope v w
+    | Nat.succ _, pair _ _ =>
+      let ⟨l, r⟩ := inwPairElim _ w
+      (inwNatElim l) ▸ (inwZeroElim _ r) ▸ rfl
+  
+  def insNatElim
+    (s: Ins pairSalgebra v (natExpr n) p)
+  :
+    p = fromNat n
+  :=
+    inwNatElim s.toInw
+  
+  def inwNatExprElimDecode
+    (w: Inw pairSalgebra v (natExpr n) p)
+  :
+    natDecode p = n
+  :=
+    match n, p with
+    | 0, _ => insZeroElim v w ▸ rfl
+    | Nat.succ _, zero => inwPairElim.nope v w
+    | Nat.succ _, pair _ _ =>
+      inwNatExprElimDecode (inwPairElim _ w).inwL  ▸ rfl
+  
+  def insNatExprElimDecode
+    (s: Ins pairSalgebra v (natExpr n) p)
+  :
+    natDecode p = n
+  :=
+    inwNatExprElimDecode s.toInw
+  
 end PairExpr
 
 

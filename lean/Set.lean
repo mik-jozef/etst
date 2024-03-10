@@ -368,6 +368,34 @@ def List.emptyNotMem (t: T):
 :=
   fun. -- WTF is this and how does it work? Why isn't it documented (or is it)?
 
+def List.Mem.nope
+  {t: T}
+  (tIn: List.Mem t [])
+:
+  P
+:=
+  False.elim (List.emptyNotMem t tIn)
+
+def List.Mem.toOr
+  {t head: T}
+  (mem: List.Mem t (head::rest)) -- Cannot use "∈" bc.
+:
+  t = head ∨ t ∈ rest
+:=
+  match mem with
+  | Mem.head a => Or.inl rfl
+  | Mem.tail a b => Or.inr b
+
+def List.Mem.elim
+  {t head: T}
+  (mem: List.Mem t (head::rest))
+  (left: t = head → C)
+  (rite: t ∈ rest → C)
+:
+  C
+:=
+  mem.toOr.elim left rite
+
 def List.appendUnique [DecidableEq T] (list: List T) (t: T) :=
   if t ∈ list then
     list

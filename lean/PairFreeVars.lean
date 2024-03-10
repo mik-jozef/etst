@@ -193,11 +193,8 @@ namespace Pair
     }
   :=
     let eq: Set.empty = fun x: Nat => x ∈ [] :=
-      funext fun x =>
-        (propext
-          (Iff.intro
-            (False.elim)
-            (fun inEmpty => List.emptyNotMem x inEmpty)))
+      funext fun _ =>
+        (propext (Iff.intro False.elim List.Mem.nope))
     
     let fv := freeVars.givenBounds expr []
     -- Using `eq ▸ fv` directly breaks `freeVars.eq` :(
