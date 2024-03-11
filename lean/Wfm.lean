@@ -360,17 +360,6 @@ namespace Expr
     ⟩
   
   
-  -- TODO delete?
-  def insVar
-    {v: Valuation salg.D}
-    {d: salg.D}
-    (s: (v x).defMem d)
-  :
-    Ins salg v (var x) d
-  :=
-    s
-  
-  
   def insFinUn
     {list: List (Expr sig)}
     (exprIn: expr ∈ list)
@@ -736,42 +725,24 @@ namespace PairExpr
   
   
   def insZthMember
-    (s: Ins pairSalgebra v expr (Pair.pair a b))
-    (xNotFree: ¬expr.IsFreeVar Set.empty x)
+    (s: Ins pairSalgebra (v.update x a) expr (Pair.pair a b))
   :
     Ins pairSalgebra v (zthMember x expr) a
   :=
-    let eqUpdated := Expr.interpretation.eqSwappedUnused
-      pairSalgebra v v expr xNotFree a
-    
-    let sUpd:
-      Ins pairSalgebra (v.update x a) expr (Pair.pair a b)
-    :=
-      by unfold Ins; exact eqUpdated ▸ s
-    
     insArbUn _ ⟨
       ⟨Pair.pair a b,
-        And.intro (insPair insBound insAny) sUpd⟩,
+        And.intro (insPair insBound insAny) s⟩,
       insBound,
     ⟩
   
   def insFstMember
-    (s: Ins pairSalgebra v expr (Pair.pair a b))
-    (xNotFree: ¬expr.IsFreeVar Set.empty x)
+    (s: Ins pairSalgebra (v.update x b) expr (Pair.pair a b))
   :
     Ins pairSalgebra v (fstMember x expr) b
   :=
-    let eqUpdated := Expr.interpretation.eqSwappedUnused
-      pairSalgebra v v expr xNotFree b
-    
-    let sUpd:
-      Ins pairSalgebra (v.update x b) expr (Pair.pair a b)
-    :=
-      by unfold Ins; exact eqUpdated ▸ s
-    
     insArbUn _ ⟨
       ⟨Pair.pair a b,
-        And.intro (insPair insAny insBound) sUpd⟩,
+        And.intro (insPair insAny insBound) s⟩,
       insBound,
     ⟩
   

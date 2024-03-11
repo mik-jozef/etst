@@ -95,6 +95,9 @@ namespace Pair
     
     def nat501Neq500: 501 ≠ 500 := by simp
     def nat502Neq500: 502 ≠ 500 := by simp
+    def nat503Neq500: 504 ≠ 500 := by simp
+    def nat504Neq500: 503 ≠ 500 := by simp
+    
     def nat500NeqNat: 500 ≠ 0 := by simp
     def nat500NeqNatLe: 500 ≠ 2 := by simp
     def nat500NeqPairDictLt: 500 ≠ 9 := by simp
@@ -132,25 +135,15 @@ namespace Pair
             isLe := abPredLe
           }
           
-          let insL:
-            InsV (wfModel.update 500 (pair a bA)) (zthMember 501 500) a
-          :=
-            insZthMember
-              insBound
-              (fun isFree => nat501Neq500 isFree.left)
-          
-          let insR:
-            InsV (wfModel.update 500 (pair a bA)) (fstMember 501 500) bA
-          :=
-            insFstMember
-              insBound
-              (fun isFree => nat501Neq500 isFree.left)
-          
           wfm.insWfmDef.toInsWfm
             (insUnR _
               (insUnDom
                 (insFree insNatLePred nat500NeqNatLe)
-                (insPair insL (isNatB.right ▸ insPair insR rfl))))
+                (insPair
+                  (insZthMember (insFree insBound nat501Neq500))
+                  (insPair
+                    (insFstMember (insFree insBound nat501Neq500))
+                    isNatB.right))))
     
     def insNatLe (isNat: IsNatLe p): Ins natLe p :=
       match p with
@@ -503,14 +496,10 @@ namespace Pair
               (insUnDom aInsAB
                 (insPair
                   (insPair
-                    (insZthMember
-                      insBound
-                      (fun isFree => nat502Neq500 isFree.left))
+                    (insZthMember (insFree insBound nat502Neq500))
                     insAny)
                   (insPair
-                    (insFstMember
-                      insBound
-                      (fun isFree => nat502Neq500 isFree.left))
+                    (insFstMember (insFree insBound nat502Neq500))
                     insAny))))
         | IsGt ba =>
           isPD.elim
@@ -532,13 +521,15 @@ namespace Pair
                     (insPair
                       insBound
                       (insZthMember
-                        (insFree insBound nat501Neq500)
-                        (fun isFree => nat502Neq500 isFree.left)))
+                        (insFree
+                          (insFree insBound nat501Neq500)
+                          nat502Neq500)))
                     (insPair
                       (eq ▸ insBound)
                       (insFstMember
-                        (insFree insBound nat501Neq500)
-                        (fun isFree => nat502Neq500 isFree.left)))))))
+                        (insFree
+                          (insFree insBound nat501Neq500)
+                          nat502Neq500)))))))
     
     def Inw.toIsPairDictLt p (inw: Inw pairDictLt p):
       IsPairDictLt p
@@ -639,5 +630,59 @@ namespace Pair
                   ((inwBoundElim inw501A).trans (inwBoundElim inw501B).symm)
                   r))
     termination_by Inw.toIsPairDictLt p inw => p.depth
+    
+    structure IsNatLeFn.Pair (a b: Pair): Prop where
+      isNatA: IsNatEncoding a
+      isNatB: IsNatEncoding b
+      isLe: natDecode b ≤ natDecode a
+    
+    def IsNatLeFn: Pair → Prop
+    | zero => False
+    | pair a b => IsNatLeFn.Pair a b
+    
+    def insNatLeFn (isNatLeFn: IsNatLeFn p): Ins natLeFn p :=
+      match p with
+      | zero => isNatLeFn.elim
+      | pair a b =>
+        let isNatLeReverse: IsNatLe (pair b a) := {
+          isNatA := isNatLeFn.isNatB
+          isNatB := isNatLeFn.isNatA
+          isLe := isNatLeFn.isLe
+        }
+        
+        wfm.insWfmDef.toInsWfm
+          (insUnDom
+            (insNatLe isNatLeReverse)
+            (insPair
+              (insFstMember (insFree insBound nat501Neq500))
+              (insZthMember (insFree insBound nat501Neq500))))
+    
+    def Inw.toIsNatLeFn (inw: Inw natLeFn p):
+      IsNatLeFn p
+    :=
+      let ⟨pBound, inwDomain, inwBody⟩ :=
+        inwUnDomElim (wfm.inwWfm.toInwWfmDef inw)
+      
+      match p with
+      | zero => inwPairElim.nope inwBody
+      | pair a b =>
+        let ⟨l, r⟩ := inwPairElim inwBody
+        
+        let ⟨_zth, inw500A⟩ := inwFstMemberElim l nat501Neq500
+        let ⟨_fst, inw500B⟩ := inwZthMemberElim r nat501Neq500
+        
+        let eqA := inwBoundElim inw500A
+        let eqB := inwBoundElim inw500B
+        
+        let eq: pair b a = pBound :=
+          Pair.noConfusion (eqA.trans eqB.symm)
+            (fun zthEq _ => zthEq ▸ eqA)
+        
+        let ⟨isNatB, isNatA, isLe⟩: IsNatLe (pair b a) :=
+          eq ▸ Inw.toIsNatLe inwDomain
+        
+        { isNatA, isNatB, isLe }
+    
+    
   end uniSet
 end Pair

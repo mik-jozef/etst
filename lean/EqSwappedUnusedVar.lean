@@ -1,5 +1,8 @@
 import Interpretation
 
+-- I spent so much time coding this.
+-- And it was all for NOTHING? 🤣 😭
+
 def Valuation.update.doubleEq
   (v: Valuation D)
   {xOuter xInner: Nat}
