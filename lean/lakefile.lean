@@ -23,6 +23,7 @@ lean_lib Lfp {}
 lean_lib Operators {}
 lean_lib Ordinal {}
 lean_lib OrdMap {}
+lean_lib PairDepthDictOrder {}
 lean_lib PairDictOrder {}
 lean_lib PartialOrder {}
 lean_lib Pointwise {}

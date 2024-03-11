@@ -203,7 +203,7 @@ namespace Expr
   :=
     Valuation.update.inEq.posMem v x dBound
   
-  def insBoundEq
+  def insBoundElim
     {v: Valuation salg.D}
     (s: Ins salg (v.update x dBound) (var x) d)
   :
@@ -211,7 +211,7 @@ namespace Expr
   :=
     Valuation.update.inDef.eq s
   
-  def inwBoundEq
+  def inwBoundElim
     {v: Valuation salg.D}
     (w: Inw salg (v.update x dBound) (var x) d)
   :
@@ -307,7 +307,7 @@ namespace Expr
     let vUpdated := v.update x dBound
     
     let dEq: dInIr.val = dBound.val :=
-      insBoundEq dInIr.property.left
+      insBoundElim dInIr.property.left
     
     let insDomain:
       Ins salg vUpdated domain dBound.val
@@ -344,7 +344,7 @@ namespace Expr
     let vUpdated := v.update x dBound
     
     let dEq: dInIr.val = dBound.val :=
-      inwBoundEq dInIr.property.left
+      inwBoundElim dInIr.property.left
     
     let insDomain:
       Inw salg vUpdated domain dBound.val
@@ -663,7 +663,7 @@ namespace PairExpr
   def insPairElim.nope
     (s: Ins pairSalgebra v (pairExpr exprL exprR) Pair.zero)
   :
-    p
+    P
   :=
     (notZero s rfl).elim
   
@@ -790,8 +790,8 @@ namespace PairExpr
     | Pair.zero => insPairElim.nope insPairXaAny
     | Pair.pair pCondZth pCondFst =>
       let ⟨insL, _insR⟩ := insPairElim insPairXaAny
-      let eqPCondZth: pCondZth = pZth := insBoundEq insL
-      let eqPZth: zth = pZth := insBoundEq insBody
+      let eqPCondZth: pCondZth = pZth := insBoundElim insL
+      let eqPZth: zth = pZth := insBoundElim insBody
       
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInsXb⟩
   
@@ -810,8 +810,8 @@ namespace PairExpr
     | Pair.zero => inwPairElim.nope inwPairXaAny
     | Pair.pair pCondZth pCondFst =>
       let ⟨insL, _insR⟩ := inwPairElim inwPairXaAny
-      let eqPCondZth: pCondZth = pZth := inwBoundEq insL
-      let eqPZth: zth = pZth := inwBoundEq inwBody
+      let eqPCondZth: pCondZth = pZth := inwBoundElim insL
+      let eqPZth: zth = pZth := inwBoundElim inwBody
       
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInwXb⟩
   
@@ -830,8 +830,8 @@ namespace PairExpr
     | Pair.zero => insPairElim.nope insPairAnyXa
     | Pair.pair pCondZth pCondFst =>
       let ⟨_insL, insR⟩ := insPairElim insPairAnyXa
-      let eqPCondZth: pCondFst = pFst := insBoundEq insR
-      let eqPZth: fst = pFst := insBoundEq insBody
+      let eqPCondZth: pCondFst = pFst := insBoundElim insR
+      let eqPZth: fst = pFst := insBoundElim insBody
       
       ⟨pCondZth, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInsXb⟩
   
@@ -850,8 +850,8 @@ namespace PairExpr
     | Pair.zero => inwPairElim.nope inwPairAnyXa
     | Pair.pair pCondZth pCondFst =>
       let ⟨_insL, insR⟩ := inwPairElim inwPairAnyXa
-      let eqPCondZth: pCondFst = pFst := inwBoundEq insR
-      let eqPZth: fst = pFst := inwBoundEq inwBody
+      let eqPCondZth: pCondFst = pFst := inwBoundElim insR
+      let eqPZth: fst = pFst := inwBoundElim inwBody
       
       ⟨pCondZth, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInsXb⟩
   

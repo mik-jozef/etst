@@ -1,6 +1,7 @@
 import UniDefList
 import Wfm
 import PairDictOrder
+import PairDepthDictOrder
 
 namespace Pair
   namespace uniSet
@@ -74,13 +75,13 @@ namespace Pair
       let ⟨pairL, exR⟩ := inwPairElim.ex n.property.insBody
       let ⟨pairR, ⟨eq, insL, insR⟩⟩ := exR.unwrap
       
-      let eqL := inwBoundEq insL
-      let eqR := inwBoundEq insR
+      let eqL := inwBoundElim insL
+      let eqR := inwBoundElim insR
       let eqN := eqR.trans eqL.symm
       
       ⟨n.val, {
         isNat := Inw.toIsNatEncoding inwNatN
-        eq := eq ▸ (inwBoundEq insL) ▸ eqN ▸ rfl
+        eq := eq ▸ (inwBoundElim insL) ▸ eqN ▸ rfl
       }⟩
     
     structure IsNatLe.Pair (a b: Pair): Prop where
@@ -94,8 +95,10 @@ namespace Pair
     
     def nat501Neq500: 501 ≠ 500 := by simp
     def nat502Neq500: 502 ≠ 500 := by simp
-    def nat500Neq0: 500 ≠ 0 := by simp
-    def nat500Neq2: 500 ≠ 2 := by simp
+    def nat500NeqNat: 500 ≠ 0 := by simp
+    def nat500NeqNatLe: 500 ≠ 2 := by simp
+    def nat500NeqPairDictLt: 500 ≠ 9 := by simp
+    
     def insNatLe.abEq (isNatLe: IsNatLe (pair a b)): Ins natLe (pair a b) :=
       let ⟨isNatA, isNatB, abLe⟩ := isNatLe
       
@@ -146,7 +149,7 @@ namespace Pair
           wfm.insWfmDef.toInsWfm
             (insUnR _
               (insUnDom
-                (insFree insNatLePred nat500Neq2)
+                (insFree insNatLePred nat500NeqNatLe)
                 (insPair insL (isNatB.right ▸ insPair insR rfl))))
     
     def insNatLe (isNat: IsNatLe p): Ins natLe p :=
@@ -180,7 +183,7 @@ namespace Pair
             let ⟨bAFst500, bBInwZeroExpr⟩ := inwPairElim inwB
             let inw500ABA :=
               inwZthFstElim aZth500 bAFst500 nat501Neq500 rfl
-            let pInnerEq: pair a bA = pInner := inwBoundEq inw500ABA
+            let pInnerEq: pair a bA = pInner := inwBoundElim inw500ABA
             let isNatLeABA: IsNatLe (pair a bA) :=
               abEq (pInnerEq ▸ inwDomain)
             {
@@ -198,7 +201,7 @@ namespace Pair
         (fun inwR =>
           let ⟨_pInner, _inwDomain, inwBody⟩ := inwUnDomElim inwR
           match p with
-          | zero => False.elim (inwPairElim.notZero inwBody rfl)
+          | zero => inwPairElim.nope inwBody
           | pair _ _ => Inw.toIsNatLe.abEq w)
     
     
@@ -216,7 +219,7 @@ namespace Pair
       | Pair.pair zero _ =>
         wfm.insWfmDef.toInsWfm
           (insUnDom
-            (insFree (insNat isEEV) nat500Neq0)
+            (insFree (insNat isEEV) nat500NeqNat)
             (insPair insZero insBound))
     
     def Inw.toIsExprEncoding.Var
@@ -232,7 +235,7 @@ namespace Pair
         inwZeroElim.nope (inwPairElim inwPairP).inwL
       | pair zero _b =>
         let ⟨_, bInw500⟩ := inwPairElim inwPairP
-        let eq := inwBoundEq bInw500
+        let eq := inwBoundElim bInw500
         eq ▸ (Inw.toIsNatEncoding inwNatPBound)
     
     
@@ -537,14 +540,104 @@ namespace Pair
                         (insFree insBound nat501Neq500)
                         (fun isFree => nat502Neq500 isFree.left)))))))
     
-    def Inw.toIsPairDictLt (inw: Inw pairDictLt p):
+    def Inw.toIsPairDictLt p (inw: Inw pairDictLt p):
       IsPairDictLt p
     :=
       inwFinUnElim (wfm.inwWfm.toInwWfmDef inw)
         (fun inwZeroPair =>
-          let lb := inwPairElim inwZeroPair
-          sorry)
-        sorry
-        sorry
+          match p with
+          | zero => inwPairElim.nope inwZeroPair
+          | pair a b =>
+            let ⟨l, r⟩ := inwPairElim inwZeroPair
+            match b with
+            | zero => inwPairElim.nope r
+            | pair _ _ =>
+              (inwZeroElim l) ▸ trivial)
+        (fun inwLtLeft =>
+          let ⟨pBound, inwDomain, inwBody⟩ := inwUnDomElim inwLtLeft
+          match p with
+          | zero => inwPairElim.nope inwBody
+          | pair a b =>
+            let ⟨l, r⟩ := inwPairElim inwBody
+            match a, b with
+            | zero, _ => inwPairElim.nope l
+            | _, zero => inwPairElim.nope r
+            | pair aA aB, pair bA bB =>
+              let ⟨inwZth, _⟩ := inwPairElim l
+              let ⟨inwFst, _⟩ := inwPairElim r
+              
+              let ⟨fst, inw500A⟩ := inwZthMemberElim inwZth nat502Neq500
+              let ⟨zth, inw500B⟩ := inwFstMemberElim inwFst nat502Neq500
+              
+              let eqA := inwBoundElim inw500A
+              let eqB := inwBoundElim inw500B
+              
+              let eq: pair aA bA = pBound :=
+                Pair.noConfusion (eqA.trans eqB.symm)
+                (fun eqZth _ => eqZth ▸ eqB)
+              
+              let inwA: Inw pairDictLt (pair aA bA) :=
+                eq ▸ inwFreeElim inwDomain nat500NeqPairDictLt
+              
+              have:
+                (pair aA bA).depth
+                  <
+                (pair (pair aA aB) (pair bA bB)).depth
+              :=
+                let leSA := Pair.depthSuccLeL aA aB
+                let leSB := Pair.depthSuccLeL bA bB
+                (Pair.depth.casesEq aA bA).elim
+                  (fun eq => eq ▸ (leSA.trans_lt (Pair.depthLtL _ _)))
+                  (fun eq => eq ▸ (leSB.trans_lt (Pair.depthLtR _ _)))
+              
+              Or.inl (toIsPairDictLt (pair aA bA) inwA))
+        (fun inwEqLeft =>
+          let ⟨pRBound, inwDomain, inwBody⟩ := inwUnDomElim inwEqLeft
+          let ⟨pLBound, inwBody⟩ := inwArbUnElim inwBody
+          
+          match p with
+          | zero => inwPairElim.nope inwBody
+          | pair a b =>
+            let ⟨l, r⟩ := inwPairElim inwBody
+            match a, b with
+            | zero, _ => inwPairElim.nope l
+            | _, zero => inwPairElim.nope r
+            | pair aA aB, pair bA bB =>
+              let ⟨inw501A, inwZth⟩ := inwPairElim l
+              let ⟨inw501B, inwFst⟩ := inwPairElim r
+              
+              let ⟨fst, inw500ABFst⟩ := inwZthMemberElim inwZth nat502Neq500
+              let ⟨zth, inw500ZthBB⟩ := inwFstMemberElim inwFst nat502Neq500
+              
+              let eqRA := inwBoundElim
+                (inwFreeElim (inw500ABFst) nat501Neq500)
+              let eqRB := inwBoundElim
+                (inwFreeElim (inw500ZthBB) nat501Neq500)
+              
+              let eq: pair aB bB = pRBound :=
+                Pair.noConfusion (eqRA.trans eqRB.symm)
+                (fun eqZth _ => eqZth ▸ eqRB)
+              
+              let inwB: Inw pairDictLt (pair aB bB) :=
+                eq ▸ inwFreeElim inwDomain nat500NeqPairDictLt
+              
+              have:
+                (pair aB bB).depth
+                  <
+                (pair (pair aA aB) (pair bA bB)).depth
+              :=
+                let leSL := Pair.depthSuccLeR aA aB
+                let leSR := Pair.depthSuccLeR bA bB
+                (Pair.depth.casesEq aB bB).elim
+                  (fun eq => eq ▸ (leSL.trans_lt (Pair.depthLtL _ _)))
+                  (fun eq => eq ▸ (leSR.trans_lt (Pair.depthLtR _ _)))
+              
+              let r := toIsPairDictLt (pair aB bB) inwB
+              
+              Or.inr
+                (And.intro
+                  ((inwBoundElim inw501A).trans (inwBoundElim inw501B).symm)
+                  r))
+    termination_by Inw.toIsPairDictLt p inw => p.depth
   end uniSet
 end Pair
