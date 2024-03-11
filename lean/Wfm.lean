@@ -747,84 +747,72 @@ namespace PairExpr
     ⟩
   
   def insZthMemberElim
-    (s: Ins pairSalgebra v (zthMember xA (var xB)) zth)
-    (neq: xA ≠ xB)
+    (s: Ins pairSalgebra v (zthMember x expr) zth)
   :
-    ∃ fst, Ins pairSalgebra v xB (Pair.pair zth fst)
+    ∃ fst, Ins pairSalgebra (v.update x zth) expr (Pair.pair zth fst)
   :=
     let ⟨pZth, ⟨insCond, insBody⟩⟩ := s
-    let ⟨pCond, ⟨insPairXaAny, pCondInsXbUpdated⟩⟩ := insCond
-    let pCondInsXb: Ins pairSalgebra v xB pCond :=
-      insFreeElim pCondInsXbUpdated neq
+    let ⟨pCond, ⟨insPairXaAny, pCondInsExpr⟩⟩ := insCond
     
-    match h: pCond with
+    match pCond with
     | Pair.zero => insPairElim.nope insPairXaAny
     | Pair.pair pCondZth pCondFst =>
       let ⟨insL, _insR⟩ := insPairElim insPairXaAny
       let eqPCondZth: pCondZth = pZth := insBoundElim insL
       let eqPZth: zth = pZth := insBoundElim insBody
       
-      ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInsXb⟩
+      ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInsExpr⟩
   
   def inwZthMemberElim
-    (s: Inw pairSalgebra v (zthMember xA (var xB)) zth)
-    (neq: xA ≠ xB)
+    (s: Inw pairSalgebra v (zthMember x expr) zth)
   :
-    ∃ fst, Inw pairSalgebra v xB (Pair.pair zth fst)
+    ∃ fst, Inw pairSalgebra (v.update x zth) expr (Pair.pair zth fst)
   :=
     let ⟨pZth, ⟨inwCond, inwBody⟩⟩ := s
-    let ⟨pCond, ⟨inwPairXaAny, pCondInwXbUpdated⟩⟩ := inwCond
-    let pCondInwXb: Inw pairSalgebra v xB pCond :=
-      inwFreeElim pCondInwXbUpdated neq
+    let ⟨pCond, ⟨inwPairXaAny, pCondInwExpr⟩⟩ := inwCond
     
-    match h: pCond with
+    match pCond with
     | Pair.zero => inwPairElim.nope inwPairXaAny
     | Pair.pair pCondZth pCondFst =>
       let ⟨insL, _insR⟩ := inwPairElim inwPairXaAny
       let eqPCondZth: pCondZth = pZth := inwBoundElim insL
       let eqPZth: zth = pZth := inwBoundElim inwBody
       
-      ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInwXb⟩
+      ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInwExpr⟩
   
   def insFstMemberElim
-    (s: Ins pairSalgebra v (fstMember xA (var xB)) fst)
-    (neq: xA ≠ xB)
+    (s: Ins pairSalgebra v (fstMember x expr) fst)
   :
-    ∃ zth, Ins pairSalgebra v xB (Pair.pair zth fst)
+    ∃ zth, Ins pairSalgebra (v.update x fst) expr (Pair.pair zth fst)
   :=
     let ⟨pFst, ⟨insCond, insBody⟩⟩ := s
-    let ⟨pCond, ⟨insPairAnyXa, pCondInsXbUpdated⟩⟩ := insCond
-    let pCondInsXb: Ins pairSalgebra v xB pCond :=
-      insFreeElim pCondInsXbUpdated neq
+    let ⟨pCond, ⟨insPairAnyXa, pCondInsExpr⟩⟩ := insCond
     
-    match h: pCond with
+    match pCond with
     | Pair.zero => insPairElim.nope insPairAnyXa
     | Pair.pair pCondZth pCondFst =>
       let ⟨_insL, insR⟩ := insPairElim insPairAnyXa
       let eqPCondZth: pCondFst = pFst := insBoundElim insR
       let eqPZth: fst = pFst := insBoundElim insBody
       
-      ⟨pCondZth, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInsXb⟩
+      ⟨pCondZth, eqPZth ▸ eqPCondZth ▸ pCondInsExpr⟩
   
   def inwFstMemberElim
-    (s: Inw pairSalgebra v (fstMember xA (var xB)) fst)
-    (neq: xA ≠ xB)
+    (s: Inw pairSalgebra v (fstMember x expr) fst)
   :
-    ∃ zth, Inw pairSalgebra v xB (Pair.pair zth fst)
+    ∃ zth, Inw pairSalgebra (v.update x fst) expr (Pair.pair zth fst)
   :=
     let ⟨pFst, ⟨inwCond, inwBody⟩⟩ := s
-    let ⟨pCond, ⟨inwPairAnyXa, pCondInwXbUpdated⟩⟩ := inwCond
-    let pCondInsXb: Inw pairSalgebra v xB pCond :=
-      inwFreeElim pCondInwXbUpdated neq
+    let ⟨pCond, ⟨inwPairAnyXa, pCondInwExpr⟩⟩ := inwCond
     
-    match h: pCond with
+    match pCond with
     | Pair.zero => inwPairElim.nope inwPairAnyXa
     | Pair.pair pCondZth pCondFst =>
       let ⟨_insL, insR⟩ := inwPairElim inwPairAnyXa
       let eqPCondZth: pCondFst = pFst := inwBoundElim insR
       let eqPZth: fst = pFst := inwBoundElim inwBody
       
-      ⟨pCondZth, eqPZth ▸ eqPCondZth ▸ h ▸ pCondInsXb⟩
+      ⟨pCondZth, eqPZth ▸ eqPCondZth ▸ pCondInwExpr⟩
   
   
   def insZthFstElim
@@ -835,19 +823,19 @@ namespace PairExpr
   :
     Ins pairSalgebra v xB (Pair.pair zth fst)
   :=
-    let ⟨chosenFst, insChosenFst⟩ := insZthMemberElim insZth neq
-    let ⟨chosenZth, insChosenZth⟩ := insFstMemberElim insFst neq
+    let ⟨chosenFst, insChosenFst⟩ := insZthMemberElim insZth
+    let ⟨chosenZth, insChosenZth⟩ := insFstMemberElim insFst
     
     let eq:
       Pair.pair zth chosenFst = Pair.pair chosenZth fst
     :=
       Set3.just.inDefToEq d
-        (isUnit ▸ insChosenFst)
-        (isUnit ▸ insChosenZth)
+        (isUnit ▸ (insFreeElim insChosenFst neq))
+        (isUnit ▸ (insFreeElim insChosenZth neq))
     
     let eqR: zth = chosenZth := Pair.noConfusion eq fun eq _ => eq
     
-    eqR ▸ insChosenZth
+    eqR ▸ (insFreeElim insChosenZth neq)
   
   def inwZthFstElim
     (inwZth: Inw pairSalgebra v (zthMember xA (var xB)) zth)
@@ -857,19 +845,19 @@ namespace PairExpr
   :
     Inw pairSalgebra v xB (Pair.pair zth fst)
   :=
-    let ⟨chosenFst, inwChosenFst⟩ := inwZthMemberElim inwZth neq
-    let ⟨chosenZth, inwChosenZth⟩ := inwFstMemberElim inwFst neq
+    let ⟨chosenFst, inwChosenFst⟩ := inwZthMemberElim inwZth
+    let ⟨chosenZth, inwChosenZth⟩ := inwFstMemberElim inwFst
     
     let eq:
       Pair.pair zth chosenFst = Pair.pair chosenZth fst
     :=
       Set3.just.inPosToEq d
-        (isUnit ▸ inwChosenFst)
-        (isUnit ▸ inwChosenZth)
+        (isUnit ▸ (inwFreeElim inwChosenFst neq))
+        (isUnit ▸ (inwFreeElim inwChosenZth neq))
     
     let eqR: zth = chosenZth := Pair.noConfusion eq fun eq _ => eq
     
-    eqR ▸ inwChosenZth
+    eqR ▸ (inwFreeElim inwChosenZth neq)
 end PairExpr
 
 namespace Pair
@@ -884,10 +872,15 @@ namespace Pair
   | pair a _ => Nat.succ (natDecode a)
   
   def natDecode.zeroEq: natDecode Pair.zero = 0 := rfl
-  def natDecode.eqZero (eqZ: p = Pair.zero):
-    natDecode p = 0
+  
+  def natDecode.eqZeroOfEqZero
+    (eqZero: natDecode p = 0)
+  :
+    p = zero
   :=
-    eqZ ▸ natDecode.zeroEq
+    match p with
+    | zero => rfl
+    | pair _ _ => Nat.noConfusion eqZero
   
   def natDecode.succPredEq
     (a b: Pair)
