@@ -89,6 +89,9 @@ def Eq.transLe
 :=
   ab ▸ bc
 
+def Nat.lt_antisymm {a b: Nat} (ab: a < b) (ba: b < a): P :=
+  False.elim (Nat.lt_irrefl _ (ab.trans ba))
+
 def Nat.lt.addNatRite (ab: a < b) (k: Nat): a < b + k :=
   Nat.lt_add_right _ _ _ ab
 

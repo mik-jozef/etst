@@ -230,3 +230,10 @@ end sPairSalgebra
 
 def sPairSalgebra: Salgebra pairSignature :=
   ⟨SPair, sPairSalgebra.I, sPairSalgebra.I.isMonotonic⟩
+
+
+namespace Pair
+  def fromNat: Nat → Pair
+  | Nat.zero => Pair.zero
+  | Nat.succ n => Pair.pair (fromNat n) Pair.zero
+end Pair

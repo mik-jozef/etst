@@ -1,6 +1,6 @@
 import UniDefList
 import Wfm
-import PairDictOrder
+import PairDictOrderInstance
 import PairDepthDictOrder
 
 namespace Pair
@@ -95,12 +95,18 @@ namespace Pair
     
     def nat501Neq500: 501 ≠ 500 := by simp
     def nat502Neq500: 502 ≠ 500 := by simp
-    def nat503Neq500: 504 ≠ 500 := by simp
-    def nat504Neq500: 503 ≠ 500 := by simp
+    def nat502Neq501: 502 ≠ 501 := by simp
+    def nat503Neq500: 503 ≠ 500 := by simp
+    def nat504Neq500: 504 ≠ 500 := by simp
     
     def nat500NeqNat: 500 ≠ 0 := by simp
     def nat500NeqNatLe: 500 ≠ 2 := by simp
     def nat500NeqPairDictLt: 500 ≠ 9 := by simp
+    def nat501NeqNatLeFn: 501 ≠ 10 := by simp
+    def nat502NeqNatLeFn: 502 ≠ 10 := by simp
+    def nat503NeqNatLeFn: 503 ≠ 10 := by simp
+    def nat504NeqNatLeFn: 504 ≠ 10 := by simp
+    
     
     def insNatLe.abEq (isNatLe: IsNatLe (pair a b)): Ins natLe (pair a b) :=
       let ⟨isNatA, isNatB, abLe⟩ := isNatLe
@@ -453,7 +459,7 @@ namespace Pair
     
     def IsPairDictLt: Pair → Prop
     | zero => False
-    | pair a b => a < b
+    | pair a b => dictOrder.Lt a b
     
     def insPairDictLt (isPD: IsPairDictLt p):
       Ins pairDictLt p
@@ -503,7 +509,7 @@ namespace Pair
                     insAny))))
         | IsGt ba =>
           isPD.elim
-            (fun ab => dictOrder.ltAntisymm ab ba)
+            (fun ab => dictOrder.Lt.antisymm ab ba)
             (fun ⟨eq, _⟩ => dictOrder.ltIrefl (eq ▸ ba))
         | IsEq eq =>
           let ipd: IsPairDictLt (pair aB bB) :=
@@ -531,7 +537,7 @@ namespace Pair
                           (insFree insBound nat501Neq500)
                           nat502Neq500)))))))
     
-    def Inw.toIsPairDictLt p (inw: Inw pairDictLt p):
+    def Inw.toIsPairDictLt.p p (inw: Inw pairDictLt p):
       IsPairDictLt p
     :=
       inwFinUnElim (wfm.inwWfm.toInwWfmDef inw)
@@ -563,18 +569,8 @@ namespace Pair
               let inwA: Inw pairDictLt (pair aA bA) :=
                 eq ▸ inwFreeElim inwDomain nat500NeqPairDictLt
               
-              have:
-                (pair aA bA).depth
-                  <
-                (pair (pair aA aB) (pair bA bB)).depth
-              :=
-                let leSA := Pair.depthSuccLeL aA aB
-                let leSB := Pair.depthSuccLeL bA bB
-                (Pair.depth.casesEq aA bA).elim
-                  (fun eq => eq ▸ (leSA.trans_lt (Pair.depthLtL _ _)))
-                  (fun eq => eq ▸ (leSB.trans_lt (Pair.depthLtR _ _)))
-              
-              Or.inl (toIsPairDictLt (pair aA bA) inwA))
+              have := depth.leZth aA aB bA bB
+              Or.inl (toIsPairDictLt.p (pair aA bA) inwA))
         (fun inwEqLeft =>
           let ⟨pRBound, inwDomain, inwBody⟩ := inwUnDomElim inwEqLeft
           let ⟨pLBound, inwBody⟩ := inwArbUnElim inwBody
@@ -604,16 +600,21 @@ namespace Pair
                 let leSL := Pair.depthSuccLeR aA aB
                 let leSR := Pair.depthSuccLeR bA bB
                 (Pair.depth.casesEq aB bB).elim
-                  (fun eq => eq ▸ (leSL.trans_lt (Pair.depthLtL _ _)))
-                  (fun eq => eq ▸ (leSR.trans_lt (Pair.depthLtR _ _)))
+                  (fun ⟨eq, _⟩ => eq ▸ (leSL.trans_lt (Pair.depthLtL _ _)))
+                  (fun ⟨eq, _⟩ => eq ▸ (leSR.trans_lt (Pair.depthLtR _ _)))
               
-              let r := toIsPairDictLt (pair aB bB) inwB
+              let r := toIsPairDictLt.p (pair aB bB) inwB
               
               Or.inr
                 (And.intro
                   ((inwBoundElim inw501A).trans (inwBoundElim inw501B).symm)
                   r))
-    termination_by Inw.toIsPairDictLt p inw => p.depth
+    termination_by Inw.toIsPairDictLt.p p inw => p.depth
+    
+    def Inw.toIsPairDictLt (inw: Inw pairDictLt p):
+      IsPairDictLt p
+    :=
+      Inw.toIsPairDictLt.p p inw
     
     structure IsNatLeFn.Pair (a b: Pair): Prop where
       isNatA: IsNatEncoding a
@@ -661,29 +662,185 @@ namespace Pair
     
     structure IsPairOfDepthAB (n p: Pair): Prop where
       isNat: IsNatEncoding n
-      isDepth: n.natDecode = p.depth
+      eqDepth: n.natDecode = p.depth
     
     def IsPairOfDepth: Pair → Prop
     | zero => False
     | pair n p => IsPairOfDepthAB n p
     
-    def insPairOfDepth (isPoD: IsPairOfDepth p):
+    def insPairOfDepth.p p (isPoD: IsPairOfDepth p):
       Ins pairOfDepth p
     :=
       match p with
       | zero => isPoD.elim
       | pair n p =>
         wfm.insWfmDef.toInsWfm
-          (match p with
-          | zero =>
-            let nEqZero := natDecode.eqZeroOfEqZero isPoD.isDepth
+          (match n, p with
+          | zero, zero =>
+            let nEqZero := natDecode.eqZeroOfEqZero isPoD.eqDepth
             
             (insUnL (insPair (nEqZero ▸ insZero) insZero) _)
-          | pair a b =>
+          | zero, pair _ _ => Nat.noConfusion isPoD.eqDepth
+          | pair _ _, zero => Nat.noConfusion isPoD.eqDepth
+          | pair nA nB, pair pA pB =>
+            
             insUnR
               _
-              (insUnDom
-                (insNat isPoD.isNat)
-                sorry))
+              ((depth.casesEq pA pB).elim
+                (fun ⟨depthEq, depthLe⟩ =>
+                  let isPoDA: IsPairOfDepth (pair nA pA) := {
+                    isNat := isPoD.isNat.left
+                    eqDepth := Nat.noConfusion
+                      (isPoD.eqDepth.trans depthEq) id
+                  }
+                  
+                  let pBAndDepth := pair (fromNat pB.depth) pB
+                  
+                  let isPoDB: IsPairOfDepth pBAndDepth := {
+                    isNat := fromNat.isNatEncoding _
+                    eqDepth := natEncode.fromNatEq _
+                  }
+                  
+                  have := depth.leZth nA nB pA pB
+                  have:
+                    pBAndDepth.depth
+                      <
+                    (pair (pair nA nB) (pair pA pB)).depth
+                  :=
+                    let eq: pBAndDepth.depth = Nat.succ pB.depth :=
+                      (depth.casesEq (fromNat pB.depth) pB).elim
+                        (fun ⟨eq, _⟩ =>
+                          eq ▸ congr rfl (fromNat.depthEq pB.depth))
+                        (fun ⟨eq, _⟩ => eq)
+                    eq ▸ (Nat.succ_le_succ depthLe).trans_lt
+                      ((Nat.succ_le_succ (depthLtL pA pB)).trans
+                        (depthLtR (pair nA nB) (pair pA pB)))
+                  
+                  insUnDom
+                    (insNat isPoD.isNat.left)
+                    (insUnDom
+                      (insCall
+                        (insPairOfDepth.p _ isPoDA)
+                        (insFree
+                          (insFree insBound nat501Neq500)
+                          nat502Neq500))
+                      (insUnDom
+                        (insCall
+                          (insPairOfDepth.p _ isPoDB)
+                          (insCall
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    (insNatLeFn {
+                                      isNatA := isPoD.isNat.left
+                                      isNatB := fromNat.isNatEncoding pB.depth
+                                      isLe :=
+                                        (natEncode.fromNatEq _) ▸
+                                        isPoDA.eqDepth ▸ depthLe
+                                    })
+                                    nat501NeqNatLeFn)
+                                  nat502NeqNatLeFn)
+                                nat503NeqNatLeFn)
+                              nat504NeqNatLeFn)
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    insBound
+                                    nat501Neq500)
+                                  nat502Neq500)
+                                nat503Neq500)
+                              nat504Neq500)))
+                        (insUnL
+                          (insPair
+                            (insPair
+                              (insFree
+                                (insFree insBound nat501Neq500)
+                                nat502Neq500)
+                              (isPoD.isNat.right ▸ insZero))
+                            (insPair
+                              (insFree insBound nat502Neq501)
+                              insBound))
+                          _))))
+                
+                (fun ⟨depthEq, depthLt⟩ =>
+                  let isPoDB: IsPairOfDepth (pair nA pB) := {
+                    isNat := isPoD.isNat.left
+                    eqDepth := Nat.noConfusion
+                      (isPoD.eqDepth.trans depthEq) id
+                  }
+                  
+                  let pAAndDepth := pair (fromNat pA.depth) pA
+                  
+                  let isPoDA: IsPairOfDepth pAAndDepth := {
+                    isNat := fromNat.isNatEncoding _
+                    eqDepth := natEncode.fromNatEq _
+                  }
+                  
+                  have := depth.leZthFst nA nB pA pB
+                  have:
+                    pAAndDepth.depth
+                      <
+                    (pair (pair nA nB) (pair pA pB)).depth
+                  :=
+                    let eq: pAAndDepth.depth = Nat.succ pA.depth :=
+                      (depth.casesEq (fromNat pA.depth) pA).elim
+                        (fun ⟨eq, _⟩ =>
+                          eq ▸ congr rfl (fromNat.depthEq pA.depth))
+                        (fun ⟨eq, _⟩ => eq)
+                    let depthSuccLe := Nat.succ_le_of_lt depthLt
+                    eq ▸ depthSuccLe.trans_lt
+                      ((depthLtR pA pB).trans (depthLtR _ _))
+                  
+                  insUnDom
+                    (insNat isPoD.isNat.left)
+                    (insUnDom
+                      (insCall
+                        (insPairOfDepth.p _ isPoDB)
+                        (insFree
+                          (insFree insBound nat501Neq500)
+                          nat502Neq500))
+                      (insUnDom
+                        (insCall
+                          (insPairOfDepth.p _ isPoDA)
+                          (insCall
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    (insNatLeFn {
+                                      isNatA := isPoD.isNat.left
+                                      isNatB := fromNat.isNatEncoding pA.depth
+                                      isLe :=
+                                        (natEncode.fromNatEq _) ▸
+                                        isPoDB.eqDepth ▸
+                                        Nat.le_of_lt depthLt
+                                    })
+                                    nat501NeqNatLeFn)
+                                  nat502NeqNatLeFn)
+                                nat503NeqNatLeFn)
+                              nat504NeqNatLeFn)
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    insBound
+                                    nat501Neq500)
+                                  nat502Neq500)
+                                nat503Neq500)
+                              nat504Neq500)))
+                        (insUnR
+                          _
+                          (insPair
+                            (insPair
+                              (insFree
+                                (insFree insBound nat501Neq500)
+                                nat502Neq500)
+                              (isPoD.isNat.right ▸ insZero))
+                            (insPair
+                              insBound
+                              (insFree insBound nat502Neq501)))))))))
+    termination_by insPairOfDepth.p p isPoD => p.depth
   end uniSet
 end Pair

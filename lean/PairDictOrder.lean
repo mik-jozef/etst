@@ -26,7 +26,7 @@ namespace Pair
   
   def dictOrder.leRefl a: Le a a := Or.inl rfl
   
-  def dictOrder.ltAntisymm
+  def dictOrder.Lt.antisymm
     (ab: Lt a b)
     (ba: Lt b a)
   :
@@ -40,14 +40,14 @@ namespace Pair
       ab.elim
         (fun ltAB =>
            ba.elim
-             (fun ltBA => ltAntisymm ltAB ltBA)
+             (fun ltBA => ltAB.antisymm ltBA)
              (fun ⟨eqA, _⟩ => ltIrefl (eqA ▸ ltAB)))
         (fun ⟨eqA, ltAB⟩ =>
           ba.elim
             (fun ltBA => ltIrefl (eqA ▸ ltBA))
-            (fun ⟨_, ltBA⟩ => ltAntisymm ltAB ltBA))
+            (fun ⟨_, ltBA⟩ => ltAB.antisymm ltBA))
   
-  def dictOrder.leAntisymm
+  def dictOrder.Le.antisymm
     (ab: Le a b)
     (ba: Le b a)
   :
@@ -58,9 +58,9 @@ namespace Pair
       (fun abLt =>
         ba.elim
           (fun eq => eq.symm)
-          (fun baLt => ltAntisymm abLt baLt))
+          (fun baLt => abLt.antisymm baLt))
   
-  def dictOrder.ltTrans
+  def dictOrder.Lt.trans
     (ab: Lt a b)
     (bc: Lt b c)
   :
@@ -76,7 +76,7 @@ namespace Pair
       ab.elim
         (fun aLtAB =>
           bc.elim
-            (fun aLtBC => Or.inl (ltTrans aLtAB aLtBC))
+            (fun aLtBC => Or.inl (aLtAB.trans aLtBC))
             (fun ⟨aEqBC, _bLtBC⟩ => Or.inl (aEqBC ▸ aLtAB)))
         (fun ⟨aEqAB, bLtAB⟩ =>
           bc.elim
@@ -85,9 +85,9 @@ namespace Pair
               Or.inr
                 (And.intro
                   (aEqAB.trans aEqBC)
-                  (ltTrans bLtAB bLtBC))))
+                  (bLtAB.trans bLtBC))))
   
-  def dictOrder.leTrans
+  def dictOrder.Le.trans
     (ab: Le a b)
     (bc: Le b c)
   :
@@ -98,7 +98,7 @@ namespace Pair
       (fun abLt =>
         bc.elim
           (fun eq => eq ▸ ab)
-          (fun bcLt => Or.inr (ltTrans abLt bcLt)))
+          (fun bcLt => Or.inr (abLt.trans bcLt)))
   
   inductive dictOrder.LtTotal (a b: Pair): Prop where
   | IsLt: Lt a b → LtTotal a b
@@ -139,32 +139,4 @@ namespace Pair
     | IsGt ba => Or.inr (Or.inr ba)
     | IsEq eq => eq ▸ Or.inl (leRefl _)
   
-  
-  noncomputable instance Pair.dictOrder: LinearOrder Pair where
-    le := dictOrder.Le
-    lt := dictOrder.Lt
-    
-    lt_iff_le_not_le _ _ :=
-      Iff.intro
-        (fun ab =>
-          And.intro
-            (Or.inr ab)
-            (fun ba =>
-              ba.elim
-                (fun eq => dictOrder.ltIrefl (eq ▸ ab))
-                (fun ba => dictOrder.ltAntisymm ab ba)))
-        (fun ⟨abLe, notBaLe⟩ =>
-          abLe.elim
-            (fun eq => False.elim (notBaLe (Or.inl eq.symm)))
-            id)
-    
-    le_refl _ := Or.inl rfl
-    
-    le_antisymm _ _ := dictOrder.leAntisymm
-    
-    le_trans _ _ _ := dictOrder.leTrans
-    
-    le_total := dictOrder.leTotal
-    
-    decidableLE := inferInstance
 end Pair
