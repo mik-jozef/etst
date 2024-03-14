@@ -1,6 +1,9 @@
 /-
-  Defines PartialOrder and PartialOrderSq, along with notation
-  for the latter.
+  PartialOrder.optionTop, given a partial order on T,
+  defines a partial order on `Option T` that places
+  none above all other elements.
+  
+  This file also contains some related helper proofs.
 -/
 
 import Mathlib.Init.Order.Defs

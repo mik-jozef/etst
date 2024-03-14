@@ -1,5 +1,6 @@
 /-
-  Defines sets and related stuff. And kinda whatever.
+  Things so basic that they ought to be in Lean's standard
+  library, and perhaps even are and I just didn't find them.
 -/
 
 import PartialOrder
@@ -53,14 +54,14 @@ namespace Set
   def full: Set D := fun _ => True
   def just (d: D): Set D := fun x => x = d
 
-  def isFinite (s: Set D): Prop := ∃ l: List D, ∀ t: D, t ∈ s → t ∈ l
+  def IsFinite (s: Set D): Prop := ∃ l: List D, ∀ t: s, t.val ∈ l
 
-  def isSubset (a b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
+  def IsSubset (a b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
 
   def indexUnion {Index: Type} {D: Type} (family: Index → Set D): Set D :=
     fun (d: D) => ∃ i: Index, family i d
 
-  theorem indexUnion.isWider
+  theorem indexUnion.IsWider
     (family: Index → Set D)
     (i: Index)
   :
@@ -72,12 +73,6 @@ end Set
 instance: Coe Nat Type where
   coe := fun n => { nn: Nat // nn < n }
 
-
--- Some things that (imho) should be a part of the standard library.
--- (or are they?).
--- Meh. I suppose I should look and replace, but ¯\_(ツ)_/¯
--- Note: If you wanna outdo Lean (pipe dreams hello!), efficient
--- search of already proven things could be a killer feature.
 
 def Eq.transLe
   {_ord: PartialOrder T}
@@ -127,15 +122,15 @@ def Nat.isTotalLt (a b: Nat): a < b ∨ b < a ∨ a = b :=
         (fun eq => Or.inr (Or.inr eq.symm))
         (fun ba => Or.inr (Or.inl ba)))
 
-def Nat.ltAntisymm {p: Prop} {a b: Nat} (ab: a < b) (ba: b < a): p :=
+def Nat.ltAntisymm {a b: Nat} (ab: a < b) (ba: b < a): P :=
   False.elim (Nat.lt_irrefl a (Nat.lt_trans ab ba))
 
-def Nat.ltLeAntisymm {p: Prop} {a b: Nat} (ab: a < b) (ba: b ≤ a): p :=
+def Nat.ltLeAntisymm {a b: Nat} (ab: a < b) (ba: b ≤ a): P :=
   (Nat.eq_or_lt_of_le ba).elim
     (fun eq => False.elim (Nat.lt_irrefl a (eq ▸ ab)))
     (fun ba => Nat.ltAntisymm ab ba)
 
-def Nat.leLtAntisymm {p: Prop} {a b: Nat} (ab: a ≤ b) (ba: b < a): p :=
+def Nat.leLtAntisymm {a b: Nat} (ab: a ≤ b) (ba: b < a): P :=
   (Nat.eq_or_lt_of_le ab).elim
     (fun eq => False.elim (Nat.lt_irrefl a (eq ▸ ba)))
     (fun ab => Nat.ltAntisymm ab ba)
@@ -251,11 +246,11 @@ def List.Has.toMem (lh: List.Has list t): t ∈ list :=
       let laHas := List.Has.toMem laHasT
       Mem.tail a laHas
 
-def List.has.fromMem (tIn: t ∈ list): List.Has list t :=
+def List.Has.fromMem (tIn: t ∈ list): List.Has list t :=
   match tIn with
   | Mem.head rest => ⟨⟨0, Nat.succ_pos _⟩, rfl⟩
   | Mem.tail _head memRest =>
-      let restHas := List.has.fromMem memRest
+      let restHas := List.Has.fromMem memRest
       let i := restHas.unwrap
       ⟨i.val.succ, i.property⟩
 
@@ -359,11 +354,6 @@ noncomputable def existsDistinctOfNotInjective
   let a1 := a0.property.unwrap
 
   ⟨⟨a0, a1⟩, a1.property⟩
-
-def Set.IsFinite
-  (s: Set T)
-:=
-  ∃ list: List T, ∀ t: s, t.val ∈ list
 
 
 def List.emptyNotMem (t: T):

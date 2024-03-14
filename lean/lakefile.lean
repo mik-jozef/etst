@@ -28,11 +28,11 @@ lean_lib PairDictOrder {}
 lean_lib PairDictOrderInstance {}
 lean_lib PartialOrder {}
 lean_lib Pointwise {}
-lean_lib Set {}
 lean_lib Set3 {}
 lean_lib Tuple {}
 lean_lib UniDefList {}
 lean_lib UniSet3 {}
+lean_lib Utils {}
 lean_lib Valuation {}
 lean_lib Wfm {}
 
