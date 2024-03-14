@@ -102,10 +102,15 @@ namespace Pair
     def nat500NeqNat: 500 ≠ 0 := by simp
     def nat500NeqNatLe: 500 ≠ 2 := by simp
     def nat500NeqPairDictLt: 500 ≠ 9 := by simp
+    def nat500NeqNatLeFn: 500 ≠ 10 := by simp
     def nat501NeqNatLeFn: 501 ≠ 10 := by simp
     def nat502NeqNatLeFn: 502 ≠ 10 := by simp
     def nat503NeqNatLeFn: 503 ≠ 10 := by simp
     def nat504NeqNatLeFn: 504 ≠ 10 := by simp
+    def nat500NeqPairOfDepth: 500 ≠ 11 := by simp
+    def nat501NeqPairOfDepth: 501 ≠ 11 := by simp
+    def nat502NeqPairOfDepth: 502 ≠ 11 := by simp
+    def nat503NeqPairOfDepth: 503 ≠ 11 := by simp
     
     
     def insNatLe.abEq (isNatLe: IsNatLe (pair a b)): Ins natLe (pair a b) :=
@@ -698,7 +703,7 @@ namespace Pair
                   
                   let isPoDB: IsPairOfDepth pBAndDepth := {
                     isNat := fromNat.isNatEncoding _
-                    eqDepth := natEncode.fromNatEq _
+                    eqDepth := natDecode.fromNatEq _
                   }
                   
                   have := depth.leZth nA nB pA pB
@@ -736,7 +741,7 @@ namespace Pair
                                       isNatA := isPoD.isNat.left
                                       isNatB := fromNat.isNatEncoding pB.depth
                                       isLe :=
-                                        (natEncode.fromNatEq _) ▸
+                                        (natDecode.fromNatEq _) ▸
                                         isPoDA.eqDepth ▸ depthLe
                                     })
                                     nat501NeqNatLeFn)
@@ -775,7 +780,7 @@ namespace Pair
                   
                   let isPoDA: IsPairOfDepth pAAndDepth := {
                     isNat := fromNat.isNatEncoding _
-                    eqDepth := natEncode.fromNatEq _
+                    eqDepth := natDecode.fromNatEq _
                   }
                   
                   have := depth.leZthFst nA nB pA pB
@@ -813,7 +818,7 @@ namespace Pair
                                       isNatA := isPoD.isNat.left
                                       isNatB := fromNat.isNatEncoding pA.depth
                                       isLe :=
-                                        (natEncode.fromNatEq _) ▸
+                                        (natDecode.fromNatEq _) ▸
                                         isPoDB.eqDepth ▸
                                         Nat.le_of_lt depthLt
                                     })
@@ -842,5 +847,128 @@ namespace Pair
                               insBound
                               (insFree insBound nat502Neq501)))))))))
     termination_by insPairOfDepth.p p isPoD => p.depth
+    
+    def insPairOfDepth (isPoD: IsPairOfDepth p):
+      Ins pairOfDepth p
+    :=
+      insPairOfDepth.p p isPoD
+    
+    
+    def natDecode.eqDepth (isNat: IsNatEncoding p):
+      natDecode p = p.depth
+    :=
+      match p with
+      | zero => rfl
+      | pair a b =>
+        (Pair.depth.casesEq a b).elim
+          (fun ⟨eq, _⟩ => eq ▸ congr rfl (eqDepth isNat.left))
+          (fun ⟨_, lt⟩ =>
+            False.elim (Nat.not_lt_zero _ (isNat.right ▸ lt)))
+    
+    def Inw.toIsPairOfDepthAB n p (inw: Inw pairOfDepth (pair n p)):
+      IsPairOfDepth (pair n p)
+    :=
+      (inwUnElim (wfm.inwWfm.toInwWfmDef inw)).elim
+        (fun inw =>
+          let ⟨l, r⟩ := inwPairElim inw
+          let aEq := inwZeroElim l
+          let bEq := inwZeroElim r
+          
+          let isZ: IsPairOfDepth (pair zero zero) := {
+            isNat := trivial
+            eqDepth := rfl
+          }
+          
+          aEq ▸ bEq ▸ isZ)
+        (fun inw =>
+          let ⟨bound500, ___inwDomain, inwBody⟩ := inwUnDomElim inw
+          let ⟨bound501, inwDomain501, inwBody⟩ := inwUnDomElim inwBody
+          let ⟨bound502, inwDomain502, inwBody⟩ := inwUnDomElim inwBody
+          
+          let ⟨arg, ⟨inwFn, inwArg⟩⟩ := inwCallElim inwDomain501
+          
+          let argEq500 := inwBoundElim
+            (inwFreeElim (inwFreeElim inwArg nat502Neq500) nat501Neq500)
+          
+          let inwPoD500501 := argEq500 ▸
+            inwFreeElim
+              (inwFreeElim
+                (inwFreeElim inwFn nat502NeqPairOfDepth)
+                nat501NeqPairOfDepth)
+              nat500NeqPairOfDepth
+          
+          let ⟨argOuter, ⟨inwFnOuter, inwArgOuter⟩⟩ :=
+            inwCallElim inwDomain502
+          let ⟨argInner, ⟨inwFnInner, inwArgInner⟩⟩ :=
+            inwCallElim inwArgOuter
+          
+          let argInnerIs500 :=
+            inwBoundElim
+              (inwFreeElim
+                (inwFreeElim
+                  (inwFreeElim
+                    (inwFreeElim inwArgInner nat504Neq500)
+                  nat503Neq500)
+                nat502Neq500)
+              nat501Neq500)
+          
+          let ⟨isNat500, isNatOuter, outerLe500⟩ :=
+            argInnerIs500 ▸
+            Inw.toIsNatLeFn
+              (inwFreeElim
+                (inwFreeElim
+                  (inwFreeElim
+                    (inwFreeElim
+                      (inwFreeElim inwFnInner nat504NeqNatLeFn)
+                    nat503NeqNatLeFn)
+                  nat502NeqNatLeFn)
+                nat501NeqNatLeFn)
+              nat500NeqNatLeFn)
+          
+          (inwUnElim inwBody).elim
+            (fun inw =>
+              match h: n, p with
+              | zero, _ => inwPairElim.nope (inwPairElim inw).inwL
+              | _, zero => inwPairElim.nope (inwPairElim inw).inwR
+              | pair nPred z, pair bA bB =>
+                let ⟨inwSucc, inwPair⟩ := inwPairElim inw
+                let ⟨inwPred, inwZ⟩ := inwPairElim inwSucc
+                let ⟨inwA, inwB⟩ := inwPairElim inwPair
+                
+                let nPredEq500 :=
+                  inwBoundElim
+                    (inwFreeElim
+                      (inwFreeElim inwPred nat502Neq500)
+                      nat501Neq500)
+                
+                let aEq501 := inwBoundElim (inwFreeElim inwA nat502Neq501)
+                let bEq502 := inwBoundElim inwB
+                
+                have: depth argOuter < depth n :=
+                  let depthLe :=
+                    (natDecode.eqDepth isNatOuter) ▸
+                    (natDecode.eqDepth (nPredEq500 ▸ isNat500)) ▸
+                    outerLe500
+                  h ▸
+                  nPredEq500 ▸
+                  depthLe.trans_lt (depthLtL bound500 z)
+                
+                have: depth bound500 < depth n :=
+                  h ▸ nPredEq500 ▸ (depthLtL nPred z)
+                
+                let isPodArgOuter502 := Inw.toIsPairOfDepthAB _ _
+                  (inwFreeElim inwFnOuter nat503NeqPairOfDepth)
+                
+                let isPod500501 := Inw.toIsPairOfDepthAB _ _ inwPoD500501
+                
+                {
+                  isNat :=
+                    And.intro
+                      (nPredEq500 ▸ isNat500)
+                      (inwZeroElim inwZ)
+                  eqDepth := sorry
+                })
+            sorry)
+    termination_by Inw.toIsPairOfDepthAB n p inw => n.depth
   end uniSet
 end Pair

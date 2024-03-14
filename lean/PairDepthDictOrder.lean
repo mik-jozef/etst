@@ -1,10 +1,6 @@
 import PairDictOrder
 
 namespace Pair
-  def depth: Pair → Nat
-  | zero => 0
-  | pair a b => Nat.succ (max a.depth b.depth)
-  
   def depthSuccLeL (a b: Pair):
     Nat.succ a.depth ≤ (pair a b).depth
   :=

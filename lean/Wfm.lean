@@ -1,6 +1,7 @@
 import Operators
 import ExampleWFCs
 import EqSwappedUnusedVar
+import PairDepthDictOrder
 
 namespace Expr
   def anyExpr: Expr sig := Expr.Un 0 0
@@ -1030,6 +1031,18 @@ namespace Pair
     natDecode a ≠ natDecode b
   :=
     (natDecode.injEq isNatA isNatB).contra neq
+  
+  
+  def natDecode.eqDepth (isNat: IsNatEncoding p):
+    natDecode p = p.depth
+  :=
+    match p with
+    | zero => rfl
+    | pair a b =>
+      (Pair.depth.casesEq a b).elim
+        sorry
+        sorry
+  
 end Pair
 
 namespace PairExpr
@@ -1045,12 +1058,12 @@ namespace PairExpr
     | Nat.zero => trivial
     | Nat.succ pred => And.intro (isNatEncoding pred) rfl
   
-  def natEncode.fromNatEq (n: Nat):
+  def natDecode.fromNatEq (n: Nat):
     natDecode (fromNat n) = n
   :=
     match n with
     | Nat.zero => rfl
-    | Nat.succ pred => congr rfl (fromNatEq pred)
+    | Nat.succ pred => congr rfl (natDecode.fromNatEq pred)
   
   
   def insNatExpr v n

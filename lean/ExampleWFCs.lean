@@ -233,6 +233,10 @@ def sPairSalgebra: Salgebra pairSignature :=
 
 
 namespace Pair
+  def depth: Pair → Nat
+  | zero => 0
+  | pair a b => Nat.succ (max a.depth b.depth)
+  
   def fromNat: Nat → Pair
   | Nat.zero => Pair.zero
   | Nat.succ n => Pair.pair (fromNat n) Pair.zero
