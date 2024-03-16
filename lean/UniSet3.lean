@@ -70,9 +70,9 @@ namespace Pair
       let n := (inwUnDomElim inwDef).unwrap
       
       let inwNatN: Inw nat n :=
-        inwFreeElim n.property.insDomain Nat.noConfusion
+        inwFreeElim n.property.inwDomain Nat.noConfusion
       
-      let ⟨pairL, exR⟩ := inwPairElim.ex n.property.insBody
+      let ⟨pairL, exR⟩ := inwPairElim.ex n.property.inwBody
       let ⟨pairR, ⟨eq, insL, insR⟩⟩ := exR.unwrap
       
       let eqL := inwBoundElim insL
@@ -911,7 +911,7 @@ namespace Pair
                 nat502Neq500)
               nat501Neq500)
           
-          let ⟨isNat500, isNatOuter, outerLe500⟩ :=
+          let ⟨isNat500, _isNatOuter, outerLe500⟩ :=
             argInnerIs500 ▸
             Inw.toIsNatLeFn
               (inwFreeElim
@@ -943,6 +943,8 @@ namespace Pair
                 let aEq501 := inwBoundElim (inwFreeElim inwA nat502Neq501)
                 let bEq502 := inwBoundElim inwB
                 
+                let zEq := inwZeroElim inwZ
+                
                 have: depth argOuter < depth n :=
                   h ▸
                   nPredEq500 ▸
@@ -958,12 +960,97 @@ namespace Pair
                 
                 {
                   isNat :=
-                    And.intro
-                      (nPredEq500 ▸ isNat500)
-                      (inwZeroElim inwZ)
-                  eqDepth := sorry
+                    And.intro (nPredEq500 ▸ isNat500) zEq
+                  eqDepth :=
+                    let eqL: (pair nPred z).depth = Nat.succ nPred.depth :=
+                      depth.eqL (zEq ▸ Nat.zero_le nPred.depth)
+                    
+                    let eqR: (pair bA bB).depth = Nat.succ bA.depth :=
+                      depth.eqL
+                        (aEq501 ▸
+                        bEq502 ▸
+                        isPod500501.eqDepth ▸
+                        isPodArgOuter502.eqDepth ▸
+                        outerLe500)
+                    let eqMid: Nat.succ nPred.depth = Nat.succ bA.depth :=
+                      aEq501 ▸
+                      nPredEq500 ▸
+                      congr rfl isPod500501.eqDepth
+                    
+                    (eqL.trans eqMid).trans eqR.symm
                 })
-            sorry)
+            (fun inw =>
+              match h: n, p with
+              | zero, _ => inwPairElim.nope (inwPairElim inw).inwL
+              | _, zero => inwPairElim.nope (inwPairElim inw).inwR
+              | pair nPred z, pair bA bB =>
+                let ⟨inwSucc, inwPair⟩ := inwPairElim inw
+                let ⟨inwPred, inwZ⟩ := inwPairElim inwSucc
+                let ⟨inwA, inwB⟩ := inwPairElim inwPair
+                
+                let nPredEq500 :=
+                  inwBoundElim
+                    (inwFreeElim
+                      (inwFreeElim inwPred nat502Neq500)
+                      nat501Neq500)
+                
+                let aEq502 := inwBoundElim inwA
+                let bEq501 := inwBoundElim (inwFreeElim inwB nat502Neq501)
+                
+                let zEq := inwZeroElim inwZ
+                
+                have: depth argOuter < depth n :=
+                  h ▸
+                  nPredEq500 ▸
+                  outerLe500.trans_lt (depthLtL bound500 z)
+                
+                have: depth bound500 < depth n :=
+                  h ▸ nPredEq500 ▸ (depthLtL nPred z)
+                
+                let isPodArgOuter502 := Inw.toIsPairOfDepthAB _ _
+                  (inwFreeElim inwFnOuter nat503NeqPairOfDepth)
+                
+                let isPod500501 := Inw.toIsPairOfDepthAB _ _ inwPoD500501
+                
+                {
+                  isNat :=
+                    And.intro (nPredEq500 ▸ isNat500) zEq
+                  eqDepth :=
+                    let eqL: (pair nPred z).depth = Nat.succ nPred.depth :=
+                      depth.eqL (zEq ▸ Nat.zero_le nPred.depth)
+                    
+                    let eqR: (pair bA bB).depth = Nat.succ bB.depth :=
+                      depth.eqR
+                        (aEq502 ▸
+                        bEq501 ▸
+                        isPod500501.eqDepth ▸
+                        isPodArgOuter502.eqDepth ▸
+                        outerLe500)
+                    let eqMid: Nat.succ nPred.depth = Nat.succ bB.depth :=
+                      bEq501 ▸
+                      nPredEq500 ▸
+                      congr rfl isPod500501.eqDepth
+                    
+                    (eqL.trans eqMid).trans eqR.symm
+                }))
     termination_by Inw.toIsPairOfDepthAB n p inw => n.depth
+    
+    def Inw.toIsPairOfDepth (inw: Inw pairOfDepth p):
+      IsPairOfDepth p
+    :=
+      match p with
+      | zero =>
+          (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+            (fun l => inwPairElim.nope l)
+            (fun r =>
+              let ⟨_, ⟨_, inwBody⟩⟩ := inwUnDomElim r
+              let ⟨_, ⟨_, inwBody⟩⟩ := inwUnDomElim inwBody
+              let ⟨_, ⟨_, inwBody⟩⟩ := inwUnDomElim inwBody
+              
+              (inwUnElim inwBody).elim
+                (fun l => inwPairElim.nope l)
+                (fun r => inwPairElim.nope r))
+      | pair a b => toIsPairOfDepthAB a b inw
+    
   end uniSet
 end Pair

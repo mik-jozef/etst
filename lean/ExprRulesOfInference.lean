@@ -366,8 +366,8 @@ namespace Expr
     (domain body: Expr sig)
     (d: salg.D): Prop
   where
-    insDomain: Inw salg (v.update x dBound) domain dBound
-    insBody: Inw salg (v.update x dBound) body d
+    inwDomain: Inw salg (v.update x dBound) domain dBound
+    inwBody: Inw salg (v.update x dBound) body d
   
   def inwUnDomElim
     (insUnDom: Inw salg v (unionExpr x domain body) d)
@@ -390,8 +390,8 @@ namespace Expr
     ⟨
       dBound,
       {
-        insDomain := insDomain
-        insBody := dBound.property.right
+        inwDomain := insDomain
+        inwBody := dBound.property.right
       },
     ⟩
   

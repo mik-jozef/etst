@@ -98,6 +98,21 @@ namespace Pair
     | pair _ _ => Nat.noConfusion eqZero
   
   
+  def depth.eqL
+    (ba: b.depth ≤ a.depth)
+  :
+    (pair a b).depth = Nat.succ a.depth
+  :=
+    congr rfl (max_eq_iff.mpr (Or.inl (And.intro rfl ba)))
+  
+  def depth.eqR
+    (ab: a.depth ≤ b.depth)
+  :
+    (pair a b).depth = Nat.succ b.depth
+  :=
+    congr rfl (max_eq_iff.mpr (Or.inr (And.intro rfl ab)))
+  
+  
   def IsNatEncoding: Set Pair
   | zero => True
   | pair a b => (IsNatEncoding a) ∧ b = zero
