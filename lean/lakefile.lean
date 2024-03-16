@@ -34,7 +34,12 @@ lean_lib Pointwise {}
 lean_lib Set3 {}
 lean_lib Tuple {}
 lean_lib UniDefList {}
-lean_lib UniSet3 {}
+lean_lib UniSet3.DefEncoding {}
+lean_lib UniSet3.Defs {}
+lean_lib UniSet3.ExprEncoding {}
+lean_lib UniSet3.Nat {}
+lean_lib UniSet3.PairDictLt {}
+lean_lib UniSet3.PairOfDepth {}
 lean_lib Utils {}
 lean_lib Valuation {}
 lean_lib Wfm {}
