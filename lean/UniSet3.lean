@@ -4,7 +4,7 @@ import PairDictOrderInstance
 import PairDepthDictOrder
 
 namespace Pair
-  namespace uniSet
+  namespace uniSet3
     open Expr
     open PairExpr
     open uniDefList
@@ -1052,5 +1052,5 @@ namespace Pair
                 (fun r => inwPairElim.nope r))
       | pair a b => toIsPairOfDepthAB a b inw
     
-  end uniSet
+  end uniSet3
 end Pair
