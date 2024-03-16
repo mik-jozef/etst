@@ -250,8 +250,8 @@ namespace Pair
       Contains (a, b) iff a < x < b for some deflist
       encoding x.
     -/
-    def defEncodinMinDist2: Nat := 16
-    def defEncodinMinDist2.expr: Expr :=
+    def defEncodingMinDist2: Nat := 16
+    def defEncodingMinDist2.expr: Expr :=
       Expr.Un 500
         (Expr.Un 501
           (Expr.Un 502
@@ -269,7 +269,7 @@ namespace Pair
     def nextDef.expr: Expr :=
       Expr.ir
         defEncodingLt
-        (Expr.cpl defEncodinMinDist2)
+        (Expr.cpl defEncodingMinDist2)
     
     /-
       Contains (n, dl), where dl is the nth least
@@ -682,7 +682,7 @@ namespace Pair
     | 13 => sameDepth.expr
     | 14 => pairLt.expr
     | 15 => defEncodingLt.expr
-    | 16 => defEncodinMinDist2.expr
+    | 16 => defEncodingMinDist2.expr
     | 17 => nextDef.expr
     | 18 => nthDefList.expr
     | 19 => shiftExprEncoding.var.expr
