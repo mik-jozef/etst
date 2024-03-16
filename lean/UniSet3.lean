@@ -17,13 +17,13 @@ namespace Pair
     def InwV := Expr.Inw pairSalgebra
     
     
-    def insNat (isPn: IsNatEncoding pn): Ins nat pn :=
+    def insNatEncoding (isPn: IsNatEncoding pn): Ins nat pn :=
       match pn with
       | Pair.zero =>
         insWfmDef.toInsWfm (insUnL insZero _)
       
       | Pair.pair a b =>
-        let insA: Ins nat a := insNat isPn.left
+        let insA: Ins nat a := insNatEncoding isPn.left
         let insExpr: Ins nat.expr (Pair.pair a b) :=
           insUnR _ (insPair insA (isPn.right ▸ insZero))
         
@@ -59,7 +59,7 @@ namespace Pair
     def insNatPairAA (isPnaa: IsNatPairAA p): Ins natPairAA p :=
       let np := isPnaa.unwrap
       
-      let insD := insFree (insNat np.property.isNat) Nat.noConfusion
+      let insD := insFree (insNatEncoding np.property.isNat) Nat.noConfusion
       let insPairAA := insPair insBound insBound
       
       np.property.eq ▸
@@ -223,7 +223,7 @@ namespace Pair
       | Pair.pair zero _ =>
         insWfmDef.toInsWfm
           (insUnDom
-            (insFree (insNat isEEV) nat500NeqNat)
+            (insFree (insNatEncoding isEEV) nat500NeqNat)
             (insPair insZero insBound))
     
     def Inw.toIsExprEncoding.Var
@@ -366,7 +366,7 @@ namespace Pair
             inList
             (insPair
               (insExprEncoding.Quantifier isQ)
-              (insPair (insNat isNat) (insExprEncoding isExpr))))
+              (insPair (insNatEncoding isNat) (insExprEncoding isExpr))))
     
     def Inw.toIsExprEncoding
       (w: Inw exprEncoding p)
@@ -727,7 +727,7 @@ namespace Pair
                         (depthLtR (pair nA nB) (pair pA pB)))
                   
                   insUnDom
-                    (insNat isPoD.isNat.left)
+                    (insNatEncoding isPoD.isNat.left)
                     (insUnDom
                       (insCall
                         (insPairOfDepth.p _ isPoDA)
@@ -809,7 +809,7 @@ namespace Pair
                       ((depthLtR pA pB).trans (depthLtR _ _))
                   
                   insUnDom
-                    (insNat isPoD.isNat.left)
+                    (insNatEncoding isPoD.isNat.left)
                     (insUnDom
                       (insCall
                         (insPairOfDepth.p _ isPoDB)
