@@ -15,6 +15,7 @@ lean_lib Arities {}
 lean_lib Chain {}
 lean_lib EqSwappedUnusedVar {}
 lean_lib ExampleWFCs {}
+lean_lib ExprRulesOfInference {}
 lean_lib PairFreeVars {}
 lean_lib Interpretation {}
 lean_lib ITTM {}
@@ -23,9 +24,11 @@ lean_lib Lfp {}
 lean_lib Operators {}
 lean_lib Ordinal {}
 lean_lib OrdMap {}
+lean_lib Pair {}
 lean_lib PairDepthDictOrder {}
 lean_lib PairDictOrder {}
 lean_lib PairDictOrderInstance {}
+lean_lib PairExpr {}
 lean_lib PartialOrder {}
 lean_lib Pointwise {}
 lean_lib Set3 {}

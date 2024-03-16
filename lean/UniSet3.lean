@@ -10,8 +10,8 @@ namespace Pair
     open uniDefList
     
     
-    def Ins := wfm.InsWfm pairSalgebra uniDefList.defList
-    def Inw := wfm.InwWfm pairSalgebra uniDefList.defList
+    def Ins := InsWfm pairSalgebra uniDefList.defList
+    def Inw := InwWfm pairSalgebra uniDefList.defList
     
     def InsV := Expr.Ins pairSalgebra
     def InwV := Expr.Inw pairSalgebra
@@ -20,18 +20,18 @@ namespace Pair
     def insNat (isPn: IsNatEncoding pn): Ins nat pn :=
       match pn with
       | Pair.zero =>
-        wfm.insWfmDef.toInsWfm (insUnL insZero _)
+        insWfmDef.toInsWfm (insUnL insZero _)
       
       | Pair.pair a b =>
         let insA: Ins nat a := insNat isPn.left
         let insExpr: Ins nat.expr (Pair.pair a b) :=
           insUnR _ (insPair insA (isPn.right ▸ insZero))
         
-        wfm.insWfmDef.toInsWfm insExpr
+        insWfmDef.toInsWfm insExpr
     
     def Inw.toIsNatEncoding (w: Inw nat pn): IsNatEncoding pn :=
       let inwNatDef: Inw nat.expr pn :=
-        wfm.inwWfm.toInwWfmDef w
+        inwWfm.toInwWfmDef w
       
       inwNatDef.elim
         (fun (pnInwZero: Inw zeroExpr pn) =>
@@ -63,10 +63,10 @@ namespace Pair
       let insPairAA := insPair insBound insBound
       
       np.property.eq ▸
-        wfm.insWfmDef.toInsWfm (insUnDom insD insPairAA)
+        insWfmDef.toInsWfm (insUnDom insD insPairAA)
     
     def Inw.toIsNatPairAA (w: Inw natPairAA p): IsNatPairAA p :=
-      let inwDef := wfm.inwWfm.toInwWfmDef w
+      let inwDef := inwWfm.toInwWfmDef w
       let n := (inwUnDomElim inwDef).unwrap
       
       let inwNatN: Inw nat n :=
@@ -87,7 +87,7 @@ namespace Pair
     structure IsNatLe.Pair (a b: Pair): Prop where
       isNatA: IsNatEncoding a
       isNatB: IsNatEncoding b
-      isLe: natDecode a ≤ natDecode b
+      isLe: a.depth ≤ b.depth
     
     def IsNatLe: Pair → Prop
     | zero => False
@@ -123,22 +123,22 @@ namespace Pair
             eq := h ▸ rfl
           }⟩
         
-        wfm.insWfmDef.toInsWfm
+        insWfmDef.toInsWfm
           (insUnL (insNatPairAA isNatPairAA) _)
       else
-        let natNeq: natDecode a ≠ natDecode b :=
-          natDecode.injNeq isNatA isNatB h
+        let natNeq: a.depth ≠ b.depth :=
+          depth.nat.injNeq isNatA isNatB h
         let abLt := Nat.lt_of_le_of_ne abLe natNeq
         let abPredLe := Nat.le_pred_of_lt abLt
         
         match hB: b with
         | zero =>
-          let nope: _ < 0 := natDecode.zeroEq ▸ hB ▸ abLt
+          let nope: _ < 0 := depth.zeroEq ▸ hB ▸ abLt
           False.elim (Nat.not_lt_zero _ nope)
-        | pair bA bB =>
+        | pair bA _bB =>
           let abPredLe:
-            natDecode a ≤ Nat.pred (Nat.succ (natDecode bA))
-          := (natDecode.succPredEq bA bB) ▸ hB ▸ abPredLe
+            a.depth ≤ Nat.pred (Nat.succ (bA.depth))
+          := (depth.nat.eqSuccDepthPred isNatB) ▸ hB ▸ abPredLe
           
           let insNatLePred: Ins natLe (pair a bA) := abEq {
             isNatA,
@@ -146,7 +146,7 @@ namespace Pair
             isLe := abPredLe
           }
           
-          wfm.insWfmDef.toInsWfm
+          insWfmDef.toInsWfm
             (insUnR _
               (insUnDom
                 (insFree insNatLePred nat500NeqNatLe)
@@ -174,7 +174,7 @@ namespace Pair
     :
       IsNatLe (Pair.pair a b)
     :=
-      (wfm.inwWfm.toInwWfmDef w).elim
+      (inwWfm.toInwWfmDef w).elim
         (fun inwPairAA =>
           (Inw.toIsNatPairAA inwPairAA).toIsNatLe)
         (fun inwR =>
@@ -195,11 +195,11 @@ namespace Pair
               isNatB := And.intro
                 isNatLeABA.isNatB
                 (inwZeroElim bBInwZeroExpr)
-              isLe := Nat.le_succ_of_le isNatLeABA.isLe
+              isLe := (isNatLeABA.isLe.trans (depthLeL _ _))
             })
     
     def Inw.toIsNatLe (w: Inw natLe p): IsNatLe p :=
-      (wfm.inwWfm.toInwWfmDef w).elim
+      (inwWfm.toInwWfmDef w).elim
         (fun inwPairAA =>
           (Inw.toIsNatPairAA inwPairAA).toIsNatLe)
         (fun inwR =>
@@ -221,7 +221,7 @@ namespace Pair
       | Pair.zero => False.elim isEEV
       | Pair.pair (Pair.pair _ _) _ => False.elim isEEV
       | Pair.pair zero _ =>
-        wfm.insWfmDef.toInsWfm
+        insWfmDef.toInsWfm
           (insUnDom
             (insFree (insNat isEEV) nat500NeqNat)
             (insPair insZero insBound))
@@ -232,7 +232,7 @@ namespace Pair
       IsExprEncoding.Var p
     :=
       let ⟨_pBound, ⟨inwNatPBound, inwPairP⟩⟩ :=
-        inwUnDomElim (wfm.inwWfm.toInwWfmDef w)
+        inwUnDomElim (inwWfm.toInwWfmDef w)
       match p with
       | zero => inwPairElim.nope inwPairP
       | pair (pair _ _) _ =>
@@ -253,7 +253,7 @@ namespace Pair
       Ins exprEncoding.binary p
     :=
       open IsExprEncoding.Bin in
-      wfm.insWfmDef.toInsWfm
+      insWfmDef.toInsWfm
         (match isEEB with
         | Is2 eq => eq ▸ insUnL (insNatExpr _ _) _
         | Is3 eq => eq ▸ insUnR _ (insUnL (insNatExpr _ _) _)
@@ -266,7 +266,7 @@ namespace Pair
       IsExprEncoding.Bin p
     :=
       open IsExprEncoding.Bin in
-      (wfm.inwWfm.toInwWfmDef w).elim
+      (inwWfm.toInwWfmDef w).elim
         (fun inwNatExpr2 => Is2 (inwNatExprElim inwNatExpr2))
         (fun un => un.elim
           (fun inwNatExpr3 => Is3 (inwNatExprElim inwNatExpr3))
@@ -283,7 +283,7 @@ namespace Pair
       Ins exprEncoding.quantifier p
     :=
       open IsExprEncoding.Quantifier in
-      wfm.insWfmDef.toInsWfm
+      insWfmDef.toInsWfm
         (match isEEB with
         | Is7 eq => eq ▸ insUnL (insNatExpr _ _) _
         | Is8 eq => eq ▸ insUnR _ (insNatExpr _ _))
@@ -294,7 +294,7 @@ namespace Pair
       IsExprEncoding.Quantifier p
     :=
       open IsExprEncoding.Quantifier in
-      (wfm.inwWfm.toInwWfmDef w).elim
+      (inwWfm.toInwWfmDef w).elim
         (fun inwNatExpr7 => Is7 (inwNatExprElim inwNatExpr7))
         (fun inwNatExpr8 => Is8 (inwNatExprElim inwNatExpr8))
     
@@ -317,7 +317,7 @@ namespace Pair
     def insExprEncoding (isEE: IsExprEncoding p):
       Ins exprEncoding p
     :=
-      wfm.insWfmDef.toInsWfm
+      insWfmDef.toInsWfm
         (match isEE with
         | IsExprEncoding.IsVar isNatX =>
           let inList:
@@ -332,7 +332,7 @@ namespace Pair
           :=
             by unfold exprEncoding.exprList; simp
           
-          insFinUn inList (wfm.insWfmDef.toInsWfm
+          insFinUn inList (insWfmDef.toInsWfm
             (insPair (insNatExpr _ _) insZero))
         | IsExprEncoding.IsBin nBin aExpr bExpr =>
           let inList:
@@ -374,7 +374,7 @@ namespace Pair
       IsExprEncoding p
     :=
       open IsExprEncoding in
-      inwFinUnElim (wfm.inwWfm.toInwWfmDef w)
+      inwFinUnElim (inwWfm.toInwWfmDef w)
         (fun inwVar =>
           match p with
           | Pair.zero =>
@@ -387,7 +387,7 @@ namespace Pair
             IsVar (Inw.toIsExprEncoding.Var inwVar))
         (fun inwZero =>
           let ⟨_l, _r, ⟨eq, inwL, inwR⟩⟩ :=
-            inwPairElim.ex (wfm.inwWfm.toInwWfmDef inwZero)
+            inwPairElim.ex (inwWfm.toInwWfmDef inwZero)
           
           eq ▸ (inwNatExprElim inwL) ▸ (inwZeroElim inwR) ▸ IsZero)
         (fun inwBin =>
@@ -436,7 +436,7 @@ namespace Pair
     def insDefEncoding (isDefEnc: IsDefEncoding p):
       Ins defEncoding p
     :=
-      wfm.insWfmDef.toInsWfm
+      insWfmDef.toInsWfm
         (match p with
         | Pair.zero => insUnL insZero _
         | Pair.pair _ _ =>
@@ -452,7 +452,7 @@ namespace Pair
       match p with
       | Pair.zero => trivial
       | Pair.pair _ _ =>
-        (wfm.inwWfm.toInwWfmDef w).elim
+        (inwWfm.toInwWfmDef w).elim
           (fun inwL => inwZeroElim.nope inwL)
           (fun inwR =>
             let ⟨l, r⟩ := inwPairElim inwR
@@ -488,7 +488,7 @@ namespace Pair
       | zero => isPD.elim
       | pair zero zero => isPD.elim
       | pair zero (pair _ _) =>
-        wfm.insWfmDef.toInsWfm
+        insWfmDef.toInsWfm
           (insFinUn
             inListZeroPair
             (insPair insZero (insPair insAny insAny)))
@@ -501,7 +501,7 @@ namespace Pair
           let ipd: IsPairDictLt (pair aA bA) := ab
           let aInsAB := insPairDictLt ipd
           
-          wfm.insWfmDef.toInsWfm
+          insWfmDef.toInsWfm
             (insFinUn
               inListLtLeft
               (insUnDom aInsAB
@@ -523,7 +523,7 @@ namespace Pair
               (fun ⟨_, lt⟩ => lt)
           let bInsAB := insPairDictLt ipd
           
-          wfm.insWfmDef.toInsWfm
+          insWfmDef.toInsWfm
             (insFinUn
               inListEqLeft
               (insUnDom bInsAB
@@ -545,7 +545,7 @@ namespace Pair
     def Inw.toIsPairDictLt.p p (inw: Inw pairDictLt p):
       IsPairDictLt p
     :=
-      inwFinUnElim (wfm.inwWfm.toInwWfmDef inw)
+      inwFinUnElim (inwWfm.toInwWfmDef inw)
         (fun inwZeroPair =>
           match p with
           | zero => inwPairElim.nope inwZeroPair
@@ -624,7 +624,7 @@ namespace Pair
     structure IsNatLeFn.Pair (a b: Pair): Prop where
       isNatA: IsNatEncoding a
       isNatB: IsNatEncoding b
-      isLe: natDecode b ≤ natDecode a
+      isLe: b.depth ≤ a.depth
     
     def IsNatLeFn: Pair → Prop
     | zero => False
@@ -640,7 +640,7 @@ namespace Pair
           isLe := isNatLeFn.isLe
         }
         
-        wfm.insWfmDef.toInsWfm
+        insWfmDef.toInsWfm
           (insUnDom
             (insNatLe isNatLeReverse)
             (insPair
@@ -651,7 +651,7 @@ namespace Pair
       IsNatLeFn p
     :=
       let ⟨_pBound, inwDomain, inwBody⟩ :=
-        inwUnDomElim (wfm.inwWfm.toInwWfmDef inw)
+        inwUnDomElim (inwWfm.toInwWfmDef inw)
       
       match p with
       | zero => inwPairElim.nope inwBody
@@ -667,7 +667,7 @@ namespace Pair
     
     structure IsPairOfDepthAB (n p: Pair): Prop where
       isNat: IsNatEncoding n
-      eqDepth: n.natDecode = p.depth
+      eqDepth: n.depth = p.depth
     
     def IsPairOfDepth: Pair → Prop
     | zero => False
@@ -679,10 +679,10 @@ namespace Pair
       match p with
       | zero => isPoD.elim
       | pair n p =>
-        wfm.insWfmDef.toInsWfm
+        insWfmDef.toInsWfm
           (match n, p with
           | zero, zero =>
-            let nEqZero := natDecode.eqZeroOfEqZero isPoD.eqDepth
+            let nEqZero := depth.eqZeroOfEqZero isPoD.eqDepth
             
             (insUnL (insPair (nEqZero ▸ insZero) insZero) _)
           | zero, pair _ _ => Nat.noConfusion isPoD.eqDepth
@@ -695,15 +695,20 @@ namespace Pair
                 (fun ⟨depthEq, depthLe⟩ =>
                   let isPoDA: IsPairOfDepth (pair nA pA) := {
                     isNat := isPoD.isNat.left
-                    eqDepth := Nat.noConfusion
-                      (isPoD.eqDepth.trans depthEq) id
+                    eqDepth :=
+                      let depthEqN :=
+                        depth.nat.eqSuccDepthPred isPoD.isNat
+                      let succEq := depthEqN.symm.trans
+                        (isPoD.eqDepth.trans depthEq)
+                      
+                      Nat.noConfusion succEq id
                   }
                   
                   let pBAndDepth := pair (fromNat pB.depth) pB
                   
                   let isPoDB: IsPairOfDepth pBAndDepth := {
                     isNat := fromNat.isNatEncoding _
-                    eqDepth := natDecode.fromNatEq _
+                    eqDepth := fromNat.depthEq _
                   }
                   
                   have := depth.leZth nA nB pA pB
@@ -741,7 +746,7 @@ namespace Pair
                                       isNatA := isPoD.isNat.left
                                       isNatB := fromNat.isNatEncoding pB.depth
                                       isLe :=
-                                        (natDecode.fromNatEq _) ▸
+                                        (fromNat.depthEq _) ▸
                                         isPoDA.eqDepth ▸ depthLe
                                     })
                                     nat501NeqNatLeFn)
@@ -772,15 +777,20 @@ namespace Pair
                 (fun ⟨depthEq, depthLt⟩ =>
                   let isPoDB: IsPairOfDepth (pair nA pB) := {
                     isNat := isPoD.isNat.left
-                    eqDepth := Nat.noConfusion
-                      (isPoD.eqDepth.trans depthEq) id
+                    eqDepth :=
+                      let depthEqN :=
+                        depth.nat.eqSuccDepthPred isPoD.isNat
+                      let succEq := depthEqN.symm.trans
+                        (isPoD.eqDepth.trans depthEq)
+                      
+                      Nat.noConfusion succEq id
                   }
                   
                   let pAAndDepth := pair (fromNat pA.depth) pA
                   
                   let isPoDA: IsPairOfDepth pAAndDepth := {
                     isNat := fromNat.isNatEncoding _
-                    eqDepth := natDecode.fromNatEq _
+                    eqDepth := fromNat.depthEq _
                   }
                   
                   have := depth.leZthFst nA nB pA pB
@@ -818,7 +828,7 @@ namespace Pair
                                       isNatA := isPoD.isNat.left
                                       isNatB := fromNat.isNatEncoding pA.depth
                                       isLe :=
-                                        (natDecode.fromNatEq _) ▸
+                                        (fromNat.depthEq _) ▸
                                         isPoDB.eqDepth ▸
                                         Nat.le_of_lt depthLt
                                     })
@@ -854,21 +864,10 @@ namespace Pair
       insPairOfDepth.p p isPoD
     
     
-    def natDecode.eqDepth (isNat: IsNatEncoding p):
-      natDecode p = p.depth
-    :=
-      match p with
-      | zero => rfl
-      | pair a b =>
-        (Pair.depth.casesEq a b).elim
-          (fun ⟨eq, _⟩ => eq ▸ congr rfl (eqDepth isNat.left))
-          (fun ⟨_, lt⟩ =>
-            False.elim (Nat.not_lt_zero _ (isNat.right ▸ lt)))
-    
     def Inw.toIsPairOfDepthAB n p (inw: Inw pairOfDepth (pair n p)):
       IsPairOfDepth (pair n p)
     :=
-      (inwUnElim (wfm.inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
         (fun inw =>
           let ⟨l, r⟩ := inwPairElim inw
           let aEq := inwZeroElim l
@@ -945,13 +944,9 @@ namespace Pair
                 let bEq502 := inwBoundElim inwB
                 
                 have: depth argOuter < depth n :=
-                  let depthLe :=
-                    (natDecode.eqDepth isNatOuter) ▸
-                    (natDecode.eqDepth (nPredEq500 ▸ isNat500)) ▸
-                    outerLe500
                   h ▸
                   nPredEq500 ▸
-                  depthLe.trans_lt (depthLtL bound500 z)
+                  outerLe500.trans_lt (depthLtL bound500 z)
                 
                 have: depth bound500 < depth n :=
                   h ▸ nPredEq500 ▸ (depthLtL nPred z)

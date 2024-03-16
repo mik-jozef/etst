@@ -536,8 +536,6 @@ def Expr.interpretation.isMonotonic.approximation
         (fun _d dIn dXPos0 => (ih dXPos0).posLe (dIn dXPos0))
 
 
-def DefList.GetDef (sig: Signature) := Nat → Expr sig
-
 /-
   A definition list is finitely bounded iff every
   definition only depends on finitely many other
@@ -551,7 +549,7 @@ def DefList.GetDef (sig: Signature) := Nat → Expr sig
     ...
   ```
 -/
-structure DefList.FinBounds (getDef: DefList.GetDef sig) where
+structure DefList.FinBounds (getDef: Nat → Expr sig) where
   bounds: Nat → Set Nat
   
   -- Note: free variables refer to other definitions
@@ -565,7 +563,7 @@ structure DefList.FinBounds (getDef: DefList.GetDef sig) where
   
   boundsFinite: ∀ name, (bounds name).IsFinite
 
-def DefList.IsFinBounded (gd: DefList.GetDef sig): Prop :=
+def DefList.IsFinBounded (gd: Nat → Expr sig): Prop :=
   ∃ _fb: FinBounds gd, True
 
 structure DefList (sig: Signature) where

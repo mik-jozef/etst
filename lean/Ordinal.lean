@@ -1,11 +1,8 @@
 /-
-  Defines ordinals and some well-known facts about them.
-  
-  Don't look inside. It's embarrassing. (And also supposed
-  to be write-once, forget and don't ever read again.)
+  Some helper functions for ordinals.
 -/
 
-import Set
+import Utils
 import Mathlib.SetTheory.Ordinal.Basic
 import Mathlib.SetTheory.Ordinal.Arithmetic
 
@@ -15,7 +12,8 @@ instance _.u: Coe (Ordinal.{u}) (Type (u + 1)) where
 namespace Ordinal
   def succ (n: Ordinal) := Order.succ n
   
-  -- IsLimit is, regrettably, taken by Mathlib, and WRONG.
+  -- IsLimit from Mathlib considers, regrettably,
+  -- zero not to be a limit ordinal.
   def IsActualLimit (n: Ordinal): Prop :=
     ∀ a < n, a.succ < n
   
@@ -190,14 +188,6 @@ namespace Ordinal
       False.elim (Ordinal.not_lt_zero nn (h ▸ nn.property))
     else
       (nIsLimit.toIsLimit h).succ_lt nn.property
-  
-  def max_either (a b: Ordinal):
-    max a b = a ∨ max a b = b
-  :=
-    if h: a ≤ b then
-      Or.inr (if_pos h)
-    else
-      Or.inl (if_neg h)
   
   def le_max_left (a b: Ordinal): a ≤ max a b :=
     if h: a ≤ b then

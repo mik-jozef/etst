@@ -1,4 +1,9 @@
-import ExampleWFCs
+/-
+  The dictionary order on pairs, the base case
+  being `zero < pair a b`.
+-/
+
+import Pair
 
 namespace Pair
   def dictOrder.Lt: Pair → Pair → Prop

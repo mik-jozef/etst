@@ -1,5 +1,6 @@
 import Arities
 import Interpretation
+import Pair
 
 open Classical
 
@@ -75,13 +76,6 @@ end natSalgebra
 def natSalgebra: Salgebra natSignature :=
   ⟨Nat, natSalgebra.I, natSalgebra.I.isMonotonic⟩
 
-
--- Ehhhm, should I rather call them binary trees?
-inductive Pair where
-| zero: Pair -- Zero is considered an improper pair.
-| pair (a b: Pair): Pair
-
-def Pair.Expr := _root_.Expr pairSignature
 
 namespace pairSalgebra
   open pairSignature
@@ -230,14 +224,3 @@ end sPairSalgebra
 
 def sPairSalgebra: Salgebra pairSignature :=
   ⟨SPair, sPairSalgebra.I, sPairSalgebra.I.isMonotonic⟩
-
-
-namespace Pair
-  def depth: Pair → Nat
-  | zero => 0
-  | pair a b => Nat.succ (max a.depth b.depth)
-  
-  def fromNat: Nat → Pair
-  | Nat.zero => Pair.zero
-  | Nat.succ n => Pair.pair (fromNat n) Pair.zero
-end Pair

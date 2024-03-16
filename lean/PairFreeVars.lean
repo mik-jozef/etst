@@ -11,7 +11,7 @@ namespace Pair
     that it should be in a standard library.
   -/
   def freeVars.givenBounds
-    (expr: Expr)
+    (expr: Expr pairSignature)
     (boundVars: List Nat)
   :
     {
@@ -34,7 +34,7 @@ namespace Pair
         ⟩
     | Expr.op pairSignature.Op.zero args => ⟨
         [],
-        let expr: Expr := Expr.op pairSignature.Op.zero args
+        let expr: Expr pairSignature := Expr.op pairSignature.Op.zero args
         let eq:
           Expr.IsFreeVar (expr) fun x => x ∈ boundVars =
             fun x =>
@@ -185,7 +185,7 @@ namespace Pair
             freeVarsExpr.property ⟨freeVar, eq ▸ freeVar.property⟩,
         ⟩
   
-  def freeVars (expr: Expr):
+  def freeVars (expr: Expr pairSignature):
     {
       list: List Nat
     //
@@ -200,7 +200,7 @@ namespace Pair
     -- Using `eq ▸ fv` directly breaks `freeVars.eq` :(
     ⟨fv.val, eq.symm ▸ fv.property⟩
   
-  def freeVars.eq (expr: Expr):
+  def freeVars.eq (expr: Expr pairSignature):
     (freeVars expr).val = freeVars.givenBounds expr []
   :=
     rfl
