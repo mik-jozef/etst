@@ -504,12 +504,7 @@ namespace PairExpr
   :
     depth p = n
   :=
-    match n, p with
-    | 0, _ => inwZeroElim w ▸ rfl
-    | Nat.succ _, zero => inwPairElim.nope w
-    | Nat.succ _, pair _ _ =>
-      inwNatExprElimDepth (inwPairElim w).inwL ▸
-        (depth.nat.eqSuccDepthPred sorry)
+    (inwNatExprElim w) ▸ (fromNat.depthEq _)
   
   def insNatExprElimDecode
     (s: Ins pairSalgebra v (natExpr n) p)
