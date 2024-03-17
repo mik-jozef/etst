@@ -147,5 +147,15 @@ namespace Pair
     | zero => False
     | pair a b => depthDictOrder.Lt a b
     
+    
+    structure IsDefEncodingLtPair (a b: Pair): Prop where
+      isDefA: IsDefEncoding a
+      isDefB: IsDefEncoding b
+      isLt: depthDictOrder.Lt a b
+    
+    def IsDefEncodingLt: Pair → Prop
+    | zero => False
+    | pair a b => IsDefEncodingLtPair a b
+    
   end uniSet3
 end Pair
