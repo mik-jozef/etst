@@ -37,6 +37,7 @@ namespace Pair
     def nat501NeqPairOfDepth: 501 ≠ 11 := by decide
     def nat502NeqPairOfDepth: 502 ≠ 11 := by decide
     def nat503NeqPairOfDepth: 503 ≠ 11 := by decide
+    def nat500NeqNatLt: 500 ≠ 12 := by decide
     
     
     structure IsNatPairAAOfN (p n: Pair): Prop where
@@ -140,6 +141,11 @@ namespace Pair
     def IsSameDepth: Pair → Prop
     | zero => False
     | pair a b => a.depth = b.depth
+    
+    
+    def IsPairLt: Pair → Prop
+    | zero => False
+    | pair a b => depthDictOrder.Lt a b
     
   end uniSet3
 end Pair
