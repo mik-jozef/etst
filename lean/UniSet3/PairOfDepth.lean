@@ -199,7 +199,7 @@ namespace Pair
       insPairOfDepth.p p isPoD
     
     
-    def Inw.toIsPairOfDepthAB n p (inw: Inw pairOfDepth (pair n p)):
+    def Inw.toIsPairOfDepth.ab n p (inw: Inw pairOfDepth (pair n p)):
       IsPairOfDepth (pair n p)
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim
@@ -288,10 +288,10 @@ namespace Pair
                 have: depth bound500 < depth n :=
                   h ▸ nPredEq500 ▸ (depthLtL nPred z)
                 
-                let isPodArgOuter502 := Inw.toIsPairOfDepthAB _ _
+                let isPodArgOuter502 := Inw.toIsPairOfDepth.ab _ _
                   (inwFreeElim inwFnOuter nat503NeqPairOfDepth)
                 
-                let isPod500501 := Inw.toIsPairOfDepthAB _ _ inwPoD500501
+                let isPod500501 := Inw.toIsPairOfDepth.ab _ _ inwPoD500501
                 
                 {
                   isNat :=
@@ -342,10 +342,10 @@ namespace Pair
                 have: depth bound500 < depth n :=
                   h ▸ nPredEq500 ▸ (depthLtL nPred z)
                 
-                let isPodArgOuter502 := Inw.toIsPairOfDepthAB _ _
+                let isPodArgOuter502 := Inw.toIsPairOfDepth.ab _ _
                   (inwFreeElim inwFnOuter nat503NeqPairOfDepth)
                 
-                let isPod500501 := Inw.toIsPairOfDepthAB _ _ inwPoD500501
+                let isPod500501 := Inw.toIsPairOfDepth.ab _ _ inwPoD500501
                 
                 {
                   isNat :=
@@ -368,7 +368,7 @@ namespace Pair
                     
                     (eqL.trans eqMid).trans eqR.symm
                 }))
-    termination_by Inw.toIsPairOfDepthAB n p inw => n.depth
+    termination_by Inw.toIsPairOfDepth.ab n p inw => n.depth
     
     def Inw.toIsPairOfDepth (inw: Inw pairOfDepth p):
       IsPairOfDepth p
@@ -385,7 +385,7 @@ namespace Pair
               (inwUnElim inwBody).elim
                 (fun l => inwPairElim.nope l)
                 (fun r => inwPairElim.nope r))
-      | pair a b => toIsPairOfDepthAB a b inw
+      | pair a b => toIsPairOfDepth.ab a b inw
     
   end uniSet3
 end Pair
