@@ -210,7 +210,7 @@ namespace Pair
     -/
     def natLt: Nat := 12
     def natLt.expr: Expr :=
-      Expr.ir natLe (Expr.Un 500 (Expr.cpl (pairExpr 500 500)))
+      Expr.ir natLe (Expr.cpl (Expr.Un 500 (pairExpr 500 500)))
     
     /-
       Contains (a, b) if a and b have the same depth.
