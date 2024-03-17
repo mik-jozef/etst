@@ -172,5 +172,18 @@ namespace Pair
     | zero => False
     | pair a b => IsDefEncodingMinDist2Pair a b
     
+    
+    structure IsNextDefPair (a b: Pair): Prop where
+      isDefA: IsDefEncoding a
+      isLeast:
+        iIsLeast
+          depthDictOrder.toPartialOrder
+          (fun p => IsDefEncoding p ∧ depthDictOrder.lt a p)
+          b
+    
+    def IsNextDef: Pair → Prop
+    | zero => False
+    | pair a b => IsNextDefPair a b
+    
   end uniSet3
 end Pair

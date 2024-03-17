@@ -148,5 +148,67 @@ namespace Pair
             ⟩
           }
     
+    def insNextDef (isNextDef: IsNextDef p):
+      Ins nextDef p
+    :=
+      match p with
+      | zero => isNextDef.elim
+      | pair a b =>
+        let isDefLtAB: IsDefEncodingLt (pair a b) := {
+          isDefA := isNextDef.isDefA
+          isDefB := isNextDef.isLeast.isMember.left
+          isLt := isNextDef.isLeast.isMember.right
+        }
+        
+        insWfmDef.toInsWfm
+          (insIr
+            (insDefEncodingLt isDefLtAB)
+            (insCpl
+              (fun inwMinDist2 =>
+                let ⟨_, _, ⟨x, ⟨axLt, xbLt, isDefX⟩⟩⟩ :=
+                  Inw.toIsDefEncodingMinDist2 inwMinDist2
+                
+                let bxLe := isNextDef.isLeast.isLeMember
+                  (And.intro isDefX axLt)
+                
+                let ltSelf: depthDictOrder.Lt x x :=
+                  @lt_of_lt_of_le
+                    _
+                    depthDictOrder.toPreorder
+                    _ _ _
+                    xbLt bxLe
+                
+                ltSelf.irefl)))
+    
+    def Inw.toIsNextDef (inw: Inw nextDef p):
+      IsNextDef p
+    :=
+      let ⟨inwDefEnc, inwCpl⟩ := inwIrElim (inwWfm.toInwWfmDef inw)
+      
+      match p with
+      | zero => Inw.toIsDefEncodingLt inwDefEnc
+      | pair _ _ =>
+        let ⟨isDefA, isDefB, ab⟩ := Inw.toIsDefEncodingLt inwDefEnc
+        
+        let isLeast := {
+          isMember := And.intro isDefB ab
+          isLeMember :=
+            fun ub ⟨isDefUB, aLtUb⟩ =>
+              byContradiction fun nbub =>
+                let ubLtB := (@not_le _ depthDictOrder).mp nbub
+                let minDist2 := ⟨ub, {
+                  ax := aLtUb
+                  xb := ubLtB
+                  isDefX := isDefUB
+                }⟩
+                
+                inwCplElim
+                  inwCpl
+                  (insDefEncodingMinDist2
+                    { isDefA, isDefB, minDist2 })
+        }
+        
+        { isDefA, isLeast }
+    
   end uniSet3
 end Pair
