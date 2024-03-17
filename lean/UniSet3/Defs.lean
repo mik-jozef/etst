@@ -42,20 +42,20 @@ namespace Pair
     
     structure IsNatPairAAOfN (p n: Pair): Prop where
       isNat: IsNatEncoding n
-      eq: p = Pair.pair n n
+      eq: p = pair n n
     
     def IsNatPairAA p := ∃ n, IsNatPairAAOfN p n
     def NatPairAA := { p // IsNatPairAA p }
     
     
-    structure IsNatLe.Pair (a b: Pair): Prop where
+    structure IsNatLePair (a b: Pair): Prop where
       isNatA: IsNatEncoding a
       isNatB: IsNatEncoding b
       isLe: a.depth ≤ b.depth
     
     def IsNatLe: Pair → Prop
     | zero => False
-    | pair a b => IsNatLe.Pair a b
+    | pair a b => IsNatLePair a b
     
     def IsNatPairAA.toIsNatLe (isAA: IsNatPairAA p): IsNatLe p :=
       let ⟨_n, isAA⟩ := isAA.unwrap
@@ -93,8 +93,8 @@ namespace Pair
     
     
     def IsDefEncoding: Pair → Prop
-    | Pair.zero => True
-    | Pair.pair a b => IsExprEncoding a ∧ IsDefEncoding b
+    | zero => True
+    | pair a b => IsExprEncoding a ∧ IsDefEncoding b
     
     
     def IsPairDictLt: Pair → Prop
@@ -102,14 +102,14 @@ namespace Pair
     | pair a b => dictOrder.Lt a b
     
     
-    structure IsNatLeFn.Pair (a b: Pair): Prop where
+    structure IsNatLeFnPair (a b: Pair): Prop where
       isNatA: IsNatEncoding a
       isNatB: IsNatEncoding b
       isLe: b.depth ≤ a.depth
     
     def IsNatLeFn: Pair → Prop
     | zero => False
-    | pair a b => IsNatLeFn.Pair a b
+    | pair a b => IsNatLeFnPair a b
     
     
     structure IsPairOfDepthAB (n p: Pair): Prop where
@@ -128,14 +128,14 @@ namespace Pair
     }
     
     
-    structure IsNatLt.Pair (a b: Pair): Prop where
+    structure IsNatLtPair (a b: Pair): Prop where
       isNatA: IsNatEncoding a
       isNatB: IsNatEncoding b
       isLt: a.depth < b.depth
     
     def IsNatLt: Pair → Prop
     | zero => False
-    | pair a b => IsNatLt.Pair a b
+    | pair a b => IsNatLtPair a b
     
     
     def IsSameDepth: Pair → Prop
