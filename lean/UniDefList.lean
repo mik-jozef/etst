@@ -244,7 +244,7 @@ namespace Pair
     -/
     def defEncodingLt: Nat := 15
     def defEncodingLt.expr: Expr :=
-      Expr.ir pairLt defEncoding
+      Expr.ir pairLt (pairExpr defEncoding defEncoding)
     
     /-
       Contains (a, b) iff a < x < b for some deflist
