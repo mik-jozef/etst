@@ -17,7 +17,7 @@ namespace Pair
   
   def dictOrder.Le (a b: Pair) := a = b ∨ Lt a b
   
-  def dictOrder.ltIrefl
+  def dictOrder.Lt.irefl
     (aa: Lt a a)
   :
     P
@@ -26,8 +26,8 @@ namespace Pair
     | zero => aa.elim
     | pair _ _ =>
       aa.elim
-        (fun lt => ltIrefl lt)
-        (fun ⟨_eq, lt⟩ => ltIrefl lt)
+        (fun lt => lt.irefl)
+        (fun ⟨_eq, lt⟩ => lt.irefl)
   
   def dictOrder.leRefl a: Le a a := Or.inl rfl
   
@@ -46,10 +46,10 @@ namespace Pair
         (fun ltAB =>
            ba.elim
              (fun ltBA => ltAB.antisymm ltBA)
-             (fun ⟨eqA, _⟩ => ltIrefl (eqA ▸ ltAB)))
+             (fun ⟨eqA, _⟩ => (eqA ▸ ltAB).irefl))
         (fun ⟨eqA, ltAB⟩ =>
           ba.elim
-            (fun ltBA => ltIrefl (eqA ▸ ltBA))
+            (fun ltBA => (eqA ▸ ltBA).irefl)
             (fun ⟨_, ltBA⟩ => ltAB.antisymm ltBA))
   
   def dictOrder.Le.antisymm

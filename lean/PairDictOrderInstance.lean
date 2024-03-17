@@ -15,7 +15,7 @@ namespace Pair
             (Or.inr ab)
             (fun ba =>
               ba.elim
-                (fun eq => dictOrder.ltIrefl (eq ▸ ab))
+                (fun eq => (eq ▸ ab).irefl)
                 (fun ba => ab.antisymm ba)))
         (fun ⟨abLe, notBaLe⟩ =>
           abLe.elim

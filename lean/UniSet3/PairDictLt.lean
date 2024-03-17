@@ -57,11 +57,11 @@ namespace Pair
         | IsGt ba =>
           isPD.elim
             (fun ab => dictOrder.Lt.antisymm ab ba)
-            (fun ⟨eq, _⟩ => dictOrder.ltIrefl (eq ▸ ba))
+            (fun ⟨eq, _⟩ => (eq ▸ ba).irefl)
         | IsEq eq =>
           let ipd: IsPairDictLt (pair aB bB) :=
             isPD.elim
-              (fun ab => dictOrder.ltIrefl (eq ▸ ab))
+              (fun ab => (eq ▸ ab).irefl)
               (fun ⟨_, lt⟩ => lt)
           let bInsAB := insPairDictLt ipd
           

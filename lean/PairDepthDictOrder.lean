@@ -32,12 +32,12 @@ namespace Pair
       id
   
   
-  def depthDictOrder.ltIrefl
+  def depthDictOrder.Lt.irefl
     (aa: Lt a a)
   :
     P
   :=
-    dictOrder.ltIrefl (aa.depthEq rfl)
+    (aa.depthEq rfl).irefl
   
   def depthDictOrder.leRefl a: Le a a := Or.inl rfl
   
@@ -148,8 +148,8 @@ namespace Pair
             (Or.inr ab)
             (fun ba =>
               ba.elim
-                (fun eq => depthDictOrder.ltIrefl (eq ▸ ab))
-                (fun ba => depthDictOrder.Lt.antisymm ab ba)))
+                (fun eq => (eq ▸ ab).irefl)
+                (fun ba => ab.antisymm ba)))
         (fun ⟨abLe, notBaLe⟩ =>
           abLe.elim
             (fun eq => False.elim (notBaLe (Or.inl eq.symm)))
