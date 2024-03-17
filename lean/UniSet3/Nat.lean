@@ -193,5 +193,50 @@ namespace Pair
         
         { isNatA, isNatB, isLe }
     
+    
+    def insNatLt (isNatLt: IsNatLt p):
+      Ins natLt p
+    :=
+      match p with
+      | zero => isNatLt.elim
+      | pair a b =>
+        let ⟨isNatA, isNatB, isLt⟩ := isNatLt
+        let isLe := Nat.le_of_lt isLt
+        let neq: a ≠ b := fun eq => isLt.ne (congr rfl eq)
+        
+        insWfmDef.toInsWfm
+          (insIr
+            (insNatLe { isNatA, isNatB, isLe })
+            (insCpl
+              (fun inw =>
+                let ⟨_, inw⟩ := inwArbUnElim inw
+                let ⟨inwA, inwB⟩ := inwPairElim inw
+                
+                let aEq := inwBoundElim inwA
+                let bEq := inwBoundElim inwB
+                
+                neq (aEq.trans bEq.symm))))
+    
+    def Inw.toIsNatLt (inw: Inw natLt p):
+      IsNatLt p
+    :=
+      let ⟨inwNatLe, inwNotRefl⟩ := inwIrElim (inwWfm.toInwWfmDef inw)
+      
+      match p with
+      | zero => Inw.toIsNatLe inwNatLe
+      | pair a b =>
+        let ⟨isNatA, isNatB, isLe⟩ := Inw.toIsNatLe inwNatLe
+        
+        let neq: a ≠ b :=
+          fun eq =>
+            inwCplElim
+              inwNotRefl
+              (insArbUn a (insPair insBound (eq ▸ insBound)))
+        
+        let neqDepth := depth.nat.injNeq isNatA isNatB neq
+        let isLt := Nat.lt_of_le_of_ne isLe neqDepth
+        
+        { isNatA, isNatB, isLt }
+    
   end uniSet3
 end Pair

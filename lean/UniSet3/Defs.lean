@@ -119,5 +119,27 @@ namespace Pair
     | zero => False
     | pair n p => IsPairOfDepthAB n p
     
+    def IsPairOfDepth.ofDepth (p: Pair):
+      IsPairOfDepth (pair (fromNat p.depth) p)
+    := {
+      isNat := fromNat.isNatEncoding _
+      eqDepth := fromNat.depthEq _
+    }
+    
+    
+    structure IsNatLt.Pair (a b: Pair): Prop where
+      isNatA: IsNatEncoding a
+      isNatB: IsNatEncoding b
+      isLt: a.depth < b.depth
+    
+    def IsNatLt: Pair → Prop
+    | zero => False
+    | pair a b => IsNatLt.Pair a b
+    
+    
+    def IsSameDepth: Pair → Prop
+    | zero => False
+    | pair a b => a.depth = b.depth
+    
   end uniSet3
 end Pair
