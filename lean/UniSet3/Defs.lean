@@ -157,5 +157,20 @@ namespace Pair
     | zero => False
     | pair a b => IsDefEncodingLtPair a b
     
+    
+    structure IsDefEncodingMinDist2ABC (a x b: Pair): Prop where
+      ax: depthDictOrder.Lt a x
+      xb: depthDictOrder.Lt x b
+      isDefX: IsDefEncoding x
+    
+    structure IsDefEncodingMinDist2Pair (a b: Pair): Prop where
+      isDefA: IsDefEncoding a
+      isDefB: IsDefEncoding b
+      minDist2: ∃ x, IsDefEncodingMinDist2ABC a x b
+    
+    def IsDefEncodingMinDist2: Pair → Prop
+    | zero => False
+    | pair a b => IsDefEncodingMinDist2Pair a b
+    
   end uniSet3
 end Pair
