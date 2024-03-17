@@ -229,6 +229,50 @@ namespace Expr
     s
   
   
+  def insIfThen
+    {cond: Expr sig}
+    (insCond: Ins salg v cond c)
+    (insBody: Ins salg v body d)
+  :
+    Ins salg v (Expr.ifThen cond body) d
+  :=
+    ⟨⟨c, insCond⟩, insBody⟩
+  
+  def inwIfThen
+    {cond: Expr sig}
+    (insCond: Inw salg v cond c)
+    (insBody: Inw salg v body d)
+  :
+    Inw salg v (Expr.ifThen cond body) d
+  :=
+    ⟨⟨c, insCond⟩, insBody⟩
+  
+  
+  def insIfThenElim
+    {cond: Expr sig}
+    (s: Ins salg v (Expr.ifThen cond body) d)
+  :
+    And
+      (∃c, Ins salg v cond c)
+      (Ins salg v body d)
+  :=
+    let ⟨exCond, insBody⟩ := s
+    
+    And.intro exCond insBody
+  
+  def inwIfThenElim
+    {cond: Expr sig}
+    (s: Inw salg v (Expr.ifThen cond body) d)
+  :
+    And
+      (∃c, Inw salg v cond c)
+      (Inw salg v body d)
+  :=
+    let ⟨exCond, insBody⟩ := s
+    
+    And.intro exCond insBody
+  
+  
   def insBound {v: Valuation salg.D}:
     Ins salg (v.update x dBound) (var x) dBound
   :=
