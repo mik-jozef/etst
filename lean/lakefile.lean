@@ -39,6 +39,7 @@ lean_lib UniSet3.Defs {}
 lean_lib UniSet3.ExprEncoding {}
 lean_lib UniSet3.Nat {}
 lean_lib UniSet3.NextDef {}
+lean_lib UniSet3.NthDefList {}
 lean_lib UniSet3.PairDictLt {}
 lean_lib UniSet3.PairLt {}
 lean_lib UniSet3.PairOfDepth {}

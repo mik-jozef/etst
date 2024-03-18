@@ -185,5 +185,17 @@ namespace Pair
     | zero => False
     | pair a b => IsNextDefPair a b
     
+    
+    inductive IsNthDefListPair: Pair → Pair → Prop where
+    | IsZeroA: IsNthDefListPair zero zero
+    | IsPairA:
+        IsNthDefListPair aPred bPred →
+        IsNextDefPair bPred b →
+        IsNthDefListPair (pair aPred zero) b
+    
+    def IsNthDefList: Pair → Prop
+    | zero => False
+    | pair a b => IsNthDefListPair a b
+    
   end uniSet3
 end Pair
