@@ -292,48 +292,60 @@ namespace Pair
           (pairExpr zeroExpr 500)
           (pairExpr zeroExpr (succExpr 500)))
     
+    def shiftExprEncoding: Nat := 20
+    
+    def shiftExprEncoding.shiftZero: Expr :=
+      pairExpr exprEncoding.zero exprEncoding.zero
+    
+    def shiftExprEncoding.shiftBin: Expr :=
+      unionExpr 500 exprEncoding.binary
+        (unionExpr 501 exprEncoding
+          (unionExpr 502 exprEncoding
+            (pairExpr
+              (pairExpr
+                500
+                (pairExpr 501 502))
+              (pairExpr
+                500
+                (pairExpr
+                  (callExpr 503 shiftExprEncoding 501)
+                  (callExpr 503 shiftExprEncoding 502))))))
+    
+    def shiftExprEncoding.shiftCpl: Expr :=
+      unionExpr 501 exprEncoding
+        (pairExpr
+          (pairExpr (natExpr 5) 501)
+          (pairExpr (natExpr 5)
+            (callExpr 503 shiftExprEncoding 501)))
+    
+    def shiftExprEncoding.shiftQuantifier: Expr :=
+      unionExpr 500 exprEncoding.quantifier
+        (unionExpr 501 exprEncoding
+          (unionExpr 502 nat
+            (pairExpr
+              (pairExpr
+                500
+                (pairExpr 502 501))
+              (pairExpr
+                500
+                (pairExpr
+                  502
+                  (callExpr 503 shiftExprEncoding 501))))))
+    
     /-
       Contains (eIn, eOut) such that eIn is an encoding
       of an expression and eOut is eIn with variables
       incremented by 1.
     -/
-    def shiftExprEncoding: Nat := 20
-    def shiftExprEncoding.expr: Expr :=
-      finUnExpr [
-        shiftExprEncoding.var,
-        
-        pairExpr exprEncoding.zero exprEncoding.zero,
-        
-        unionExpr 501 exprEncoding
-          (unionExpr 502 exprEncoding
-            (pairExpr
-              (pairExpr
-                exprEncoding.binary
-                (pairExpr 501 502))
-              (pairExpr
-                exprEncoding.binary
-                (pairExpr
-                  (callExpr 503 shiftExprEncoding 501)
-                  (callExpr 503 shiftExprEncoding 502))))),
-        
-        unionExpr 501 exprEncoding
-          (pairExpr
-            (pairExpr (natExpr 5) 501)
-            (pairExpr (natExpr 5)
-              (callExpr 503 shiftExprEncoding 501))),
-        
-        unionExpr 501 exprEncoding
-          (unionExpr 502 nat
-            (pairExpr
-              (pairExpr
-                exprEncoding.quantifier
-                (pairExpr 502 501))
-              (pairExpr
-                exprEncoding.quantifier
-                (pairExpr
-                  502
-                  (callExpr 503 shiftExprEncoding 501))))),
-      ]
+    def shiftExprEncoding.exprList: List Expr := [
+      shiftExprEncoding.var,
+      shiftZero,
+      shiftBin,
+      shiftCpl,
+      shiftQuantifier,
+    ]
+    
+    def shiftExprEncoding.expr: Expr := finUnExpr exprList
     
     /-
       (dlIn, dlOut) where dlIn equals dlOut except that
@@ -420,7 +432,8 @@ namespace Pair
           (pairExpr 500 500))
     
     /-
-      (dlA, (dlB, dlRes)), where dlRes = [ ...dlA, ...dlB ]
+      (dlA, (dlB, dlRes)), where dlRes = [ ...dlA, ...dlB ],
+      with variables in dlB properly shifted.
     -/
     def append: Nat := 27
     def append.expr: Expr :=
@@ -731,9 +744,18 @@ namespace Pair
               let xIn: ↑usedByX ∈ fv := fvEq ▸ freeVars.property usedByX
               allLe xIn
             
-            -- Here we are proving that each definition only
-            -- uses finitely many other definitions by enumerating
-            -- all used definitions of all definitions.
+            /-
+              Here we are proving that each definition only
+              uses finitely many other definitions by enumerating
+              all used definitions of all definitions.
+              
+              For future edits, you can view the list of free vars
+              of an expression `expr` using:
+              
+              ```
+                #eval freeVars.givenBounds expr []
+              ```
+            -/
             match x with
             | 0 => prf 0 [ 0 ] rfl (by simp) usedByX
             | 1 => prf 1 [ 0 ] rfl (by simp) usedByX
@@ -755,7 +777,7 @@ namespace Pair
             | 17 => prf 17 [ 15, 16 ] rfl (by simp[leN35]) usedByX
             | 18 => prf 18 [ 18, 17 ] rfl (by simp[leN35]) usedByX
             | 19 => prf 19 [ 0 ] rfl (by simp[leN35]) usedByX
-            | 20 => prf 20 [ 19, 4, 7, 5, 20, 0, 6 ] rfl (by simp[leN35]) usedByX
+            | 20 => prf 20 [ 19, 4, 5, 7, 20, 6, 0 ] rfl (by simp[leN35]) usedByX
             | 21 => prf 21 [ 7, 8, 20, 21 ] rfl (by simp[leN35]) usedByX
             | 22 => prf 22 [ 7, 8, 21 ] rfl (by simp[leN35]) usedByX
             | 23 => prf 23 [ 7 ] rfl (by simp[leN35]) usedByX

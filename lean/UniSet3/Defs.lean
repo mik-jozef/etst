@@ -23,6 +23,8 @@ namespace Pair
     def nat502Neq500: 502 ≠ 500 := by decide
     def nat502Neq501: 502 ≠ 501 := by decide
     def nat503Neq500: 503 ≠ 500 := by decide
+    def nat503Neq501: 503 ≠ 501 := by decide
+    def nat503Neq502: 503 ≠ 502 := by decide
     def nat504Neq500: 504 ≠ 500 := by decide
     
     def nat500NeqNat: 500 ≠ 0 := by decide
@@ -196,6 +198,73 @@ namespace Pair
     def IsNthDefList: Pair → Prop
     | zero => False
     | pair a b => IsNthDefListPair a b
+    
+    
+    inductive IsShiftExprPair: Pair → Pair → Prop where
+    | IsVar:
+        IsNatEncoding x →
+        IsShiftExprPair (pair zero x) (pair zero (succ x))
+    | IsZero:
+        IsShiftExprPair (pair (fromNat 1) zero) (pair (fromNat 1) zero)
+    | IsBin:
+        IsExprEncoding.Bin n →
+        IsShiftExprPair a as →
+        IsShiftExprPair b bs →
+        IsShiftExprPair (pair n (pair a b)) (pair n (pair as bs))
+    | IsCpl:
+        IsShiftExprPair p ps →
+        IsShiftExprPair (pair (fromNat 5) p) (pair (fromNat 5) ps)
+    | IsQuantifier:
+        IsExprEncoding.Quantifier n →
+        IsNatEncoding x →
+        IsShiftExprPair b bs →
+        IsShiftExprPair (pair n (pair x b)) (pair n (pair x bs))
+    
+    def IsShiftExprEncoding: Pair → Prop
+    | zero => False
+    | pair a b => IsShiftExprPair a b
+    
+    structure IsShiftExprPair.IsExpr (a b: Pair): Prop where
+      isExpr: IsExprEncoding a
+      isExprShifted: IsExprEncoding b
+    
+    def IsShiftExprPair.toIsExpr: IsShiftExprPair a b → IsExpr a b
+    | IsVar isNat => {
+      isExpr := IsExprEncoding.IsVar isNat
+      isExprShifted := IsExprEncoding.IsVar (And.intro isNat rfl)
+    }
+    | IsZero => {
+      isExpr := IsExprEncoding.IsZero
+      isExprShifted := IsExprEncoding.IsZero
+    }
+    | IsBin isBin isShiftA isShiftB => {
+      isExpr :=
+        IsExprEncoding.IsBin
+          isBin
+          isShiftA.toIsExpr.isExpr
+          isShiftB.toIsExpr.isExpr
+      isExprShifted :=
+        IsExprEncoding.IsBin
+          isBin
+          isShiftA.toIsExpr.isExprShifted
+          isShiftB.toIsExpr.isExprShifted
+    }
+    | IsCpl isShift => {
+      isExpr := IsExprEncoding.IsCpl isShift.toIsExpr.isExpr
+      isExprShifted := IsExprEncoding.IsCpl isShift.toIsExpr.isExprShifted
+    }
+    | IsQuantifier isQuantifier isNat isShift => {
+      isExpr :=
+        IsExprEncoding.IsQuantifier
+          isQuantifier
+          isNat
+          isShift.toIsExpr.isExpr
+      isExprShifted :=
+        IsExprEncoding.IsQuantifier
+          isQuantifier
+          isNat
+          isShift.toIsExpr.isExprShifted
+    }
     
   end uniSet3
 end Pair

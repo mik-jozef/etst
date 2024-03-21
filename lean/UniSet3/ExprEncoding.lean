@@ -8,6 +8,27 @@ namespace Pair
     open uniDefList
     
     
+    def insExprEncoding.zero:
+      Ins exprEncoding.zero (pair (fromNat 1) zero)
+    :=
+      (insWfmDef.toInsWfm
+        (insPair (insNatExpr _ _) insZero))
+    
+    def Inw.toIsExprEncodinng.zero
+      (w: Inw exprEncoding.zero p)
+    :
+      p = (pair (fromNat 1) zero)
+    :=
+      match p with
+      | Pair.zero => inwPairElim.nope (inwWfm.toInwWfmDef w)
+      | Pair.pair Pair.zero _ =>
+        inwPairElim.nope (inwPairElim (inwWfm.toInwWfmDef w)).inwL
+      | Pair.pair _ _ =>
+        let ⟨inwL, inwR⟩ := inwPairElim (inwWfm.toInwWfmDef w)
+        
+        (inwNatExprElim inwL) ▸ (inwZeroElim inwR) ▸ rfl
+    
+    
     def insExprEncoding.binary (isEEB: IsExprEncoding.Bin p):
       Ins exprEncoding.binary p
     :=
@@ -77,8 +98,7 @@ namespace Pair
           :=
             by unfold exprEncoding.exprList; simp
           
-          insFinUn inList (insWfmDef.toInsWfm
-            (insPair (insNatExpr _ _) insZero))
+          insFinUn inList insExprEncoding.zero
         | IsExprEncoding.IsBin nBin aExpr bExpr =>
           let inList:
             exprEncoding.binExpr ∈ exprEncoding.exprList
