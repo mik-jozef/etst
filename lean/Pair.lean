@@ -193,4 +193,19 @@ namespace Pair
   :=
     (depth.nat.injEq isNatA isNatB).contra neq
   
+  
+  def arrayLength: Pair → Nat
+  | zero => 0
+  | pair _ b => Nat.succ b.arrayLength
+  
+  def arrayLength.eqSuccTail (a b: Pair):
+    (pair a b).arrayLength = Nat.succ b.arrayLength
+  :=
+    rfl
+  
+  def arrayLength.ltTail (a b: Pair):
+    b.arrayLength < (pair a b).arrayLength
+  :=
+    Nat.lt_succ_self b.arrayLength
+  
 end Pair

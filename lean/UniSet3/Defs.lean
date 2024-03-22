@@ -40,6 +40,9 @@ namespace Pair
     def nat502NeqPairOfDepth: 502 ≠ 11 := by decide
     def nat503NeqPairOfDepth: 503 ≠ 11 := by decide
     def nat500NeqNatLt: 500 ≠ 12 := by decide
+    def nat500NeqIncrementExprs: 500 ≠ 21 := by decide
+    def nat501NeqIncrementExprs: 501 ≠ 21 := by decide
+    def nat502NeqIncrementExprs: 502 ≠ 21 := by decide
     
     
     structure IsNatPairAAOfN (p n: Pair): Prop where
@@ -265,6 +268,66 @@ namespace Pair
           isNat
           isShift.toIsExpr.isExprShifted
     }
+    
+    
+    inductive IsIncrementExprsPair: Pair → Pair → Prop where
+    | EmptyDefList: IsIncrementExprsPair zero zero
+    | NonemptyDefList:
+      IsShiftExprPair exprA exprB →
+      IsIncrementExprsPair defListA defListB →
+      IsIncrementExprsPair (pair exprA defListA) (pair exprB defListB)
+    
+    def IsIncrementExprs: Pair → Prop
+    | zero => False
+    | pair a b => IsIncrementExprsPair a b
+    
+    structure IsIncrementExprsPair.IsDef (a b: Pair): Prop where
+      isDef: IsDefEncoding a
+      isDefShifted: IsDefEncoding b
+    
+    def IsIncrementExprsPair.toIsDef:
+      IsIncrementExprsPair a b → IsDef a b
+    | IsIncrementExprsPair.EmptyDefList => {
+        isDef := trivial
+        isDefShifted := trivial
+      }
+    | IsIncrementExprsPair.NonemptyDefList isShift isInc => {
+      isDef :=
+        And.intro
+          isShift.toIsExpr.isExpr
+          isInc.toIsDef.isDef
+      isDefShifted :=
+        And.intro
+          isShift.toIsExpr.isExprShifted
+          isInc.toIsDef.isDefShifted
+    }
+    
+    def IsIncrementExprsPair.pairZeroNope
+      (isInc: IsIncrementExprsPair (pair a b) zero)
+    :
+      P
+    :=
+      match isInc with.
+    
+    def IsIncrementExprsPair.zeroPairNope
+      (isInc: IsIncrementExprsPair zero (pair a b))
+    :
+      P
+    :=
+      match isInc with.
+    
+    
+    structure IsShiftDefPair (a b cA cB: Pair): Prop where
+      isExprA: IsExprEncoding a
+      isDefB: IsDefEncoding b
+      eqA: a = cA
+      isShiftedB: IsIncrementExprsPair b cB
+    
+    def IsShiftDefEncoding: Pair → Prop
+    | zero => False
+    | pair _ zero => False
+    | pair _ (pair _ zero) => False
+    | pair a (pair b (pair cA cB)) => IsShiftDefPair a b cA cB
     
   end uniSet3
 end Pair
