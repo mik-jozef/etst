@@ -405,7 +405,7 @@ namespace Pair
         (unionExpr 500 lastExpr
           (pairExpr
             (pairExpr exprEncoding (zthMember 501 500))
-            (fstMember 501 lastExpr)))
+            (fstMember 501 500)))
     
     /-
       (dlIn, dlOut), where dlOut contains all but the

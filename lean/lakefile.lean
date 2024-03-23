@@ -34,6 +34,7 @@ lean_lib Pointwise {}
 lean_lib Set3 {}
 lean_lib Tuple {}
 lean_lib UniDefList {}
+lean_lib UniSet3.Append {}
 lean_lib UniSet3.DefEncoding {}
 lean_lib UniSet3.Defs {}
 lean_lib UniSet3.ExprEncoding {}

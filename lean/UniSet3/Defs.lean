@@ -329,5 +329,65 @@ namespace Pair
     | pair _ (pair _ zero) => False
     | pair a (pair b (pair cA cB)) => IsShiftDefPair a b cA cB
     
+    
+    structure IsLastExprBasePair (a b: Pair): Prop where
+      eq: a = b
+      isExprA: IsExprEncoding a
+    
+    def IsLastExprBasePair.isExprB
+      (isB: IsLastExprBasePair a b)
+    :
+      IsExprEncoding b
+    :=
+      isB.eq ▸ isB.isExprA
+    
+    def IsLastExprBase: Pair → Prop
+    | zero => False
+    | pair zero _ => False
+    | pair (pair _ (pair _ _)) _ => False
+    | pair (pair a zero) b => IsLastExprBasePair a b
+    
+    
+    inductive IsLastExprPair: Pair → Pair → Prop where
+    | LengthOne: IsExprEncoding a → IsLastExprPair (pair a zero) a
+    | LengthMore:
+      IsExprEncoding a →
+      IsDefEncoding b →
+      IsLastExprPair b c →
+      IsLastExprPair (pair a b) c
+    
+    def IsLastExpr: Pair → Prop
+    | zero => False
+    | pair a b => IsLastExprPair a b
+    
+    def IsLastExprPair.nopeZeroDef
+      (isL: IsLastExprPair zero b)
+    :
+      P
+    :=
+      match isL with.
+    
+    def IsLastExprBase.toIsLastExpr
+      (isBase: IsLastExprBase p)
+    :
+      IsLastExpr p
+    :=
+      match p with
+      | zero => isBase
+      | pair zero _ => isBase.elim
+      | pair (pair _ (pair _ _)) _ => isBase.elim
+      | pair (pair _ zero) _ =>
+        isBase.eq ▸ IsLastExprPair.LengthOne isBase.isExprA
+    
+    def IsLastExprPair.isDefA
+      (isL: IsLastExprPair a b)
+    :
+      IsDefEncoding a
+    :=
+      match isL with
+      | LengthOne isExprB => And.intro isExprB trivial
+      | LengthMore isExprHead isDefTail isLast =>
+        And.intro isExprHead isDefTail
+    
   end uniSet3
 end Pair
