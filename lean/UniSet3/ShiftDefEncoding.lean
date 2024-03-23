@@ -117,7 +117,7 @@ namespace Pair
                   (insPair
                     (insFree (isShiftDef.eqA ▸ insBound) nat501Neq500)
                     (insCall
-                      (insIncrementExprs isShiftDef.isShiftedB)
+                      (insIncrementExprs isShiftDef.isIncrementedB)
                       (insFree insBound nat502Neq501)))))))
     
     def Inw.toIsShiftDefEncoding (inw: Inw shiftDefEncoding p):
@@ -153,7 +153,7 @@ namespace Pair
           isExprA := eqA ▸ Inw.toIsExprEncoding inwDomainExpr
           isDefB := eqDl ▸ Inw.toIsDefEncoding inwDomainDl
           eqA := eqA.trans eqCA.symm
-          isShiftedB := eqDl ▸ eqDlAlias ▸ Inw.toIsIncrementExprs inwFn
+          isIncrementedB := eqDl ▸ eqDlAlias ▸ Inw.toIsIncrementExprs inwFn
         }
     
   end uniSet3

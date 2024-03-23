@@ -1,4 +1,5 @@
-import UniSet3.ExprEncoding
+import UniSet3.DefEncoding
+import UniSet3.ShiftDefEncoding
 
 
 namespace Pair
@@ -206,6 +207,88 @@ namespace Pair
             eqBA ▸
             IsUpToLastPair.LengthMore isExpr isUTLB)
     termination_by Inw.toIsUpToLast inw => arrayLengthA p
+    
+    
+    def insAppendBase (isDef: IsDefEncoding dl):
+      Ins append.base (pair zero (pair dl dl))
+    :=
+      insWfmDef.toInsWfm
+        (insPair
+          insZero
+          (insUnDom
+            (insDefEncoding isDef)
+            (insPair insBound insBound)))
+    
+    def insAppend (isAppend: IsAppend p):
+      Ins append p
+    :=
+      match p with
+      | zero => isAppend.elim
+      | pair _a zero => isAppend.elim
+      | pair _a (pair _b _c) =>
+        insWfmDef.toInsWfm
+          (isAppend.rec
+            (fun isDef =>
+              insUnL (insAppendBase isDef) _)
+            (fun
+              isUpTo
+              isLastExpr
+              isShiftDef
+              _isAppend
+              insAppendDef
+            =>
+              insUnR _
+                (insUnDom
+                  (insDefEncoding
+                    isUpTo.isDefA)
+                  (insUnDom
+                    (insDefEncoding
+                      isShiftDef.isDefB)
+                    (insPair
+                      (insFree
+                        insBound
+                        nat501Neq500)
+                      (insPair
+                        insBound
+                        (insCall
+                          (insCall
+                            (insWfmDef.toInsWfm
+                              insAppendDef)
+                            (insCall
+                              (insUpToLast
+                                isUpTo)
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    (insFree
+                                      insBound
+                                      nat501Neq500)
+                                    nat502Neq500)
+                                  nat503Neq500)
+                                nat504Neq500)))
+                          (insCall
+                            (insCall
+                              (insShiftDefEncoding
+                                isShiftDef)
+                              (insCall
+                                (insLastExpr
+                                  isLastExpr)
+                                (insFree
+                                  (insFree
+                                    (insFree
+                                      (insFree
+                                        (insFree
+                                          insBound
+                                          nat501Neq500)
+                                        nat502Neq500)
+                                      nat503Neq500)
+                                    nat504Neq500)
+                                  nat505Neq500)))
+                            (insFree
+                              (insFree
+                                insBound
+                                nat502Neq501)
+                              nat503Neq501)))))))))
     
   end uniSet3
 end Pair

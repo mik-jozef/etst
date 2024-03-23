@@ -441,11 +441,17 @@ namespace Pair
         append.base
         (unionExpr 500 defEncoding
           (unionExpr 501 defEncoding
-            (callExpr 502
-              (callExpr 503 append (callExpr 504 upToLast 500))
-              (callExpr 503
-                (callExpr 504 shiftDefEncoding (callExpr 504 lastExpr 500))
-                501))))
+            (pairExpr
+              500
+              (pairExpr
+                501
+                (callExpr 502
+                  (callExpr 503 append (callExpr 504 upToLast 500))
+                  (callExpr 503
+                    (callExpr 504
+                      shiftDefEncoding
+                      (callExpr 505 lastExpr 500))
+                    501))))))
     
     /-
       Contains (n, dl), such that dl is a (finite prefix

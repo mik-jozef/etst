@@ -26,6 +26,7 @@ namespace Pair
     def nat503Neq501: 503 ≠ 501 := by decide
     def nat503Neq502: 503 ≠ 502 := by decide
     def nat504Neq500: 504 ≠ 500 := by decide
+    def nat505Neq500: 505 ≠ 500 := by decide
     
     def nat500NeqNat: 500 ≠ 0 := by decide
     def nat500NeqNatLe: 500 ≠ 2 := by decide
@@ -321,7 +322,7 @@ namespace Pair
       isExprA: IsExprEncoding a
       isDefB: IsDefEncoding b
       eqA: a = cA
-      isShiftedB: IsIncrementExprsPair b cB
+      isIncrementedB: IsIncrementExprsPair b cB
     
     def IsShiftDefEncoding: Pair → Prop
     | zero => False
@@ -410,6 +411,21 @@ namespace Pair
       | LengthOne isExpr => And.intro isExpr trivial
       | LengthMore isExprHead isUTLTail =>
         And.intro isExprHead (isDefA isUTLTail)
+    
+    
+    inductive IsAppendABC: Pair → Pair → Pair → Prop
+    | Base: IsDefEncoding dl → IsAppendABC zero dl dl
+    | Step:
+      IsUpToLastPair dlA dlAUpToLast →
+      IsLastExprPair dlA dlALast →
+      IsShiftDefPair dlALast dlB dlALast dlBIncremented →
+      IsAppendABC dlAUpToLast (pair dlALast dlBIncremented) dlRes →
+      IsAppendABC dlA dlB dlRes
+    
+    def IsAppend: Pair → Prop
+    | zero => False
+    | pair _ zero => False
+    | pair a (pair b c) => IsAppendABC a b c
     
   end uniSet3
 end Pair
