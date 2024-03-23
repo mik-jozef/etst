@@ -48,8 +48,8 @@ namespace Pair
   instance exprOfNat: (n: Nat) → OfNat Expr n :=
     PairExpr.exprOfNat
   
-    -- Convention: bound variables start at 500.
-    namespace uniDefList
+  -- Convention: bound variables start at 500.
+  namespace uniDefList
     /-
       Contains exactly the pairs that encode natural numbers.
       nat = () | (nat, ())
