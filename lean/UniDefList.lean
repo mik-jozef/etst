@@ -414,12 +414,12 @@ namespace Pair
     def upToLast: Nat := 25
     def upToLast.expr: Expr :=
       Expr.un
-        (pairExpr exprEncoding zeroExpr)
+        (pairExpr (pairExpr exprEncoding zeroExpr) zeroExpr)
         (unionExpr 500 upToLast
           (unionExpr 501 exprEncoding
             (pairExpr
-              (pairExpr 501 500)
-              (pairExpr 501 500))))
+              (pairExpr 501 (zthMember 502 500))
+              (pairExpr 501 (fstMember 502 500)))))
     
     /-
       ([], (dl, dl)) for dl ∈ defEncoding

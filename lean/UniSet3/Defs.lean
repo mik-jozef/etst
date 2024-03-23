@@ -389,5 +389,28 @@ namespace Pair
       | LengthMore isExprHead isDefTail isLast =>
         And.intro isExprHead isDefTail
     
+    
+    inductive IsUpToLastPair: Pair → Pair → Prop where
+    | LengthOne: IsExprEncoding a → IsUpToLastPair (pair a zero) zero
+    | LengthMore:
+      IsExprEncoding head →
+      IsDefEncoding tail →
+      IsUpToLastPair tail init →
+      IsUpToLastPair (pair head tail) (pair head init)
+    
+    def IsUpToLast: Pair → Prop
+    | zero => False
+    | pair a b => IsUpToLastPair a b
+    
+    def IsUpToLastPair.isDefA
+      (isUTL: IsUpToLastPair a b)
+    :
+      IsDefEncoding a
+    :=
+      match isUTL with
+      | LengthOne isExpr => And.intro isExpr trivial
+      | LengthMore isExprHead isDefTail isUTLTail =>
+        And.intro isExprHead isDefTail
+    
   end uniSet3
 end Pair
