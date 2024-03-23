@@ -394,7 +394,6 @@ namespace Pair
     | LengthOne: IsExprEncoding a → IsUpToLastPair (pair a zero) zero
     | LengthMore:
       IsExprEncoding head →
-      IsDefEncoding tail →
       IsUpToLastPair tail init →
       IsUpToLastPair (pair head tail) (pair head init)
     
@@ -409,8 +408,8 @@ namespace Pair
     :=
       match isUTL with
       | LengthOne isExpr => And.intro isExpr trivial
-      | LengthMore isExprHead isDefTail isUTLTail =>
-        And.intro isExprHead isDefTail
+      | LengthMore isExprHead isUTLTail =>
+        And.intro isExprHead (isDefA isUTLTail)
     
   end uniSet3
 end Pair

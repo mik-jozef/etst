@@ -132,7 +132,6 @@ namespace Pair
                 _)
             (fun
               isExprHead
-              _isDefTail
               _isUpToLastTail
               insUpToLastTail
             =>
@@ -205,7 +204,7 @@ namespace Pair
             
             eqAA ▸
             eqBA ▸
-            IsUpToLastPair.LengthMore isExpr isUTLB.isDefA isUTLB)
+            IsUpToLastPair.LengthMore isExpr isUTLB)
     termination_by Inw.toIsUpToLast inw => arrayLengthA p
     
   end uniSet3
