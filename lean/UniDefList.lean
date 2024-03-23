@@ -795,8 +795,8 @@ namespace Pair
             | 29 => prf 29 [ 7, 8, 0, 29 ] rfl (by simp[leN35]) usedByX
             | 30 => prf 30 [ 0, 28 ] rfl (by simp[leN35]) usedByX
             | 31 => prf 31 [ 30, 29 ] rfl (by simp[leN35]) usedByX
-            | 32 => prf 32 [ 0 ] rfl (by simp[leN35]) usedByX
-            | 33 => prf 33 [ 32, 0, 33 ] rfl (by simp[leN35]) usedByX
+            | 32 => prf 32 [] rfl (by simp[leN35]) usedByX
+            | 33 => prf 33 [ 32, 33 ] rfl (by simp[leN35]) usedByX
             | 34 => prf 34 [ 0, 33, 35, 7, 34 ] rfl (by simp[leN35]) usedByX
             | 35 => prf 35 [ 0, 34, 31 ] rfl (by simp[leN35]) usedByX
             | rest + 36 =>
