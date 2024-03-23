@@ -521,20 +521,20 @@ namespace Pair
     -/
     def getBound.base: Nat := 32
     def getBound.base.expr: Expr :=
-      unionExpr 500 nat
+      Expr.Un 500
         (Expr.Un 501
           (pairExpr
             (pairExpr (pairExpr 500 501) anyExpr)
             (pairExpr 500 501)))
     
     /-
-      ((n, p)[], (n_i, p_i)) + some garbage.
+      ((n, p)[], (n_i, p_i)).
     -/
     def getBound: Nat := 33
     def getBound.expr: Expr :=
       Expr.un
         getBound.base
-        (unionExpr 500 nat
+        (Expr.Un 500
           (Expr.Un 501
             (pairExpr
               (pairExpr (pairExpr (Expr.cpl 500) anyExpr) 501)
