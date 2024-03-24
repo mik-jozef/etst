@@ -389,7 +389,7 @@ namespace PairExpr
     let eq:
       Pair.pair zth chosenFst = Pair.pair chosenZth fst
     :=
-      Set3.just.inDefToEq d
+      Set3.just.inDefToEqBin d
         (isUnit ▸ (insFreeElim insChosenFst neq))
         (isUnit ▸ (insFreeElim insChosenZth neq))
     
@@ -411,7 +411,7 @@ namespace PairExpr
     let eq:
       Pair.pair zth chosenFst = Pair.pair chosenZth fst
     :=
-      Set3.just.inPosToEq d
+      Set3.just.inPosToEqBin d
         (isUnit ▸ (inwFreeElim inwChosenFst neq))
         (isUnit ▸ (inwFreeElim inwChosenZth neq))
     
@@ -462,6 +462,34 @@ namespace PairExpr
     let ⟨inwFn, inwP⟩ := inwIrElim inwIr
     
     ⟨zth, And.intro inwFn (inwPairElim inwP).inwL⟩
+  
+  def insCallElimBound
+    (s: Ins pairSalgebra v (callExpr x fn (var arg)) b)
+    (isUnit: v arg = Set3.just a)
+    (neq: x ≠ arg)
+  :
+    Ins pairSalgebra (v.update x b) fn (Pair.pair a b)
+  :=
+    let ⟨aAlias, ⟨insFn, insArg⟩⟩ := insCallElim s
+    
+    let insVArg: (v arg).defMem aAlias := insFreeElim insArg neq
+    let eq: aAlias = a := Set3.just.inDefToEq (isUnit ▸ insVArg)
+    
+    eq ▸ insFn
+  
+  def inwCallElimBound
+    (w: Inw pairSalgebra v (callExpr x fn (var arg)) b)
+    (isUnit: v arg = Set3.just a)
+    (neq: x ≠ arg)
+  :
+    Inw pairSalgebra (v.update x b) fn (Pair.pair a b)
+  :=
+    let ⟨aAlias, ⟨inwFn, inwArg⟩⟩ := inwCallElim w
+    
+    let inwVArg: (v arg).posMem aAlias := inwFreeElim inwArg neq
+    let eq: aAlias = a := Set3.just.inPosToEq (isUnit ▸ inwVArg)
+    
+    eq ▸ inwFn
   
   
   def insNatExpr v n

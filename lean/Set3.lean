@@ -35,6 +35,14 @@ namespace Set3
   
   def just.inDefToEq
     {a b: D}
+    (aIn: a ∈ (just b).defMem)
+  :
+    a = b
+  :=
+    aIn
+  
+  def just.inDefToEqBin
+    {a b: D}
     (d: D)
     (aIn: a ∈ (just d).defMem)
     (bIn: b ∈ (just d).defMem)
@@ -44,6 +52,14 @@ namespace Set3
     aIn.trans bIn.symm
   
   def just.inPosToEq
+    {a b: D}
+    (aIn: a ∈ (just b).posMem)
+  :
+    a = b
+  :=
+    aIn
+  
+  def just.inPosToEqBin
     {a b: D}
     (d: D)
     (aIn: a ∈ (just d).posMem)

@@ -208,4 +208,12 @@ namespace Pair
   :=
     Nat.lt_succ_self b.arrayLength
   
+  def arrayLength.ltOfLtTail
+    (ab: tailA.arrayLength < tailB.arrayLength)
+    (headA headB: Pair)
+  :
+    (pair headA tailA).arrayLength < (pair headB tailB).arrayLength
+  :=
+    Nat.succ_lt_succ ab
+  
 end Pair

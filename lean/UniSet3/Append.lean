@@ -219,6 +219,30 @@ namespace Pair
             (insDefEncoding isDef)
             (insPair insBound insBound)))
     
+    def Inw.toIsAppendOfBase (inw: Inw append.base p):
+      IsAppend p
+    :=
+      match p with
+      | zero => inwPairElim.nope (inwWfm.toInwWfmDef inw)
+      | pair _a b =>
+        let ⟨inwZ, inwUn⟩ := inwPairElim (inwWfm.toInwWfmDef inw)
+        let ⟨_dl, ⟨inwDomain, inwBody⟩⟩ := inwUnDomElim inwUn
+        
+        match b with
+        | zero => inwPairElim.nope inwBody
+        | pair _bA _bB =>
+          let ⟨inwBA, inwBB⟩ := inwPairElim inwBody
+          
+          let eqZ := inwZeroElim inwZ
+          let eqBA := inwBoundElim inwBA
+          let eqBB := inwBoundElim inwBB
+          
+          eqZ ▸
+          eqBA ▸
+          eqBB.symm ▸
+          IsAppendABC.Base (toIsDefEncoding inwDomain)
+    
+    
     def insAppend (isAppend: IsAppend p):
       Ins append p
     :=
@@ -289,6 +313,65 @@ namespace Pair
                                 insBound
                                 nat502Neq501)
                               nat503Neq501)))))))))
+    
+    def Inw.toIsAppend (inw: Inw append p):
+      IsAppend p
+    :=
+      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+        toIsAppendOfBase
+        (fun inw =>
+          let ⟨dlA, ⟨_inwDomainDlA, inw⟩⟩ := inwUnDomElim inw
+          let ⟨dlB, ⟨_inwDomainDlB, inw⟩⟩ := inwUnDomElim inw
+          
+          match p with
+          | zero => inwPairElim.nope inw
+          | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
+          | pair a (pair b c) =>
+            let ⟨inw500A, inw⟩ := inwPairElim inw
+            let ⟨inw501B, inw⟩ := inwPairElim inw
+            
+            let eqA := inwBoundElim (inwFreeElim inw500A nat501Neq500)
+            let eqB := inwBoundElim inw501B
+            
+            let ⟨dlShifted, ⟨inwFnDlShifted, inwArgDlShifted⟩⟩ :=
+              inwCallElim inw
+            
+            let inwCallDlDl :=
+              inwCallElimBound inwArgDlShifted rfl nat503Neq501
+            
+            let ⟨dlALast, inwFnLast, inwArgLast⟩ :=
+              inwCallElim inwCallDlDl
+            
+            let inwLast := inwCallElimBound inwArgLast rfl nat505Neq500
+            
+            let ⟨dlAUpToLast, ⟨inwFnAppend, inwArgAppend⟩⟩ :=
+              inwCallElim inwFnDlShifted
+            
+            let inwUpToLast :=
+              inwCallElimBound inwArgAppend rfl nat504Neq500
+            
+            match dlShifted with
+            | zero =>
+              (toIsShiftDefEncoding inwFnLast).elim
+            | pair sA sB =>
+              let isShift := toIsShiftDefEncoding inwFnLast
+              
+              have: dlAUpToLast.arrayLength < a.arrayLength :=
+                eqA ▸ (toIsUpToLast inwUpToLast).arrayLengthLt
+              
+              let isAppendUTL:
+                IsAppendABC dlAUpToLast (pair dlALast sB) c
+              :=
+                isShift.eqA ▸ toIsAppend inwFnAppend
+              
+              eqA ▸
+              eqB ▸
+              IsAppendABC.Step
+                (toIsUpToLast inwUpToLast)
+                (toIsLastExpr inwLast)
+                (isShift.eqA ▸ isShift)
+                isAppendUTL)
+    termination_by Inw.toIsAppend inw => arrayLengthA p
     
   end uniSet3
 end Pair

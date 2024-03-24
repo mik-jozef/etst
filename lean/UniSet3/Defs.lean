@@ -412,6 +412,15 @@ namespace Pair
       | LengthMore isExprHead isUTLTail =>
         And.intro isExprHead (isDefA isUTLTail)
     
+    def IsUpToLastPair.arrayLengthLt
+      (isUTL: IsUpToLastPair a b)
+    :
+      b.arrayLength < a.arrayLength
+    :=
+      isUTL.rec
+        (fun _ => arrayLength.ltTail _ _)
+        (fun _ _ isLtTail => arrayLength.ltOfLtTail isLtTail _ _)
+    
     
     inductive IsAppendABC: Pair → Pair → Pair → Prop
     | Base: IsDefEncoding dl → IsAppendABC zero dl dl
