@@ -436,5 +436,27 @@ namespace Pair
     | pair _ zero => False
     | pair a (pair b c) => IsAppendABC a b c
     
+    
+    inductive IsEnumUpToPair: Pair → Pair → Prop
+    | Base: IsEnumUpToPair zero zero
+    | Step:
+      IsEnumUpToPair n dlSoFar →
+      IsNthDefListPair n dlNth →
+      IsAppendABC dlSoFar dlNth dlAppended →
+      IsEnumUpToPair (pair n zero) dlAppended
+    
+    def IsEnumUpTo: Pair → Prop
+    | zero => False
+    | pair a b => IsEnumUpToPair a b
+    
+    def IsEnumUpToPair.isNatA
+      (isEnumUpTo: IsEnumUpToPair a b)
+    :
+      IsNatEncoding a
+    :=
+      isEnumUpTo.rec
+        trivial
+        (fun _ _ _ isNatN => And.intro isNatN rfl)
+    
   end uniSet3
 end Pair

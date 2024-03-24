@@ -46,6 +46,7 @@ lean_lib UniSet3.PairLt {}
 lean_lib UniSet3.PairOfDepth {}
 lean_lib UniSet3.ShiftDefEncoding {}
 lean_lib UniSet3.ShiftExprEncoding {}
+lean_lib UniSet3.TheDefList {}
 lean_lib Utils {}
 lean_lib Valuation {}
 lean_lib Wfm {}

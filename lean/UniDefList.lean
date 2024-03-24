@@ -471,11 +471,11 @@ namespace Pair
         (pairExpr zeroExpr zeroExpr)
         (unionExpr 500 nat
           (pairExpr
-            500
+            (pairExpr 500 zeroExpr)
             (callExpr 501
               (callExpr 502 append
-                (callExpr 503 enumUpTo (zthMember 504 500)))
-              (callExpr 502 nthDefList (zthMember 504 500)))))
+                (callExpr 503 enumUpTo 500))
+              (callExpr 502 nthDefList 500))))
     
     /-
       Contains (dl, (n, e)) such that e is the nth
