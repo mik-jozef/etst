@@ -216,4 +216,31 @@ namespace Pair
   :=
     Nat.succ_lt_succ ab
   
+  
+  def arrayAt (p: Pair) (n: Nat): Option Pair :=
+    match p, n with
+    | zero, _ => none
+    | pair head _tail, Nat.zero => head
+    | pair _head tail, Nat.succ pred => tail.arrayAt pred
+  
+  def arrayAt.tailEq
+    (eqAt: (pair head tail).arrayAt (pair n zero).depth = p)
+  :
+    tail.arrayAt n.depth = p
+  :=
+    let zeroLe: zero.depth ≤ n.depth := (Nat.zero_le n.depth)
+    
+    show (pair head tail).arrayAt (depth n).succ = p from
+      (depth.eqL zeroLe) ▸ eqAt
+  
+  def arrayAt.consEq
+    (eqAt: tail.arrayAt n.depth = p)
+    (head: Pair)
+  :
+    (pair head tail).arrayAt (pair n zero).depth = p
+  :=
+    let zeroLe: zero.depth ≤ n.depth := (Nat.zero_le n.depth)
+    
+    (depth.eqL zeroLe) ▸ eqAt
+  
 end Pair

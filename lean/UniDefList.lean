@@ -484,11 +484,11 @@ namespace Pair
     def defListToSet: Nat := 29
     def defListToSet.expr: Expr :=
       unionExpr 500 exprEncoding
-        (Expr.un
-          (pairExpr
-            (pairExpr 500 zeroExpr) -- A length-one deflist.
-            (pairExpr zeroExpr 500))
-          (unionExpr 501 defEncoding
+        (unionExpr 501 defEncoding
+          (Expr.un
+            (pairExpr
+              (pairExpr 500 501)
+              (pairExpr zeroExpr 500))
             (unionExpr 502 nat
               (pairExpr
                 (pairExpr 500 501)

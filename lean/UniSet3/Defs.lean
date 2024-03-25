@@ -26,10 +26,13 @@ namespace Pair
     def nat503Neq501: 503 ≠ 501 := by decide
     def nat503Neq502: 503 ≠ 502 := by decide
     def nat504Neq500: 504 ≠ 500 := by decide
+    def nat504Neq501: 504 ≠ 501 := by decide
     def nat505Neq500: 505 ≠ 500 := by decide
     
     def nat500NeqNat: 500 ≠ 0 := by decide
     def nat500NeqNatLe: 500 ≠ 2 := by decide
+    def nat500NeqExprEncoding: 500 ≠ 7 := by decide
+    def nat501NeqDefEncoding: 501 ≠ 8 := by decide
     def nat500NeqPairDictLt: 500 ≠ 9 := by decide
     def nat500NeqNatLeFn: 500 ≠ 10 := by decide
     def nat501NeqNatLeFn: 501 ≠ 10 := by decide
@@ -457,6 +460,26 @@ namespace Pair
       isEnumUpTo.rec
         trivial
         (fun _ _ _ isNatN => And.intro isNatN rfl)
+    
+    
+    structure IsDefListToSetABC (a b c: Pair): Prop where
+      isDef: IsDefEncoding a
+      isNat: IsNatEncoding b
+      eq: a.arrayAt b.depth = c
+    
+    def IsDefListToSet: Pair → Prop
+    | zero => False
+    | pair _ zero => False
+    | pair a (pair b c) => IsDefListToSetABC a b c
+    
+    def IsDefListToSetABC.defNonempty
+      (is: IsDefListToSetABC zero b c)
+    :
+      P
+    :=
+      let eqNone: none = zero.arrayAt b.depth := rfl
+      
+      Option.noConfusion (eqNone.trans is.eq)
     
   end uniSet3
 end Pair

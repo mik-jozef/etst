@@ -8,6 +8,11 @@ namespace Pair
   | zero => 0
   | pair a _ => a.depth
   
+  protected def depthBA: Pair → Nat
+  | zero => 0
+  | pair _ zero => 0
+  | pair _ (pair bA _) => bA.depth
+  
   namespace uniSet3
     open Expr
     open PairExpr
@@ -99,6 +104,191 @@ namespace Pair
             eqAPred ▸
             IsEnumUpToPair.Step isUpTo isNth isAppend)
     termination_by Inw.toIsEnumUpTo inw => p.depthA
+    
+    
+    def insDefListToSet (isDefToSet: IsDefListToSet p):
+      Ins defListToSet p
+    :=
+      insWfmDef.toInsWfm
+        (match p with
+        | zero => isDefToSet.elim
+        | pair _ zero => isDefToSet.elim
+        | pair zero (pair _ _) => isDefToSet.defNonempty
+        
+        | pair (pair dlHead dlTail) (pair zero expr) =>
+          let eq: dlHead = expr :=
+            Option.noConfusion isDefToSet.eq id
+          
+          eq ▸ insUnDom
+            (insExprEncoding isDefToSet.isDef.left)
+            (insUnDom
+              (insDefEncoding
+                isDefToSet.isDef.right)
+              (insUnL
+                (insPair
+                  (insPair
+                    (insFree
+                      insBound
+                      nat501Neq500)
+                    insBound)
+                  (insPair
+                    insZero
+                    (insFree
+                      insBound
+                      nat501Neq500)))
+                _))
+        
+        | pair (pair dlHead dlTail) (pair (pair iPred z) expr) =>
+          let atTailEq:
+            dlTail.arrayAt iPred.depth = some expr
+          :=
+            arrayAt.tailEq
+              (isDefToSet.isNat.right ▸ isDefToSet.eq)
+          
+          isDefToSet.isNat.right ▸
+          insUnDom
+            (insExprEncoding
+              isDefToSet.isDef.left)
+            (insUnDom
+              (insDefEncoding
+                isDefToSet.isDef.right)
+              (insUnR _
+                (insUnDom
+                  (insNatEncoding
+                    isDefToSet.isNat.left)
+                  (insPair
+                    (insPair
+                      (insFree
+                        (insFree
+                          insBound
+                          nat501Neq500)
+                        nat502Neq500)
+                      (insFree
+                        insBound
+                        nat502Neq501))
+                    (insPair
+                      (insPair
+                        insBound
+                        insZero)
+                      (insCall
+                        (insCall
+                          (insDefListToSet {
+                            isDef := isDefToSet.isDef.right
+                            isNat := isDefToSet.isNat.left
+                            eq := atTailEq
+                          })
+                          (insFree
+                            (insFree
+                              (insFree
+                                insBound
+                                nat502Neq501)
+                              nat503Neq501)
+                            nat504Neq501))
+                        (insFree
+                          insBound
+                          nat503Neq502))))))))
+    
+    def Inw.toIsDefListToSet (inw: Inw defListToSet p):
+      IsDefListToSet p
+    :=
+      let inw := inwWfm.toInwWfmDef inw
+      
+      let ⟨head, ⟨inwDomainHead, inw⟩⟩ := inwUnDomElim inw
+      let ⟨tail, ⟨inwDomainTail, inw⟩⟩ := inwUnDomElim inw
+      
+      (inwUnElim inw).elim
+        (fun inw =>
+          match p with
+          | zero => inwPairElim.nope inw
+          | pair zero _ => inwPairElim.nope (inwPairElim inw).inwL
+          | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
+          | pair (pair head tail) (pair n expr) =>
+            let ⟨inw500501, inwZero500⟩ := inwPairElim inw
+            let ⟨inw500Head, inw501⟩ := inwPairElim inw500501
+            let ⟨inwZero, inw500Expr⟩ := inwPairElim inwZero500
+            
+            let eqHead := inwBoundElim
+              (inwFreeElim inw500Head nat501Neq500)
+            
+            let eqExpr := inwBoundElim
+              (inwFreeElim inw500Expr nat501Neq500)
+            
+            let eqTail := inwBoundElim inw501
+            let eqZero := inwZeroElim inwZero
+            
+            let isHeadExpr :=
+              toIsExprEncoding
+                (inwFreeElim inwDomainHead nat500NeqExprEncoding)
+            
+            let isTailDef :=
+              toIsDefEncoding
+                (inwFreeElim inwDomainTail nat501NeqDefEncoding)
+            
+            eqHead ▸
+            eqTail ▸
+            eqZero ▸
+            eqExpr.symm ▸
+            {
+              isDef := And.intro isHeadExpr isTailDef
+              isNat := trivial
+              eq := rfl
+            })
+        (fun inw =>
+          let ⟨n, ⟨inwDomainN, inw⟩⟩ := inwUnDomElim inw
+          
+          match p with
+          | zero => inwPairElim.nope inw
+          | pair zero _ => inwPairElim.nope (inwPairElim inw).inwL
+          | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
+          | pair (pair head tail) (pair zero expr) =>
+            inwPairElim.nope (inwPairElim (inwPairElim inw).inwR).inwL
+          | pair (pair head tail) (pair (pair nAlias z) expr) =>
+            let ⟨inwDl, inwAt⟩ := inwPairElim inw
+            let ⟨inwHead, inwTail⟩ := inwPairElim inwDl
+            let ⟨inwSucc, inw⟩ := inwPairElim inwAt
+            let ⟨inwN, inwZ⟩ := inwPairElim inwSucc
+            
+            let eqHead :=
+              inwBoundElim
+                (inwFreeElim
+                  (inwFreeElim
+                    inwHead
+                    nat502Neq500)
+                  nat501Neq500)
+            
+            let eqTail := inwBoundElim (inwFreeElim inwTail nat502Neq501)
+            
+            let eqN := inwBoundElim inwN
+            let eqZ := inwZeroElim inwZ
+            
+            let isHeadExpr :=
+              toIsExprEncoding
+                (inwFreeElim inwDomainHead nat500NeqExprEncoding)
+            
+            let isTailDef :=
+              toIsDefEncoding
+                (inwFreeElim inwDomainTail nat501NeqDefEncoding)
+            
+            let isNatN := toIsNatEncoding inwDomainN
+            
+            let inw := inwCallElimBound inw rfl nat503Neq502
+            let inw := inwCallElimBound inw rfl nat504Neq501
+            
+            have:
+              n.depth < (pair nAlias z).depth
+            :=
+              eqN ▸ eqZ ▸ depthLtL _ _
+            
+            eqHead ▸
+            eqTail ▸
+            eqZ ▸
+            eqN ▸ 
+            {
+              isDef := And.intro isHeadExpr isTailDef
+              isNat := And.intro isNatN rfl
+              eq := arrayAt.consEq (toIsDefListToSet inw).eq _
+            })
+    termination_by Inw.toIsDefListToSet inw => p.depthBA
     
   end uniSet3
 end Pair
