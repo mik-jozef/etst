@@ -49,12 +49,13 @@ namespace Pair
     def nat502NeqIncrementExprs: 502 ≠ 21 := by decide
     
     
-    structure IsNatPairAAOfN (p n: Pair): Prop where
-      isNat: IsNatEncoding n
-      eq: p = pair n n
+    structure IsNatPairAAPair (a b: Pair): Prop where
+      isNatA: IsNatEncoding a
+      eq: a = b
     
-    def IsNatPairAA p := ∃ n, IsNatPairAAOfN p n
-    def NatPairAA := { p // IsNatPairAA p }
+    def IsNatPairAA: Pair → Prop
+    | zero => False
+    | pair a b => IsNatPairAAPair a b
     
     
     structure IsNatLePair (a b: Pair): Prop where
@@ -67,12 +68,14 @@ namespace Pair
     | pair a b => IsNatLePair a b
     
     def IsNatPairAA.toIsNatLe (isAA: IsNatPairAA p): IsNatLe p :=
-      let ⟨_n, isAA⟩ := isAA.unwrap
-      isAA.eq ▸ {
-        isNatA := isAA.isNat,
-        isNatB := isAA.isNat
-        isLe := Nat.le_refl _,
-      }
+      match p with
+      | zero => isAA
+      | pair _ _ =>
+        isAA.eq ▸ {
+          isNatA := isAA.isNatA,
+          isNatB := isAA.eq ▸ isAA.isNatA
+          isLe := Nat.le_refl _,
+        }
     
     
     inductive IsExprEncoding.Bin (p: Pair): Prop :=

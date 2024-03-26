@@ -41,32 +41,35 @@ namespace Pair
     
     
     def insNatPairAA (isPnaa: IsNatPairAA p): Ins natPairAA p :=
-      let np := isPnaa.unwrap
-      
-      let insD := insFree (insNatEncoding np.property.isNat) Nat.noConfusion
-      let insPairAA := insPair insBound insBound
-      
-      np.property.eq ▸
-        insWfmDef.toInsWfm (insUnDom insD insPairAA)
+      match p with
+      | zero => isPnaa.elim
+      | pair _ _ =>
+        isPnaa.eq ▸
+        insWfmDef.toInsWfm
+          (insUnDom
+            (insFree
+              (insNatEncoding
+                isPnaa.isNatA)
+              Nat.noConfusion)
+            (insPair insBound insBound))
     
     def Inw.toIsNatPairAA (w: Inw natPairAA p): IsNatPairAA p :=
       let inwDef := inwWfm.toInwWfmDef w
-      let n := (inwUnDomElim inwDef).unwrap
+      let ⟨n, ⟨inwDomain, inw⟩⟩ := inwUnDomElim inwDef
       
       let inwNatN: Inw nat n :=
-        inwFreeElim n.property.inwDomain Nat.noConfusion
+        inwFreeElim inwDomain Nat.noConfusion
       
-      let ⟨pairL, exR⟩ := inwPairElim.ex n.property.inwBody
-      let ⟨pairR, ⟨eq, insL, insR⟩⟩ := exR.unwrap
+      let ⟨_pairL, ⟨_pairR, ⟨eq, inwL, inwR⟩⟩⟩ := inwPairElim.ex inw
       
-      let eqL := inwBoundElim insL
-      let eqR := inwBoundElim insR
-      let eqN := eqR.trans eqL.symm
+      let eqL := inwBoundElim inwL
+      let eqR := inwBoundElim inwR
       
-      ⟨n.val, {
-        isNat := Inw.toIsNatEncoding inwNatN
-        eq := eq ▸ (inwBoundElim insL) ▸ eqN ▸ rfl
-      }⟩
+      eq ▸
+      {
+        isNatA := eqL ▸ Inw.toIsNatEncoding inwNatN
+        eq := eqL.trans eqR.symm
+      }
     
     
     def insNatLe.ab (isNatLe: IsNatLe (pair a b)): Ins natLe (pair a b) :=
@@ -74,10 +77,10 @@ namespace Pair
       
       if h: a = b then
         let isNatPairAA: IsNatPairAA (pair a b) :=
-          ⟨a, {
-            isNat := isNatA
+          {
+            isNatA := isNatA
             eq := h ▸ rfl
-          }⟩
+          }
         
         insWfmDef.toInsWfm
           (insUnL (insNatPairAA isNatPairAA) _)
