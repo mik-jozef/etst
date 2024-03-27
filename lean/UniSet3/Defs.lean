@@ -197,10 +197,25 @@ namespace Pair
     | zero => False
     | pair a b => IsNextDefPair a b
     
+    def IsNextDefPair.isUnique
+      (isNextA: IsNextDefPair dl nextA)
+      (isNextB: IsNextDefPair dl nextB)
+    :
+      nextA = nextB
+    :=
+      iIsLeast.isUnique isNextA.isLeast isNextB.isLeast
+    
+    def IsNextDefPair.isLt
+      (isNextDef: IsNextDefPair a b)
+    :
+      depthDictOrder.Lt a b
+    :=
+      isNextDef.isLeast.isMember.right
+    
     
     inductive IsNthDefListPair: Pair → Pair → Prop where
-    | IsZeroA: IsNthDefListPair zero zero
-    | IsPairA:
+    | Zero: IsNthDefListPair zero zero
+    | Succ:
         IsNthDefListPair aPred bPred →
         IsNextDefPair bPred b →
         IsNthDefListPair (pair aPred zero) b
@@ -208,6 +223,56 @@ namespace Pair
     def IsNthDefList: Pair → Prop
     | zero => False
     | pair a b => IsNthDefListPair a b
+    
+    def IsNthDefListPair.isNat
+      (isNth: IsNthDefListPair n dlN)
+    :
+      IsNatEncoding n
+    :=
+      match isNth with
+      | Zero => trivial
+      | Succ isNthPred _ => And.intro isNthPred.isNat rfl
+    
+    def IsNthDefListPair.eqAt
+      (isNthA: IsNthDefListPair n dlA)
+      (isNthB: IsNthDefListPair n dlB)
+    :
+      dlA = dlB
+    :=
+      match isNthA, isNthB with
+      | Zero, Zero => rfl
+      | Succ isNthPredA isNextA, Succ isNthPredB isNextB =>
+        let ih := eqAt isNthPredA isNthPredB
+        
+        isNextA.isUnique (ih ▸ isNextB)
+      
+    def IsNthDefListPair.ltIfLtNat
+      (isNth: IsNthDefListPair n dlN)
+      (isMth: IsNthDefListPair m dlM)
+      (nm: n.depth < m.depth)
+    :
+      depthDictOrder.Lt dlN dlM
+    :=
+      match isMth with
+      | Zero =>
+        False.elim (Nat.not_lt_zero _ nm)
+      | Succ isMthPred isNextDefPair =>
+        let leMPred := Nat.le_of_lt_succ
+          (depth.nat.eqSuccDepthPred
+            ((Succ isMthPred isNextDefPair).isNat) ▸ nm)
+        
+        (Nat.eq_or_lt_of_le leMPred).elim
+          (fun eqDepth =>
+            let eqN := depth.nat.injEq
+              isNth.isNat isMthPred.isNat eqDepth
+            
+            let eqDlN := eqAt isNth (eqN.symm ▸ isMthPred)
+            
+            eqDlN ▸ isNextDefPair.isLt)
+          (fun lt =>
+            let ih := ltIfLtNat isNth isMthPred lt
+            
+            ih.trans isNextDefPair.isLt)
     
     
     inductive IsShiftExprPair: Pair → Pair → Prop where

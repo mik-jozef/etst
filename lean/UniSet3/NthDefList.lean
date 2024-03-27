@@ -44,7 +44,7 @@ namespace Pair
           let eqL := inwZeroElim inwL
           let eqR := inwZeroElim inwR
           
-          eqL ▸ eqR ▸ IsNthDefListPair.IsZeroA)
+          eqL ▸ eqR ▸ IsNthDefListPair.Zero)
         (fun inw =>
           let ⟨bound, ⟨inwDomain, inwBody⟩⟩ := inwUnDomElim inw
           let ⟨inwA, inwB⟩ := inwPairElim inwBody
@@ -65,7 +65,7 @@ namespace Pair
             
             let isNextDef := Inw.toIsNextDef inwFn
             
-            zEq ▸ IsNthDefListPair.IsPairA isNthPred isNextDef)
+            zEq ▸ IsNthDefListPair.Succ isNthPred isNextDef)
     termination_by Inw.toIsNthDefList.ab a inw => a.depth
     
     def Inw.toIsNthDefList (inw: Inw nthDefList p):

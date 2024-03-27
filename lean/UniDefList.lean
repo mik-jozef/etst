@@ -551,7 +551,7 @@ namespace Pair
     /-
       The set of pairs (n, s) such that n is a natural number,
       and for every definable triset of pairs dtp, there exists
-      a natural number n such that `theSet & (n, Any) = dtp`
+      a natural number n such that `callExpr _ theSet n = dtp`
     -/
     def theSet: Nat := 35
     
