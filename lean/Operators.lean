@@ -474,3 +474,23 @@ def DefList.wellFoundedModel.isModel
     wfmEq ▸ eq
   
   wfmEq.trans clfpEq
+
+
+def Salgebra.IsDefinable
+  (salg: Salgebra sig)
+  (set: Set3 salg.D)
+:
+  Prop
+:=
+  ∃
+    (dl: DefList sig)
+    (x: Nat)
+  ,
+    set = dl.wellFoundedModel salg x
+
+def Salgebra.Definable
+  (salg: Salgebra sig)
+:
+  Type
+:=
+  { set: Set3 salg.D // salg.IsDefinable set }
