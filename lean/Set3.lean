@@ -24,11 +24,15 @@ namespace Set3
     allDefIn: ∀ d: s3.defMem, d.val ∈ s2
     allNinNpos: ∀ d: ↑s2ᶜ, d.val ∉ s3.posMem
   
+  
   def empty {D: Type}: Set3 D :=
     ⟨Set.empty, Set.empty, Preorder.le_refl _⟩
   
   def undetermined {D: Type}: Set3 D :=
     ⟨Set.empty, Set.full, fun _ => False.elim⟩
+  
+  def full {D: Type}: Set3 D :=
+    ⟨Set.full, Set.full, Preorder.le_refl _⟩
   
   def just {D: Type} (d: D): Set3 D :=
     ⟨Set.just d, Set.just d, Preorder.le_refl _⟩
@@ -753,5 +757,70 @@ namespace Set3
     let dSupS: (d: D) → d ∈ sup.val.posMem → d ∈ s.val.posMem := supGeS.posLe
     
     Function.contra (dSupS d) dNin
+  
+  
+  def union (s0 s1: Set3 D): Set3 D := ⟨
+    s0.defMem ∪ s1.defMem,
+    s0.posMem ∪ s1.posMem,
+    fun _d dIn =>
+      dIn.elim
+        (fun dIn0 => Or.inl (s0.defLePos dIn0))
+        (fun dIn1 => Or.inr (s1.defLePos dIn1))
+  ⟩
+  
+  def memUnion (s0 s1: Set3 D) (d: D):
+    d ∈ (union s0 s1).defMem ↔ d ∈ s0.defMem ∨ d ∈ s1.defMem
+  :=
+    Iff.intro id id
+  
+  def union.monoLeft (s0 s1: Set3 D):
+    s0 ≤ union s0 s1
+  :=
+    LeStd.intro
+      (Set.subset_union_left _ _)
+      (Set.subset_union_left _ _)
+  
+  def union.monoRite (s0 s1: Set3 D):
+    s1 ≤ union s0 s1
+  :=
+    LeStd.intro
+      (Set.subset_union_right _ _)
+      (Set.subset_union_right _ _)
+  
+  
+  def inter (s0 s1: Set3 D): Set3 D := ⟨
+    s0.defMem ∩ s1.defMem,
+    s0.posMem ∩ s1.posMem,
+    fun _d dIn =>
+      And.intro
+        (s0.defLePos dIn.left)
+        (s1.defLePos dIn.right)
+  ⟩
+  
+  def memInter (s0 s1: Set3 D) (d: D):
+    d ∈ (inter s0 s1).defMem ↔ d ∈ s0.defMem ∧ d ∈ s1.defMem
+  :=
+    Iff.intro id id
+  
+  def inter.monoLeft (s0 s1: Set3 D):
+    inter s0 s1 ≤ s0
+  :=
+    LeStd.intro
+      (Set.inter_subset_left _ _)
+      (Set.inter_subset_left _ _)
+  
+  def inter.monoRite (s0 s1: Set3 D):
+    inter s0 s1 ≤ s1
+  :=
+    LeStd.intro
+      (Set.inter_subset_right _ _)
+      (Set.inter_subset_right _ _)
+  
+  
+  instance unionInst (D: Type u): Union (Set3 D) where
+    union := union
+  
+  instance interInst (D: Type u): Inter (Set3 D) where
+    inter := inter
   
 end Set3
