@@ -561,7 +561,8 @@ structure DefList.FinBounds (getDef: Nat → Expr sig) where
   
   boundsTransitive: ∀ a b c, bounds a b → bounds b c → bounds a c
   
-  boundsFinite: ∀ name, (bounds name).IsFinite
+  -- previously `boundsFinite: ∀ name, (bounds name).IsFinite`
+  boundsFinite: ∀ name, ∃ ub, ∀ x ∈ bounds name, x < ub
 
 def DefList.IsFinBounded (gd: Nat → Expr sig): Prop :=
   ∃ _fb: FinBounds gd, True

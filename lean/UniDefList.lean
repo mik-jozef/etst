@@ -14,32 +14,6 @@ import Wfm
   We show that this triset is itself definable.
 -/
 
-def Nat.setLeN.isFinite (n: Nat):
-  Set.IsFinite (fun x => x ≤ n)
-:=
-  match n with
-  | zero => ⟨
-      [ 0 ],
-      fun m =>
-        let eqZero := Nat.le_zero.mp m.property
-        eqZero ▸ List.Mem.head []
-    ⟩
-  | succ pred =>
-      let isFinPred := isFinite pred
-      let listPred := isFinPred.unwrap
-      
-      ⟨
-        succ pred :: listPred,
-        fun m =>
-          let leOrEq := Nat.le_or_eq_of_le_succ m.property
-          leOrEq.elim
-            (fun le =>
-              let mInList := listPred.property ⟨m, le⟩
-              List.Mem.tail (succ pred) mInList)
-            (fun eq =>
-              by rewrite [eq]; exact List.Mem.head listPred.val),
-      ⟩
-
 namespace Pair
   open pairSignature
   open Expr
@@ -809,7 +783,8 @@ namespace Pair
               xEq ▸ le35Self
         ,
         
-        boundsFinite := fun _ => Nat.setLeN.isFinite 35,
+        boundsFinite := fun _ => ⟨36, fun _ => Nat.lt_succ_of_le⟩,
+        
         boundsTransitive := fun a b c _bLe cLe => cLe,
       }, trivial⟩
     }
