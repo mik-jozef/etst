@@ -64,15 +64,15 @@ namespace Pair
                   insUnDom
                     (insNatEncoding isPoD.isNat.left)
                     (insUnDom
-                      (insCall
+                      (insCallExpr
                         (insPairOfDepth.p _ isPoDA)
                         (insFree
                           (insFree insBound nat501Neq500)
                           nat502Neq500))
                       (insUnDom
-                        (insCall
+                        (insCallExpr
                           (insPairOfDepth.p _ isPoDB)
-                          (insCall
+                          (insCallExpr
                             (insFree
                               (insFree
                                 (insFree
@@ -146,15 +146,15 @@ namespace Pair
                   insUnDom
                     (insNatEncoding isPoD.isNat.left)
                     (insUnDom
-                      (insCall
+                      (insCallExpr
                         (insPairOfDepth.p _ isPoDB)
                         (insFree
                           (insFree insBound nat501Neq500)
                           nat502Neq500))
                       (insUnDom
-                        (insCall
+                        (insCallExpr
                           (insPairOfDepth.p _ isPoDA)
-                          (insCall
+                          (insCallExpr
                             (insFree
                               (insFree
                                 (insFree
@@ -219,7 +219,7 @@ namespace Pair
           let ⟨bound501, inwDomain501, inwBody⟩ := inwUnDomElim inwBody
           let ⟨bound502, inwDomain502, inwBody⟩ := inwUnDomElim inwBody
           
-          let ⟨arg, ⟨inwFn, inwArg⟩⟩ := inwCallElim inwDomain501
+          let ⟨arg, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwDomain501
           
           let argEq500 := inwBoundElim
             (inwFreeElim (inwFreeElim inwArg nat502Neq500) nat501Neq500)
@@ -232,9 +232,9 @@ namespace Pair
               nat500NeqPairOfDepth
           
           let ⟨argOuter, ⟨inwFnOuter, inwArgOuter⟩⟩ :=
-            inwCallElim inwDomain502
+            inwCallExprElim inwDomain502
           let ⟨argInner, ⟨inwFnInner, inwArgInner⟩⟩ :=
-            inwCallElim inwArgOuter
+            inwCallExprElim inwArgOuter
           
           let argInnerIs500 :=
             inwBoundElim

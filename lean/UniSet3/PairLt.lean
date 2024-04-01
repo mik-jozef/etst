@@ -24,10 +24,10 @@ namespace Pair
           (insUnDom
             (insNatEncoding (fromNat.isNatEncoding a.depth))
             (insPair
-              (insCall
+              (insCallExpr
                 (insPairOfDepth (IsPairOfDepth.ofDepth a))
                 (insFree insBound nat501Neq500))
-              (insCall
+              (insCallExpr
                 (insPairOfDepth isPodB)
                 (insFree insBound nat501Neq500))))
     
@@ -42,8 +42,8 @@ namespace Pair
       | pair a b =>
         let ⟨l, r⟩ := inwPairElim inwBody
         
-        let ⟨_argL, ⟨inwFnL, inwArgL⟩⟩ := inwCallElim l
-        let ⟨_argR, ⟨inwFnR, inwArgR⟩⟩ := inwCallElim r
+        let ⟨_argL, ⟨inwFnL, inwArgL⟩⟩ := inwCallExprElim l
+        let ⟨_argR, ⟨inwFnR, inwArgR⟩⟩ := inwCallExprElim r
         
         let argEqL := inwBoundElim (inwFreeElim inwArgL nat501Neq500)
         let argEqR := inwBoundElim (inwFreeElim inwArgR nat501Neq500)
@@ -89,7 +89,7 @@ namespace Pair
               (insUnDom
                 (insNatLt isLt)
                 (insPair
-                  (insCall
+                  (insCallExpr
                     (insPairOfDepth {
                       isNat := fromNat.isNatEncoding a.depth
                       eqDepth := fromNat.depthEq a.depth
@@ -98,7 +98,7 @@ namespace Pair
                       (insFree
                         (insFree insBound nat501Neq500)
                       nat502Neq500)))
-                  (insCall
+                  (insCallExpr
                     (insPairOfDepth {
                       isNat := fromNat.isNatEncoding b.depth
                       eqDepth := fromNat.depthEq b.depth
@@ -139,8 +139,8 @@ namespace Pair
             | zero => inwPairElim.nope inwBody
             | pair pA pB =>
               let ⟨l, r⟩ := inwPairElim inwBody
-              let ⟨_argL, ⟨inwFnL, inwArgL⟩⟩ := inwCallElim l
-              let ⟨_argR, ⟨inwFnR, inwArgR⟩⟩ := inwCallElim r
+              let ⟨_argL, ⟨inwFnL, inwArgL⟩⟩ := inwCallExprElim l
+              let ⟨_argR, ⟨inwFnR, inwArgR⟩⟩ := inwCallExprElim r
               
               let ⟨eqL, eqR⟩ :=
                 Pair.noConfusion

@@ -28,7 +28,7 @@ namespace Pair
                       (insZthMember
                         (insFree insBound nat501Neq500))
                       insZero)
-                    (insCall
+                    (insCallExpr
                       (insNextDef isNextPair)
                       (insFstMember
                         (insFree
@@ -53,7 +53,7 @@ namespace Pair
           | zero => inwPairElim.nope inwA
           | pair aPred z =>
             let ⟨inwAPred, inwZ⟩ := inwPairElim inwA
-            let ⟨bPred, ⟨inwFn, inwArg⟩⟩ := inwCallElim inwB
+            let ⟨bPred, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwB
             
             let boundEq := inwBoundElim
               (inwZthFstElim inwAPred inwArg nat501Neq500 rfl)

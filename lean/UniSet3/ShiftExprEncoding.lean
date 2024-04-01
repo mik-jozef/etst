@@ -74,12 +74,12 @@ namespace Pair
                           (insFree insBound nat501Neq500)
                           nat502Neq500)
                         (insPair
-                          (insCall
+                          (insCallExpr
                             (insShiftExprEncoding isShiftExprA)
                             (insFree
                               (insFree insBound nat502Neq501)
                               nat503Neq501))
-                          (insCall
+                          (insCallExpr
                             (insShiftExprEncoding isShiftExprB)
                             (insFree insBound nat503Neq502))))))))
           
@@ -97,7 +97,7 @@ namespace Pair
                   (insPair (insNatExpr _ _) insBound)
                   (insPair
                     (insNatExpr _ _)
-                    (insCall
+                    (insCallExpr
                       (insShiftExprEncoding isShift)
                       (insFree insBound nat503Neq501)))))
           
@@ -129,7 +129,7 @@ namespace Pair
                           nat502Neq500)
                         (insPair
                           insBound
-                          (insCall
+                          (insCallExpr
                             (insShiftExprEncoding isShift)
                             (insFree
                               (insFree insBound nat502Neq501)
@@ -229,8 +229,8 @@ namespace Pair
               
               let ⟨inwCallBBA, inwCallBBB⟩ := inwPairElim inwPairCall
               
-              let ⟨bBAPred, ⟨inwShiftA, inw501⟩⟩ := inwCallElim inwCallBBA
-              let ⟨bBBPred, ⟨inwShiftB, inw502⟩⟩ := inwCallElim inwCallBBB
+              let ⟨bBAPred, ⟨inwShiftA, inw501⟩⟩ := inwCallExprElim inwCallBBA
+              let ⟨bBBPred, ⟨inwShiftB, inw502⟩⟩ := inwCallExprElim inwCallBBB
               
               let eqBBAPred :=
                 inwBoundElim
@@ -280,7 +280,7 @@ namespace Pair
             let eqBA := inwNatExprElim inwNat5B
             let eqAB := inwBoundElim inwAB
             
-            let ⟨exprAlias, ⟨inwFn, inwArg⟩⟩ := inwCallElim inwBB
+            let ⟨exprAlias, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwBB
             
             let eqExpr := inwBoundElim (inwFreeElim inwArg nat503Neq501)
             
@@ -326,7 +326,7 @@ namespace Pair
               let ⟨inwABA, inwABB⟩ := inwPairElim inwAB
               let ⟨inwBBA, inwCallBBB⟩ := inwPairElim inwBB
               
-              let ⟨exprAlias, ⟨inwFn, inwArg⟩⟩ := inwCallElim inwCallBBB
+              let ⟨exprAlias, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwCallBBB
               
               let eqABA := inwBoundElim inwABA
               let eqBBA := inwBoundElim inwBBA

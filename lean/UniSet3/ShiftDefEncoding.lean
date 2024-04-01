@@ -32,12 +32,12 @@ namespace Pair
                         (insFree insBound nat501Neq500)
                         insBound)
                       (insPair
-                        (insCall
+                        (insCallExpr
                           (insShiftExprEncoding isShiftExpr)
                           (insFree
                             (insFree insBound nat501Neq500)
                             nat502Neq500))
-                        (insCall
+                        (insCallExpr
                           (insWfmDef.toInsWfm insIncRest)
                           (insFree insBound nat502Neq501))))))))
     
@@ -70,8 +70,8 @@ namespace Pair
             let eqAB := inwBoundElim inw501
             
             let ⟨inwCallL, inwCallR⟩ := inwPairElim inwCallPair
-            let ⟨exprAlias, ⟨inwFnExpr, inwArgExpr⟩⟩ := inwCallElim inwCallL
-            let ⟨dlAlias, ⟨inwFnDl, inwArgDl⟩⟩ := inwCallElim inwCallR
+            let ⟨exprAlias, ⟨inwFnExpr, inwArgExpr⟩⟩ := inwCallExprElim inwCallL
+            let ⟨dlAlias, ⟨inwFnDl, inwArgDl⟩⟩ := inwCallExprElim inwCallR
             
             let eqExpr :=
               inwBoundElim
@@ -116,7 +116,7 @@ namespace Pair
                   insBound
                   (insPair
                     (insFree (isShiftDef.eqA ▸ insBound) nat501Neq500)
-                    (insCall
+                    (insCallExpr
                       (insIncrementExprs isShiftDef.isIncrementedB)
                       (insFree insBound nat502Neq501)))))))
     
@@ -145,7 +145,7 @@ namespace Pair
         let eqCA :=
           inwBoundElim (inwFreeElim inw501CA nat501Neq500)
         
-        let ⟨_dlAlias, ⟨inwFn, inwArg⟩⟩ := inwCallElim inw
+        let ⟨_dlAlias, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inw
         
         let eqDlAlias := inwBoundElim (inwFreeElim inwArg nat502Neq501)
         

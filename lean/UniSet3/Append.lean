@@ -274,11 +274,11 @@ namespace Pair
                         nat501Neq500)
                       (insPair
                         insBound
-                        (insCall
-                          (insCall
+                        (insCallExpr
+                          (insCallExpr
                             (insWfmDef.toInsWfm
                               insAppendDef)
-                            (insCall
+                            (insCallExpr
                               (insUpToLast
                                 isUpTo)
                               (insFree
@@ -290,11 +290,11 @@ namespace Pair
                                     nat502Neq500)
                                   nat503Neq500)
                                 nat504Neq500)))
-                          (insCall
-                            (insCall
+                          (insCallExpr
+                            (insCallExpr
                               (insShiftDefEncoding
                                 isShiftDef)
-                              (insCall
+                              (insCallExpr
                                 (insLastExpr
                                   isLastExpr)
                                 (insFree
@@ -334,18 +334,18 @@ namespace Pair
             let eqB := inwBoundElim inw501B
             
             let ⟨dlShifted, ⟨inwFnDlShifted, inwArgDlShifted⟩⟩ :=
-              inwCallElim inw
+              inwCallExprElim inw
             
             let inwCallDlDl :=
               inwCallElimBound inwArgDlShifted rfl nat503Neq501
             
             let ⟨dlALast, inwFnLast, inwArgLast⟩ :=
-              inwCallElim inwCallDlDl
+              inwCallExprElim inwCallDlDl
             
             let inwLast := inwCallElimBound inwArgLast rfl nat505Neq500
             
             let ⟨dlAUpToLast, ⟨inwFnAppend, inwArgAppend⟩⟩ :=
-              inwCallElim inwFnDlShifted
+              inwCallExprElim inwFnDlShifted
             
             let inwUpToLast :=
               inwCallElimBound inwArgAppend rfl nat504Neq500
