@@ -25,7 +25,7 @@ namespace Ordinal
   :=
     And.intro notZero ial
   
-  def prev_of_succ_not_lt
+  def pred_of_succ_not_lt
     {nn n: Ordinal}
     (nnLt: nn < n)
     (succNLt: ¬nn.succ < n)
@@ -49,7 +49,7 @@ namespace Ordinal
   :=
     notLimit.toEx fun _nn nImpl =>
       let ⟨nnLt, succNLt⟩ := nImpl.implToAnd
-      prev_of_succ_not_lt nnLt succNLt
+      pred_of_succ_not_lt nnLt succNLt
   
   def notLimitToPredLt
     {n: Ordinal}
