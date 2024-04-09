@@ -114,6 +114,25 @@ namespace Valuation
       else
         val v
   
+  def update.eqBound
+    (val: Valuation D)
+    (x: Nat)
+    (d: D)
+  :
+    val.update x d x = Set3.just d
+  :=
+    by unfold update; exact if_pos rfl
+  
+  def update.eqOrig
+    (val: Valuation D)
+    {xBound xReq: Nat}
+    (xNeq: xBound ≠ xReq)
+    (d: D)
+  :
+    val.update xBound d xReq = val xReq
+  :=
+    by unfold update; exact if_neg xNeq.symm
+  
   def update.inEq.defMem
     (val: Valuation D)
     (x: Nat)
@@ -121,7 +140,7 @@ namespace Valuation
   :
     (val.update x d x).defMem d
   :=
-    by unfold Valuation.update; rw [if_pos rfl]; exact rfl
+    eqBound val x d ▸ rfl
   
   def update.inEq.posMem
     (val: Valuation D)
@@ -130,7 +149,7 @@ namespace Valuation
   :
     (val.update x d x).posMem d
   :=
-    by unfold Valuation.update; rw [if_pos rfl]; exact rfl
+    eqBound val x d ▸ rfl
   
   def update.inDef.eq
     (inUpdated: (update val x dBound x).defMem d)
