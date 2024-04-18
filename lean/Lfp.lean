@@ -217,7 +217,7 @@ def lfp.stage.option.isMono.ifChain.{u}
   (cc: IsChainComplete ord)
   (op: T → T)
   (opMono: IsMonotonic ord ord op)
-  (a b: Ordinal.{u}) -- I'd make these hidden but no idea how to do termination_by
+  {a b: Ordinal.{u}}
   (ab: a ≤ b)
   (isChain: IsChain ord.optionTop.le (previous cc op b))
 :
@@ -247,13 +247,13 @@ def lfp.stage.option.isMono.ifChain.{u}
       option.previous.isChainToIsChain isChain b.pred b.pred_le_self
     
     let abp: option cc op a ≤ option cc op b.pred :=
-      option.isMono.ifChain cc op opMono a b.pred aLeBPred isChainPred
+      option.isMono.ifChain cc op opMono aLeBPred isChainPred
     
     let bpb: option cc op b.pred ≤ option cc op b :=
       if hPredLim: b.pred.IsActualLimit then
-        let isMono (aa bb: ↑b.pred) ab :=
+        let isMono (aa bb: ↑b.pred) aabb :=
           let bbLtB: bb < b := bb.property.trans_le (b.pred_le_self)
-          option.isMono.ifChain cc op opMono aa bb ab
+          option.isMono.ifChain cc op opMono aabb
             (option.previous.isChainToIsChain isChain bb (le_of_lt bbLtB))
         
         let leSuccPred :=
@@ -279,7 +279,7 @@ def lfp.stage.option.isMono.ifChain.{u}
             let optionPredPredLe:
               option cc op b.pred.pred ≤ option cc op b.pred
             :=
-              isMono.ifChain cc op opMono _ _ b.pred.pred_le_self
+              isMono.ifChain cc op opMono b.pred.pred_le_self
                 (previous.isChainToIsChain isChain b.pred b.pred_le_self)
             
             let tLeOpT: t ≤ op t := show some t ≤ op t from
@@ -290,19 +290,19 @@ def lfp.stage.option.isMono.ifChain.{u}
     abp.trans bpb
 termination_by lfp.stage.option.isMono.ifChain cc op opMono a b ab isChain => b
 
-def lfp.stage.option.previous.isChain.{u}
+def lfp.stage.option.previous.isChain
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
   (op: T → T)
   (opMono: IsMonotonic ord ord op)
-  (n: Ordinal.{u})
+  (n: Ordinal)
 :
   IsChain ord.optionTop.le (previous cc op n)
 :=
   let isMono {a b: ↑n} (ab: a ≤ b) :=
     have: b < n := b.property
     let isChainB := isChain cc op opMono b
-    lfp.stage.option.isMono.ifChain cc op opMono a b ab isChainB
+    lfp.stage.option.isMono.ifChain cc op opMono ab isChainB
     
   fun t0 t0Mem t1 t1Mem _ =>
     let t0Index := t0Mem.unwrap
@@ -407,7 +407,7 @@ def lfp.stage.isMono
   let bEq: option cc op b = stageB := stageB.property.symm
   
   let isChain := option.previous.isChain cc op opMono b
-  let opAB := option.isMono.ifChain cc op opMono a b ab isChain
+  let opAB := option.isMono.ifChain cc op opMono ab isChain
   
   show some stageA.val ≤ some stageB.val from aEq ▸ bEq ▸ opAB
 
@@ -483,7 +483,7 @@ def lfp.stage.limit
         stageEq ▸ optNLeT
   }
 
-def lfp.stage.succ
+def lfp.stage.succEq
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
   (op: T → T)
@@ -503,6 +503,22 @@ def lfp.stage.succ
     stageEqNSucc ▸ optSucc
   
   Option.noConfusion someEq id
+
+def lfp.stage.pred
+  {ord: PartialOrder T}
+  (cc: IsChainComplete ord)
+  (op: T → T)
+  (opMono: IsMonotonic ord ord op)
+  {n: Ordinal}
+  (nNotLimit: ¬n.IsActualLimit)
+:
+  stage cc op opMono n = op (stage cc op opMono n.pred)
+:=
+  let eq: n.pred.succ = n := Ordinal.succ_pred_of_not_limit nNotLimit
+  
+  eq ▸
+  eq.symm ▸
+  lfp.stage.succEq cc op opMono n.pred
 
 def lfp.stage.leFP
   {ord: PartialOrder T}
@@ -538,7 +554,7 @@ def lfp.stage.leFP
     
     let opFpEq: fp.val = op fp.val := fp.property
     let stageNEq: stage cc op opMono n = op stageNPred :=
-      (Ordinal.succ_pred_of_not_limit h) ▸ succ cc op opMono n.pred
+      (Ordinal.succ_pred_of_not_limit h) ▸ succEq cc op opMono n.pred
     
     opFpEq ▸ stageNEq ▸ opPredLe
 termination_by lfp.stage.leFP cc op opMono n fp => n
@@ -595,7 +611,7 @@ noncomputable def lfp.fixedStage
     ord.le_antisymm _ _ stageLeSucc stageSuccLe
   
   let stageEqOp: stages n0.succ = op (stages n0) :=
-    lfp.stage.succ cc op opMono n0
+    lfp.stage.succEq cc op opMono n0
   
   ⟨
     n0,
@@ -618,7 +634,7 @@ noncomputable def lfp
     fs.property,
   ⟩
 
-def lfp.stage.eqLfp
+def lfp.stage.gtLfpEqLfp
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
   (op: T → T)

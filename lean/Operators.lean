@@ -67,6 +67,72 @@ noncomputable def operatorC.fixedStage
     (operatorC salg dl b)
     (operatorC.isMonotonic salg dl b)
 
+noncomputable def operatorC.fixedIndex
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  (b: Valuation salg.D)
+:
+  { n: Ordinal //
+    operatorC.stage salg dl b n = (operatorC.lfp salg dl b).val }
+:= ⟨
+  operatorC.fixedStage salg dl b,
+  rfl,
+⟩
+
+structure operatorC.FixedIndex2
+  (salg: Salgebra sig)
+  (dlA: DefList sig)
+  (dlB: DefList sig)
+  (bA: Valuation salg.D)
+  (bB: Valuation salg.D)
+  (n: Ordinal): Prop
+where
+  eqLfpA: operatorC.stage salg dlA bA n = (operatorC.lfp salg dlA bA).val
+  eqLfpB: operatorC.stage salg dlB bB n = (operatorC.lfp salg dlB bB).val
+
+noncomputable def operatorC.fixedIndex2
+  (salg: Salgebra sig)
+  (dlA: DefList sig)
+  (dlB: DefList sig)
+  (bA: Valuation salg.D)
+  (bB: Valuation salg.D)
+:
+  { n // operatorC.FixedIndex2 salg dlA dlB bA bB n }
+:=
+  let fixedA := operatorC.fixedIndex salg dlA bA
+  let fixedB := operatorC.fixedIndex salg dlB bB
+  
+  if h: fixedA.val ≤ fixedB.val then
+    ⟨
+      fixedB.val,
+      ⟨
+        let isLfpAtB := lfp.stage.gtLfpEqLfp
+          (Valuation.ord.standard.isChainComplete salg.D)
+          (operatorC salg dlA bA)
+          (operatorC.isMonotonic salg dlA bA)
+          h
+          ((operatorC.lfp salg dlA bA).property)
+        
+        iIsLeast.isUnique isLfpAtB (lfp salg dlA bA).property,
+        fixedB.property,
+      ⟩
+    ⟩
+  else
+    ⟨
+      fixedA.val,
+      ⟨
+        fixedA.property,
+        let isLfpAtA := lfp.stage.gtLfpEqLfp
+          (Valuation.ord.standard.isChainComplete salg.D)
+          (operatorC salg dlB bB)
+          (operatorC.isMonotonic salg dlB bB)
+          (le_of_not_le h)
+          ((operatorC.lfp salg dlB bB).property)
+        
+        iIsLeast.isUnique isLfpAtA (lfp salg dlB bB).property,
+      ⟩
+    ⟩
+
 noncomputable def operatorC.stage.previous
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -99,7 +165,25 @@ def operatorC.stage.limit
     (operatorC.isMonotonic salg dl b)
     nIsLimit
 
-def operatorC.stage.succ
+def operatorC.stage.limitAt
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  (b: Valuation salg.D)
+  {n: Ordinal}
+  (nIsLimit: n.IsActualLimit)
+  (x: Nat)
+:
+  IsSupremum
+    (Set3.ord.standard salg.D)
+    (Set.pointwiseAt (fun d => d ∈ previous salg dl b n) x)
+    (operatorC.stage salg dl b n x)
+:=
+  let isSup := operatorC.stage.limit salg dl b nIsLimit
+  let supAt := Set.pointwiseSup.supAt ⟨_, isSup⟩ x
+  
+  supAt.property
+
+def operatorC.stage.succEq
   (salg: Salgebra sig)
   (dl: DefList sig)
   (b: Valuation salg.D)
@@ -108,7 +192,7 @@ def operatorC.stage.succ
   operatorC.stage salg dl b n.succ =
     (operatorC salg dl b) (operatorC.stage salg dl b n)
 :=
-  lfp.stage.succ
+  lfp.stage.succEq
     (Valuation.ord.standard.isChainComplete salg.D)
     (operatorC salg dl b)
     (operatorC.isMonotonic salg dl b)
@@ -131,7 +215,7 @@ def operatorC.stage.pred
   :=
     congr rfl nEq
   
-  stageEq.symm.trans (succ salg dl b n.pred)
+  stageEq.symm.trans (succEq salg dl b n.pred)
 
 noncomputable def operatorC.stage.eqPrevN
   (salg: Salgebra sig)
@@ -272,7 +356,7 @@ noncomputable def operatorB.isMonotonic.commonFixedStage
         (operatorC salg dl b0)
         (operatorC.stage salg dl b0 lfpI1)
     :=
-      lfp.stage.eqLfp
+      lfp.stage.gtLfpEqLfp
         (Valuation.ord.standard.isChainComplete salg.D)
         (operatorC salg dl b0)
         (operatorC.isMonotonic salg dl b0)
@@ -297,7 +381,7 @@ noncomputable def operatorB.isMonotonic.commonFixedStage
         (operatorC salg dl b1)
         (operatorC.stage salg dl b1 lfpI0)
     :=
-      lfp.stage.eqLfp
+      lfp.stage.gtLfpEqLfp
         (Valuation.ord.standard.isChainComplete salg.D)
         (operatorC salg dl b1)
         (operatorC.isMonotonic salg dl b1)
@@ -369,6 +453,56 @@ noncomputable def operatorB.fixedIndex
   rfl
 ⟩
 
+structure operatorB.FixedIndex2
+  (salg: Salgebra sig)
+  (dlA: DefList sig)
+  (dlB: DefList sig)
+  (n: Ordinal): Prop
+where
+  eqLfpA: operatorB.stage salg dlA n = (operatorB.lfp salg dlA).val
+  eqLfpB: operatorB.stage salg dlB n = (operatorB.lfp salg dlB).val
+
+noncomputable def operatorB.fixedIndex2
+  (salg: Salgebra sig)
+  (dlA: DefList sig)
+  (dlB: DefList sig)
+:
+  { n // operatorB.FixedIndex2 salg dlA dlB n }
+:=
+  let fixedA := operatorB.fixedIndex salg dlA
+  let fixedB := operatorB.fixedIndex salg dlB
+  
+  if h: fixedA.val ≤ fixedB.val then
+    ⟨
+      fixedB.val,
+      ⟨
+        let isLfpAtB := lfp.stage.gtLfpEqLfp
+          (Valuation.ord.approximation.isChainComplete salg.D)
+          (operatorB salg dlA)
+          (operatorB.isMonotonic salg dlA)
+          h
+          ((operatorB.lfp salg dlA).property)
+        
+        iIsLeast.isUnique isLfpAtB (lfp salg dlA).property,
+        fixedB.property,
+      ⟩
+    ⟩
+  else
+    ⟨
+      fixedA.val,
+      ⟨
+        fixedA.property,
+        let isLfpAtA := lfp.stage.gtLfpEqLfp
+          (Valuation.ord.approximation.isChainComplete salg.D)
+          (operatorB salg dlB)
+          (operatorB.isMonotonic salg dlB)
+          (le_of_not_le h)
+          ((operatorB.lfp salg dlB).property)
+        
+        iIsLeast.isUnique isLfpAtA (lfp salg dlB).property,
+      ⟩
+    ⟩
+
 noncomputable def operatorB.stage.previous
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -399,7 +533,24 @@ def operatorB.stage.limit
     (operatorB.isMonotonic salg dl)
     nIsLimit
 
-def operatorB.stage.succ
+def operatorB.stage.limitAt
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  {n: Ordinal}
+  (nIsLimit: n.IsActualLimit)
+  (x: Nat)
+:
+  IsSupremum
+    (Set3.ord.approximation salg.D)
+    (Set.pointwiseAt (fun d => d ∈ previous salg dl n) x)
+    (operatorB.stage salg dl n x)
+:=
+  let isSup := operatorB.stage.limit salg dl nIsLimit
+  let supAt := Set.pointwiseSup.supAt ⟨_, isSup⟩ x
+  
+  supAt.property
+
+def operatorB.stage.succEq
   (salg: Salgebra sig)
   (dl: DefList sig)
   (n: Ordinal)
@@ -407,7 +558,7 @@ def operatorB.stage.succ
   operatorB.stage salg dl n.succ =
     (operatorB salg dl) (operatorB.stage salg dl n)
 :=
-  lfp.stage.succ
+  lfp.stage.succEq
     (Valuation.ord.approximation.isChainComplete salg.D)
     (operatorB salg dl)
     (operatorB.isMonotonic salg dl)
