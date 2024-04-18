@@ -38,6 +38,11 @@ def UpperBound (ord: PartialOrder T) (s: Set T) := { t: T // IsUpperBound ord s 
 
 def IsSupremum (ord: PartialOrder T) (s: Set T) (t: T): Prop :=
   iIsLeast ord (IsUpperBound ord s) t
+-- @deprecated? it's probably better to use T with IsSupremum.
+-- One may deal with situations where the sets whose supremums
+-- one deals with are the same sets but defined differently.
+-- In such cases the suprema are of different types which
+-- prevents eg. stating they are equal.
 def Supremum (ord: PartialOrder T) (s: Set T) := Least ord (IsUpperBound ord s)
 
 def Supremum.eq
@@ -46,6 +51,19 @@ def Supremum.eq
   a = b
 :=
   Least.eq a b
+
+def IsSupremum.eq
+  (a: IsSupremum ord sA tA)
+  (b: IsSupremum ord sB tB)
+  (eqSet: sA = sB)
+:
+  tA = tB
+:=
+  let bsa := eqSet ▸ b
+  
+  let sEq := (Supremum.eq ⟨tA, a⟩ ⟨tB, bsa⟩)
+  
+  Subtype.noConfusion sEq id
 
 def IsFixedPoint (op: T → T): Set T := fun t => t = op t
 def FixedPoint (op: T → T): Type u := IsFixedPoint op
