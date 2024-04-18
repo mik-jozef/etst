@@ -3,7 +3,7 @@ import PartialOrder
 import Pointwise
 
 
-def Valuation (D: Type u) := Nat → Set3 D
+def Valuation D := Nat → Set3 D
 
 namespace Valuation
   def empty: Valuation D := fun _ => Set3.empty
@@ -122,6 +122,16 @@ namespace Valuation
     val.update x d x = Set3.just d
   :=
     by unfold update; exact if_pos rfl
+  
+  def update.eqBoundOfEq
+    (val: Valuation D)
+    {xBound xReq: Nat}
+    (xEq: xBound = xReq)
+    (d: D)
+  :
+    val.update xBound d xReq = Set3.just d
+  :=
+    xEq ▸ update.eqBound val xReq d
   
   def update.eqOrig
     (val: Valuation D)
