@@ -1,6 +1,5 @@
 import Operators
 import ExampleWFCs
-import EqSwappedUnusedVar
 import PairDepthDictOrder
 
 namespace Expr
