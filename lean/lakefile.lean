@@ -20,6 +20,7 @@ lean_lib Interpretation {}
 lean_lib ITTM {}
 lean_lib LeN35 {}
 lean_lib Lfp {}
+lean_lib ExprIsFreeVar {}
 lean_lib Operators {}
 lean_lib Ordinal {}
 lean_lib OrdMap {}

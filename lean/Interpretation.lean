@@ -1,70 +1,7 @@
 import Valuation
+import ExprIsFreeVar
 
 open Classical
-
-
--- Thanks to answerers of https://proofassistants.stackexchange.com/q/1740
-structure Signature where
-  Op: Type u
-  Params: Op → Type v
-
-
-inductive Expr (sig: Signature) where
-  | var (v: Nat)
-  | op (op: sig.Op) (args: sig.Params op → Expr sig)
-  | un (left rite: Expr sig)
-  | ir (left rite: Expr sig)
-  | cpl (expr: Expr sig)
-  | ifThen (cond expr: Expr sig)
-  | Un (x: Nat) (body: Expr sig)
-  | Ir (x: Nat) (body: Expr sig)
-
-namespace Expr
-  instance: Coe Nat (Expr s) where
-    coe := fun n => Expr.var n
-  
-  instance (n: Nat): OfNat (Expr s) n where
-    ofNat := Expr.var n
-  
-  def any: Expr s := Expr.un 0 (Expr.cpl 0)
-end Expr
-
-def Expr.IsFreeVar
-  (expr: Expr sig)
-  (boundVars: Set Nat)
-:
-  Set Nat
-:=
-  fun x =>
-    match expr with
-      | var v => x = v ∧ v ∉ boundVars
-      | op _ args => ∃ param, (args param).IsFreeVar boundVars x
-      | un left rite =>
-          Or
-            (left.IsFreeVar boundVars x)
-            (rite.IsFreeVar boundVars x)
-      | ir left rite =>
-          Or
-            (left.IsFreeVar boundVars x)
-            (rite.IsFreeVar boundVars x)
-      | cpl expr => expr.IsFreeVar boundVars x
-      | ifThen cond expr =>
-          Or
-            (cond.IsFreeVar boundVars x)
-            (expr.IsFreeVar boundVars x)
-      | Un bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
-      | Ir bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
-  
-
-inductive PosExpr (s: Signature) where
-  | var (v: Nat)
-  | opApp (op: s.Op) (args: s.Params op → PosExpr s)
-  | un (left: PosExpr s) (rite: PosExpr s)
-  | ir (left: PosExpr s) (rite: PosExpr s)
-  | ifThen (cond ifYes: PosExpr s)
-    -- Complementing a bound variable is OK.
-  | Un (x xc: Var) (body: PosExpr s)
-  | Ir (x xc: Var) (body: PosExpr s)
 
 
 def Args
@@ -178,6 +115,193 @@ def Expr.interpretation
       fun _d dDefBody xDDef =>
         (body.I xDDef).defLePos (dDefBody xDDef)
     ⟩
+
+
+def Expr.interpretation.opEqDef
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (opr: sig.Op)
+  (args: sig.Params opr → Expr sig)
+:
+  (interpretation salg b c (op opr args)).defMem
+    =
+  salg.I opr (fun arg => (interpretation salg b c (args arg)).defMem)
+:=
+  rfl
+
+def Expr.interpretation.opEqPos
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (opr: sig.Op)
+  (args: sig.Params opr → Expr sig)
+:
+  (interpretation salg b c (op opr args)).posMem
+    =
+  salg.I opr (fun arg => (interpretation salg b c (args arg)).posMem)
+:=
+  rfl
+
+def Expr.interpretation.unEqDef
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (left rite: Expr sig)
+:
+  (interpretation salg b c (un left rite)).defMem
+    =
+  Union.union
+    (interpretation salg b c left).defMem
+    (interpretation salg b c rite).defMem
+:=
+  rfl
+
+def Expr.interpretation.unEqPos
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (left rite: Expr sig)
+:
+  (interpretation salg b c (un left rite)).posMem
+    =
+  Union.union
+    (interpretation salg b c left).posMem
+    (interpretation salg b c rite).posMem
+:=
+  rfl
+
+def Expr.interpretation.irEqDef
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (left rite: Expr sig)
+:
+  (interpretation salg b c (ir left rite)).defMem
+    =
+  Inter.inter
+    (interpretation salg b c left).defMem
+    (interpretation salg b c rite).defMem
+:=
+  rfl
+
+def Expr.interpretation.irEqPos
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (left rite: Expr sig)
+:
+  (interpretation salg b c (ir left rite)).posMem
+    =
+  Inter.inter
+    (interpretation salg b c left).posMem
+    (interpretation salg b c rite).posMem
+:=
+  rfl
+
+def Expr.interpretation.cplEqDef
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (expr: Expr sig)
+:
+  (interpretation salg b c (cpl expr)).defMem
+    =
+  (interpretation salg b b expr).posMemᶜ
+:=
+  rfl
+
+def Expr.interpretation.cplEqPos
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (expr: Expr sig)
+:
+  (interpretation salg b c (cpl expr)).posMem
+    =
+  (interpretation salg b b expr).defMemᶜ
+:=
+  rfl
+
+def Expr.interpretation.ifThenEqDef
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (cond expr: Expr sig)
+:
+  (interpretation salg b c (ifThen cond expr)).defMem
+    =
+  (fun d =>
+    And
+      (∃ dC, dC ∈ (interpretation salg b c cond).defMem)
+      (d ∈ (interpretation salg b c expr).defMem))
+:=
+  rfl
+
+def Expr.interpretation.ifThenEqPos
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (cond expr: Expr sig)
+:
+  (interpretation salg b c (ifThen cond expr)).posMem
+    =
+  (fun d =>
+    And
+      (∃ dC, dC ∈ (interpretation salg b c cond).posMem)
+      (d ∈ (interpretation salg b c expr).posMem))
+:=
+  rfl
+
+def Expr.interpretation.arbUnEqDef
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (x: Nat)
+  (body: Expr sig)
+:
+  let interpretationBody dX :=
+    interpretation salg (b.update x dX) (c.update x dX) body
+  
+  (interpretation salg b c (Expr.Un x body)).defMem
+    =
+  (fun d => ∃ dX, d ∈ (interpretationBody dX).defMem)
+:=
+  rfl
+
+def Expr.interpretation.arbUnEqPos
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (x: Nat)
+  (body: Expr sig)
+:
+  let interpretationBody dX :=
+    interpretation salg (b.update x dX) (c.update x dX) body
+  
+  (interpretation salg b c (Expr.Un x body)).posMem
+    =
+  (fun d => ∃ dX, d ∈ (interpretationBody dX).posMem)
+:=
+  rfl
+
+def Expr.interpretation.arbIrEqDef
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (x: Nat)
+  (body: Expr sig)
+:
+  let interpretationBody dX :=
+    interpretation salg (b.update x dX) (c.update x dX) body
+  
+  (interpretation salg b c (Expr.Ir x body)).defMem
+    =
+  (fun d => ∀ dX, d ∈ (interpretationBody dX).defMem)
+:=
+  rfl
+
+def Expr.interpretation.arbIrEqPos
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (x: Nat)
+  (body: Expr sig)
+:
+  let interpretationBody dX :=
+    interpretation salg (b.update x dX) (c.update x dX) body
+  
+  (interpretation salg b c (Expr.Ir x body)).posMem
+    =
+  (fun d => ∀ dX, d ∈ (interpretationBody dX).posMem)
+:=
+  rfl
 
 
 def Expr.interpretation.isMonotonic.standard
