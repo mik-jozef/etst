@@ -293,7 +293,9 @@ namespace Pair
         IsExprEncoding.Quantifier n →
         IsNatEncoding x →
         IsShiftExprPair b bs →
-        IsShiftExprPair (pair n (pair x b)) (pair n (pair x bs))
+        IsShiftExprPair
+          (pair n (pair x b))
+          (pair n (pair (succ x) bs))
     
     def IsShiftExprEncoding: Pair → Prop
     | zero => False
@@ -337,7 +339,7 @@ namespace Pair
       isExprShifted :=
         IsExprEncoding.IsQuantifier
           isQuantifier
-          isNat
+          (And.intro isNat rfl)
           isShift.toIsExpr.isExprShifted
     }
     

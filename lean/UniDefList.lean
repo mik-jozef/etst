@@ -303,7 +303,7 @@ namespace Pair
               (pairExpr
                 500
                 (pairExpr
-                  502
+                  (succExpr 502)
                   (callExpr 503 shiftExprEncoding 501))))))
     
     /-

@@ -128,7 +128,9 @@ namespace Pair
                           (insFree insBound nat501Neq500)
                           nat502Neq500)
                         (insPair
-                          insBound
+                          (insPair
+                            insBound
+                            insZero)
                           (insCallExpr
                             (insShiftExprEncoding isShift)
                             (insFree
@@ -307,7 +309,9 @@ namespace Pair
             match aB, bB with
             | zero, _ => inwPairElim.nope inwAB
             | _, zero => inwPairElim.nope inwBB
-            | pair aBA aBB, pair bBA bBB =>
+            | pair aBA aBB, pair zero bBB =>
+              inwPairElim.nope (inwPairElim inwBB).inwL
+            | pair aBA aBB, pair (pair bBAA bBAB) bBB =>
               let isQ := Inw.toIsExprEncoding.quantifier inwQ
               let isNat := Inw.toIsNatEncoding inwNat
               
@@ -326,10 +330,13 @@ namespace Pair
               let ⟨inwABA, inwABB⟩ := inwPairElim inwAB
               let ⟨inwBBA, inwCallBBB⟩ := inwPairElim inwBB
               
+              let ⟨inwBBAA, innwBBAB⟩ := inwPairElim inwBBA
+              
               let ⟨exprAlias, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwCallBBB
               
               let eqABA := inwBoundElim inwABA
-              let eqBBA := inwBoundElim inwBBA
+              let eqBBAA := inwBoundElim inwBBAA
+              let eqBBAB := inwZeroElim innwBBAB
               
               let eqExprAlias :=
                 inwBoundElim
@@ -341,7 +348,7 @@ namespace Pair
                 inwBoundElim (inwFreeElim inwABB nat502Neq501)
               
               have:
-                bBB.depth < (pair bA (pair bBA bBB)).depth
+                bBB.depth < (pair bA (pair (pair bBAA bBAB) bBB)).depth
               :=
                 (depthLtR _ _).trans (depthLtR _ _)
               
@@ -350,7 +357,8 @@ namespace Pair
               eqAA ▸
               eqAB.symm ▸
               eqABA ▸
-              eqBBA.symm ▸
+              eqBBAA.symm ▸
+              eqBBAB ▸
               (eqABB.trans eqExprAlias.symm) ▸
               IsShiftExprPair.IsQuantifier isQ isNat isShift)
     termination_by Inw.toIsShiftExprEncoding w => p.depthB
