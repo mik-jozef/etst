@@ -37,11 +37,11 @@ namespace Pair
                     (insPair
                       insBound
                       insZero)
-                    (insCall
-                      (insCall
+                    (insCallExpr
+                      (insCallExpr
                         (insAppend
                           isAppend)
-                        (insCall
+                        (insCallExpr
                           (insWfmDef.toInsWfm
                             insSoFar)
                           (insFree
@@ -51,7 +51,7 @@ namespace Pair
                                 nat501Neq500)
                               nat502Neq500)
                             nat503Neq500)))
-                      (insCall
+                      (insCallExpr
                         (insNthDefList
                           isNthDl)
                         (insFree
@@ -85,9 +85,9 @@ namespace Pair
             let eqAPred := inwBoundElim inwAPred
             let eqZ := inwZeroElim inwZ
             
-            let ⟨nthDl, inwFnNthDl, inwArgNthDl⟩ := inwCallElim inwDl
+            let ⟨nthDl, inwFnNthDl, inwArgNthDl⟩ := inwCallExprElim inwDl
             let ⟨dlSoFar, inwFnDlSoFar, inwArgDlSoFar⟩ :=
-              inwCallElim inwFnNthDl
+              inwCallExprElim inwFnNthDl
             
             let isAppend := toIsAppend inwFnDlSoFar
             
@@ -170,8 +170,8 @@ namespace Pair
                       (insPair
                         insBound
                         insZero)
-                      (insCall
-                        (insCall
+                      (insCallExpr
+                        (insCallExpr
                           (insDefListToSet {
                             isDef := isDefToSet.isDef.right
                             isNat := isDefToSet.isNat.left
