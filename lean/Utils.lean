@@ -211,6 +211,21 @@ def Nat.abs.ltle.rite {a b c: Nat} (ab: a < b) (bc: b ≤ c):
   let lt: c - b < c - a := Nat.ltle.subLt ab bc
   absBC ▸ absAC ▸ lt
 
+def Nat.lt_add_left
+  (eq: a + b = c)
+  (lt: 0 < a)
+:
+  b < c
+:=
+  eq ▸ Nat.lt_add_of_pos_left lt
+
+def Nat.lt_add_rite
+  (eq: a + b = c)
+  (lt: 0 < b)
+:
+  a < c
+:=
+  eq ▸ Nat.lt_add_of_pos_right lt
 
 def List.Has (list: List T) (t: T): Prop :=
   ∃ n: Fin list.length, list.get n = t

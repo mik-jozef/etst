@@ -20,13 +20,11 @@ namespace Pair
           isShiftEnc.rec
             (insUnL (insPair insZero insZero) _)
             (fun isShiftExpr isIncRest insIncRest =>
-              let ⟨isExprA, _isExprB⟩ := isShiftExpr.toIsExpr
-              
               insUnR _
                 (insUnDom
-                  (insExprEncoding isExprA)
+                  (insExprEncoding isShiftExpr.isExprA)
                   (insUnDom
-                    (insDefEncoding isIncRest.toIsDef.isDef)
+                    (insDefEncoding isIncRest.isDefA)
                     (insPair
                       (insPair
                         (insFree insBound nat501Neq500)

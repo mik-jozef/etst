@@ -58,9 +58,9 @@ namespace Pair
               (insUnDom
                 (insExprEncoding.binary isBin)
                 (insUnDom
-                  (insExprEncoding isShiftExprA.toIsExpr.isExpr)
+                  (insExprEncoding isShiftExprA.isExprA)
                   (insUnDom
-                    (insExprEncoding isShiftExprB.toIsExpr.isExpr)
+                    (insExprEncoding isShiftExprB.isExprA)
                     (insPair
                       (insPair
                         (insFree
@@ -92,7 +92,7 @@ namespace Pair
             insFinUn
               inList
               (insUnDom
-                (insExprEncoding isShift.toIsExpr.isExpr)
+                (insExprEncoding isShift.isExprA)
                 (insPair
                   (insPair (insNatExpr _ _) insBound)
                   (insPair
@@ -112,7 +112,7 @@ namespace Pair
               (insUnDom
                 (insExprEncoding.quantifier isQ)
                 (insUnDom
-                  (insExprEncoding isShift.toIsExpr.isExpr)
+                  (insExprEncoding isShift.isExprA)
                   (insUnDom
                     (insNatEncoding isNat)
                     (insPair

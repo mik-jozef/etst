@@ -164,4 +164,26 @@ namespace Pair
     le_total := depthDictOrder.leTotal
     
     decidableLE := inferInstance
+  
+  def depthDictOrder.zeroLeAny (a: Pair): zero ≤ a :=
+    match a with
+    | zero => Or.inl rfl
+    | pair _ _ => Or.inr (Lt.NeqDepth (Nat.zero_lt_succ _))
+  
+  def depthDictOrder.nopeLtZero
+    (a: Pair)
+    (aLtZero: a < zero)
+  :
+    P
+  :=
+    False.elim
+      (match a with
+      | zero =>
+        match aLtZero with
+        | Lt.EqDepth _ lt => lt
+        | Lt.NeqDepth depthLt => Nat.lt_irrefl _ depthLt
+      | pair _ _ =>
+        match aLtZero with
+        | Lt.EqDepth _ lt => lt
+        | Lt.NeqDepth depthLt => Nat.not_lt_zero _ depthLt)
 end Pair

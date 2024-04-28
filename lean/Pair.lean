@@ -6,7 +6,25 @@ inductive Pair where
 | zero: Pair -- Zero is considered an improper pair.
 | pair (a b: Pair): Pair
 
--- def Pair.Expr := _root_.Expr pairSignature
+def decideEq: (a b: Pair) → Decidable (a = b)
+| Pair.zero, Pair.zero => isTrue rfl
+| Pair.zero, Pair.pair _ _ => isFalse (fun nope => Pair.noConfusion nope)
+| Pair.pair _ _, Pair.zero => isFalse (fun nope => Pair.noConfusion nope)
+| Pair.pair aA aB, Pair.pair bA bB =>
+  let eqA := decideEq aA bA
+  let eqB := decideEq aB bB
+  
+  match eqA, eqB with
+  | isTrue aEq, isTrue bEq => isTrue (congr (congr rfl aEq) bEq)
+  | isFalse aNeq, _ =>
+    isFalse
+      (fun nope => (Pair.noConfusion nope fun aEq _ => aNeq aEq))
+  | _, isFalse bNeq =>
+    isFalse
+      (fun nope => (Pair.noConfusion nope fun _ bEq => bNeq bEq))
+
+instance Pair.decidableEq: DecidableEq Pair := decideEq
+      
 
 namespace Pair
   def fromNat: Nat → Pair
@@ -16,6 +34,27 @@ namespace Pair
   def depth: Pair → Nat
   | zero => 0
   | pair a b => Nat.succ (max a.depth b.depth)
+  
+  
+  def fromNat.injEq
+    (eq: fromNat n = fromNat m)
+  :
+    n = m
+  :=
+    match n, m with
+    | Nat.zero, Nat.zero => rfl
+    | Nat.zero, Nat.succ _ => Pair.noConfusion eq
+    | Nat.succ _, Nat.zero => Pair.noConfusion eq
+    | Nat.succ _nPred, Nat.succ _mPred =>
+      let eqFromPred :=
+        Pair.noConfusion eq fun predEq _ => predEq
+      
+      congrArg Nat.succ (fromNat.injEq eqFromPred)
+  
+  def fromNat.injNeq:
+    n ≠ m → fromNat n ≠ fromNat m
+  :=
+    injEq.contra
   
   
   def depthSuccLeL (a b: Pair):
@@ -216,6 +255,22 @@ namespace Pair
   :=
     Nat.succ_lt_succ ab
   
+  def arrayLength.leOfLeTail
+    (ab: tailA.arrayLength ≤ tailB.arrayLength)
+    (headA headB: Pair)
+  :
+    (pair headA tailA).arrayLength ≤ (pair headB tailB).arrayLength
+  :=
+    Nat.succ_le_succ ab
+  
+  def arrayLength.eqOfEqTail
+    (ab: tailA.arrayLength = tailB.arrayLength)
+    (headA headB: Pair)
+  :
+    (pair headA tailA).arrayLength = (pair headB tailB).arrayLength
+  :=
+    by unfold arrayLength; exact congr rfl ab
+  
   
   def arrayAt (p: Pair) (n: Nat): Option Pair :=
     match p, n with
@@ -243,4 +298,59 @@ namespace Pair
     
     (depth.eqL zeroLe) ▸ eqAt
   
+  def arrayAt.nopeNoneOfWithinBounds
+    {arr: Pair}
+    (withinBounds: n < arr.arrayLength)
+    (eqNone: arr.arrayAt n = none)
+  :
+    P
+  :=
+    match arr, n with
+    | zero, _ => False.elim (Nat.not_lt_zero _ withinBounds)
+    | pair _ tail, Nat.succ nPred =>
+      let nPredWithinBounds:
+        nPred < tail.arrayLength
+      :=
+        Nat.lt_of_succ_lt_succ withinBounds
+      
+      nopeNoneOfWithinBounds nPredWithinBounds eqNone
+  
+  
+  def arrayLast (head tail: Pair): Pair :=
+    match tail with
+    | zero => head
+    | pair tailHead tailTail => tailHead.arrayLast tailTail
+  
+  def arrayUpToLast (head tail: Pair): Pair :=
+    match tail with
+    | zero => zero
+    | pair tailHead tailTail =>
+      pair head (tailHead.arrayUpToLast tailTail)
+  
+  def arrayUpToLast.lengthEq
+    (head tail: Pair)
+  :
+    (head.arrayUpToLast tail).arrayLength = tail.arrayLength
+  :=
+    match tail with
+    | zero => rfl
+    | pair tailHead tailTail =>
+      let ih := lengthEq tailHead tailTail
+      
+      arrayLength.eqOfEqTail
+        ih head (tailHead.arrayUpToLast tailTail)
+  
+  def arrayUpToLast.lengthLt
+    (head tail: Pair)
+  :
+    (head.arrayUpToLast tail).arrayLength
+      <
+    (pair head tail).arrayLength
+  :=
+    match tail with
+    | zero => Nat.zero_lt_succ _
+    | pair tailHead tailTail =>
+      let ih := lengthLt tailHead tailTail
+      
+      arrayLength.ltOfLtTail ih head (tailHead.arrayUpToLast tailTail)
 end Pair
