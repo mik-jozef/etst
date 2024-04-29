@@ -17,8 +17,8 @@ namespace Pair
     open uniDefList
     
     
-    def Ins := InsWfm pairSalgebra uniDefList.defList
-    def Inw := InwWfm pairSalgebra uniDefList.defList
+    def Ins := InsWfm pairSalgebra uniDefList.defList.toDefList
+    def Inw := InwWfm pairSalgebra uniDefList.defList.toDefList
     
     
     def nat501Neq500: 501 ≠ 500 := by decide

@@ -693,7 +693,8 @@ def DefList.IsFinBounded (gd: Nat → Expr sig): Prop :=
 
 structure DefList (sig: Signature) where
   getDef: Nat → Expr sig
-  
+
+structure FinBoundedDL (sig: Signature) extends DefList sig where
   isFinBounded: DefList.IsFinBounded getDef
 
 -- Interpretation on definition lists is defined pointwise.

@@ -702,7 +702,7 @@ namespace Pair
       35
     
     def defList:
-      DefList pairSignature
+      FinBoundedDL pairSignature
     := {
       getDef := defList.getDef
       

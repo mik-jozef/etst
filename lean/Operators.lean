@@ -634,7 +634,7 @@ def Salgebra.IsDefinable
   Prop
 :=
   ∃
-    (dl: DefList sig)
+    (dl: FinBoundedDL sig)
     (x: Nat)
   ,
     set = dl.wellFoundedModel salg x

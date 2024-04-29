@@ -133,13 +133,18 @@ def Nat.leLtAntisymm {a b: Nat} (ab: a ≤ b) (ba: b < a): P :=
     (fun ab => Nat.ltAntisymm ab ba)
 
 
-def Nat.isTotal (a b: Nat): a < b ∨ b < a ∨ a = b :=
+inductive Nat.IsTotal (a b: Nat): Prop where
+| IsLt: a < b → IsTotal a b
+| IsGt: b < a → IsTotal a b
+| IsEq: a = b → IsTotal a b
+
+def Nat.isTotal (a b: Nat): IsTotal a b :=
   (Nat.lt_or_ge a b).elim
-    (fun lt => Or.inl lt)
-    (fun ge => Or.inr
+    (fun lt => IsTotal.IsLt lt)
+    (fun ge =>
       ((Nat.eq_or_lt_of_le ge).symm.elim
-        (fun x => Or.inl x)
-        (fun x => Or.inr x.symm)))
+        (fun x => IsTotal.IsGt x)
+        (fun x => IsTotal.IsEq x.symm)))
 
 
 def Nat.abs (a b: Nat) := Nat.max (a - b) (b - a)
@@ -171,11 +176,10 @@ def Nat.abs.eq.leBA {a b: Nat} (ba: b ≤ a): Nat.abs a b = a - b :=
     (fun lt => Nat.abs.eq.ltBA lt)
 
 def Nat.abs.symm (a b: Nat): Nat.abs a b = Nat.abs b a :=
-  (a.isTotal b).elim
+  (a.isTotal b).rec
     (fun lt => (Nat.abs.eq.ltAB lt).trans (Nat.abs.eq.ltBA lt).symm)
-      (fun gtOrEq => gtOrEq.elim
-        (fun gt => (Nat.abs.eq.ltBA gt).trans (Nat.abs.eq.ltAB gt).symm)
-        (fun eq => eq ▸ rfl))
+    (fun gt => (Nat.abs.eq.ltBA gt).trans (Nat.abs.eq.ltAB gt).symm)
+    (fun eq => eq ▸ rfl)
 
 
 def Nat.ltle.subLt {a b c: Nat} (ab: a < b) (bc: b ≤ c): c - b < c - a :=
