@@ -1198,6 +1198,7 @@ namespace Pair
         LengthMore isDef.left (fn isDef.right)
     
     
+    -- TODO this is wrong
     inductive IsAppendABC: Pair → Pair → Pair → Prop
     | Base: IsDefEncoding dl → IsAppendABC zero dl dl
     | Step:
@@ -1326,6 +1327,34 @@ namespace Pair
     
     termination_by IsAppendABC.isUnique a b => dl0.arrayLength
     
+    def IsAppendABC.preservesInitial
+      (isAppend: IsAppendABC a b c)
+      (isAt: a.arrayAt i = some expr)
+    :
+      c.arrayAt i = some expr
+    :=
+      match isAppend with
+      | Base isDefB => Option.noConfusion isAt
+      | @Step _ aUtl aL _ bShifted _
+          isUpToLast isLast isShift isAppendPrev
+      =>
+        match a, h: aUtl.arrayAt i with
+        | pair aHead aTail, none =>
+          let aUtlEq: aUtl = arrayUpToLast aHead aTail :=
+            isUpToLast.isUnique (IsUpToLastPair.fn isUpToLast.isDefA)
+          
+          let lengthEq :=
+            arrayUpToLast.lengthEqOfNone isAt (aUtlEq ▸ h)
+          
+          let arrayLastEq := arrayLast.eqOfEqAt isAt lengthEq
+          let isLastEqArrayLast: aL = arrayLast aHead aTail :=
+            isLast.isUnique (IsLastExprPair.fn isLast.isDefA)
+          let isLastEq := isLastEqArrayLast.trans arrayLastEq
+          
+          sorry
+        | _, some exprU =>
+          sorry
+    
     
     inductive IsEnumUpToPair: Pair → Pair → Prop
     | Base: IsEnumUpToPair zero zero
@@ -1363,7 +1392,6 @@ namespace Pair
     :
       a = b
     :=
-      -- What's your problem, Lean? What universes?
       match isEnumUpToA, isEnumUpToB with
       | Base, Base => rfl
       | Step isEnumUpToPrevA isNthA isAppendA,
@@ -1483,6 +1511,103 @@ namespace Pair
     :=
       exNthDef.loop n 1 Nat.one_ne_zero
     
+    def IsEnumUpToPair.preservesPrevious.succ
+      (isEnumUpTo: IsEnumUpToPair (fromNat n) dl)
+      (isSuccEnumUpTo: IsEnumUpToPair (fromNat n.succ) dlSucc)
+      (isAt: dl.arrayAt i = some expr)
+    :
+      dlSucc.arrayAt i = some expr
+    :=
+      match isSuccEnumUpTo with
+      | Step isEnumUpToPrev _ isAppend =>
+        let eqPrev := isEnumUpToPrev.isUnique isEnumUpTo
+        
+        isAppend.preservesInitial (eqPrev ▸ isAt)
+    
+    def IsEnumUpToPair.preservesPrevious.directed
+      (isEnumUpToA: IsEnumUpToPair (fromNat nA) dlA)
+      (isEnumUpToB: IsEnumUpToPair (fromNat nB) dlB)
+      (isAt: dlA.arrayAt i = some expr)
+      (ab: nA < nB)
+    :
+      dlB.arrayAt i = some expr
+    :=
+      match nB with
+      | Nat.zero => False.elim (Nat.not_lt_zero _ ab)
+      | Nat.succ nBPred =>
+        if h: nA = nBPred then
+          succ isEnumUpToA (h ▸ isEnumUpToB) isAt
+        else
+          let ltNBPred: nA < nBPred :=
+            Nat.lt_of_le_of_ne (Nat.le_of_lt_succ ab) h
+          
+          let ⟨_, isUpToPred⟩ := IsEnumUpToPair.nthIteration nBPred
+          let ih := directed isEnumUpToA isUpToPred isAt ltNBPred
+          
+          succ isUpToPred isEnumUpToB ih
+    
+    inductive IsEnumUpToPair.PreservesPrevious
+      (dl: Pair)
+      (i: Nat)
+      (expr: Pair)
+    : Prop where
+    | CaseNone (isNone: dl.arrayAt i = none)
+    | CaseSome (isSome: dl.arrayAt i = some expr)
+    
+    def IsEnumUpToPair.preservesPrevious
+      (isEnumUpToA: IsEnumUpToPair (fromNat nA) dlA)
+      (isEnumUpToB: IsEnumUpToPair (fromNat nB) dlB)
+      (isAt: dlA.arrayAt i = some expr)
+    :
+      IsEnumUpToPair.PreservesPrevious dlB i expr
+    :=
+      open PreservesPrevious in
+      (Nat.isTotal nA nB).rec
+        (fun ab =>
+          CaseSome
+            (preservesPrevious.directed
+              isEnumUpToA isEnumUpToB isAt ab))
+        (fun ba =>
+          match h: dlB.arrayAt i with
+          | none => CaseNone h
+          | some exprB =>
+            let isAtB :=
+              (preservesPrevious.directed
+                isEnumUpToB isEnumUpToA h ba)
+            let exprEq: expr = exprB :=
+              Option.some.inj (isAt.symm.trans isAtB)
+            exprEq ▸ CaseSome h)
+        (fun eqN =>
+          let eqDl: dlA = dlB :=
+            isEnumUpToA.isUnique (eqN ▸ isEnumUpToB)
+          
+          CaseSome (eqDl ▸ isAt))
+    
+    def IsEnumUpToPair.isUniqueNthDef
+      (n: Nat)
+      (dlA: DlWithNthDef n)
+      (dlB: DlWithNthDef n)
+    :
+      dlA.dlEncoding.arrayAt n = dlB.dlEncoding.arrayAt n
+    :=
+      let notNoneA: dlA.dlEncoding.arrayAt n ≠ none :=
+        fun eq => arrayAt.nopeNoneOfWithinBounds dlA.hasNthDef eq
+      let notNoneB: dlB.dlEncoding.arrayAt n ≠ none :=
+        fun eq => arrayAt.nopeNoneOfWithinBounds dlB.hasNthDef eq
+      
+      match
+        hA: dlA.dlEncoding.arrayAt n,
+        hB: dlB.dlEncoding.arrayAt n
+      with
+        | none, none => rfl
+        | none, some _ => False.elim (notNoneA (hA ▸ rfl))
+        | some _, none => False.elim (notNoneB (hB ▸ rfl))
+        | some _, some _ =>
+        (dlA.isEnumUpTo.preservesPrevious dlB.isEnumUpTo hA).rec
+          (fun eq => False.elim (notNoneB eq))
+          (fun eq => eq.symm.trans hB)
+    
+    
     structure IsDefListToSetABC (a b c: Pair): Prop where
       isDef: IsDefEncoding a
       isNat: IsNatEncoding b
@@ -1501,6 +1626,38 @@ namespace Pair
       let eqNone: none = zero.arrayAt b.depth := rfl
       
       Option.noConfusion (eqNone.trans is.eq)
+    
+    def IsDefListToSetABC.isUnique
+      (isA: IsDefListToSetABC dl n a)
+      (isB: IsDefListToSetABC dl n b)
+    :
+      a = b
+    :=
+      Option.some.inj (isA.eq.symm.trans isB.eq)
+    
+    inductive TheDefListPair
+      (exprIndex expr: Pair)
+    : Prop where
+    | intro
+      (n dl: Pair)
+      (isEnumUpTo: IsEnumUpToPair n dl)
+      (isAt: IsDefListToSetABC dl exprIndex expr)
+    
+    def TheDefList: Pair → Prop
+    | zero => False
+    | pair exprIndex expr => TheDefListPair exprIndex expr
+    
+    def TheDefListPair.isUnique
+      (isB: TheDefListPair exprIndex exprA)
+      (isA: TheDefListPair exprIndex exprB)
+    :
+      exprA = exprB
+    :=
+      match isA, isB with
+      | TheDefListPair.intro nA dlA isUpToA isAtA,
+        TheDefListPair.intro nB dlB isUpToB isAtB
+      =>
+        sorry
     
   end uniSet3
 end Pair
