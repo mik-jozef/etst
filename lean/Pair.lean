@@ -279,24 +279,19 @@ namespace Pair
     | pair _head tail, Nat.succ pred => tail.arrayAt pred
   
   def arrayAt.tailEq
-    (eqAt: (pair head tail).arrayAt (pair n zero).depth = p)
+    (eqAt: (pair head tail).arrayAt n.succ = p)
   :
-    tail.arrayAt n.depth = p
+    tail.arrayAt n = p
   :=
-    let zeroLe: zero.depth ≤ n.depth := (Nat.zero_le n.depth)
-    
-    show (pair head tail).arrayAt (depth n).succ = p from
-      (depth.eqL zeroLe) ▸ eqAt
+    eqAt
   
   def arrayAt.consEq
-    (eqAt: tail.arrayAt n.depth = p)
+    (eqAt: tail.arrayAt n = p)
     (head: Pair)
   :
-    (pair head tail).arrayAt (pair n zero).depth = p
+    (pair head tail).arrayAt n.succ = p
   :=
-    let zeroLe: zero.depth ≤ n.depth := (Nat.zero_le n.depth)
-    
-    (depth.eqL zeroLe) ▸ eqAt
+    eqAt
   
   def arrayAt.nopeNoneOfWithinBounds
     {arr: Pair}
@@ -315,11 +310,79 @@ namespace Pair
       
       nopeNoneOfWithinBounds nPredWithinBounds eqNone
   
+  def arrayAt.lengthLeOfNone
+    {arr: Pair}
+    (eqNone: arr.arrayAt n = none)
+  :
+    arr.arrayLength ≤ n
+  :=
+    match arr, n with
+    | zero, _ => Nat.zero_le _
+    | pair _ _, Nat.zero => Option.noConfusion eqNone
+    | pair _ _, Nat.succ _ =>
+      let nPredLeTail :=
+        arrayAt.lengthLeOfNone (arrayAt.tailEq eqNone)
+      
+      Nat.succ_le_succ nPredLeTail
+  
+  def arrayAt.lengthGtOfSome
+    {arr: Pair}
+    (eqSome: arr.arrayAt n = some p)
+  :
+    n < arr.arrayLength
+  :=
+    match arr, n with
+    | zero, _ => Option.noConfusion eqSome
+    | pair _ _, Nat.zero => Nat.zero_lt_succ _
+    | pair _ _, Nat.succ _ =>
+      let nPredLtTail :=
+        arrayAt.lengthGtOfSome (arrayAt.tailEq eqSome)
+      
+      Nat.succ_lt_succ nPredLtTail
+  
   
   def arrayLast (head tail: Pair): Pair :=
     match tail with
     | zero => head
     | pair tailHead tailTail => tailHead.arrayLast tailTail
+  
+  def arrayLast.eqLastOfTail
+    (eq: arrayLast head (pair tailHead tailTail) = p)
+  :
+    tailHead.arrayLast tailTail = p
+  :=
+    eq
+  
+  def arrayLast.eqLastOfCons
+    (eq: arrayLast tailHead tailTail = p)
+    (head: Pair)
+  :
+    head.arrayLast (pair tailHead tailTail) = p
+  :=
+    eq
+  
+  def arrayLast.eqOfEqAt
+    (eqAt: (pair head tail).arrayAt n = some p)
+    (eqLength: (pair head tail).arrayLength = n.succ)
+  :
+    head.arrayLast tail = p
+  :=
+    match tail, n with
+    | zero, Nat.zero => Option.some.inj eqAt
+    | zero, Nat.succ _ => Nat.noConfusion eqLength Nat.noConfusion
+    | pair _tailHead _tailTail, Nat.zero =>
+      Nat.noConfusion eqLength Nat.noConfusion
+    | pair tailHead tailTail, Nat.succ _nPred =>
+      let eqTailLength :=
+        eqLength.symm.trans
+          (arrayLength.eqSuccTail head (pair tailHead tailTail))
+      
+      let ih := arrayLast.eqOfEqAt
+        (arrayAt.tailEq eqAt)
+        (Nat.noConfusion eqTailLength Eq.symm)
+      
+      eqLastOfCons ih head
+  
   
   def arrayUpToLast (head tail: Pair): Pair :=
     match tail with
@@ -327,7 +390,7 @@ namespace Pair
     | pair tailHead tailTail =>
       pair head (tailHead.arrayUpToLast tailTail)
   
-  def arrayUpToLast.lengthEq
+  def arrayUpToLast.lengthEqTail
     (head tail: Pair)
   :
     (head.arrayUpToLast tail).arrayLength = tail.arrayLength
@@ -335,10 +398,20 @@ namespace Pair
     match tail with
     | zero => rfl
     | pair tailHead tailTail =>
-      let ih := lengthEq tailHead tailTail
+      let ih := lengthEqTail tailHead tailTail
       
       arrayLength.eqOfEqTail
         ih head (tailHead.arrayUpToLast tailTail)
+  
+  def arrayUpToLast.succLengthEq
+    (head tail: Pair)
+  :
+    (pair head tail).arrayLength
+      =
+    Nat.succ (head.arrayUpToLast tail).arrayLength
+  :=
+    (lengthEqTail head tail) ▸
+    arrayLength.eqSuccTail head tail
   
   def arrayUpToLast.lengthLt
     (head tail: Pair)
@@ -353,4 +426,19 @@ namespace Pair
       let ih := lengthLt tailHead tailTail
       
       arrayLength.ltOfLtTail ih head (tailHead.arrayUpToLast tailTail)
+  
+  def arrayUpToLast.lengthEqOfNone
+    (eqSome: (pair head tail).arrayAt n = some p)
+    (eqNone: (head.arrayUpToLast tail).arrayAt n = none)
+  :
+    (pair head tail).arrayLength = n.succ
+  :=
+    let lengthPredLeN :=
+      (succLengthEq head tail).symm ▸
+      Nat.succ_le_succ (arrayAt.lengthLeOfNone eqNone)
+    
+    let nLtLength := arrayAt.lengthGtOfSome eqSome
+    
+    (Nat.eq_of_lt_of_le_succ nLtLength lengthPredLeN).symm
+  
 end Pair

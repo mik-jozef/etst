@@ -231,6 +231,18 @@ def Nat.lt_add_rite
 :=
   eq ▸ Nat.lt_add_of_pos_right lt
 
+def Nat.eq_of_lt_of_le_succ
+  {a b: Nat}
+  (lt: a < b)
+  (le: b ≤ a.succ)
+:
+  a.succ = b
+:=
+  (le_or_eq_of_le_succ le).elim
+    (fun ba => Nat.leLtAntisymm ba lt)
+    Eq.symm
+
+
 def List.Has (list: List T) (t: T): Prop :=
   ∃ n: Fin list.length, list.get n = t
 

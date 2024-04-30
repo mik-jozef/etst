@@ -35,7 +35,8 @@ namespace Pair
       
       let ⟨dlSliceEnd, gtBounds⟩ := finBounds.boundsFinite x
       
-      let dlSliceEncoding := defListToEncoding dl 0 dlSliceEnd
+      let dlSliceEncoding :=
+        defListToEncoding dl.toDefList 0 dlSliceEnd
       
       sorry
   end uniSet3
