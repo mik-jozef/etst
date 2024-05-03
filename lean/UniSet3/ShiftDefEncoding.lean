@@ -1,8 +1,12 @@
-import UniSet3.ShiftExprEncoding
+import UniSet3.IncrVarsExpr
 import UniSet3.DefEncoding
 
 
 namespace Pair
+  
+  protected def depthA: Pair → Nat
+  | zero => 0
+  | pair a _ => a.depth
   
   namespace uniSet3
     open Expr
@@ -10,8 +14,8 @@ namespace Pair
     open uniDefList
     
     
-    def insIncrementExprs (isShiftEnc: IsIncrementExprs p):
-      Ins shiftDefEncoding.incrementExprs p
+    def insIncrVarsDefEncoding (isShiftEnc: IsIncrVarsDefEncoding p):
+      Ins incrVarsDefEncoding p
     :=
       insWfmDef.toInsWfm
         (match p with
@@ -31,7 +35,7 @@ namespace Pair
                         insBound)
                       (insPair
                         (insCallExpr
-                          (insShiftExprEncoding isShiftExpr)
+                          (insIncrVarsExpr isShiftExpr)
                           (insFree
                             (insFree insBound nat501Neq500)
                             nat502Neq500))
@@ -39,10 +43,10 @@ namespace Pair
                           (insWfmDef.toInsWfm insIncRest)
                           (insFree insBound nat502Neq501))))))))
     
-    def Inw.toIsIncrementExprs (w: Inw shiftDefEncoding.incrementExprs p):
-      IsIncrementExprs p
+    def Inw.toIsIncrVarsDefEncoding (w: Inw incrVarsDefEncoding p):
+      IsIncrVarsDefEncoding p
     :=
-      open IsIncrementExprsPair in
+      open IsIncrVarsDefEncodingPair in
       (inwUnElim (inwWfm.toInwWfmDef w)).elim
         (fun inw =>
           match p with
@@ -90,9 +94,9 @@ namespace Pair
             (eqAA.trans eqExpr.symm) ▸
             (eqAB.trans eqDl.symm) ▸
             NonemptyDefList
-              (Inw.toIsShiftExprEncoding inwFnExpr)
-              (Inw.toIsIncrementExprs (inwFnDl)))
-    termination_by Inw.toIsIncrementExprs w => p.arrayLength
+              (Inw.toIsIncrVarsExpr inwFnExpr)
+              (Inw.toIsIncrVarsDefEncoding (inwFnDl)))
+    termination_by Inw.toIsIncrVarsDefEncoding w => p.arrayLength
     
     
     def insShiftDefEncoding (isShiftDef: IsShiftDefEncoding p):
@@ -101,58 +105,118 @@ namespace Pair
       match p with
       | zero => isShiftDef.elim
       | pair _a zero => isShiftDef.elim
-      | pair _a (pair _b zero) => isShiftDef.elim
-      | pair _a (pair _b (pair _cA _cB)) =>
+      | pair a (pair b c) =>
         insWfmDef.toInsWfm
-          (insUnDom
-            (insExprEncoding isShiftDef.isExprA)
-            (insUnDom
-              (insDefEncoding isShiftDef.isDefB)
-              (insPair
-                (insFree insBound nat501Neq500)
+          (match isShiftDef with
+          | IsShiftDefEncodingABC.ZeroShift isDefB =>
+            insUnL
+              (insUnDom
+                (insFree
+                  (insDefEncoding isDefB)
+                  nat500NeqDefEncoding)
                 (insPair
-                  insBound
+                  insZero
                   (insPair
-                    (insFree (isShiftDef.eqA ▸ insBound) nat501Neq500)
-                    (insCallExpr
-                      (insIncrementExprs isShiftDef.isIncrementedB)
-                      (insFree insBound nat502Neq501)))))))
+                    insBound
+                    insBound)))
+              _
+          | IsShiftDefEncodingABC.SuccShift isShiftPrev isInc =>
+            insUnR _
+              (insUnDom
+                (insFree
+                  (insNatEncoding
+                    isShiftPrev.isNatA)
+                  nat500NeqNat)
+                (insUnDom
+                  (insFree
+                    (insFree
+                      (insDefEncoding
+                        isShiftDef.isDefB)
+                      nat500NeqDefEncoding)
+                    nat501NeqDefEncoding)
+                  (insPair
+                    (insPair
+                      (insFree
+                        insBound
+                        nat501Neq500)
+                      insZero)
+                    (insPair
+                      insBound
+                      (insCallExpr
+                        (insIncrVarsDefEncoding isInc)
+                        (insCallExpr
+                          (insCallExpr
+                            (insShiftDefEncoding isShiftPrev)
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    insBound
+                                    nat501Neq500)
+                                  nat502Neq500)
+                                nat503Neq500)
+                              nat504Neq500))
+                          (insFree
+                            (insFree
+                              insBound
+                              nat502Neq501)
+                            nat503Neq501))))))))
+    termination_by insShiftDefEncoding w => p.depthA
+    decreasing_by exact depthLtL _ zero
     
     def Inw.toIsShiftDefEncoding (inw: Inw shiftDefEncoding p):
       IsShiftDefEncoding p
     :=
-      let ⟨_expr, inwDomainExpr, inwBody⟩ :=
-        inwUnDomElim (inwWfm.toInwWfmDef inw)
-      let ⟨_dl, inwDomainDl, inwBody⟩ := inwUnDomElim inwBody
-      
-      match p with
-      | zero => inwPairElim.nope inwBody
-      | pair _a zero => inwPairElim.nope (inwPairElim inwBody).inwR
-      | pair _a (pair _bA zero) =>
-        inwPairElim.nope (inwPairElim (inwPairElim inwBody).inwR).inwR
-      | pair _a (pair _b (pair _cA _cB)) =>
-        let ⟨inw500A, inw⟩ := inwPairElim inwBody
-        let ⟨inw501, inw⟩ := inwPairElim inw
-        let ⟨inw501CA, inw⟩ := inwPairElim inw
-        
-        let eqA :=
-          inwBoundElim (inwFreeElim inw500A nat501Neq500)
-        
-        let eqDl := inwBoundElim inw501
-        
-        let eqCA :=
-          inwBoundElim (inwFreeElim inw501CA nat501Neq500)
-        
-        let ⟨_dlAlias, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inw
-        
-        let eqDlAlias := inwBoundElim (inwFreeElim inwArg nat502Neq501)
-        
-        {
-          isExprA := eqA ▸ Inw.toIsExprEncoding inwDomainExpr
-          isDefB := eqDl ▸ Inw.toIsDefEncoding inwDomainDl
-          eqA := eqA.trans eqCA.symm
-          isIncrementedB := eqDl ▸ eqDlAlias ▸ Inw.toIsIncrementExprs inwFn
-        }
-    
+      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+        (fun inw =>
+          let ⟨dl, ⟨inwDomain, inw⟩⟩ := inwUnDomElim inw
+          let isDefDl := Inw.toIsDefEncoding inwDomain
+          
+          match p with
+          | zero => inwPairElim.nope inw
+          | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
+          | pair a (pair b c) =>
+            let ⟨inwA, inw⟩ := inwPairElim inw
+            let ⟨inwB, inwC⟩ := inwPairElim inw
+            
+            inwZeroElim inwA ▸
+            inwBoundElim inwB ▸
+            (inwBoundElim inwC).symm ▸
+            IsShiftDefEncodingABC.ZeroShift isDefDl)
+        (fun inw =>
+          let ⟨n, ⟨inwDomainN, inw⟩⟩ := inwUnDomElim inw
+          let ⟨dl, ⟨inwDomainDl, inw⟩⟩ := inwUnDomElim inw
+          
+          match p with
+          | zero => inwPairElim.nope inw
+          | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
+          | pair zero _ => inwPairElim.nope (inwPairElim inw).inwL
+          | pair (pair aA aB) (pair b c) =>
+            let ⟨inwA, inw⟩ := inwPairElim inw
+            let ⟨inwAA, inwAB⟩ := inwPairElim inwA
+            let ⟨inw501, inwCallOuter⟩ := inwPairElim inw
+            
+            let eqAA := inwBoundElim (inwFreeElim inwAA nat501Neq500)
+            let eqAB := inwZeroElim inwAB
+            let eqDl := inwBoundElim inw501
+            
+            let ⟨argOuter, ⟨inwFnOuter, inwArgOuter⟩⟩ :=
+              inwCallExprElim inwCallOuter
+            
+            let inwCallMiddle :=
+              inwCallElimBound inwArgOuter rfl nat503Neq501
+            
+            let inw :=
+              inwCallElimBound inwCallMiddle rfl nat504Neq500
+            
+            have := eqAA ▸ depthLtL aA aB
+            
+            eqAA ▸
+            eqAB ▸
+            eqDl.symm ▸
+            IsShiftDefEncodingABC.SuccShift
+              (toIsShiftDefEncoding inw)
+              (Inw.toIsIncrVarsDefEncoding inwFnOuter))
+    termination_by Inw.toIsShiftDefEncoding inw => p.depthA
   end uniSet3
 end Pair

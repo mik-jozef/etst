@@ -4,10 +4,6 @@ import UniSet3.NthDefList
 
 namespace Pair
   
-  protected def depthA: Pair → Nat
-  | zero => 0
-  | pair a _ => a.depth
-  
   protected def depthBA: Pair → Nat
   | zero => 0
   | pair _ zero => 0
@@ -143,7 +139,9 @@ namespace Pair
             dlTail.arrayAt iPred.depth = some expr
           :=
             arrayAt.tailEq
-              (isDefToSet.isNat.right ▸ isDefToSet.eq)
+              (isDefToSet.isNat.right ▸
+              depth.nat.eqSuccDepthPred isDefToSet.isNat ▸
+              isDefToSet.eq)
           
           isDefToSet.isNat.right ▸
           insUnDom
@@ -286,7 +284,9 @@ namespace Pair
             {
               isDef := And.intro isHeadExpr isTailDef
               isNat := And.intro isNatN rfl
-              eq := arrayAt.consEq (toIsDefListToSet inw).eq _
+              eq :=
+                depth.nat.eqSuccDepthPred (And.intro isNatN rfl) ▸
+                arrayAt.consEq (toIsDefListToSet inw).eq _
             })
     termination_by Inw.toIsDefListToSet inw => p.depthBA
     

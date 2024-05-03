@@ -209,38 +209,210 @@ namespace Pair
     termination_by Inw.toIsUpToLast inw => arrayLengthA p
     
     
-    def insAppendBase (isDef: IsDefEncoding dl):
-      Ins append.base (pair zero (pair dl dl))
-    :=
-      insWfmDef.toInsWfm
-        (insPair
-          insZero
-          (insUnDom
-            (insDefEncoding isDef)
-            (insPair insBound insBound)))
-    
-    def Inw.toIsAppendOfBase (inw: Inw append.base p):
-      IsAppend p
+    def insArrayAppend (isArrayAppend: IsArrayAppend p):
+      Ins arrayAppend p
     :=
       match p with
-      | zero => inwPairElim.nope (inwWfm.toInwWfmDef inw)
-      | pair _a b =>
-        let ⟨inwZ, inwUn⟩ := inwPairElim (inwWfm.toInwWfmDef inw)
-        let ⟨_dl, ⟨inwDomain, inwBody⟩⟩ := inwUnDomElim inwUn
-        
-        match b with
-        | zero => inwPairElim.nope inwBody
-        | pair _bA _bB =>
-          let ⟨inwBA, inwBB⟩ := inwPairElim inwBody
+      | zero => isArrayAppend.elim
+      | pair _ zero => isArrayAppend.elim
+      | pair a (pair b c) =>
+        insWfmDef.toInsWfm
+          (match isArrayAppend with
+          | IsArrayAppendABC.Base isDefB =>
+            insUnL
+              (insPair
+                insZero
+                (insUnDom
+                  (insFree
+                    (insDefEncoding isDefB)
+                    nat500NeqDefEncoding)
+                  (insPair
+                    insBound
+                    insBound)))
+              _
+          | IsArrayAppendABC.Step
+            isUpToLast
+            isLastExpr
+            isAppendPrev
+          =>
+            have := isUpToLast.arrayLengthLt
+            
+            insUnR _
+              (insUnDom
+                (insDefEncoding
+                  isUpToLast.isDefA)
+                (insUnDom
+                  (insDefEncoding
+                    isAppendPrev.isDefB.right)
+                  (insPair
+                    (insFree
+                      insBound
+                      nat501Neq500)
+                    (insPair
+                      insBound
+                      (insCallExpr
+                        (insCallExpr
+                          (insArrayAppend
+                            isAppendPrev)
+                          (insCallExpr
+                            (insUpToLast
+                              isUpToLast)
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    insBound
+                                    nat501Neq500)
+                                  nat502Neq500)
+                                nat503Neq500)
+                              nat504Neq500)))
+                        (insPair
+                          (insCallExpr
+                            (insLastExpr
+                              isLastExpr)
+                            (insFree
+                              (insFree
+                                (insFree
+                                  insBound
+                                  nat501Neq500)
+                                nat502Neq500)
+                              nat503Neq500))
+                          (insFree
+                            insBound
+                            nat502Neq501))))))))
+    termination_by insArrayAppend inw => arrayLengthA p
+    
+    def Inw.toIsArrayAppend (inw: Inw arrayAppend p):
+      IsArrayAppend p
+    :=
+      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+        (fun inw =>
+          match p with
+          | zero => inwPairElim.nope inw
+          | pair a bc =>
+            let ⟨inwZ, inw⟩ := inwPairElim inw
+            let ⟨dl, ⟨inwDomain, inw⟩⟩ := inwUnDomElim inw
+            
+            match bc with
+            | zero => inwPairElim.nope inw
+            | pair b c =>
+              let ⟨inwB, inwC⟩ := inwPairElim inw
+              
+              inwZeroElim inwZ ▸
+              inwBoundElim inwB ▸
+              (inwBoundElim inwC).symm ▸
+              IsArrayAppendABC.Base
+                (Inw.toIsDefEncoding inwDomain))
+        (fun inw =>
+          let ⟨dl500, ⟨_inwDomainA, inw⟩⟩ := inwUnDomElim inw
+          let ⟨dl501, ⟨_inwDomainB, inw⟩⟩ := inwUnDomElim inw
           
-          let eqZ := inwZeroElim inwZ
-          let eqBA := inwBoundElim inwBA
-          let eqBB := inwBoundElim inwBB
+          match p with
+          | zero => inwPairElim.nope inw
+          | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
+          | pair a (pair b c) =>
+            let ⟨inw500, inw⟩ := inwPairElim inw
+            let ⟨inw501, inw⟩ := inwPairElim inw
+            
+            let eq500 := inwBoundElim (inwFreeElim inw500 nat501Neq500)
+            let eq501 := inwBoundElim inw501
+            
+            let ⟨argOuter, ⟨inwFnOuter, inwArgOuter⟩⟩ :=
+              inwCallExprElim inw
+            
+            match argOuter with
+            | zero => inwPairElim.nope inwArgOuter
+            | pair def500Last def501Alias =>
+              let ⟨inwCallLast, inw501Alias⟩ := inwPairElim inwArgOuter
+              
+              let inwLast := inwCallElimBound inwCallLast rfl nat503Neq500
+              let isLast := Inw.toIsLastExpr inwLast
+              let eq501Alias :=
+                inwBoundElim (inwFreeElim inw501Alias nat502Neq501)
+              
+              let ⟨argMidLeft, ⟨inwFnMidLeft, inwArgMidLeft⟩⟩ :=
+                inwCallExprElim inwFnOuter
+              
+              let inwUtl := inwCallElimBound inwArgMidLeft rfl nat504Neq500
+              let isUtl := Inw.toIsUpToLast inwUtl
+              
+              have: argMidLeft.arrayLength < a.arrayLength :=
+                eq500 ▸ isUtl.arrayLengthLt
+              
+              let isAppendPrev :=
+                eq501Alias ▸ toIsArrayAppend inwFnMidLeft
+              
+              eq500 ▸
+              eq501 ▸
+              IsArrayAppendABC.Step isUtl isLast isAppendPrev)
+    termination_by Inw.toIsArrayAppend inw => arrayLengthA p
+    
+    
+    def insArrayLength (isArrayLength: IsArrayLength p):
+      Ins uniDefList.arrayLength p
+    :=
+      match p, isArrayLength with
+      | zero, isArrL => isArrL.elim
+      | pair zero zero, IsArrayLengthPair.Zero =>
+        insWfmDef.toInsWfm
+          (insUnL (insPair insZero insZero) _)
+      | pair _ _, IsArrayLengthPair.Succ isArrLengthPrev head =>
+        insWfmDef.toInsWfm
+          (insUnR _
+            (insArbUn _
+              (insPair
+                (insPair
+                  insAny
+                  insBound)
+                (insPair
+                  (insCallExpr
+                    (insArrayLength
+                      isArrLengthPrev)
+                    (insFree
+                      insBound
+                      nat501Neq500))
+                  insZero))))
+    
+    def Inw.toIsArrayLength (inw: Inw uniDefList.arrayLength p):
+      IsArrayLength p
+    :=
+      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+        (fun inw =>
+          match p with
+          | zero => inwPairElim.nope inw
+          | pair _ _ =>
+            let ⟨inwL, inwR⟩ := inwPairElim inw
+            
+            inwZeroElim inwL ▸
+            (inwZeroElim inwR).symm ▸
+            IsArrayLengthPair.Zero)
+        (fun inw =>
+          let ⟨argTail, inw⟩ := inwArbUnElim inw
           
-          eqZ ▸
-          eqBA ▸
-          eqBB.symm ▸
-          IsAppendABC.Base (toIsDefEncoding inwDomain)
+          match p with
+          | zero => inwPairElim.nope inw
+          | pair zero _ => inwPairElim.nope (inwPairElim inw).inwL
+          | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
+          | pair (pair head tail) (pair nPred z) =>
+            let ⟨inwArr, inwLength⟩ := inwPairElim inw
+            let ⟨_inwHead, inwTail⟩ := inwPairElim inwArr
+            let ⟨inwPred, inwZ⟩ := inwPairElim inwLength
+            
+            let inwArrLengthPred :=
+              (inwBoundElim inwTail).symm ▸
+              inwCallElimBound inwPred rfl nat501Neq500
+            
+            have := arrayLength.ltTail head tail
+            
+            let isArrLengthPrev:
+              -- Lean, why is this not inferred?
+              IsArrayLength (pair tail nPred)
+            :=
+              toIsArrayLength inwArrLengthPred
+            
+            inwZeroElim inwZ ▸
+            IsArrayLengthPair.Succ isArrLengthPrev head)
+    termination_by Inw.toIsArrayLength inw => arrayLengthA p
     
     
     def insAppend (isAppend: IsAppend p):
@@ -248,130 +420,108 @@ namespace Pair
     :=
       match p with
       | zero => isAppend.elim
-      | pair _a zero => isAppend.elim
-      | pair _a (pair _b _c) =>
+      | pair _ zero => isAppend.elim
+      | pair a (pair _b _c) =>
         insWfmDef.toInsWfm
-          (isAppend.rec
-            (fun isDef =>
-              insUnL (insAppendBase isDef) _)
-            (fun
-              isUpTo
-              isLastExpr
-              isShiftDef
-              _isAppend
-              insAppendDef
-            =>
-              insUnR _
-                (insUnDom
-                  (insDefEncoding
-                    isUpTo.isDefA)
-                  (insUnDom
-                    (insDefEncoding
-                      isShiftDef.isDefB)
-                    (insPair
+          (insUnDom
+            (insDefEncoding
+              isAppend.isDefA)
+            (insUnDom
+              (insDefEncoding
+                isAppend.isDefB)
+              (insPair
+                (insFree
+                  insBound
+                  nat501Neq500)
+                (insPair
+                  insBound
+                  (insCallExpr
+                    (insCallExpr
+                      (insArrayAppend isAppend)
                       (insFree
-                        insBound
-                        nat501Neq500)
-                      (insPair
-                        insBound
+                        (insFree
+                          (insFree
+                            insBound
+                            nat501Neq500)
+                          nat502Neq500)
+                        nat503Neq500))
+                    (insCallExpr
+                      (insCallExpr
+                        (insShiftDefEncoding
+                          (IsShiftDefEncodingABC.fn
+                            (fromNat.isNatEncoding _)
+                            isAppend.isDefB))
                         (insCallExpr
-                          (insCallExpr
-                            (insWfmDef.toInsWfm
-                              insAppendDef)
-                            (insCallExpr
-                              (insUpToLast
-                                isUpTo)
-                              (insFree
-                                (insFree
-                                  (insFree
-                                    (insFree
-                                      insBound
-                                      nat501Neq500)
-                                    nat502Neq500)
-                                  nat503Neq500)
-                                nat504Neq500)))
-                          (insCallExpr
-                            (insCallExpr
-                              (insShiftDefEncoding
-                                isShiftDef)
-                              (insCallExpr
-                                (insLastExpr
-                                  isLastExpr)
-                                (insFree
-                                  (insFree
-                                    (insFree
-                                      (insFree
-                                        (insFree
-                                          insBound
-                                          nat501Neq500)
-                                        nat502Neq500)
-                                      nat503Neq500)
-                                    nat504Neq500)
-                                  nat505Neq500)))
+                          (insArrayLength
+                            (IsArrayLength.lengthIslength a))
+                          (insFree
                             (insFree
                               (insFree
-                                insBound
-                                nat502Neq501)
-                              nat503Neq501)))))))))
+                                (insFree
+                                  (insFree
+                                    insBound
+                                    nat501Neq500)
+                                  nat502Neq500)
+                                nat503Neq500)
+                              nat504Neq500)
+                            nat505Neq500)))
+                      (insFree
+                        (insFree
+                          insBound
+                          nat502Neq501)
+                        nat503Neq501)))))))
     
     def Inw.toIsAppend (inw: Inw append p):
       IsAppend p
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
-        toIsAppendOfBase
-        (fun inw =>
-          let ⟨dlA, ⟨_inwDomainDlA, inw⟩⟩ := inwUnDomElim inw
-          let ⟨dlB, ⟨_inwDomainDlB, inw⟩⟩ := inwUnDomElim inw
-          
-          match p with
-          | zero => inwPairElim.nope inw
-          | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
-          | pair a (pair b c) =>
-            let ⟨inw500A, inw⟩ := inwPairElim inw
-            let ⟨inw501B, inw⟩ := inwPairElim inw
-            
-            let eqA := inwBoundElim (inwFreeElim inw500A nat501Neq500)
-            let eqB := inwBoundElim inw501B
-            
-            let ⟨dlShifted, ⟨inwFnDlShifted, inwArgDlShifted⟩⟩ :=
-              inwCallExprElim inw
-            
-            let inwCallDlDl :=
-              inwCallElimBound inwArgDlShifted rfl nat503Neq501
-            
-            let ⟨dlALast, inwFnLast, inwArgLast⟩ :=
-              inwCallExprElim inwCallDlDl
-            
-            let inwLast := inwCallElimBound inwArgLast rfl nat505Neq500
-            
-            let ⟨dlAUpToLast, ⟨inwFnAppend, inwArgAppend⟩⟩ :=
-              inwCallExprElim inwFnDlShifted
-            
-            let inwUpToLast :=
-              inwCallElimBound inwArgAppend rfl nat504Neq500
-            
-            match dlShifted with
-            | zero =>
-              (toIsShiftDefEncoding inwFnLast).elim
-            | pair sA sB =>
-              let isShift := toIsShiftDefEncoding inwFnLast
-              
-              have: dlAUpToLast.arrayLength < a.arrayLength :=
-                eqA ▸ (toIsUpToLast inwUpToLast).arrayLengthLt
-              
-              let isAppendUTL:
-                IsAppendABC dlAUpToLast (pair dlALast sB) c
-              :=
-                isShift.eqA ▸ toIsAppend inwFnAppend
-              
-              eqA ▸
-              eqB ▸
-              IsAppendABC.Step
-                (toIsUpToLast inwUpToLast)
-                (toIsLastExpr inwLast)
-                (isShift.eqA ▸ isShift)
-                isAppendUTL)
-    termination_by Inw.toIsAppend inw => arrayLengthA p
+      let inw := inwWfm.toInwWfmDef inw
+      let ⟨dlA, ⟨_inwDomainA, inw⟩⟩ := inwUnDomElim inw
+      let ⟨_dlB, ⟨_inwDomainB, inw⟩⟩ := inwUnDomElim inw
+      
+      match p with
+      | zero => inwPairElim.nope inw
+      | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
+      | pair _a (pair _b c) =>
+        let ⟨inwA, inw⟩ := inwPairElim inw
+        let ⟨inwB, inw⟩ := inwPairElim inw
+        
+        let eqA := inwBoundElim (inwFreeElim inwA nat501Neq500)
+        let eqB := inwBoundElim inwB
+        
+        let ⟨argOuter, ⟨inwFnOuter, inwArgOuter⟩⟩ :=
+          inwCallExprElim inw
+        
+        let ⟨_aliasDlA, ⟨inwFnMidLeft, inwArgMidLeft⟩⟩ :=
+          inwCallExprElim inwFnOuter
+        
+        let aliasDlAEq :=
+          inwBoundElim
+            (inwFreeElim
+              (inwFreeElim
+                (inwFreeElim
+                  inwArgMidLeft
+                  nat503Neq500)
+                nat502Neq500)
+              nat501Neq500)
+        
+        let inwShiftCall :=
+          inwCallElimBound inwArgOuter rfl nat503Neq501
+        
+        let ⟨_n, ⟨inwShift, inwArrayLengthCall⟩⟩ :=
+          inwCallExprElim inwShiftCall
+        
+        let inwArrayLength :=
+          inwCallElimBound inwArrayLengthCall rfl nat505Neq500
+        
+        let isShift := toIsShiftDefEncoding inwShift
+        let isLength := toIsArrayLength inwArrayLength
+        
+        let isAppend: IsArrayAppendABC dlA argOuter c :=
+          aliasDlAEq ▸ toIsArrayAppend inwFnMidLeft
+        
+        eqA ▸
+        eqB ▸
+        IsAppendABC.fromArrayAppend isAppend isShift isLength
     
   end uniSet3
 end Pair

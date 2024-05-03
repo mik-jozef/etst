@@ -14,19 +14,19 @@ namespace Pair
     open uniDefList
     
     
-    def insShiftExprEncoding (isShiftEnc: IsShiftExprEncoding p):
-      Ins shiftExprEncoding p
+    def insIncrVarsExpr (isShiftEnc: IsIncrVarsExpr p):
+      Ins incrVarsExpr p
     :=
       match p with
       | zero => isShiftEnc.elim
       | pair a b =>
         insWfmDef.toInsWfm
           (match isShiftEnc with
-          | IsShiftExprPair.IsVar isNatX =>
+          | IsIncrVarsExprPair.IsVar isNatX =>
             let inList:
-              Expr.var shiftExprEncoding.var ∈ shiftExprEncoding.exprList
+              Expr.var incrVarsExpr.var ∈ incrVarsExpr.exprList
             :=
-              by unfold shiftExprEncoding.exprList; simp
+              by unfold incrVarsExpr.exprList; simp
             
             insFinUn
               inList
@@ -37,21 +37,21 @@ namespace Pair
                     (insPair insZero insBound)
                     (insPair insZero (insPair insBound insZero)))))
           
-          | IsShiftExprPair.IsZero =>
+          | IsIncrVarsExprPair.IsZero =>
             let inList:
-              shiftExprEncoding.shiftZero ∈ shiftExprEncoding.exprList
+              incrVarsExpr.opZero ∈ incrVarsExpr.exprList
             :=
-              by unfold shiftExprEncoding.exprList; simp
+              by unfold incrVarsExpr.exprList; simp
             
             insFinUn
               inList
               (insPair insExprEncoding.zero insExprEncoding.zero)
           
-          | IsShiftExprPair.IsBin isBin isShiftExprA isShiftExprB =>
+          | IsIncrVarsExprPair.IsBin isBin isShiftExprA isShiftExprB =>
             let inList:
-              shiftExprEncoding.shiftBin ∈ shiftExprEncoding.exprList
+              incrVarsExpr.binExpr ∈ incrVarsExpr.exprList
             :=
-              by unfold shiftExprEncoding.exprList; simp
+              by unfold incrVarsExpr.exprList; simp
             
             insFinUn
               inList
@@ -75,19 +75,19 @@ namespace Pair
                           nat502Neq500)
                         (insPair
                           (insCallExpr
-                            (insShiftExprEncoding isShiftExprA)
+                            (insIncrVarsExpr isShiftExprA)
                             (insFree
                               (insFree insBound nat502Neq501)
                               nat503Neq501))
                           (insCallExpr
-                            (insShiftExprEncoding isShiftExprB)
+                            (insIncrVarsExpr isShiftExprB)
                             (insFree insBound nat503Neq502))))))))
           
-          | IsShiftExprPair.IsCpl isShift =>
+          | IsIncrVarsExprPair.IsCpl isShift =>
             let inList:
-              shiftExprEncoding.shiftCpl ∈ shiftExprEncoding.exprList
+              incrVarsExpr.cplExpr ∈ incrVarsExpr.exprList
             :=
-              by unfold shiftExprEncoding.exprList; simp
+              by unfold incrVarsExpr.exprList; simp
             
             insFinUn
               inList
@@ -98,14 +98,14 @@ namespace Pair
                   (insPair
                     (insNatExpr _ _)
                     (insCallExpr
-                      (insShiftExprEncoding isShift)
+                      (insIncrVarsExpr isShift)
                       (insFree insBound nat503Neq501)))))
           
-          | IsShiftExprPair.IsQuantifier isQ isNat isShift =>
+          | IsIncrVarsExprPair.IsQuantifier isQ isNat isShift =>
             let inList:
-              shiftExprEncoding.shiftQuantifier ∈ shiftExprEncoding.exprList
+              incrVarsExpr.quantifierExpr ∈ incrVarsExpr.exprList
             :=
-              by unfold shiftExprEncoding.exprList; simp
+              by unfold incrVarsExpr.exprList; simp
             
             insFinUn
               inList
@@ -132,13 +132,13 @@ namespace Pair
                             insBound
                             insZero)
                           (insCallExpr
-                            (insShiftExprEncoding isShift)
+                            (insIncrVarsExpr isShift)
                             (insFree
                               (insFree insBound nat502Neq501)
                               nat503Neq501)))))))))
     
-    def Inw.toIsShiftExprEncoding (w: Inw shiftExprEncoding p):
-      IsShiftExprEncoding p
+    def Inw.toIsIncrVarsExpr (w: Inw incrVarsExpr p):
+      IsIncrVarsExpr p
     :=
       inwFinUnElim (inwWfm.toInwWfmDef w)
         (fun inw =>
@@ -175,7 +175,7 @@ namespace Pair
             eqXA ▸
             eqXBA.symm ▸
             eqXBB.symm ▸
-            IsShiftExprPair.IsVar (Inw.toIsNatEncoding inwDomain))
+            IsIncrVarsExprPair.IsVar (Inw.toIsNatEncoding inwDomain))
         (fun inw =>
           match p with
           | Pair.zero => inwPairElim.nope inw
@@ -184,7 +184,7 @@ namespace Pair
             
             Inw.toIsExprEncodinng.zero inwL ▸
             Inw.toIsExprEncodinng.zero inwR ▸
-            IsShiftExprPair.IsZero)
+            IsIncrVarsExprPair.IsZero)
         (fun inw =>
           let ⟨boundBin, ⟨inwDomain500, inwBody⟩⟩ :=
             inwUnDomElim inw
@@ -248,7 +248,7 @@ namespace Pair
               :=
                 (Pair.depthLtL _ _).trans (Pair.depthLtR _ _)
               
-              let isShiftBA := toIsShiftExprEncoding inwShiftA
+              let isShiftBA := toIsIncrVarsExpr inwShiftA
               
               have:
                 (pair bBBPred bBB).depthB
@@ -257,7 +257,7 @@ namespace Pair
               :=
                 (Pair.depthLtR _ _).trans (Pair.depthLtR _ _)
               
-              let isShiftBB := toIsShiftExprEncoding inwShiftB
+              let isShiftBB := toIsIncrVarsExpr inwShiftB
               
               eqAA ▸
               eqBA.symm ▸
@@ -265,7 +265,7 @@ namespace Pair
               eqBBAPred ▸
               eqABB ▸
               eqBBBPred ▸
-              IsShiftExprPair.IsBin isBinBound isShiftBA isShiftBB)
+              IsIncrVarsExprPair.IsBin isBinBound isShiftBA isShiftBB)
         (fun inw =>
           let ⟨expr, ⟨_inwExpr, inwBody⟩⟩ := inwUnDomElim inw
           
@@ -291,7 +291,7 @@ namespace Pair
             eqAA ▸
             (eqAB.trans eqExpr.symm) ▸
             eqBA ▸
-            IsShiftExprPair.IsCpl (toIsShiftExprEncoding inwFn))
+            IsIncrVarsExprPair.IsCpl (toIsIncrVarsExpr inwFn))
         (fun inw =>
           let ⟨q, ⟨inwQ, inwBody⟩⟩ := inwUnDomElim inw
           let ⟨expr, ⟨_inwExpr, inwBody⟩⟩ := inwUnDomElim inwBody
@@ -352,7 +352,7 @@ namespace Pair
               :=
                 (depthLtR _ _).trans (depthLtR _ _)
               
-              let isShift := toIsShiftExprEncoding inwFn
+              let isShift := toIsIncrVarsExpr inwFn
               
               eqAA ▸
               eqAB.symm ▸
@@ -360,8 +360,8 @@ namespace Pair
               eqBBAA.symm ▸
               eqBBAB ▸
               (eqABB.trans eqExprAlias.symm) ▸
-              IsShiftExprPair.IsQuantifier isQ isNat isShift)
-    termination_by Inw.toIsShiftExprEncoding w => p.depthB
+              IsIncrVarsExprPair.IsQuantifier isQ isNat isShift)
+    termination_by Inw.toIsIncrVarsExpr w => p.depthB
     
   end uniSet3
 end Pair

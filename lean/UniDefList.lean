@@ -1,6 +1,6 @@
 import ExampleWFCs
 import PairFreeVars
-import LeN35
+import LeN36
 import Operators
 import Wfm
 
@@ -258,20 +258,20 @@ namespace Pair
             (succExpr (zthMember 501 500))
             (callExpr 501 nextDef (fstMember 502 500))))
     
-    -- See shiftExprEncoding.
-    def shiftExprEncoding.var: Nat := 19
-    def shiftExprEncoding.var.expr: Expr :=
+    -- See incrVarsExpr.
+    def incrVarsExpr.var: Nat := 19
+    def incrVarsExpr.var.expr: Expr :=
       unionExpr 500 nat
         (pairExpr
           (pairExpr zeroExpr 500)
           (pairExpr zeroExpr (succExpr 500)))
     
-    def shiftExprEncoding: Nat := 20
+    def incrVarsExpr: Nat := 20
     
-    def shiftExprEncoding.shiftZero: Expr :=
+    def incrVarsExpr.opZero: Expr :=
       pairExpr exprEncoding.zero exprEncoding.zero
     
-    def shiftExprEncoding.shiftBin: Expr :=
+    def incrVarsExpr.binExpr: Expr :=
       unionExpr 500 exprEncoding.binary
         (unionExpr 501 exprEncoding
           (unionExpr 502 exprEncoding
@@ -282,17 +282,17 @@ namespace Pair
               (pairExpr
                 500
                 (pairExpr
-                  (callExpr 503 shiftExprEncoding 501)
-                  (callExpr 503 shiftExprEncoding 502))))))
+                  (callExpr 503 incrVarsExpr 501)
+                  (callExpr 503 incrVarsExpr 502))))))
     
-    def shiftExprEncoding.shiftCpl: Expr :=
+    def incrVarsExpr.cplExpr: Expr :=
       unionExpr 501 exprEncoding
         (pairExpr
           (pairExpr (natExpr 5) 501)
           (pairExpr (natExpr 5)
-            (callExpr 503 shiftExprEncoding 501)))
+            (callExpr 503 incrVarsExpr 501)))
     
-    def shiftExprEncoding.shiftQuantifier: Expr :=
+    def incrVarsExpr.quantifierExpr: Expr :=
       unionExpr 500 exprEncoding.quantifier
         (unionExpr 501 exprEncoding
           (unionExpr 502 nat
@@ -304,29 +304,29 @@ namespace Pair
                 500
                 (pairExpr
                   (succExpr 502)
-                  (callExpr 503 shiftExprEncoding 501))))))
+                  (callExpr 503 incrVarsExpr 501))))))
     
     /-
       Contains (eIn, eOut) such that eIn is an encoding
       of an expression and eOut is eIn with variables
       incremented by 1.
     -/
-    def shiftExprEncoding.exprList: List Expr := [
-      shiftExprEncoding.var,
-      shiftZero,
-      shiftBin,
-      shiftCpl,
-      shiftQuantifier,
+    def incrVarsExpr.exprList: List Expr := [
+      incrVarsExpr.var,
+      opZero,
+      binExpr,
+      cplExpr,
+      quantifierExpr,
     ]
     
-    def shiftExprEncoding.expr: Expr := finUnExpr exprList
+    def incrVarsExpr.expr: Expr := finUnExpr exprList
     
     /-
       (dlIn, dlOut) where dlIn equals dlOut except that
       the variables of dlOut are incremented by 1.
     -/
-    def shiftDefEncoding.incrementExprs: Nat := 21
-    def shiftDefEncoding.incrementExprs.expr: Expr :=
+    def incrVarsDefEncoding: Nat := 21
+    def incrVarsDefEncoding.expr: Expr :=
       Expr.un
         (pairExpr zeroExpr zeroExpr)
         (unionExpr 500 exprEncoding
@@ -334,28 +334,29 @@ namespace Pair
             (pairExpr
               (pairExpr 500 501)
               (pairExpr
-                (callExpr 502 shiftExprEncoding 500)
-                (callExpr 502 shiftDefEncoding.incrementExprs 501)))))
+                (callExpr 502 incrVarsExpr 500)
+                (callExpr 502 incrVarsDefEncoding 501)))))
     
     /-
-      (expr, (dlIn, dlOut)) where dlOut = [ expr, ...shift(dlIn) ]
-      and the shift function increments every variable
-      in every expression of dlIn, so that the semantics
-      of the definitions is preserved.
+      (n, (dlIn, dlOut)) where dlOut is dlIn with variables
+      incremented by n.
     -/
     def shiftDefEncoding: Nat := 22
     def shiftDefEncoding.expr: Expr :=
-      unionExpr 500 exprEncoding
-        (unionExpr 501 defEncoding
-          (pairExpr
-            500
+      Expr.un
+        (unionExpr 500 defEncoding
+          (pairExpr zeroExpr (pairExpr 500 500)))
+        (unionExpr 500 nat
+          (unionExpr 501 defEncoding
             (pairExpr
-              501
+              (succExpr 500)
               (pairExpr
-                500
+                501
                 (callExpr 502
-                  shiftDefEncoding.incrementExprs
-                  501)))))
+                  incrVarsDefEncoding
+                  (callExpr 503
+                    (callExpr 504 shiftDefEncoding 500)
+                    501))))))
     
     /-
       (dl, expr), where dl is a definition list of length
@@ -396,23 +397,15 @@ namespace Pair
               (pairExpr 501 (fstMember 502 500)))))
     
     /-
-      ([], (dl, dl)) for dl ∈ defEncoding
+      (dlA, (dlB, dlRes)), where `dlRes = [ ...dlA, ...dlB ]`.
     -/
-    def append.base: Nat := 26
-    def append.base.expr: Expr :=
-      pairExpr
-        zeroExpr
-        (unionExpr 500 defEncoding
-          (pairExpr 500 500))
-    
-    /-
-      (dlA, (dlB, dlRes)), where dlRes = [ ...dlA, ...dlB ],
-      with variables in dlB properly shifted.
-    -/
-    def append: Nat := 27
-    def append.expr: Expr :=
-      Expr.un
-        append.base
+    def arrayAppend: Nat := 26
+    def arrayAppend.expr: Expr :=
+      (Expr.un
+        (pairExpr
+          zeroExpr
+          (unionExpr 500 defEncoding
+            (pairExpr 500 500)))
         (unionExpr 500 defEncoding
           (unionExpr 501 defEncoding
             (pairExpr
@@ -420,12 +413,52 @@ namespace Pair
               (pairExpr
                 501
                 (callExpr 502
-                  (callExpr 503 append (callExpr 504 upToLast 500))
-                  (callExpr 503
-                    (callExpr 504
-                      shiftDefEncoding
-                      (callExpr 505 lastExpr 500))
-                    501))))))
+                  (callExpr 503 arrayAppend (callExpr 504 upToLast 500))
+                  (pairExpr
+                    (callExpr 503 lastExpr 500)
+                    501)))))))
+    
+    /-
+      (arr, n), where arr is an array of length n.
+    -/
+    def arrayLength: Nat := 27
+    def arrayLength.expr: Expr :=
+      Expr.un
+        (pairExpr zeroExpr zeroExpr)
+        (Expr.Un 500
+          (pairExpr
+            (pairExpr anyExpr 500)
+            (succExpr (callExpr 501 arrayLength 500))))
+    
+    /-
+      The append operation on definition lists is a
+      combination of the array append operation and
+      the shift operation on the first (not the zeroth)
+      array. This operation preserves the internal
+      structure of the definition lists.
+      
+        (dlA, (dlB, dlRes)) \,,
+      
+      where
+      
+        dlRes = [ ...dlA, ...shift(dlA.length, dlB) ] \,.
+      
+      append(dlA, dlB) = arrayAppend dlA (shift (length dlA) dlB) \,.
+    -/
+    def append: Nat := 28
+    def append.expr: Expr :=
+      unionExpr 500 defEncoding
+        (unionExpr 501 defEncoding
+          (pairExpr
+            500
+            (pairExpr
+              501
+              (callExpr 502
+                (callExpr 503 arrayAppend 500)
+                (callExpr 503
+                  (callExpr 504 shiftDefEncoding
+                    (callExpr 505 arrayLength 500))
+                  501)))))
     
     /-
       Contains (n, dl), such that dl is a (finite prefix
@@ -439,7 +472,7 @@ namespace Pair
       Every finite prefix of any definition list is
       in some deflist prefix returned by `enumUpTo`.
     -/
-    def enumUpTo: Nat := 28
+    def enumUpTo: Nat := 29
     def enumUpTo.expr: Expr :=
       Expr.un
         (pairExpr zeroExpr zeroExpr)
@@ -455,7 +488,7 @@ namespace Pair
       Contains (dl, (n, e)) such that e is the nth
       expression of dl ∈ defEncoding.
     -/
-    def defListToSet: Nat := 29
+    def defListToSet: Nat := 30
     def defListToSet.expr: Expr :=
       unionExpr 500 exprEncoding
         (unionExpr 501 defEncoding
@@ -473,7 +506,7 @@ namespace Pair
     /-
       Contains all deflists of enumUpTo.
     -/
-    def theDlPrefixes: Nat := 30
+    def theDlPrefixes: Nat := 31
     def theDlPrefixes.expr: Expr :=
       unionExpr 500 nat
         (callExpr 501 enumUpTo 500)
@@ -485,7 +518,7 @@ namespace Pair
       
       Defines definitions of all definable trisets.
     -/
-    def theDefList: Nat := 31
+    def theDefList: Nat := 32
     def theDefList.expr: Expr :=
       unionExpr 500 theDlPrefixes
         (callExpr 501 defListToSet 500)
@@ -493,7 +526,7 @@ namespace Pair
     /-
       ([(n, p), ...], (n, p)).
     -/
-    def getBound.base: Nat := 32
+    def getBound.base: Nat := 33
     def getBound.base.expr: Expr :=
       Expr.Un 500
         (Expr.Un 501
@@ -504,7 +537,7 @@ namespace Pair
     /-
       ((n, p)[], (n_i, p_i)).
     -/
-    def getBound: Nat := 33
+    def getBound: Nat := 34
     def getBound.expr: Expr :=
       Expr.un
         getBound.base
@@ -515,19 +548,19 @@ namespace Pair
               (callExpr 502 getBound 501))))
     
     /-
-      (Hopefully, to be proven: )
+      (TODO Hopefully, to be proven: )
       Contains (expr, bound, s) where expr is an expression,
       bound is an array of var-pair pairs (bound vars),
       and s is the interpretation of the nth definition
       in `theDefList`.
     -/
-    def interpretation: Nat := 34
+    def interpretation: Nat := 35
     /-
       The set of pairs (n, s) such that n is a natural number,
       and for every definable triset of pairs dtp, there exists
       a natural number n such that `callExpr _ theSet n = dtp`
     -/
-    def theSet: Nat := 35
+    def theSet: Nat := 36
     
     def interpretation.expr: Expr :=
       /-
@@ -678,28 +711,29 @@ namespace Pair
     | 16 => defEncodingMinDist2.expr
     | 17 => nextDef.expr
     | 18 => nthDefList.expr
-    | 19 => shiftExprEncoding.var.expr
-    | 20 => shiftExprEncoding.expr
-    | 21 => shiftDefEncoding.incrementExprs.expr
+    | 19 => incrVarsExpr.var.expr
+    | 20 => incrVarsExpr.expr
+    | 21 => incrVarsDefEncoding.expr
     | 22 => shiftDefEncoding.expr
     | 23 => lastExpr.base.expr
     | 24 => lastExpr.expr
     | 25 => upToLast.expr
-    | 26 => append.base.expr
-    | 27 => append.expr
-    | 28 => enumUpTo.expr
-    | 29 => defListToSet.expr
-    | 30 => theDlPrefixes.expr
-    | 31 => theDefList.expr
-    | 32 => getBound.base.expr
-    | 33 => getBound.expr
-    | 34 => interpretation.expr
-    | 35 => theSet.expr
-    | _rest + 36 =>
+    | 26 => arrayAppend.expr
+    | 27 => arrayLength.expr
+    | 28 => append.expr
+    | 29 => enumUpTo.expr
+    | 30 => defListToSet.expr
+    | 31 => theDlPrefixes.expr
+    | 32 => theDefList.expr
+    | 33 => getBound.base.expr
+    | 34 => getBound.expr
+    | 35 => interpretation.expr
+    | 36 => theSet.expr
+    | _rest + 37 =>
       -- This would be nice, but proving `usedNamesInBounds`
       -- below proved to be a pain.
       -- callExpr (rest + 37) theSet (natExpr rest)
-      35
+      36
     
     def defList:
       FinBoundedDL pairSignature
@@ -707,18 +741,18 @@ namespace Pair
       getDef := defList.getDef
       
       isFinBounded := ⟨{
-        bounds := fun _ x => x ≤ 35,
+        bounds := fun _ x => x ≤ 36,
         usedNamesInBounds :=
           fun x usedByX =>
             let prf
               (defIndex: Nat)
               (fv: List Nat)
               (fvEq: (freeVars (defList.getDef defIndex)).val = fv)
-              (allLe: ∀ {x} (_: x ∈ fv), x ≤ 35)
+              (allLe: ∀ {x} (_: x ∈ fv), x ≤ 36)
               (usedByX:
                 (Expr.IsFreeVar (defList.getDef defIndex) Set.empty))
             :
-              usedByX.val ≤ 35
+              usedByX.val ≤ 36
             :=
               let freeVars := freeVars (defList.getDef defIndex)
               let xIn: ↑usedByX ∈ fv := fvEq ▸ freeVars.property usedByX
@@ -739,56 +773,57 @@ namespace Pair
             match x with
             | 0 => prf 0 [ 0 ] rfl (by simp) usedByX
             | 1 => prf 1 [ 0 ] rfl (by simp) usedByX
-            | 2 => prf 2 [ 1, 2 ] rfl (by simp[leN35]) usedByX
+            | 2 => prf 2 [ 1, 2 ] rfl (by simp[leN36]) usedByX
             | 3 => prf 3 [ 0 ] rfl (by simp) usedByX
             | 4 => prf 4 [] rfl (by simp) usedByX
             | 5 => prf 5 [] rfl (by simp) usedByX
             | 6 => prf 6 [] rfl (by simp) usedByX
-            | 7 => prf 7 [ 3, 4, 5, 7, 6, 0 ] rfl (by simp[leN35]) usedByX
-            | 8 => prf 8 [ 7, 8 ] rfl (by simp[leN35]) usedByX
-            | 9 => prf 9 [ 9 ] rfl (by simp[leN35]) usedByX
-            | 10 => prf 10 [ 2 ] rfl (by simp[leN35]) usedByX
-            | 11 => prf 11 [ 0, 11, 10 ] rfl (by simp[leN35]) usedByX
-            | 12 => prf 12 [ 2 ] rfl (by simp[leN35]) usedByX
-            | 13 => prf 13 [ 0, 11 ] rfl (by simp[leN35]) usedByX
-            | 14 => prf 14 [ 13, 9, 12, 11 ] rfl (by simp[leN35]) usedByX
-            | 15 => prf 15 [ 14, 8 ] rfl (by simp[leN35]) usedByX
-            | 16 => prf 16 [ 15 ] rfl (by simp[leN35]) usedByX
-            | 17 => prf 17 [ 15, 16 ] rfl (by simp[leN35]) usedByX
-            | 18 => prf 18 [ 18, 17 ] rfl (by simp[leN35]) usedByX
-            | 19 => prf 19 [ 0 ] rfl (by simp[leN35]) usedByX
-            | 20 => prf 20 [ 19, 4, 5, 7, 20, 6, 0 ] rfl (by simp[leN35]) usedByX
-            | 21 => prf 21 [ 7, 8, 20, 21 ] rfl (by simp[leN35]) usedByX
-            | 22 => prf 22 [ 7, 8, 21 ] rfl (by simp[leN35]) usedByX
-            | 23 => prf 23 [ 7 ] rfl (by simp[leN35]) usedByX
-            | 24 => prf 24 [ 23, 24, 7 ] rfl (by simp[leN35]) usedByX
-            | 25 => prf 25 [ 7, 25 ] rfl (by simp[leN35]) usedByX
-            | 26 => prf 26 [ 8 ] rfl (by simp[leN35]) usedByX
-            | 27 => prf 27 [ 26, 8, 27, 25, 22, 24 ] rfl (by simp[leN35]) usedByX
-            | 28 => prf 28 [ 0, 27, 28, 18 ] rfl (by simp[leN35]) usedByX
-            | 29 => prf 29 [ 7, 8, 0, 29 ] rfl (by simp[leN35]) usedByX
-            | 30 => prf 30 [ 0, 28 ] rfl (by simp[leN35]) usedByX
-            | 31 => prf 31 [ 30, 29 ] rfl (by simp[leN35]) usedByX
-            | 32 => prf 32 [] rfl (by simp[leN35]) usedByX
-            | 33 => prf 33 [ 32, 33 ] rfl (by simp[leN35]) usedByX
-            | 34 => prf 34 [ 0, 33, 35, 7, 34 ] rfl (by simp[leN35]) usedByX
-            | 35 => prf 35 [ 0, 34, 31 ] rfl (by simp[leN35]) usedByX
-            | rest + 36 =>
-              let expr: Expr := 35
+            | 7 => prf 7 [ 3, 4, 5, 7, 6, 0 ] rfl (by simp[leN36]) usedByX
+            | 8 => prf 8 [ 7, 8 ] rfl (by simp[leN36]) usedByX
+            | 9 => prf 9 [ 9 ] rfl (by simp[leN36]) usedByX
+            | 10 => prf 10 [ 2 ] rfl (by simp[leN36]) usedByX
+            | 11 => prf 11 [ 0, 11, 10 ] rfl (by simp[leN36]) usedByX
+            | 12 => prf 12 [ 2 ] rfl (by simp[leN36]) usedByX
+            | 13 => prf 13 [ 0, 11 ] rfl (by simp[leN36]) usedByX
+            | 14 => prf 14 [ 13, 9, 12, 11 ] rfl (by simp[leN36]) usedByX
+            | 15 => prf 15 [ 14, 8 ] rfl (by simp[leN36]) usedByX
+            | 16 => prf 16 [ 15 ] rfl (by simp[leN36]) usedByX
+            | 17 => prf 17 [ 15, 16 ] rfl (by simp[leN36]) usedByX
+            | 18 => prf 18 [ 18, 17 ] rfl (by simp[leN36]) usedByX
+            | 19 => prf 19 [ 0 ] rfl (by simp[leN36]) usedByX
+            | 20 => prf 20 [ 19, 4, 5, 7, 20, 6, 0 ] rfl (by simp[leN36]) usedByX
+            | 21 => prf 21 [ 7, 8, 20, 21 ] rfl (by simp[leN36]) usedByX
+            | 22 => prf 22 [ 8, 0, 21, 22 ] rfl (by simp[leN36]) usedByX
+            | 23 => prf 23 [ 7 ] rfl (by simp[leN36]) usedByX
+            | 24 => prf 24 [ 23, 24, 7 ] rfl (by simp[leN36]) usedByX
+            | 25 => prf 25 [ 7, 25 ] rfl (by simp[leN36]) usedByX
+            | 26 => prf 26 [ 8, 26, 25, 24 ] rfl (by simp[leN36]) usedByX
+            | 27 => prf 27 [ 27 ] rfl (by simp[leN36]) usedByX
+            | 28 => prf 28 [ 8, 26, 22, 27 ] rfl (by simp[leN36]) usedByX
+            | 29 => prf 29 [ 0, 28, 29, 18 ] rfl (by simp[leN36]) usedByX
+            | 30 => prf 30 [ 7, 8, 0, 30 ] rfl (by simp[leN36]) usedByX
+            | 31 => prf 31 [ 0, 29 ] rfl (by simp[leN36]) usedByX
+            | 32 => prf 32 [ 31, 30 ] rfl (by simp[leN36]) usedByX
+            | 33 => prf 33 [] rfl (by simp[leN36]) usedByX
+            | 34 => prf 34 [ 33, 34 ] rfl (by simp[leN36]) usedByX
+            | 35 => prf 35 [ 0, 34, 36, 7, 35 ] rfl (by simp[leN36]) usedByX
+            | 36 => prf 36 [ 0, 35, 32 ] rfl (by simp[leN36]) usedByX
+            | rest + 37 =>
+              let expr: Expr := 36
               
               let freeVars := freeVars expr
-              let xIn: ↑usedByX ∈ [ 35 ] := freeVars.property usedByX
-              let xEq: usedByX.val = 35 := List.eq_of_mem_singleton xIn
-              let le35Self: 35 ≤ 35 := by simp
-              xEq ▸ le35Self
+              let xIn: ↑usedByX ∈ [ 36 ] := freeVars.property usedByX
+              let xEq: usedByX.val = 36 := List.eq_of_mem_singleton xIn
+              let le36Self: 36 ≤ 36 := Nat.le_refl 36
+              xEq ▸ le36Self
         ,
         
-        boundsFinite := fun _ => ⟨36, fun _ => Nat.lt_succ_of_le⟩,
+        boundsFinite := fun _ => ⟨37, fun _ => Nat.lt_succ_of_le⟩,
         
         boundsTransitive := fun a b c _bLe cLe => cLe,
       }, trivial⟩
     }
-    
+        
     noncomputable def wfModel :=
       defList.wellFoundedModel pairSalgebra
     

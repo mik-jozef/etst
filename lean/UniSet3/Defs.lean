@@ -34,6 +34,7 @@ namespace Pair
     def nat500NeqNat: 500 ≠ 0 := by decide
     def nat500NeqNatLe: 500 ≠ 2 := by decide
     def nat500NeqExprEncoding: 500 ≠ 7 := by decide
+    def nat500NeqDefEncoding: 500 ≠ 8 := by decide
     def nat501NeqDefEncoding: 501 ≠ 8 := by decide
     def nat500NeqPairDictLt: 500 ≠ 9 := by decide
     def nat500NeqNatLeFn: 500 ≠ 10 := by decide
@@ -49,6 +50,11 @@ namespace Pair
     def nat500NeqIncrementExprs: 500 ≠ 21 := by decide
     def nat501NeqIncrementExprs: 501 ≠ 21 := by decide
     def nat502NeqIncrementExprs: 502 ≠ 21 := by decide
+    def nat500NeqShiftDefEncoding: 500 ≠ 22 := by decide
+    def nat501NeqShiftDefEncoding: 501 ≠ 22 := by decide
+    def nat502NeqShiftDefEncoding: 502 ≠ 22 := by decide
+    def nat503NeqShiftDefEncoding: 503 ≠ 22 := by decide
+    def nat504NeqShiftDefEncoding: 504 ≠ 22 := by decide
     
     
     structure IsNatPairAAPair (a b: Pair): Prop where
@@ -264,6 +270,15 @@ namespace Pair
       }
       | IsExprEncoding.IsVar _ => isQuant.nopeVar
     
+    def IsExprEncoding.withIsQuantifierZero
+      {P: Prop}
+      (isExpr: IsExprEncoding (pair n zero))
+      (isBin: IsExprEncoding.Quantifier n)
+    :
+      P
+    :=
+      match isExpr, isBin with.
+    
     def IsExprEncoding.Bin.nopeZeroPayload
       (isBin: IsExprEncoding.Bin n)
       (isExprZero: IsExprEncoding (pair n zero))
@@ -296,10 +311,10 @@ namespace Pair
     :=
       False.elim
         (match isExpr with
-        | IsExprEncoding.IsVar _ => (neq0 rfl).elim
-        | IsExprEncoding.IsZero => (neq1 rfl).elim
+        | IsExprEncoding.IsVar _ => neq0 rfl
+        | IsExprEncoding.IsZero => neq1 rfl
         | IsExprEncoding.IsBin isBin _ _ => notBin isBin
-        | IsExprEncoding.IsCpl _ => (neq5 rfl).elim
+        | IsExprEncoding.IsCpl _ => neq5 rfl
         | IsExprEncoding.IsQuantifier isQuant _ _ => notQuant isQuant)
     
     
@@ -431,7 +446,21 @@ namespace Pair
     :
       defA = defB
     :=
-      sorry
+      (depthDictOrder.le_total defA defB).elim
+        (fun ab =>
+          ab.elim id
+            (fun lt =>
+              let nextLeB :=
+                isNextA.isLeast.isLeMember
+                  (And.intro isNextB.isDefA lt)
+              nextLeB.ltAntisymm isNextB.isLt))
+        (fun ba =>
+          ba.elim Eq.symm
+            (fun lt =>
+              let nextLeA :=
+                isNextB.isLeast.isLeMember
+                  (And.intro isNextA.isDefA lt)
+              nextLeA.ltAntisymm isNextA.isLt))
     
     structure IsNextDefPair.NextDefEncoding (dl: Pair) where
       next: Pair
@@ -585,110 +614,110 @@ namespace Pair
         }
     
     
-    inductive IsShiftExprPair: Pair → Pair → Prop where
+    inductive IsIncrVarsExprPair: Pair → Pair → Prop where
     | IsVar:
         IsNatEncoding x →
-        IsShiftExprPair (pair zero x) (pair zero (succ x))
+        IsIncrVarsExprPair (pair zero x) (pair zero (succ x))
     | IsZero:
-        IsShiftExprPair (pair (fromNat 1) zero) (pair (fromNat 1) zero)
+        IsIncrVarsExprPair (pair (fromNat 1) zero) (pair (fromNat 1) zero)
     | IsBin:
         IsExprEncoding.Bin n →
-        IsShiftExprPair a as →
-        IsShiftExprPair b bs →
-        IsShiftExprPair (pair n (pair a b)) (pair n (pair as bs))
+        IsIncrVarsExprPair a as →
+        IsIncrVarsExprPair b bs →
+        IsIncrVarsExprPair (pair n (pair a b)) (pair n (pair as bs))
     | IsCpl:
-        IsShiftExprPair p ps →
-        IsShiftExprPair (pair (fromNat 5) p) (pair (fromNat 5) ps)
+        IsIncrVarsExprPair p ps →
+        IsIncrVarsExprPair (pair (fromNat 5) p) (pair (fromNat 5) ps)
     | IsQuantifier:
         IsExprEncoding.Quantifier n →
         IsNatEncoding x →
-        IsShiftExprPair b bs →
-        IsShiftExprPair
+        IsIncrVarsExprPair b bs →
+        IsIncrVarsExprPair
           (pair n (pair x b))
           (pair n (pair (succ x) bs))
     
-    def IsShiftExprEncoding: Pair → Prop
+    def IsIncrVarsExpr: Pair → Prop
     | zero => False
-    | pair a b => IsShiftExprPair a b
+    | pair a b => IsIncrVarsExprPair a b
     
-    def IsShiftExprPair.isExprA:
-      IsShiftExprPair a b → IsExprEncoding a
+    def IsIncrVarsExprPair.isExprA:
+      IsIncrVarsExprPair a b → IsExprEncoding a
     
     | IsVar isNat => IsExprEncoding.IsVar isNat
     | IsZero => IsExprEncoding.IsZero
-    | IsBin isBin isShiftA isShiftB =>
-      IsExprEncoding.IsBin isBin isShiftA.isExprA isShiftB.isExprA
+    | IsBin isBin isIncrA isIncrB =>
+      IsExprEncoding.IsBin isBin isIncrA.isExprA isIncrB.isExprA
     
-    | IsCpl isShift => IsExprEncoding.IsCpl isShift.isExprA
-    | IsQuantifier isQuantifier isNat isShift =>
-      IsExprEncoding.IsQuantifier isQuantifier isNat isShift.isExprA
+    | IsCpl isIncr => IsExprEncoding.IsCpl isIncr.isExprA
+    | IsQuantifier isQuantifier isNat isIncr =>
+      IsExprEncoding.IsQuantifier isQuantifier isNat isIncr.isExprA
     
-    def IsShiftExprPair.isExprB:
-      IsShiftExprPair a b → IsExprEncoding b
+    def IsIncrVarsExprPair.isExprB:
+      IsIncrVarsExprPair a b → IsExprEncoding b
     
     | IsVar isNat => IsExprEncoding.IsVar (And.intro isNat rfl)
     | IsZero => IsExprEncoding.IsZero
-    | IsBin isBin isShiftA isShiftB =>
-      IsExprEncoding.IsBin isBin isShiftA.isExprB isShiftB.isExprB
+    | IsBin isBin isIncrA isIncrB =>
+      IsExprEncoding.IsBin isBin isIncrA.isExprB isIncrB.isExprB
     
-    | IsCpl isShift => IsExprEncoding.IsCpl isShift.isExprB
+    | IsCpl isIncr => IsExprEncoding.IsCpl isIncr.isExprB
       
-    | IsQuantifier isQuantifier isNat isShift =>
+    | IsQuantifier isQuantifier isNat isIncr =>
       IsExprEncoding.IsQuantifier
-        isQuantifier (And.intro isNat rfl) isShift.isExprB
+        isQuantifier (And.intro isNat rfl) isIncr.isExprB
     
-    def IsShiftExprPair.isUnique
-      (isShiftA: IsShiftExprPair expr shiftedA)
-      (isShiftB: IsShiftExprPair expr shiftedB)
+    def IsIncrVarsExprPair.isUnique
+      (isIncrA: IsIncrVarsExprPair expr a)
+      (isIncrB: IsIncrVarsExprPair expr b)
     :
-      shiftedA = shiftedB
+      a = b
     :=
-      match isShiftA, isShiftB with
+      match isIncrA, isIncrB with
       | IsVar isNatA, IsVar isNatB => rfl
       
       | IsZero, IsZero => rfl
       
-      | IsBin _sBinA isShiftLeftA isShiftRiteA,
-        IsBin isBinB isShiftLeftB isShiftRiteB
+      | IsBin _sBinA isIncrLeftA isIncrRiteA,
+        IsBin isBinB isIncrLeftB isIncrRiteB
       =>
-        let eqLeft := isUnique isShiftLeftA isShiftLeftB
-        let eqRite := isUnique isShiftRiteA isShiftRiteB
+        let eqLeft := isUnique isIncrLeftA isIncrLeftB
+        let eqRite := isUnique isIncrRiteA isIncrRiteB
         eqRite ▸ eqLeft ▸ rfl
       
-      | IsCpl isShiftA, IsCpl isShiftB =>
-        let eqExpr := isUnique isShiftA isShiftB
+      | IsCpl isIncrA, IsCpl isIncrB =>
+        let eqExpr := isUnique isIncrA isIncrB
         eqExpr ▸ rfl
       
-      | IsQuantifier _sQuantifierA _sNatA isShiftA,
-        IsQuantifier isQuantifierB isNatB isShiftB
+      | IsQuantifier _sQuantifierA _sNatA isIncrA,
+        IsQuantifier isQuantifierB isNatB isIncrB
       =>
-        let eqShift := isUnique isShiftA isShiftB
-        eqShift ▸ rfl
+        let eqIncremented := isUnique isIncrA isIncrB
+        eqIncremented ▸ rfl
       
       | IsQuantifier isQuantifierA _ _,
-        IsBin isBinB isShiftLeftB isShiftRiteB
+        IsBin isBinB isIncrLeftB isIncrRiteB
       =>
         IsExprEncoding.nopeBinQuant isBinB isQuantifierA
       
       | IsQuantifier isQuantifierA _ _,
-        IsCpl isShiftB
+        IsCpl isIncrB
       =>
         isQuantifierA.nopeCpl
       
       | IsBin isBinA _ _,
-        IsQuantifier isQuantifierB isNatB isShiftB
+        IsQuantifier isQuantifierB isNatB isIncrB
       =>
         IsExprEncoding.nopeBinQuant isBinA isQuantifierB
       
       | IsBin isBinA _ _,
-        IsCpl isShiftB
+        IsCpl isIncrB
       =>
         isBinA.nopeCpl
     
     -- why does this have to be noncomputable?
     -- Seems very much computable to me.
     -- I've proven decidability of the conditions, haven't I?
-    noncomputable def IsShiftExprPair.shiftExpr
+    noncomputable def IsIncrVarsExprPair.incrVars
       (exprEncoding: Pair)
     :
       Pair
@@ -699,7 +728,7 @@ namespace Pair
         if n = fromNat 0 then
           pair (fromNat 0) (pair payload zero)
         else if n = fromNat 1 then
-          pair (fromNat 1) zero
+          pair (fromNat 1) payload
         else if IsExprEncoding.Bin n then
           match payload with
           | zero => zero
@@ -710,11 +739,11 @@ namespace Pair
             have: depth b < depth (pair n (pair a b)) :=
               (depthLtR a b).trans (depthLtR n (pair a b))
             
-            pair n (pair (shiftExpr a) (shiftExpr b))
+            pair n (pair (incrVars a) (incrVars b))
         else if n = fromNat 5 then
           have := depthLtR n payload
           
-          pair (fromNat 5) (shiftExpr payload)
+          pair (fromNat 5) (incrVars payload)
         else if IsExprEncoding.Quantifier n then
           match payload with
           | zero => zero
@@ -722,38 +751,38 @@ namespace Pair
             have: depth body < depth (pair n (pair x body)) :=
               (depthLtR x body).trans (depthLtR n (pair x body))
             
-            pair n (pair (pair x zero) (shiftExpr body))
+            pair n (pair (pair x zero) (incrVars body))
         else
           zero
     
-    def IsShiftExprPair.shiftExpr.eq0
+    def IsIncrVarsExprPair.incrVars.eq0
       (payload: Pair)
     :
-      shiftExpr (pair (fromNat 0) payload)
+      incrVars (pair (fromNat 0) payload)
         =
       pair (fromNat 0) (pair payload zero)
     :=
-      by unfold shiftExpr; exact if_pos rfl
+      by unfold incrVars; exact if_pos rfl
     
-    def IsShiftExprPair.shiftExpr.eq1
+    def IsIncrVarsExprPair.incrVars.eq1
       (payload: Pair)
     :
-      shiftExpr (pair (fromNat 1) payload)
+      incrVars (pair (fromNat 1) payload)
         =
-      pair (fromNat 1) zero
+      pair (fromNat 1) payload
     :=
       let neqFN: fromNat 1 ≠ fromNat 0 := fromNat.injNeq (by decide)
       by
-        unfold shiftExpr;
+        unfold incrVars;
         exact (if_neg neqFN).trans (if_pos rfl)
     
-    def IsShiftExprPair.shiftExpr.eqBin
+    def IsIncrVarsExprPair.incrVars.eqBin
       (isBin: IsExprEncoding.Bin n)
       (a b: Pair)
     :
-      shiftExpr (pair n (pair a b))
+      incrVars (pair n (pair a b))
         =
-      pair n (pair (shiftExpr a) (shiftExpr b))
+      pair n (pair (incrVars a) (incrVars b))
     :=
       let neq0: n ≠ fromNat 0 :=
         fun eq =>
@@ -765,23 +794,23 @@ namespace Pair
       
       (if_neg neq0).trans ((if_neg neq1).trans (if_pos isBin))
     
-    def IsShiftExprPair.shiftExpr.eqCpl
+    def IsIncrVarsExprPair.incrVars.eqCpl
       (payload: Pair)
     :
-      shiftExpr (pair (fromNat 5) payload)
+      incrVars (pair (fromNat 5) payload)
         =
-      pair (fromNat 5) (shiftExpr payload)
+      pair (fromNat 5) (incrVars payload)
     :=
       -- What arcane magic is this?
-      by conv => lhs; unfold shiftExpr;
+      by conv => lhs; unfold incrVars;
     
-    def IsShiftExprPair.shiftExpr.eqQuant
+    def IsIncrVarsExprPair.incrVars.eqQuant
       (isQuant: IsExprEncoding.Quantifier n)
       (x body: Pair)
     :
-      shiftExpr (pair n (pair x body))
+      incrVars (pair n (pair x body))
         =
-      pair n (pair (pair x zero) (shiftExpr body))
+      pair n (pair (pair x zero) (incrVars body))
     :=
       let neq0: n ≠ fromNat 0 :=
         fun eq =>
@@ -803,23 +832,66 @@ namespace Pair
             ((if_neg neq5).trans
               (if_pos isQuant))))
     
+    def IsIncrVarsExprPair.incrVars.eqQuantZero
+      (isQuant: IsExprEncoding.Quantifier n)
+    :
+      incrVars (pair n zero) = zero
+    :=
+      let neq0: n ≠ fromNat 0 :=
+        fun eq =>
+          let eq: n = zero := eq
+          IsExprEncoding.Quantifier.nopeVar (eq.symm ▸ isQuant)
+      let neq1: n ≠ fromNat 1 :=
+        fun eq =>
+          IsExprEncoding.Quantifier.nopeOpZero (eq ▸ isQuant)
+      let notBin: ¬ IsExprEncoding.Bin n :=
+        fun isBin => IsExprEncoding.nopeBinQuant isBin isQuant
+      let neq5: n ≠ fromNat 5 :=
+        fun eq =>
+          let eq: n = fromNat 5 := eq
+          IsExprEncoding.Quantifier.nopeCpl (eq.symm ▸ isQuant)
+      
+      (if_neg neq0).trans
+        ((if_neg neq1).trans
+          ((if_neg notBin).trans
+            ((if_neg neq5).trans
+              (if_pos isQuant))))
     
-    def IsShiftExprPair.fn
+    def IsIncrVarsExprPair.incrVars.eqZeroOutOfBounds
+      (neq0: n ≠ fromNat 0)
+      (neq1: n ≠ fromNat 1)
+      (neq5: n ≠ fromNat 5)
+      (notBin: ¬ IsExprEncoding.Bin n)
+      (notQuant: ¬ IsExprEncoding.Quantifier n)
+      (payload: Pair)
+    :
+      incrVars (pair n payload) = zero
+    :=
+      by
+        unfold incrVars
+        exact
+          (if_neg neq0).trans
+            ((if_neg neq1).trans
+              ((if_neg notBin).trans
+                ((if_neg neq5).trans
+                  (if_neg notQuant))))
+    
+    def IsIncrVarsExprPair.fn
       (isExpr: IsExprEncoding expr)
     :
-      IsShiftExprPair expr (shiftExpr expr)
+      IsIncrVarsExprPair expr (incrVars expr)
     :=
       match expr with
       | zero => isExpr.nopeZero
       | pair n payload =>
         if h0: n = fromNat 0 then
           h0 ▸
-          shiftExpr.eq0 payload ▸
+          incrVars.eq0 payload ▸
           IsVar (IsExprEncoding.withIsVar (h0 ▸ isExpr))
         else if h1: n = fromNat 1 then
           h1 ▸
-          shiftExpr.eq1 payload ▸
-          IsExprEncoding.withIsZero (h1 ▸ isExpr) ▸
+          incrVars.eq1 payload ▸
+          (h1 ▸ isExpr).withIsZero ▸
           IsZero
         else if hBin: IsExprEncoding.Bin n then
           match payload with
@@ -827,11 +899,11 @@ namespace Pair
           | pair a b =>
             let ⟨isExprA, isExprB⟩ := isExpr.withIsBin hBin
             
-            shiftExpr.eqBin hBin a b ▸
+            incrVars.eqBin hBin a b ▸
             IsBin hBin (fn isExprA) (fn isExprB)
         else if h5: n = fromNat 5 then
           h5 ▸
-          shiftExpr.eqCpl payload ▸
+          incrVars.eqCpl payload ▸
           IsCpl (fn (IsExprEncoding.withIsCpl (h5 ▸ isExpr)))
         else if hQuant: IsExprEncoding.Quantifier n then
           match payload with
@@ -839,189 +911,311 @@ namespace Pair
           | pair x body =>
             let ⟨isNat, isBody⟩ := isExpr.withIsQuantifier hQuant
             
-            shiftExpr.eqQuant hQuant x body ▸
+            incrVars.eqQuant hQuant x body ▸
             IsQuantifier hQuant isNat (fn isBody)
         else
           IsExprEncoding.nopeNumOutOfBounds h0 h1 h5 hBin hQuant isExpr
     
+    def IsIncrVarsExprPair.incrVars.isExprArg
+      (isExpr: IsExprEncoding (incrVars expr))
+    :
+      IsExprEncoding expr
+    :=
+      match expr with
+      | zero => isExpr.nopeZero
+      | pair n payload =>
+        if h0: n = fromNat 0 then
+          let isExpr := incrVars.eq0 payload ▸ h0 ▸ isExpr
+          
+          h0 ▸
+          IsExprEncoding.IsVar (isExpr.withIsVar).left
+        else if h1: n = fromNat 1 then
+          let eq: payload = zero :=
+            (incrVars.eq1 payload ▸ h1 ▸ isExpr).withIsZero
+          
+          h1 ▸ eq ▸ IsExprEncoding.IsZero
+        else if hBin: IsExprEncoding.Bin n then
+          match payload, hBin with
+          | pair a b, hBin =>
+            let isExpr := (incrVars.eqBin hBin a b) ▸ isExpr
+            let ⟨l, r⟩ := isExpr.withIsBin hBin
+            
+            IsExprEncoding.IsBin hBin (isExprArg l) (isExprArg r)
+        else if h5: n = fromNat 5 then
+          let isExpr := incrVars.eqCpl payload ▸ h5 ▸ isExpr
+          
+          h5 ▸
+          IsExprEncoding.IsCpl (isExprArg isExpr.withIsCpl)
+        else if hQuant: IsExprEncoding.Quantifier n then
+          match payload, hQuant with
+          | zero, hQuant =>
+            let isExpr := incrVars.eqQuantZero hQuant ▸ isExpr
+            
+            match isExpr with.
+          | pair x body, hQuant =>
+            let isExpr := (incrVars.eqQuant hQuant x body) ▸ isExpr
+            let ⟨isNat, isBody⟩ := isExpr.withIsQuantifier hQuant
+            
+            IsExprEncoding.IsQuantifier
+              hQuant isNat.left (isExprArg isBody)
+        else
+          let eq := eqZeroOutOfBounds h0 h1 h5 hBin hQuant payload
+          match eq ▸ isExpr with.
+      
     
-    inductive IsIncrementExprsPair: Pair → Pair → Prop where
-    | EmptyDefList: IsIncrementExprsPair zero zero
+    inductive IsIncrVarsDefEncodingPair: Pair → Pair → Prop where
+    | EmptyDefList: IsIncrVarsDefEncodingPair zero zero
     | NonemptyDefList:
-      IsShiftExprPair exprA exprB →
-      IsIncrementExprsPair defListA defListB →
-      IsIncrementExprsPair (pair exprA defListA) (pair exprB defListB)
+      IsIncrVarsExprPair exprA exprB →
+      IsIncrVarsDefEncodingPair defListA defListB →
+      IsIncrVarsDefEncodingPair (pair exprA defListA) (pair exprB defListB)
     
-    def IsIncrementExprs: Pair → Prop
+    def IsIncrVarsDefEncoding: Pair → Prop
     | zero => False
-    | pair a b => IsIncrementExprsPair a b
+    | pair a b => IsIncrVarsDefEncodingPair a b
     
-    def IsIncrementExprsPair.isDefA
-      (isInc: IsIncrementExprsPair a b)
+    def IsIncrVarsDefEncodingPair.isDefA
+      (isInc: IsIncrVarsDefEncodingPair a b)
     :
       IsDefEncoding a
     :=
       match isInc with
       | EmptyDefList => trivial
-      | NonemptyDefList isShift isInc =>
-        And.intro isShift.isExprA isInc.isDefA
+      | NonemptyDefList isIncr isInc =>
+        And.intro isIncr.isExprA isInc.isDefA
     
-    def IsIncrementExprsPair.isDefB
-      (isInc: IsIncrementExprsPair a b)
+    def IsIncrVarsDefEncodingPair.isDefB
+      (isInc: IsIncrVarsDefEncodingPair a b)
     :
       IsDefEncoding b
     :=
       match isInc with
       | EmptyDefList => trivial
-      | NonemptyDefList isShift isInc =>
-        And.intro isShift.isExprB isInc.isDefB
+      | NonemptyDefList isIncr isInc =>
+        And.intro isIncr.isExprB isInc.isDefB
     
-    def IsIncrementExprsPair.pairZeroNope
-      (isInc: IsIncrementExprsPair (pair a b) zero)
+    def IsIncrVarsDefEncodingPair.pairZeroNope
+      (isInc: IsIncrVarsDefEncodingPair (pair a b) zero)
     :
       P
     :=
       match isInc with.
     
-    def IsIncrementExprsPair.zeroPairNope
-      (isInc: IsIncrementExprsPair zero (pair a b))
+    def IsIncrVarsDefEncodingPair.zeroPairNope
+      (isInc: IsIncrVarsDefEncodingPair zero (pair a b))
     :
       P
     :=
       match isInc with.
     
-    def IsIncrementExprsPair.lengthEq
-      (isInc: IsIncrementExprsPair a b)
+    def IsIncrVarsDefEncodingPair.lengthEq
+      (isInc: IsIncrVarsDefEncodingPair a b)
     :
       a.arrayLength = b.arrayLength
     :=
       match isInc with
       | EmptyDefList => rfl
-      | NonemptyDefList _isShift isIncPrev =>
+      | NonemptyDefList _isIncr isIncPrev =>
         Pair.arrayLength.eqOfEqTail (lengthEq isIncPrev) _ _
     
-    def IsIncrementExprsPair.isUnique
-      (isIncA: IsIncrementExprsPair dl dlIncA)
-      (isIncB: IsIncrementExprsPair dl dlIncB)
+    def IsIncrVarsDefEncodingPair.isUnique
+      (isIncA: IsIncrVarsDefEncodingPair dl dlIncA)
+      (isIncB: IsIncrVarsDefEncodingPair dl dlIncB)
     :
       dlIncA = dlIncB
     :=
       match isIncA, isIncB with
       | EmptyDefList, EmptyDefList => rfl
-      | NonemptyDefList isShiftA isIncA,
-        NonemptyDefList isShiftB isIncB
+      | NonemptyDefList isIncrA isIncA,
+        NonemptyDefList isIncrB isIncB
       =>
-        let eqShift := isShiftA.isUnique isShiftB
+        let eqIncremented := isIncrA.isUnique isIncrB
         let eqPrev := isUnique isIncA isIncB
         
-        eqPrev ▸ eqShift ▸ rfl
+        eqPrev ▸ eqIncremented ▸ rfl
     
-    noncomputable def IsIncrementExprsPair.shiftExprs
-      (isDef: IsDefEncoding dl)
+    noncomputable def IsIncrVarsDefEncodingPair.incrVars
+      (dl: Pair)
     :
       Pair
     :=
       match dl with
       | zero => zero
-      | pair a _ =>
+      | pair head tail =>
         pair
-          (IsShiftExprPair.shiftExpr a)
-          (shiftExprs isDef.right)
+          (IsIncrVarsExprPair.incrVars head)
+          (incrVars tail)
     
-    def IsIncrementExprsPair.fn
+    def IsIncrVarsDefEncodingPair.incrVars.lengthEq
+      (dl: Pair)
+    :
+      dl.arrayLength = (incrVars dl).arrayLength
+    :=
+      match dl with
+      | zero => rfl
+      | pair head tail =>
+        let ih := lengthEq tail
+        arrayLength.eqOfEqTail ih head tail
+    
+    def IsIncrVarsDefEncodingPair.fn
       (isDef: IsDefEncoding dl)
     :
-      IsIncrementExprsPair dl (shiftExprs isDef)
+      IsIncrVarsDefEncodingPair dl (incrVars dl)
     :=
       match dl with
       | zero => EmptyDefList
       | pair _expr _defList =>
         NonemptyDefList
-          (IsShiftExprPair.fn isDef.left)
+          (IsIncrVarsExprPair.fn isDef.left)
           (fn isDef.right)
     
-    def IsIncrementExprsPair.shiftedIsDef
+    def IsIncrVarsDefEncodingPair.incrVars.isDef
       (isDef: IsDefEncoding dl)
     :
-      IsDefEncoding (shiftExprs isDef)
+      IsDefEncoding (incrVars dl)
     :=
       (fn isDef).isDefB
     
+    def IsIncrVarsDefEncodingPair.incrVars.isDefArg
+      (isDef: IsDefEncoding (incrVars dl))
+    :
+      IsDefEncoding dl
+    :=
+      match dl with
+      | zero => isDef
+      | pair _ _ =>
+        And.intro
+          (IsIncrVarsExprPair.incrVars.isExprArg isDef.left)
+          (isDefArg isDef.right)
     
-    /-
-      ```
-        shift(a: Expr, b: DefList)
-          = c
-          = pair cA cB
-          = pair a (incrementExprs b)
-          = [ a, ...(incrementExprs b) ]
-      ```
-    -/
-    structure IsShiftDefPair (a b cHead cTail: Pair): Prop where
-      isExprA: IsExprEncoding a
-      isDefB: IsDefEncoding b
-      eqA: a = cHead
-      isIncrementedB: IsIncrementExprsPair b cTail
+    
+    inductive IsShiftDefEncodingABC: (a b c: Pair) → Prop
+    | ZeroShift:
+      IsDefEncoding b →
+      IsShiftDefEncodingABC zero b b
+    | SuccShift:
+      IsShiftDefEncodingABC a b c →
+      IsIncrVarsDefEncodingPair c cIncr →
+      IsShiftDefEncodingABC (pair a zero) b cIncr
     
     def IsShiftDefEncoding: Pair → Prop
     | zero => False
     | pair _ zero => False
-    | pair _ (pair _ zero) => False
-    | pair a (pair b (pair cA cB)) => IsShiftDefPair a b cA cB
+    | pair a (pair b c) => IsShiftDefEncodingABC a b c
     
-    def IsShiftDefPair.isDefC
-      (isShiftDef: IsShiftDefPair a b cHead cTail)
+    def IsShiftDefEncodingABC.isNatA
+      (isShiftDef: IsShiftDefEncodingABC a b c)
     :
-      IsDefEncoding (pair cHead cTail)
+      IsNatEncoding a
     :=
-      And.intro
-        (isShiftDef.eqA ▸ isShiftDef.isExprA)
-        isShiftDef.isIncrementedB.isDefB
+      match isShiftDef with
+      | ZeroShift _ => trivial
+      | SuccShift isShiftPrev _ =>
+        And.intro isShiftPrev.isNatA rfl
     
-    def IsShiftDefPair.lengthEqTail
-      (isShiftDefPair: IsShiftDefPair expr dl _expr dlShifted)
+    def IsShiftDefEncodingABC.isDefB
+      (isShiftDef: IsShiftDefEncodingABC a b c)
     :
-      dl.arrayLength = dlShifted.arrayLength
+      IsDefEncoding b
     :=
-      isShiftDefPair.isIncrementedB.lengthEq
+      match isShiftDef with
+      | ZeroShift isDef => isDef
+      | SuccShift isShiftPrev _ => isShiftPrev.isDefB
     
-    def IsShiftDefPair.lengthEqWhole
-      (isShiftDefPair: IsShiftDefPair expr dl _expr dlShifted)
+    def IsShiftDefEncodingABC.isDefC
+      (isShiftDef: IsShiftDefEncodingABC a b c)
     :
-      dl.arrayLength.succ = (pair expr dlShifted).arrayLength
+      IsDefEncoding c
     :=
-      (arrayLength.eqSuccTail expr dl).symm.trans
-        (arrayLength.eqOfEqTail (lengthEqTail isShiftDefPair) _ _)
+      match isShiftDef with
+      | ZeroShift isDef => isDef
+      | SuccShift _ isInc => isInc.isDefB
     
-    def IsShiftDefPair.isUniqueHead
-      (isShiftDefA: IsShiftDefPair a b cHeadA cTailA)
-      (isShiftDefB: IsShiftDefPair a b cHeadB cTailB)
+    def IsShiftDefEncodingABC.lengthEq
+      (isShiftDef: IsShiftDefEncodingABC n dlIn dlOut)
     :
-      cHeadA = cHeadB
+      dlIn.arrayLength = dlOut.arrayLength
     :=
-      isShiftDefA.eqA.symm.trans isShiftDefB.eqA
+      match isShiftDef with
+      | ZeroShift isDef => rfl
+      | SuccShift isShiftPrev isInc =>
+        isShiftPrev.lengthEq.trans isInc.lengthEq
     
-    def IsShiftDefPair.isUniqueTail
-      (isShiftDefA: IsShiftDefPair a b cHeadA cTailA)
-      (isShiftDefB: IsShiftDefPair a b cHeadB cTailB)
+    def IsShiftDefEncodingABC.isUnique
+      (isShiftDefA: IsShiftDefEncodingABC n dlIn dlOutA)
+      (isShiftDefB: IsShiftDefEncodingABC n dlIn dlOutB)
     :
-      cTailA = cTailB
+      dlOutA = dlOutB
     :=
-      isShiftDefA.isIncrementedB.isUnique isShiftDefB.isIncrementedB
+      match isShiftDefA, isShiftDefB with
+      | ZeroShift _, ZeroShift _ => rfl
+      | SuccShift isShiftPrevA isIncA,
+        SuccShift isShiftPrevB isIncB
+      =>
+        let eqPrev := isUnique isShiftPrevA isShiftPrevB
+        isIncA.isUnique (eqPrev ▸ isIncB)
     
-    def IsShiftDefPair.fn
-      (isExpr: IsExprEncoding expr)
+    noncomputable def IsShiftDefEncodingABC.shiftVars
+      (n dl: Pair)
+    :
+      Pair
+    :=
+      match n with
+      | zero => dl
+      | pair nPred _ =>
+        IsIncrVarsDefEncodingPair.incrVars (shiftVars nPred dl)
+    
+    def IsShiftDefEncodingABC.shiftVars.isDef
+      (n: Pair)
       (isDef: IsDefEncoding dl)
     :
-      IsShiftDefPair expr dl expr
-        (IsIncrementExprsPair.shiftExprs isDef)
+      IsDefEncoding (shiftVars n dl)
     :=
-      {
-        isExprA := isExpr
-        isDefB := isDef
-        eqA := rfl
-        isIncrementedB := IsIncrementExprsPair.fn isDef
-      }
+      match n with
+      | zero => isDef
+      | pair nPred _ =>
+        IsIncrVarsDefEncodingPair.incrVars.isDef
+          (shiftVars.isDef nPred isDef)
+    
+    noncomputable def IsShiftDefEncodingABC.shiftVars.lengthEq
+      (n dl: Pair)
+    :
+      dl.arrayLength = (shiftVars n dl).arrayLength
+    :=
+      match n with
+      | zero => rfl
+      | pair nPred _ =>
+        lengthEq nPred dl ▸
+        IsIncrVarsDefEncodingPair.incrVars.lengthEq _ ▸
+        rfl
+    
+    def IsShiftDefEncodingABC.shiftVars.isDefArg
+      (n: Pair)
+      (isDef: IsDefEncoding (shiftVars n dl))
+    :
+      IsDefEncoding dl
+    :=
+      match n with
+      | zero => isDef
+      | pair nPred _ =>
+          (shiftVars.isDefArg
+            nPred
+            (IsIncrVarsDefEncodingPair.incrVars.isDefArg isDef))
+    
+    def IsShiftDefEncodingABC.fn
+      (isNat: IsNatEncoding n)
+      (isDef: IsDefEncoding dl)
+    :
+      IsShiftDefEncodingABC n dl (shiftVars n dl)
+    :=
+      match n with
+      | zero => ZeroShift isDef
+      | pair nPred _ =>
+        isNat.right ▸
+        SuccShift
+          (fn isNat.left isDef)
+          (IsIncrVarsDefEncodingPair.fn
+            (shiftVars.isDef nPred isDef))
     
     
     structure IsLastExprBasePair (a b: Pair): Prop where
@@ -1197,146 +1391,165 @@ namespace Pair
       | pair _ _ =>
         LengthMore isDef.left (fn isDef.right)
     
+    def IsUpToLastPair.preservesElements
+      (isUpToLast: IsUpToLastPair dl dlUtl)
+      (isAt: dlUtl.arrayAt i = some expr)
+    :
+      dl.arrayAt i = some expr
+    :=
+      match isUpToLast, i with
+      | LengthOne _, _ => Option.noConfusion isAt
+      | LengthMore _ _, Nat.zero =>
+        isAt
+      | LengthMore _ isUpToLastPrev, Nat.succ _ =>
+        -- This variable cannot be inlined. How come, Lean?
+        let ih := preservesElements isUpToLastPrev isAt
+        ih
     
-    -- TODO this is wrong
-    inductive IsAppendABC: Pair → Pair → Pair → Prop
-    | Base: IsDefEncoding dl → IsAppendABC zero dl dl
+    
+    inductive IsArrayAppendABC: Pair → Pair → Pair → Prop
+    | Base: IsDefEncoding dl → IsArrayAppendABC zero dl dl
     | Step:
       IsUpToLastPair dlA dlAUpToLast →
       IsLastExprPair dlA dlALast →
-      IsShiftDefPair dlALast dlB dlALast dlBIncremented →
-      IsAppendABC dlAUpToLast (pair dlALast dlBIncremented) dlRes →
-      IsAppendABC dlA dlB dlRes
+      IsArrayAppendABC dlAUpToLast (pair dlALast dlB) dlRes →
+      IsArrayAppendABC dlA dlB dlRes
     
-    def IsAppend: Pair → Prop
+    def IsArrayAppend: Pair → Prop
     | zero => False
     | pair _ zero => False
-    | pair a (pair b c) => IsAppendABC a b c
+    | pair a (pair b c) => IsArrayAppendABC a b c
     
-    def IsAppendABC.isDefA
-      (isAppend: IsAppendABC dlA dlB dlRes)
+    def IsArrayAppendABC.isDefA
+      (isAppend: IsArrayAppendABC dlA dlB dlRes)
     :
       IsDefEncoding dlA
     :=
       match isAppend with
       | Base _ => trivial
-      | Step isUpToLast _ _ _ => isUpToLast.isDefA
+      | Step isUpToLast _ _ => isUpToLast.isDefA
     
-    def IsAppendABC.isDefB
-      (isAppend: IsAppendABC dlA dlB dlRes)
+    def IsArrayAppendABC.isDefB
+      (isAppend: IsArrayAppendABC dlA dlB dlRes)
     :
       IsDefEncoding dlB
-    :=
-      match isAppend with
-      | Base isDef => isDef
-      | Step _ _ isShiftDef _ => isShiftDef.isDefB
-    
-    def IsAppendABC.isDefRes
-      (isAppend: IsAppendABC dlA dlB dlRes)
-    :
-      IsDefEncoding dlRes
     :=
       -- Lean, get better at automatic termination-showing, pls.
       -- match isAppend with
       -- | Base isDef => isDef
-      -- | Step _ _ _ isAppendPrev => isAppendPrev.isDefRes
-      isAppend.rec id (fun _ _ _ _ => id)
+      -- | Step _ _ isAppendPrev => isAppendPrev.isDefB.right
+      isAppend.rec id (fun _ _ _ ih => ih.right)
     
-    structure IsAppendABC.AppendResult
-      (isDefA: IsDefEncoding a)
-      (isDefB: IsDefEncoding b)
+    def IsArrayAppendABC.isDefRes
+      (isAppend: IsArrayAppendABC dlA dlB dlRes)
+    :
+      IsDefEncoding dlRes
+    :=
+      isAppend.rec id (fun _ _ _ ih => ih)
+    
+    structure IsArrayAppendABC.AppendResult
+      (a b: Pair)
     where
       dl: Pair
-      isAppend: IsAppendABC a b dl
+      isAppend: IsArrayAppendABC a b dl
     
-    noncomputable def IsAppendABC.append
+    noncomputable def IsArrayAppendABC.append
       (isDefA: IsDefEncoding a)
       (isDefB: IsDefEncoding b)
     :
-      AppendResult isDefA isDefB
+      AppendResult a b
     :=
       match a with
       | zero => {
         dl := b
-        isAppend := IsAppendABC.Base isDefB
+        isAppend := IsArrayAppendABC.Base isDefB
       }
       | pair aHead aTail =>
         let isUpToLast := IsUpToLastPair.fn isDefA
         let isLast := IsLastExprPair.fn isDefA
-        let isShiftDef := IsShiftDefPair.fn isLast.isExprB isDefB
         
         have := arrayUpToLast.lengthLt aHead aTail
         
         let ⟨dl, isAppend⟩ :=
-          append isUpToLast.isDefB isShiftDef.isDefC
+          append
+            isUpToLast.isDefB
+            (show
+              IsDefEncoding (pair (aHead.arrayLast aTail) b)
+            from
+              And.intro isLast.isExprB isDefB)
         
         {
           dl := dl
           isAppend :=
-            IsAppendABC.Step isUpToLast isLast isShiftDef isAppend
+            IsArrayAppendABC.Step isUpToLast isLast isAppend
         }
-    termination_by IsAppendABC.append isDefA isDefB => a.arrayLength
+    termination_by IsArrayAppendABC.append isDefA isDefB => a.arrayLength
     
-    def IsAppendABC.lengthEq
-      (isAppend: IsAppendABC a b c)
+    def IsArrayAppendABC.lengthEq
+      (isAppend: IsArrayAppendABC a b c)
     :
       a.arrayLength + b.arrayLength = c.arrayLength
     :=
-      -- Lean cannot prove termination automatically here:
-      -- match isAppend with
-      -- | Base _ => Nat.zero_add _
-      -- | Step isUpToLast isLast isShift isAppendPrev =>
-        
-      --   isUpToLast.lengthEq ▸
-      --   isShift.lengthEqTail ▸
-      --   isAppendPrev.lengthEq ▸
-      --   sorry
-      
       isAppend.rec
         (fun _isDef => Nat.zero_add _)
-        (fun isUpToLast _isLast isShift _isAppendPrev ih =>
-          isUpToLast.lengthEq ▸
-          isShift.lengthEqTail ▸
-          ih ▸
+        (fun isUtl _ _ ih =>
+          isUtl.lengthEq ▸
           (Nat.succ_add_eq_succ_add _ _) ▸
-          rfl)
+          ih)
     
-    def IsAppendABC.isUnique
-      (isAppendA: IsAppendABC dl0 dl1 dlA)
-      (isAppendB: IsAppendABC dl0 dl1 dlB)
+    def IsArrayAppendABC.isUnique
+      (isAppendA: IsArrayAppendABC dl0 dl1 dlA)
+      (isAppendB: IsArrayAppendABC dl0 dl1 dlB)
     :
       dlA = dlB
     :=
-      -- Lean, you got issues with automatic termination-showing.
-      
       match isAppendA, isAppendB with
       | Base _isDefA, Base _isDefB => rfl
-      | Step isUpToLastA isLastA isShiftA isAppendPrevA,
-        Step isUpToLastB isLastB isShiftB isAppendPrevB
+      | Step isUpToLastA isLastA isAppendPrevA,
+        Step isUpToLastB isLastB isAppendPrevB
       =>
         let eqUpToLast := isUpToLastA.isUnique isUpToLastB
         let eqLast := isLastA.isUnique isLastB
         
-        let eqShift :=
-          isShiftA.isUniqueTail (eqLast.symm ▸ isShiftB)
-        
         have := isUpToLastA.arrayLengthLt
         
         isAppendPrevA.isUnique
-          (eqUpToLast ▸ eqLast ▸ eqShift ▸ isAppendPrevB)
+          (eqUpToLast ▸ eqLast ▸ isAppendPrevB)
+    termination_by IsArrayAppendABC.isUnique a b => dl0.arrayLength
     
-    termination_by IsAppendABC.isUnique a b => dl0.arrayLength
+    def IsArrayAppendABC.preservesFinal
+      (isAppend: IsArrayAppendABC a b c)
+      (isAt: b.arrayAt i = some expr)
+    :
+      c.arrayAt (i + a.arrayLength) = some expr
+    :=
+      match isAppend with
+      | Base _ => isAt
+      | @Step _ aUtl aL _ _
+          isUpToLast _ isAppendPrev
+      =>
+        let isAtNew: (pair aL b).arrayAt (i.succ) = some expr := isAt
+        
+        have := isUpToLast.arrayLengthLt
+        
+        isUpToLast.lengthEq ▸
+        (Nat.succ_add_eq_succ_add _ _) ▸
+        preservesFinal isAppendPrev isAtNew
+    termination_by
+      IsArrayAppendABC.preservesFinal isAppend isAt
+    =>
+      a.arrayLength
     
-    def IsAppendABC.preservesInitial
-      (isAppend: IsAppendABC a b c)
+    def IsArrayAppendABC.preservesInitial
+      (isAppend: IsArrayAppendABC a b c)
       (isAt: a.arrayAt i = some expr)
     :
       c.arrayAt i = some expr
     :=
       match isAppend with
       | Base isDefB => Option.noConfusion isAt
-      | @Step _ aUtl aL _ bShifted _
-          isUpToLast isLast isShift isAppendPrev
+      | @Step _ aUtl aL _ _
+          isUpToLast isLast isAppendPrev
       =>
         match a, h: aUtl.arrayAt i with
         | pair aHead aTail, none =>
@@ -1351,9 +1564,157 @@ namespace Pair
             isLast.isUnique (IsLastExprPair.fn isLast.isDefA)
           let isLastEq := isLastEqArrayLast.trans arrayLastEq
           
-          sorry
-        | _, some exprU =>
-          sorry
+          let isAtNew: (pair aL b).arrayAt 0 = some expr :=
+            isLastEq ▸ rfl
+          
+          let iEq: i = aUtl.arrayLength :=
+            Nat.succ_injective
+              (isUpToLast.lengthEq ▸ lengthEq.symm)
+          
+          iEq ▸
+          show arrayAt c (arrayLength aUtl) = some expr from
+            Nat.zero_add aUtl.arrayLength ▸
+            preservesFinal isAppendPrev isAtNew
+        
+        | a, some exprU =>
+          have := isUpToLast.arrayLengthLt
+          
+          isAt.symm.trans (isUpToLast.preservesElements h) ▸
+          isAppendPrev.preservesInitial h
+    termination_by
+      IsArrayAppendABC.preservesInitial isAppend isAt
+    =>
+      a.arrayLength
+    
+    
+    inductive IsArrayLengthPair: Pair → Pair → Prop
+    | Zero: IsArrayLengthPair zero zero
+    | Succ:
+      IsArrayLengthPair dl dlLength →
+      (expr: Pair) →
+      IsArrayLengthPair (pair expr dl) (pair dlLength zero)
+    
+    def IsArrayLength: Pair → Prop
+    | zero => False
+    | pair a b => IsArrayLengthPair a b
+    
+    def IsArrayLength.lengthIslength
+      (arr: Pair)
+    :
+      IsArrayLengthPair arr (fromNat arr.arrayLength)
+    :=
+      match arr with
+      | zero => IsArrayLengthPair.Zero
+      | pair head tail =>
+        IsArrayLengthPair.Succ (lengthIslength tail) head
+    
+    def IsArrayLength.lengthEqFromNat
+      (isArrLength: IsArrayLengthPair arr n)
+    :
+      n = fromNat arr.arrayLength
+    :=
+      match isArrLength with
+      | IsArrayLengthPair.Zero => rfl
+      | IsArrayLengthPair.Succ eqTail _head =>
+        let ih := lengthEqFromNat eqTail
+        arrayLength.eqSuccTail _ _ ▸
+        fromNat.fromSuccEq _ ▸
+        ih ▸ rfl
+    
+    
+    def IsAppendABC (a b c: Pair): Prop :=
+      IsArrayAppendABC
+        a
+        (IsShiftDefEncodingABC.shiftVars (fromNat a.arrayLength) b)
+        c
+    
+    def IsAppend: Pair → Prop
+    | zero => False
+    | pair _ zero => False
+    | pair a (pair b c) => IsAppendABC a b c
+    
+    def IsAppendABC.isDefA
+      (isAppend: IsAppendABC dlA dlB dlRes)
+    :
+      IsDefEncoding dlA
+    :=
+      IsArrayAppendABC.isDefA isAppend
+    
+    def IsAppendABC.isDefB
+      (isAppend: IsAppendABC dlA dlB dlRes)
+    :
+      IsDefEncoding dlB
+    :=
+      IsShiftDefEncodingABC.shiftVars.isDefArg
+        _ (IsArrayAppendABC.isDefB isAppend)
+    
+    def IsAppendABC.isDefRes
+      (isAppend: IsAppendABC dlA dlB dlRes)
+    :
+      IsDefEncoding dlRes
+    :=
+      IsArrayAppendABC.isDefRes isAppend
+    
+    structure IsAppendABC.AppendResult
+      (a b: Pair)
+    where
+      dl: Pair
+      isAppend: IsAppendABC a b dl
+    
+    noncomputable def IsAppendABC.append
+      (isDefA: IsDefEncoding a)
+      (isDefB: IsDefEncoding b)
+    :
+      AppendResult a b
+    :=
+      let isDefBShifted :=
+        IsShiftDefEncodingABC.shiftVars.isDef _ isDefB
+      
+      let ⟨dl, isAppend⟩ :=
+        IsArrayAppendABC.append isDefA isDefBShifted
+      
+      { dl, isAppend }
+    
+    def IsAppendABC.lengthEq
+      (isAppend: IsAppendABC a b c)
+    :
+      a.arrayLength + b.arrayLength = c.arrayLength
+    :=
+      IsShiftDefEncodingABC.shiftVars.lengthEq _ b ▸
+      IsArrayAppendABC.lengthEq isAppend
+    
+    def IsAppendABC.isUnique
+      (isAppendA: IsAppendABC dl0 dl1 dlA)
+      (isAppendB: IsAppendABC dl0 dl1 dlB)
+    :
+      dlA = dlB
+    :=
+      IsArrayAppendABC.isUnique isAppendA isAppendB
+    
+    def IsAppendABC.preservesInitial
+      (isAppend: IsAppendABC a b c)
+      (isAt: a.arrayAt i = some expr)
+    :
+      c.arrayAt i = some expr
+    :=
+      IsArrayAppendABC.preservesInitial isAppend isAt
+    
+    def IsAppendABC.fromArrayAppend
+      (isArrayAppend: IsArrayAppendABC a bShifted c)
+      (isShift: IsShiftDefEncodingABC n b bShifted)
+      (isLength: IsArrayLengthPair a n)
+    :
+      IsAppendABC a b c
+    :=
+      let eq:
+        bShifted = IsShiftDefEncodingABC.shiftVars (fromNat a.arrayLength) b
+      :=
+        IsShiftDefEncodingABC.isUnique
+          isShift
+          (IsArrayLength.lengthEqFromNat isLength ▸
+          IsShiftDefEncodingABC.fn isShift.isNatA isShift.isDefB)
+      
+      by unfold IsAppendABC; exact eq ▸ isArrayAppend
     
     
     inductive IsEnumUpToPair: Pair → Pair → Prop
@@ -1550,7 +1911,8 @@ namespace Pair
       (dl: Pair)
       (i: Nat)
       (expr: Pair)
-    : Prop where
+    :
+      Prop where
     | CaseNone (isNone: dl.arrayAt i = none)
     | CaseSome (isSome: dl.arrayAt i = some expr)
     
@@ -1637,7 +1999,8 @@ namespace Pair
     
     inductive TheDefListPair
       (exprIndex expr: Pair)
-    : Prop where
+    :
+      Prop where
     | intro
       (n dl: Pair)
       (isEnumUpTo: IsEnumUpToPair n dl)

@@ -186,4 +186,24 @@ namespace Pair
         match aLtZero with
         | Lt.EqDepth _ lt => lt
         | Lt.NeqDepth depthLt => Nat.not_lt_zero _ depthLt)
+  
+  def depthDictOrder.Le.ltAntisymm
+    (ab: Le a b)
+    (ba: Lt b a)
+  :
+    P
+  :=
+    ab.elim
+      (fun eq => (eq ▸ ba).irefl)
+      (fun abLt => ba.antisymm abLt)
+  
+  def depthDictOrder.Lt.leAntisymm
+    (ab: Lt a b)
+    (ba: Le b a)
+  :
+    P
+  :=
+    ba.elim
+      (fun eq => (eq.symm ▸ ab).irefl)
+      (fun baLt => ab.antisymm baLt)
 end Pair

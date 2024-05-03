@@ -56,6 +56,13 @@ namespace Pair
   :=
     injEq.contra
   
+  def fromNat.fromSuccEq
+    (n: Nat)
+  :
+    fromNat (Nat.succ n) = pair (fromNat n) zero
+  :=
+    rfl
+  
   
   def depthSuccLeL (a b: Pair):
     Nat.succ a.depth ≤ (pair a b).depth
