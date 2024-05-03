@@ -243,44 +243,13 @@ def Nat.eq_of_lt_of_le_succ
     Eq.symm
 
 
-def List.Has (list: List T) (t: T): Prop :=
-  ∃ n: Fin list.length, list.get n = t
-
-def List.HasAll (list: List T): Prop :=
-  ∀ t: T, list.Has t
+structure List.HasAll (list: List T): Prop where
+  isIn: ∀ t: T, t ∈ list
 
 def Type.IsFinite (T: Type u): Prop :=
   ∃ list: List T, list.HasAll
 
 def Type.Finite := { T: Type // Type.IsFinite T }
-
-def List.Has.toMem (lh: List.Has list t): t ∈ list :=
-  let tIndex := lh.unwrap
-
-  match tIndex, hL: list with
-  | ⟨⟨Nat.zero, fin⟩, tIn⟩, [] =>
-      let finL: 0 < length [] := hL ▸ fin
-      False.elim (Nat.not_lt_zero _ finL)
-  | ⟨⟨Nat.zero, fin⟩, tIn⟩, a::la =>
-      let tInAla: (a::la).get ⟨0, hL ▸ fin⟩ = t := hL ▸ tIn
-      let taEq: t = a := tInAla.symm
-      taEq ▸ Mem.head la
-  | ⟨⟨Nat.succ n, fin⟩, tIn⟩, [] =>
-      let finL: Nat.succ n < length [] := hL ▸ fin
-      False.elim (Nat.not_lt_zero _ finL)
-  | ⟨⟨Nat.succ n, fin⟩, tIn⟩, a::la =>
-      let tInAla: (a::la).get ⟨Nat.succ n, hL ▸ fin⟩ = t := hL ▸ tIn
-      let laHasT: la.Has t := ⟨⟨n, _⟩, tInAla⟩
-      let laHas := List.Has.toMem laHasT
-      Mem.tail a laHas
-
-def List.Has.fromMem (tIn: t ∈ list): List.Has list t :=
-  match tIn with
-  | Mem.head rest => ⟨⟨0, Nat.succ_pos _⟩, rfl⟩
-  | Mem.tail _head memRest =>
-      let restHas := List.Has.fromMem memRest
-      let i := restHas.unwrap
-      ⟨i.val.succ, i.property⟩
 
 
 def Option.neqConfusion (neq: a ≠ b): some a ≠ some b :=
@@ -387,7 +356,7 @@ noncomputable def existsDistinctOfNotInjective
 def List.emptyNotMem (t: T):
   t ∉ []
 :=
-  fun. -- WTF is this and how does it work? Why isn't it documented (or is it)?
+  fun.
 
 def List.Mem.nope
   {t: T}
