@@ -570,14 +570,14 @@ def Lfp
   (ord: PartialOrder T)
   (op: T → T)
 :=
-  Least ord (IsFixedPoint op)
+  Least ord.le (IsFixedPoint op)
 
 def IsLfp
   (ord: PartialOrder T)
   (op: T → T)
   (t: T)
 :=
-  iIsLeast ord (IsFixedPoint op) t
+  iIsLeast ord.le (IsFixedPoint op) t
 
 noncomputable def lfp.fixedStage
   {ord: PartialOrder T}

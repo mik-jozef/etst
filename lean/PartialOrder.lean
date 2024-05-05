@@ -138,6 +138,31 @@ namespace PartialOrder
   :=
     ord.optionTop.le_antisymm _ _ (noneGreatest t) noneLe
   
+  
+  def leLtAntisymm
+    {ord: PartialOrder T}
+    (ab: ord.le a b)
+    (ba: ord.lt b a)
+  :
+    P
+  :=
+    False.elim
+      ((lt_or_eq_of_le ab).elim
+        (fun abLt => lt_asymm ba abLt)
+        (fun eq => lt_irrefl _ (eq ▸ ba)))
+  
+  def ltLeAntisymm
+    {ord: PartialOrder T}
+    (ab: ord.lt a b)
+    (ba: ord.le b a)
+  :
+    P
+  :=
+    False.elim
+      ((lt_or_eq_of_le ba).elim
+        (fun baLt => lt_asymm ab baLt)
+        (fun eq => lt_irrefl _ (eq.symm ▸ ab)))
+  
 end PartialOrder
 
 

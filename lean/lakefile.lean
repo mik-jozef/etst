@@ -52,6 +52,7 @@ lean_lib UniSet3.TheDefList {}
 lean_lib UniSet3.TheSet3 {}
 lean_lib Utils {}
 lean_lib Valuation {}
+lean_lib WellFoundedOfLeast {}
 lean_lib Wfm {}
 
 require mathlib from git

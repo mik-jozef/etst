@@ -105,17 +105,12 @@ namespace Pair
           (fun eq => eq ▸ ab)
           (fun bcLt => Or.inr (abLt.trans bcLt)))
   
-  inductive dictOrder.LtTotal (a b: Pair): Prop where
-  | IsLt: Lt a b → LtTotal a b
-  | IsGt: Lt b a → LtTotal a b
-  | IsEq: a = b → LtTotal a b
-  
   def dictOrder.ltTotal
     (a b: Pair)
   :
-    LtTotal a b
+    IsComparable Lt a b
   :=
-    open LtTotal in
+    open IsComparable in
     match a, b with
     | zero, zero => IsEq rfl
     | zero, pair _ _ => IsLt trivial
@@ -138,7 +133,7 @@ namespace Pair
   :
     Le a b ∨ Le b a
   :=
-    open LtTotal in
+    open IsComparable in
     match ltTotal a b with
     | IsLt ab => Or.inl (Or.inr ab)
     | IsGt ba => Or.inr (Or.inr ba)

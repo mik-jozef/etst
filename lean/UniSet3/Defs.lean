@@ -471,7 +471,15 @@ namespace Pair
     :
       NextDefEncoding dl
     :=
-      sorry
+      let next := sorry
+      
+      {
+        next,
+        isNext := {
+          isDefA := isDef,
+          isLeast := sorry
+        }
+      }
     
     
     inductive IsNthDefListPair: Pair → Pair → Prop where

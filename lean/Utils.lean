@@ -13,7 +13,7 @@ noncomputable instance propDecidable (P: Prop): Decidable P :=
   Classical.propDecidable P
 
 
-inductive Null | null
+inductive Null: Type* | null
 
 noncomputable def Exists.unwrap
   {P: T → Prop}
@@ -49,12 +49,47 @@ instance Set.ord: PartialOrder (Set D) where
   le_trans (a b c: Set D) := fun (ab: a ≤ b) (bc: b ≤ c) =>
     fun (d: D) (da: d ∈ a) => (@bc d) ((@ab d) da)
 
+noncomputable def List.pfilter
+  (list: List D)
+  (pred: D → Prop)
+:
+  { l: List D // ∀ d, d ∈ l ↔ d ∈ list ∧ pred d }
+:=
+  let decideEq d:
+    (decide (pred d) = true) = pred d
+  :=
+    by simp
+  
+  ⟨
+    list.filter pred,
+    fun d => decideEq d ▸ List.mem_filter
+  ⟩
+
 namespace Set
   def empty: Set D := fun _ => False
   def full: Set D := fun _ => True
   def just (d: D): Set D := fun x => x = d
 
   def IsFinite (s: Set D): Prop := ∃ l: List D, ∀ t: s, t.val ∈ l
+  
+  noncomputable def IsFinite.inIff
+    {s: Set D}
+    (isFin: s.IsFinite)
+  :
+    { l: List D // ∀ t, t ∈ s ↔ t ∈ l }
+  :=
+    let ⟨l, allOfSIn⟩ := isFin.unwrap
+    let ⟨lf, inIff⟩ := l.pfilter s
+    
+    ⟨
+      lf,
+      fun d =>
+        Iff.intro
+          (fun dInS =>
+            (inIff d).mpr (And.intro (allOfSIn ⟨d, dInS⟩) dInS))
+          (fun dInLf =>
+            ((inIff d).mp dInLf).right),
+    ⟩
 
   def IsSubset (a b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
 
@@ -133,19 +168,36 @@ def Nat.leLtAntisymm {a b: Nat} (ab: a ≤ b) (ba: b < a): P :=
     (fun ab => Nat.ltAntisymm ab ba)
 
 
-inductive Nat.IsTotal (a b: Nat): Prop where
-| IsLt: a < b → IsTotal a b
-| IsGt: b < a → IsTotal a b
-| IsEq: a = b → IsTotal a b
+inductive IsComparable (rel: T → T → Prop) (a b: T): Prop
+where
+| IsLt: rel a b → IsComparable rel a b
+| IsGt: rel b a → IsComparable rel a b
+| IsEq: a = b → IsComparable rel a b
 
-def Nat.isTotal (a b: Nat): IsTotal a b :=
+def IsConnected (rel: T → T → Prop): Prop :=
+  ∀ a b: T, IsComparable rel a b
+
+def LinearOrder.ltTotal
+  (ord: LinearOrder T)
+:
+  IsConnected ord.lt
+:=
+  fun a b =>
+    if h: a = b then
+      IsComparable.IsEq h
+    else
+      (ord.le_total a b).elim
+        (fun le => IsComparable.IsLt (le.lt_of_ne h))
+        (fun ge => IsComparable.IsGt (ge.lt_of_ne (fun eq => h (eq.symm))))
+
+
+def Nat.isTotal (a b: Nat): IsComparable Nat.lt a b :=
   (Nat.lt_or_ge a b).elim
-    (fun lt => IsTotal.IsLt lt)
+    (fun lt => IsComparable.IsLt lt)
     (fun ge =>
       ((Nat.eq_or_lt_of_le ge).symm.elim
-        (fun x => IsTotal.IsGt x)
-        (fun x => IsTotal.IsEq x.symm)))
-
+        (fun x => IsComparable.IsGt x)
+        (fun x => IsComparable.IsEq x.symm)))
 
 def Nat.abs (a b: Nat) := Nat.max (a - b) (b - a)
 

@@ -29,7 +29,7 @@ namespace Valuation
     lt := (ord.approximation D).lt
   
   
-  def empty.isLeast: iIsLeast (ord.standard D) Set.full empty := {
+  def empty.isLeast: iIsLeast (ord.standard D).le Set.full empty := {
     isMember := trivial
     isLeMember :=
       (fun _val _valInFull _x => Set3.LeStd.intro
@@ -38,7 +38,7 @@ namespace Valuation
   }
   
   def undetermined.isLeast:
-    iIsLeast (ord.approximation D) Set.full undetermined
+    iIsLeast (ord.approximation D).le Set.full undetermined
   := {
     isMember := trivial
     isLeMember :=
@@ -86,6 +86,7 @@ namespace Valuation
     chSup.val = Valuation.empty
   :=
     iIsLeast.isUnique
+      (standard D)
       (Chain.sup.empty.isLeast ch chEmpty chSup)
       empty.isLeast
   
@@ -97,6 +98,7 @@ namespace Valuation
     chSup.val = Valuation.undetermined
   :=
     iIsLeast.isUnique
+      (approximation D)
       (Chain.sup.empty.isLeast ch chEmpty chSup)
       undetermined.isLeast
   

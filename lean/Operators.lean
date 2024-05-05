@@ -113,7 +113,10 @@ noncomputable def operatorC.fixedIndex2
           h
           ((operatorC.lfp salg dlA bA).property)
         
-        iIsLeast.isUnique isLfpAtB (lfp salg dlA bA).property,
+        iIsLeast.isUnique
+          (Valuation.ord.standard salg.D)
+          isLfpAtB
+          (lfp salg dlA bA).property,
         fixedB.property,
       ⟩
     ⟩
@@ -129,7 +132,10 @@ noncomputable def operatorC.fixedIndex2
           (le_of_not_le h)
           ((operatorC.lfp salg dlB bB).property)
         
-        iIsLeast.isUnique isLfpAtA (lfp salg dlB bB).property,
+        iIsLeast.isUnique
+          (Valuation.ord.standard salg.D)
+          isLfpAtA
+          (lfp salg dlB bB).property,
       ⟩
     ⟩
 
@@ -331,7 +337,11 @@ def operatorB.eqLfpC
 :
   lfp.val = operatorB salg dl b
 :=
-  congr rfl (Least.eq lfp (operatorC.lfp salg dl b))
+  congr rfl
+    (Least.eq
+      (Valuation.ord.standard salg.D)
+      lfp
+      (operatorC.lfp salg dl b))
 
 
 noncomputable def operatorB.isMonotonic.commonFixedStage
@@ -483,7 +493,10 @@ noncomputable def operatorB.fixedIndex2
           h
           ((operatorB.lfp salg dlA).property)
         
-        iIsLeast.isUnique isLfpAtB (lfp salg dlA).property,
+        iIsLeast.isUnique
+          (Valuation.ord.approximation salg.D)
+          isLfpAtB
+          (lfp salg dlA).property,
         fixedB.property,
       ⟩
     ⟩
@@ -499,7 +512,10 @@ noncomputable def operatorB.fixedIndex2
           (le_of_not_le h)
           ((operatorB.lfp salg dlB).property)
         
-        iIsLeast.isUnique isLfpAtA (lfp salg dlB).property,
+        iIsLeast.isUnique
+          (Valuation.ord.approximation salg.D)
+          isLfpAtA
+          (lfp salg dlB).property,
       ⟩
     ⟩
 

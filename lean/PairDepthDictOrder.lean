@@ -1,5 +1,7 @@
-import Utils
+import Chain
 import PairDictOrder
+import Utils
+import WellFoundedOfLeast
 
 
 namespace Pair
@@ -99,38 +101,33 @@ namespace Pair
           (fun eq => eq ▸ ab)
           (fun bcLt => Or.inr (depthDictOrder.Lt.trans abLt bcLt)))
   
-  inductive depthDictOrder.LtTotal (a b: Pair): Prop where
-  | IsLt: Lt a b → LtTotal a b
-  | IsGt: Lt b a → LtTotal a b
-  | IsEq: a = b → LtTotal a b
-  
   def depthDictOrder.ltTotal
     (a b: Pair)
   :
-    LtTotal a b
+    IsComparable Lt a b
   :=
     if h: a.depth = b.depth then
       (dictOrder.ltTotal a b).rec
-        (fun lt => LtTotal.IsLt (Lt.EqDepth h lt))
-        (fun gt => LtTotal.IsGt (Lt.EqDepth h.symm gt))
-        (fun eq => LtTotal.IsEq eq)
+        (fun lt => IsComparable.IsLt (Lt.EqDepth h lt))
+        (fun gt => IsComparable.IsGt (Lt.EqDepth h.symm gt))
+        (fun eq => IsComparable.IsEq eq)
     else
       (Nat.le_total a.depth b.depth).elim
         (fun le =>
           le.eq_or_lt.elim
             (fun eq => False.elim (h eq))
-            (fun lt => LtTotal.IsLt (Lt.NeqDepth lt)))
+            (fun lt => IsComparable.IsLt (Lt.NeqDepth lt)))
         (fun ge =>
           ge.eq_or_lt.elim
             (fun eq => False.elim (h eq.symm))
-            (fun gt => LtTotal.IsGt (Lt.NeqDepth gt)))
+            (fun gt => IsComparable.IsGt (Lt.NeqDepth gt)))
   
   def depthDictOrder.leTotal
     (a b: Pair)
   :
     Le a b ∨ Le b a
   :=
-    open LtTotal in
+    open IsComparable in
     match ltTotal a b with
     | IsLt ab => Or.inl (Or.inr ab)
     | IsGt ba => Or.inr (Or.inr ba)
@@ -206,4 +203,33 @@ namespace Pair
     ba.elim
       (fun eq => (eq.symm ▸ ab).irefl)
       (fun baLt => ab.antisymm baLt)
+  
+  
+  def depthDictOrder.nonemptyHasLeast
+    (s: Set Pair)
+    {t: Pair}
+    (sNonempty: t ∈ s)
+  :
+    ∃ least, iIsLeast Le s least
+  :=
+    let sBounded: Set Pair :=
+      fun p => s p ∧ p.depth ≤ t.depth
+    
+    let sBoundedNonempty: t ∈ sBounded :=
+      And.intro sNonempty (le_refl _)
+    
+    sorry
+  
+  def depthDictOrder.isWellFounded:
+    WellFounded depthDictOrder.Lt
+  :=
+    well_founded_of_least
+      depthDictOrder.toPartialOrder
+      depthDictOrder.nonemptyHasLeast
+  
+  def depthDictOrder.wfRel: WellFoundedRelation Pair := {
+    rel := depthDictOrder.Lt,
+    wf := depthDictOrder.isWellFounded
+  }
+  
 end Pair

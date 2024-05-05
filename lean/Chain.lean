@@ -2,15 +2,20 @@ import Tuple
 
 -- Ideally, IsLeast should take two property names [X] and [Y] as arguments,
 -- and return a structure with these two properties. "left" and "right" = BAD :/
-structure iIsLeast (ord: PartialOrder T) (s: Set T) (t: T): Prop where
+structure iIsLeast (le: T → T → Prop) (s: Set T) (t: T): Prop where
   isMember: t ∈ s
-  isLeMember: ∀ ⦃tt: T⦄, tt ∈ s → t ≤ tt
+  isLeMember: ∀ ⦃tt: T⦄, tt ∈ s → le t tt
 
-def Least (ord: PartialOrder T) (s: Set T): Type u :=
-  { t: T // iIsLeast ord s t }
+structure IsMinimal (lt: T → T → Prop) (s: Set T) (t: T): Prop where
+  isMember: t ∈ s
+  isLeMember: ∀ ⦃tt: T⦄, tt ∈ s → ¬lt tt t
+
+def Least (le: T → T → Prop) (s: Set T): Type u :=
+  { t: T // iIsLeast le s t }
 
 def Least.eq
-  (a b: Least ord s)
+  (ord: PartialOrder T)
+  (a b: Least ord.le s)
 :
   a = b
 :=
@@ -20,10 +25,9 @@ def Least.eq
   Subtype.eq (ord.le_antisymm _ _ ab ba)
 
 def iIsLeast.isUnique
-  {s: Set T}
-  {t0 t1: T}
-  (t0IsLeast: iIsLeast ord s t0)
-  (t1IsLeast: iIsLeast ord s t1)
+  (ord: PartialOrder T)
+  (t0IsLeast: iIsLeast ord.le s t0)
+  (t1IsLeast: iIsLeast ord.le s t1)
 :
   t0 = t1
 :=
@@ -32,25 +36,145 @@ def iIsLeast.isUnique
   
   ord.le_antisymm _ _ t0Le t1Le
 
+def List.least
+  (ord: LinearOrder T)
+  (list: List T)
+  (sNonEmpty: list ≠ [])
+:
+  Least ord.le (fun t => t ∈ list)
+:=
+  match list with
+    | [] => False.elim (sNonEmpty rfl)
+    | head :: [] => ⟨
+        head,
+        {
+          isMember := Mem.head []
+          isLeMember :=
+            fun _t tIn =>
+              List.eq_of_mem_singleton tIn ▸
+              ord.le_refl head
+        },
+      ⟩
+    | head :: tailHead :: tailTail =>
+        let leastOfTail :=
+          least ord (tailHead :: tailTail) List.noConfusion
+        
+        if hLt: head < leastOfTail.val then
+          ⟨
+            head,
+            {
+              isMember := Mem.head _
+              isLeMember :=
+                fun _t tIn =>
+                  match tIn with
+                  | Mem.head _ => le_refl _
+                  | Mem.tail _ tInTail =>
+                      let tLe := leastOfTail.property.isLeMember tInTail
+                      (hLt.trans_le tLe).le
+            },
+          ⟩
+        else if hGt: leastOfTail.val < head then
+          ⟨
+            leastOfTail.val,
+            {
+              isMember := Mem.tail _ leastOfTail.property.isMember
+              isLeMember :=
+                fun _t tIn =>
+                  match tIn with
+                  | Mem.head _ => hGt.le
+                  | Mem.tail _ tInTail =>
+                    leastOfTail.property.isLeMember tInTail
+            },
+          ⟩
+        else if hEq: head = leastOfTail.val then
+          ⟨
+            head,
+            {
+              isMember := Mem.head _
+              isLeMember :=
+                fun _t tIn =>
+                  match tIn with
+                  | Mem.head _ => le_refl _
+                  | Mem.tail _ tInTail =>
+                    hEq ▸ leastOfTail.property.isLeMember tInTail
+            },
+          ⟩
+        else
+          False.elim
+            (match ord.ltTotal head leastOfTail.val with
+            | IsComparable.IsLt lt => hLt lt
+            | IsComparable.IsGt gt => hGt gt
+            | IsComparable.IsEq eq => hEq eq)
+
+
+noncomputable def Least.ofFinite
+  (ord: LinearOrder T)
+  {s: Set T}
+  (isFinite: s.IsFinite)
+  (sNonempty: t ∈ s)
+:
+  Least ord.le s
+:=
+  let list := isFinite.inIff
+  let listNonempty :=
+    fun (eqEmpty: list.val = []) =>
+      let tInEmpty: t ∈ [] :=
+        eqEmpty ▸ (list.property t).mp sNonempty
+      
+      match tInEmpty with.
+  
+  let least := list.val.least ord listNonempty
+  
+  ⟨
+    least.val,
+    {
+      isMember :=
+        (list.property least.val).mpr least.property.isMember
+      
+      isLeMember :=
+        fun t tIn =>
+          least.property.isLeMember ((list.property t).mp tIn)
+    }
+  ⟩
+
+def IsMinimal.leastOfConnected
+  (isMinimal: IsMinimal lt s t)
+  (isConnected: IsConnected lt)
+  (ordersIff: ∀ t0 t1, le t0 t1 ↔ lt t0 t1 ∨ t0 = t1)
+:
+  iIsLeast le s t
+:= {
+  isMember := isMinimal.isMember
+  isLeMember :=
+    fun tt ttIn =>
+      let ttNotLt := isMinimal.isLeMember ttIn
+      
+      open IsComparable in
+      match isConnected t tt with
+      | IsLt isLt => (ordersIff t tt).mpr (Or.inl isLt)
+      | IsGt isGt => False.elim (ttNotLt isGt)
+      | IsEq isEq => (ordersIff t tt).mpr (Or.inr isEq)
+}
+
 def IsUpperBound (_: PartialOrder T) (s: Set T) (t: T): Prop :=
   ∀ tt: ↑s, tt.val ≤ t
 def UpperBound (ord: PartialOrder T) (s: Set T) := { t: T // IsUpperBound ord s t }
 
 def IsSupremum (ord: PartialOrder T) (s: Set T) (t: T): Prop :=
-  iIsLeast ord (IsUpperBound ord s) t
+  iIsLeast ord.le (IsUpperBound ord s) t
 -- @deprecated? it's probably better to use T with IsSupremum.
 -- One may deal with situations where the sets whose supremums
 -- one deals with are the same sets but defined differently.
 -- In such cases the suprema are of different types which
 -- prevents eg. stating they are equal.
-def Supremum (ord: PartialOrder T) (s: Set T) := Least ord (IsUpperBound ord s)
+def Supremum (ord: PartialOrder T) (s: Set T) := Least ord.le (IsUpperBound ord s)
 
 def Supremum.eq
   (a b: Supremum ord s)
 :
   a = b
 :=
-  Least.eq a b
+  Least.eq ord a b
 
 def IsSupremum.eq
   (a: IsSupremum ord sA tA)
@@ -211,7 +335,7 @@ def Chain.sup.empty.isLeast
   (chEmpty: ch.IsEmpty)
   (chSup: Supremum ord ch)
 :
-  iIsLeast ord Set.full chSup.val
+  iIsLeast ord.le Set.full chSup.val
 := {
   isMember := trivial
   isLeMember :=
