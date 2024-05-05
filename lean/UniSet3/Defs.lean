@@ -403,7 +403,7 @@ namespace Pair
       isDefA: IsDefEncoding a
       isLeast:
         iIsLeast
-          depthDictOrder.toPartialOrder
+          depthDictOrder.le
           (fun p => IsDefEncoding p ∧ depthDictOrder.lt a p)
           b
     
@@ -424,7 +424,10 @@ namespace Pair
     :
       nextA = nextB
     :=
-      iIsLeast.isUnique isNextA.isLeast isNextB.isLeast
+      iIsLeast.isUnique
+        depthDictOrder.toPartialOrder
+        isNextA.isLeast
+        isNextB.isLeast
     
     def IsNextDefPair.isLt
       (isNextDef: IsNextDefPair a b)
@@ -448,36 +451,55 @@ namespace Pair
     :=
       (depthDictOrder.le_total defA defB).elim
         (fun ab =>
-          ab.elim id
+          ab.elim
             (fun lt =>
               let nextLeB :=
                 isNextA.isLeast.isLeMember
                   (And.intro isNextB.isDefA lt)
-              nextLeB.ltAntisymm isNextB.isLt))
+              nextLeB.ltAntisymm isNextB.isLt)
+            id)
         (fun ba =>
-          ba.elim Eq.symm
+          ba.elim
             (fun lt =>
               let nextLeA :=
                 isNextB.isLeast.isLeMember
                   (And.intro isNextA.isDefA lt)
-              nextLeA.ltAntisymm isNextA.isLt))
+              nextLeA.ltAntisymm isNextA.isLt)
+            Eq.symm)
     
     structure IsNextDefPair.NextDefEncoding (dl: Pair) where
       next: Pair
       isNext: IsNextDefPair dl next
     
-    def IsNextDefPair.getNext
+    noncomputable def IsNextDefPair.getNext
       (isDef: IsDefEncoding dl)
     :
       NextDefEncoding dl
     :=
-      let next := sorry
+      let greaterDefLists: Set Pair :=
+        fun p => IsDefEncoding p ∧ depthDictOrder.Lt dl p
+      
+      let greaterDefList := pair (pair (fromNat 1) zero) dl
+      let isDefList: IsDefEncoding greaterDefList :=
+        And.intro IsExprEncoding.IsZero isDef
+      
+      let depthGt: dl.depth < greaterDefList.depth := depthLtR _ _
+      
+      let isIn: greaterDefList ∈ greaterDefLists :=
+        And.intro isDefList (depthDictOrder.Lt.NeqDepth depthGt)
+      
+      let ⟨next, isLeast⟩ :=
+        least_of_wf_rel_total
+          depthDictOrder.isWellFounded
+          greaterDefLists
+          isIn
+          depthDictOrder.ltTotal
       
       {
-        next,
+        next := next,
         isNext := {
           isDefA := isDef,
-          isLeast := sorry
+          isLeast := isLeast
         }
       }
     
@@ -601,7 +623,7 @@ namespace Pair
       dlEncoding: Pair
       isNth: IsNthDefListPair (fromNat n) dlEncoding
     
-    def IsNthDefListPair.getNthDlEncoding
+    noncomputable def IsNthDefListPair.getNthDlEncoding
       (n: Nat)
     :
       IsNthDefListPair.NthDlEncoding n

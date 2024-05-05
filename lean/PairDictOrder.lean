@@ -15,7 +15,7 @@ namespace Pair
       (Lt lA rA)
       (lA = rA ∧ Lt lB rB)
   
-  def dictOrder.Le (a b: Pair) := a = b ∨ Lt a b
+  def dictOrder.Le (a b: Pair) := Lt a b ∨ a = b
   
   def dictOrder.Lt.irefl
     (aa: Lt a a)
@@ -29,7 +29,7 @@ namespace Pair
         (fun lt => lt.irefl)
         (fun ⟨_eq, lt⟩ => lt.irefl)
   
-  def dictOrder.leRefl a: Le a a := Or.inl rfl
+  def dictOrder.leRefl a: Le a a := Or.inr rfl
   
   def dictOrder.Lt.antisymm
     (ab: Lt a b)
@@ -59,11 +59,11 @@ namespace Pair
     a = b
   :=
     ab.elim
-      (fun eq => eq)
       (fun abLt =>
         ba.elim
-          (fun eq => eq.symm)
-          (fun baLt => abLt.antisymm baLt))
+          (fun baLt => abLt.antisymm baLt)
+          (fun eq => eq.symm))
+      (fun eq => eq)
   
   def dictOrder.Lt.trans
     (ab: Lt a b)
@@ -99,11 +99,11 @@ namespace Pair
     Le a c
   :=
     ab.elim
-      (fun eq => eq ▸ bc)
       (fun abLt =>
         bc.elim
-          (fun eq => eq ▸ ab)
-          (fun bcLt => Or.inr (abLt.trans bcLt)))
+          (fun bcLt => Or.inl (abLt.trans bcLt))
+          (fun eq => eq ▸ ab))
+      (fun eq => eq ▸ bc)
   
   def dictOrder.ltTotal
     (a b: Pair)
@@ -135,8 +135,8 @@ namespace Pair
   :=
     open IsComparable in
     match ltTotal a b with
-    | IsLt ab => Or.inl (Or.inr ab)
-    | IsGt ba => Or.inr (Or.inr ba)
+    | IsLt ab => Or.inl (Or.inl ab)
+    | IsGt ba => Or.inr (Or.inl ba)
     | IsEq eq => eq ▸ Or.inl (leRefl _)
   
 end Pair

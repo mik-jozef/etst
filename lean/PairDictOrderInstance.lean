@@ -12,17 +12,17 @@ namespace Pair
       Iff.intro
         (fun ab =>
           And.intro
-            (Or.inr ab)
+            (Or.inl ab)
             (fun ba =>
               ba.elim
-                (fun eq => (eq ▸ ab).irefl)
-                (fun ba => ab.antisymm ba)))
+                (fun ba => ab.antisymm ba)
+                (fun eq => (eq ▸ ab).irefl)))
         (fun ⟨abLe, notBaLe⟩ =>
           abLe.elim
-            (fun eq => False.elim (notBaLe (Or.inl eq.symm)))
-            id)
+            id
+            (fun eq => False.elim (notBaLe (Or.inr eq.symm))))
     
-    le_refl _ := Or.inl rfl
+    le_refl _ := Or.inr rfl
     
     le_antisymm _ _ := dictOrder.Le.antisymm
     

@@ -9,7 +9,7 @@ namespace Pair
   | EqDepth: a.depth = b.depth → dictOrder.Lt a b → Lt a b
   | NeqDepth: a.depth < b.depth → Lt a b
   
-  def depthDictOrder.Le (a b: Pair) := a = b ∨ Lt a b
+  def depthDictOrder.Le (a b: Pair) := Lt a b ∨ a = b
   
   
   def depthDictOrder.Lt.depthEq
@@ -41,7 +41,7 @@ namespace Pair
   :=
     (aa.depthEq rfl).irefl
   
-  def depthDictOrder.leRefl a: Le a a := Or.inl rfl
+  def depthDictOrder.leRefl a: Le a a := Or.inr rfl
   
   def depthDictOrder.Lt.antisymm
     (ab: Lt a b)
@@ -63,11 +63,11 @@ namespace Pair
     a = b
   :=
     ab.elim
-      (fun eq => eq)
       (fun abLt =>
         ba.elim
-          (fun eq => eq.symm)
-          (fun baLt => depthDictOrder.Lt.antisymm abLt baLt))
+          (fun baLt => depthDictOrder.Lt.antisymm abLt baLt)
+          (fun eq => eq.symm))
+      (fun eq => eq)
   
   def depthDictOrder.Lt.trans
     (ab: Lt a b)
@@ -95,11 +95,11 @@ namespace Pair
     Le a c
   :=
     ab.elim
-      (fun eq => eq ▸ bc)
       (fun abLt =>
         bc.elim
-          (fun eq => eq ▸ ab)
-          (fun bcLt => Or.inr (depthDictOrder.Lt.trans abLt bcLt)))
+          (fun bcLt => Or.inl (depthDictOrder.Lt.trans abLt bcLt))
+          (fun eq => eq ▸ ab))
+      (fun eq => eq ▸ bc)
   
   def depthDictOrder.ltTotal
     (a b: Pair)
@@ -129,8 +129,8 @@ namespace Pair
   :=
     open IsComparable in
     match ltTotal a b with
-    | IsLt ab => Or.inl (Or.inr ab)
-    | IsGt ba => Or.inr (Or.inr ba)
+    | IsLt ab => Or.inl (Or.inl ab)
+    | IsGt ba => Or.inr (Or.inl ba)
     | IsEq eq => eq ▸ Or.inl (leRefl _)
   
   
@@ -142,17 +142,17 @@ namespace Pair
       Iff.intro
         (fun ab =>
           And.intro
-            (Or.inr ab)
+            (Or.inl ab)
             (fun ba =>
               ba.elim
-                (fun eq => (eq ▸ ab).irefl)
-                (fun ba => ab.antisymm ba)))
+                (fun ba => ab.antisymm ba)
+                (fun eq => (eq ▸ ab).irefl)))
         (fun ⟨abLe, notBaLe⟩ =>
           abLe.elim
-            (fun eq => False.elim (notBaLe (Or.inl eq.symm)))
-            id)
+            id
+            (fun eq => False.elim (notBaLe (Or.inr eq.symm))))
     
-    le_refl _ := Or.inl rfl
+    le_refl _ := Or.inr rfl
     
     le_antisymm _ _ := depthDictOrder.Le.antisymm
     
@@ -164,8 +164,8 @@ namespace Pair
   
   def depthDictOrder.zeroLeAny (a: Pair): zero ≤ a :=
     match a with
-    | zero => Or.inl rfl
-    | pair _ _ => Or.inr (Lt.NeqDepth (Nat.zero_lt_succ _))
+    | zero => Or.inr rfl
+    | pair _ _ => Or.inl (Lt.NeqDepth (Nat.zero_lt_succ _))
   
   def depthDictOrder.nopeLtZero
     (a: Pair)
@@ -191,8 +191,8 @@ namespace Pair
     P
   :=
     ab.elim
-      (fun eq => (eq ▸ ba).irefl)
       (fun abLt => ba.antisymm abLt)
+      (fun eq => (eq ▸ ba).irefl)
   
   def depthDictOrder.Lt.leAntisymm
     (ab: Lt a b)
@@ -201,8 +201,8 @@ namespace Pair
     P
   :=
     ba.elim
-      (fun eq => (eq.symm ▸ ab).irefl)
       (fun baLt => ab.antisymm baLt)
+      (fun eq => (eq.symm ▸ ab).irefl)
   
   
   def depthDictOrder.nonemptyHasLeast
@@ -218,7 +218,31 @@ namespace Pair
     let sBoundedNonempty: t ∈ sBounded :=
       And.intro sNonempty (le_refl _)
     
-    sorry
+    let sBounded_is_finite :=
+      depth.boundedByIsFinite
+        fun p (pInS: p ∈ sBounded) =>
+          Nat.lt_succ_of_le pInS.right
+    
+    let ⟨lob, isLob⟩ :=
+       Least.ofFinite depthDictOrder sBounded_is_finite sBoundedNonempty
+    
+    ⟨
+      lob,
+      {
+        isMember := isLob.isMember.left,
+        isLeMember :=
+          fun p pInS =>
+            match Nat.linearOrder.ltTotal p.depth t.depth with
+            | IsComparable.IsLt pt =>
+                isLob.isLeMember (And.intro pInS pt.le)
+            | IsComparable.IsGt tp =>
+                let lob_le_t := isLob.isLeMember
+                  (And.intro sNonempty (le_refl _))
+                lob_le_t.trans (Or.inl (Lt.NeqDepth tp))
+            | IsComparable.IsEq eq =>
+              isLob.isLeMember (And.intro pInS (eq ▸ le_refl _))
+      }
+    ⟩
   
   def depthDictOrder.isWellFounded:
     WellFounded depthDictOrder.Lt

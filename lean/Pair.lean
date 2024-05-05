@@ -158,6 +158,29 @@ namespace Pair
   :=
     congr rfl (max_eq_iff.mpr (Or.inr (And.intro rfl ab)))
   
+  def depth.ltLOfEqSucc
+    (ltSucc: (pair a b).depth < n.succ)
+  :
+    a.depth < n
+  :=
+    (casesEq a b).elim
+      (fun ⟨eq, le⟩ =>
+        Nat.lt_of_succ_lt_succ (eq ▸ ltSucc))
+      (fun ⟨eq, lt⟩ =>
+        let ltSucc := (Nat.succ_lt_succ lt).trans (eq ▸ ltSucc)
+        Nat.lt_of_succ_lt_succ ltSucc)
+  
+  def depth.ltROfEqSucc
+    (ltSucc: (pair a b).depth < n.succ)
+  :
+    b.depth < n
+  :=
+    (casesEq a b).elim
+      (fun ⟨eq, le⟩ =>
+        le.trans_lt (Nat.lt_of_succ_lt_succ (eq ▸ ltSucc)))
+      (fun ⟨eq, lt⟩ =>
+        Nat.lt_of_succ_lt_succ (eq ▸ ltSucc))
+  
   
   def IsNatEncoding: Set Pair
   | zero => True
@@ -447,5 +470,52 @@ namespace Pair
     let nLtLength := arrayAt.lengthGtOfSome eqSome
     
     (Nat.eq_of_lt_of_le_succ nLtLength lengthPredLeN).symm
+  
+  
+  def depth.setOfAllBelowIsFinite
+    (n: Nat)
+  :
+    Set.IsFinite (fun (p: Pair) => p.depth < n)
+  :=
+    match n with
+    | Nat.zero =>
+      ⟨
+        [],
+        fun ⟨_p, pInS⟩ => False.elim (Nat.not_lt_zero _ pInS)
+      ⟩
+    | Nat.succ nPred =>
+      let sPred: Set Pair := fun p => p.depth < nPred
+      
+      let isFinitePred := setOfAllBelowIsFinite nPred
+      
+      Set.IsFinite.ofPairsOfFinite
+        isFinitePred
+        isFinitePred
+        Pair.pair
+        _
+        ⟨
+          [Pair.zero],
+          fun ⟨c, ⟨cDepthLt, neqMapped⟩⟩ =>
+            let cEqZero: c = zero :=
+              match c with
+              | zero => rfl
+              | pair a b =>
+                let aInSPred: a ∈ sPred := ltLOfEqSucc cDepthLt
+                let bInSPred: b ∈ sPred := ltROfEqSucc cDepthLt
+                
+                False.elim (neqMapped aInSPred bInSPred rfl)
+            
+            cEqZero ▸ List.Mem.head [],
+        ⟩
+  
+  def depth.boundedByIsFinite
+    {s: Set Pair}
+    (isBounded: ∀ p ∈ s, p.depth < n)
+  :
+    s.IsFinite
+  :=
+    Set.IsFinite.ofIsLeFinite
+      (setOfAllBelowIsFinite n)
+      (fun p inS => isBounded p inS)
   
 end Pair

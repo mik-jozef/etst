@@ -179,13 +179,13 @@ noncomputable def minimal_of_well_founded
   minimal_of_well_founded.acc (wf.1 t) s nonempty
 
 noncomputable def least_of_wf_rel_total
-  {le: T → T → Prop}
-  (wf: WellFounded le)
+  {lt: T → T → Prop}
+  (wf: WellFounded lt)
   (s: Set T)
   (nonempty: t ∈ s)
-  (isConnected: ∀ t0 t1, le t0 t1 ∨ le t1 t0)
+  (is_connected: IsConnected lt)
 :
-  { t // iIsLeast le s t }
+  { t // iIsLeast (fun a b => lt a b ∨ a = b) s t }
 :=
   let ⟨t, isMinimal⟩ := minimal_of_well_founded wf s nonempty
   
@@ -194,10 +194,12 @@ noncomputable def least_of_wf_rel_total
     {
       isMember := isMinimal.isMember,
       isLeMember :=
-        fun tOther in_s =>
-          (isConnected t tOther).elim
-            id
-            (fun le_other =>
-              False.elim (isMinimal.isLeMember in_s le_other))
+        fun t_other in_s =>
+          match is_connected t t_other with
+          | IsComparable.IsLt t_lt => Or.inl t_lt
+          | IsComparable.IsGt t_gt =>
+            False.elim (isMinimal.isLeMember in_s t_gt)
+          | IsComparable.IsEq t_eq =>
+            Or.inr t_eq
     }
   ⟩

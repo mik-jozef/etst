@@ -1,6 +1,10 @@
 /-
   Things so basic that they ought to be in Lean's standard
-  library, and perhaps even are and I just didn't find them.
+  library, and <del>perhaps</del> most likely even are and
+  I just didn't find them.
+  
+  Also some things that seemed basic but turned out not to be.
+  And some stuff that just kinda doesn't fit anywhere else.
 -/
 
 import PartialOrder
@@ -72,24 +76,27 @@ namespace Set
 
   def IsFinite (s: Set D): Prop := ∃ l: List D, ∀ t: s, t.val ∈ l
   
-  noncomputable def IsFinite.inIff
-    {s: Set D}
-    (isFin: s.IsFinite)
-  :
-    { l: List D // ∀ t, t ∈ s ↔ t ∈ l }
-  :=
-    let ⟨l, allOfSIn⟩ := isFin.unwrap
-    let ⟨lf, inIff⟩ := l.pfilter s
+  namespace IsFinite
+    noncomputable def inIff
+      {s: Set D}
+      (isFin: s.IsFinite)
+    :
+      { l: List D // ∀ t, t ∈ s ↔ t ∈ l }
+    :=
+      let ⟨l, allOfSIn⟩ := isFin.unwrap
+      let ⟨lf, inIff⟩ := l.pfilter s
+      
+      ⟨
+        lf,
+        fun d =>
+          Iff.intro
+            (fun dInS =>
+              (inIff d).mpr (And.intro (allOfSIn ⟨d, dInS⟩) dInS))
+            (fun dInLf =>
+              ((inIff d).mp dInLf).right),
+      ⟩
     
-    ⟨
-      lf,
-      fun d =>
-        Iff.intro
-          (fun dInS =>
-            (inIff d).mpr (And.intro (allOfSIn ⟨d, dInS⟩) dInS))
-          (fun dInLf =>
-            ((inIff d).mp dInLf).right),
-    ⟩
+  end IsFinite
 
   def IsSubset (a b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
 
@@ -560,3 +567,97 @@ def List.concatUnique.inRiteToIn
 def List.flattenUnique: List (List T) → List T
 | nil => []
 | cons head tail => head ++ (flattenUnique tail)
+
+namespace Set
+  namespace IsFinite
+    
+    def ofIsLeFinite
+      {a b: Set D}
+      (isFin: a.IsFinite)
+      (isLe: b ≤ a)
+    :
+      b.IsFinite
+    :=
+      let ⟨l, allOfAIn⟩ := isFin.unwrap
+      let ⟨lf, inIff⟩ := l.pfilter b
+      
+      ⟨
+        lf,
+        fun ⟨d, dIn⟩ =>
+          (inIff d).mpr (And.intro (allOfAIn ⟨d, isLe dIn⟩) dIn)
+      ⟩
+    
+    def ofPairsOfFinite.combineLists
+      (listA: List A)
+      (listB: List B)
+      (combine: A → B → C)
+    :
+      { lc: List C // ∀ ⦃a b⦄, a ∈ listA → b ∈ listB → combine a b ∈ lc }
+    :=
+      match listA with
+      | List.nil => ⟨
+        [],
+        fun _a _b aIn _bIn => match aIn with.
+      ⟩
+      | List.cons aHead aTail =>
+        let ⟨lcTail, lcTailIn⟩ := combineLists aTail listB combine
+        let lcHead := listB.map (combine aHead)
+        let lc := lcHead ++ lcTail
+        ⟨
+          lc,
+          fun _ _ aIn bIn =>
+            aIn.toOr.elim
+              (fun eqHead =>
+                let inMapped :=
+                  List.mem_map_of_mem (combine aHead) bIn
+                
+                eqHead ▸
+                List.mem_append_left lcTail inMapped)
+              (fun inTail =>
+                List.mem_append_right lcHead (lcTailIn inTail bIn))
+        ⟩
+    
+    def ofPairsOfFinite
+      {sa: Set A}
+      (isFinA: sa.IsFinite)
+      {sb: Set B}
+      (isFinB: sb.IsFinite)
+      (combine: A → B → C)
+      (sc: Set C)
+      (finiteExtraElements:
+        IsFinite { c | c ∈ sc ∧ ∀ ⦃a b⦄, a ∈ sa → b ∈ sb → c ≠ combine a b })
+    :
+      sc.IsFinite
+    :=
+      let ⟨la, allOfAIn⟩ := isFinA.unwrap
+      let ⟨lb, allOfBIn⟩ := isFinB.unwrap
+      let ⟨lc, allOfCIn⟩ := finiteExtraElements.unwrap
+      
+      let ⟨lab, labIn⟩ :=
+        ofPairsOfFinite.combineLists la lb combine
+      
+      ⟨
+        lab ++ lc,
+        fun ⟨c, inL⟩ =>
+          if h: ∃ a b, a ∈ la ∧ b ∈ lb ∧ c = combine a b then
+            let ⟨a, b, aIn, bIn, eq⟩ := h
+            
+            List.mem_append_left lc (eq ▸ labIn aIn bIn)
+          else
+            let al: ∀ ⦃a b⦄, a ∈ la → b ∈ lb → c ≠ combine a b :=
+              fun a b aIn bIn cEq =>
+                h ⟨a, b, aIn, bIn, cEq⟩
+            
+            let inLc := allOfCIn ⟨
+              c,
+              And.intro
+                inL
+                fun _ _ inSa inSb =>
+                  al (allOfAIn ⟨_, inSa⟩) (allOfBIn ⟨_, inSb⟩)
+            ⟩
+            
+            List.mem_append_right lab inLc
+      ⟩
+    
+  end IsFinite
+end Set
