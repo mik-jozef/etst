@@ -734,15 +734,6 @@ namespace Pair
       =>
         isQuantifierA.nopeCpl
       
-      | IsBin isBinA _ _,
-        IsQuantifier isQuantifierB isNatB isIncrB
-      =>
-        IsExprEncoding.nopeBinQuant isBinA isQuantifierB
-      
-      | IsBin isBinA _ _,
-        IsCpl isIncrB
-      =>
-        isBinA.nopeCpl
     
     -- why does this have to be noncomputable?
     -- Seems very much computable to me.
