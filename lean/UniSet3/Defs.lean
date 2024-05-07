@@ -2023,8 +2023,9 @@ namespace Pair
     :
       Prop where
     | intro
-      (n dl: Pair)
-      (isEnumUpTo: IsEnumUpToPair n dl)
+      (n: Nat)
+      (dl: Pair)
+      (isEnumUpTo: IsEnumUpToPair (fromNat n) dl)
       (isAt: IsDefListToSetABC dl exprIndex expr)
     
     def TheDefList: Pair → Prop
@@ -2038,10 +2039,15 @@ namespace Pair
       exprA = exprB
     :=
       match isA, isB with
-      | TheDefListPair.intro nA dlA isUpToA isAtA,
-        TheDefListPair.intro nB dlB isUpToB isAtB
+      | TheDefListPair.intro _ _ isUpToA isAtA,
+        TheDefListPair.intro _ _ isUpToB isAtB
       =>
-        sorry
+        open IsEnumUpToPair.PreservesPrevious in
+        match isUpToA.preservesPrevious isUpToB isAtA.eq with
+        | CaseNone isNone =>
+          Option.noConfusion (isNone.symm.trans isAtB.eq)
+        | CaseSome isSome =>
+          Option.some.inj (isAtB.eq.symm.trans isSome)
     
   end uniSet3
 end Pair
