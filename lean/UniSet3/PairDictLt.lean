@@ -37,7 +37,7 @@ namespace Pair
       | pair (pair aA aB) zero => isPD.elim
       | pair (pair aA aB) (pair bA bB) =>
         
-        open Pair.dictOrder.LtTotal in
+        open IsComparable in
         match Pair.dictOrder.ltTotal aA bA with
         | IsLt ab =>
           let ipd: IsPairDictLt (pair aA bA) := ab
