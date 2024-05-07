@@ -3,8 +3,8 @@ import Mathlib.Order.MinMax
 
 -- Ehhhm, should I rather call them binary trees?
 inductive Pair where
-| zero: Pair -- Zero is considered an improper pair.
-| pair (a b: Pair): Pair
+| zero -- Zero is considered an improper pair.
+| pair (a b: Pair)
 
 def decideEq: (a b: Pair) → Decidable (a = b)
 | Pair.zero, Pair.zero => isTrue rfl
