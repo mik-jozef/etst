@@ -1,5 +1,5 @@
 import Arities
-import UniDefList
+import UniSet3.UniDefList
 
 /-
   See `exprEncoding.exprList`.

@@ -34,7 +34,6 @@ lean_lib PartialOrder {}
 lean_lib Pointwise {}
 lean_lib Set3 {}
 lean_lib Tuple {}
-lean_lib UniDefList {}
 lean_lib UniSet3.Append {}
 lean_lib UniSet3.DefEncoding {}
 lean_lib UniSet3.DefListToEncoding {}
@@ -50,6 +49,7 @@ lean_lib UniSet3.PairOfDepth {}
 lean_lib UniSet3.ShiftDefEncoding {}
 lean_lib UniSet3.TheDefList {}
 lean_lib UniSet3.TheSet3 {}
+lean_lib UniSet3.UniDefList {}
 lean_lib Utils {}
 lean_lib Valuation {}
 lean_lib WellFoundedOfLeast {}

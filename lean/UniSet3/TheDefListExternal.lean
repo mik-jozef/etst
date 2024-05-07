@@ -1,5 +1,5 @@
 import ExampleWFCs
-import UniDefList
+import UniSet3.UniDefList
 import UniSet3.DefListToEncoding
 
 

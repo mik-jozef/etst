@@ -3,10 +3,10 @@
   defined by the definition list in `UniDefList`.
 -/
 
-import UniDefList
 import Wfm
 import PairDictOrderInstance
 import PairDepthDictOrder
+import UniSet3.UniDefList
 import UniSet3.DefListToEncoding
 
 
