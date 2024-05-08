@@ -63,6 +63,13 @@ namespace Pair
   :=
     rfl
   
+  def fromNat.eqSuccOfEq
+    (eq: fromNat n = p)
+  :
+    fromNat (Nat.succ n) = pair p zero
+  :=
+    eq ▸ fromSuccEq n
+  
   
   def depthSuccLeL (a b: Pair):
     Nat.succ a.depth ≤ (pair a b).depth
@@ -207,7 +214,6 @@ namespace Pair
   
   
   def depth.nat.eqSuccDepthPred
-    {a b: Pair}
     (isNat: IsNatEncoding (pair a b))
   :
     depth (pair a b)
@@ -261,6 +267,37 @@ namespace Pair
     depth a ≠ depth b
   :=
     (depth.nat.injEq isNatA isNatB).contra neq
+  
+  def IsNatEncoding.toNat
+    (isNat: IsNatEncoding p)
+  :
+    Nat
+  :=
+    match p with
+    | zero => 0
+    | pair _ _ => (toNat isNat.left).succ
+  
+  def IsNatEncoding.toNatFromNatEq
+    (isNat: IsNatEncoding p)
+  :
+    fromNat (IsNatEncoding.toNat isNat) = p
+  :=
+    -- Termination ought to be automatically inferred here.
+    -- match p with
+    -- | zero => rfl
+    -- | pair pred z =>
+    --   isNat.right ▸
+    --   fromNat.eqSuccOfEq (toNatFromNatEq isNat.left)
+    
+    let isNatToEq: ∀ (isNat : IsNatEncoding p), fromNat (toNat isNat) = p := p.rec
+      (fun _ => rfl)
+      (fun _ _ ihPred _ isNat =>
+        -- Inlining this variable causes an error.
+        let eqWithZ := fromNat.eqSuccOfEq (ihPred isNat.left)
+        
+        isNat.right ▸ eqWithZ)
+    
+    isNatToEq isNat
   
   
   def arrayLength: Pair → Nat

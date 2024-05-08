@@ -2018,7 +2018,7 @@ namespace Pair
     :=
       Option.some.inj (isA.eq.symm.trans isB.eq)
     
-    inductive TheDefListPair
+    inductive IsTheDefListExprPair
       (exprIndex expr: Pair)
     :
       Prop where
@@ -2028,19 +2028,19 @@ namespace Pair
       (isEnumUpTo: IsEnumUpToPair (fromNat i) dl)
       (isAt: IsDefListToSetABC dl exprIndex expr)
     
-    def TheDefList: Pair → Prop
+    def IsTheDefListExpr: Pair → Prop
     | zero => False
-    | pair exprIndex expr => TheDefListPair exprIndex expr
+    | pair exprIndex expr => IsTheDefListExprPair exprIndex expr
     
-    def TheDefListPair.isUnique
-      (isB: TheDefListPair exprIndex exprA)
-      (isA: TheDefListPair exprIndex exprB)
+    def IsTheDefListExprPair.isUnique
+      (isB: IsTheDefListExprPair exprIndex exprA)
+      (isA: IsTheDefListExprPair exprIndex exprB)
     :
       exprA = exprB
     :=
       match isA, isB with
-      | TheDefListPair.intro _ _ isUpToA isAtA,
-        TheDefListPair.intro _ _ isUpToB isAtB
+      | intro _ _ isUpToA isAtA,
+        intro _ _ isUpToB isAtB
       =>
         open IsEnumUpToPair.PreservesPrevious in
         match isUpToA.preservesPrevious isUpToB isAtA.eq with
@@ -2049,11 +2049,11 @@ namespace Pair
         | CaseSome isSome =>
           Option.some.inj (isAtB.eq.symm.trans isSome)
     
-    structure TheDefListPair.NthExpr (n: Nat) where
+    structure IsTheDefListExprPair.NthExpr (n: Nat) where
       expr: Pair
-      isNth: TheDefListPair (fromNat n) expr
+      isNth: IsTheDefListExprPair (fromNat n) expr
     
-    noncomputable def TheDefListPair.getNthExpr
+    noncomputable def IsTheDefListExprPair.getNthExpr
       (n: Nat)
     :
       NthExpr n
@@ -2069,7 +2069,7 @@ namespace Pair
       
       | some expr =>
         let isNth :=
-          TheDefListPair.intro
+          intro
             i
             dlEncoding
             isEnumUpTo

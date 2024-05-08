@@ -290,5 +290,53 @@ namespace Pair
             })
     termination_by Inw.toIsDefListToSet inw => p.depthBA
     
+    def insTheDefListExpr (isTheDefListExpr: IsTheDefListExpr p):
+      Ins theDefList p
+    :=
+      match p, isTheDefListExpr with
+      | pair _n _expr,
+        IsTheDefListExprPair.intro i _dl isUpTo isDefToSet
+      =>
+        insWfmDef.toInsWfm
+          (insUnDom
+            (insWfmDef.toInsWfm
+              (insUnDom
+                (insNatEncoding
+                  (fromNat.isNatEncoding i))
+                (insCallExpr
+                  (insEnumUpTo isUpTo)
+                  (insFree
+                    insBound
+                    nat501Neq500))))
+            (insCallExpr
+              (insDefListToSet isDefToSet)
+              (insFree
+                insBound
+                nat501Neq500)))
+    
+    def Inw.toIsTheDefListExpr (inw: Inw theDefList p):
+      IsTheDefListExpr p
+    :=
+      let inw := inwWfm.toInwWfmDef inw
+      
+      let ⟨dl, ⟨inwDomainPrefixes, inw⟩⟩ := inwUnDomElim inw
+      let inw := inwCallElimBound inw rfl nat501Neq500
+      
+      let isDefListToSet := toIsDefListToSet inw
+      
+      match p, isDefListToSet with
+      | pair _n _expr, isDefListToSet =>
+        
+        let inw := inwWfm.toInwWfmDef inwDomainPrefixes
+        let ⟨_iEnc, ⟨inwDomainI, inw⟩⟩ := inwUnDomElim inw
+        let inw := inwCallElimBound inw rfl nat501Neq500
+        
+        let isEnumUpTo := toIsEnumUpTo inw
+        let isNatI := toIsNatEncoding inwDomainI
+        let i := isNatI.toNat
+        
+        IsTheDefListExprPair.intro
+          i dl (isNatI.toNatFromNatEq ▸ isEnumUpTo) isDefListToSet
+    
   end uniSet3
 end Pair
