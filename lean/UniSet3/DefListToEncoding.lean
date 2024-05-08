@@ -58,11 +58,19 @@ def Pair.exprToEncoding: Expr pairSignature → Pair
 
 def Pair.defListToEncoding
   (dl: DefList pairSignature)
-  (start: Nat)
+  (iStart iEnd: Nat)
 :
-  (length: Nat) → Pair
-| Nat.zero => Pair.zero
-| Nat.succ pred =>
-  Pair.pair
-    (exprToEncoding (dl.getDef start))
-    (defListToEncoding dl (Nat.succ start) pred)
+  Pair
+:=
+  if h: iEnd ≤ iStart then
+    Pair.zero
+  else
+    have: iEnd - iStart.succ < iEnd - iStart :=
+      Nat.sub_lt_sub_left
+        (Nat.lt_of_not_le h)
+        (Nat.lt_succ_self iStart)
+    
+    Pair.pair
+      (exprToEncoding (dl.getDef iStart))
+      (defListToEncoding dl (Nat.succ iStart) iEnd)
+termination_by Pair.defListToEncoding dl iStart iEnd => iEnd - iStart
