@@ -19,6 +19,22 @@ def Set3.pairCallJust
 :=
   Set3.pairCall fn (Set3.just arg)
 
+
+noncomputable def theDefListExternal.getDef
+  (n: Nat)
+:
+  Expr pairSignature
+:=
+  Pair.encodingToExpr
+    (Pair.uniSet3.IsTheDefListExprPair.getNthExpr n).expr
+
+noncomputable def theDefListExternal:
+  DefList pairSignature
+:= {
+  getDef := theDefListExternal.getDef
+}
+
+
 namespace Pair
   noncomputable def uniSet3 := uniDefList.wfModel uniDefList.theSet
   
