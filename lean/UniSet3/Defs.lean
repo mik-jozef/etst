@@ -7,7 +7,6 @@ import Wfm
 import PairDictOrderInstance
 import PairDepthDictOrder
 import UniSet3.UniDefList
-import UniSet3.DefListToEncoding
 
 
 namespace Pair
