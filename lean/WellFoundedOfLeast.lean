@@ -178,7 +178,7 @@ noncomputable def minimal_of_well_founded
 :=
   minimal_of_well_founded.acc (wf.1 t) s nonempty
 
-noncomputable def least_of_wf_rel_total
+noncomputable def least_of_well_founded_total
   {lt: T → T → Prop}
   (wf: WellFounded lt)
   (s: Set T)

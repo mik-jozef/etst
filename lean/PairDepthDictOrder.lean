@@ -256,4 +256,16 @@ namespace Pair
     wf := depthDictOrder.isWellFounded
   }
   
+  noncomputable def depthDictOrder.least
+    (s: Set Pair)
+    (sNonempty: t ∈ s)
+  :
+    Least Le s
+  :=
+    least_of_well_founded_total
+      depthDictOrder.isWellFounded
+      s
+      sNonempty
+      depthDictOrder.ltTotal
+  
 end Pair

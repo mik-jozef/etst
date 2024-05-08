@@ -488,11 +488,7 @@ namespace Pair
         And.intro isDefList (depthDictOrder.Lt.NeqDepth depthGt)
       
       let ⟨next, isLeast⟩ :=
-        least_of_wf_rel_total
-          depthDictOrder.isWellFounded
-          greaterDefLists
-          isIn
-          depthDictOrder.ltTotal
+        depthDictOrder.least greaterDefLists isIn
       
       {
         next := next,
