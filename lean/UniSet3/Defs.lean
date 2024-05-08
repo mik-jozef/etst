@@ -1855,7 +1855,7 @@ namespace Pair
       isEnumUpTo: IsEnumUpToPair (fromNat i) dlEncoding
       hasNthDef: n < dlEncoding.arrayLength
     
-    noncomputable def IsEnumUpToPair.exNthDef.loop
+    noncomputable def IsEnumUpToPair.nthDef.loop
       (n: Nat)
       (i: Nat) -- The loop index.
       (iNotZero: i ≠ 0)
@@ -1881,17 +1881,17 @@ namespace Pair
             (Nat.lt_of_not_ge h)
             (nthIteration.lengthGrows iNotZero)
         
-        exNthDef.loop n i.succ Nat.noConfusion
+        nthDef.loop n i.succ Nat.noConfusion
     
-    termination_by IsEnumUpToPair.exNthDef.loop n i iNotZero =>
+    termination_by IsEnumUpToPair.nthDef.loop n i iNotZero =>
       n.succ - (nthIteration i).dlEncoding.arrayLength
     
-    noncomputable def IsEnumUpToPair.exNthDef
+    noncomputable def IsEnumUpToPair.nthDef
       (n: Nat)
     :
       DlWithNthDef n
     :=
-      exNthDef.loop n 1 Nat.one_ne_zero
+      nthDef.loop n 1 Nat.one_ne_zero
     
     def IsEnumUpToPair.preservesPrevious.succ
       (isEnumUpTo: IsEnumUpToPair (fromNat n) dl)
@@ -2023,9 +2023,9 @@ namespace Pair
     :
       Prop where
     | intro
-      (n: Nat)
+      (i: Nat)
       (dl: Pair)
-      (isEnumUpTo: IsEnumUpToPair (fromNat n) dl)
+      (isEnumUpTo: IsEnumUpToPair (fromNat i) dl)
       (isAt: IsDefListToSetABC dl exprIndex expr)
     
     def TheDefList: Pair → Prop
@@ -2048,6 +2048,38 @@ namespace Pair
           Option.noConfusion (isNone.symm.trans isAtB.eq)
         | CaseSome isSome =>
           Option.some.inj (isAtB.eq.symm.trans isSome)
+    
+    structure TheDefListPair.NthExpr (n: Nat) where
+      expr: Pair
+      isNth: TheDefListPair (fromNat n) expr
+    
+    noncomputable def TheDefListPair.getNthExpr
+      (n: Nat)
+    :
+      NthExpr n
+    :=
+      let {
+        dlEncoding, i, isEnumUpTo, hasNthDef
+      } :=
+        IsEnumUpToPair.nthDef n
+      
+      match h: dlEncoding.arrayAt n with
+      | none =>
+        False.elim (arrayAt.nopeNoneOfWithinBounds hasNthDef h)
+      
+      | some expr =>
+        let isNth :=
+          TheDefListPair.intro
+            i
+            dlEncoding
+            isEnumUpTo
+            {
+              isDef := isEnumUpTo.isDefB
+              isNat := fromNat.isNatEncoding n
+              eq := fromNat.depthEq _ ▸ h
+            }
+        
+        { expr, isNth }
     
   end uniSet3
 end Pair
