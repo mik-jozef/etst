@@ -9,6 +9,11 @@ namespace Pair
   | EqDepth: a.depth = b.depth → dictOrder.Lt a b → Lt a b
   | NeqDepth: a.depth < b.depth → Lt a b
   
+  def depthDictOrder.EqDepth {a b: Pair} (eq: a.depth = b.depth) lt :=
+    depthDictOrder.Lt.EqDepth eq lt
+  def depthDictOrder.NeqDepth {a b: Pair} (lt: a.depth < b.depth) :=
+    depthDictOrder.Lt.NeqDepth lt
+  
   def depthDictOrder.Le (a b: Pair) := Lt a b ∨ a = b
   
   
@@ -167,6 +172,9 @@ namespace Pair
     | zero => Or.inr rfl
     | pair _ _ => Or.inl (Lt.NeqDepth (Nat.zero_lt_succ _))
   
+  def depthDictOrder.zeroLtPair (a b: Pair): zero < pair a b :=
+    Lt.NeqDepth (Nat.zero_lt_succ _)
+  
   def depthDictOrder.nopeLtZero
     (a: Pair)
     (aLtZero: a < zero)
@@ -267,5 +275,70 @@ namespace Pair
       s
       sNonempty
       depthDictOrder.ltTotal
+  
+  noncomputable def depthDictOrder.nthPair: Nat → Pair
+  | 0 => zero
+  | Nat.succ nPred =>
+    (least
+      (fun p => nthPair nPred < p)
+      (NeqDepth (depthLtL (nthPair nPred) zero))).val
+  
+  def depthDictOrder.nthPairIsLeast
+    (n: Nat)
+  :
+    iIsLeast Le (fun p => nthPair n < p) (nthPair n.succ)
+  :=
+    (least
+      (fun p => nthPair n < p)
+      (NeqDepth (depthLtL (nthPair n) zero))).property
+  
+  def depthDictOrder.notNthIsGt
+    (p: Pair)
+    (notNth: ∀ n, nthPair n ≠ p)
+    (n: Nat)
+  :
+    nthPair n < p
+  :=
+    match n with
+    | 0 =>
+      match p with
+      | zero => False.elim (notNth 0 rfl)
+      | pair a b => zeroLtPair a b
+    | Nat.succ nPred =>
+      let ih := notNthIsGt p notNth nPred
+      let le := (nthPairIsLeast nPred).isLeMember ih
+      
+      le.elim id (fun eq => False.elim (notNth nPred.succ eq))
+  
+  def depthDictOrder.isBoundedByNotNth
+    (p: Pair)
+    (notNth: ∀ n, nthPair n ≠ p)
+    (n: Nat)
+  :
+    (nthPair n).depth ≤ p.depth
+  :=
+    match notNthIsGt p notNth n with
+    | Lt.EqDepth eq _ => Nat.le_of_eq eq
+    | Lt.NeqDepth lt => lt.le
+  
+  def depthDictOrder.nthPairSurjective
+    (p: Pair)
+  :
+    ∃ n, nthPair n = p
+  :=
+    by_contradiction (fun nex =>
+      let allNotNth: ∀ n, nthPair n ≠ p :=
+        fun n eq => nex ⟨n, eq⟩
+      
+      let isBounded := isBoundedByNotNth p allNotNth
+      
+      let isNth: Set Pair := fun p => ∃ n, nthPair n = p
+      let isFinite: Set.IsFinite isNth :=
+        depth.boundedByIsFinite
+          (fun np npIsNth =>
+            let ⟨i, eq⟩ := npIsNth
+            eq ▸ (isBounded i).trans_lt (depthLtL p zero))
+      
+      sorry)
   
 end Pair
