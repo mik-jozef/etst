@@ -512,7 +512,7 @@ namespace Pair
   def depth.setOfAllBelowIsFinite
     (n: Nat)
   :
-    Set.IsFinite (fun (p: Pair) => p.depth < n)
+    Set.HasListOfAll (fun (p: Pair) => p.depth < n)
   :=
     match n with
     | Nat.zero =>
@@ -525,7 +525,7 @@ namespace Pair
       
       let isFinitePred := setOfAllBelowIsFinite nPred
       
-      Set.IsFinite.ofPairsOfFinite
+      Set.HasListOfAll.ofPairsOfFinite
         isFinitePred
         isFinitePred
         Pair.pair
@@ -549,9 +549,9 @@ namespace Pair
     {s: Set Pair}
     (isBounded: ∀ p ∈ s, p.depth < n)
   :
-    s.IsFinite
+    s.HasListOfAll
   :=
-    Set.IsFinite.ofIsLeFinite
+    Set.HasListOfAll.ofIsLeFinite
       (setOfAllBelowIsFinite n)
       (fun p inS => isBounded p inS)
   

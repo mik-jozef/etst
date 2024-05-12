@@ -175,6 +175,10 @@ namespace Pair
   def depthDictOrder.zeroLtPair (a b: Pair): zero < pair a b :=
     Lt.NeqDepth (Nat.zero_lt_succ _)
   
+  def depthDictOrder.zeroLtOfNeq (_neq: p ≠ zero): zero < p :=
+    match p with
+    | pair a b => zeroLtPair a b
+  
   def depthDictOrder.nopeLtZero
     (a: Pair)
     (aLtZero: a < zero)
@@ -232,7 +236,10 @@ namespace Pair
           Nat.lt_succ_of_le pInS.right
     
     let ⟨lob, isLob⟩ :=
-       Least.ofFinite depthDictOrder sBounded_is_finite sBoundedNonempty
+       Least.ofHasListOfAll
+         depthDictOrder
+        sBounded_is_finite
+        sBoundedNonempty
     
     ⟨
       lob,
@@ -277,7 +284,7 @@ namespace Pair
       depthDictOrder.ltTotal
   
   noncomputable def depthDictOrder.nthPair: Nat → Pair
-  | 0 => zero
+  | Nat.zero => zero
   | Nat.succ nPred =>
     (least
       (fun p => nthPair nPred < p)
@@ -292,6 +299,50 @@ namespace Pair
       (fun p => nthPair n < p)
       (NeqDepth (depthLtL (nthPair n) zero))).property
   
+  def depthDictOrder.nthPair.isMonoSucc
+    (n: Nat)
+  :
+    nthPair n < nthPair n.succ
+  :=
+    (nthPairIsLeast n).isMember
+  
+  def depthDictOrder.nthPair.isMono
+    {a b: Nat}
+    (ab: a < b)
+  :
+    nthPair a < nthPair b
+  :=
+    match b with
+    | Nat.succ bpred =>
+      if h: a = bpred then
+        h.symm ▸ nthPair.isMonoSucc a
+      else
+        let ih := isMono (Nat.lt_of_lt_succ_of_ne ab h)
+        ih.trans (nthPair.isMonoSucc bpred)
+  
+  def depthDictOrder.nthPair.isMonoRev
+    (ab: nthPair a < nthPair b)
+  :
+    a < b
+  :=
+    open IsComparable in
+    match Nat.ltTotal a b with
+    | IsLt ab => ab
+    | IsGt ba => Lt.antisymm ab (nthPair.isMono ba)
+    | IsEq eq => (eq ▸ ab).irefl
+  
+  def depthDictOrder.nthPair.isInjective
+    {a b: Nat}
+    (eq: nthPair a = nthPair b)
+  :
+    a = b
+  :=
+    open IsComparable in
+    match Nat.ltTotal a b with
+    | IsLt ab => False.elim ((nthPair.isMono ab).ne eq)
+    | IsGt ba => False.elim ((nthPair.isMono ba).ne eq.symm)
+    | IsEq eq => eq
+  
   def depthDictOrder.notNthIsGt
     (p: Pair)
     (notNth: ∀ n, nthPair n ≠ p)
@@ -300,7 +351,7 @@ namespace Pair
     nthPair n < p
   :=
     match n with
-    | 0 =>
+    | Nat.zero =>
       match p with
       | zero => False.elim (notNth 0 rfl)
       | pair a b => zeroLtPair a b
@@ -333,12 +384,48 @@ namespace Pair
       let isBounded := isBoundedByNotNth p allNotNth
       
       let isNth: Set Pair := fun p => ∃ n, nthPair n = p
-      let isFinite: Set.IsFinite isNth :=
+      let isFinite: Set.HasListOfAll isNth :=
         depth.boundedByIsFinite
-          (fun np npIsNth =>
+          (fun _np npIsNth =>
             let ⟨i, eq⟩ := npIsNth
             eq ▸ (isBounded i).trans_lt (depthLtL p zero))
       
-      sorry)
+      let notFinite: ¬Set.HasListOfAll isNth :=
+        Nat.imageNotFiniteOfInjecive
+          (fun _ _ => nthPair.isInjective)
+      
+      notFinite isFinite)
+  
+  noncomputable def depthDictOrder.indexOf
+    (p: Pair)
+  :
+    Nat
+  :=
+    (nthPairSurjective p).unwrap
+  
+  def depthDictOrder.indexOf.eqNth
+    (p: Pair)
+  :
+    nthPair (indexOf p) = p
+  :=
+    (nthPairSurjective p).unwrap.property  
+  
+  def depthDictOrder.nthPair.eqIndexOf
+    (n: Nat)
+  :
+    indexOf (nthPair n) = n
+  :=
+    nthPair.isInjective (indexOf.eqNth (nthPair n))
+  
+  def depthDictOrder.indexOf.isMono
+    {a b: Pair}
+    (ab: a < b)
+  :
+    indexOf a < indexOf b
+  :=
+    let aEq := indexOf.eqNth a
+    let bEq := indexOf.eqNth b
+    nthPair.isMonoRev (aEq.symm ▸ bEq.symm ▸ ab)
+    
   
 end Pair

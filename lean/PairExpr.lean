@@ -514,7 +514,7 @@ namespace PairExpr
     p = fromNat n
   :=
     match n, p with
-    | 0, _ => inwZeroElim w ▸ rfl
+    | Nat.zero, _ => inwZeroElim w ▸ rfl
     | Nat.succ _, zero => inwPairElim.nope w
     | Nat.succ _, pair _ _ =>
       let ⟨l, r⟩ := inwPairElim w

@@ -107,10 +107,10 @@ def List.least
             | IsComparable.IsEq eq => hEq eq)
 
 
-noncomputable def Least.ofFinite
+noncomputable def Least.ofHasListOfAll
   (ord: LinearOrder T)
   {s: Set T}
-  (isFinite: s.IsFinite)
+  (isFinite: s.HasListOfAll)
   (sNonempty: t ∈ s)
 :
   Least ord.le s

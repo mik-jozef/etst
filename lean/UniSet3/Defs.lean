@@ -321,6 +321,9 @@ namespace Pair
     | zero => True
     | pair a b => IsExprEncoding a ∧ IsDefEncoding b
     
+    def IsDefEncoding.zero: IsDefEncoding zero :=
+      trivial
+    
     
     def IsPairDictLt: Pair → Prop
     | zero => False
@@ -498,6 +501,60 @@ namespace Pair
         }
       }
     
+    structure IsNextDefPair.PrevDefEncoding (dl: Pair) where
+      prev: Pair
+      isPrev: IsNextDefPair prev dl
+    
+    noncomputable def IsNextDefPair.getPrev.helper
+      (isDefDl: IsDefEncoding dl)
+      (isDefLb: IsDefEncoding lb)
+      (isLt: depthDictOrder.Lt lb dl)
+    :
+      PrevDefEncoding dl
+    :=
+      let IsMid mid :=
+        IsDefEncoding mid ∧
+        depthDictOrder.Lt lb mid ∧
+        depthDictOrder.Lt mid dl
+      
+      if h: ∃ mid, IsMid mid then
+        let ⟨mid, isDefMid, isGtLb, isLtDl⟩ := h.unwrap
+        
+        have :=
+          Nat.sub_lt_sub_left
+            (depthDictOrder.indexOf.isMono isLt)
+            (depthDictOrder.indexOf.isMono isGtLb)
+        
+        getPrev.helper isDefDl isDefMid isLtDl
+      else
+        {
+          prev := lb,
+          isPrev := {
+            isDefA := isDefLb,
+            isLeast := {
+              isMember := And.intro isDefDl isLt,
+              isLeMember := fun m isMem =>
+                let notLt :=
+                  fun isLt => h ⟨m, isMem.left, isMem.right, isLt⟩
+                
+                @le_of_not_lt _ depthDictOrder _ _ notLt
+            }
+          }
+        }
+    termination_by helper isDefDl isDefLb isLt =>
+      depthDictOrder.indexOf dl - depthDictOrder.indexOf lb
+    
+    noncomputable def IsNextDefPair.getPrev
+      (isDef: IsDefEncoding dl)
+      (neqZero: dl ≠ zero)
+    :
+      PrevDefEncoding dl
+    :=
+      getPrev.helper
+        isDef
+        IsDefEncoding.zero
+        (depthDictOrder.zeroLtOfNeq neqZero)
+    
     
     inductive IsNthDefListPair: Pair → Pair → Prop where
     | Zero: IsNthDefListPair zero zero
@@ -637,6 +694,28 @@ namespace Pair
           dlEncoding := nPredNext
           isNth := Succ isNthPred isNext
         }
+    
+    def IsNthDefListPair.isSurjective
+      (isDef: IsDefEncoding dl)
+    :
+      ∃ n, IsNthDefListPair n dl
+    :=
+      have := depthDictOrder.wfRel
+      
+      if h: dl = zero then
+        ⟨0, h.symm ▸ Zero⟩
+      else
+        let ⟨prevDl, isNext⟩ := IsNextDefPair.getPrev isDef h
+        
+        have := depthDictOrder.indexOf.isMono isNext.isLt
+        let ⟨nPred, isNthPred⟩ := isSurjective isNext.isDefA
+        
+        Exists.intro
+          (pair nPred zero)
+          (IsNthDefListPair.Succ isNthPred isNext)
+    
+    -- Cannot find a way to make Lean use `depthDictOrder.wfRel` :/
+    termination_by isSurjective isDef => depthDictOrder.indexOf dl
     
     
     inductive IsIncrVarsExprPair: Pair → Pair → Prop where
@@ -977,7 +1056,18 @@ namespace Pair
         else
           let eq := eqZeroOutOfBounds h0 h1 h5 hBin hQuant payload
           match eq ▸ isExpr with.
-      
+    
+    noncomputable def IsIncrVarsExprPair.shiftVars
+      (n: Nat)
+      (expr: Pair)
+    :
+      Pair
+    :=
+      match n with
+      | Nat.zero => expr
+      | Nat.succ nPred =>
+        IsIncrVarsExprPair.incrVars (shiftVars nPred expr)
+    
     
     inductive IsIncrVarsDefEncodingPair: Pair → Pair → Prop where
     | EmptyDefList: IsIncrVarsDefEncodingPair zero zero
@@ -1104,6 +1194,19 @@ namespace Pair
           (IsIncrVarsExprPair.incrVars.isExprArg isDef.left)
           (isDefArg isDef.right)
     
+    def IsIncrVarsDefEncodingPair.incrVars.incrAt
+      {dl: Pair}
+      (eqAt: dl.arrayAt i = some expr)
+    :
+      (incrVars dl).arrayAt i
+        =
+      some (IsIncrVarsExprPair.incrVars expr)
+    :=
+      match i, dl with
+      | Nat.zero, pair _ _ =>
+        Option.noConfusion eqAt id ▸ rfl
+      | Nat.succ _, pair _ tail => @incrAt _ _ tail eqAt
+    
     
     inductive IsShiftDefEncodingABC: (a b c: Pair) → Prop
     | ZeroShift:
@@ -1217,6 +1320,21 @@ namespace Pair
           (shiftVars.isDefArg
             nPred
             (IsIncrVarsDefEncodingPair.incrVars.isDefArg isDef))
+    
+    def IsShiftDefEncodingABC.shiftVars.eqExprShift
+      (n: Nat)
+      (eqAt: dl.arrayAt i = some expr)
+    :
+      (shiftVars (fromNat n) dl).arrayAt i
+        =
+      some (IsIncrVarsExprPair.shiftVars n expr)
+    :=
+      match n with
+      | Nat.zero => eqAt
+      | Nat.succ nPred =>
+        let ih := eqExprShift nPred eqAt
+        
+        IsIncrVarsDefEncodingPair.incrVars.incrAt ih
     
     def IsShiftDefEncodingABC.fn
       (isNat: IsNatEncoding n)
@@ -1537,10 +1655,10 @@ namespace Pair
       (isAppend: IsArrayAppendABC a b c)
       (isAt: b.arrayAt i = some expr)
     :
-      c.arrayAt (i + a.arrayLength) = some expr
+      c.arrayAt (a.arrayLength + i) = some expr
     :=
       match isAppend with
-      | Base _ => isAt
+      | Base _ => Nat.zero_add _ ▸ isAt
       | @Step _ aUtl aL _ _
           isUpToLast _ isAppendPrev
       =>
@@ -1588,9 +1706,7 @@ namespace Pair
               (isUpToLast.lengthEq ▸ lengthEq.symm)
           
           iEq ▸
-          show arrayAt c (arrayLength aUtl) = some expr from
-            Nat.zero_add aUtl.arrayLength ▸
-            preservesFinal isAppendPrev isAtNew
+          preservesFinal isAppendPrev isAtNew
         
         | a, some exprU =>
           have := isUpToLast.arrayLengthLt
@@ -1714,6 +1830,21 @@ namespace Pair
       c.arrayAt i = some expr
     :=
       IsArrayAppendABC.preservesInitial isAppend isAt
+    
+    def IsAppendABC.shiftsFinal
+      (isAppend: IsAppendABC a b c)
+      (isAt: b.arrayAt i = some expr)
+    :
+      c.arrayAt (a.arrayLength + i)
+        =
+      some (IsIncrVarsExprPair.shiftVars a.arrayLength expr)
+    :=
+      let eqAtShifted :=
+        IsShiftDefEncodingABC.shiftVars.eqExprShift
+          a.arrayLength
+          isAt
+      
+      IsArrayAppendABC.preservesFinal isAppend eqAtShifted
     
     def IsAppendABC.fromArrayAppend
       (isArrayAppend: IsArrayAppendABC a bShifted c)
@@ -2075,6 +2206,58 @@ namespace Pair
             }
         
         { expr, isNth }
+    
+    structure IsTheDefListExprPair.IndexOfDefList (dl: Pair) where
+      i: Nat
+      eqAt:
+        ∀ (_isSome: dl.arrayAt n = some expr)
+        ,
+          IsTheDefListExprPair
+            (fromNat (i + n))
+            (IsIncrVarsExprPair.shiftVars i expr)
+    
+    
+    noncomputable def IsTheDefListExprPair.getIndexOf
+      (isDef: IsDefEncoding dl)
+    :
+      IndexOfDefList dl
+    :=
+      let ⟨nPair, isNth⟩ :=
+        (IsNthDefListPair.isSurjective isDef).unwrap
+      
+      let nNat := isNth.isNat.toNat
+      let nEq: fromNat nNat = nPair := isNth.isNat.toNatFromNatEq
+      
+      let ⟨dlSoFar, isEnumUpTo⟩ :=
+        IsEnumUpToPair.nthIteration nNat
+      
+      let ⟨dlRes, isAppend⟩ :=
+        IsAppendABC.append isEnumUpTo.isDefB isDef
+      
+      let isEnumUpToNext :=
+        IsEnumUpToPair.Step
+          (nEq ▸ isEnumUpTo)
+          isNth
+          isAppend
+      
+      {
+        i := dlSoFar.arrayLength
+        eqAt :=
+          fun eqSome =>
+            let isDlToSet := {
+              isDef := isAppend.isDefRes
+              isNat := fromNat.isNatEncoding _
+              eq :=
+                fromNat.depthEq _ ▸
+                IsAppendABC.shiftsFinal isAppend eqSome
+            }
+            
+            IsTheDefListExprPair.intro
+              nNat.succ
+              dlRes
+              (fromNat.fromSuccEq _ ▸ nEq ▸ isEnumUpToNext)
+              isDlToSet
+      }
     
   end uniSet3
 end Pair

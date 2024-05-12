@@ -10,6 +10,7 @@
 import PartialOrder
 import Mathlib.Init.Set
 import Mathlib.Data.Set.Basic
+import Mathlib.Data.Fintype.Card
 
 -- Mathlib.Data.Set.Basic exports 'em', so cannot `open Classical`. Fck this.
 def byContradiction {P: Prop} := @Classical.byContradiction P
@@ -74,16 +75,16 @@ namespace Set
   def full: Set D := fun _ => True
   def just (d: D): Set D := fun x => x = d
 
-  def IsFinite (s: Set D): Prop := ∃ l: List D, ∀ t: s, t.val ∈ l
+  def HasListOfAll (s: Set D): Prop := ∃ l: List D, ∀ t: s, t.val ∈ l
   
-  namespace IsFinite
+  namespace HasListOfAll
     noncomputable def inIff
       {s: Set D}
-      (isFin: s.IsFinite)
+      (hasList: s.HasListOfAll)
     :
       { l: List D // ∀ t, t ∈ s ↔ t ∈ l }
     :=
-      let ⟨l, allOfSIn⟩ := isFin.unwrap
+      let ⟨l, allOfSIn⟩ := hasList.unwrap
       let ⟨lf, inIff⟩ := l.pfilter s
       
       ⟨
@@ -96,7 +97,24 @@ namespace Set
               ((inIff d).mp dInLf).right),
       ⟩
     
-  end IsFinite
+    def toFinite
+      {s: Set D}
+      (hasList: s.HasListOfAll)
+    :
+      Finite s
+    :=
+      let ⟨list, inListIff⟩ := inIff hasList
+      let typedList: List ↑s :=
+        list.pmap
+          (fun d h => ⟨d, h⟩)
+          (fun e eIn => (inListIff e).mpr eIn)
+      
+      let inTypedList (e: ↑s): e ∈ typedList :=
+        List.mem_pmap.mpr ⟨e, ⟨(inListIff e).mp e.property, rfl⟩⟩
+      
+      Fintype.finite (Fintype.ofList typedList inTypedList)
+    
+  end HasListOfAll
 
   def IsSubset (a b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
 
@@ -126,6 +144,30 @@ def Eq.transLe
 :=
   ab ▸ bc
 
+
+inductive IsComparable (rel: T → T → Prop) (a b: T): Prop
+where
+| IsLt: rel a b → IsComparable rel a b
+| IsGt: rel b a → IsComparable rel a b
+| IsEq: a = b → IsComparable rel a b
+
+def IsConnected (rel: T → T → Prop): Prop :=
+  ∀ a b: T, IsComparable rel a b
+
+def LinearOrder.ltTotal
+  (ord: LinearOrder T)
+:
+  IsConnected ord.lt
+:=
+  fun a b =>
+    if h: a = b then
+      IsComparable.IsEq h
+    else
+      (ord.le_total a b).elim
+        (fun le => IsComparable.IsLt (le.lt_of_ne h))
+        (fun ge => IsComparable.IsGt (ge.lt_of_ne (fun eq => h (eq.symm))))
+
+
 def Nat.lt.addNatRite (ab: a < b) (k: Nat): a < b + k :=
   Nat.lt_add_right _ _ _ ab
 
@@ -150,16 +192,8 @@ def Nat.lteTrans {a b c: Nat} (ab: a < b) (bc: b ≤ c): a < c :=
     (fun eq => eq ▸ ab)
     (fun lt => Nat.lt_trans ab lt)
 
-def Nat.isTotalLt (a b: Nat): a < b ∨ b < a ∨ a = b :=
-  (Nat.le_total a b).elim
-    (fun ab =>
-      (Nat.eq_or_lt_of_le ab).elim
-        (fun eq => Or.inr (Or.inr eq))
-        (fun ab => Or.inl ab))
-    (fun ba =>
-      (Nat.eq_or_lt_of_le ba).elim
-        (fun eq => Or.inr (Or.inr eq.symm))
-        (fun ba => Or.inr (Or.inl ba)))
+def Nat.ltTotal: IsConnected Nat.lt :=
+  LinearOrder.ltTotal Nat.linearOrder
 
 def Nat.ltAntisymm {a b: Nat} (ab: a < b) (ba: b < a): P :=
   False.elim (Nat.lt_irrefl a (Nat.lt_trans ab ba))
@@ -173,29 +207,6 @@ def Nat.leLtAntisymm {a b: Nat} (ab: a ≤ b) (ba: b < a): P :=
   (Nat.eq_or_lt_of_le ab).elim
     (fun eq => False.elim (Nat.lt_irrefl a (eq ▸ ba)))
     (fun ab => Nat.ltAntisymm ab ba)
-
-
-inductive IsComparable (rel: T → T → Prop) (a b: T): Prop
-where
-| IsLt: rel a b → IsComparable rel a b
-| IsGt: rel b a → IsComparable rel a b
-| IsEq: a = b → IsComparable rel a b
-
-def IsConnected (rel: T → T → Prop): Prop :=
-  ∀ a b: T, IsComparable rel a b
-
-def LinearOrder.ltTotal
-  (ord: LinearOrder T)
-:
-  IsConnected ord.lt
-:=
-  fun a b =>
-    if h: a = b then
-      IsComparable.IsEq h
-    else
-      (ord.le_total a b).elim
-        (fun le => IsComparable.IsLt (le.lt_of_ne h))
-        (fun ge => IsComparable.IsGt (ge.lt_of_ne (fun eq => h (eq.symm))))
 
 
 def Nat.isTotal (a b: Nat): IsComparable Nat.lt a b :=
@@ -300,6 +311,17 @@ def Nat.eq_of_lt_of_le_succ
   (le_or_eq_of_le_succ le).elim
     (fun ba => Nat.leLtAntisymm ba lt)
     Eq.symm
+
+def Nat.lt_of_lt_succ_of_ne
+  {a b: Nat}
+  (lt: a < b.succ)
+  (neq: a ≠ b)
+:
+  a < b
+:=
+  (Nat.lt_or_eq_of_le (Nat.lt_succ.mp lt)).elim
+    id
+    (fun eq => (neq eq).elim)
 
 
 structure List.HasAll (list: List T): Prop where
@@ -569,16 +591,16 @@ def List.flattenUnique: List (List T) → List T
 | cons head tail => head ++ (flattenUnique tail)
 
 namespace Set
-  namespace IsFinite
+  namespace HasListOfAll
     
     def ofIsLeFinite
       {a b: Set D}
-      (isFin: a.IsFinite)
+      (hasList: a.HasListOfAll)
       (isLe: b ≤ a)
     :
-      b.IsFinite
+      b.HasListOfAll
     :=
-      let ⟨l, allOfAIn⟩ := isFin.unwrap
+      let ⟨l, allOfAIn⟩ := hasList.unwrap
       let ⟨lf, inIff⟩ := l.pfilter b
       
       ⟨
@@ -619,18 +641,19 @@ namespace Set
     
     def ofPairsOfFinite
       {sa: Set A}
-      (isFinA: sa.IsFinite)
+      (hasListA: sa.HasListOfAll)
       {sb: Set B}
-      (isFinB: sb.IsFinite)
+      (hasListB: sb.HasListOfAll)
       (combine: A → B → C)
       (sc: Set C)
       (finiteExtraElements:
-        IsFinite { c | c ∈ sc ∧ ∀ ⦃a b⦄, a ∈ sa → b ∈ sb → c ≠ combine a b })
+        HasListOfAll
+          { c | c ∈ sc ∧ ∀ ⦃a b⦄, a ∈ sa → b ∈ sb → c ≠ combine a b })
     :
-      sc.IsFinite
+      sc.HasListOfAll
     :=
-      let ⟨la, allOfAIn⟩ := isFinA.unwrap
-      let ⟨lb, allOfBIn⟩ := isFinB.unwrap
+      let ⟨la, allOfAIn⟩ := hasListA.unwrap
+      let ⟨lb, allOfBIn⟩ := hasListB.unwrap
       let ⟨lc, allOfCIn⟩ := finiteExtraElements.unwrap
       
       let ⟨lab, labIn⟩ :=
@@ -659,5 +682,31 @@ namespace Set
             List.mem_append_right lab inLc
       ⟩
     
-  end IsFinite
+  end HasListOfAll
 end Set
+
+def Nat.imageNotFiniteOfInjecive
+  {f: Nat → T}
+  (inj: f.Injective)
+:
+  ¬Set.HasListOfAll (fun t => ∃ n, f n = t)
+:=
+  let image: Set T := { t | ∃ n, f n = t }
+  
+  fun list =>
+    have: Finite image :=
+      Set.HasListOfAll.toFinite list
+    
+    let toFun (t: ↑image): Nat := t.property.unwrap
+    let invFun (n: Nat): ↑image := ⟨f n, ⟨n, rfl⟩⟩
+    
+    let equiv: image ≃ Nat := {
+      toFun,
+      invFun,
+      left_inv := fun t => Subtype.eq t.property.unwrap.property
+      right_inv := fun n =>
+        inj (invFun n).property.unwrap.property
+    }
+    
+    let natIsFinite := Finite.of_equiv _ equiv
+    instInfiniteNat.not_finite natIsFinite
