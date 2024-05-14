@@ -729,11 +729,84 @@ namespace Pair
     | 34 => getBound.expr
     | 35 => interpretation.expr
     | 36 => theSet.expr
-    | _rest + 37 =>
-      -- This would be nice, but proving `usedNamesInBounds`
-      -- below proved to be a pain.
-      -- callExpr (rest + 37) theSet (natExpr rest)
-      36
+    | _rest + 37 => zeroExpr
+    
+    def defList.usedVarsLt37
+      (usedVar: IsFreeVar (getDef a) Set.empty)
+    :
+      usedVar.val < 37
+    :=
+      let prf
+        (x: Nat)
+        (fv: List Nat)
+        (fvEq: (freeVars (getDef x)).val = fv)
+        (allLe: ∀ {x} (_: x ∈ fv), x ≤ 36)
+        (usedByX: IsFreeVar (getDef x) Set.empty)
+      :
+        usedByX.val < 37
+      :=
+        let freeVars := freeVars (getDef x)
+        let xIn: ↑usedByX ∈ fv := fvEq ▸ freeVars.property usedByX
+        Nat.lt_succ_of_le (allLe xIn)
+      
+      match a with
+      | 0 => prf 0 [ 0 ] rfl (by simp) usedVar
+      | 1 => prf 1 [ 0 ] rfl (by simp) usedVar
+      | 2 => prf 2 [ 1, 2 ] rfl (by simp[leN36]) usedVar
+      | 3 => prf 3 [ 0 ] rfl (by simp) usedVar
+      | 4 => prf 4 [] rfl (by simp) usedVar
+      | 5 => prf 5 [] rfl (by simp) usedVar
+      | 6 => prf 6 [] rfl (by simp) usedVar
+      | 7 => prf 7 [ 3, 4, 5, 7, 6, 0 ] rfl (by simp[leN36]) usedVar
+      | 8 => prf 8 [ 7, 8 ] rfl (by simp[leN36]) usedVar
+      | 9 => prf 9 [ 9 ] rfl (by simp[leN36]) usedVar
+      | 10 => prf 10 [ 2 ] rfl (by simp[leN36]) usedVar
+      | 11 => prf 11 [ 0, 11, 10 ] rfl (by simp[leN36]) usedVar
+      | 12 => prf 12 [ 2 ] rfl (by simp[leN36]) usedVar
+      | 13 => prf 13 [ 0, 11 ] rfl (by simp[leN36]) usedVar
+      | 14 => prf 14 [ 13, 9, 12, 11 ] rfl (by simp[leN36]) usedVar
+      | 15 => prf 15 [ 14, 8 ] rfl (by simp[leN36]) usedVar
+      | 16 => prf 16 [ 15 ] rfl (by simp[leN36]) usedVar
+      | 17 => prf 17 [ 15, 16 ] rfl (by simp[leN36]) usedVar
+      | 18 => prf 18 [ 18, 17 ] rfl (by simp[leN36]) usedVar
+      | 19 => prf 19 [ 0 ] rfl (by simp[leN36]) usedVar
+      | 20 => prf 20 [ 19, 4, 5, 7, 20, 6, 0 ] rfl (by simp[leN36]) usedVar
+      | 21 => prf 21 [ 7, 8, 20, 21 ] rfl (by simp[leN36]) usedVar
+      | 22 => prf 22 [ 8, 0, 21, 22 ] rfl (by simp[leN36]) usedVar
+      | 23 => prf 23 [ 7 ] rfl (by simp[leN36]) usedVar
+      | 24 => prf 24 [ 23, 24, 7 ] rfl (by simp[leN36]) usedVar
+      | 25 => prf 25 [ 7, 25 ] rfl (by simp[leN36]) usedVar
+      | 26 => prf 26 [ 8, 26, 25, 24 ] rfl (by simp[leN36]) usedVar
+      | 27 => prf 27 [ 27 ] rfl (by simp[leN36]) usedVar
+      | 28 => prf 28 [ 8, 26, 22, 27 ] rfl (by simp[leN36]) usedVar
+      | 29 => prf 29 [ 0, 28, 29, 18 ] rfl (by simp[leN36]) usedVar
+      | 30 => prf 30 [ 7, 8, 0, 30 ] rfl (by simp[leN36]) usedVar
+      | 31 => prf 31 [ 0, 29 ] rfl (by simp[leN36]) usedVar
+      | 32 => prf 32 [ 31, 30 ] rfl (by simp[leN36]) usedVar
+      | 33 => prf 33 [] rfl (by simp[leN36]) usedVar
+      | 34 => prf 34 [ 33, 34 ] rfl (by simp[leN36]) usedVar
+      | 35 => prf 35 [ 0, 34, 36, 7, 35 ] rfl (by simp[leN36]) usedVar
+      | 36 => prf 36 [ 0, 35, 32 ] rfl (by simp[leN36]) usedVar
+    
+    def defList.hasFiniteBounds
+      (dependsOn: DefList.DependsOn getDef a b)
+    :
+      b < max a.succ 37
+    :=
+      -- Git gud @ termination showing, Lean.
+      -- match dependsOn with
+      -- | DefList.DependsOn.Refl x =>
+      --   lt_max_of_lt_left (Nat.lt_succ_self x)
+      -- | DefList.DependsOn.Uses aUsesB bUsesC =>
+      --   let ih := hasFiniteBounds bUsesC
+      --   sorry
+      
+      dependsOn.rec
+        (fun x => lt_max_of_lt_left (Nat.lt_succ_self x))
+        (fun aUsesB _ ih =>
+          let bLt37 := usedVarsLt37 ⟨_, aUsesB⟩
+          let maxEq := max_eq_right (Nat.succ_le_of_lt bLt37)
+          lt_max_of_lt_right (maxEq ▸ ih))
     
     def defList:
       FinBoundedDL pairSignature
@@ -741,86 +814,12 @@ namespace Pair
       getDef := defList.getDef
       
       isFinBounded := ⟨{
-        bounds := fun _ x => x ≤ 36,
-        usedNamesInBounds :=
-          fun x usedByX =>
-            let prf
-              (defIndex: Nat)
-              (fv: List Nat)
-              (fvEq: (freeVars (defList.getDef defIndex)).val = fv)
-              (allLe: ∀ {x} (_: x ∈ fv), x ≤ 36)
-              (usedByX:
-                (Expr.IsFreeVar (defList.getDef defIndex) Set.empty))
-            :
-              usedByX.val ≤ 36
-            :=
-              let freeVars := freeVars (defList.getDef defIndex)
-              let xIn: ↑usedByX ∈ fv := fvEq ▸ freeVars.property usedByX
-              allLe xIn
-            
-            /-
-              Here we are proving that each definition only
-              uses finitely many other definitions by enumerating
-              all used definitions of all definitions.
-              
-              For future edits, you can view the list of free vars
-              of an expression `expr` using:
-              
-              ```
-                #eval freeVars.givenBounds expr []
-              ```
-            -/
-            match x with
-            | 0 => prf 0 [ 0 ] rfl (by simp) usedByX
-            | 1 => prf 1 [ 0 ] rfl (by simp) usedByX
-            | 2 => prf 2 [ 1, 2 ] rfl (by simp[leN36]) usedByX
-            | 3 => prf 3 [ 0 ] rfl (by simp) usedByX
-            | 4 => prf 4 [] rfl (by simp) usedByX
-            | 5 => prf 5 [] rfl (by simp) usedByX
-            | 6 => prf 6 [] rfl (by simp) usedByX
-            | 7 => prf 7 [ 3, 4, 5, 7, 6, 0 ] rfl (by simp[leN36]) usedByX
-            | 8 => prf 8 [ 7, 8 ] rfl (by simp[leN36]) usedByX
-            | 9 => prf 9 [ 9 ] rfl (by simp[leN36]) usedByX
-            | 10 => prf 10 [ 2 ] rfl (by simp[leN36]) usedByX
-            | 11 => prf 11 [ 0, 11, 10 ] rfl (by simp[leN36]) usedByX
-            | 12 => prf 12 [ 2 ] rfl (by simp[leN36]) usedByX
-            | 13 => prf 13 [ 0, 11 ] rfl (by simp[leN36]) usedByX
-            | 14 => prf 14 [ 13, 9, 12, 11 ] rfl (by simp[leN36]) usedByX
-            | 15 => prf 15 [ 14, 8 ] rfl (by simp[leN36]) usedByX
-            | 16 => prf 16 [ 15 ] rfl (by simp[leN36]) usedByX
-            | 17 => prf 17 [ 15, 16 ] rfl (by simp[leN36]) usedByX
-            | 18 => prf 18 [ 18, 17 ] rfl (by simp[leN36]) usedByX
-            | 19 => prf 19 [ 0 ] rfl (by simp[leN36]) usedByX
-            | 20 => prf 20 [ 19, 4, 5, 7, 20, 6, 0 ] rfl (by simp[leN36]) usedByX
-            | 21 => prf 21 [ 7, 8, 20, 21 ] rfl (by simp[leN36]) usedByX
-            | 22 => prf 22 [ 8, 0, 21, 22 ] rfl (by simp[leN36]) usedByX
-            | 23 => prf 23 [ 7 ] rfl (by simp[leN36]) usedByX
-            | 24 => prf 24 [ 23, 24, 7 ] rfl (by simp[leN36]) usedByX
-            | 25 => prf 25 [ 7, 25 ] rfl (by simp[leN36]) usedByX
-            | 26 => prf 26 [ 8, 26, 25, 24 ] rfl (by simp[leN36]) usedByX
-            | 27 => prf 27 [ 27 ] rfl (by simp[leN36]) usedByX
-            | 28 => prf 28 [ 8, 26, 22, 27 ] rfl (by simp[leN36]) usedByX
-            | 29 => prf 29 [ 0, 28, 29, 18 ] rfl (by simp[leN36]) usedByX
-            | 30 => prf 30 [ 7, 8, 0, 30 ] rfl (by simp[leN36]) usedByX
-            | 31 => prf 31 [ 0, 29 ] rfl (by simp[leN36]) usedByX
-            | 32 => prf 32 [ 31, 30 ] rfl (by simp[leN36]) usedByX
-            | 33 => prf 33 [] rfl (by simp[leN36]) usedByX
-            | 34 => prf 34 [ 33, 34 ] rfl (by simp[leN36]) usedByX
-            | 35 => prf 35 [ 0, 34, 36, 7, 35 ] rfl (by simp[leN36]) usedByX
-            | 36 => prf 36 [ 0, 35, 32 ] rfl (by simp[leN36]) usedByX
-            | rest + 37 =>
-              let expr: Expr := 36
-              
-              let freeVars := freeVars expr
-              let xIn: ↑usedByX ∈ [ 36 ] := freeVars.property usedByX
-              let xEq: usedByX.val = 36 := List.eq_of_mem_singleton xIn
-              let le36Self: 36 ≤ 36 := Nat.le_refl 36
-              xEq ▸ le36Self
-        ,
-        
-        boundsFinite := fun _ => ⟨37, fun _ => Nat.lt_succ_of_le⟩,
-        
-        boundsTransitive := fun a b c _bLe cLe => cLe,
+        bounds := fun x b => b ≤ 36 ∨ b < x,
+        boundsFinite :=
+          fun x => ⟨
+            max x.succ 37,
+            defList.hasFiniteBounds,
+          ⟩,
       }, trivial⟩
     }
         

@@ -1,3 +1,4 @@
+import DefListDefEq
 import UniSet3.DefListToEncoding
 
 def Set3.pairCall (fn arg: Set3 Pair): Set3 Pair := {
@@ -51,8 +52,23 @@ namespace Pair
       
       let ⟨dlSliceEnd, gtBounds⟩ := finBounds.boundsFinite x
       
-      let dlSliceEncoding :=
+      let ⟨dlSliceEncoding, isDefSlice⟩ :=
         defListToEncoding dl.toDefList 0 dlSliceEnd
+      
+      let ⟨iStart, eqAt⟩ := IsTheDefListExprPair.getIndexOf isDefSlice
+      
+      let eqL :=
+        DefList.eqDefsToEqSets
+          dl.toDefList
+          theDefListExternal
+          pairSalgebra
+          (fun i => iStart + i)
+          (fun i => DefList.DependsOn dl.getDef x i)
+          Nat.add_left_cancel
+          (fun ⟨i, isUsed⟩ => sorry)
+          (fun ⟨xM, isMapped⟩ ⟨xF, isFree⟩ => isMapped.push isFree)
+          x
+          (DefList.DependsOn.Refl x)
       
       sorry
   end uniSet3

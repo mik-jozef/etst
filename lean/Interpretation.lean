@@ -660,6 +660,43 @@ def Expr.interpretation.isMonotonic.approximation
         (fun _d dIn dXPos0 => (ih dXPos0).posLe (dIn dXPos0))
 
 
+def DefList.GetDef (sig: Signature) := Nat → Expr sig
+
+/-
+  The definition x depends on y if x = y or x contains
+  y, possibly transitively.
+-/
+inductive DefList.DependsOn
+  (getDef: GetDef sig): Nat → Nat → Prop
+where
+| Refl x: DependsOn getDef x x
+| Uses
+  (aUsesB: (getDef a).IsFreeVar Set.empty b)
+  (bUsesC: DependsOn getDef b c)
+  :
+    DependsOn getDef a c
+
+def DefList.DependsOn.push
+  (dependsOn: DependsOn getDef a b)
+  (isFree: (getDef b).IsFreeVar Set.empty c)
+:
+  DependsOn getDef a c
+:=
+  -- match dependsOn with
+  -- | Refl _ => Uses isFree (Refl c)
+  -- | Uses head tail =>
+  --   let ih := push tail isFree
+  --   sorry
+  let thePrincipleTM:
+    (getDef b).IsFreeVar Set.empty c → DependsOn getDef a c
+  :=
+    dependsOn.rec
+      (fun _ isFree => Uses isFree (Refl c))
+      (fun isFree _ ih ihh =>
+        Uses isFree (ih ihh))
+  
+  thePrincipleTM isFree
+
 /-
   A definition list is finitely bounded iff every
   definition only depends on finitely many other
@@ -673,26 +710,22 @@ def Expr.interpretation.isMonotonic.approximation
     ...
   ```
 -/
-structure DefList.FinBounds (getDef: Nat → Expr sig) where
+structure DefList.FinBounds (getDef: GetDef sig) where
   bounds: Nat → Set Nat
   
-  -- Note: free variables refer to other definitions
-  -- of a definition list.
-  usedNamesInBounds:
-    ∀ (name: Nat)
-      (usedName: (getDef name).IsFreeVar Set.empty),
-    usedName.val ∈ bounds name
-  
-  boundsTransitive: ∀ a b c, bounds a b → bounds b c → bounds a c
-  
-  -- previously `boundsFinite: ∀ name, (bounds name).IsFinite`
-  boundsFinite: ∀ name, ∃ ub, ∀ x ∈ bounds name, x < ub
+  boundsFinite:
+    ∀ name,
+    ∃ upperBound,
+    ∀ {dep}
+      (_: DependsOn getDef name dep)
+    ,
+      dep < upperBound
 
 def DefList.IsFinBounded (gd: Nat → Expr sig): Prop :=
   ∃ _fb: FinBounds gd, True
 
 structure DefList (sig: Signature) where
-  getDef: Nat → Expr sig
+  getDef: DefList.GetDef sig
 
 structure FinBoundedDL (sig: Signature) extends DefList sig where
   isFinBounded: DefList.IsFinBounded getDef
