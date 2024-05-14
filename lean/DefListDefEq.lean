@@ -552,7 +552,7 @@ def DefList.eqDefsToEqSets.succCaseC
     (dlSrc.getDef xSrc).mapVars varMapping
       =
     dlDst.getDef (varMapping xSrc))
-  (areUsedDefsMapped: -- TODO is this necessary?
+  (areUsedDefsMapped:
     ∀ (xUsed: (dlSrc.getDef xSrc).IsFreeVar Set.empty)
     ,
       IsDefMapped xUsed)
@@ -614,7 +614,7 @@ def DefList.eqDefsToEqSets.opC
         =
       dlDst.getDef (varMapping xSrc))
   (areUsedDefsMapped:
-    ∀ {xMapped: IsDefMapped}
+    ∀ (xMapped: IsDefMapped)
       (xUsed: (dlSrc.getDef xMapped).IsFreeVar Set.empty)
     ,
       IsDefMapped xUsed)
@@ -645,7 +645,7 @@ def DefList.eqDefsToEqSets.opC
                 ih
                 mappingIsInjective
                 (areMappedDefsEqual xMapped)
-                areUsedDefsMapped
+                (fun fv => areUsedDefsMapped _ fv)
                 invB)
   
   show
@@ -671,7 +671,7 @@ def DefList.eqDefsToEqSets.succCaseB
         =
       dlDst.getDef (varMapping xSrc))
   (areUsedDefsMapped:
-    ∀ {xMapped: IsDefMapped}
+    ∀ (xMapped: IsDefMapped)
       (xUsed: (dlSrc.getDef xMapped).IsFreeVar Set.empty)
     ,
       IsDefMapped xUsed)
@@ -712,7 +712,7 @@ def DefList.eqDefsToEqSets.succCaseB
         xMapped)
 
 def DefList.eqDefsToEqSets
-  {dlSrc dlDst: DefList sig}
+  (dlSrc dlDst: DefList sig)
   (salg: Salgebra sig)
   (varMapping: Nat → Nat)
   (IsDefMapped: Set Nat)
@@ -724,7 +724,7 @@ def DefList.eqDefsToEqSets
         =
       dlDst.getDef (varMapping xSrc))
   (areUsedDefsMapped:
-    ∀ {xMapped: IsDefMapped}
+    ∀ (xMapped: IsDefMapped)
       (xUsed: (dlSrc.getDef xMapped).IsFreeVar Set.empty)
     ,
       IsDefMapped xUsed)
