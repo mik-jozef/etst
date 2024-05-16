@@ -799,7 +799,7 @@ namespace Pair
       --   lt_max_of_lt_left (Nat.lt_succ_self x)
       -- | DefList.DependsOn.Uses aUsesB bUsesC =>
       --   let ih := hasFiniteBounds bUsesC
-      --   sorry
+      --   ...
       
       dependsOn.rec
         (fun x => lt_max_of_lt_left (Nat.lt_succ_self x))

@@ -323,6 +323,22 @@ def Nat.lt_of_lt_succ_of_ne
     id
     (fun eq => (neq eq).elim)
 
+def Nat.succ_sub_comm_of_lt
+  {a b: Nat}
+  (lt: a ≤ b)
+:
+  (b - a).succ = b.succ - a
+:=
+  match a, b, lt with
+  | zero, zero, _ => rfl
+  | zero, succ _bPred, _ => rfl
+  | succ aPred, succ bPred, le =>
+    let ih := Nat.succ_sub_comm_of_lt (Nat.le_of_succ_le_succ le)
+    
+    Nat.succ_sub_succ_eq_sub bPred aPred ▸
+    Nat.succ_sub_succ_eq_sub bPred.succ aPred ▸
+    ih
+
 
 structure List.HasAll (list: List T): Prop where
   isIn: ∀ t: T, t ∈ list
@@ -710,3 +726,22 @@ def Nat.imageNotFiniteOfInjecive
     
     let natIsFinite := Finite.of_equiv _ equiv
     instInfiniteNat.not_finite natIsFinite
+
+def congrBin
+  {fn0 fn1: A → B → C}
+  (eqFn: fn0 = fn1)
+  (eqArg0: arg0A = arg0B)
+  (eqArg1: arg1A = arg1B)
+:
+  fn0 arg0A arg1A = fn1 arg0B arg1B
+:=
+  eqFn ▸ eqArg0 ▸ eqArg1 ▸ rfl
+
+def Subtype.eqVal
+  {P: T → Prop}
+  {a b: { t // P t }}
+  (eq: a = b)
+:
+  a.val = b.val
+:=
+  congr rfl eq

@@ -1065,8 +1065,7 @@ namespace Pair
     :=
       match n with
       | Nat.zero => expr
-      | Nat.succ nPred =>
-        IsIncrVarsExprPair.incrVars (shiftVars nPred expr)
+      | Nat.succ nPred => incrVars (shiftVars nPred expr)
     
     
     inductive IsIncrVarsDefEncodingPair: Pair → Pair → Prop where

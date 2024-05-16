@@ -686,7 +686,7 @@ def DefList.DependsOn.push
   -- | Refl _ => Uses isFree (Refl c)
   -- | Uses head tail =>
   --   let ih := push tail isFree
-  --   sorry
+  --   ...
   let thePrincipleTM:
     (getDef b).IsFreeVar Set.empty c → DependsOn getDef a c
   :=

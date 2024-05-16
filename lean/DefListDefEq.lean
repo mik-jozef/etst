@@ -46,6 +46,114 @@ def Expr.mapVars
 | Ir x body =>
   Ir (varMapping x) (body.mapVars varMapping)
 
+def Expr.mapVars.eqOfId
+  (expr: Expr sig)
+:
+  expr.mapVars id = expr
+:=
+  match expr with
+  | Expr.var _ => rfl
+  | Expr.op _ args =>
+    congr rfl (funext fun arg => eqOfId (args arg))
+  | Expr.un left rite =>
+    congrBin rfl (eqOfId left) (eqOfId rite)
+  | Expr.ir left rite =>
+    congrBin rfl (eqOfId left) (eqOfId rite)
+  | Expr.cpl expr =>
+    @congr _ _ cpl cpl _ _ rfl (eqOfId expr)
+  | Expr.ifThen cond body =>
+    congrBin rfl (eqOfId cond) (eqOfId body)
+  | Expr.Un _ body =>
+    congrBin rfl rfl (eqOfId body)
+  | Expr.Ir _ body =>
+    congrBin rfl rfl (eqOfId body)
+
+def Expr.mapVars.eqOfIsId
+  (expr: Expr sig)
+  (varMapping: Nat → Nat)
+  (isId: ∀ x, varMapping x = x)
+:
+  expr.mapVars varMapping = expr
+:=
+  let eqId: varMapping = id := funext isId
+  eqId ▸ eqOfId expr
+
+def Expr.mapVars.eqOfIsComposition
+  (expr: Expr sig)
+  (varMapping mapping1 mapping0: Nat → Nat)
+  (eqMapping:
+    ∀ x, varMapping x = mapping1 (mapping0 x))
+:
+  expr.mapVars varMapping
+    =
+  (expr.mapVars mapping0).mapVars mapping1
+:=
+  match expr with
+  | Expr.var x =>
+    show _ = var (mapping1 (mapping0 x)) from
+      eqMapping x ▸ rfl
+  | Expr.op opr args =>
+    show
+      _
+        =
+      op opr (fun arg => ((args arg).mapVars mapping0).mapVars mapping1)
+    from
+      congr
+        rfl
+        (funext fun arg =>
+          eqOfIsComposition
+            (args arg)
+            varMapping
+            mapping1
+            mapping0
+            eqMapping)
+  | Expr.un left rite =>
+    show
+      un (left.mapVars varMapping) (rite.mapVars varMapping) = _
+    from
+      congrBin
+        rfl
+        (eqOfIsComposition left varMapping mapping1 mapping0 eqMapping)
+        (eqOfIsComposition rite varMapping mapping1 mapping0 eqMapping)
+  | Expr.ir left rite =>
+    show
+      ir (left.mapVars varMapping) (rite.mapVars varMapping) = _
+    from
+      congrBin
+        rfl
+        (eqOfIsComposition left varMapping mapping1 mapping0 eqMapping)
+        (eqOfIsComposition rite varMapping mapping1 mapping0 eqMapping)
+  | Expr.cpl expr =>
+    show
+      cpl (expr.mapVars varMapping) = _
+    from
+      @congr _ _ cpl cpl _ _ rfl
+        (eqOfIsComposition expr varMapping mapping1 mapping0 eqMapping)
+  | Expr.ifThen cond body =>
+    show
+      ifThen (cond.mapVars varMapping) (body.mapVars varMapping) = _
+    from
+      congrBin
+        rfl
+        (eqOfIsComposition cond varMapping mapping1 mapping0 eqMapping)
+        (eqOfIsComposition body varMapping mapping1 mapping0 eqMapping)
+  | Expr.Un x body =>
+    show
+      Un (varMapping x) (body.mapVars varMapping) = _
+    from
+      congrBin
+        rfl
+        (eqMapping x)
+        (eqOfIsComposition body varMapping mapping1 mapping0 eqMapping)
+  | Expr.Ir x body =>
+    show
+      Ir (varMapping x) (body.mapVars varMapping) = _
+    from
+      congrBin
+        rfl
+        (eqMapping x)
+        (eqOfIsComposition body varMapping mapping1 mapping0 eqMapping)
+      
 
 def Expr.mapVars.preservesInterpretation
   (salg: Salgebra sig)
