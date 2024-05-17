@@ -86,13 +86,13 @@ namespace Pair
         incrVars.eqQuant (Is8 rfl) _ _ ▸
         congrBin rfl rfl (congr rfl incrVarsEqMapVars)
     
-    def shiftVarsEqMapVars.incr
+    def IsIncrVarsExprPair.shiftVarsEqMapVars.incr
       (eqN:
-        IsIncrVarsExprPair.shiftVars n (exprToEncoding expr)
+        shiftVars n (exprToEncoding expr)
           =
         exprToEncoding (Expr.mapVars (n + ·) expr))
     :
-      IsIncrVarsExprPair.shiftVars n.succ (exprToEncoding expr)
+      shiftVars n.succ (exprToEncoding expr)
         =
       exprToEncoding (Expr.mapVars (n.succ + ·) expr)
     :=
@@ -109,8 +109,8 @@ namespace Pair
           _ _ _ _ (Nat.succ_add n) ▸
         rfl
     
-    def shiftVarsEqMapVars:
-      IsIncrVarsExprPair.shiftVars n (exprToEncoding expr)
+    def IsIncrVarsExprPair.shiftVarsEqMapVars:
+      shiftVars n (exprToEncoding expr)
         =
       exprToEncoding (Expr.mapVars (n + ·) expr)
     :=
@@ -124,7 +124,7 @@ namespace Pair
         shiftVarsEqMapVars.incr shiftVarsEqMapVars
     
     
-    def theDefListHasAllDefinable
+    def theDefListExternal.hasAllDefinable
       (s3: Set3 Pair)
       (isDef: pairSalgebra.IsDefinable s3)
     :
@@ -173,9 +173,9 @@ namespace Pair
             
             let isDefList := eqAt eqInSlice
             
-            theDefListExternal.inListOfIsDefList
+            inListOfIsDefList
               isDefList
-              shiftVarsEqMapVars)
+              IsIncrVarsExprPair.shiftVarsEqMapVars)
           (fun ⟨xM, isMapped⟩ ⟨xF, isFree⟩ => isMapped.push isFree)
           x
           (DefList.DependsOn.Refl x)
@@ -188,7 +188,7 @@ namespace Pair
     :
       ∃ x: Nat, uniSet3.pairCallJust (fromNat x) = s3
     :=
-      let ⟨x, eq⟩ := theDefListHasAllDefinable s3 isDef
+      let ⟨x, eq⟩ := theDefListExternal.hasAllDefinable s3 isDef
       
       sorry
   end uniSet3
