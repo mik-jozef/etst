@@ -19,7 +19,7 @@ lean_lib ExprRulesOfInference {}
 lean_lib PairFreeVars {}
 lean_lib Interpretation {}
 lean_lib ITTM {}
-lean_lib LeN36 {}
+lean_lib LeN37 {}
 lean_lib Lfp {}
 lean_lib ExprIsFreeVar {}
 lean_lib Operators {}
@@ -50,6 +50,7 @@ lean_lib UniSet3.ShiftDefEncoding {}
 lean_lib UniSet3.TheDefList {}
 lean_lib UniSet3.TheSet3 {}
 lean_lib UniSet3.UniDefList {}
+lean_lib UniSet3.UniSet3 {}
 lean_lib Utils {}
 lean_lib Valuation {}
 lean_lib WellFoundedOfLeast {}

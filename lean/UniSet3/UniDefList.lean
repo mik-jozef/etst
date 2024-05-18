@@ -1,6 +1,6 @@
 import ExampleWFCs
 import PairFreeVars
-import LeN36
+import LeN37
 import Operators
 import Wfm
 
@@ -548,19 +548,25 @@ namespace Pair
               (callExpr 502 getBound 501))))
     
     /-
-      (TODO Hopefully, to be proven: )
-      Contains (expr, bound, s) where expr is an expression,
-      bound is an array of var-pair pairs (bound vars),
-      and s is the interpretation of the nth definition
-      in `theDefList`.
+      Contains (bound, expr, s) where bound is an array
+      of var-pair pairs (bound vars), `expr` is an expression
+      and `s` is the interpretation of `expr` with `theSet` (below)
+      serving as the valuation. (Ie. `expr = interpretation theSet`)
     -/
     def interpretation: Nat := 35
+    
     /-
-      The set of pairs (n, s) such that n is a natural number,
-      and for every definable triset of pairs dtp, there exists
-      a natural number n such that `callExpr _ theSet n = dtp`
+      Contains (expr, s) where s is the interpretation of
+      `expr` with `theSet` serving as the valuation.
     -/
-    def theSet: Nat := 36
+    def freeInterpretation := 36
+    
+    /-
+      The set of pairs (n, s) where n is a natural number.
+      For every definable triset of pairs dtp, there exists
+      a natural number n such that (n, p) ∈ theSet = p ∈ dtp.
+    -/
+    def theSet: Nat := 37
     
     def interpretation.expr: Expr :=
       /-
@@ -579,9 +585,9 @@ namespace Pair
         unionExpr 500 nat
           (Expr.Un 501
             (pairExpr
-              (pairExpr zeroExpr 500)
+              501
               (pairExpr
-                501
+                (pairExpr zeroExpr 500)
                 (Expr.un
                   (callExpr 502 (callExpr 503 getBound 501) 500)
                   (/- if 500 is a free var -/ Expr.ifThen
@@ -595,18 +601,21 @@ namespace Pair
                     (callExpr 502 theSet 500)))))),
         
         -- op zero
-        pairExpr
-          (pairExpr (natExpr 1) zeroExpr)
-          (pairExpr anyExpr zeroExpr),
+        Expr.Un 501
+          (pairExpr
+            501
+            (pairExpr
+              (pairExpr (natExpr 1) zeroExpr)
+              (pairExpr anyExpr zeroExpr))),
         
         -- op pair
         unionExpr 500 exprEncoding
           (unionExpr 501 exprEncoding
             (Expr.Un 502
               (pairExpr
-                (pairExpr (natExpr 2) (pairExpr 500 501))
+                502
                 (pairExpr
-                  502
+                  (pairExpr (natExpr 2) (pairExpr 500 501))
                   (pairExpr
                     (callExpr 503 (callExpr 504 interpretation 500) 502)
                     (callExpr 503 (callExpr 504 interpretation 501) 502)))))),
@@ -616,9 +625,9 @@ namespace Pair
           (unionExpr 501 exprEncoding
             (Expr.Un 502
               (pairExpr
-                (pairExpr (natExpr 3) (pairExpr 500 501))
+                502
                 (pairExpr
-                  502
+                  (pairExpr (natExpr 3) (pairExpr 500 501))
                   (Expr.un
                     (callExpr 503 (callExpr 504 interpretation 500) 502)
                     (callExpr 503 (callExpr 504 interpretation 501) 502)))))),
@@ -628,9 +637,9 @@ namespace Pair
           (unionExpr 501 exprEncoding
             (Expr.Un 502
               (pairExpr
-                (pairExpr (natExpr 4) (pairExpr 500 501))
+                502
                 (pairExpr
-                  502
+                  (pairExpr (natExpr 4) (pairExpr 500 501))
                   (Expr.ir
                     (callExpr 503 (callExpr 504 interpretation 500) 502)
                     (callExpr 503 (callExpr 504 interpretation 501) 502)))))),
@@ -639,9 +648,9 @@ namespace Pair
         unionExpr 500 exprEncoding
           (Expr.Un 502
             (pairExpr
-              (pairExpr (natExpr 5) 500)
+              502
               (pairExpr
-                502
+                (pairExpr (natExpr 5) 500)
                 (Expr.cpl
                   (callExpr 503 (callExpr 504 interpretation 500) 502))))),
         
@@ -650,9 +659,9 @@ namespace Pair
           (unionExpr 501 exprEncoding
             (Expr.Un 502
               (pairExpr
-                (pairExpr (natExpr 6) (pairExpr 500 501))
+                502
                 (pairExpr
-                  502
+                  (pairExpr (natExpr 6) (pairExpr 500 501))
                   (Expr.ifThen
                     (callExpr 503 (callExpr 504 interpretation 500) 502)
                     (callExpr 503 (callExpr 504 interpretation 501) 502)))))),
@@ -662,9 +671,9 @@ namespace Pair
           (unionExpr 501 exprEncoding
             (Expr.Un 502
               (pairExpr
-                (pairExpr (natExpr 4) (pairExpr 500 501))
+                502
                 (pairExpr
-                  502
+                  (pairExpr (natExpr 4) (pairExpr 500 501))
                   (Expr.Un 503
                     (callExpr 503
                       (callExpr 504 interpretation 501)
@@ -675,21 +684,23 @@ namespace Pair
           (unionExpr 501 exprEncoding
             (Expr.Un 502
               (pairExpr
-                (pairExpr (natExpr 4) (pairExpr 500 501))
+                502
                 (pairExpr
-                  502
+                  (pairExpr (natExpr 4) (pairExpr 500 501))
                   (Expr.Ir 503
                     (callExpr 503
                       (callExpr 504 interpretation 501)
                       (pairExpr (pairExpr 500 503) 502))))))),
       ]
     
+    def freeInterpretation.expr := callExpr 502 interpretation zeroExpr
+    
     def theSet.expr: Expr :=
       unionExpr 500 nat
-        (callExpr 501
-          (callExpr 502 interpretation
-            (callExpr 503 theDefList 500))
-          zeroExpr)
+        (pairExpr 500
+          (callExpr 501
+            freeInterpretation
+            (callExpr 502 theDefList 500)))
     
     def defList.getDef: Nat → Expr
     | 0 => nat.expr
@@ -728,22 +739,23 @@ namespace Pair
     | 33 => getBound.base.expr
     | 34 => getBound.expr
     | 35 => interpretation.expr
-    | 36 => theSet.expr
+    | 36 => freeInterpretation.expr
+    | 37 => theSet.expr
     | _rest + 37 => zeroExpr
     
-    def defList.usedVarsLt37
+    def defList.usedVarsLt38
       (usedVar: IsFreeVar (getDef a) Set.empty)
     :
-      usedVar.val < 37
+      usedVar.val < 38
     :=
       let prf
         (x: Nat)
         (fv: List Nat)
         (fvEq: (freeVars (getDef x)).val = fv)
-        (allLe: ∀ {x} (_: x ∈ fv), x ≤ 36)
+        (allLe: ∀ {x} (_: x ∈ fv), x ≤ 37)
         (usedByX: IsFreeVar (getDef x) Set.empty)
       :
-        usedByX.val < 37
+        usedByX.val < 38
       :=
         let freeVars := freeVars (getDef x)
         let xIn: ↑usedByX ∈ fv := fvEq ▸ freeVars.property usedByX
@@ -752,46 +764,47 @@ namespace Pair
       match a with
       | 0 => prf 0 [ 0 ] rfl (by simp) usedVar
       | 1 => prf 1 [ 0 ] rfl (by simp) usedVar
-      | 2 => prf 2 [ 1, 2 ] rfl (by simp[leN36]) usedVar
+      | 2 => prf 2 [ 1, 2 ] rfl (by simp[leN37]) usedVar
       | 3 => prf 3 [ 0 ] rfl (by simp) usedVar
       | 4 => prf 4 [] rfl (by simp) usedVar
       | 5 => prf 5 [] rfl (by simp) usedVar
       | 6 => prf 6 [] rfl (by simp) usedVar
-      | 7 => prf 7 [ 3, 4, 5, 7, 6, 0 ] rfl (by simp[leN36]) usedVar
-      | 8 => prf 8 [ 7, 8 ] rfl (by simp[leN36]) usedVar
-      | 9 => prf 9 [ 9 ] rfl (by simp[leN36]) usedVar
-      | 10 => prf 10 [ 2 ] rfl (by simp[leN36]) usedVar
-      | 11 => prf 11 [ 0, 11, 10 ] rfl (by simp[leN36]) usedVar
-      | 12 => prf 12 [ 2 ] rfl (by simp[leN36]) usedVar
-      | 13 => prf 13 [ 0, 11 ] rfl (by simp[leN36]) usedVar
-      | 14 => prf 14 [ 13, 9, 12, 11 ] rfl (by simp[leN36]) usedVar
-      | 15 => prf 15 [ 14, 8 ] rfl (by simp[leN36]) usedVar
-      | 16 => prf 16 [ 15 ] rfl (by simp[leN36]) usedVar
-      | 17 => prf 17 [ 15, 16 ] rfl (by simp[leN36]) usedVar
-      | 18 => prf 18 [ 18, 17 ] rfl (by simp[leN36]) usedVar
-      | 19 => prf 19 [ 0 ] rfl (by simp[leN36]) usedVar
-      | 20 => prf 20 [ 19, 4, 5, 7, 20, 6, 0 ] rfl (by simp[leN36]) usedVar
-      | 21 => prf 21 [ 7, 8, 20, 21 ] rfl (by simp[leN36]) usedVar
-      | 22 => prf 22 [ 8, 0, 21, 22 ] rfl (by simp[leN36]) usedVar
-      | 23 => prf 23 [ 7 ] rfl (by simp[leN36]) usedVar
-      | 24 => prf 24 [ 23, 24, 7 ] rfl (by simp[leN36]) usedVar
-      | 25 => prf 25 [ 7, 25 ] rfl (by simp[leN36]) usedVar
-      | 26 => prf 26 [ 8, 26, 25, 24 ] rfl (by simp[leN36]) usedVar
-      | 27 => prf 27 [ 27 ] rfl (by simp[leN36]) usedVar
-      | 28 => prf 28 [ 8, 26, 22, 27 ] rfl (by simp[leN36]) usedVar
-      | 29 => prf 29 [ 0, 28, 29, 18 ] rfl (by simp[leN36]) usedVar
-      | 30 => prf 30 [ 7, 8, 0, 30 ] rfl (by simp[leN36]) usedVar
-      | 31 => prf 31 [ 0, 29 ] rfl (by simp[leN36]) usedVar
-      | 32 => prf 32 [ 31, 30 ] rfl (by simp[leN36]) usedVar
-      | 33 => prf 33 [] rfl (by simp[leN36]) usedVar
-      | 34 => prf 34 [ 33, 34 ] rfl (by simp[leN36]) usedVar
-      | 35 => prf 35 [ 0, 34, 36, 7, 35 ] rfl (by simp[leN36]) usedVar
-      | 36 => prf 36 [ 0, 35, 32 ] rfl (by simp[leN36]) usedVar
+      | 7 => prf 7 [ 3, 4, 5, 7, 6, 0 ] rfl (by simp[leN37]) usedVar
+      | 8 => prf 8 [ 7, 8 ] rfl (by simp[leN37]) usedVar
+      | 9 => prf 9 [ 9 ] rfl (by simp[leN37]) usedVar
+      | 10 => prf 10 [ 2 ] rfl (by simp[leN37]) usedVar
+      | 11 => prf 11 [ 0, 11, 10 ] rfl (by simp[leN37]) usedVar
+      | 12 => prf 12 [ 2 ] rfl (by simp[leN37]) usedVar
+      | 13 => prf 13 [ 0, 11 ] rfl (by simp[leN37]) usedVar
+      | 14 => prf 14 [ 13, 9, 12, 11 ] rfl (by simp[leN37]) usedVar
+      | 15 => prf 15 [ 14, 8 ] rfl (by simp[leN37]) usedVar
+      | 16 => prf 16 [ 15 ] rfl (by simp[leN37]) usedVar
+      | 17 => prf 17 [ 15, 16 ] rfl (by simp[leN37]) usedVar
+      | 18 => prf 18 [ 18, 17 ] rfl (by simp[leN37]) usedVar
+      | 19 => prf 19 [ 0 ] rfl (by simp[leN37]) usedVar
+      | 20 => prf 20 [ 19, 4, 5, 7, 20, 6, 0 ] rfl (by simp[leN37]) usedVar
+      | 21 => prf 21 [ 7, 8, 20, 21 ] rfl (by simp[leN37]) usedVar
+      | 22 => prf 22 [ 8, 0, 21, 22 ] rfl (by simp[leN37]) usedVar
+      | 23 => prf 23 [ 7 ] rfl (by simp[leN37]) usedVar
+      | 24 => prf 24 [ 23, 24, 7 ] rfl (by simp[leN37]) usedVar
+      | 25 => prf 25 [ 7, 25 ] rfl (by simp[leN37]) usedVar
+      | 26 => prf 26 [ 8, 26, 25, 24 ] rfl (by simp[leN37]) usedVar
+      | 27 => prf 27 [ 27 ] rfl (by simp[leN37]) usedVar
+      | 28 => prf 28 [ 8, 26, 22, 27 ] rfl (by simp[leN37]) usedVar
+      | 29 => prf 29 [ 0, 28, 29, 18 ] rfl (by simp[leN37]) usedVar
+      | 30 => prf 30 [ 7, 8, 0, 30 ] rfl (by simp[leN37]) usedVar
+      | 31 => prf 31 [ 0, 29 ] rfl (by simp[leN37]) usedVar
+      | 32 => prf 32 [ 31, 30 ] rfl (by simp[leN37]) usedVar
+      | 33 => prf 33 [] rfl (by simp[leN37]) usedVar
+      | 34 => prf 34 [ 33, 34 ] rfl (by simp[leN37]) usedVar
+      | 35 => prf 35 [ 0, 34, 37, 7, 35 ] rfl (by simp[leN37]) usedVar
+      | 36 => prf 36 [ 35 ] rfl (by simp[leN37]) usedVar
+      | 37 => prf 37 [ 0, 36, 32 ] rfl (by simp[leN37]) usedVar
     
     def defList.hasFiniteBounds
       (dependsOn: DefList.DependsOn getDef a b)
     :
-      b < max a.succ 37
+      b < max a.succ 38
     :=
       -- Git gud @ termination showing, Lean.
       -- match dependsOn with
@@ -804,7 +817,7 @@ namespace Pair
       dependsOn.rec
         (fun x => lt_max_of_lt_left (Nat.lt_succ_self x))
         (fun aUsesB _ ih =>
-          let bLt37 := usedVarsLt37 ⟨_, aUsesB⟩
+          let bLt37 := usedVarsLt38 ⟨_, aUsesB⟩
           let maxEq := max_eq_right (Nat.succ_le_of_lt bLt37)
           lt_max_of_lt_right (maxEq ▸ ih))
     
@@ -813,14 +826,11 @@ namespace Pair
     := {
       getDef := defList.getDef
       
-      isFinBounded := ⟨{
-        bounds := fun x b => b ≤ 36 ∨ b < x,
-        boundsFinite :=
-          fun x => ⟨
-            max x.succ 37,
-            defList.hasFiniteBounds,
-          ⟩,
-      }, trivial⟩
+      isFinBounded :=
+        fun x => ⟨
+          max x.succ 38,
+          defList.hasFiniteBounds,
+        ⟩
     }
         
     noncomputable def wfModel :=

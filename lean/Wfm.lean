@@ -66,3 +66,15 @@ def inwWfm.toInwWfmDef
     congr (DefList.wellFoundedModel.isModel salg dl) rfl
   
   show (dl.interpretation salg v v n).posMem d from eqAtN ▸ w
+
+
+def wfmAtEq
+  (dl: DefList sig)
+  (salg: Salgebra sig)
+  (x: Nat)
+:
+  dl.wellFoundedModel salg x
+    =
+  dl.interpretation salg (dl.wellFoundedModel salg) (dl.wellFoundedModel salg) x
+:=
+  congr (DefList.wellFoundedModel.isModel salg dl) rfl

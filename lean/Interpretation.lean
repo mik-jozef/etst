@@ -710,19 +710,13 @@ def DefList.DependsOn.push
     ...
   ```
 -/
-structure DefList.FinBounds (getDef: GetDef sig) where
-  bounds: Nat → Set Nat
-  
-  boundsFinite:
-    ∀ name,
-    ∃ upperBound,
-    ∀ {dep}
-      (_: DependsOn getDef name dep)
-    ,
-      dep < upperBound
-
-def DefList.IsFinBounded (gd: Nat → Expr sig): Prop :=
-  ∃ _fb: FinBounds gd, True
+def DefList.IsFinBounded (getDef: Nat → Expr sig): Prop :=
+  ∀ name,
+  ∃ upperBound,
+  ∀ {dep}
+    (_: DependsOn getDef name dep)
+  ,
+    dep < upperBound
 
 structure DefList (sig: Signature) where
   getDef: DefList.GetDef sig

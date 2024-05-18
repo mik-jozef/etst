@@ -606,14 +606,14 @@ def operatorB.stage.isMonotonic
     (operatorB.isMonotonic salg dl)
     (nnLt)
 
+
 def Valuation.IsModel
   (salg: Salgebra sig)
   (dl: DefList sig)
-  (v: Valuation salg.D)
 :
-  Prop
+  Set (Valuation salg.D)
 :=
-  v = dl.interpretation salg v v
+  fun v => v = dl.interpretation salg v v
 
 noncomputable def DefList.wellFoundedModel
   (salg: Salgebra sig)
@@ -641,6 +641,17 @@ def DefList.wellFoundedModel.isModel
     wfmEq ▸ eq
   
   wfmEq.trans clfpEq
+
+def DefList.wellFoundedModel.isLfp
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+:
+  IsLfp
+    (Valuation.ord.approximation salg.D)
+    (operatorB salg dl)
+    (dl.wellFoundedModel salg)
+:=
+  (operatorB.lfp salg dl).property
 
 
 def Salgebra.IsDefinable
