@@ -320,8 +320,7 @@ def operatorC.stage.isMonotonic.approximation
         salg (dl.getDef x) b0 b1 s0Pred s1Pred b0LeB1 s0PredLeS1Pred
   
       s0Eq ▸ s1Eq ▸ ILe
-termination_by operatorC.stage.isMonotonic.approximation
-  alg dl b0 b1 b0LeB1 n => n
+termination_by n
 
 
 noncomputable def operatorB (salg: Salgebra sig) (dl: DefList sig):

@@ -169,10 +169,10 @@ def LinearOrder.ltTotal
 
 
 def Nat.lt.addNatRite (ab: a < b) (k: Nat): a < b + k :=
-  Nat.lt_add_right _ _ _ ab
+  Nat.lt_add_right _ ab
 
 def Nat.lt.addNatLeft (ab: a < b) (k: Nat): a < k + b :=
-  (Nat.add_comm b k) ▸ (Nat.lt_add_right _ _ k ab)
+  (Nat.add_comm b k) ▸ (Nat.lt_add_right k ab)
 
 def Nat.lt.addNat (ab: a < b) (left rite: Nat): a < left + b + rite :=
   Nat.lt.addNatRite (Nat.lt.addNatLeft ab left) rite
@@ -193,7 +193,7 @@ def Nat.lteTrans {a b c: Nat} (ab: a < b) (bc: b ≤ c): a < c :=
     (fun lt => Nat.lt_trans ab lt)
 
 def Nat.ltTotal: IsConnected Nat.lt :=
-  LinearOrder.ltTotal Nat.linearOrder
+  LinearOrder.ltTotal Nat.instLinearOrder
 
 def Nat.ltAntisymm {a b: Nat} (ab: a < b) (ba: b < a): P :=
   False.elim (Nat.lt_irrefl a (Nat.lt_trans ab ba))
@@ -284,14 +284,6 @@ def Nat.abs.ltle.rite {a b c: Nat} (ab: a < b) (bc: b ≤ c):
 
   let lt: c - b < c - a := Nat.ltle.subLt ab bc
   absBC ▸ absAC ▸ lt
-
-def Nat.lt_add_left
-  (eq: a + b = c)
-  (lt: 0 < a)
-:
-  b < c
-:=
-  eq ▸ Nat.lt_add_of_pos_left lt
 
 def Nat.lt_add_rite
   (eq: a + b = c)
@@ -453,7 +445,7 @@ noncomputable def existsDistinctOfNotInjective
 def List.emptyNotMem (t: T):
   t ∉ []
 :=
-  fun.
+  nofun
 
 def List.Mem.nope
   {t: T}
@@ -635,7 +627,7 @@ namespace Set
       match listA with
       | List.nil => ⟨
         [],
-        fun _a _b aIn _bIn => match aIn with.
+        fun _a _b aIn _bIn => nomatch aIn
       ⟩
       | List.cons aHead aTail =>
         let ⟨lcTail, lcTailIn⟩ := combineLists aTail listB combine

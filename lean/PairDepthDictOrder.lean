@@ -247,7 +247,10 @@ namespace Pair
         isMember := isLob.isMember.left,
         isLeMember :=
           fun p pInS =>
-            match Nat.linearOrder.ltTotal p.depth t.depth with
+            let isComparable :=
+              Nat.instLinearOrder.ltTotal p.depth t.depth
+            
+            match isComparable with
             | IsComparable.IsLt pt =>
                 isLob.isLeMember (And.intro pInS pt.le)
             | IsComparable.IsGt tp =>

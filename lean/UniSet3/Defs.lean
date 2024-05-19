@@ -155,7 +155,7 @@ namespace Pair
     :
       P
     :=
-      match isExpr with.
+      nomatch isExpr
     
     def IsExprEncoding.nopeBinQuant
       (isBin: IsExprEncoding.Bin p)
@@ -163,28 +163,28 @@ namespace Pair
     :
       P
     :=
-      False.elim (match isBin, isQuant with.)
+      False.elim (nomatch isBin, isQuant)
     
     def IsExprEncoding.Bin.nopeVar
       (isBin: IsExprEncoding.Bin zero)
     :
       P
     :=
-      match isBin with.
+      nomatch isBin
     
     def IsExprEncoding.Bin.nopeOpZero
       (isBin: IsExprEncoding.Bin (fromNat 1))
     :
       P
     :=
-      match isBin with.
+      nomatch isBin
     
     def IsExprEncoding.Bin.nopeCpl
       (isBin: IsExprEncoding.Bin (fromNat 5))
     :
       P
     :=
-      match isBin with.
+      nomatch isBin
     
     
     def IsExprEncoding.Quantifier.nopeVar
@@ -192,21 +192,21 @@ namespace Pair
     :
       P
     :=
-      False.elim (match isQuant with.)
+      False.elim (nomatch isQuant)
     
     def IsExprEncoding.Quantifier.nopeOpZero
       (isQuant: IsExprEncoding.Quantifier (fromNat 1))
     :
       P
     :=
-      False.elim (match isQuant with.)
+      False.elim (nomatch isQuant)
     
     def IsExprEncoding.Quantifier.nopeCpl
       (isQuant: IsExprEncoding.Quantifier (fromNat 5))
     :
       P
     :=
-      False.elim (match isQuant with.)
+      False.elim (nomatch isQuant)
     
     
     def IsExprEncoding.withIsVar
@@ -276,7 +276,7 @@ namespace Pair
     :
       P
     :=
-      match isExpr, isBin with.
+      nomatch isExpr, isBin
     
     def IsExprEncoding.Bin.nopeZeroPayload
       (isBin: IsExprEncoding.Bin n)
@@ -541,7 +541,7 @@ namespace Pair
             }
           }
         }
-    termination_by helper isDefDl isDefLb isLt =>
+    termination_by
       depthDictOrder.indexOf dl - depthDictOrder.indexOf lb
     
     noncomputable def IsNextDefPair.getPrev
@@ -715,7 +715,7 @@ namespace Pair
           (IsNthDefListPair.Succ isNthPred isNext)
     
     -- Cannot find a way to make Lean use `depthDictOrder.wfRel` :/
-    termination_by isSurjective isDef => depthDictOrder.indexOf dl
+    termination_by depthDictOrder.indexOf dl
     
     
     inductive IsIncrVarsExprPair: Pair → Pair → Prop where
@@ -896,8 +896,9 @@ namespace Pair
         =
       pair (fromNat 5) (incrVars payload)
     :=
-      -- What arcane magic is this?
-      by conv => lhs; unfold incrVars;
+      by
+        conv => lhs; unfold incrVars;
+        exact rfl
     
     def IsIncrVarsExprPair.incrVars.eqQuant
       (isQuant: IsExprEncoding.Quantifier n)
@@ -1046,7 +1047,7 @@ namespace Pair
           | zero, hQuant =>
             let isExpr := incrVars.eqQuantZero hQuant ▸ isExpr
             
-            match isExpr with.
+            nomatch isExpr
           | pair x body, hQuant =>
             let isExpr := (incrVars.eqQuant hQuant x body) ▸ isExpr
             let ⟨isNat, isBody⟩ := isExpr.withIsQuantifier hQuant
@@ -1055,7 +1056,7 @@ namespace Pair
               hQuant isNat.left (isExprArg isBody)
         else
           let eq := eqZeroOutOfBounds h0 h1 h5 hBin hQuant payload
-          match eq ▸ isExpr with.
+          nomatch eq ▸ isExpr
     
     noncomputable def IsIncrVarsExprPair.shiftVars
       (n: Nat)
@@ -1104,14 +1105,14 @@ namespace Pair
     :
       P
     :=
-      match isInc with.
+      nomatch isInc
     
     def IsIncrVarsDefEncodingPair.zeroPairNope
       (isInc: IsIncrVarsDefEncodingPair zero (pair a b))
     :
       P
     :=
-      match isInc with.
+      nomatch isInc
     
     def IsIncrVarsDefEncodingPair.lengthEq
       (isInc: IsIncrVarsDefEncodingPair a b)
@@ -1386,7 +1387,7 @@ namespace Pair
     :
       P
     :=
-      match isL with.
+      nomatch isL
     
     def IsLastExprBase.toIsLastExpr
       (isBase: IsLastExprBase p)
@@ -1616,7 +1617,7 @@ namespace Pair
           isAppend :=
             IsArrayAppendABC.Step isUpToLast isLast isAppend
         }
-    termination_by IsArrayAppendABC.append isDefA isDefB => a.arrayLength
+    termination_by a.arrayLength
     
     def IsArrayAppendABC.lengthEq
       (isAppend: IsArrayAppendABC a b c)
@@ -1627,7 +1628,7 @@ namespace Pair
         (fun _isDef => Nat.zero_add _)
         (fun isUtl _ _ ih =>
           isUtl.lengthEq ▸
-          (Nat.succ_add_eq_succ_add _ _) ▸
+          (Nat.succ_add_eq_add_succ _ _) ▸
           ih)
     
     def IsArrayAppendABC.isUnique
@@ -1648,7 +1649,7 @@ namespace Pair
         
         isAppendPrevA.isUnique
           (eqUpToLast ▸ eqLast ▸ isAppendPrevB)
-    termination_by IsArrayAppendABC.isUnique a b => dl0.arrayLength
+    termination_by dl0.arrayLength
     
     def IsArrayAppendABC.preservesFinal
       (isAppend: IsArrayAppendABC a b c)
@@ -1666,12 +1667,9 @@ namespace Pair
         have := isUpToLast.arrayLengthLt
         
         isUpToLast.lengthEq ▸
-        (Nat.succ_add_eq_succ_add _ _) ▸
+        (Nat.succ_add_eq_add_succ _ _) ▸
         preservesFinal isAppendPrev isAtNew
-    termination_by
-      IsArrayAppendABC.preservesFinal isAppend isAt
-    =>
-      a.arrayLength
+    termination_by a.arrayLength
     
     def IsArrayAppendABC.preservesInitial
       (isAppend: IsArrayAppendABC a b c)
@@ -1712,10 +1710,7 @@ namespace Pair
           
           isAt.symm.trans (isUpToLast.preservesElements h) ▸
           isAppendPrev.preservesInitial h
-    termination_by
-      IsArrayAppendABC.preservesInitial isAppend isAt
-    =>
-      a.arrayLength
+    termination_by a.arrayLength
     
     
     inductive IsArrayLengthPair: Pair → Pair → Prop
@@ -1944,7 +1939,7 @@ namespace Pair
         }
     
     def IsEnumUpToPair.lengthGrows
-      (nNotZero: n ≠ 0)
+      (_nNotZero: n ≠ 0)
       (isNth: IsEnumUpToPair (fromNat n) dlN)
       (isSuccNth: IsEnumUpToPair (fromNat n.succ) dlSuccN)
     :
@@ -2008,7 +2003,7 @@ namespace Pair
         
         nthDef.loop n i.succ Nat.noConfusion
     
-    termination_by IsEnumUpToPair.nthDef.loop n i iNotZero =>
+    termination_by
       n.succ - (nthIteration i).dlEncoding.arrayLength
     
     noncomputable def IsEnumUpToPair.nthDef

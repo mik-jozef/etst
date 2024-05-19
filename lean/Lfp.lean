@@ -28,7 +28,7 @@ noncomputable def lfp.stage.option
     match prev with
       | none => none
       | some t => op t
-termination_by lfp.stage.option cc op n => n
+termination_by n
 
 noncomputable def lfp.stage.option.previous
   {ord: PartialOrder T}
@@ -288,7 +288,7 @@ def lfp.stage.option.isMono.ifChain.{u}
             bPredSome ▸ bSome ▸ opMono tLeOpT
     
     abp.trans bpb
-termination_by lfp.stage.option.isMono.ifChain cc op opMono a b ab isChain => b
+termination_by b
 
 def lfp.stage.option.previous.isChain
   {ord: PartialOrder T}
@@ -314,7 +314,7 @@ def lfp.stage.option.previous.isChain
       let hReverse := le_of_lt (not_le.mp h)
       
       Or.inr (t0Index.prop ▸ t1Index.prop ▸ isMono hReverse)
-termination_by lfp.stage.option.previous.isChain cc op n => n
+termination_by n
 
 noncomputable def lfp.stage.option.notNone
   {ord: PartialOrder T}
@@ -348,7 +348,7 @@ noncomputable def lfp.stage.option.notNone
       | some t => ⟨t, rfl⟩
     let optN := pred.ifSome cc op n h nPred.property
     fun eq => Option.noConfusion (eq.symm.trans optN)
-termination_by lfp.stage.option.notNone cc op opMono n => n
+termination_by n
 
 
 noncomputable def lfp.stage.withEq
@@ -557,7 +557,7 @@ def lfp.stage.leFP
       (Ordinal.succ_pred_of_not_limit h) ▸ succEq cc op opMono n.pred
     
     opFpEq ▸ stageNEq ▸ opPredLe
-termination_by lfp.stage.leFP cc op opMono n fp => n
+termination_by n
 
 
 structure lfp.OrdPair (stages: Ordinal → T) where

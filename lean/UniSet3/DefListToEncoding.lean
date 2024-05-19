@@ -89,7 +89,7 @@ def Pair.exprToEncoding.injEq
   =>
     Pair.noConfusion
       (Subtype.eqVal eq)
-      fun _ _ => congr rfl (funext fun.)
+      fun _ _ => congr rfl (funext nofun)
   
   | Expr.op pairSignature.Op.pair _argsA,
     Expr.op pairSignature.Op.pair _argsB
@@ -188,7 +188,7 @@ def Pair.defListToEncoding
   DefListToEncoding dl iStart
 :=
   if h: iEnd ≤ iStart then
-    ⟨Pair.zero, trivial, fun.⟩
+    ⟨Pair.zero, trivial, nofun⟩
   else
     have: iEnd - iStart.succ < iEnd - iStart :=
       Nat.sub_lt_sub_left
@@ -215,13 +215,13 @@ def Pair.defListToEncoding
             let iPredWithinBounds :=
               Nat.lt_of_succ_lt_succ iWithinBounds
             
-            Nat.succ_add_eq_succ_add iStart iPred ▸
+            Nat.succ_add_eq_add_succ iStart iPred ▸
             arrayAt.consEq
               (eqAtTail iPred iPredWithinBounds)
               headEncoding
     }
       
-termination_by Pair.defListToEncoding dl iStart iEnd => iEnd - iStart
+termination_by iEnd - iStart
 
 def Pair.defListToEncoding.eqIfEndLe
   (dl: DefList pairSignature)
@@ -274,10 +274,7 @@ def Pair.defListToEncoding.lengthEq
     (arrayLength.eqSuccTail _ _).trans
       (lengthEq dl iStart.succ iEnd ▸
       (natEqL.trans natEqR))
-termination_by
-  Pair.defListToEncoding.lengthEq dl iStart iEnd
-=>
-  iEnd - iStart
+termination_by iEnd - iStart
 
 namespace Pair
   noncomputable def encodingToExpr

@@ -36,7 +36,7 @@ def iIsLeast.isUnique
   
   ord.le_antisymm _ _ t0Le t1Le
 
-def List.least
+noncomputable def List.least
   (ord: LinearOrder T)
   (list: List T)
   (sNonEmpty: list ≠ [])
@@ -121,7 +121,7 @@ noncomputable def Least.ofHasListOfAll
       let tInEmpty: t ∈ [] :=
         eqEmpty ▸ (list.property t).mp sNonempty
       
-      match tInEmpty with.
+      nomatch tInEmpty
   
   let least := list.val.least ord listNonempty
   
