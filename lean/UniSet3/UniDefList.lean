@@ -548,10 +548,15 @@ namespace Pair
               (callExpr 502 getBound 501))))
     
     /-
-      Contains (bound, expr, s) where bound is an array
+      Contains (bound, expr, p) where bound is an array
       of var-pair pairs (bound vars), `expr` is an expression
-      and `s` is the interpretation of `expr` with `theSet` (below)
-      serving as the valuation. (Ie. `expr = interpretation theSet`)
+      and `p` is a member of the interpretation of `expr` with
+      `theSet` (below) serving as the valuation (of free
+      variables).
+      
+      The triple is contained strongly iff `s` is a definitive
+      member of the interpretation, else it is contained
+      weakly.
     -/
     def interpretation: Nat := 35
     
