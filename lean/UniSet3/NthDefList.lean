@@ -66,7 +66,7 @@ namespace Pair
             let isNextDef := Inw.toIsNextDef inwFn
             
             zEq ▸ IsNthDefListPair.Succ isNthPred isNextDef)
-    termination_by Inw.toIsNthDefList.ab a inw => a.depth
+    termination_by a.depth
     
     def Inw.toIsNthDefList (inw: Inw nthDefList p):
       IsNthDefList p

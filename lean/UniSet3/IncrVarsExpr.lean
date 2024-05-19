@@ -361,7 +361,7 @@ namespace Pair
               eqBBAB ▸
               (eqABB.trans eqExprAlias.symm) ▸
               IsIncrVarsExprPair.IsQuantifier isQ isNat isShift)
-    termination_by Inw.toIsIncrVarsExpr w => p.depthB
+    termination_by p.depthB
     
   end uniSet3
 end Pair

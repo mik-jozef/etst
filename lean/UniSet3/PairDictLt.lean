@@ -156,7 +156,7 @@ namespace Pair
                 (And.intro
                   ((inwBoundElim inw501A).trans (inwBoundElim inw501B).symm)
                   r))
-    termination_by Inw.toIsPairDictLt.p p inw => p.depth
+    termination_by p.depth
     
     def Inw.toIsPairDictLt (inw: Inw pairDictLt p):
       IsPairDictLt p

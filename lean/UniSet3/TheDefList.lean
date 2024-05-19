@@ -99,7 +99,7 @@ namespace Pair
             eqZ ▸
             eqAPred ▸
             IsEnumUpToPair.Step isUpTo isNth isAppend)
-    termination_by Inw.toIsEnumUpTo inw => p.depthA
+    termination_by p.depthA
     
     
     def insDefListToSet (isDefToSet: IsDefListToSet p):
@@ -139,8 +139,7 @@ namespace Pair
             dlTail.arrayAt iPred.depth = some expr
           :=
             arrayAt.tailEq
-              (isDefToSet.isNat.right ▸
-              depth.nat.eqSuccDepthPred isDefToSet.isNat ▸
+              (depth.nat.eqSuccDepthPred isDefToSet.isNat ▸
               isDefToSet.eq)
           
           isDefToSet.isNat.right ▸
@@ -288,7 +287,7 @@ namespace Pair
                 depth.nat.eqSuccDepthPred (And.intro isNatN rfl) ▸
                 arrayAt.consEq (toIsDefListToSet inw).eq _
             })
-    termination_by Inw.toIsDefListToSet inw => p.depthBA
+    termination_by p.depthBA
     
     def insTheDefListExpr (isTheDefListExpr: IsTheDefListExpr p):
       Ins theDefList p

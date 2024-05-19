@@ -191,7 +191,7 @@ namespace Pair
                             (insPair
                               insBound
                               (insFree insBound nat502Neq501)))))))))
-    termination_by insPairOfDepth.p p isPoD => p.depth
+    termination_by p.depth
     
     def insPairOfDepth (isPoD: IsPairOfDepth p):
       Ins pairOfDepth p
@@ -368,7 +368,6 @@ namespace Pair
                     
                     (eqL.trans eqMid).trans eqR.symm
                 }))
-    termination_by Inw.toIsPairOfDepth.ab n p inw => n.depth
     
     def Inw.toIsPairOfDepth (inw: Inw pairOfDepth p):
       IsPairOfDepth p

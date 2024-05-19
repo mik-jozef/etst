@@ -96,7 +96,7 @@ namespace Pair
             NonemptyDefList
               (Inw.toIsIncrVarsExpr inwFnExpr)
               (Inw.toIsIncrVarsDefEncoding (inwFnDl)))
-    termination_by Inw.toIsIncrVarsDefEncoding w => p.arrayLength
+    termination_by p.arrayLength
     
     
     def insShiftDefEncoding (isShiftDef: IsShiftDefEncoding p):
@@ -161,7 +161,7 @@ namespace Pair
                               insBound
                               nat502Neq501)
                             nat503Neq501))))))))
-    termination_by insShiftDefEncoding w => p.depthA
+    termination_by p.depthA
     decreasing_by exact depthLtL _ zero
     
     def Inw.toIsShiftDefEncoding (inw: Inw shiftDefEncoding p):
@@ -217,6 +217,6 @@ namespace Pair
             IsShiftDefEncodingABC.SuccShift
               (toIsShiftDefEncoding inw)
               (Inw.toIsIncrVarsDefEncoding inwFnOuter))
-    termination_by Inw.toIsShiftDefEncoding inw => p.depthA
+    termination_by p.depthA
   end uniSet3
 end Pair

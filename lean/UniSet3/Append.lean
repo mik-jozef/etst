@@ -96,7 +96,7 @@ namespace Pair
         (fun inw =>
           let ⟨lastTail, ⟨inwDomain, inwBody⟩⟩ := inwUnDomElim inw
           
-          match h: p with
+          match p with
           | zero => inwPairElim.nope inwBody
           | pair zero _ => inwPairElim.nope (inwPairElim inwBody).inwL
           | pair (pair aA aB) b =>
@@ -114,7 +114,7 @@ namespace Pair
               toIsLastExpr (eqLastTail.symm ▸ inwDomain)
             
             IsLastExprPair.LengthMore isExprAA isLastTail.isDefA isLastTail)
-    termination_by Inw.toIsLastExpr inw => arrayLengthA p
+    termination_by arrayLengthA p
     
     
     def insUpToLast (isUpToLast: IsUpToLast p):
@@ -206,7 +206,7 @@ namespace Pair
             eqAA ▸
             eqBA ▸
             IsUpToLastPair.LengthMore isExpr isUTLB)
-    termination_by Inw.toIsUpToLast inw => arrayLengthA p
+    termination_by arrayLengthA p
     
     
     def insArrayAppend (isArrayAppend: IsArrayAppend p):
@@ -280,7 +280,7 @@ namespace Pair
                           (insFree
                             insBound
                             nat502Neq501))))))))
-    termination_by insArrayAppend inw => arrayLengthA p
+    termination_by arrayLengthA p
     
     def Inw.toIsArrayAppend (inw: Inw arrayAppend p):
       IsArrayAppend p
@@ -345,7 +345,7 @@ namespace Pair
               eq500 ▸
               eq501 ▸
               IsArrayAppendABC.Step isUtl isLast isAppendPrev)
-    termination_by Inw.toIsArrayAppend inw => arrayLengthA p
+    termination_by arrayLengthA p
     
     
     def insArrayLength (isArrayLength: IsArrayLength p):
@@ -412,7 +412,7 @@ namespace Pair
             
             inwZeroElim inwZ ▸
             IsArrayLengthPair.Succ isArrLengthPrev head)
-    termination_by Inw.toIsArrayLength inw => arrayLengthA p
+    termination_by arrayLengthA p
     
     
     def insAppend (isAppend: IsAppend p):
