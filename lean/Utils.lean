@@ -729,7 +729,7 @@ def congrBin
 :=
   eqFn ▸ eqArg0 ▸ eqArg1 ▸ rfl
 
-def Subtype.eqVal
+def Subtype.val_eq_val
   {P: T → Prop}
   {a b: { t // P t }}
   (eq: a = b)
@@ -737,3 +737,12 @@ def Subtype.eqVal
   a.val = b.val
 :=
   congr rfl eq
+
+def Subtype.val_eq
+  {P: T → Prop}
+  (t: T)
+  (pt: P t)
+:
+  (Subtype.mk t pt).val = t
+:=
+  rfl

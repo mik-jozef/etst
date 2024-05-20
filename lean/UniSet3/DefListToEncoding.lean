@@ -81,21 +81,21 @@ def Pair.exprToEncoding.injEq
   match a, b with
   | Expr.var _, Expr.var _ =>
     Pair.noConfusion
-      (Subtype.eqVal eq)
+      (Subtype.val_eq_val eq)
       fun _ => congr rfl ∘ fromNat.injEq
   
   | Expr.op pairSignature.Op.zero _,
     Expr.op pairSignature.Op.zero _
   =>
     Pair.noConfusion
-      (Subtype.eqVal eq)
+      (Subtype.val_eq_val eq)
       fun _ _ => congr rfl (funext nofun)
   
   | Expr.op pairSignature.Op.pair _argsA,
     Expr.op pairSignature.Op.pair _argsB
   =>
     Pair.noConfusion
-      (Subtype.eqVal eq)
+      (Subtype.val_eq_val eq)
       fun _ eqP =>
         Pair.noConfusion
           eqP
@@ -111,7 +111,7 @@ def Pair.exprToEncoding.injEq
   
   | Expr.un _leftA _riteA, Expr.un _leftB _riteB =>
     Pair.noConfusion
-      (Subtype.eqVal eq)
+      (Subtype.val_eq_val eq)
       fun _ eqP =>
         Pair.noConfusion
           eqP
@@ -122,7 +122,7 @@ def Pair.exprToEncoding.injEq
   
   | Expr.ir _leftA _riteA, Expr.ir _leftB _riteB =>
     Pair.noConfusion
-      (Subtype.eqVal eq)
+      (Subtype.val_eq_val eq)
       fun _ eqP =>
         Pair.noConfusion
           eqP
@@ -133,13 +133,13 @@ def Pair.exprToEncoding.injEq
   
   | Expr.cpl _exprA, Expr.cpl _exprB =>
     Pair.noConfusion
-      (Subtype.eqVal eq)
+      (Subtype.val_eq_val eq)
       fun _ eqP =>
         congr rfl (exprToEncoding.injEq (Subtype.eq eqP))
   
   | Expr.ifThen _condA _bodyA, Expr.ifThen _condB _bodyB =>
     Pair.noConfusion
-      (Subtype.eqVal eq)
+      (Subtype.val_eq_val eq)
       fun _ eqP =>
         Pair.noConfusion
           eqP
@@ -150,7 +150,7 @@ def Pair.exprToEncoding.injEq
   
   | Expr.Un _xA _bodyA, Expr.Un _xB _bodyB =>
     Pair.noConfusion
-      (Subtype.eqVal eq)
+      (Subtype.val_eq_val eq)
       fun _ eqP =>
         Pair.noConfusion
           eqP
@@ -161,7 +161,7 @@ def Pair.exprToEncoding.injEq
   
   | Expr.Ir _xA _bodyA, Expr.Ir _xB _bodyB =>
     Pair.noConfusion
-      (Subtype.eqVal eq)
+      (Subtype.val_eq_val eq)
       fun _ eqP =>
         Pair.noConfusion
           eqP
