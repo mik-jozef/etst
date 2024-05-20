@@ -2201,6 +2201,16 @@ namespace Pair
         
         { expr, isNth }
     
+    def IsTheDefListExprPair.getNthExpr.eq
+      (is: IsTheDefListExpr (pair xEnc expr))
+      (eq: xEnc = fromNat x)
+    :
+      expr = (IsTheDefListExprPair.getNthExpr x).expr
+    :=
+      let isX := (IsTheDefListExprPair.getNthExpr x).isNth
+      
+      IsTheDefListExprPair.isUnique (eq ▸ is) isX
+    
     structure IsTheDefListExprPair.IndexOfDefList (dl: Pair) where
       i: Nat
       eqAt:
