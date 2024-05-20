@@ -103,7 +103,7 @@ namespace Valuation
       undetermined.isLeast
   
   
-  noncomputable def update
+  def update
     (val: Valuation D)
     (x: Nat)
     (d: D)
