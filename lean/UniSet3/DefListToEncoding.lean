@@ -296,6 +296,67 @@ namespace Pair
     unfold encodingToExpr
     exact dif_pos ex ▸ rfl
   
+  def exprToEncoding.existsOfIsEncoding
+    (isExprEnc: uniSet3.IsExprEncoding p)
+  :
+    ∃ expr, exprToEncoding expr = p
+  :=
+    open uniSet3.IsExprEncoding in
+    open uniSet3.IsExprEncoding.Bin in
+    open uniSet3.IsExprEncoding.Quantifier in
+    open PairExpr in
+    match isExprEnc with
+    | IsVar isNat => ⟨
+      Expr.var isNat.toNat,
+      Subtype.val_eq _ _ ▸
+      isNat.toNatFromNatEq.symm ▸
+      rfl
+    ⟩
+    | IsZero => ⟨
+      Expr.op pairSignature.Op.zero nofun,
+      rfl
+    ⟩
+    | IsBin isBin isExprA isExprB =>
+      let ⟨exprA, eqA⟩ := existsOfIsEncoding isExprA
+      let ⟨exprB, eqB⟩ := existsOfIsEncoding isExprB
+      
+      match isBin with
+      | Is2 eq2 => ⟨
+        pairExpr exprA exprB,
+        eq2 ▸ eqA ▸ eqB ▸ rfl,
+      ⟩
+      | Is3 eq3 => ⟨
+        Expr.un exprA exprB,
+        eq3 ▸ eqA ▸ eqB ▸ rfl,
+      ⟩
+      | Is4 eq4 => ⟨
+        Expr.ir exprA exprB,
+        eq4 ▸ eqA ▸ eqB ▸ rfl,
+      ⟩
+      | Is6 eq6 => ⟨
+        Expr.ifThen exprA exprB,
+        eq6 ▸ eqA ▸ eqB ▸ rfl,
+      ⟩
+    | IsCpl isExpr =>
+      let ⟨expr, eq⟩ := existsOfIsEncoding isExpr
+      ⟨Expr.cpl expr, eq ▸ rfl⟩
+    | IsQuantifier isQuant isNat isExpr =>
+      let ⟨expr, eq⟩ := existsOfIsEncoding isExpr
+      
+      match isQuant with
+      | Is7 eq7 => ⟨
+        Expr.Un isNat.toNat expr,
+        Subtype.val_eq _ _ ▸
+        isNat.toNatFromNatEq.symm ▸
+        eq7 ▸ eq ▸ rfl,
+      ⟩
+      | Is8 eq8 => ⟨
+        Expr.Ir isNat.toNat expr,
+        Subtype.val_eq _ _ ▸
+        isNat.toNatFromNatEq.symm ▸
+        eq8 ▸ eq ▸ rfl,
+      ⟩
+  
   def encodingToExpr.isInverse
     (expr: Expr pairSignature)
   :
@@ -305,5 +366,48 @@ namespace Pair
     let eq := encodingToExpr.eqOfExists ex
     
     eq ▸ exprToEncoding.injEq (Subtype.eq ex.unwrap.property)
+  
+  def encodingToExpr.injEq
+    (isExprA: uniSet3.IsExprEncoding a)
+    (isExprB: uniSet3.IsExprEncoding b)
+    (eq: encodingToExpr a = encodingToExpr b)
+  :
+    a = b
+  :=
+    let tmpA := exprToEncoding.existsOfIsEncoding isExprA
+    let exprA := tmpA.unwrap.val
+    let eqA: exprToEncoding exprA = a := tmpA.unwrap.property
+    
+    let tmpB := exprToEncoding.existsOfIsEncoding isExprB
+    let exprB := tmpB.unwrap.val
+    let eqB: exprToEncoding exprB = b := tmpB.unwrap.property
+    
+    let encEqA: a.encodingToExpr = exprA :=
+      eqOfExists ⟨exprA, eqA⟩
+    let encEqB: b.encodingToExpr = exprB :=
+      eqOfExists ⟨exprB, eqB⟩
+    
+    let exprEq := encEqA.symm.trans (eq.trans encEqB)
+    
+    eqA.symm.trans (exprEq ▸ eqB)
+  
+  def exprToEncoding.isInverse
+    (isExpr: uniSet3.IsExprEncoding p)
+  :
+    exprToEncoding (encodingToExpr p) = p
+  :=
+    let ex := existsOfIsEncoding isExpr
+    let eq := encodingToExpr.eqOfExists ex
+    
+    eq ▸ ex.unwrap.property
+  
+  
+  def encodingToExpr.toEqExprToEncoding
+    (isExpr: uniSet3.IsExprEncoding exprEnc)
+    (eq: exprEnc.encodingToExpr = expr)
+  :
+    exprEnc = exprToEncoding expr
+  :=
+    eq ▸ (exprToEncoding.isInverse isExpr).symm
   
 end Pair    
