@@ -21,6 +21,7 @@ def InwWfm
 :=
   expr.Inw salg (dl.wellFoundedModel salg) d
 
+
 def insWfmDef.toInsWfm
   (s: InsWfm salg dl (dl.getDef n) d)
 :
@@ -28,6 +29,15 @@ def insWfmDef.toInsWfm
 := by
   unfold InsWfm;
   exact (DefList.wellFoundedModel.isModel salg dl) ▸ s
+
+def inwWfmDef.toInwWfm
+  (w: InwWfm salg dl (dl.getDef n) d)
+:
+  InwWfm salg dl n d
+:= by
+  unfold InwWfm;
+  exact (DefList.wellFoundedModel.isModel salg dl) ▸ w
+
 
 def insWfm.toInsWfmDef
   {n: Nat}
@@ -43,14 +53,6 @@ def insWfm.toInsWfmDef
     congr (DefList.wellFoundedModel.isModel salg dl) rfl
   
   show (dl.interpretation salg v v n).defMem d from eqAtN ▸ s
-
-def inwWfmDef.toInwWfm
-  (w: InwWfm salg dl (dl.getDef n) d)
-:
-  InwWfm salg dl n d
-:= by
-  unfold InwWfm;
-  exact (DefList.wellFoundedModel.isModel salg dl) ▸ w
 
 def inwWfm.toInwWfmDef
   {n: Nat}
