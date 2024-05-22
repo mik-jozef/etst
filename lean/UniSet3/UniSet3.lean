@@ -1,29 +1,9 @@
 import DefListDefEq
 import UniSet3.DefListToEncoding
-
-def Set3.pairCall (fn arg: Set3 Pair): Set3 Pair := {
-  defMem := fun p => ∃ (a: arg.defMem), fn.defMem (Pair.pair a p)
-  posMem := fun p => ∃ (a: arg.posMem), fn.posMem (Pair.pair a p)
-  defLePos :=
-    fun _p pInDef =>
-      let ⟨⟨a, aInArgDef⟩, apInFnDef⟩ := pInDef
-      
-      ⟨
-        ⟨a, (arg.defLePos aInArgDef)⟩,
-        fn.defLePos apInFnDef
-      ⟩
-}
-
-def Set3.pairCallJust
-  (fn: Set3 Pair)
-  (arg: Pair)
-:=
-  Set3.pairCall fn (Set3.just arg)
+import UniSet3.TheSet3
 
 
 namespace Pair
-  noncomputable def uniSet3 := uniDefList.wfModel uniDefList.theSet
-  
   namespace uniSet3
     noncomputable def theDefListExternal.getDef
       (n: Nat)
@@ -45,13 +25,12 @@ namespace Pair
     :
       expr = theDefListExternal.getDef i
     :=
-      let isInDlNth := (IsTheDefListExprPair.getNthExpr i).isNth
-      let eq := IsTheDefListExprPair.isUnique isInDlNth isInDl
-      
       by
         unfold theDefListExternal.getDef;
         exact
-          eq ▸ eqEnc ▸ (encodingToExpr.isInverse expr).symm
+          IsTheDefListExprPair.getNthExpr.eq isInDl rfl ▸
+          eqEnc ▸
+          (encodingToExpr.isInverse expr).symm
     
     def IsIncrVarsExprPair.incrVarsEqMapVars:
       incrVars (exprToEncoding expr)
@@ -183,19 +162,10 @@ namespace Pair
       
       ⟨iStart + x, by unfold wfm; exact eq ▸ sEq⟩
     
-    def theSetAsValuation: Valuation Pair :=
-      fun n => Set3.pairCallJust uniSet3 (fromNat n)
-    
     def theSetAsValuation.interpretationsEqual
       (x: Nat)
     :
-      Set3.pairCallJust
-        (Expr.interpretation
-          pairSalgebra
-          uniDefList.wfModel
-          uniDefList.wfModel
-          (uniDefList.defList.getDef uniDefList.theSet))
-        (fromNat x)
+      Set3.pairCallJust uniSet3 (fromNat x)
         =
       Expr.interpretation
         pairSalgebra
@@ -203,22 +173,20 @@ namespace Pair
         theSetAsValuation
         (encodingToExpr (IsTheDefListExprPair.getNthExpr x).expr)
     :=
-      Set3.eq
-        sorry
-        sorry
+      Set3.ord.standard.le_antisymm _ _ ⟨
+        fun _ => insNthOfInsTheSet,
+        fun _ => inwNthOfInwTheSet,
+      ⟩ ⟨
+        sorry,
+        sorry,
+      ⟩
     
     def theSetAsValuation.isFixedPointOpC:
       IsFixedPoint
         (operatorC pairSalgebra theDefListExternal theSetAsValuation)
         theSetAsValuation
     :=
-      funext fun x => by
-        conv => lhs; unfold theSetAsValuation uniSet3 uniDefList.wfModel;
-        exact
-          wfmAtEq
-            uniDefList.defList.toDefList
-            pairSalgebra uniDefList.theSet ▸
-          interpretationsEqual x
+      funext interpretationsEqual
     
     def theSetAsValuation.isLeCLfp:
       (Valuation.ord.standard Pair).le

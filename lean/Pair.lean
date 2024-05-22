@@ -195,6 +195,20 @@ namespace Pair
   
   def NatEncoding := { p // IsNatEncoding p }
   
+  def isNatEncoding.decidable (p: Pair):
+    Decidable (IsNatEncoding p)
+  :=
+    match p with
+    | zero => isTrue trivial
+    | pair _ (pair _ _) =>
+      isFalse (fun nope => Pair.noConfusion nope.right)
+    | pair a zero =>
+      match isNatEncoding.decidable a with
+      | isTrue isNatA =>
+        isTrue (And.intro isNatA rfl)
+      | isFalse aNotNat =>
+        isFalse (fun nope => aNotNat nope.left)
+  
   
   def fromNat.isNatEncoding (n: Nat):
     IsNatEncoding (fromNat n)
@@ -267,6 +281,17 @@ namespace Pair
     depth a ≠ depth b
   :=
     (depth.nat.injEq isNatA isNatB).contra neq
+  
+  def fromNat.eqOfDepth
+    (isNat: IsNatEncoding p)
+  :
+    fromNat p.depth = p
+  :=
+    match p with
+    | zero => rfl
+    | pair _ zero =>
+      depth.nat.eqSuccDepthPred isNat ▸
+      fromNat.eqSuccOfEq (fromNat.eqOfDepth isNat.left)
   
   def IsNatEncoding.toNat
     (isNat: IsNatEncoding p)

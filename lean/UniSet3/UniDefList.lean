@@ -528,7 +528,7 @@ namespace Pair
     -/
     def getBound.base: Nat := 33
     def getBound.base.expr: Expr :=
-      Expr.Un 500
+      unionExpr 500 nat
         (Expr.Un 501
           (pairExpr
             (pairExpr (pairExpr 500 501) anyExpr)
@@ -544,8 +544,14 @@ namespace Pair
         (Expr.Un 500
           (Expr.Un 501
             (pairExpr
-              (pairExpr (pairExpr (Expr.cpl 500) anyExpr) 501)
-              (callExpr 502 getBound 501))))
+              (pairExpr
+                (pairExpr (Expr.cpl 500) anyExpr)
+                501)
+              (pairExpr
+                500
+                (callExpr 502
+                  (callExpr 503 getBound 501)
+                  500)))))
     
     /-
       Contains (bound, expr, p) where bound is an array
@@ -573,37 +579,28 @@ namespace Pair
     -/
     def theSet: Nat := 37
     
-    def interpretation.expr: Expr :=
-      /-
-      | var (v: Nat)                 => (0, v)
-      | op (op: zero) (args)         => (1, ())
-      | op (op: pair) (args)         => (2, (args 0, args 1))
-      | un (left rite: Expr sig)     => (3, (left, rite))
-      | ir (left rite: Expr sig)     => (4, (left, rite))
-      | cpl (expr: Expr sig)         => (5, expr)
-      | ifThen (cond expr: Expr sig) => (6, (cond, expr))
-      | Un (x: Nat) (body: Expr sig) => (7, (x, body))
-      | Ir (x: Nat) (body: Expr sig) => (8, (x, body))
-      -/
-      finUnExpr [
-        -- var
-        unionExpr 500 nat
-          (Expr.Un 501
+    def interpretation.exprVar: Expr :=
+      unionExpr 500 nat
+        (Expr.Un 501
+          (pairExpr
+            501
             (pairExpr
-              501
-              (pairExpr
-                (pairExpr zeroExpr 500)
-                (Expr.un
-                  (callExpr 502 (callExpr 503 getBound 501) 500)
-                  (/- if 500 is a free var -/ Expr.ifThen
-                    (Expr.cpl
-                      -- Turning a nonempty type into the universal
-                      -- type, so that it may be complemented to test
-                      -- for emptiness.
-                      (Expr.ifThen
-                        (callExpr 502 (callExpr 503 getBound 501) 500)
-                        anyExpr))
-                    (callExpr 502 theSet 500)))))),
+              (pairExpr zeroExpr 500)
+              (Expr.un
+                (callExpr 502 (callExpr 503 getBound 501) 500)
+                (/- if 500 is a free var -/ Expr.ifThen
+                  (Expr.cpl
+                    -- Turning a nonempty type into the universal
+                    -- type, so that it may be complemented to test
+                    -- for emptiness.
+                    (Expr.ifThen
+                      (callExpr 502 (callExpr 503 getBound 501) 500)
+                      anyExpr))
+                  (callExpr 502 theSet 500))))))
+    
+    def interpretation.expr: Expr :=
+      finUnExpr [
+        exprVar,
         
         -- op zero
         Expr.Un 501
@@ -698,7 +695,8 @@ namespace Pair
                       (pairExpr (pairExpr 500 503) 502))))))),
       ]
     
-    def freeInterpretation.expr := callExpr 502 interpretation zeroExpr
+    def freeInterpretation.expr :=
+      callExpr 502 interpretation zeroExpr
     
     def theSet.expr: Expr :=
       unionExpr 500 nat
@@ -800,7 +798,7 @@ namespace Pair
       | 30 => prf 30 [ 7, 8, 0, 30 ] rfl (by simp[leN37]) usedVar
       | 31 => prf 31 [ 0, 29 ] rfl (by simp[leN37]) usedVar
       | 32 => prf 32 [ 31, 30 ] rfl (by simp[leN37]) usedVar
-      | 33 => prf 33 [] rfl (by simp[leN37]) usedVar
+      | 33 => prf 33 [ 0 ] rfl (by simp[leN37]) usedVar
       | 34 => prf 34 [ 33, 34 ] rfl (by simp[leN37]) usedVar
       | 35 => prf 35 [ 0, 34, 37, 7, 35 ] rfl (by simp[leN37]) usedVar
       | 36 => prf 36 [ 35 ] rfl (by simp[leN37]) usedVar

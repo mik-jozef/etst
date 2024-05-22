@@ -14,6 +14,9 @@ def Args
 /-
   Salgebras act not on elements themselves (like algebras
   do), but on sets of elements, monotonically.
+  
+  (Equivalently, a salgebra on T is an algebra on sets
+  of T whose operations are monotonic.)
 -/
 structure Salgebra (s: Signature) where
   D: Type u

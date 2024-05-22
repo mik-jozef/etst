@@ -311,7 +311,7 @@ namespace Expr
   def inwFree
     {v: Valuation salg.D}
     {d: salg.D}
-    (isPos: (v x).posMem d)
+    (isPos: Inw salg v (var x) d)
     (neq: xB ≠ x)
   :
     Inw salg (v.update xB dBound) (var x) d

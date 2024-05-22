@@ -170,6 +170,16 @@ def Pair.exprToEncoding.injEq
             let bodyEq := exprToEncoding.injEq (Subtype.eq bodyEq)
             congrBin rfl xEq bodyEq
 
+def Pair.exprToEncoding.eqVarDepth
+  (isNat: IsNatEncoding p)
+:
+  exprToEncoding p.depth = pair zero p
+:=
+  by
+    conv =>
+      rhs; rw [(fromNat.eqOfDepth isNat).symm];
+    exact rfl
+
 
 structure Pair.DefListToEncoding
   (dl: DefList pairSignature)
@@ -409,5 +419,13 @@ namespace Pair
     exprEnc = exprToEncoding expr
   :=
     eq ▸ (exprToEncoding.isInverse isExpr).symm
+  
+  def exprToEncoding.toEqEncodingToExpr
+    (expr: Expr pairSignature)
+    (eq: (exprToEncoding expr).val = p)
+  :
+    expr = encodingToExpr p
+  :=
+    eq ▸ (encodingToExpr.isInverse expr).symm
   
 end Pair    
