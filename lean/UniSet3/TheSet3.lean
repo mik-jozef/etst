@@ -520,16 +520,7 @@ namespace Pair
         by
           unfold interp
           rw [encodingToExpr.pairEncEq isExprA isExprB]
-          exact show
-            Expr.Ins
-              pairSalgebra
-              _
-              (pairExpr (encodingToExpr exprEncA) (encodingToExpr exprEncB))
-              (pair pA pB)
-          from
-            insPair
-              sorry
-              sorry
+          exact insPair inDefA inDefB
     
     def inInterpOfIns.exprUn
       (ins:
