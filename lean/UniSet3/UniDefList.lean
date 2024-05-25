@@ -660,7 +660,7 @@ namespace Pair
               (pairExpr
                 (pairExpr (natExpr 6) (pairExpr 500 501))
                 (Expr.ifThen
-                  (callExpr 503 (callExpr 504 interpretation 502) 501)
+                  (callExpr 503 (callExpr 504 interpretation 502) 500)
                   (callExpr 503 (callExpr 504 interpretation 502) 501))))))
     
     def interpretation.exprArbUnion: Expr :=
