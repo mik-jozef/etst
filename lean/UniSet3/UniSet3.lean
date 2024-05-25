@@ -174,11 +174,11 @@ namespace Pair
         (encodingToExpr (IsTheDefListExprPair.getNthExpr x).expr)
     :=
       Set3.ord.standard.le_antisymm _ _ ⟨
-        fun _ => insNthOfInsTheSet,
-        fun _ => inwNthOfInwTheSet,
+        fun _ => inDefNthOfInsTheSet,
+        fun _ => inPosNthOfInwTheSet,
       ⟩ ⟨
-        sorry,
-        sorry,
+        fun _ => insTheSetOfInDefNth,
+        fun _ => inwTheSetOfInPosNth,
       ⟩
     
     def theSetAsValuation.isFixedPointOpC:

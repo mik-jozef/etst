@@ -526,8 +526,7 @@ namespace Pair
     /-
       ([(n, p), ...], (n, p)).
     -/
-    def getBound.base: Nat := 33
-    def getBound.base.expr: Expr :=
+    def getBound.baseExpr: Expr :=
       unionExpr 500 nat
         (Expr.Un 501
           (pairExpr
@@ -537,10 +536,10 @@ namespace Pair
     /-
       ((n, p)[], (n_i, p_i)).
     -/
-    def getBound: Nat := 34
+    def getBound: Nat := 33
     def getBound.expr: Expr :=
       Expr.un
-        getBound.base
+        getBound.baseExpr
         (Expr.Un 500
           (Expr.Un 501
             (pairExpr
@@ -564,20 +563,20 @@ namespace Pair
       member of the interpretation, else it is contained
       weakly.
     -/
-    def interpretation: Nat := 35
+    def interpretation: Nat := 34
     
     /-
       Contains (expr, s) where s is the interpretation of
       `expr` with `theSet` serving as the valuation.
     -/
-    def freeInterpretation := 36
+    def freeInterpretation := 35
     
     /-
       The set of pairs (n, s) where n is a natural number.
       For every definable triset of pairs dtp, there exists
       a natural number n such that (n, p) ∈ theSet = p ∈ dtp.
     -/
-    def theSet: Nat := 37
+    def theSet: Nat := 36
     
     def interpretation.exprVar: Expr :=
       unionExpr 500 nat
@@ -598,101 +597,113 @@ namespace Pair
                       anyExpr))
                   (callExpr 502 theSet 500))))))
     
-    def interpretation.expr: Expr :=
-      finUnExpr [
-        exprVar,
-        
-        -- op zero
-        Expr.Un 501
+    def interpretation.exprZero: Expr :=
+      Expr.Un 501
+        (pairExpr
+          501
           (pairExpr
-            501
-            (pairExpr
-              (pairExpr (natExpr 1) zeroExpr)
-              (pairExpr anyExpr zeroExpr))),
-        
-        -- op pair
-        unionExpr 500 exprEncoding
-          (unionExpr 501 exprEncoding
-            (Expr.Un 502
-              (pairExpr
-                502
-                (pairExpr
-                  (pairExpr (natExpr 2) (pairExpr 500 501))
-                  (pairExpr
-                    (callExpr 503 (callExpr 504 interpretation 500) 502)
-                    (callExpr 503 (callExpr 504 interpretation 501) 502)))))),
-        
-        -- union
-        unionExpr 500 exprEncoding
-          (unionExpr 501 exprEncoding
-            (Expr.Un 502
-              (pairExpr
-                502
-                (pairExpr
-                  (pairExpr (natExpr 3) (pairExpr 500 501))
-                  (Expr.un
-                    (callExpr 503 (callExpr 504 interpretation 500) 502)
-                    (callExpr 503 (callExpr 504 interpretation 501) 502)))))),
-        
-        -- intersection
-        unionExpr 500 exprEncoding
-          (unionExpr 501 exprEncoding
-            (Expr.Un 502
-              (pairExpr
-                502
-                (pairExpr
-                  (pairExpr (natExpr 4) (pairExpr 500 501))
-                  (Expr.ir
-                    (callExpr 503 (callExpr 504 interpretation 500) 502)
-                    (callExpr 503 (callExpr 504 interpretation 501) 502)))))),
-        
-        -- complement
-        unionExpr 500 exprEncoding
+            (pairExpr (natExpr 1) zeroExpr)
+            zeroExpr))
+    
+    def interpretation.exprPair: Expr :=
+      unionExpr 500 exprEncoding
+        (unionExpr 501 exprEncoding
           (Expr.Un 502
             (pairExpr
               502
               (pairExpr
-                (pairExpr (natExpr 5) 500)
-                (Expr.cpl
-                  (callExpr 503 (callExpr 504 interpretation 500) 502))))),
-        
-        -- ifThen
-        unionExpr 500 exprEncoding
-          (unionExpr 501 exprEncoding
-            (Expr.Un 502
-              (pairExpr
-                502
+                (pairExpr (natExpr 2) (pairExpr 500 501))
                 (pairExpr
-                  (pairExpr (natExpr 6) (pairExpr 500 501))
-                  (Expr.ifThen
-                    (callExpr 503 (callExpr 504 interpretation 500) 502)
-                    (callExpr 503 (callExpr 504 interpretation 501) 502)))))),
-        
-        -- arbitrary union
-        unionExpr 500 nat
-          (unionExpr 501 exprEncoding
-            (Expr.Un 502
+                  (callExpr 503 (callExpr 504 interpretation 502) 500)
+                  (callExpr 503 (callExpr 504 interpretation 502) 501))))))
+    
+    def interpretation.exprUnion: Expr :=
+      unionExpr 500 exprEncoding
+        (unionExpr 501 exprEncoding
+          (Expr.Un 502
+            (pairExpr
+              502
               (pairExpr
-                502
-                (pairExpr
-                  (pairExpr (natExpr 4) (pairExpr 500 501))
-                  (Expr.Un 503
-                    (callExpr 503
-                      (callExpr 504 interpretation 501)
-                      (pairExpr (pairExpr 500 503) 502))))))),
-        
-        -- arbitrary intersection
-        unionExpr 500 nat
-          (unionExpr 501 exprEncoding
-            (Expr.Un 502
+                (pairExpr (natExpr 3) (pairExpr 500 501))
+                (Expr.un
+                  (callExpr 503 (callExpr 504 interpretation 502) 500)
+                  (callExpr 503 (callExpr 504 interpretation 502) 501))))))
+    
+    def interpretation.exprIntersection: Expr :=
+      unionExpr 500 exprEncoding
+        (unionExpr 501 exprEncoding
+          (Expr.Un 502
+            (pairExpr
+              502
               (pairExpr
-                502
-                (pairExpr
-                  (pairExpr (natExpr 4) (pairExpr 500 501))
-                  (Expr.Ir 503
-                    (callExpr 503
-                      (callExpr 504 interpretation 501)
-                      (pairExpr (pairExpr 500 503) 502))))))),
+                (pairExpr (natExpr 4) (pairExpr 500 501))
+                (Expr.ir
+                  (callExpr 503 (callExpr 504 interpretation 502) 500)
+                  (callExpr 503 (callExpr 504 interpretation 502) 501))))))
+    
+    def interpretation.exprCpl: Expr :=
+      unionExpr 500 exprEncoding
+        (Expr.Un 502
+          (pairExpr
+            502
+            (pairExpr
+              (pairExpr (natExpr 5) 500)
+              (Expr.cpl
+                (callExpr 503 (callExpr 504 interpretation 502) 500)))))
+    
+    def interpretation.exprIfThen: Expr :=
+      unionExpr 500 exprEncoding
+        (unionExpr 501 exprEncoding
+          (Expr.Un 502
+            (pairExpr
+              502
+              (pairExpr
+                (pairExpr (natExpr 6) (pairExpr 500 501))
+                (Expr.ifThen
+                  (callExpr 503 (callExpr 504 interpretation 502) 501)
+                  (callExpr 503 (callExpr 504 interpretation 502) 501))))))
+    
+    def interpretation.exprArbUnion: Expr :=
+      unionExpr 500 nat
+        (unionExpr 501 exprEncoding
+          (Expr.Un 502
+            (pairExpr
+              502
+              (pairExpr
+                (pairExpr (natExpr 4) (pairExpr 500 501))
+                (Expr.Un 503
+                  (callExpr 503
+                    (callExpr 504
+                      interpretation
+                      (pairExpr (pairExpr 500 503) 502))
+                    501))))))
+    
+    def interpretation.exprArbIntersection: Expr :=
+      unionExpr 500 nat
+        (unionExpr 501 exprEncoding
+          (Expr.Un 502
+            (pairExpr
+              502
+              (pairExpr
+                (pairExpr (natExpr 4) (pairExpr 500 501))
+                (Expr.Ir 503
+                  (callExpr 503
+                    (callExpr 504
+                      interpretation
+                      (pairExpr (pairExpr 500 503) 502))
+                    501))))))
+    
+    def interpretation.expr: Expr :=
+      finUnExpr [
+        exprVar,
+        exprZero,
+        exprPair,
+        exprUnion,
+        exprIntersection,
+        exprCpl,
+        exprIfThen,
+        exprArbUnion,
+        exprArbIntersection,
       ]
     
     def freeInterpretation.expr :=
@@ -739,11 +750,10 @@ namespace Pair
     | 30 => defListToSet.expr
     | 31 => theDlPrefixes.expr
     | 32 => theDefList.expr
-    | 33 => getBound.base.expr
-    | 34 => getBound.expr
-    | 35 => interpretation.expr
-    | 36 => freeInterpretation.expr
-    | 37 => theSet.expr
+    | 33 => getBound.expr
+    | 34 => interpretation.expr
+    | 35 => freeInterpretation.expr
+    | 36 => theSet.expr
     | _rest + 37 => zeroExpr
     
     def defList.usedVarsLt38
@@ -798,11 +808,10 @@ namespace Pair
       | 30 => prf 30 [ 7, 8, 0, 30 ] rfl (by simp[leN37]) usedVar
       | 31 => prf 31 [ 0, 29 ] rfl (by simp[leN37]) usedVar
       | 32 => prf 32 [ 31, 30 ] rfl (by simp[leN37]) usedVar
-      | 33 => prf 33 [ 0 ] rfl (by simp[leN37]) usedVar
-      | 34 => prf 34 [ 33, 34 ] rfl (by simp[leN37]) usedVar
-      | 35 => prf 35 [ 0, 34, 37, 7, 35 ] rfl (by simp[leN37]) usedVar
-      | 36 => prf 36 [ 35 ] rfl (by simp[leN37]) usedVar
-      | 37 => prf 37 [ 0, 36, 32 ] rfl (by simp[leN37]) usedVar
+      | 33 => prf 33 [ 0, 33 ] rfl (by simp[leN37]) usedVar
+      | 34 => prf 34 [ 0, 33, 36, 7, 34 ] rfl (by simp[leN37]) usedVar
+      | 35 => prf 35 [ 34 ] rfl (by simp[leN37]) usedVar
+      | 36 => prf 36 [ 0, 35, 32 ] rfl (by simp[leN37]) usedVar
     
     def defList.hasFiniteBounds
       (dependsOn: DefList.DependsOn getDef a b)

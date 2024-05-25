@@ -359,6 +359,18 @@ namespace Expr
     
     insArbUn _ ⟨⟨dBound, ⟨inUpdated, insDomain⟩⟩, insBody⟩
   
+  def inwUnDom
+    (inwDomain: Inw salg (v.update x dBound) domain dBound)
+    (inwBody: Inw salg (v.update x dBound) body d)
+  :
+    Inw salg v (unionExpr x domain body) d
+  :=
+    let inUpdated: ((v.update x dBound) x).posMem dBound :=
+      Valuation.update.inEq.posMem v x dBound
+    
+    inwArbUn _ ⟨⟨dBound, ⟨inUpdated, inwDomain⟩⟩, inwBody⟩
+  
+  
   -- I wish Lean supported anonymous structures.
   -- And also non-Prop-typed members of prop structures
   -- (under the condition that any two instances are only

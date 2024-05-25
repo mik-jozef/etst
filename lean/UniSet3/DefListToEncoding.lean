@@ -411,6 +411,13 @@ namespace Pair
     
     eq ▸ ex.unwrap.property
   
+  def exprToEncoding.isInverseSubtype
+    (isExpr: uniSet3.IsExprEncoding p)
+  :
+    exprToEncoding (encodingToExpr p) = ⟨p, isExpr⟩
+  :=
+    Subtype.eq (isInverse isExpr)
+  
   
   def encodingToExpr.toEqExprToEncoding
     (isExpr: uniSet3.IsExprEncoding exprEnc)
@@ -422,10 +429,147 @@ namespace Pair
   
   def exprToEncoding.toEqEncodingToExpr
     (expr: Expr pairSignature)
+    (p: Pair)
     (eq: (exprToEncoding expr).val = p)
   :
     expr = encodingToExpr p
   :=
     eq ▸ (encodingToExpr.isInverse expr).symm
+  
+  
+  def encodingToExpr.varEncEq
+    (isNat: IsNatEncoding xEnc)
+  :
+    (pair zero xEnc).encodingToExpr = Expr.var xEnc.depth
+  :=
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        xEnc.depth _ (exprToEncoding.eqVarDepth isNat))
+  
+  def encodingToExpr.zeroEncEq:
+    (pair (fromNat 1) zero).encodingToExpr
+      =
+    PairExpr.zeroExpr
+  :=
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        PairExpr.zeroExpr
+        (pair (fromNat 1) zero)
+        rfl)
+  
+  def encodingToExpr.pairEncEq
+    (isExprA: uniSet3.IsExprEncoding exprA)
+    (isExprB: uniSet3.IsExprEncoding exprB)
+  :
+    (pair (fromNat 2) (pair exprA exprB)).encodingToExpr
+      =
+    PairExpr.pairExpr
+      (encodingToExpr exprA)
+      (encodingToExpr exprB)
+  :=
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        (PairExpr.pairExpr
+          (encodingToExpr exprA)
+          (encodingToExpr exprB))
+        (pair (fromNat 2) (pair exprA exprB))
+        (show pair (fromNat 2) _ = _ from by
+          rw [exprToEncoding.isInverseSubtype isExprA]
+          rw [exprToEncoding.isInverseSubtype isExprB]))
+  
+  def encodingToExpr.unEncEq
+    (isExprA: uniSet3.IsExprEncoding exprA)
+    (isExprB: uniSet3.IsExprEncoding exprB)
+  :
+    (pair (fromNat 3) (pair exprA exprB)).encodingToExpr
+      =
+    Expr.un (encodingToExpr exprA) (encodingToExpr exprB)
+  :=
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        (Expr.un (encodingToExpr exprA) (encodingToExpr exprB))
+        (pair (fromNat 3) (pair exprA exprB))
+        (show pair (fromNat 3) _ = _ from by
+          rw [exprToEncoding.isInverseSubtype isExprA]
+          rw [exprToEncoding.isInverseSubtype isExprB]))
+  
+  def encodingToExpr.irEncEq
+    (isExprA: uniSet3.IsExprEncoding exprA)
+    (isExprB: uniSet3.IsExprEncoding exprB)
+  :
+    (pair (fromNat 4) (pair exprA exprB)).encodingToExpr
+      =
+    Expr.ir (encodingToExpr exprA) (encodingToExpr exprB)
+  :=
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        (Expr.ir (encodingToExpr exprA) (encodingToExpr exprB))
+        (pair (fromNat 4) (pair exprA exprB))
+        (show pair (fromNat 4) _ = _ from by
+          rw [exprToEncoding.isInverseSubtype isExprA]
+          rw [exprToEncoding.isInverseSubtype isExprB]))
+  
+  def encodingToExpr.cplEncEq
+    (isExpr: uniSet3.IsExprEncoding exprEnc)
+  :
+    (pair (fromNat 5) exprEnc).encodingToExpr
+      =
+    Expr.cpl (encodingToExpr exprEnc)
+  :=
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        (Expr.cpl (encodingToExpr exprEnc))
+        (pair (fromNat 5) exprEnc)
+        (by
+          unfold exprToEncoding
+          rw [exprToEncoding.isInverseSubtype isExpr]))
+  
+  def encodingToExpr.ifThenEncEq
+    (isExprA: uniSet3.IsExprEncoding exprA)
+    (isExprB: uniSet3.IsExprEncoding exprB)
+  :
+    (pair (fromNat 6) (pair exprA exprB)).encodingToExpr
+      =
+    Expr.ifThen (encodingToExpr exprA) (encodingToExpr exprB)
+  :=
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        (Expr.ifThen (encodingToExpr exprA) (encodingToExpr exprB))
+        (pair (fromNat 6) (pair exprA exprB))
+        (show pair (fromNat 6) _ = _ from by
+          rw [exprToEncoding.isInverseSubtype isExprA]
+          rw [exprToEncoding.isInverseSubtype isExprB]))
+  
+  def encodingToExpr.arbUnEncEq
+    (isNat: IsNatEncoding xEnc)
+    (isExpr: uniSet3.IsExprEncoding exprEnc)
+  :
+    (pair (fromNat 7) (pair xEnc exprEnc)).encodingToExpr
+      =
+    Expr.Un xEnc.depth (encodingToExpr exprEnc)
+  :=
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        (Expr.Un xEnc.depth (encodingToExpr exprEnc))
+        (pair (fromNat 7) (pair xEnc exprEnc))
+        (show pair (fromNat 7) _ = _ from by
+          rw [exprToEncoding.isInverseSubtype isExpr]
+          rw [fromNat.eqOfDepth isNat]))
+  
+  def encodingToExpr.arbIrEncEq
+    (isNat: IsNatEncoding xEnc)
+    (isExpr: uniSet3.IsExprEncoding exprEnc)
+  :
+    (pair (fromNat 8) (pair xEnc exprEnc)).encodingToExpr
+      =
+    Expr.Ir xEnc.depth (encodingToExpr exprEnc)
+  :=
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        (Expr.Ir xEnc.depth (encodingToExpr exprEnc))
+        (pair (fromNat 8) (pair xEnc exprEnc))
+        (show pair (fromNat 8) _ = _ from by
+          rw [exprToEncoding.isInverseSubtype isExpr]
+          rw [fromNat.eqOfDepth isNat]))
   
 end Pair    
