@@ -149,6 +149,44 @@ namespace Expr
     s
   
   
+  def insArbIr
+    {salg: Salgebra sig}
+    {v: Valuation salg.D}
+    {d: salg.D}
+    (s: ∀ dBound, Ins salg (v.update x dBound) body d)
+  :
+    Ins salg v (Expr.Ir x body) d
+  :=
+    fun d => s d
+  
+  def inwArbIr
+    {salg: Salgebra sig}
+    {v: Valuation salg.D}
+    {d: salg.D}
+    (s: ∀ dBound, Inw salg (v.update x dBound) body d)
+  :
+    Inw salg v (Expr.Ir x body) d
+  :=
+    fun d => s d
+  
+  
+  def insArbIrElim
+    (s: Ins salg v (Expr.Ir x body) d)
+    (dBound: salg.D)
+  :
+    Ins salg (v.update x dBound) body d
+  :=
+    s dBound
+  
+  def inwArbIrElim
+    (s: Inw salg v (Expr.Ir x body) d)
+    (dBound: salg.D)
+  :
+    Inw salg (v.update x dBound) body d
+  :=
+    s dBound
+  
+  
   def insCpl
     (w: ¬Inw salg v expr d)
   :

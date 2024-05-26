@@ -670,10 +670,10 @@ namespace Pair
             (pairExpr
               502
               (pairExpr
-                (pairExpr (natExpr 4) (pairExpr 500 501))
+                (pairExpr (natExpr 7) (pairExpr 500 501))
                 (Expr.Un 503
-                  (callExpr 503
-                    (callExpr 504
+                  (callExpr 504
+                    (callExpr 505
                       interpretation
                       (pairExpr (pairExpr 500 503) 502))
                     501))))))
@@ -685,10 +685,10 @@ namespace Pair
             (pairExpr
               502
               (pairExpr
-                (pairExpr (natExpr 4) (pairExpr 500 501))
+                (pairExpr (natExpr 8) (pairExpr 500 501))
                 (Expr.Ir 503
-                  (callExpr 503
-                    (callExpr 504
+                  (callExpr 504
+                    (callExpr 505
                       interpretation
                       (pairExpr (pairExpr 500 503) 502))
                     501))))))

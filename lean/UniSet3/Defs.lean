@@ -29,7 +29,11 @@ namespace Pair
     def nat504Neq500: 504 ≠ 500 := by decide
     def nat504Neq501: 504 ≠ 501 := by decide
     def nat504Neq502: 504 ≠ 502 := by decide
+    def nat504Neq503: 504 ≠ 503 := by decide
     def nat505Neq500: 505 ≠ 500 := by decide
+    def nat505Neq501: 505 ≠ 501 := by decide
+    def nat505Neq502: 505 ≠ 502 := by decide
+    def nat505Neq503: 505 ≠ 503 := by decide
     
     def nat500NeqNat: 500 ≠ 0 := by decide
     def nat500NeqNatLe: 500 ≠ 2 := by decide
