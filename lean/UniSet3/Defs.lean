@@ -2126,6 +2126,24 @@ namespace Pair
     | pair _ zero => False
     | pair a (pair b c) => IsDefListToSetABC a b c
     
+    def IsDefListToSetABC.isExpr
+      (is: IsDefListToSetABC a b c)
+    :
+      IsExprEncoding c
+    :=
+      match a, b with
+      | pair _head _tail, zero =>
+        let eq := Option.noConfusion is.eq id
+        eq ▸ is.isDef.left
+      | pair _head _tail, pair _bPred zero =>
+        isExpr {
+          isDef := is.isDef.right
+          isNat := is.isNat.left
+          eq :=
+            arrayAt.tailEq
+              (depth.nat.eqSuccDepthPred is.isNat ▸ is.eq)
+        }
+    
     def IsDefListToSetABC.defNonempty
       (is: IsDefListToSetABC zero b c)
     :
@@ -2156,6 +2174,14 @@ namespace Pair
     def IsTheDefListExpr: Pair → Prop
     | zero => False
     | pair exprIndex expr => IsTheDefListExprPair exprIndex expr
+    
+    def IsTheDefListExprPair.isExpr
+      (is: IsTheDefListExprPair i exprEnc)
+    :
+      IsExprEncoding exprEnc
+    :=
+      match is with
+      | intro _ _ _ isDefListToSet => isDefListToSet.isExpr
     
     def IsTheDefListExprPair.isUnique
       (isB: IsTheDefListExprPair exprIndex exprA)
