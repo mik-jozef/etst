@@ -14,7 +14,7 @@ lean_lib ExampleWFCs {}
 lean_lib ExprRulesOfInference {}
 lean_lib PairFreeVars {}
 lean_lib Interpretation {}
-lean_lib ExprIsFreeVar {}
+lean_lib Expr {}
 lean_lib Operators {}
 lean_lib Ordinal {}
 lean_lib OrdMap {}
@@ -46,8 +46,10 @@ lean_lib UniSet3.UniSet3 {}
 lean_lib Utils.BasicUtils {}
 lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
+lean_lib Utils.ExprIsFreeVar {}
 lean_lib Utils.LeN37 {}
 lean_lib Utils.Lfp {}
+lean_lib Utils.Pair {}
 lean_lib Utils.PartialOrder {}
 lean_lib Valuation {}
 lean_lib WellFoundedOfLeast {}

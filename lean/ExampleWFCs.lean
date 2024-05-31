@@ -119,7 +119,7 @@ inductive SPair.Ret
   so on. Eg. `s = (s, ())` is a valid spair that
   contains itself and the improper pair.
   
-  An spair is coded as a function from sequences of
+  An spair is coded as a function from tuples of
   indices to what that spair contains under those
   indices, or null if the path is invalid. Invalid
   paths are those that try to access the contents
