@@ -6,6 +6,7 @@
 import Interpretation
 import Operators
 
+
 /-
   Mapping bound variables is intentional -- this way we
   don't need to track whether a variable is bound or free.

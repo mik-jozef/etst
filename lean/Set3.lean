@@ -1,5 +1,5 @@
 import Utils.BasicUtils
-import Lfp
+import Utils.Lfp
 
 
 structure Set3 (D: Type u) where

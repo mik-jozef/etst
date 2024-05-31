@@ -1,3 +1,7 @@
+/-
+  Definitions and helper functions about chains, upper bounds, etc.
+-/
+
 import Tuple
 
 

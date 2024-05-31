@@ -1,3 +1,33 @@
+/-
+  This file defines the least fixed point of a function monotonic
+  with respect to a chain-complete partial order, by iteratively
+  constructing the fixed point.
+  
+  Given a chain-complete partial order `ord` and a function
+  `op: T → T`, we define a a function `stage: Ordinal → T` like so:
+  
+  ```
+    stage n.succ = op (stage n)
+    stage limit = sup { stage nn | nn < limit }
+  ```
+  
+  Because there are more ordinals than elements of T, there must be
+  distinct ordinals `n0` and `n1` such that `stage n0 = stage n1`.
+  WLOG, let `n0 < n1`. Since `stage` is monotonic, we can show that
+  
+      `stage n0 = stage n0.succ = stage n1`
+  
+  is a fixed point. By induction, for any `n`, `stage n` is less
+  than any fixed point, making `lfp` the least fixed point.
+  
+  This is a well-known construction, and a version of the
+  Knaster-Tarski theorem. See eg:
+  
+  Mark Saaltink, Fixed points in chain-complete partial orders.
+  ORA Canada Technical Report TR-93-5463-02. October 1993.
+  https://web.archive.org/web/20210507014028/https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.53.1267&rep=rep1&type=pdf
+-/
+
 import Tuple
 import Utils.Chain
 

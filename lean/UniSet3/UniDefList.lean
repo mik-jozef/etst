@@ -1,6 +1,6 @@
 import ExampleWFCs
 import PairFreeVars
-import LeN37
+import Utils.LeN37
 import Operators
 import Wfm
 
