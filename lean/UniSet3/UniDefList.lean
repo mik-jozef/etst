@@ -693,18 +693,19 @@ namespace Pair
                       (pairExpr (pairExpr 500 503) 502))
                     501))))))
     
-    def interpretation.expr: Expr :=
-      finUnExpr [
-        exprVar,
-        exprZero,
-        exprPair,
-        exprUnion,
-        exprIntersection,
-        exprCpl,
-        exprIfThen,
-        exprArbUnion,
-        exprArbIntersection,
-      ]
+    def interpretation.exprList: List Expr := [
+      exprVar,
+      exprZero,
+      exprPair,
+      exprUnion,
+      exprIntersection,
+      exprCpl,
+      exprIfThen,
+      exprArbUnion,
+      exprArbIntersection,
+    ]
+    
+    def interpretation.expr: Expr := finUnExpr exprList
     
     def freeInterpretation.expr :=
       callExpr 502 interpretation zeroExpr

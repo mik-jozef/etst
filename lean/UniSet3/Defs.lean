@@ -59,6 +59,10 @@ namespace Pair
     def nat502NeqShiftDefEncoding: 502 ≠ 22 := by decide
     def nat503NeqShiftDefEncoding: 503 ≠ 22 := by decide
     def nat504NeqShiftDefEncoding: 504 ≠ 22 := by decide
+    def nat500NeqGetBounds: 500 ≠ 33 := by decide
+    def nat501NeqGetBounds: 501 ≠ 33 := by decide
+    def nat502NeqGetBounds: 502 ≠ 33 := by decide
+    def nat503NeqGetBounds: 503 ≠ 33 := by decide
     
     
     structure IsNatPairAAPair (a b: Pair): Prop where
