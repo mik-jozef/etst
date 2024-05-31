@@ -18,8 +18,6 @@ lean_lib Expr {}
 lean_lib Operators {}
 lean_lib OrdMap {}
 lean_lib Pair {}
-lean_lib PairDepthDictOrder {}
-lean_lib PairDictOrder {}
 lean_lib PairExpr {}
 lean_lib Pointwise {}
 lean_lib Set3 {}
@@ -49,6 +47,8 @@ lean_lib Utils.LeN37 {}
 lean_lib Utils.Lfp {}
 lean_lib Utils.Ordinal {}
 lean_lib Utils.Pair {}
+lean_lib Utils.PairDepthDictOrder {}
+lean_lib Utils.PairDictOrder {}
 lean_lib Utils.PartialOrder {}
 lean_lib Utils.Set3 {}
 lean_lib Valuation {}
