@@ -2,7 +2,7 @@
   Definitions and helper functions about chains, upper bounds, etc.
 -/
 
-import Tuple
+import Utils.Tuple
 
 
 -- Ideally, IsLeast should take two property names [X] and [Y]

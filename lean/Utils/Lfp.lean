@@ -28,8 +28,8 @@
   https://web.archive.org/web/20210507014028/https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.53.1267&rep=rep1&type=pdf
 -/
 
-import Tuple
 import Utils.Chain
+
 
 noncomputable def lfp.stage.option
   {ord: PartialOrder T}
