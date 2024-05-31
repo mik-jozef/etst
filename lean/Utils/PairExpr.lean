@@ -1,3 +1,12 @@
+/-
+  Defines "macro" expressions for the pair signature.
+  See `Expr.lean` for the definition of expressions.
+  
+  Inference rules in the style of those from
+  `ExprRulesOfInference.lean` for these macros are
+  also provided.
+-/
+
 import ExprRulesOfInference
 import Utils.Pair
 import Utils.Set3
@@ -28,26 +37,57 @@ namespace PairExpr
         | ArityTwo.zth => left
         | ArityTwo.fst => rite
   
-  -- Make sure n is not a free var in the expr.
+  /-
+    Let `expr` be an expression that represets a set of
+    pairs `s3` (under some valuation). The expression
+    `zthMember n expr` then represents the set of all
+    `a` such that `(a, _) ∈ s3`.
+    
+    `n` must not be a free variable in `expr`.
+  -/
   def zthMember (n: Nat) (expr: Expr): Expr :=
     Expr.Un n (Expr.ifThen (Expr.ir (pairExpr n anyExpr) expr) n)
   
-  -- Make sure n is not a free var in the expr.
+  /-
+    Let `expr` be an expression that represets a set of
+    pairs `s3` (under some valuation). The expression
+    `fstMember n expr` then represents the set of all
+    `b` such that `(_, b) ∈ s3`.
+    
+    `n` must not be a free variable in `expr`.
+  -/
   def fstMember (n: Nat) (expr: Expr): Expr :=
     Expr.Un n (Expr.ifThen (Expr.ir (pairExpr anyExpr n) expr) n)
   
-  -- Make sure n is not a free var in the expr.
+  /-
+    Let `fn` and `arg` be expressions that represent
+    sets of pairs `sFn` and `sArg` (under some valuation).
+    The expression `callExpr n fn arg` then represents
+    the set of all `b` such that there exists an `a`
+    such that `(a, b) ∈ sFn` and `a ∈ sArg`.
+    
+    `sFn` can be viewed as a function that, as a set,
+    contains its input-output pairs.
+  -/
   def callExpr (n: Nat) (fn arg: Expr): Expr :=
     fstMember n (Expr.ir fn (pairExpr arg anyExpr))
   
+  /-
+    For an encoding `nEnc` of a natural number `n`,
+    `succExpr nEnc` represents the encoding of `n + 1`.
+    (Note 0 is reprezented by `Pair.zero`.)
+  -/
   def succExpr (expr: Expr): Expr := pairExpr expr zeroExpr
-  
   
   def succ (pair: Pair): Pair := Pair.pair pair Pair.zero
   
   instance ofNat n: OfNat Pair n where
     ofNat := Pair.fromNat n
   
+  /-
+    Given a natural number `n`, `natExpr n` represents
+    the encoding of `n` as a pair.
+  -/
   def natExpr: Nat → Expr
   | Nat.zero => zeroExpr
   | Nat.succ pred => succExpr (natExpr pred)

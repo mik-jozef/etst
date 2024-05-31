@@ -37,6 +37,7 @@ lean_lib Utils.Ordinal {}
 lean_lib Utils.Pair {}
 lean_lib Utils.PairDepthDictOrder {}
 lean_lib Utils.PairDictOrder {}
+lean_lib Utils.PairExpr {}
 lean_lib Utils.PairFreeVars {}
 lean_lib Utils.PartialOrder {}
 lean_lib Utils.Pointwise {}
@@ -50,7 +51,6 @@ lean_lib ExprRulesOfInference {}
 lean_lib Interpretation {}
 lean_lib Operators {}
 lean_lib Pair {}
-lean_lib PairExpr {}
 lean_lib Set3 {}
 lean_lib Tuple {}
 lean_lib Valuation {}
