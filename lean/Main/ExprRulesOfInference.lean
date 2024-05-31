@@ -1,5 +1,17 @@
-import Operators
-import ExampleWFCs
+/-
+  Defines basic rules of inference for expressions.
+  Since we're working in a three-valued setting, we
+  have two kinds of membership relations -- strong
+  membership and weak membership (See
+  @file:`Main/Set3.lean` for more).
+  
+  These rules are analogous to the rules of inference
+  for classical logic, but are applied to expressions
+  from @file:`Main/Expr.lean`.
+-/
+
+import Main.Operators
+import Main.ExampleWFCs
 
 
 namespace Expr

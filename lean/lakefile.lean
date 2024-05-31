@@ -9,6 +9,17 @@ lean_lib HM.Compile {}
 lean_lib HM.Hamkins {}
 lean_lib HM.Uhm {}
 
+lean_lib Main.Arities {}
+lean_lib Main.ExampleWFCs {}
+lean_lib Main.Expr {}
+lean_lib Main.ExprRulesOfInference {}
+lean_lib Main.Interpretation {}
+lean_lib Main.Operators {}
+lean_lib Main.Pair {}
+lean_lib Main.Set3 {}
+lean_lib Main.Valuation {}
+lean_lib Main.Wfm {}
+
 lean_lib UniSet3.Append {}
 lean_lib UniSet3.DefEncoding {}
 lean_lib UniSet3.DefListToEncoding {}
@@ -44,17 +55,6 @@ lean_lib Utils.Pointwise {}
 lean_lib Utils.Set3 {}
 lean_lib Utils.Tuple {}
 lean_lib Utils.WellFoundedOfLeast {}
-
-lean_lib Arities {}
-lean_lib ExampleWFCs {}
-lean_lib Expr {}
-lean_lib ExprRulesOfInference {}
-lean_lib Interpretation {}
-lean_lib Operators {}
-lean_lib Pair {}
-lean_lib Set3 {}
-lean_lib Valuation {}
-lean_lib Wfm {}
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4"

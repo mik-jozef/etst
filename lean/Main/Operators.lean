@@ -1,5 +1,5 @@
-import Arities
-import Interpretation
+import Main.Arities
+import Main.Interpretation
 
 
 def operatorC (salg: Salgebra sig) (dl: DefList sig) (b: Valuation salg.D):

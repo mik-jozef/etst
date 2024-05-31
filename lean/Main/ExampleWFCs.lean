@@ -1,6 +1,6 @@
-import Arities
-import Interpretation
-import Pair
+import Main.Arities
+import Main.Interpretation
+import Main.Pair
 
 
 inductive natSignature.Op

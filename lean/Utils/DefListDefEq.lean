@@ -3,8 +3,8 @@
   (three-valued) sets.
 -/
 
-import Interpretation
-import Operators
+import Main.Interpretation
+import Main.Operators
 
 
 /-

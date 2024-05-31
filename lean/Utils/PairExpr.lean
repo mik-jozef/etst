@@ -7,7 +7,7 @@
   also provided.
 -/
 
-import ExprRulesOfInference
+import Main.ExprRulesOfInference
 import Utils.Pair
 import Utils.Set3
 

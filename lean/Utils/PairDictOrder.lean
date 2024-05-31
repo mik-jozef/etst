@@ -3,7 +3,7 @@
   being `zero < pair a b`.
 -/
 
-import Pair
+import Main.Pair
 
 namespace Pair
   namespace dictOrder

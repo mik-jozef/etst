@@ -2,7 +2,7 @@
   Contains stuff related to `Set3`.
 -/
 
-import Set3
+import Main.Set3
 
 
 namespace Set3

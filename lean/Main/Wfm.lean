@@ -1,5 +1,6 @@
+import Main.ExprRulesOfInference
 import Utils.PairExpr
-import ExprRulesOfInference
+
 
 def InsWfm
   (salg: Salgebra sig)

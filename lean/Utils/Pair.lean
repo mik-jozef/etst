@@ -2,7 +2,7 @@
   Proofs of properties of definitions in `Pair.lean`.
 -/
 
-import Pair
+import Main.Pair
 
 
 def decideEq: (a b: Pair) → Decidable (a = b)
