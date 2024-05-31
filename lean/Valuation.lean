@@ -1,5 +1,5 @@
 import Utils.Set3
-import Pointwise
+import Utils.Pointwise
 
 
 def Valuation D := Nat → Set3 D

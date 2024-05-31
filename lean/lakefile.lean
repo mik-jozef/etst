@@ -19,7 +19,6 @@ lean_lib Operators {}
 lean_lib OrdMap {}
 lean_lib Pair {}
 lean_lib PairExpr {}
-lean_lib Pointwise {}
 lean_lib Set3 {}
 lean_lib Tuple {}
 lean_lib UniSet3.Append {}
@@ -50,6 +49,7 @@ lean_lib Utils.Pair {}
 lean_lib Utils.PairDepthDictOrder {}
 lean_lib Utils.PairDictOrder {}
 lean_lib Utils.PartialOrder {}
+lean_lib Utils.Pointwise {}
 lean_lib Utils.Set3 {}
 lean_lib Valuation {}
 lean_lib WellFoundedOfLeast {}

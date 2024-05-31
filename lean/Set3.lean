@@ -1,3 +1,33 @@
+/-
+  # Chapter 0: Three-valued Sets
+  
+  This file defines a type `Set3 (D: Type)` that represents
+  a set whose membership relation is three-valued -- every
+  element is either a definitive member, a possible member,
+  or its membership is *undetermined*.
+  
+  Formally, a `Set3 D` is a pair `(defMem, posMem)` of sets
+  such that `defMem ⊆ posMem`.
+  
+  Two orders are defined on `Set3 D`, the standard order
+  and the approximation order.
+  
+  A set `a` is less than or equal to `b` in the standard
+  if it contains fewer definitive members and fewer possible
+  members than `b`. Formally, `a ≤ b` if
+  
+      a.defMem ⊆ b.defMem ∧ a.posMem ⊆ b.posMem  \,.
+  
+  A set `a` is less than or equal to `b` in the approximation
+  order if it has more undefined members, but agrees with `b`
+  on its determined members. Formally, `a ⊑ b` if
+  
+      a.defMem ⊆ b.defMem ∧ b.posMem ⊆ a.posMem  \,.
+  
+  
+  Both orders are proven chain-complete.
+-/
+
 import Utils.BasicUtils
 import Utils.Lfp
 

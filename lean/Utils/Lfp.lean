@@ -15,7 +15,7 @@
   distinct ordinals `n0` and `n1` such that `stage n0 = stage n1`.
   WLOG, let `n0 < n1`. Since `stage` is monotonic, we can show that
   
-      `stage n0 = stage n0.succ = stage n1`
+      stage n0 = stage n0.succ = stage n1
   
   is a fixed point. By induction, for any `n`, `stage n` is less
   than any fixed point, making `lfp` the least fixed point.

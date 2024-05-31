@@ -1,3 +1,7 @@
+/-
+  Contains stuff related to `Set3`.
+-/
+
 import Set3
 
 
