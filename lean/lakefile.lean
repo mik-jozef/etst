@@ -9,18 +9,6 @@ lean_lib HM.Compile {}
 lean_lib HM.Hamkins {}
 lean_lib HM.Uhm {}
 
-lean_lib Arities {}
-lean_lib ExampleWFCs {}
-lean_lib ExprRulesOfInference {}
-lean_lib PairFreeVars {}
-lean_lib Interpretation {}
-lean_lib Expr {}
-lean_lib Operators {}
-lean_lib OrdMap {}
-lean_lib Pair {}
-lean_lib PairExpr {}
-lean_lib Set3 {}
-lean_lib Tuple {}
 lean_lib UniSet3.Append {}
 lean_lib UniSet3.DefEncoding {}
 lean_lib UniSet3.DefListToEncoding {}
@@ -38,6 +26,7 @@ lean_lib UniSet3.TheDefList {}
 lean_lib UniSet3.TheSet3 {}
 lean_lib UniSet3.UniDefList {}
 lean_lib UniSet3.UniSet3 {}
+
 lean_lib Utils.BasicUtils {}
 lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
@@ -48,10 +37,22 @@ lean_lib Utils.Ordinal {}
 lean_lib Utils.Pair {}
 lean_lib Utils.PairDepthDictOrder {}
 lean_lib Utils.PairDictOrder {}
+lean_lib Utils.PairFreeVars {}
 lean_lib Utils.PartialOrder {}
 lean_lib Utils.Pointwise {}
 lean_lib Utils.Set3 {}
 lean_lib Utils.WellFoundedOfLeast {}
+
+lean_lib Arities {}
+lean_lib ExampleWFCs {}
+lean_lib Expr {}
+lean_lib ExprRulesOfInference {}
+lean_lib Interpretation {}
+lean_lib Operators {}
+lean_lib Pair {}
+lean_lib PairExpr {}
+lean_lib Set3 {}
+lean_lib Tuple {}
 lean_lib Valuation {}
 lean_lib Wfm {}
 

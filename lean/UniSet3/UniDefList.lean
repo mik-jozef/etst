@@ -1,5 +1,5 @@
 import ExampleWFCs
-import PairFreeVars
+import Utils.PairFreeVars
 import Utils.LeN37
 import Operators
 import Wfm

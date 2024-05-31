@@ -4,7 +4,10 @@ import ExampleWFCs
 
 namespace Pair
   /-
-    This could be generalized for any signature with finite number
+    This function computes the free variables of an expression,
+    given a list of variables that are bound.
+    
+    It could be generalized for any signature with finite number
     of operators (and their arguments) -- only the op case would
     need to be able to handle that. Does mathlib have something
     like `(list: List A) → (m: A → B) → a ∈ list → m a ∈ list.map m`?
