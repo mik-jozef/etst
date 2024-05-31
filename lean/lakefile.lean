@@ -10,8 +10,6 @@ lean_lib HM.Hamkins {}
 lean_lib HM.Uhm {}
 
 lean_lib Arities {}
-lean_lib Chain {}
-lean_lib DefListDefEq {}
 lean_lib ExampleWFCs {}
 lean_lib ExprRulesOfInference {}
 lean_lib PairFreeVars {}
@@ -49,6 +47,8 @@ lean_lib UniSet3.TheSet3 {}
 lean_lib UniSet3.UniDefList {}
 lean_lib UniSet3.UniSet3 {}
 lean_lib Utils.BasicUtils {}
+lean_lib Utils.DefListDefEq {}
+lean_lib Utils.Chain {}
 lean_lib Utils.PartialOrder {}
 lean_lib Valuation {}
 lean_lib WellFoundedOfLeast {}

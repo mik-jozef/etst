@@ -1,5 +1,5 @@
 import Tuple
-import Chain
+import Utils.Chain
 
 noncomputable def lfp.stage.option
   {ord: PartialOrder T}

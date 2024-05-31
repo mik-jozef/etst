@@ -3,7 +3,7 @@
   from `Mathlib/Order/OrderIsoNat.lean`.
 -/
 
-import Chain
+import Utils.Chain
 
 set_option linter.unusedVariables false
 

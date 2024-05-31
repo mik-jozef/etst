@@ -1,8 +1,9 @@
 import Tuple
 
 
--- Ideally, IsLeast should take two property names [X] and [Y] as arguments,
--- and return a structure with these two properties. "left" and "right" = BAD :/
+-- Ideally, IsLeast should take two property names [X] and [Y]
+-- as arguments, and return a structure with these two properties.
+-- "left" and "right" = BAD :/
 structure iIsLeast (le: T → T → Prop) (s: Set T) (t: T): Prop where
   isMember: t ∈ s
   isLeMember: ∀ ⦃tt: T⦄, tt ∈ s → le t tt

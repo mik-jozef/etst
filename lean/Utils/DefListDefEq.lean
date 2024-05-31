@@ -7,12 +7,11 @@ import Interpretation
 import Operators
 
 /-
-  Mapping bound variables is intentionall -- this way we
+  Mapping bound variables is intentional -- this way we
   don't need to track whether a variable is bound or free.
   
   Doing that would also require tracking them in the deflist
-  and proving it's done properly, so no thank you TODO explain
-  in more detail.
+  and proving it's done properly, so no thank you.
   
   If I ever need to map only the free variables, I can create
   `Expr.mapFreeVars` and use it instead.

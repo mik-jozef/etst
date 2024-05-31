@@ -2,7 +2,7 @@
   Stuff related to pointwise partial orders.
 -/
 
-import Chain
+import Utils.Chain
 
 
 instance PartialOrder.pointwise

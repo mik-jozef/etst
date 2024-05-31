@@ -1,4 +1,4 @@
-import DefListDefEq
+import Utils.DefListDefEq
 import UniSet3.DefListToEncoding
 import UniSet3.TheSet3
 
