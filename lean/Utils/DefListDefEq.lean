@@ -1,6 +1,6 @@
 /-
   Proves that structurally identical definitions define the same
-  collections.
+  (three-valued) sets.
 -/
 
 import Interpretation
