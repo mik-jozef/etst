@@ -1,5 +1,5 @@
-import Utils
 import PairDictOrder
+
 
 namespace Pair
   -- This has to be in a separate file to not inferfere with

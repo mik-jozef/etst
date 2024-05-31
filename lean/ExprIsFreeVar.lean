@@ -1,4 +1,4 @@
-import Utils
+import Utils.BasicUtils
 
 
 -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1740

@@ -2,9 +2,10 @@
   Some helper functions for ordinals.
 -/
 
-import Utils
+import Utils.BasicUtils
 import Mathlib.SetTheory.Ordinal.Basic
 import Mathlib.SetTheory.Ordinal.Arithmetic
+
 
 instance _.u: Coe (Ordinal.{u}) (Type (u + 1)) where
   coe n := { nn: Ordinal // nn < n }

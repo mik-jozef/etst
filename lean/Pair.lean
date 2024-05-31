@@ -1,5 +1,7 @@
-import Utils
 import Mathlib.Order.MinMax
+
+import Utils.BasicUtils
+
 
 -- Ehhhm, should I rather call them binary trees?
 inductive Pair where

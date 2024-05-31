@@ -4,7 +4,6 @@
 
 import Chain
 
-open Classical
 
 instance PartialOrder.pointwise
   (X: Type u)

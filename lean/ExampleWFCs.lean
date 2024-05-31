@@ -2,8 +2,6 @@ import Arities
 import Interpretation
 import Pair
 
-open Classical
-
 
 inductive natSignature.Op
   | zero

@@ -2,6 +2,7 @@ import Operators
 import ExampleWFCs
 import PairDepthDictOrder
 
+
 namespace Expr
   def anyExpr: Expr sig := Expr.Un 0 0
   def noneExpr: Expr sig := Expr.cpl anyExpr
@@ -497,7 +498,6 @@ namespace Expr
     Ins salg v (finUnExpr list) p
   :=
     match list with
-    | List.nil => List.Mem.nope exprIn
     | List.cons _e0 _rest =>
       exprIn.elim
         (fun eq => eq ▸ insUnL s _)
@@ -511,7 +511,6 @@ namespace Expr
     Inw salg v (finUnExpr list) p
   :=
     match list with
-    | List.nil => List.Mem.nope exprIn
     | List.cons _e0 _rest =>
       exprIn.elim
         (fun eq => eq ▸ inwUnL w _)

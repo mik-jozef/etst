@@ -1,5 +1,6 @@
 import Tuple
 
+
 -- Ideally, IsLeast should take two property names [X] and [Y] as arguments,
 -- and return a structure with these two properties. "left" and "right" = BAD :/
 structure iIsLeast (le: T → T → Prop) (s: Set T) (t: T): Prop where
@@ -408,7 +409,7 @@ def IsChainComplete.supNoneIffNoneIn
   
   supEq ▸ Iff.intro
     (fun supNone =>
-      by_contradiction fun noneNin =>
+      byContradiction fun noneNin =>
         let chain: Chain ord := Chain.option.some ord chainOpt
         let supChain := chain.sup cc
         

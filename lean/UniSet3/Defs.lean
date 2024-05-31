@@ -1963,7 +1963,8 @@ namespace Pair
         let nthDlPosLength :=
           isNthDefN.posLengthIfIndexNotZero Pair.noConfusion
         
-        dlNEq ▸ Nat.lt_add_rite isAppend.lengthEq nthDlPosLength
+        dlNEq ▸ Nat.lt_left_of_add
+          isAppend.lengthEq nthDlPosLength
     
     def IsEnumUpToPair.nthIteration.lengthGrows
       {n: Nat}
@@ -2074,7 +2075,7 @@ namespace Pair
       IsEnumUpToPair.PreservesPrevious dlB i expr
     :=
       open PreservesPrevious in
-      (Nat.isTotal nA nB).rec
+      (Nat.ltTotal nA nB).rec
         (fun ab =>
           CaseSome
             (preservesPrevious.directed

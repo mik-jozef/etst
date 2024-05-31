@@ -1,8 +1,6 @@
 import Valuation
 import ExprIsFreeVar
 
-open Classical
-
 
 def Args
   (s: Signature)

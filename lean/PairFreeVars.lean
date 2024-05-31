@@ -1,6 +1,7 @@
 import Interpretation
 import ExampleWFCs
 
+
 namespace Pair
   /-
     This could be generalized for any signature with finite number
@@ -194,7 +195,7 @@ namespace Pair
   :=
     let eq: Set.empty = fun x: Nat => x ∈ [] :=
       funext fun _ =>
-        (propext (Iff.intro False.elim List.Mem.nope))
+        (propext (Iff.intro nofun nofun))
     
     let fv := freeVars.givenBounds expr []
     -- Using `eq ▸ fv` directly breaks `freeVars.eq` :(

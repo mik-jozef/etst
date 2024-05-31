@@ -1,5 +1,4 @@
 import Set3
-import PartialOrder
 import Pointwise
 
 

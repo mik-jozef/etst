@@ -1,4 +1,4 @@
-import Utils
+import Utils.BasicUtils
 
 
 structure PairOf (A: Type u) where

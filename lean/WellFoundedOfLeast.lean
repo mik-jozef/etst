@@ -91,7 +91,7 @@ namespace well_founded_of_least
     -- let f_x_lt (x: { a // ¬Acc ord.lt a }): ord.lt (f x) x :=
     --   (ex_lt_not_acc x).unwrap.property
     
-    by_contradiction fun not_acc =>
+    byContradiction fun not_acc =>
       -- let rec dec_seq: Nat → { a // ¬Acc ord.lt a }
       -- | Nat.zero => ⟨t, not_acc⟩
       -- | Nat.succ nPred => f (dec_seq nPred)

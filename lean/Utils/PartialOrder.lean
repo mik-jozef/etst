@@ -8,7 +8,6 @@
 
 import Mathlib.Init.Order.Defs
 
-open Classical
 
 namespace PartialOrder
   def Option.Le (ord: PartialOrder T): Option T → Option T → Prop
@@ -124,7 +123,7 @@ namespace PartialOrder
   :
     t = none
   :=
-    byContradiction fun neqNone =>
+    Classical.byContradiction fun neqNone =>
       match t with
         | none => neqNone rfl
         | some _ => tGreatest none

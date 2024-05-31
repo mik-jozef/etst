@@ -7,16 +7,16 @@
   And some stuff that just kinda doesn't fit anywhere else.
 -/
 
-import PartialOrder
 import Mathlib.Init.Set
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Fintype.Card
 
--- Mathlib.Data.Set.Basic exports 'em', so cannot `open Classical`. Fck this.
+import Utils.PartialOrder
+
+
 def byContradiction {P: Prop} := @Classical.byContradiction P
 noncomputable instance propDecidable (P: Prop): Decidable P :=
   Classical.propDecidable P
-
 
 inductive Null: Type* | null
 
@@ -35,7 +35,7 @@ def Function.contra (ab: A → B): ¬B → ¬A :=
   fun nb => fun a => nb (ab a)
 
 theorem Not.dne {P: Prop} (h: ¬¬P): P :=
-  Or.elim (em P)
+  Or.elim (Classical.em P)
     (fun p: P => p)
     (fun np: ¬P => absurd np h)
 
@@ -117,32 +117,10 @@ namespace Set
   end HasListOfAll
 
   def IsSubset (a b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
-
-  def indexUnion {Index: Type} {D: Type} (family: Index → Set D): Set D :=
-    fun (d: D) => ∃ i: Index, family i d
-
-  theorem indexUnion.IsWider
-    (family: Index → Set D)
-    (i: Index)
-  :
-    (family i) ⊆ (indexUnion family)
-  :=
-    fun (d: D) (dfi: d ∈ family i) => ⟨i, dfi⟩
 end Set
 
 instance: Coe Nat Type where
   coe := fun n => { nn: Nat // nn < n }
-
-
-def Eq.transLe
-  {_ord: PartialOrder T}
-  {a b c: T}
-  (ab: a = b)
-  (bc: b ≤ c)
-:
-  a ≤ c
-:=
-  ab ▸ bc
 
 
 inductive IsComparable (rel: T → T → Prop) (a b: T): Prop
@@ -177,11 +155,6 @@ def Nat.lt.addNatLeft (ab: a < b) (k: Nat): a < k + b :=
 def Nat.lt.addNat (ab: a < b) (left rite: Nat): a < left + b + rite :=
   Nat.lt.addNatRite (Nat.lt.addNatLeft ab left) rite
 
-def Nat.lt.zero.ifNotZero {n: Nat} (nNotZero: n ≠ 0): 0 < n :=
-  zero_lt_of_ne_zero nNotZero
-
-def Nat.le.zero (n: Nat): 0 ≤ n := zero_le n
-
 def Nat.letTrans {a b c: Nat} (ab: a ≤ b) (bc: b < c): a < c :=
   (Nat.eq_or_lt_of_le ab).elim
     (fun eq => eq ▸ bc)
@@ -209,23 +182,15 @@ def Nat.leLtAntisymm {a b: Nat} (ab: a ≤ b) (ba: b < a): P :=
     (fun ab => Nat.ltAntisymm ab ba)
 
 
-def Nat.isTotal (a b: Nat): IsComparable Nat.lt a b :=
-  (Nat.lt_or_ge a b).elim
-    (fun lt => IsComparable.IsLt lt)
-    (fun ge =>
-      ((Nat.eq_or_lt_of_le ge).symm.elim
-        (fun x => IsComparable.IsGt x)
-        (fun x => IsComparable.IsEq x.symm)))
-
 def Nat.abs (a b: Nat) := Nat.max (a - b) (b - a)
 
 def Nat.abs.same (a: Nat): Nat.abs a a = 0 :=
   let aa: a - a = 0 := Nat.sub_self a
-  (if_pos (aa ▸ Nat.le.zero _)).trans aa
+  (if_pos (aa ▸ zero_le _)).trans aa
 
 def Nat.abs.eq.ltAB {a b: Nat} (ab: a < b): Nat.abs a b = b - a :=
   let eqZero: a - b = 0 := Nat.sub_eq_zero_of_le (Nat.le_of_lt ab)
-  if_pos (eqZero ▸ Nat.le.zero _)
+  if_pos (eqZero ▸ zero_le _)
 
 def Nat.abs.eq.ltBA {a b: Nat} (ba: b < a): Nat.abs a b = a - b :=
   let eqZero: b - a = 0 := Nat.sub_eq_zero_of_le (Nat.le_of_lt ba)
@@ -246,7 +211,7 @@ def Nat.abs.eq.leBA {a b: Nat} (ba: b ≤ a): Nat.abs a b = a - b :=
     (fun lt => Nat.abs.eq.ltBA lt)
 
 def Nat.abs.symm (a b: Nat): Nat.abs a b = Nat.abs b a :=
-  (a.isTotal b).rec
+  (a.ltTotal b).rec
     (fun lt => (Nat.abs.eq.ltAB lt).trans (Nat.abs.eq.ltBA lt).symm)
     (fun gt => (Nat.abs.eq.ltBA gt).trans (Nat.abs.eq.ltAB gt).symm)
     (fun eq => eq ▸ rfl)
@@ -285,7 +250,7 @@ def Nat.abs.ltle.rite {a b c: Nat} (ab: a < b) (bc: b ≤ c):
   let lt: c - b < c - a := Nat.ltle.subLt ab bc
   absBC ▸ absAC ▸ lt
 
-def Nat.lt_add_rite
+def Nat.lt_left_of_add
   (eq: a + b = c)
   (lt: 0 < b)
 :
@@ -442,19 +407,6 @@ noncomputable def existsDistinctOfNotInjective
   ⟨⟨a0, a1⟩, a1.property⟩
 
 
-def List.emptyNotMem (t: T):
-  t ∉ []
-:=
-  nofun
-
-def List.Mem.nope
-  {t: T}
-  (tIn: List.Mem t [])
-:
-  P
-:=
-  False.elim (List.emptyNotMem t tIn)
-
 def List.Mem.toOr
   {t head: T}
   (mem: List.Mem t (head::rest)) -- Cannot use "∈" bc.
@@ -584,7 +536,6 @@ def List.concatUnique.inRiteToIn
   t ∈ concatUnique listL listR
 :=
   match listR with
-  | nil => False.elim (emptyNotMem t tInR)
   | cons head tail =>
     by unfold concatUnique; exact
       match tInR with

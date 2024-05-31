@@ -1,6 +1,5 @@
 import Chain
 import PairDictOrder
-import Utils
 import WellFoundedOfLeast
 
 
@@ -380,7 +379,7 @@ namespace Pair
   :
     ∃ n, nthPair n = p
   :=
-    by_contradiction (fun nex =>
+    byContradiction (fun nex =>
       let allNotNth: ∀ n, nthPair n ≠ p :=
         fun n eq => nex ⟨n, eq⟩
       

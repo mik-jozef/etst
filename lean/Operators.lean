@@ -1,8 +1,6 @@
 import Arities
 import Interpretation
 
-open Classical
-
 
 def operatorC (salg: Salgebra sig) (dl: DefList sig) (b: Valuation salg.D):
   Valuation salg.D → Valuation salg.D
