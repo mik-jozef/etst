@@ -816,6 +816,17 @@ namespace Pair
       =>
         isQuantifierA.nopeCpl
       
+      | IsCpl _,
+        IsQuantifier isQuantifierB _ _
+      =>
+        isQuantifierB.nopeCpl
+      
+      | IsVar _, IsBin isB _ _ => nomatch isB
+      | IsVar _, IsQuantifier isQ _ _ => nomatch isQ
+      | IsBin isB _ _, IsVar _ => nomatch isB
+      | IsBin isB _ _, IsQuantifier isQ _ _ => nomatch isB, isQ
+      | IsQuantifier isQ _ _, IsVar _ => nomatch isQ
+    
     
     -- why does this have to be noncomputable?
     -- Seems very much computable to me.
