@@ -1,24 +1,20 @@
 /-
-  The contents of this file are either taken or adapted
+  The functions `minimal_of_well_founded` and
+  `least_of_well_founded_total` return the minimal
+  and least elements of a set, respectively, given
+  a well-founded (and total) relation on the type.
+  
+  Parts of this file are either adapted
   from `Mathlib/Order/OrderIsoNat.lean`.
 -/
 
+import Mathlib.Order.OrderIsoNat
 import Utils.Chain
 
 set_option linter.unusedVariables false
 
 
 namespace well_founded_of_least
-  def exists_not_acc_lt_of_not_acc
-    (h : ¬Acc r a)
-  :
-    ∃ b, ¬Acc r b ∧ r b a
-  := by
-    contrapose! h
-    refine' ⟨_, fun b hr => _⟩
-    by_contra hb
-    exact h b hb hr
-  
   def every_nonempty_has_least
     (ord: PartialOrder T)
   :=
@@ -36,7 +32,8 @@ namespace well_founded_of_least
       ord.lt y x
   :=
     fun ⟨x, hx⟩ =>
-      let ⟨y, ⟨not_acc, lt⟩⟩ := exists_not_acc_lt_of_not_acc hx
+      let ⟨y, ⟨not_acc, lt⟩⟩ :=
+        RelEmbedding.exists_not_acc_lt_of_not_acc hx
       ⟨⟨y, not_acc⟩, lt⟩
   
   noncomputable def f
@@ -57,7 +54,6 @@ namespace well_founded_of_least
   | Nat.zero => ⟨t, not_acc⟩
   | Nat.succ nPred => f ord (dec_seq ord t not_acc nPred)
   
-  -- TODO is this used?
   def dec_seq_0_eq_t: dec_seq ord t not_acc 0 = ⟨t, not_acc⟩ :=
     rfl
   
@@ -76,13 +72,15 @@ namespace well_founded_of_least
   :
     Acc ord.lt t
   :=
+    -- This should work:
     -- let ex_lt_not_acc:
     --   ∀ x: { a // ¬Acc ord.lt a },
     --   ∃ y: { a // ¬Acc ord.lt a },
     --     ord.lt y x
     -- :=
     --   fun ⟨x, hx⟩ =>
-    --     let ⟨y, ⟨not_acc, lt⟩⟩ := exists_not_acc_lt_of_not_acc hx
+    --     let ⟨y, ⟨not_acc, lt⟩⟩ :=
+    --       exists_not_acc_lt_of_not_acc hx
     --     ⟨⟨y, not_acc⟩, lt⟩
     -- 
     -- let f (x: { a // ¬Acc ord.lt a }): { a // ¬Acc ord.lt a } :=

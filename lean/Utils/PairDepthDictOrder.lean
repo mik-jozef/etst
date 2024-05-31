@@ -12,7 +12,7 @@
 import Utils.Chain
 import Utils.Pair
 import Utils.PairDictOrder
-import WellFoundedOfLeast
+import Utils.WellFoundedOfLeast
 
 
 namespace Pair

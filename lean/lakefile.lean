@@ -51,8 +51,8 @@ lean_lib Utils.PairDictOrder {}
 lean_lib Utils.PartialOrder {}
 lean_lib Utils.Pointwise {}
 lean_lib Utils.Set3 {}
+lean_lib Utils.WellFoundedOfLeast {}
 lean_lib Valuation {}
-lean_lib WellFoundedOfLeast {}
 lean_lib Wfm {}
 
 require mathlib from git
