@@ -1,3 +1,8 @@
+/-
+  Defines `freeVars`, a function that computes the free variables
+  of an expression.
+-/
+
 import Interpretation
 import ExampleWFCs
 
