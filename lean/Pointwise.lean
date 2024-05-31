@@ -5,7 +5,7 @@
 import Utils.Chain
 
 
-instance PartialOrder.pointwise
+def PartialOrder.pointwise
   (X: Type u)
   {Y: Type v}
   (_: PartialOrder Y)

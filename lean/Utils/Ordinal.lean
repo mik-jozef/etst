@@ -1,5 +1,5 @@
 /-
-  Some helper functions for ordinals.
+  Some helper functions and definitions for ordinals.
 -/
 
 import Utils.BasicUtils

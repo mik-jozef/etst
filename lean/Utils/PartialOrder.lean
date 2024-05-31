@@ -58,7 +58,7 @@ namespace PartialOrder
   :=
     congr rfl (ord.le_antisymm a b ab ba)
   
-  instance optionTop (ord: PartialOrder T): PartialOrder (Option T) where
+  def optionTop (ord: PartialOrder T): PartialOrder (Option T) where
     le := Option.Le ord
     
     le_refl

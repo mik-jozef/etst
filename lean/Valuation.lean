@@ -1,4 +1,4 @@
-import Set3
+import Utils.Set3
 import Pointwise
 
 
@@ -10,22 +10,28 @@ namespace Valuation
   def undetermined: Valuation D := fun _ => Set3.undetermined
   
   
-  instance ord.approximation (D: Type u):
+  def ord.approximation (D: Type u):
     PartialOrder (Valuation D)
   :=
     PartialOrder.pointwise Nat (Set3.ord.approximation D)
   
-  instance ord.standard (D: Type u)
+  def ord.standard (D: Type u)
   :
     PartialOrder (Valuation D)
   :=
     PartialOrder.pointwise Nat (Set3.ord.standard D)
   
-  instance Set3.sqle (D: Type u): SqLE (Valuation D) where
+  instance instSqle (D: Type u): SqLE (Valuation D) where
     le := (ord.approximation D).le
   
-  instance Set3.sqlt (D: Type u): SqLT (Valuation D) where
+  instance instSqlt (D: Type u): SqLT (Valuation D) where
     lt := (ord.approximation D).lt
+  
+  instance instLe (D: Type u): LE (Valuation D) where
+    le := (ord.standard D).le
+  
+  instance instLt (D: Type u): LT (Valuation D) where
+    lt := (ord.standard D).lt
   
   
   def empty.isLeast: iIsLeast (ord.standard D).le Set.full empty := {
@@ -353,7 +359,12 @@ namespace Valuation
     let supAt := Set.pointwiseSup.supAt sup x
     let withoutDAtX := Set3.withoutDef (sup.val x) d
     
-    let dIsUB: IsUpperBound _ (set.pointwiseAt x) withoutDAtX :=
+    let dIsUB:
+      IsUpperBound
+        (Set3.ord.standard D)
+        (set.pointwiseAt x)
+        withoutDAtX
+    :=
       fun triset =>
         let valOfTriset := triset.property.unwrap
         
@@ -445,9 +456,10 @@ namespace Valuation
                     eq ▸ h ▸ Set3.without.leStd _
                   else
                     let eq: withoutD xx = sup.val xx := if_neg h
-                    eq ▸ Preorder.le_refl _
+                    eq ▸ (Set3.ord.standard D).le_refl _
               
-              withoutDLe.trans (sup.property.isLeMember vIsUB)
+              (ord.standard D).le_trans _ _ _
+                withoutDLe (sup.property.isLeMember vIsUB)
         }
       ⟩
       

@@ -1,6 +1,5 @@
 import Operators
 import ExampleWFCs
-import PairDepthDictOrder
 
 
 namespace Expr

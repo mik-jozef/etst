@@ -1,4 +1,4 @@
-import Ordinal
+import Utils.Ordinal
 
 
 structure Tuple (T: Type u) where

@@ -1,4 +1,6 @@
 import ExprRulesOfInference
+import Utils.Pair
+import Utils.Set3
 
 
 namespace PairExpr
