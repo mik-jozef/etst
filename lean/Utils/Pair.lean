@@ -25,6 +25,9 @@ def decideEq: (a b: Pair) → Decidable (a = b)
 instance Pair.decidableEq: DecidableEq Pair := decideEq
 
 namespace Pair
+  def zeroLtSizeOf: (p: Pair) → 0 < sizeOf p
+  | zero => Nat.zero_lt_succ _
+  | pair a b => by simp
   
   def fromNat.injEq
     (eq: fromNat n = fromNat m)

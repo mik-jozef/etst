@@ -311,6 +311,19 @@ namespace Pair
           (addBoundVars theSetAsValuation boundVars)
           exprEnc.encodingToExpr
     
+    def interp.eqDef
+      (boundVars exprEnc: Pair)
+    :
+      interp boundVars exprEnc
+        =
+      interpretation
+        pairSalgebra
+        (addBoundVars theSetAsValuation boundVars)
+        (addBoundVars theSetAsValuation boundVars)
+        exprEnc.encodingToExpr
+    :=
+      rfl
+    
     def interp.inDefOfIsBoundHead
       (isNat: IsNatEncoding xEnc)
     :
@@ -2397,6 +2410,36 @@ namespace Pair
                 inwFn
         }
     
+    def insOfInInterp.exprBin.interpLR
+      (eqPab: p = pair a b)
+      (inDef:
+        Set3.defMem
+          (interp boundVars (pair (fromNat 2) (pair left rite)))
+          p)
+      (isExprLeft: IsExprEncoding left)
+      (isExprRite: IsExprEncoding rite)
+    :
+      And
+        ((interp boundVars left).defMem a)
+        ((interp boundVars rite).defMem b)
+    :=
+      let ⟨l, r, eqPlr⟩ :=
+        encodingToExpr.pairEncEq isExprLeft isExprRite ▸
+        interp.eqDef _ _ ▸
+        inDef
+      
+      let eqLa: l = a :=
+        Pair.noConfusion
+          (eqPlr.symm.trans eqPab)
+          (fun eq _ => eq)
+      
+      let eqRb: r = b :=
+        Pair.noConfusion
+          (eqPlr.symm.trans eqPab)
+          (fun _ eq => eq)
+      
+      eqLa ▸ eqRb ▸ And.intro l.property r.property
+    
     def insOfInInterp.exprBin.pair
       (inDef:
         Set3.defMem
@@ -2405,13 +2448,17 @@ namespace Pair
       (isExprLeft: IsExprEncoding left)
       (isExprRite: IsExprEncoding rite)
       (ihLeft:
+        {a b: Pair} →
+        p = pair a b →
         Ins
           uniDefList.interpretation
-          (pair boundVars (pair left p)))
+          (pair boundVars (pair left a)))
       (ihRite:
+        {a b: Pair} →
+        p = pair a b →
         Ins
           uniDefList.interpretation
-          (pair boundVars (pair rite p)))
+          (pair boundVars (pair rite b)))
     :
       Ins
         uniDefList.interpretation
@@ -2828,16 +2875,27 @@ namespace Pair
     :=
       open IsExprEncoding.Bin in
       match isBin with
-      | Is2 eq =>
+      | Is2 eq2 =>
         insOfInInterp.exprBin.pair
-          (eq ▸ inDef)
+          (eq2 ▸ inDef)
           isExprLeft
           isExprRite
-          sorry
-          sorry
+          (fun eq =>
+            have: 0 < sizeOf rite := Pair.zeroLtSizeOf _
+            insOfInterpretation
+              (insOfInInterp.exprBin.interpLR
+                eq (eq2 ▸ inDef) isExprLeft isExprRite).left
+              isExprLeft)
+          (fun eq =>
+            have: 0 < sizeOf left := Pair.zeroLtSizeOf _
+            insOfInterpretation
+              (insOfInInterp.exprBin.interpLR
+                eq (eq2 ▸ inDef) isExprLeft isExprRite).right
+              isExprRite)
       | Is3 eq => sorry
       | Is4 eq => sorry
       | Is6 eq => sorry
+    termination_by sizeOf left + sizeOf rite
     
     
     def interpretationOfIns
@@ -2895,6 +2953,7 @@ namespace Pair
         sorry
       | IsExprEncoding.IsQuantifier isQuant isNatX isExprBody =>
         sorry
+    termination_by sizeOf exprEnc
     
     def inwOfInterpretation
       (inPos: (interp boundVars exprEnc).posMem p)
