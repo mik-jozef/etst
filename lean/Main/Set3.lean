@@ -3,11 +3,14 @@
   
   This file defines a type `Set3 (D: Type)` that represents
   a set whose membership relation is three-valued -- every
-  element is either a definitive member, a possible member,
-  or its membership is *undetermined*.
+  element is either a definitive member, a definitive
+  non-member, or its membership is *undetermined*.
+  Elements that are either definitive members or undetermined
+  members are called possible members.
   
   Formally, a `Set3 D` is a pair `(defMem, posMem)` of sets
-  such that `defMem ⊆ posMem`.
+  such that `defMem ⊆ posMem` (`defMem` and `posMem` contain
+  the definitive and possible members, respectively).
   
   Two orders are defined on `Set3 D`, the standard order
   and the approximation order.
@@ -19,11 +22,11 @@
       a.defMem ⊆ b.defMem ∧ a.posMem ⊆ b.posMem  \,.
   
   A set `a` is less than or equal to `b` in the approximation
-  order if it has more undefined members, but agrees with `b`
+  order if it has more undetermined members (ie. fewer definitive
+  members, and fewer definitive nonmembers), but agrees with `b`
   on its determined members. Formally, `a ⊑ b` if
   
       a.defMem ⊆ b.defMem ∧ b.posMem ⊆ a.posMem  \,.
-  
   
   Both orders are proven chain-complete.
 -/
