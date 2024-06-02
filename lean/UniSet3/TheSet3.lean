@@ -2411,7 +2411,7 @@ namespace Pair
         }
     
     
-    def insOfInInterp.exprBin.interpLR
+    def insOfInInterp.exprBin.pairExpr.interpLR
       (eqN: n = fromNat 2)
       (eqPab: p = pair a b)
       (inDef:
@@ -2443,7 +2443,7 @@ namespace Pair
       
       eqLa ▸ eqRb ▸ And.intro l.property r.property
     
-    def insOfInInterp.exprBin.inList:
+    def insOfInInterp.exprBin.pairExpr.inList:
       uniDefList.interpretation.exprPair
         ∈
       uniDefList.interpretation.exprList
@@ -2486,7 +2486,7 @@ namespace Pair
         eqN ▸
         insWfmDef.toInsWfm
           (insFinUn
-            inList
+            pairExpr.inList
             (insUnDom
               (insExprEncoding
                 isExprLeft)
@@ -2539,7 +2539,7 @@ namespace Pair
                               nat502Neq501)
                             nat503Neq501)))))))))
     
-    def inwOfInInterp.exprBin.interpLR
+    def inwOfInInterp.exprBin.pairExpr.interpLR
       (eqN: n = fromNat 2)
       (eqPab: p = pair a b)
       (inDef:
@@ -2607,7 +2607,7 @@ namespace Pair
         eqN ▸
         inwWfmDef.toInwWfm
           (inwFinUn
-            insOfInInterp.exprBin.inList
+            insOfInInterp.exprBin.pairExpr.inList
             (inwUnDom
               (insExprEncoding isExprLeft).toInw
               (inwUnDom
@@ -2657,6 +2657,255 @@ namespace Pair
                               inwBound
                               nat502Neq501)
                             nat503Neq501)))))))))
+    
+    def insOfInInterp.exprBin.unExpr.interpLR
+      (eqN: n = fromNat 3)
+      (inDef:
+        Set3.defMem
+          (interp boundVars (pair n (pair left rite)))
+          p)
+      (isExprLeft: IsExprEncoding left)
+      (isExprRite: IsExprEncoding rite)
+    :
+      Or
+        ((interp boundVars left).defMem p)
+        ((interp boundVars rite).defMem p)
+    :=
+      let insUnion :=
+        encodingToExpr.unEncEq isExprLeft isExprRite ▸
+        eqN ▸
+        inDef
+      
+      (insUnElim insUnion).elim Or.inl Or.inr
+    
+    def insOfInInterp.exprBin.unExpr.inList:
+      uniDefList.interpretation.exprUnion
+        ∈
+      uniDefList.interpretation.exprList
+    :=
+      by unfold uniDefList.interpretation.exprList; simp
+    
+    def insOfInInterp.exprBin.unExpr
+      (eqN: n = fromNat 3)
+      (inDef:
+        Set3.defMem
+          (interp boundVars (pair n (pair left rite)))
+          p)
+      (isExprLeft: IsExprEncoding left)
+      (isExprRite: IsExprEncoding rite)
+      (ih:
+        Or
+          (Ins
+            uniDefList.interpretation
+            (pair boundVars (pair left p)))
+          (Ins
+            uniDefList.interpretation
+            (pair boundVars (pair rite p))))
+    :
+      Ins
+        uniDefList.interpretation
+        (pair boundVars (pair (pair n (pair left rite)) p))
+    :=
+      eqN ▸
+      insWfmDef.toInsWfm
+        (insFinUn
+          unExpr.inList
+          (insUnDom
+            (insExprEncoding isExprLeft)
+            (insUnDom
+              (insExprEncoding isExprRite)
+              (insArbUn
+                boundVars
+                (insPair
+                  insBound
+                  (insPair
+                    (insPair
+                      (insNatExpr _ _)
+                      (insPair
+                        (insFree
+                          (insFree
+                            insBound
+                            nat501Neq500)
+                          nat502Neq500)
+                        (insFree
+                          insBound
+                          nat502Neq501)))
+                    (ih.elim
+                      (fun insL =>
+                        insUnL 
+                          (insCallExpr
+                            (insCallExpr
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    (insFree
+                                      (insFree
+                                        insL
+                                        nat500NeqInterpretation)
+                                      nat501NeqInterpretation)
+                                    nat502NeqInterpretation)
+                                  nat503NeqInterpretation)
+                                nat504NeqInterpretation)
+                              (insFree
+                                (insFree
+                                  insBound
+                                  nat503Neq502)
+                                nat504Neq502))
+                            (insFree
+                              (insFree
+                                (insFree
+                                  insBound
+                                  nat501Neq500)
+                                nat502Neq500)
+                              nat503Neq500))
+                          _)
+                      (fun insR =>
+                        insUnR
+                          _
+                          (insCallExpr
+                            (insCallExpr
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    (insFree
+                                      (insFree
+                                        insR
+                                        nat500NeqInterpretation)
+                                      nat501NeqInterpretation)
+                                    nat502NeqInterpretation)
+                                  nat503NeqInterpretation)
+                                nat504NeqInterpretation)
+                              (insFree
+                                (insFree
+                                  insBound
+                                  nat503Neq502)
+                                nat504Neq502))
+                            (insFree
+                              (insFree
+                                insBound
+                                nat502Neq501)
+                              nat503Neq501))))))))))
+    
+    def inwOfInInterp.exprBin.unExpr.interpLR
+      (eqN: n = fromNat 3)
+      (inDef:
+        Set3.posMem
+          (interp boundVars (pair n (pair left rite)))
+          p)
+      (isExprLeft: IsExprEncoding left)
+      (isExprRite: IsExprEncoding rite)
+    :
+      Or
+        ((interp boundVars left).posMem p)
+        ((interp boundVars rite).posMem p)
+    :=
+      let inwUnion :=
+        encodingToExpr.unEncEq isExprLeft isExprRite ▸
+        eqN ▸
+        inDef
+      
+      (inwUnElim inwUnion).elim Or.inl Or.inr
+    
+    def inwOfInInterp.exprBin.unExpr
+      (eqN: n = fromNat 3)
+      (inDef:
+        Set3.posMem
+          (interp boundVars (pair n (pair left rite)))
+          p)
+      (isExprLeft: IsExprEncoding left)
+      (isExprRite: IsExprEncoding rite)
+      (ih:
+        Or
+          (Inw
+            uniDefList.interpretation
+            (pair boundVars (pair left p)))
+          (Inw
+            uniDefList.interpretation
+            (pair boundVars (pair rite p))))
+    :
+      Inw
+        uniDefList.interpretation
+        (pair boundVars (pair (pair n (pair left rite)) p))
+    :=
+      eqN ▸
+      inwWfmDef.toInwWfm
+        (inwFinUn
+          insOfInInterp.exprBin.unExpr.inList
+          (inwUnDom
+            (insExprEncoding isExprLeft).toInw
+            (inwUnDom
+              (insExprEncoding isExprRite).toInw
+              (inwArbUn
+                boundVars
+                (inwPair
+                  inwBound
+                  (inwPair
+                    (inwPair
+                      (inwNatExpr _ _)
+                      (inwPair
+                        (inwFree
+                          (inwFree
+                            inwBound
+                            nat501Neq500)
+                          nat502Neq500)
+                        (inwFree
+                          inwBound
+                          nat502Neq501)))
+                    (ih.elim
+                      (fun inwL =>
+                        inwUnL 
+                          (inwCallExpr
+                            (inwCallExpr
+                              (inwFree
+                                (inwFree
+                                  (inwFree
+                                    (inwFree
+                                      (inwFree
+                                        inwL
+                                        nat500NeqInterpretation)
+                                      nat501NeqInterpretation)
+                                    nat502NeqInterpretation)
+                                  nat503NeqInterpretation)
+                                nat504NeqInterpretation)
+                              (inwFree
+                                (inwFree
+                                  inwBound
+                                  nat503Neq502)
+                                nat504Neq502))
+                            (inwFree
+                              (inwFree
+                                (inwFree
+                                  inwBound
+                                  nat501Neq500)
+                                nat502Neq500)
+                              nat503Neq500))
+                          _)
+                      (fun inwR =>
+                        inwUnR
+                          _
+                          (inwCallExpr
+                            (inwCallExpr
+                              (inwFree
+                                (inwFree
+                                  (inwFree
+                                    (inwFree
+                                      (inwFree
+                                        inwR
+                                        nat500NeqInterpretation)
+                                      nat501NeqInterpretation)
+                                    nat502NeqInterpretation)
+                                  nat503NeqInterpretation)
+                                nat504NeqInterpretation)
+                              (inwFree
+                                (inwFree
+                                  inwBound
+                                  nat503Neq502)
+                                nat504Neq502))
+                            (inwFree
+                              (inwFree
+                                inwBound
+                                nat502Neq501)
+                              nat503Neq501))))))))))
     
     
     mutual
@@ -3065,6 +3314,9 @@ namespace Pair
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
+      have: 0 < sizeOf rite := Pair.zeroLtSizeOf _
+      have: 0 < sizeOf left := Pair.zeroLtSizeOf _
+      
       open IsExprEncoding.Bin in
       match isBin with
       | Is2 eq2 =>
@@ -3074,18 +3326,26 @@ namespace Pair
           isExprLeft
           isExprRite
           (fun eq =>
-            have: 0 < sizeOf rite := Pair.zeroLtSizeOf _
             insOfInterpretation
-              (insOfInInterp.exprBin.interpLR
+              (insOfInInterp.exprBin.pairExpr.interpLR
                 eq2 eq inDef isExprLeft isExprRite).left
               isExprLeft)
           (fun eq =>
-            have: 0 < sizeOf left := Pair.zeroLtSizeOf _
             insOfInterpretation
-              (insOfInInterp.exprBin.interpLR
+              (insOfInInterp.exprBin.pairExpr.interpLR
                 eq2 eq inDef isExprLeft isExprRite).right
               isExprRite)
-      | Is3 eq => sorry
+      | Is3 eq3 =>
+        insOfInInterp.exprBin.unExpr
+          eq3
+          inDef
+          isExprLeft
+          isExprRite
+          (Or.elim
+            (insOfInInterp.exprBin.unExpr.interpLR
+              eq3 inDef isExprLeft isExprRite)
+            (fun inl => Or.inl (insOfInterpretation inl isExprLeft))
+            (fun inr => Or.inr (insOfInterpretation inr isExprRite)))
       | Is4 eq => sorry
       | Is6 eq => sorry
     termination_by sizeOf left + sizeOf rite
@@ -3100,6 +3360,9 @@ namespace Pair
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
+      have: 0 < sizeOf rite := Pair.zeroLtSizeOf _
+      have: 0 < sizeOf left := Pair.zeroLtSizeOf _
+      
       open IsExprEncoding.Bin in
       match isBin with
       | Is2 eq2 =>
@@ -3109,18 +3372,26 @@ namespace Pair
           isExprLeft
           isExprRite
           (fun eq =>
-            have: 0 < sizeOf rite := Pair.zeroLtSizeOf _
             inwOfInterpretation
-              (inwOfInInterp.exprBin.interpLR
+              (inwOfInInterp.exprBin.pairExpr.interpLR
                 eq2 eq inPos isExprLeft isExprRite).left
               isExprLeft)
           (fun eq =>
-            have: 0 < sizeOf left := Pair.zeroLtSizeOf _
             inwOfInterpretation
-              (inwOfInInterp.exprBin.interpLR
+              (inwOfInInterp.exprBin.pairExpr.interpLR
                 eq2 eq inPos isExprLeft isExprRite).right
               isExprRite)
-      | Is3 eq => sorry
+      | Is3 eq =>
+        inwOfInInterp.exprBin.unExpr
+          eq
+          inPos
+          isExprLeft
+          isExprRite
+          (Or.elim
+            (inwOfInInterp.exprBin.unExpr.interpLR
+              eq inPos isExprLeft isExprRite)
+            (fun inl => Or.inl (inwOfInterpretation inl isExprLeft))
+            (fun inr => Or.inr (inwOfInterpretation inr isExprRite)))
       | Is4 eq => sorry
       | Is6 eq => sorry
     termination_by sizeOf left + sizeOf rite

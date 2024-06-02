@@ -62,6 +62,11 @@ namespace Pair
     def nat501NeqGetBounds: 501 ≠ 33 := by decide
     def nat502NeqGetBounds: 502 ≠ 33 := by decide
     def nat503NeqGetBounds: 503 ≠ 33 := by decide
+    def nat500NeqInterpretation: 500 ≠ 34 := by decide
+    def nat501NeqInterpretation: 501 ≠ 34 := by decide
+    def nat502NeqInterpretation: 502 ≠ 34 := by decide
+    def nat503NeqInterpretation: 503 ≠ 34 := by decide
+    def nat504NeqInterpretation: 504 ≠ 34 := by decide
     
     
     structure IsNatPairAAPair (a b: Pair): Prop where
