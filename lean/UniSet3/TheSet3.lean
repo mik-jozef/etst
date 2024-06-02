@@ -1988,13 +1988,20 @@ namespace Pair
             (pair (pair varEnc boundValue) boundVars)
             (pair exprEncBody p))
     
-    noncomputable def inInterpOfIns.exprArbUn.insOfIns
+    def inInterpOfIns.exprArbUn
+      (ihBody:
+        {varEnc bodyEnc boundVars: Pair} →
+        exprEnc = pair (fromNat 7) (pair varEnc bodyEnc) →
+        Ins
+          uniDefList.interpretation
+          (pair boundVars (pair bodyEnc p)) →
+        (interp boundVars bodyEnc).defMem p)
       (ins:
         Ins
           uniDefList.interpretation.exprArbUnion
           (pair boundVars (pair exprEnc p)))
     :
-      InsOfIns boundVars exprEnc p
+      (interp boundVars exprEnc).defMem p
     :=
       let ⟨_varEnc, ⟨insDomainVar, ins⟩⟩ :=
         (insUnDomElim ins).unwrap
@@ -2066,47 +2073,46 @@ namespace Pair
                   nat504Neq502)
                 nat503Neq502)
           
-          eqFn7 ▸ eqBv ▸
-          {
-            varEnc := varAlias,
-            isVarNat := eqVar ▸ isVar,
-            exprEncBody := bodyAlias,
-            boundValue := boundValue,
-            eqExprEnc := rfl,
-            eqExprEncExpr :=
-              encodingToExpr.arbUnEncEq
-                (eqVar ▸ isVar) (eqBody ▸ isBody),
-            ins :=
-              eqBody ▸ eqVar ▸ eqHa ▸ eqHb ▸ eqTail ▸
-              insFn
-          }
+          let eqEnc :=
+            encodingToExpr.arbUnEncEq
+              (eqVar.symm ▸ isVar)
+              (eqBody.symm ▸ isBody)
+          
+          let addBoundsEq := addBoundVars.updateEq
+            _ (eqVar.symm ▸ isVar) _ _
+          
+          let inDefBody := @ihBody
+            varAlias bodyAlias
+            (pair (pair varAlias boundValue) boundVars)
+            (eqFn7 ▸ rfl)
+            ((eqHa.trans eqVar.symm) ▸
+            (eqBv.trans eqTail.symm) ▸
+            eqHb ▸
+            eqBody ▸
+            insFn)
+          
+          by
+            unfold interp
+            rw [eqFn7, eqEnc]
+            exact
+              insArbUn
+                boundValue
+                (addBoundsEq ▸ inDefBody)
     
-    structure inInterpOfInw.exprArbUn.InwOfInw
-      (boundVars exprEnc p: Pair)
-    where
-      varEnc: Pair
-      isVarNat: IsNatEncoding varEnc
-      boundValue: Pair
-      exprEncBody: Pair
-      eqExprEnc: exprEnc = pair (fromNat 7) (pair varEnc exprEncBody)
-      eqExprEncExpr:
-        exprEnc.encodingToExpr
-          =
-        Expr.Un varEnc.depth exprEncBody.encodingToExpr
-      inw:
+    def inInterpOfInw.exprArbUn
+      (ih:
+        {varEnc bodyEnc boundVars: Pair} →
+        exprEnc = pair (fromNat 7) (pair varEnc bodyEnc) →
         Inw
           uniDefList.interpretation
-          (pair
-            (pair (pair varEnc boundValue) boundVars)
-            (pair exprEncBody p))
-    
-    noncomputable def inInterpOfInw.exprArbUn.inwOfInw
+          (pair boundVars (pair bodyEnc p)) →
+        (interp boundVars bodyEnc).posMem p)
       (inw:
         Inw
           uniDefList.interpretation.exprArbUnion
           (pair boundVars (pair exprEnc p)))
     :
-      InwOfInw boundVars exprEnc p
+      (interp boundVars exprEnc).posMem p
     :=
       let ⟨_varEnc, ⟨inwDomainVar, inw⟩⟩ :=
         (inwUnDomElim inw).unwrap
@@ -2178,20 +2184,31 @@ namespace Pair
                   nat504Neq502)
                 nat503Neq502)
           
-          eqFn7 ▸ eqBv ▸
-          {
-            varEnc := varAlias,
-            isVarNat := eqVar ▸ isVar,
-            boundValue := boundValue,
-            exprEncBody := bodyAlias,
-            eqExprEnc := rfl,
-            eqExprEncExpr :=
-              encodingToExpr.arbUnEncEq
-                (eqVar ▸ isVar) (eqBody ▸ isBody),
-            inw :=
-              eqBody ▸ eqVar ▸ eqHa ▸ eqHb ▸ eqTail ▸
-              inwFn
-          }
+          let eqEnc :=
+            encodingToExpr.arbUnEncEq
+              (eqVar.symm ▸ isVar)
+              (eqBody.symm ▸ isBody)
+          
+          let addBoundsEq := addBoundVars.updateEq
+            _ (eqVar.symm ▸ isVar) _ _
+          
+          let inDefBody := @ih
+            varAlias bodyAlias
+            (pair (pair varAlias boundValue) boundVars)
+            (eqFn7 ▸ rfl)
+            ((eqHa.trans eqVar.symm) ▸
+            (eqBv.trans eqTail.symm) ▸
+            eqHb ▸
+            eqBody ▸
+            inwFn)
+          
+          by
+            unfold interp
+            rw [eqFn7, eqEnc]
+            exact
+              inwArbUn
+                boundValue
+                (addBoundsEq ▸ inDefBody)
     
     
     structure inInterpOfIns.exprArbIr.InsOfIns
@@ -3413,63 +3430,6 @@ namespace Pair
     
     
     mutual
-    def inInterpOfIns.exprArbUn
-      (ins:
-        Ins
-          uniDefList.interpretation.exprArbUnion
-          (pair boundVars (pair exprEnc p)))
-    :
-      (interp boundVars exprEnc).defMem p
-    :=
-      let {
-        varEnc,
-        isVarNat,
-        exprEncBody,
-        boundValue,
-        eqExprEnc,
-        eqExprEncExpr,
-        ins
-      } :=
-        inInterpOfIns.exprArbUn.insOfIns ins
-      
-      let inDef := interpretationOfIns ins
-      
-      by
-        unfold interp
-        exact eqExprEncExpr ▸ insArbUn boundValue
-          (addBoundVars.updateEq _ isVarNat _ _ ▸
-          inDef)
-    termination_by (sizeOf exprEnc, 0)
-    
-    def inInterpOfInw.exprArbUn
-      (inw:
-        Inw
-          uniDefList.interpretation.exprArbUnion
-          (pair boundVars (pair exprEnc p)))
-    :
-      (interp boundVars exprEnc).posMem p
-    :=
-      let {
-        varEnc,
-        isVarNat,
-        exprEncBody,
-        boundValue,
-        eqExprEnc,
-        eqExprEncExpr,
-        inw
-      } :=
-        inInterpOfInw.exprArbUn.inwOfInw inw
-      
-      let inDef := interpretationOfInw inw
-      
-      by
-        unfold interp
-        exact eqExprEncExpr ▸ inwArbUn boundValue
-          (addBoundVars.updateEq _ isVarNat _ _ ▸
-          inDef)
-    termination_by (sizeOf exprEnc, 0)
-    
-    
     def inInterpOfIns.exprArbIr
       (ins:
         Ins
@@ -3700,7 +3660,8 @@ namespace Pair
         (inInterpOfIns.exprIfThen
           (fun _ => interpretationOfIns)
           (fun _ => interpretationOfIns))
-        inInterpOfIns.exprArbUn
+        (inInterpOfIns.exprArbUn
+          (fun _ => interpretationOfIns))
         inInterpOfIns.exprArbIr
     termination_by (sizeOf exprEnc, 1)
     
@@ -3728,7 +3689,8 @@ namespace Pair
         (inInterpOfInw.exprIfThen
           (fun _ => interpretationOfInw)
           (fun _ => interpretationOfInw))
-        inInterpOfInw.exprArbUn
+        (inInterpOfInw.exprArbUn
+          (fun _ => interpretationOfInw))
         inInterpOfInw.exprArbIr
     termination_by (sizeOf exprEnc, 1)
     
