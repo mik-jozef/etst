@@ -1675,39 +1675,32 @@ namespace Pair
           exact inwIr ihl ihr
     
     
-    structure inInterpOfIns.exprCpl.InsOfIns
-      (boundVars exprEnc p: Pair)
-    where
-      exprEncInner: Pair
-      isExpr: IsExprEncoding exprEncInner
-      eqExprEnc: exprEnc = pair (fromNat 5) exprEncInner
-      eqExprEncExpr:
-        exprEnc.encodingToExpr
-          =
-        Expr.cpl exprEncInner.encodingToExpr
-      ninw:
-        ¬Inw
-          (var uniDefList.interpretation)
-          (pair boundVars (pair exprEncInner p))
-    
-    noncomputable def inInterpOfIns.exprCpl.insOfIns
+    def inInterpOfIns.exprCpl
+      (ih:
+        {exprEncInner: Pair} →
+        exprEnc = pair (fromNat 5) exprEncInner →
+        (interp boundVars exprEncInner).posMem p →
+        IsExprEncoding exprEncInner →
+        Inw
+          uniDefList.interpretation
+          (pair boundVars (pair exprEncInner p)))
       (ins:
         Ins
           uniDefList.interpretation.exprCpl
-          (pair boundVars (pair cplEnc p)))
+          (pair boundVars (pair exprEnc p)))
     :
-      InsOfIns boundVars cplEnc p
+      (interp boundVars exprEnc).defMem p
     :=
-      let ⟨exprEnc, ⟨insDomain, ins⟩⟩ := (insUnDomElim ins).unwrap
+      let ⟨exprInnerAlias0, ⟨insDomain, ins⟩⟩ := (insUnDomElim ins).unwrap
       let ⟨_bvAlias, ins⟩ := (insArbUnElim ins).unwrap
       let ⟨insBv, ins⟩ := insPairElim ins
       let ⟨insCplEnc, insP⟩ := insPairElim ins
       
       let isExpr := Inw.toIsExprEncoding insDomain.toInw
       
-      match cplEnc with
+      match exprEnc with
       | zero => insPairElim.nope insCplEnc
-      | pair _fromNat5 exprAlias =>
+      | pair _fromNat5 exprInnerAlias1 =>
         let ⟨insFn5, insExpr⟩ := insPairElim insCplEnc
         
         let eqFn5 := insNatExprElim insFn5
@@ -1717,7 +1710,7 @@ namespace Pair
         
         let ninw
           (inw: Inw uniDefList.interpretation
-            (pair boundVars (pair exprEnc p)))
+            (pair boundVars (pair exprInnerAlias1 p)))
         :=
           insCplElim
             insP
@@ -1731,53 +1724,51 @@ namespace Pair
                   nat504Neq502))
               (inwFree
                 (inwFree
-                  inwBound
+                  (eqExpr ▸ inwBound)
                   nat502Neq500)
                 nat503Neq500))
         
-        eqFn5 ▸
-        {
-          exprEncInner := exprAlias,
-          isExpr := eqExpr ▸ isExpr,
-          eqExprEnc := rfl,
-          eqExprEncExpr :=
-            encodingToExpr.cplEncEq (eqExpr ▸ isExpr),
-          ninw := eqExpr ▸ ninw,
-        }
+        let eqEnc :=
+          encodingToExpr.cplEncEq (eqExpr.symm ▸ isExpr)
+        
+        let ninterp inPos := 
+          ninw
+            (ih
+              (eqFn5 ▸ eqExpr ▸ rfl)
+              inPos
+              (eqExpr.symm ▸ isExpr))
+        
+        by
+          unfold interp
+          rw [eqFn5, eqEnc]
+          exact insCpl ninterp
     
-    structure inInterpOfInw.exprCpl.InwOfInw
-      (boundVars exprEnc p: Pair)
-    where
-      exprEncInner: Pair
-      isExpr: IsExprEncoding exprEncInner
-      eqExprEnc: exprEnc = pair (fromNat 5) exprEncInner
-      eqExprEncExpr:
-        exprEnc.encodingToExpr
-          =
-        Expr.cpl exprEncInner.encodingToExpr
-      nins:
-        ¬Ins
-          (var uniDefList.interpretation)
-          (pair boundVars (pair exprEncInner p))
-    
-    noncomputable def inInterpOfInw.exprCpl.inwOfInw
+    def inInterpOfInw.exprCpl
+      (ih:
+        {exprEncInner: Pair} →
+        exprEnc = pair (fromNat 5) exprEncInner →
+        (interp boundVars exprEncInner).defMem p →
+        IsExprEncoding exprEncInner →
+        Ins
+          uniDefList.interpretation
+          (pair boundVars (pair exprEncInner p)))
       (inw:
         Inw
           uniDefList.interpretation.exprCpl
-          (pair boundVars (pair cplEnc p)))
+          (pair boundVars (pair exprEnc p)))
     :
-      InwOfInw boundVars cplEnc p
+      (interp boundVars exprEnc).posMem p
     :=
-      let ⟨exprEnc, ⟨inwDomain, inw⟩⟩ := (inwUnDomElim inw).unwrap
+      let ⟨exprInnerAlias0, ⟨inwDomain, inw⟩⟩ := (inwUnDomElim inw).unwrap
       let ⟨_bvAlias, inw⟩ := (inwArbUnElim inw).unwrap
       let ⟨inwBv, inw⟩ := inwPairElim inw
       let ⟨inwCplEnc, inwP⟩ := inwPairElim inw
       
       let isExpr := Inw.toIsExprEncoding inwDomain
       
-      match cplEnc with
+      match exprEnc with
       | zero => inwPairElim.nope inwCplEnc
-      | pair _fromNat5 exprAlias =>
+      | pair _fromNat5 exprInnerAlias1 =>
         let ⟨inwFn5, inwExpr⟩ := inwPairElim inwCplEnc
         
         let eqFn5 := inwNatExprElim inwFn5
@@ -1787,7 +1778,7 @@ namespace Pair
         
         let nins
           (ins: Ins uniDefList.interpretation
-            (pair boundVars (pair exprEnc p)))
+            (pair boundVars (pair exprInnerAlias1 p)))
         :=
           inwCplElim
             inwP
@@ -1801,19 +1792,24 @@ namespace Pair
                   nat504Neq502))
               (insFree
                 (insFree
-                  insBound
+                  (eqExpr ▸ insBound)
                   nat502Neq500)
                 nat503Neq500))
         
-        eqFn5 ▸
-        {
-          exprEncInner := exprAlias,
-          isExpr := eqExpr ▸ isExpr,
-          eqExprEnc := rfl,
-          eqExprEncExpr :=
-            encodingToExpr.cplEncEq (eqExpr ▸ isExpr),
-          nins := eqExpr ▸ nins,
-        }
+        let eqEnc :=
+          encodingToExpr.cplEncEq (eqExpr.symm ▸ isExpr)
+        
+        let ninterp inPos :=
+          nins
+            (ih
+              (eqFn5 ▸ eqExpr ▸ rfl)
+              inPos
+              (eqExpr.symm ▸ isExpr))
+        
+        by
+          unfold interp
+          rw [eqFn5, eqEnc]
+          exact inwCpl ninterp
     
     
     structure inInterpOfIns.exprIfThen.InsOfIns
@@ -3419,57 +3415,6 @@ namespace Pair
     
     
     mutual
-    def inInterpOfIns.exprCpl
-      (ins:
-        Ins
-          uniDefList.interpretation.exprCpl
-          (pair boundVars (pair exprEnc p)))
-    :
-      (interp boundVars exprEnc).defMem p
-    :=
-      let {
-        exprEncInner,
-        isExpr
-        eqExprEnc,
-        eqExprEncExpr,
-        ninw
-      } :=
-        inInterpOfIns.exprCpl.insOfIns ins
-      
-      let ninPos inPos :=
-        ninw (inwOfInterpretation inPos isExpr)
-      
-      by
-        unfold interp
-        exact eqExprEncExpr ▸ insCpl ninPos
-    termination_by (sizeOf exprEnc, 0)
-    
-    def inInterpOfInw.exprCpl
-      (inw:
-        Inw
-          uniDefList.interpretation.exprCpl
-          (pair boundVars (pair exprEnc p)))
-    :
-      (interp boundVars exprEnc).posMem p
-    :=
-      let {
-        exprEncInner,
-        isExpr,
-        eqExprEnc,
-        eqExprEncExpr,
-        nins
-      } :=
-        inInterpOfInw.exprCpl.inwOfInw inw
-      
-      let ninsDef inDef :=
-        nins (insOfInterpretation inDef isExpr)
-      
-      by
-        unfold interp
-        exact eqExprEncExpr ▸ inwCpl ninsDef
-    termination_by (sizeOf exprEnc, 0)
-    
-    
     def inInterpOfIns.exprIfThen
       (ins:
         Ins
@@ -3807,7 +3752,8 @@ namespace Pair
         (inInterpOfIns.exprIr
           (fun _ => interpretationOfIns)
           (fun _ => interpretationOfIns))
-        inInterpOfIns.exprCpl
+        (inInterpOfIns.exprCpl
+          (fun _ => inwOfInterpretation))
         inInterpOfIns.exprIfThen
         inInterpOfIns.exprArbUn
         inInterpOfIns.exprArbIr
@@ -3832,7 +3778,8 @@ namespace Pair
         (inInterpOfInw.exprIr
           (fun _ => interpretationOfInw)
           (fun _ => interpretationOfInw))
-        inInterpOfInw.exprCpl
+        (inInterpOfInw.exprCpl
+          (fun _ => insOfInterpretation))
         inInterpOfInw.exprIfThen
         inInterpOfInw.exprArbUn
         inInterpOfInw.exprArbIr
