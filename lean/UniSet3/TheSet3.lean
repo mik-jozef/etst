@@ -2410,11 +2410,13 @@ namespace Pair
                 inwFn
         }
     
+    
     def insOfInInterp.exprBin.interpLR
+      (eqN: n = fromNat 2)
       (eqPab: p = pair a b)
       (inDef:
         Set3.defMem
-          (interp boundVars (pair (fromNat 2) (pair left rite)))
+          (interp boundVars (pair n (pair left rite)))
           p)
       (isExprLeft: IsExprEncoding left)
       (isExprRite: IsExprEncoding rite)
@@ -2426,6 +2428,7 @@ namespace Pair
       let ⟨l, r, eqPlr⟩ :=
         encodingToExpr.pairEncEq isExprLeft isExprRite ▸
         interp.eqDef _ _ ▸
+        eqN ▸
         inDef
       
       let eqLa: l = a :=
@@ -2440,10 +2443,18 @@ namespace Pair
       
       eqLa ▸ eqRb ▸ And.intro l.property r.property
     
-    def insOfInInterp.exprBin.pair
+    def insOfInInterp.exprBin.inList:
+      uniDefList.interpretation.exprPair
+        ∈
+      uniDefList.interpretation.exprList
+    :=
+      by unfold uniDefList.interpretation.exprList; simp
+    
+    def insOfInInterp.exprBin.pairExpr
+      (eqN: n = fromNat 2)
       (inDef:
         Set3.defMem
-          (interp boundVars (pair (fromNat 2) (pair left rite)))
+          (interp boundVars (pair n (pair left rite)))
           p)
       (isExprLeft: IsExprEncoding left)
       (isExprRite: IsExprEncoding rite)
@@ -2464,7 +2475,188 @@ namespace Pair
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
-      sorry
+      match p with
+      | zero =>
+        insPairElim.nope
+          (encodingToExpr.pairEncEq isExprLeft isExprRite ▸
+          eqN ▸
+          interp.eqDef _ _ ▸
+          inDef)
+      | pair a b =>
+        eqN ▸
+        insWfmDef.toInsWfm
+          (insFinUn
+            inList
+            (insUnDom
+              (insExprEncoding
+                isExprLeft)
+              (insUnDom
+                (insExprEncoding
+                  isExprRite)
+                (insArbUn
+                  boundVars
+                  (insPair
+                    insBound
+                    (insPair
+                      (insPair
+                        (insNatExpr _ _)
+                        (insPair
+                          (insFree
+                            (insFree
+                              insBound
+                              nat501Neq500)
+                            nat502Neq500)
+                          (insFree
+                            insBound
+                            nat502Neq501)))
+                      (insPair
+                        (insCallExpr
+                          (insCallExpr
+                            (ihLeft rfl)
+                            (insFree
+                              (insFree
+                                insBound
+                                nat503Neq502)
+                              nat504Neq502))
+                          (insFree
+                            (insFree
+                              (insFree
+                                insBound
+                                nat501Neq500)
+                              nat502Neq500)
+                            nat503Neq500))
+                        (insCallExpr
+                          (insCallExpr
+                            (ihRite rfl)
+                            (insFree
+                              (insFree
+                                insBound
+                                nat503Neq502)
+                              nat504Neq502))
+                          (insFree
+                            (insFree
+                              insBound
+                              nat502Neq501)
+                            nat503Neq501)))))))))
+    
+    def inwOfInInterp.exprBin.interpLR
+      (eqN: n = fromNat 2)
+      (eqPab: p = pair a b)
+      (inDef:
+        Set3.posMem
+          (interp boundVars (pair n (pair left rite)))
+          p)
+      (isExprLeft: IsExprEncoding left)
+      (isExprRite: IsExprEncoding rite)
+    :
+      And
+        ((interp boundVars left).posMem a)
+        ((interp boundVars rite).posMem b)
+    :=
+      let ⟨l, r, eqPlr⟩ :=
+        encodingToExpr.pairEncEq isExprLeft isExprRite ▸
+        interp.eqDef _ _ ▸
+        eqN ▸
+        inDef
+      
+      let eqLa: l = a :=
+        Pair.noConfusion
+          (eqPlr.symm.trans eqPab)
+          (fun eq _ => eq)
+      
+      let eqRb: r = b :=
+        Pair.noConfusion
+          (eqPlr.symm.trans eqPab)
+          (fun _ eq => eq)
+      
+      eqLa ▸ eqRb ▸ And.intro l.property r.property
+    
+    def inwOfInInterp.exprBin.pairExpr
+      (eqN: n = fromNat 2)
+      (inDef:
+        Set3.posMem
+          (interp boundVars (pair n (pair left rite)))
+          p)
+      (isExprLeft: IsExprEncoding left)
+      (isExprRite: IsExprEncoding rite)
+      (ihLeft:
+        {a b: Pair} →
+        p = pair a b →
+        Inw
+          uniDefList.interpretation
+          (pair boundVars (pair left a)))
+      (ihRite:
+        {a b: Pair} →
+        p = pair a b →
+        Inw
+          uniDefList.interpretation
+          (pair boundVars (pair rite b)))
+    :
+      Inw
+        uniDefList.interpretation
+        (pair boundVars (pair (pair n (pair left rite)) p))
+    :=
+      match p with
+      | zero =>
+        inwPairElim.nope
+          (encodingToExpr.pairEncEq isExprLeft isExprRite ▸
+          eqN ▸
+          interp.eqDef _ _ ▸
+          inDef)
+      | pair a b =>
+        eqN ▸
+        inwWfmDef.toInwWfm
+          (inwFinUn
+            insOfInInterp.exprBin.inList
+            (inwUnDom
+              (insExprEncoding isExprLeft).toInw
+              (inwUnDom
+                (insExprEncoding isExprRite).toInw
+                (inwArbUn
+                  boundVars
+                  (inwPair
+                    inwBound
+                    (inwPair
+                      (inwPair
+                        (inwNatExpr _ _)
+                        (inwPair
+                          (inwFree
+                            (inwFree
+                              inwBound
+                              nat501Neq500)
+                            nat502Neq500)
+                          (inwFree
+                            inwBound
+                            nat502Neq501)))
+                      (inwPair
+                        (inwCallExpr
+                          (inwCallExpr
+                            (ihLeft rfl)
+                            (inwFree
+                              (inwFree
+                                inwBound
+                                nat503Neq502)
+                              nat504Neq502))
+                          (inwFree
+                            (inwFree
+                              (inwFree
+                                inwBound
+                                nat501Neq500)
+                              nat502Neq500)
+                            nat503Neq500))
+                        (inwCallExpr
+                          (inwCallExpr
+                            (ihRite rfl)
+                            (inwFree
+                              (inwFree
+                                inwBound
+                                nat503Neq502)
+                              nat504Neq502))
+                          (inwFree
+                            (inwFree
+                              inwBound
+                              nat502Neq501)
+                            nat503Neq501)))))))))
     
     
     mutual
@@ -2876,21 +3068,57 @@ namespace Pair
       open IsExprEncoding.Bin in
       match isBin with
       | Is2 eq2 =>
-        insOfInInterp.exprBin.pair
-          (eq2 ▸ inDef)
+        insOfInInterp.exprBin.pairExpr
+          eq2
+          inDef
           isExprLeft
           isExprRite
           (fun eq =>
             have: 0 < sizeOf rite := Pair.zeroLtSizeOf _
             insOfInterpretation
               (insOfInInterp.exprBin.interpLR
-                eq (eq2 ▸ inDef) isExprLeft isExprRite).left
+                eq2 eq inDef isExprLeft isExprRite).left
               isExprLeft)
           (fun eq =>
             have: 0 < sizeOf left := Pair.zeroLtSizeOf _
             insOfInterpretation
               (insOfInInterp.exprBin.interpLR
-                eq (eq2 ▸ inDef) isExprLeft isExprRite).right
+                eq2 eq inDef isExprLeft isExprRite).right
+              isExprRite)
+      | Is3 eq => sorry
+      | Is4 eq => sorry
+      | Is6 eq => sorry
+    termination_by sizeOf left + sizeOf rite
+    
+    def inwOfInInterp.exprBin
+      (inPos: (interp boundVars (pair n (pair left rite))).posMem p)
+      (isBin: IsExprEncoding.Bin n)
+      (isExprLeft: IsExprEncoding left)
+      (isExprRite: IsExprEncoding rite)
+    :
+      Inw
+        uniDefList.interpretation
+        (pair boundVars (pair (pair n (pair left rite)) p))
+    :=
+      open IsExprEncoding.Bin in
+      match isBin with
+      | Is2 eq2 =>
+        inwOfInInterp.exprBin.pairExpr
+          eq2
+          inPos
+          isExprLeft
+          isExprRite
+          (fun eq =>
+            have: 0 < sizeOf rite := Pair.zeroLtSizeOf _
+            inwOfInterpretation
+              (inwOfInInterp.exprBin.interpLR
+                eq2 eq inPos isExprLeft isExprRite).left
+              isExprLeft)
+          (fun eq =>
+            have: 0 < sizeOf left := Pair.zeroLtSizeOf _
+            inwOfInterpretation
+              (inwOfInInterp.exprBin.interpLR
+                eq2 eq inPos isExprLeft isExprRite).right
               isExprRite)
       | Is3 eq => sorry
       | Is4 eq => sorry
@@ -2969,11 +3197,12 @@ namespace Pair
       | IsExprEncoding.IsZero =>
         inwOfInInterp.exprZero inPos
       | IsExprEncoding.IsBin isBin isExprLeft isExprRite  =>
-        sorry
+        inwOfInInterp.exprBin inPos isBin isExprLeft isExprRite
       | IsExprEncoding.IsCpl isExprInner =>
         sorry
       | IsExprEncoding.IsQuantifier isQuant isNatX isExprBody =>
         sorry
+    termination_by sizeOf exprEnc
     end
     
     
