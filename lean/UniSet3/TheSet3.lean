@@ -3300,6 +3300,60 @@ namespace Pair
                             nat502Neq501)
                           nat503Neq501)))))))))
     
+    def insOfInInterp.exprCpl.interpLR
+      (eqN: n = fromNat 5)
+      (inDef: (interp boundVars (pair n exprEnc)).defMem p)
+      (isExprInner: IsExprEncoding exprEnc)
+    :
+      ¬ (interp boundVars exprEnc).posMem p
+    :=
+      insCplElim
+        (encodingToExpr.cplEncEq isExprInner ▸
+        eqN ▸
+        inDef)
+    
+    def insOfInInterp.exprCpl.inList:
+      uniDefList.interpretation.exprCpl
+        ∈
+      uniDefList.interpretation.exprList
+    :=
+      by unfold uniDefList.interpretation.exprList; simp
+    
+    def insOfInInterp.exprCpl
+      (eqN: n = fromNat 5)
+      (inDef: (interp boundVars (pair n exprEnc)).defMem p)
+      (isExpr: IsExprEncoding exprEnc)
+      (ih:
+        ¬ Inw
+          uniDefList.interpretation
+          (pair boundVars (pair exprEnc p)))
+    :
+      Ins
+        uniDefList.interpretation
+        (pair boundVars (pair (pair n exprEnc) p))
+    :=
+      eqN ▸
+      insWfmDef.toInsWfm
+        (insFinUn
+          exprCpl.inList
+          (insUnDom
+            (insExprEncoding isExpr)
+            (insArbUn
+              boundVars
+              (insPair
+                insBound
+                (insPair
+                  (insPair
+                    (insNatExpr _ _)
+                    (insFree
+                      insBound
+                      nat502Neq500))
+                  (insCpl
+                    fun inw =>
+                      let inw := inwCallElimBound inw rfl nat503Neq500
+                      let inw := inwCallElimBound inw rfl nat504Neq502
+                      ih inw))))))
+    
     
     mutual
     def inInterpOfIns.exprPair
@@ -3357,6 +3411,7 @@ namespace Pair
       eqP ▸
       by unfold interp; exact eqExprEncExpr ▸
       inwPair inDefA inDefB
+    termination_by (sizeOf exprEnc, 0)
     
     
     def inInterpOfIns.exprUn
@@ -3420,6 +3475,7 @@ namespace Pair
         by
           unfold interp
           exact eqExprEncExpr ▸ inwUnR _ inDefB
+    termination_by (sizeOf exprEnc, 0)
     
     
     def inInterpOfIns.exprIr
@@ -3471,6 +3527,7 @@ namespace Pair
       by
         unfold interp
         exact eqExprEncExpr ▸ inwIr inDefA inDefB
+    termination_by (sizeOf exprEnc, 0)
     
     
     def inInterpOfIns.exprCpl
@@ -3520,6 +3577,7 @@ namespace Pair
       by
         unfold interp
         exact eqExprEncExpr ▸ inwCpl ninsDef
+    termination_by (sizeOf exprEnc, 0)
     
     
     def inInterpOfIns.exprIfThen
@@ -3573,6 +3631,7 @@ namespace Pair
       by
         unfold interp
         exact eqExprEncExpr ▸ inwIfThen inDefCond inDefBody
+    termination_by (sizeOf exprEnc, 0)
     
     
     def inInterpOfIns.exprArbUn
@@ -3628,6 +3687,7 @@ namespace Pair
         exact eqExprEncExpr ▸ inwArbUn boundValue
           (addBoundVars.updateEq _ isVarNat _ _ ▸
           inDef)
+    termination_by (sizeOf exprEnc, 0)
     
     
     def inInterpOfIns.exprArbIr
@@ -3695,6 +3755,7 @@ namespace Pair
       by
         unfold interp
         exact eqExprEncExpr ▸ inwArbIr inDef
+    termination_by (sizeOf exprEnc, 0)
     
     
     def insOfInInterp.exprBin
@@ -3763,7 +3824,7 @@ namespace Pair
           isExprRite
           ⟨c, (insOfInterpretation inDefCond isExprLeft)⟩
           (insOfInterpretation inDefBody isExprRite)
-    termination_by sizeOf left + sizeOf rite
+    termination_by (sizeOf left + sizeOf rite, 0)
     
     def inwOfInInterp.exprBin
       (inPos: (interp boundVars (pair n (pair left rite))).posMem p)
@@ -3831,7 +3892,7 @@ namespace Pair
           isExprRite
           ⟨c, (inwOfInterpretation inDefCond isExprLeft)⟩
           (inwOfInterpretation inDefBody isExprRite)
-    termination_by sizeOf left + sizeOf rite
+    termination_by (sizeOf left + sizeOf rite, 0)
     
     
     def interpretationOfIns
@@ -3855,9 +3916,9 @@ namespace Pair
     def interpretationOfInw
       (inw:
         Inw uniDefList.interpretation
-          (pair boundVars (pair expr p)))
+          (pair boundVars (pair exprEnc p)))
     :
-      (interp boundVars expr).posMem p
+      (interp boundVars exprEnc).posMem p
     :=
       inwFinUnElim (inwWfm.toInwWfmDef inw)
         inInterpOfInw.exprVar
@@ -3869,6 +3930,7 @@ namespace Pair
         inInterpOfInw.exprIfThen
         inInterpOfInw.exprArbUn
         inInterpOfInw.exprArbIr
+    termination_by (sizeOf exprEnc, 1)
     
     def insOfInterpretation
       (inDef: (interp boundVars exprEnc).defMem p)
@@ -3886,10 +3948,15 @@ namespace Pair
       | IsExprEncoding.IsBin isBin isExprLeft isExprRite  =>
         insOfInInterp.exprBin inDef isBin isExprLeft isExprRite
       | IsExprEncoding.IsCpl isExprInner =>
-        sorry
+        let ninPos :=
+          insOfInInterp.exprCpl.interpLR rfl inDef isExprInner
+        
+        let ih inw := ninPos (interpretationOfInw inw)
+        
+        insOfInInterp.exprCpl rfl inDef isExprInner ih
       | IsExprEncoding.IsQuantifier isQuant isNatX isExprBody =>
         sorry
-    termination_by sizeOf exprEnc
+    termination_by (sizeOf exprEnc, 0)
     
     def inwOfInterpretation
       (inPos: (interp boundVars exprEnc).posMem p)
@@ -3910,172 +3977,7 @@ namespace Pair
         sorry
       | IsExprEncoding.IsQuantifier isQuant isNatX isExprBody =>
         sorry
-    termination_by sizeOf exprEnc
+    termination_by (sizeOf exprEnc, 0)
     end
-    
-    
-    def freeInterpretationOfIns
-      (ins: Ins uniDefList.freeInterpretation (pair expr p))
-    :
-      (interp zero expr).defMem p
-    :=
-      let ⟨_z, ⟨insFn, insArg⟩⟩ :=
-        insCallExprElim (insWfm.toInsWfmDef ins)
-      
-      let zEq := insZeroElim insArg
-      
-      zEq ▸ interpretationOfIns insFn
-    
-    def freeInterpretationOfInw
-      (ins: Inw uniDefList.freeInterpretation (pair expr p))
-    :
-      (interp zero expr).posMem p
-    :=
-      let ⟨_z, ⟨insFn, insArg⟩⟩ :=
-        inwCallExprElim (inwWfm.toInwWfmDef ins)
-      
-      let zEq := inwZeroElim insArg
-      
-      zEq ▸ interpretationOfInw insFn
-    
-    
-    def insOfFreeInterpretation
-      (inDef: (interp zero exprEnc).defMem p)
-      (isExpr: IsExprEncoding exprEnc)
-    :
-      Ins uniDefList.freeInterpretation (pair exprEnc p)
-    :=
-      insWfmDef.toInsWfm
-        (insCallExpr
-          (insOfInterpretation inDef isExpr)
-          insZero)
-    
-    def inwOfFreeInterpretation
-      (inPos: (interp zero expr).posMem p)
-      (isExpr: IsExprEncoding expr)
-    :
-      Inw uniDefList.freeInterpretation (pair expr p)
-    :=
-      inwWfmDef.toInwWfm
-        (inwCallExpr
-          (inwOfInterpretation inPos isExpr)
-          inwZero)
-    
-    
-    def inDefNthOfInsTheSet
-      (ins: Ins uniDefList.theSet (pair (fromNat x) p))
-    :
-      Set3.defMem
-        (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
-        p
-    :=
-      let ⟨_xEnc, ⟨_insNatXEnc, ins⟩⟩ :=
-        insUnDomElim (insWfm.toInsWfmDef ins)
-      
-      let ⟨insL, insR⟩ := insPairElim ins
-      
-      let xEncEqX := (insBoundElim insL).symm
-      
-      let ⟨_expr, ⟨insFn, insArg⟩⟩ := insCallExprElim insR
-      
-      let isTheDefListExpr :=
-        Inw.toIsTheDefListExpr
-          (insCallElimBound insArg rfl nat502Neq500).toInw
-      
-      let exprEq :=
-        IsTheDefListExprPair.getNthExpr.eq
-          isTheDefListExpr xEncEqX
-      
-      exprEq ▸
-      freeInterpretationOfIns insFn
-    
-    def inPosNthOfInwTheSet
-      (inw: Inw uniDefList.theSet (pair (fromNat x) p))
-    :
-      Set3.posMem
-        (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
-        p
-    :=
-      let ⟨_xEnc, ⟨_inwNatXEnc, inw⟩⟩ :=
-        inwUnDomElim (inwWfm.toInwWfmDef inw)
-      
-      let ⟨inwL, inwR⟩ := inwPairElim inw
-      
-      let xEncEqX := (inwBoundElim inwL).symm
-      
-      let ⟨_expr, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwR
-      
-      let isTheDefListExpr :=
-        Inw.toIsTheDefListExpr
-          (inwCallElimBound inwArg rfl nat502Neq500)
-      
-      let exprEq :=
-        IsTheDefListExprPair.getNthExpr.eq
-          isTheDefListExpr xEncEqX
-      
-      exprEq ▸
-      freeInterpretationOfInw inwFn
-    
-    
-    def insTheSetOfInDefNth
-      (inDef:
-        Set3.defMem
-          (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
-          p)
-    :
-      Ins uniDefList.theSet (pair (fromNat x) p)
-    :=
-      let isExpr :=
-        (IsTheDefListExprPair.getNthExpr x).isNth.isExpr
-      
-      insWfmDef.toInsWfm
-        (insUnDom
-          (insNatEncoding
-            (fromNat.isNatEncoding x))
-          (insPair
-            insBound
-            (insCallExpr
-              (insOfFreeInterpretation inDef isExpr)
-              (insCallExpr
-                (insTheDefListExpr
-                  (IsTheDefListExprPair.getNthExpr x).isNth)
-                (insFree
-                  (insFree
-                    insBound
-                    nat501Neq500)
-                  nat502Neq500)))))
-    
-    def inwTheSetOfInPosNth
-      (inPos:
-        Set3.posMem
-          (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
-          p)
-    :
-      Inw uniDefList.theSet (pair (fromNat x) p)
-    :=
-      let isExpr :=
-        (IsTheDefListExprPair.getNthExpr x).isNth.isExpr
-      
-      inwWfmDef.toInwWfm
-        (inwUnDom
-          (insNatEncoding
-            (fromNat.isNatEncoding x)).toInw
-          (inwPair
-            inwBound
-            (inwCallExpr
-              (inwOfFreeInterpretation inPos isExpr)
-              (inwCallExpr
-                (insTheDefListExpr
-                  (show
-                    -- Why is this necessary?
-                    IsTheDefListExpr (pair _ _)
-                  from
-                    (IsTheDefListExprPair.getNthExpr x).isNth)).toInw
-                (inwFree
-                  (inwFree
-                    inwBound
-                    nat501Neq500)
-                  nat502Neq500)))))
-    
   end uniSet3
 end Pair
