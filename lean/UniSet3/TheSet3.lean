@@ -1969,25 +1969,6 @@ namespace Pair
           exact inwIfThen ihl ihr
     
     
-    structure inInterpOfIns.exprArbUn.InsOfIns
-      (boundVars exprEnc p: Pair)
-    where
-      varEnc: Pair
-      isVarNat: IsNatEncoding varEnc
-      boundValue: Pair
-      exprEncBody: Pair
-      eqExprEnc: exprEnc = pair (fromNat 7) (pair varEnc exprEncBody)
-      eqExprEncExpr:
-        exprEnc.encodingToExpr
-          =
-        Expr.Un varEnc.depth exprEncBody.encodingToExpr
-      ins:
-        Ins
-          uniDefList.interpretation
-          (pair
-            (pair (pair varEnc boundValue) boundVars)
-            (pair exprEncBody p))
-    
     def inInterpOfIns.exprArbUn
       (ihBody:
         {varEnc bodyEnc boundVars: Pair} →
