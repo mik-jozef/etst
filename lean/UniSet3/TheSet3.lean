@@ -3097,6 +3097,210 @@ namespace Pair
                           nat503Neq501)))))))))
     
     
+    def insOfInInterp.exprBin.ifThenExpr.interpLR
+      {cond: Pair}
+      (eqN: n = fromNat 6)
+      (inDef:
+        Set3.defMem
+          (interp boundVars (pair n (pair cond body)))
+          p)
+      (isExprCond: IsExprEncoding cond)
+      (isExprBody: IsExprEncoding body)
+    :
+      And
+        (∃ c, (interp boundVars cond).defMem c)
+        ((interp boundVars body).defMem p)
+    :=
+      insIfThenElim
+        (encodingToExpr.ifThenEncEq isExprCond isExprBody ▸
+        eqN ▸
+        inDef)
+    
+    def insOfInInterp.exprBin.ifThenExpr.inList:
+      uniDefList.interpretation.exprIfThen
+        ∈
+      uniDefList.interpretation.exprList
+    :=
+      by unfold uniDefList.interpretation.exprList; simp
+    
+    def insOfInInterp.exprBin.ifThenExpr
+      {cond: Pair}
+      (eqN: n = fromNat 6)
+      (inDef:
+        Set3.defMem
+          (interp boundVars (pair n (pair cond body)))
+          p)
+      (isExprCond: IsExprEncoding cond)
+      (isExprBody: IsExprEncoding body)
+      (ihCond:
+        (∃ c,
+          Ins
+            uniDefList.interpretation
+            (pair boundVars (pair cond c))))
+      (ihBody:
+        Ins
+          uniDefList.interpretation
+          (pair boundVars (pair body p)))
+    :
+      Ins
+        uniDefList.interpretation
+        (pair boundVars (pair (pair n (pair cond body)) p))
+    :=
+      let ⟨_c, ihCond⟩ := ihCond
+      
+      eqN ▸
+      insWfmDef.toInsWfm
+        (insFinUn
+          ifThenExpr.inList
+          (insUnDom
+            (insExprEncoding isExprCond)
+            (insUnDom
+              (insExprEncoding isExprBody)
+              (insArbUn
+                boundVars
+                (insPair
+                  insBound
+                  (insPair
+                    (insPair
+                      (insNatExpr _ _)
+                      (insPair
+                        (insFree
+                          (insFree
+                            insBound
+                            nat501Neq500)
+                          nat502Neq500)
+                        (insFree
+                          insBound
+                          nat502Neq501)))
+                    (insIfThen
+                      (insCallExpr
+                        (insCallExpr
+                          ihCond
+                          (insFree
+                            (insFree
+                              insBound
+                              nat503Neq502)
+                            nat504Neq502))
+                        (insFree
+                          (insFree
+                            (insFree
+                              insBound
+                              nat501Neq500)
+                            nat502Neq500)
+                          nat503Neq500))
+                      (insCallExpr
+                        (insCallExpr
+                          ihBody
+                          (insFree
+                            (insFree
+                              insBound
+                              nat503Neq502)
+                            nat504Neq502))
+                        (insFree
+                          (insFree
+                            insBound
+                            nat502Neq501)
+                          nat503Neq501)))))))))
+    
+    def inwOfInInterp.exprBin.ifThenExpr.interpLR
+      {cond: Pair}
+      (eqN: n = fromNat 6)
+      (inDef:
+        Set3.posMem
+          (interp boundVars (pair n (pair cond body)))
+          p)
+      (isExprCond: IsExprEncoding cond)
+      (isExprBody: IsExprEncoding body)
+    :
+      And
+        (∃ c, (interp boundVars cond).posMem c)
+        ((interp boundVars body).posMem p)
+    :=
+      inwIfThenElim
+        (encodingToExpr.ifThenEncEq isExprCond isExprBody ▸
+        eqN ▸
+        inDef)
+    
+    def inwOfInInterp.exprBin.ifThenExpr
+      {cond: Pair}
+      (eqN: n = fromNat 6)
+      (inDef:
+        Set3.posMem
+          (interp boundVars (pair n (pair cond body)))
+          p)
+      (isExprCond: IsExprEncoding cond)
+      (isExprBody: IsExprEncoding body)
+      (ihCond:
+        (∃ c,
+          Inw
+            uniDefList.interpretation
+            (pair boundVars (pair cond c))))
+      (ihBody:
+        Inw
+          uniDefList.interpretation
+          (pair boundVars (pair body p)))
+    :
+      Inw
+        uniDefList.interpretation
+        (pair boundVars (pair (pair n (pair cond body)) p))
+    :=
+      let ⟨_c, ihCond⟩ := ihCond
+      
+      eqN ▸
+      inwWfmDef.toInwWfm
+        (inwFinUn
+          insOfInInterp.exprBin.ifThenExpr.inList
+          (inwUnDom
+            (insExprEncoding isExprCond).toInw
+            (inwUnDom
+              (insExprEncoding isExprBody).toInw
+              (inwArbUn
+                boundVars
+                (inwPair
+                  inwBound
+                  (inwPair
+                    (inwPair
+                      (inwNatExpr _ _)
+                      (inwPair
+                        (inwFree
+                          (inwFree
+                            inwBound
+                            nat501Neq500)
+                          nat502Neq500)
+                        (inwFree
+                          inwBound
+                          nat502Neq501)))
+                    (inwIfThen
+                      (inwCallExpr
+                        (inwCallExpr
+                          ihCond
+                          (inwFree
+                            (inwFree
+                              inwBound
+                              nat503Neq502)
+                            nat504Neq502))
+                        (inwFree
+                          (inwFree
+                            (inwFree
+                              inwBound
+                              nat501Neq500)
+                            nat502Neq500)
+                          nat503Neq500))
+                      (inwCallExpr
+                        (inwCallExpr
+                          ihBody
+                          (inwFree
+                            (inwFree
+                              inwBound
+                              nat503Neq502)
+                            nat504Neq502))
+                        (inwFree
+                          (inwFree
+                            inwBound
+                            nat502Neq501)
+                          nat503Neq501)))))))))
+    
+    
     mutual
     def inInterpOfIns.exprPair
       (ins:
@@ -3547,7 +3751,18 @@ namespace Pair
           isExprRite
           (insOfInterpretation inl isExprLeft)
           (insOfInterpretation inr isExprRite)
-      | Is6 eq => sorry
+      | Is6 eq =>
+        let ⟨⟨c, inDefCond⟩, inDefBody⟩ :=
+          insOfInInterp.exprBin.ifThenExpr.interpLR
+            eq inDef isExprLeft isExprRite
+        
+        insOfInInterp.exprBin.ifThenExpr
+          eq
+          inDef
+          isExprLeft
+          isExprRite
+          ⟨c, (insOfInterpretation inDefCond isExprLeft)⟩
+          (insOfInterpretation inDefBody isExprRite)
     termination_by sizeOf left + sizeOf rite
     
     def inwOfInInterp.exprBin
@@ -3604,7 +3819,18 @@ namespace Pair
           isExprRite
           (inwOfInterpretation inl isExprLeft)
           (inwOfInterpretation inr isExprRite)
-      | Is6 eq => sorry
+      | Is6 eq =>
+        let ⟨⟨c, inDefCond⟩, inDefBody⟩ :=
+          inwOfInInterp.exprBin.ifThenExpr.interpLR
+            eq inPos isExprLeft isExprRite
+        
+        inwOfInInterp.exprBin.ifThenExpr
+          eq
+          inPos
+          isExprLeft
+          isExprRite
+          ⟨c, (inwOfInterpretation inDefCond isExprLeft)⟩
+          (inwOfInterpretation inDefBody isExprRite)
     termination_by sizeOf left + sizeOf rite
     
     
