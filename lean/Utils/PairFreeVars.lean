@@ -3,8 +3,8 @@
   of an expression.
 -/
 
-import Main.Interpretation
-import Main.ExampleWFCs
+import WFC.Interpretation
+import WFC.ExampleWFCs
 
 
 namespace Pair

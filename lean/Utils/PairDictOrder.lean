@@ -3,7 +3,7 @@
   being `zero < pair a b`.
 -/
 
-import Main.Pair
+import WFC.Pair
 
 namespace Pair
   namespace dictOrder

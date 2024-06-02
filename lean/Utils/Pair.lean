@@ -2,7 +2,7 @@
   Proofs of properties of definitions in `Pair.lean`.
 -/
 
-import Main.Pair
+import WFC.Pair
 
 
 def decideEq: (a b: Pair) → Decidable (a = b)

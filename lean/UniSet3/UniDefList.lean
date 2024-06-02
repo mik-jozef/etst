@@ -1,8 +1,8 @@
-import Main.ExampleWFCs
+import WFC.ExampleWFCs
 import Utils.PairFreeVars
 import Utils.LeN37
-import Main.Operators
-import Main.Wfm
+import WFC.Operators
+import WFC.Wfm
 
 /-
   In this file, we define the triset of all definable

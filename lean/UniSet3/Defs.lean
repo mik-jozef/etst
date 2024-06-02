@@ -3,7 +3,7 @@
   defined by the definition list in `UniDefList`.
 -/
 
-import Main.Wfm
+import WFC.Wfm
 import Utils.PairDepthDictOrder
 import UniSet3.UniDefList
 

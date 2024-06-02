@@ -10,8 +10,8 @@
   from @file:`Main/Expr.lean`.
 -/
 
-import Main.Operators
-import Main.ExampleWFCs
+import WFC.Operators
+import WFC.ExampleWFCs
 
 
 namespace Expr

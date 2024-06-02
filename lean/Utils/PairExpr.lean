@@ -7,7 +7,7 @@
   also provided.
 -/
 
-import Main.ExprRulesOfInference
+import WFC.ExprRulesOfInference
 import Utils.Pair
 import Utils.Set3
 

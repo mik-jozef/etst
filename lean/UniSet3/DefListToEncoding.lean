@@ -1,4 +1,4 @@
-import Main.Arities
+import WFC.Arities
 import UniSet3.UniDefList
 import UniSet3.Defs
 

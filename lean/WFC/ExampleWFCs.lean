@@ -1,6 +1,6 @@
-import Main.Arities
-import Main.Interpretation
-import Main.Pair
+import WFC.Arities
+import WFC.Interpretation
+import WFC.Pair
 
 
 inductive natSignature.Op

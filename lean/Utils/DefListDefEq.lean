@@ -3,8 +3,8 @@
   (three-valued) sets.
 -/
 
-import Main.Interpretation
-import Main.Operators
+import WFC.Interpretation
+import WFC.Operators
 
 
 /-
