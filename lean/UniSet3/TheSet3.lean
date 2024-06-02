@@ -1184,7 +1184,7 @@ namespace Pair
     -- The mutual block below strains Lean a lot
     -- (performance-wise). I'm putting as much
     -- of the logic outside of it as possible.
-    noncomputable def inInterpOfIns.exprPair
+    def inInterpOfIns.exprPair
       (ihLeft:
         {exprEncA exprEncB pA pB: Pair} →
         p = pair pA pB →
@@ -1266,7 +1266,7 @@ namespace Pair
           rw [eqFn2, eqEnc]
           exact insPair ihl ihr
     
-    noncomputable def inInterpOfInw.exprPair
+    def inInterpOfInw.exprPair
       (ihLeft:
         {exprEncA exprEncB pA pB: Pair} →
         p = pair pA pB →
@@ -1304,7 +1304,7 @@ namespace Pair
       | pair _ zero, _ =>
         inwPairElim.nope (inwPairElim inwEnc).inwR
       | _, zero => inwPairElim.nope inwP
-      | pair _fromNat2 (pair _exprAliasA _exprAliasB),
+      | pair _fromNat2 (pair exprAliasA exprAliasB),
         pair pA pB
       =>
         let ⟨inwFn2, inwExpr⟩ := inwPairElim inwEnc
@@ -1336,11 +1336,11 @@ namespace Pair
             (eqExprB.symm ▸ isExprB)
         
         let ihl := @ihLeft
-          _exprAliasA _exprAliasB _ _
+          exprAliasA exprAliasB _ _
           rfl (eqFn2 ▸ rfl) (eqBv ▸ eqExprA ▸ inwA)
         
         let ihr := @ihRite
-          _exprAliasA _exprAliasB _ _
+          exprAliasA exprAliasB _ _
           rfl (eqFn2 ▸ rfl) (eqBv ▸ eqExprB ▸ inwB)
         
         by
@@ -1349,7 +1349,7 @@ namespace Pair
           exact inwPair ihl ihr
     
     
-    noncomputable def inInterpOfIns.exprUn
+    def inInterpOfIns.exprUn
       (ihLeft:
         {exprEncA exprEncB: Pair} →
         exprEnc = pair (fromNat 3) (pair exprEncA exprEncB) →
@@ -1520,32 +1520,27 @@ namespace Pair
               exact inwUnR _ inr)
     
     
-    structure inInterpOfIns.exprIr.InsOfIns
-      (boundVars exprEnc p: Pair)
-    where
-      exprEncA: Pair
-      exprEncB: Pair
-      eqExprEnc: exprEnc = pair (fromNat 4) (pair exprEncA exprEncB)
-      eqExprEncExpr:
-        exprEnc.encodingToExpr
-          =
-        Expr.ir exprEncA.encodingToExpr exprEncB.encodingToExpr
-      insA:
+    def inInterpOfIns.exprIr
+      (ihLeft:
+        {exprEncA exprEncB: Pair} →
+        exprEnc = pair (fromNat 4) (pair exprEncA exprEncB) →
         Ins
           uniDefList.interpretation
-          (pair boundVars (pair exprEncA p))
-      insB:
+          (pair boundVars (pair exprEncA p)) →
+        (interp boundVars exprEncA).defMem p)
+      (ihRite:
+        {exprEncA exprEncB: Pair} →
+        exprEnc = pair (fromNat 4) (pair exprEncA exprEncB) →
         Ins
           uniDefList.interpretation
-          (pair boundVars (pair exprEncB p))
-    
-    noncomputable def inInterpOfIns.exprIr.insOfIns
+          (pair boundVars (pair exprEncB p)) →
+        (interp boundVars exprEncB).defMem p)
       (ins:
         Ins
           uniDefList.interpretation.exprIntersection
           (pair boundVars (pair exprEnc p)))
     :
-      InsOfIns boundVars exprEnc p
+      (interp boundVars exprEnc).defMem p
     :=
       let ⟨_exprEncA, ⟨insDomainA, ins⟩⟩ := (insUnDomElim ins).unwrap
       let ⟨_exprEncB, ⟨insDomainB, ins⟩⟩ := (insUnDomElim ins).unwrap
@@ -1584,44 +1579,45 @@ namespace Pair
         let eqExprB :=
           insBoundElim (insFreeElim insExprB nat502Neq501)
         
-        eqFn4 ▸ eqBv ▸
-        {
-          exprEncA := exprAliasA,
-          exprEncB := exprAliasB,
-          eqExprEnc := rfl,
-          eqExprEncExpr :=
-            encodingToExpr.irEncEq
-              (eqExprA ▸ isExprA) (eqExprB ▸ isExprB),
-          insA := eqExprA ▸ insA,
-          insB := eqExprB ▸ insB
-        }
+        let eqEnc :=
+          encodingToExpr.irEncEq
+            (eqExprA.symm ▸ isExprA)
+            (eqExprB.symm ▸ isExprB)
+        
+        let ihl := @ihLeft
+          exprAliasA exprAliasB
+          (eqFn4 ▸ rfl) (eqBv ▸ eqExprA ▸ insA)
+        
+        let ihr := @ihRite
+          exprAliasA exprAliasB
+          (eqFn4 ▸ rfl) (eqBv ▸ eqExprB ▸ insB)
+        
+        by
+          unfold interp
+          rw [eqFn4, eqEnc]
+          exact insIr ihl ihr
     
-    structure inInterpOfInw.exprIr.InwOfInw
-      (boundVars exprEnc p: Pair)
-    where
-      exprEncA: Pair
-      exprEncB: Pair
-      eqExprEnc: exprEnc = pair (fromNat 4) (pair exprEncA exprEncB)
-      eqExprEncExpr:
-        exprEnc.encodingToExpr
-          =
-        Expr.ir exprEncA.encodingToExpr exprEncB.encodingToExpr
-      inwA:
+    def inInterpOfInw.exprIr
+      (ihLeft:
+        {exprEncA exprEncB: Pair} →
+        exprEnc = pair (fromNat 4) (pair exprEncA exprEncB) →
         Inw
           uniDefList.interpretation
-          (pair boundVars (pair exprEncA p))
-      inwB:
+          (pair boundVars (pair exprEncA p)) →
+        (interp boundVars exprEncA).posMem p)
+      (ihRite:
+        {exprEncA exprEncB: Pair} →
+        exprEnc = pair (fromNat 4) (pair exprEncA exprEncB) →
         Inw
           uniDefList.interpretation
-          (pair boundVars (pair exprEncB p))
-    
-    noncomputable def inInterpOfInw.exprIr.inwOfInw
+          (pair boundVars (pair exprEncB p)) →
+        (interp boundVars exprEncB).posMem p)
       (inw:
         Inw
           uniDefList.interpretation.exprIntersection
           (pair boundVars (pair exprEnc p)))
     :
-      InwOfInw boundVars exprEnc p
+      (interp boundVars exprEnc).posMem p
     :=
       let ⟨_exprEncA, ⟨inwDomainA, inw⟩⟩ := (inwUnDomElim inw).unwrap
       let ⟨_exprEncB, ⟨inwDomainB, inw⟩⟩ := (inwUnDomElim inw).unwrap
@@ -1660,17 +1656,23 @@ namespace Pair
         let eqExprB :=
           inwBoundElim (inwFreeElim inwExprB nat502Neq501)
         
-        eqFn4 ▸ eqBv ▸
-        {
-          exprEncA := exprAliasA,
-          exprEncB := exprAliasB,
-          eqExprEnc := rfl,
-          eqExprEncExpr :=
-            encodingToExpr.irEncEq
-              (eqExprA ▸ isExprA) (eqExprB ▸ isExprB),
-          inwA := eqExprA ▸ inwA,
-          inwB := eqExprB ▸ inwB
-        }
+        let eqEnc :=
+          encodingToExpr.irEncEq
+            (eqExprA.symm ▸ isExprA)
+            (eqExprB.symm ▸ isExprB)
+        
+        let ihl := @ihLeft
+          exprAliasA exprAliasB
+          (eqFn4 ▸ rfl) (eqBv ▸ eqExprA ▸ inwA)
+        
+        let ihr := @ihRite
+          exprAliasA exprAliasB
+          (eqFn4 ▸ rfl) (eqBv ▸ eqExprB ▸ inwB)
+        
+        by
+          unfold interp
+          rw [eqFn4, eqEnc]
+          exact inwIr ihl ihr
     
     
     structure inInterpOfIns.exprCpl.InsOfIns
@@ -3417,59 +3419,6 @@ namespace Pair
     
     
     mutual
-    def inInterpOfIns.exprIr
-      (ins:
-        Ins
-          uniDefList.interpretation.exprIntersection
-          (pair boundVars (pair exprEnc p)))
-    :
-      (interp boundVars exprEnc).defMem p
-    :=
-      let {
-        exprEncA,
-        exprEncB,
-        eqExprEnc,
-        eqExprEncExpr,
-        insA,
-        insB
-      } :=
-        inInterpOfIns.exprIr.insOfIns ins
-      
-      let inDefA := interpretationOfIns insA
-      let inDefB := interpretationOfIns insB
-      
-      by
-        unfold interp
-        exact eqExprEncExpr ▸ insIr inDefA inDefB
-    termination_by (sizeOf exprEnc, 0)
-    
-    def inInterpOfInw.exprIr
-      (inw:
-        Inw
-          uniDefList.interpretation.exprIntersection
-          (pair boundVars (pair exprEnc p)))
-    :
-      (interp boundVars exprEnc).posMem p
-    :=
-      let {
-        exprEncA,
-        exprEncB,
-        eqExprEnc,
-        eqExprEncExpr,
-        inwA,
-        inwB
-      } :=
-        inInterpOfInw.exprIr.inwOfInw inw
-      
-      let inDefA := interpretationOfInw inwA
-      let inDefB := interpretationOfInw inwB
-      
-      by
-        unfold interp
-        exact eqExprEncExpr ▸ inwIr inDefA inDefB
-    termination_by (sizeOf exprEnc, 0)
-    
-    
     def inInterpOfIns.exprCpl
       (ins:
         Ins
@@ -3855,7 +3804,9 @@ namespace Pair
         (inInterpOfIns.exprUn
           (fun _ => interpretationOfIns)
           (fun _ => interpretationOfIns))
-        inInterpOfIns.exprIr
+        (inInterpOfIns.exprIr
+          (fun _ => interpretationOfIns)
+          (fun _ => interpretationOfIns))
         inInterpOfIns.exprCpl
         inInterpOfIns.exprIfThen
         inInterpOfIns.exprArbUn
@@ -3878,7 +3829,9 @@ namespace Pair
         (inInterpOfInw.exprUn
           (fun _ => interpretationOfInw)
           (fun _ => interpretationOfInw))
-        inInterpOfInw.exprIr
+        (inInterpOfInw.exprIr
+          (fun _ => interpretationOfInw)
+          (fun _ => interpretationOfInw))
         inInterpOfInw.exprCpl
         inInterpOfInw.exprIfThen
         inInterpOfInw.exprArbUn
