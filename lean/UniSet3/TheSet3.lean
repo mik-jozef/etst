@@ -4169,5 +4169,170 @@ namespace Pair
         inwOfInInterp.exprQuant inPos isQuant isNatX isExprBody
     termination_by (sizeOf exprEnc, 0)
     end
+    
+    
+    def freeInterpretationOfIns
+      (ins: Ins uniDefList.freeInterpretation (pair expr p))
+    :
+      (interp zero expr).defMem p
+    :=
+      let ⟨_z, ⟨insFn, insArg⟩⟩ :=
+        insCallExprElim (insWfm.toInsWfmDef ins)
+      
+      let zEq := insZeroElim insArg
+      
+      zEq ▸ interpretationOfIns insFn
+    
+    def freeInterpretationOfInw
+      (ins: Inw uniDefList.freeInterpretation (pair expr p))
+    :
+      (interp zero expr).posMem p
+    :=
+      let ⟨_z, ⟨insFn, insArg⟩⟩ :=
+        inwCallExprElim (inwWfm.toInwWfmDef ins)
+      
+      let zEq := inwZeroElim insArg
+      
+      zEq ▸ interpretationOfInw insFn
+    
+    
+    def insOfFreeInterpretation
+      (inDef: (interp zero exprEnc).defMem p)
+      (isExpr: IsExprEncoding exprEnc)
+    :
+      Ins uniDefList.freeInterpretation (pair exprEnc p)
+    :=
+      insWfmDef.toInsWfm
+        (insCallExpr
+          (insOfInterpretation inDef isExpr)
+          insZero)
+    
+    def inwOfFreeInterpretation
+      (inPos: (interp zero expr).posMem p)
+      (isExpr: IsExprEncoding expr)
+    :
+      Inw uniDefList.freeInterpretation (pair expr p)
+    :=
+      inwWfmDef.toInwWfm
+        (inwCallExpr
+          (inwOfInterpretation inPos isExpr)
+          inwZero)
+    
+    
+    def inDefNthOfInsTheSet
+      (ins: Ins uniDefList.theSet (pair (fromNat x) p))
+    :
+      Set3.defMem
+        (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
+        p
+    :=
+      let ⟨_xEnc, ⟨_insNatXEnc, ins⟩⟩ :=
+        insUnDomElim (insWfm.toInsWfmDef ins)
+      
+      let ⟨insL, insR⟩ := insPairElim ins
+      
+      let xEncEqX := (insBoundElim insL).symm
+      
+      let ⟨_expr, ⟨insFn, insArg⟩⟩ := insCallExprElim insR
+      
+      let isTheDefListExpr :=
+        Inw.toIsTheDefListExpr
+          (insCallElimBound insArg rfl nat502Neq500).toInw
+      
+      let exprEq :=
+        IsTheDefListExprPair.getNthExpr.eq
+          isTheDefListExpr xEncEqX
+      
+      exprEq ▸
+      freeInterpretationOfIns insFn
+    
+    def inPosNthOfInwTheSet
+      (inw: Inw uniDefList.theSet (pair (fromNat x) p))
+    :
+      Set3.posMem
+        (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
+        p
+    :=
+      let ⟨_xEnc, ⟨_inwNatXEnc, inw⟩⟩ :=
+        inwUnDomElim (inwWfm.toInwWfmDef inw)
+      
+      let ⟨inwL, inwR⟩ := inwPairElim inw
+      
+      let xEncEqX := (inwBoundElim inwL).symm
+      
+      let ⟨_expr, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwR
+      
+      let isTheDefListExpr :=
+        Inw.toIsTheDefListExpr
+          (inwCallElimBound inwArg rfl nat502Neq500)
+      
+      let exprEq :=
+        IsTheDefListExprPair.getNthExpr.eq
+          isTheDefListExpr xEncEqX
+      
+      exprEq ▸
+      freeInterpretationOfInw inwFn
+    
+    
+    def insTheSetOfInDefNth
+      (inDef:
+        Set3.defMem
+          (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
+          p)
+    :
+      Ins uniDefList.theSet (pair (fromNat x) p)
+    :=
+      let isExpr :=
+        (IsTheDefListExprPair.getNthExpr x).isNth.isExpr
+      
+      insWfmDef.toInsWfm
+        (insUnDom
+          (insNatEncoding
+            (fromNat.isNatEncoding x))
+          (insPair
+            insBound
+            (insCallExpr
+              (insOfFreeInterpretation inDef isExpr)
+              (insCallExpr
+                (insTheDefListExpr
+                  (IsTheDefListExprPair.getNthExpr x).isNth)
+                (insFree
+                  (insFree
+                    insBound
+                    nat501Neq500)
+                  nat502Neq500)))))
+    
+    def inwTheSetOfInPosNth
+      (inPos:
+        Set3.posMem
+          (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
+          p)
+    :
+      Inw uniDefList.theSet (pair (fromNat x) p)
+    :=
+      let isExpr :=
+        (IsTheDefListExprPair.getNthExpr x).isNth.isExpr
+      
+      inwWfmDef.toInwWfm
+        (inwUnDom
+          (insNatEncoding
+            (fromNat.isNatEncoding x)).toInw
+          (inwPair
+            inwBound
+            (inwCallExpr
+              (inwOfFreeInterpretation inPos isExpr)
+              (inwCallExpr
+                (insTheDefListExpr
+                  (show
+                    -- Why is this necessary?
+                    IsTheDefListExpr (pair _ _)
+                  from
+                    (IsTheDefListExprPair.getNthExpr x).isNth)).toInw
+                (inwFree
+                  (inwFree
+                    inwBound
+                    nat501Neq500)
+                  nat502Neq500)))))
+    
   end uniSet3
 end Pair
