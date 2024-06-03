@@ -67,6 +67,7 @@ namespace Pair
     def nat502NeqInterpretation: 502 ≠ 34 := by decide
     def nat503NeqInterpretation: 503 ≠ 34 := by decide
     def nat504NeqInterpretation: 504 ≠ 34 := by decide
+    def nat505NeqInterpretation: 505 ≠ 34 := by decide
     
     
     structure IsNatPairAAPair (a b: Pair): Prop where
