@@ -3432,6 +3432,200 @@ namespace Pair
                       ih ins))))))
     
     
+    def insOfInInterp.exprQuant.arbUn.inList:
+      uniDefList.interpretation.exprArbUnion
+        ∈
+      uniDefList.interpretation.exprList
+    :=
+      by unfold uniDefList.interpretation.exprList; simp
+    
+    def insOfInInterp.exprQuant.arbUn
+      (eqN: n = fromNat 7)
+      (inDef: (interp boundVars (pair n (pair varEnc bodyEnc))).defMem p)
+      (isNatVar: IsNatEncoding varEnc)
+      (isExprBody: IsExprEncoding bodyEnc)
+      (ih:
+        {boundVal: Pair} →
+        (interp (pair (pair varEnc boundVal) boundVars) bodyEnc).defMem p →
+        Ins
+          (var uniDefList.interpretation)
+          (pair (pair (pair varEnc boundVal) boundVars) (pair bodyEnc p)))
+    :
+      Ins
+        (var uniDefList.interpretation)
+        (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
+    :=
+      let eqEnc :=
+        encodingToExpr.arbUnEncEq isNatVar isExprBody
+      
+      let ⟨boundVal, inDefBodyUpdated⟩ :=
+        insArbUnElim (eqEnc ▸ interp.eqDef _ _ ▸ eqN ▸ inDef)
+      
+      let addBoundsEq :=
+        addBoundVars.updateEq theSetAsValuation
+          isNatVar boundVal boundVars
+      
+      let inDefBody := by
+        unfold interp
+        exact addBoundsEq.symm ▸ inDefBodyUpdated
+      
+      let insBody := ih inDefBody
+      
+      insWfmDef.toInsWfm
+        (insFinUn
+          arbUn.inList
+          (insUnDom
+            (insNatEncoding isNatVar)
+            (insUnDom
+              (insExprEncoding isExprBody)
+              (insArbUn
+                boundVars
+                (insPair
+                  insBound
+                  (insPair
+                    (insPair
+                      (eqN ▸ insNatExpr _ _)
+                      (insPair
+                        (insFree
+                          (insFree
+                            insBound
+                            nat501Neq500)
+                          nat502Neq500)
+                        (insFree
+                          insBound
+                          nat502Neq501)))
+                    (insArbUn
+                      boundVal
+                      (insCallExpr
+                        (insCallExpr
+                          insBody
+                          (insPair
+                            (insPair
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    (insFree
+                                      (insFree
+                                        insBound
+                                        nat501Neq500)
+                                      nat502Neq500)
+                                    nat503Neq500)
+                                  nat504Neq500)
+                                nat505Neq500)
+                              (insFree
+                                (insFree
+                                  insBound
+                                  nat504Neq503)
+                                nat505Neq503))
+                            (insFree
+                              (insFree
+                                (insFree
+                                  insBound
+                                  nat503Neq502)
+                                nat504Neq502)
+                              nat505Neq502)))
+                        (insFree
+                          (insFree
+                            (insFree
+                              insBound
+                              nat502Neq501)
+                            nat503Neq501)
+                          nat504Neq501)))))))))
+    
+    def inwOfInInterp.exprQuant.arbUn
+      (eqN: n = fromNat 7)
+      (inDef: (interp boundVars (pair n (pair varEnc bodyEnc))).posMem p)
+      (isNatVar: IsNatEncoding varEnc)
+      (isExprBody: IsExprEncoding bodyEnc)
+      (ih:
+        {boundVal: Pair} →
+        (interp (pair (pair varEnc boundVal) boundVars) bodyEnc).posMem p →
+        Inw
+          (var uniDefList.interpretation)
+          (pair (pair (pair varEnc boundVal) boundVars) (pair bodyEnc p)))
+    :
+      Inw
+        (var uniDefList.interpretation)
+        (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
+    :=
+      let eqEnc :=
+        encodingToExpr.arbUnEncEq isNatVar isExprBody
+      
+      let ⟨boundVal, inDefBodyUpdated⟩ :=
+        inwArbUnElim (eqEnc ▸ interp.eqDef _ _ ▸ eqN ▸ inDef)
+      
+      let addBoundsEq :=
+        addBoundVars.updateEq theSetAsValuation
+          isNatVar boundVal boundVars
+      
+      let inDefBody := by
+        unfold interp
+        exact addBoundsEq.symm ▸ inDefBodyUpdated
+      
+      let inwBody := ih inDefBody
+      
+      inwWfmDef.toInwWfm
+        (inwFinUn
+          insOfInInterp.exprQuant.arbUn.inList
+          (inwUnDom
+            (insNatEncoding isNatVar).toInw
+            (inwUnDom
+              (insExprEncoding isExprBody).toInw
+              (inwArbUn
+                boundVars
+                (inwPair
+                  inwBound
+                  (inwPair
+                    (inwPair
+                      (eqN ▸ inwNatExpr _ _)
+                      (inwPair
+                        (inwFree
+                          (inwFree
+                            inwBound
+                            nat501Neq500)
+                          nat502Neq500)
+                        (inwFree
+                          inwBound
+                          nat502Neq501)))
+                    (inwArbUn
+                      boundVal
+                      (inwCallExpr
+                        (inwCallExpr
+                          inwBody
+                          (inwPair
+                            (inwPair
+                              (inwFree
+                                (inwFree
+                                  (inwFree
+                                    (inwFree
+                                      (inwFree
+                                        inwBound
+                                        nat501Neq500)
+                                      nat502Neq500)
+                                    nat503Neq500)
+                                  nat504Neq500)
+                                nat505Neq500)
+                              (inwFree
+                                (inwFree
+                                  inwBound
+                                  nat504Neq503)
+                                nat505Neq503))
+                            (inwFree
+                              (inwFree
+                                (inwFree
+                                  inwBound
+                                  nat503Neq502)
+                                nat504Neq502)
+                              nat505Neq502)))
+                        (inwFree
+                          (inwFree
+                            (inwFree
+                              inwBound
+                              nat502Neq501)
+                            nat503Neq501)
+                          nat504Neq501)))))))))
+    
+    
     mutual
     def insOfInInterp.exprBin
       (inDef: (interp boundVars (pair n (pair left rite))).defMem p)
@@ -3570,6 +3764,56 @@ namespace Pair
     termination_by (sizeOf left + sizeOf rite, 0)
     
     
+    def insOfInInterp.exprQuant
+      (inDef: (interp boundVars (pair n (pair varEnc bodyEnc))).defMem p)
+      (isQuant: IsExprEncoding.Quantifier n)
+      (isNatVar: IsNatEncoding varEnc)
+      (isExprBody: IsExprEncoding bodyEnc)
+    :
+      Ins
+        uniDefList.interpretation
+        (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
+    :=
+      open IsExprEncoding.Quantifier in
+      match isQuant with
+      | Is7 eq =>
+        let asdf := inDef
+        insOfInInterp.exprQuant.arbUn
+          eq
+          inDef
+          isNatVar
+          isExprBody
+          (fun inDefBody =>
+            insOfInterpretation inDefBody isExprBody)
+      | Is8 eq =>
+        sorry
+    termination_by (sizeOf bodyEnc, 1)
+    
+    def inwOfInInterp.exprQuant
+      (inPos: (interp boundVars (pair n (pair varEnc bodyEnc))).posMem p)
+      (isQuant: IsExprEncoding.Quantifier n)
+      (isNatVar: IsNatEncoding varEnc)
+      (isExprBody: IsExprEncoding bodyEnc)
+    :
+      Inw
+        uniDefList.interpretation
+        (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
+    :=
+      open IsExprEncoding.Quantifier in
+      match isQuant with
+      | Is7 eq =>
+        inwOfInInterp.exprQuant.arbUn
+          eq
+          inPos
+          isNatVar
+          isExprBody
+          (fun inDefBody =>
+            inwOfInterpretation inDefBody isExprBody)
+      | Is8 eq =>
+        sorry
+    termination_by (sizeOf bodyEnc, 1)
+    
+    
     def interpretationOfIns
       (ins:
         Ins uniDefList.interpretation
@@ -3653,7 +3897,7 @@ namespace Pair
         
         insOfInInterp.exprCpl rfl inDef isExprInner ih
       | IsExprEncoding.IsQuantifier isQuant isNatX isExprBody =>
-        sorry
+        insOfInInterp.exprQuant inDef isQuant isNatX isExprBody
     termination_by (sizeOf exprEnc, 0)
     
     def inwOfInterpretation
@@ -3679,7 +3923,7 @@ namespace Pair
         
         inwOfInInterp.exprCpl rfl inPos isExprInner ih
       | IsExprEncoding.IsQuantifier isQuant isNatX isExprBody =>
-        sorry
+        inwOfInInterp.exprQuant inPos isQuant isNatX isExprBody
     termination_by (sizeOf exprEnc, 0)
     end
   end uniSet3
