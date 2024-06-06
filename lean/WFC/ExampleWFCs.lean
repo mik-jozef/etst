@@ -1,4 +1,3 @@
-import Utils.Arities
 import WFC.Interpretation
 import WFC.Pair
 

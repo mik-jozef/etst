@@ -27,7 +27,6 @@ lean_lib UniSet3.TheSet3 {}
 lean_lib UniSet3.UniDefList {}
 lean_lib UniSet3.UniSet3 {}
 
-lean_lib Utils.Arities {}
 lean_lib Utils.BasicUtils {}
 lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
@@ -47,8 +46,8 @@ lean_lib Utils.Tuple {}
 lean_lib Utils.WellFoundedOfLeast {}
 
 lean_lib WFC.Ch0_Set3 {}
+lean_lib WFC.Ch1_Expr {}
 lean_lib WFC.ExampleWFCs {}
-lean_lib WFC.Expr {}
 lean_lib WFC.ExprRulesOfInference {}
 lean_lib WFC.Interpretation {}
 lean_lib WFC.Operators {}

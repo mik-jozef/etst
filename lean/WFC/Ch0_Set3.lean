@@ -12,6 +12,8 @@
   such that `defMem ⊆ posMem` (`defMem` and `posMem` contain
   the definitive and possible members, respectively).
   
+  Elements of `Set3 D` are called trisets of `D`.
+  
   Two orders are defined on `Set3 D`, the standard order
   and the approximation order.
   

@@ -2,7 +2,7 @@
   Helpers for working with free variables in expressions.
 -/
 
-import WFC.Expr
+import WFC.Ch1_Expr
 
 
 def Expr.IsFreeVar.boundNotFree
