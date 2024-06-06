@@ -1,6 +1,7 @@
 /-
-  The dictionary order on pairs, the base case
-  being `zero < pair a b`.
+  The dictionary order on pairs, the base case being
+  
+      zero < pair a b \,.
 -/
 
 import WFC.Pair

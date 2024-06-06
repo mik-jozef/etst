@@ -1,6 +1,6 @@
 /-
   Defines "macro" expressions for the pair signature.
-  See `Expr.lean` for the definition of expressions.
+  See @file:WFC/Expr.lean for the definition of expressions.
   
   Inference rules in the style of those from
   `ExprRulesOfInference.lean` for these macros are

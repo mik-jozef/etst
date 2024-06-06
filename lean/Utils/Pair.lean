@@ -1,10 +1,12 @@
 /-
-  Proofs of properties of definitions in `Pair.lean`.
+  Proofs of properties of definitions in @file:/WFC/Pair.lean.
+  See that file for the definitions themselves.
 -/
 
 import WFC.Pair
 
 
+-- Equality of pairs is decidable.
 def decideEq: (a b: Pair) → Decidable (a = b)
 | Pair.zero, Pair.zero => isTrue rfl
 | Pair.zero, Pair.pair _ _ => isFalse (fun nope => Pair.noConfusion nope)

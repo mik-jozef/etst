@@ -4,9 +4,9 @@
   - If the depths of two pairs are different, the one with
     the smaller depth is considered smaller.
   - Otherwise, the dictionary order (defined in
-    @file:/PairDictOrder.lean) is used.
+    @file:/Utils/PairDictOrder.lean) is used.
   
-  This files also proves some basic properties of the order.
+  This file also proves some basic properties of the order.
 -/
 
 import Utils.Chain
@@ -233,6 +233,10 @@ namespace Pair
         (fun eq => (eq.symm ▸ ab).irefl)
     
     
+    /-
+      Every nonempty set of pairs has a least element in the
+      depth dictionary order.
+    -/
     def nonemptyHasLeast
       (s: Set Pair)
       {t: Pair}
@@ -302,6 +306,7 @@ namespace Pair
         sNonempty
         depthDictOrder.ltTotal
     
+    -- Returns the nth least pair in the depth dictionary order.
     noncomputable def nthPair: Nat → Pair
     | Nat.zero => zero
     | Nat.succ nPred =>
@@ -309,6 +314,7 @@ namespace Pair
         (fun p => nthPair nPred < p)
         (NeqDepth (depthLtL (nthPair nPred) zero))).val
     
+    -- Proves that `nthPair n` is the nth least pair.
     def nthPairIsLeast
       (n: Nat)
     :
@@ -362,6 +368,10 @@ namespace Pair
       | IsGt ba => False.elim ((nthPair.isMono ba).ne eq.symm)
       | IsEq eq => eq
     
+    /-
+      Shows that any pair `p` that is not `nthPair n` for any `n`
+      is greater than any `nthPair n`.
+    -/
     def notNthIsGt
       (p: Pair)
       (notNth: ∀ n, nthPair n ≠ p)
@@ -380,6 +390,13 @@ namespace Pair
         
         le.elim id (fun eq => False.elim (notNth nPred.succ eq))
     
+    /-
+      Shows that any pair `p` that is not `nthPair n` for any `n`
+      has depth greater than or equal to the depth of `nthPair n`.
+      
+      (Since `nthPair` is injective, it follows `p` has greater
+      depth than infinitely many pairs.)
+    -/
     def isBoundedByNotNth
       (p: Pair)
       (notNth: ∀ n, nthPair n ≠ p)
@@ -391,6 +408,13 @@ namespace Pair
       | Lt.EqDepth eq _ => Nat.le_of_eq eq
       | Lt.NeqDepth lt => lt.le
     
+    /-
+      Shows that every pair `p` is `nthPair n` for some `n`.
+      
+      The proof combines `isBoundedByNotNth` with the fact that
+      for any pair `p`, there are only finitely many pairs with
+      a smaller depth.
+    -/
     def nthPairSurjective
       (p: Pair)
     :
@@ -415,6 +439,10 @@ namespace Pair
         
         notFinite isFinite)
     
+    /-
+      Given a pair `p`, `indexOf p` is a number `n` such that
+      `p` is the `n`th least pair in the depth dictionary order.
+    -/
     noncomputable def indexOf
       (p: Pair)
     :
