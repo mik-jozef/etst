@@ -1,125 +1,10 @@
-import Utils.Set3
-import Utils.Pointwise
+/-
+  Contains utility definitions related to valuatinos.
+-/
 
-
-def Valuation D := Nat → Set3 D
+import WFC.Ch2_Valuation
 
 namespace Valuation
-  def empty: Valuation D := fun _ => Set3.empty
-  
-  def undetermined: Valuation D := fun _ => Set3.undetermined
-  
-  
-  def ord.approximation (D: Type u):
-    PartialOrder (Valuation D)
-  :=
-    PartialOrder.pointwise Nat (Set3.ord.approximation D)
-  
-  def ord.standard (D: Type u)
-  :
-    PartialOrder (Valuation D)
-  :=
-    PartialOrder.pointwise Nat (Set3.ord.standard D)
-  
-  instance instSqle (D: Type u): SqLE (Valuation D) where
-    le := (ord.approximation D).le
-  
-  instance instSqlt (D: Type u): SqLT (Valuation D) where
-    lt := (ord.approximation D).lt
-  
-  instance instLe (D: Type u): LE (Valuation D) where
-    le := (ord.standard D).le
-  
-  instance instLt (D: Type u): LT (Valuation D) where
-    lt := (ord.standard D).lt
-  
-  
-  def empty.isLeast: iIsLeast (ord.standard D).le Set.full empty := {
-    isMember := trivial
-    isLeMember :=
-      (fun _val _valInFull _x => Set3.LeStd.intro
-        (fun _t tInEmpty => False.elim tInEmpty)
-        (fun _t tInEmpty => False.elim tInEmpty))
-  }
-  
-  def undetermined.isLeast:
-    iIsLeast (ord.approximation D).le Set.full undetermined
-  := {
-    isMember := trivial
-    isLeMember :=
-      (fun _val _valInFull _x => Set3.LeApx.intro
-        (fun _t tInUndet => False.elim tInUndet)
-        (fun _t _tInUndet => trivial))
-  }
-  
-  noncomputable def ord.standard.sup
-    {D: Type u}
-    (ch: Chain (standard D))
-  :
-    Supremum (standard D) ch
-  :=
-    ch.pointwiseSup (Set3.ord.standard.isChainComplete D)
-  
-  noncomputable def ord.approximation.sup
-    (ch: Chain (approximation D))
-  :
-    Supremum (approximation D) ch
-  :=
-    ch.pointwiseSup (Set3.ord.approximation.isChainComplete D)
-  
-  
-  def ord.standard.isChainComplete (D: Type u)
-  :
-    IsChainComplete (Valuation.ord.standard D)
-  := {
-    supExists := fun ch => ⟨(sup ch).val, (sup ch).property⟩
-  }
-  
-  def ord.approximation.isChainComplete (D: Type u)
-  :
-    IsChainComplete (Valuation.ord.approximation D)
-  := {
-    supExists := fun ch => ⟨(sup ch).val, (sup ch).property⟩
-  }
-  
-  
-  def ord.standard.sup.emptyChain
-    (ch: Chain (standard D))
-    (chEmpty: ch.IsEmpty)
-    (chSup: Supremum (standard D) ch)
-  :
-    chSup.val = Valuation.empty
-  :=
-    iIsLeast.isUnique
-      (standard D)
-      (Chain.sup.empty.isLeast ch chEmpty chSup)
-      empty.isLeast
-  
-  def ord.approximation.sup.emptyChain
-    (ch: Chain (approximation D))
-    (chEmpty: ch.IsEmpty)
-    (chSup: Supremum (approximation D) ch)
-  :
-    chSup.val = Valuation.undetermined
-  :=
-    iIsLeast.isUnique
-      (approximation D)
-      (Chain.sup.empty.isLeast ch chEmpty chSup)
-      undetermined.isLeast
-  
-  
-  def update
-    (val: Valuation D)
-    (x: Nat)
-    (d: D)
-  :
-    Valuation D
-  :=
-    fun v =>
-      if v = x then
-        Set3.just d
-      else
-        val v
   
   def update.eqBound
     (val: Valuation D)
@@ -324,6 +209,7 @@ namespace Valuation
         Set3.LeApx.intro
           (fun _dd ddIn => val1Eq ▸ (le xx).defLe (val0Eq ▸ ddIn))
           (fun _dd ddIn => val0Eq ▸ (le xx).posLe (val1Eq ▸ ddIn))
+  
   
   def ord.standard.inSet.inSup.defMem
     {set: Set (Valuation D)}

@@ -64,15 +64,22 @@ namespace Set3
     allNinNpos: ∀ d: ↑s2ᶜ, d.val ∉ s3.posMem
   
   
+  -- The empty triset contains no elements.
   def empty {D: Type}: Set3 D :=
     ⟨Set.empty, Set.empty, Preorder.le_refl _⟩
   
+  /-
+    The wholly undetermined triset possibly contains all
+    elements of `D`, but has no definitive members.
+  -/
   def undetermined {D: Type}: Set3 D :=
     ⟨Set.empty, Set.full, fun _ => False.elim⟩
   
+  -- The full triset contains all elements of `D`.
   def full {D: Type}: Set3 D :=
     ⟨Set.full, Set.full, Preorder.le_refl _⟩
   
+  -- A triset containing a single element.
   def just {D: Type} (d: D): Set3 D :=
     ⟨Set.just d, Set.just d, Preorder.le_refl _⟩
   

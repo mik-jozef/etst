@@ -43,16 +43,17 @@ lean_lib Utils.PartialOrder {}
 lean_lib Utils.Pointwise {}
 lean_lib Utils.Set3 {}
 lean_lib Utils.Tuple {}
+lean_lib Utils.Valuation {}
 lean_lib Utils.WellFoundedOfLeast {}
 
 lean_lib WFC.Ch0_Set3 {}
 lean_lib WFC.Ch1_Expr {}
+lean_lib WFC.Ch2_Valuation {}
 lean_lib WFC.ExampleWFCs {}
 lean_lib WFC.ExprRulesOfInference {}
 lean_lib WFC.Interpretation {}
 lean_lib WFC.Operators {}
 lean_lib WFC.Pair {}
-lean_lib WFC.Valuation {}
 lean_lib WFC.Wfm {}
 
 require mathlib from git
