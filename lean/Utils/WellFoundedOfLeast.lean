@@ -4,8 +4,8 @@
   and least elements of a set, respectively, given
   a well-founded (and total) relation on the type.
   
-  Parts of this file are either adapted
-  from `Mathlib/Order/OrderIsoNat.lean`.
+  Parts of this file are adapted from
+  `Mathlib/Order/OrderIsoNat.lean`.
 -/
 
 import Mathlib.Order.OrderIsoNat
