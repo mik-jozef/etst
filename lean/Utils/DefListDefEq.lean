@@ -3,7 +3,7 @@
   (three-valued) sets.
 -/
 
-import WFC.Interpretation
+import Utils.Interpretation
 import WFC.Operators
 
 

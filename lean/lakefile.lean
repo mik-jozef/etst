@@ -31,6 +31,7 @@ lean_lib Utils.BasicUtils {}
 lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
 lean_lib Utils.ExprIsFreeVar {}
+lean_lib Utils.Interpretation {}
 lean_lib Utils.LeN37 {}
 lean_lib Utils.Lfp {}
 lean_lib Utils.Ordinal {}
@@ -49,9 +50,9 @@ lean_lib Utils.WellFoundedOfLeast {}
 lean_lib WFC.Ch0_Set3 {}
 lean_lib WFC.Ch1_Expr {}
 lean_lib WFC.Ch2_Valuation {}
+lean_lib WFC.Ch3_Interpretation {}
 lean_lib WFC.ExampleWFCs {}
 lean_lib WFC.ExprRulesOfInference {}
-lean_lib WFC.Interpretation {}
 lean_lib WFC.Operators {}
 lean_lib WFC.Pair {}
 lean_lib WFC.Wfm {}

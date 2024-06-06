@@ -1,4 +1,4 @@
-import WFC.Interpretation
+import Utils.Interpretation
 
 
 def operatorC (salg: Salgebra sig) (dl: DefList sig) (b: Valuation salg.D):

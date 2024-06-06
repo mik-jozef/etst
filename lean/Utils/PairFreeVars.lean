@@ -3,7 +3,7 @@
   of an expression.
 -/
 
-import WFC.Interpretation
+import Utils.Interpretation
 import WFC.ExampleWFCs
 
 
