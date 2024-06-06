@@ -30,6 +30,9 @@ def Least.eq
   
   Subtype.eq (ord.le_antisymm _ _ ab ba)
 
+/-
+  Every two least elements of a set are equal.
+-/
 def iIsLeast.isUnique
   (ord: PartialOrder T)
   (t0IsLeast: iIsLeast ord.le s t0)
@@ -42,6 +45,10 @@ def iIsLeast.isUnique
   
   ord.le_antisymm _ _ t0Le t1Le
 
+/-
+  Given a list of elements of `T` linearly ordered by `ord`,
+  returns the least element of the list.
+-/
 noncomputable def List.least
   (ord: LinearOrder T)
   (list: List T)
@@ -113,6 +120,11 @@ noncomputable def List.least
             | IsComparable.IsEq eq => hEq eq)
 
 
+/-
+  Given an linear order `ord`, returns the least element of a set
+  `s` for which there exists a list of all its elements (ie. a set
+  that is finite).
+-/
 noncomputable def Least.ofHasListOfAll
   (ord: LinearOrder T)
   {s: Set T}
@@ -143,9 +155,14 @@ noncomputable def Least.ofHasListOfAll
     }
   ⟩
 
+/-
+  Given a minimal element of a set ordered by a connected
+  (ie. total) order, shows it is the least element.
+-/
 def IsMinimal.leastOfConnected
   (isMinimal: IsMinimal lt s t)
   (isConnected: IsConnected lt)
+  -- `le` is the non-strict version of `lt`.
   (ordersIff: ∀ t0 t1, le t0 t1 ↔ lt t0 t1 ∨ t0 = t1)
 :
   iIsLeast le s t
@@ -312,6 +329,9 @@ def IsChain.toComparable
       (fun ab => Or.inl ab)
       (fun ba => Or.inr (Or.inl ba))
 
+/-
+  An order is chain-complete if every chain has a supremum.
+-/
 structure IsChainComplete (ord: PartialOrder T): Prop where
   supExists: ∀ ch: Chain ord, ∃ t: T, IsSupremum ord ch.set t
 
@@ -323,6 +343,11 @@ noncomputable def Chain.sup
 :=
   (cc.supExists ch).unwrap
 
+/-
+  Given a partial order `ord` and a chain `chainOpt` of `Option T`
+  in the `ord.optionTop` order, returns the chain of `T` that is
+  `chainOpt` without the `none` elements.
+-/
 def Chain.option.some
   (ord: PartialOrder T)
   (chainOpt: Chain (ord.optionTop))
@@ -336,6 +361,9 @@ def Chain.option.some
       (fun lt10 => Or.inr lt10)
 ⟩
 
+/-
+  The supremum of an empty chain is the least element of the order.
+-/
 def Chain.sup.empty.isLeast
   (ch: Chain ord)
   (chEmpty: ch.IsEmpty)
@@ -351,6 +379,10 @@ def Chain.sup.empty.isLeast
       chSup.property.isLeMember tIsUB)
 }
 
+/-
+  Given a chain-complete order `ord` on `T` and a chain `chainOpt`
+  of `Option T` in the `ord.optionTop` order, returns its supremum. 
+-/
 noncomputable def IsChainComplete.optionTop.sup
   (cc: IsChainComplete ord)
   (chainOpt: Chain ord.optionTop)
@@ -393,7 +425,9 @@ noncomputable def IsChainComplete.optionTop.sup
     },
   ⟩
 
-def IsChainComplete.optionTop (cc: IsChainComplete ord):
+def IsChainComplete.optionTop
+  (cc: IsChainComplete ord)
+:
   IsChainComplete ord.optionTop
 := {
   supExists := fun chainOpt => ⟨
@@ -402,6 +436,10 @@ def IsChainComplete.optionTop (cc: IsChainComplete ord):
     ⟩
 }
 
+/-
+  Given an order `ord`, the supremum of a chain wrt. `ord.optionTop`
+  that contains `none` is `none`.
+-/
 def IsChainComplete.supNoneIffNoneIn
   (cc: IsChainComplete ord)
   (chainOpt: Chain ord.optionTop)
@@ -428,6 +466,11 @@ def IsChainComplete.supNoneIffNoneIn
         exact dif_pos noneIn)
 
 
+/-
+  Given two suprema `aSup` and `bSup` of sets `a` and `b`, such that
+  for every element of `a` there is an element of `b` that is greater,
+  shows that `aSup` is less than or equal to `bSup`.
+-/
 def Supremum.leIfSetLeSet
   {ord: PartialOrder T}
   {a b: Set T}

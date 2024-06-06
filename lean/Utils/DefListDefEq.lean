@@ -8,11 +8,12 @@ import WFC.Operators
 
 
 /-
+  In an expression, replaces every
+  - variable `var x` with `var (varMapping x)`, and
+  - quantifier `Un/Ir x ...` with `Un/Ir (varMapping x) ...`.
+  
   Mapping bound variables is intentional -- this way we
   don't need to track whether a variable is bound or free.
-  
-  Doing that would also require tracking them in the deflist
-  and proving it's done properly, so no thank you.
   
   If I ever need to map only the free variables, I can create
   `Expr.mapFreeVars` and use it instead.
@@ -155,6 +156,19 @@ def Expr.mapVars.eqOfIsComposition
         (eqOfIsComposition body varMapping mapping1 mapping0 eqMapping)
       
 
+/-
+  Assuming that we have
+  - an injective mapping `varMapping` of variables,
+  - expressions `exprSrc` and `exprDst` such that
+    `exprDst` is the mapped version of `exprSrc`,
+  - and two pairs of background and context valuations
+    that "respect that mapping" (ie. for every free
+    variable `x` of `exprSrc`,
+    `srcVal x = dstVal (varMapping x)`)
+  
+  we prove that the interpretations of `exprSrc` and
+  `exprDst` under the corresponding valuations are equal.
+-/
 def Expr.mapVars.preservesInterpretation
   (salg: Salgebra sig)
   (exprSrc exprDst: Expr sig)
@@ -736,8 +750,7 @@ def DefList.eqDefsToEqSets.opC
     operatorC.fixedIndex2 salg dlSrc dlDst bSrc bDst
   
   let stagesEqualC :=
-    Ordinal.induction
-      fp
+    fp.induction
       (fun n ih =>
         show
           eqDefsToEqSets.InvariantC
@@ -846,8 +859,7 @@ def DefList.eqDefsToEqSets
   let ⟨fp, ⟨eqSrc, eqDst⟩⟩ := operatorB.fixedIndex2 salg dlSrc dlDst
   
   let stagesEqualB :=
-    Ordinal.induction
-      fp
+    fp.induction
       (fun n ih =>
         show
           eqDefsToEqSets.InvariantB

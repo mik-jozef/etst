@@ -3,8 +3,9 @@
   library, and <del>perhaps</del> most likely even are and
   I just didn't find them.
   
-  Also some things that seemed basic but turned out not to be.
-  And some stuff that just kinda doesn't fit anywhere else.
+  Also some things that seemed basic but turned out to be
+  a bit more complicated. And some stuff that just kinda
+  doesn't fit anywhere else.
 -/
 
 import Mathlib.Init.Set

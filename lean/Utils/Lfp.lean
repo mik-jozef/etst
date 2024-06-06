@@ -6,10 +6,8 @@
   Given a chain-complete partial order `ord` and a function
   `op: T → T`, we define a a function `stage: Ordinal → T` like so:
   
-  ```
-    stage n.succ = op (stage n)
-    stage limit = sup { stage nn | nn < limit }
-  ```
+      stage n.succ = op (stage n)
+      stage limit = sup { stage nn | nn < limit }
   
   Because there are more ordinals than elements of T, there must be
   distinct ordinals `n0` and `n1` such that `stage n0 = stage n1`.
@@ -17,8 +15,9 @@
   
       stage n0 = stage n0.succ = stage n1
   
-  is a fixed point. By induction, for any `n`, `stage n` is less
-  than any fixed point, making `lfp` the least fixed point.
+  is a fixed point. By induction, it is shown that for any `n`,
+  `stage n` is less than any fixed point, making our fixed point
+  the least fixed point.
   
   This is a well-known construction, and a version of the
   Knaster-Tarski theorem. See eg:
@@ -441,6 +440,7 @@ def lfp.stage.isMono
   
   show some stageA.val ≤ some stageB.val from aEq ▸ bEq ▸ opAB
 
+-- The tuple of all previous stages.
 noncomputable def lfp.stage.previous
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
@@ -467,6 +467,7 @@ def lfp.stage.previous.eqOption
 :=
   stage.eqOption cc op opMono nn
 
+-- Proves that a limit stage is the supremum of the previous stages.
 def lfp.stage.limit
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
@@ -513,6 +514,10 @@ def lfp.stage.limit
         stageEq ▸ optNLeT
   }
 
+/-
+  Proves that a successor stage is the operator applied to the current
+  stage.
+-/
 def lfp.stage.succEq
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
@@ -534,6 +539,10 @@ def lfp.stage.succEq
   
   Option.noConfusion someEq id
 
+/-
+  Proves that a non-limit stage is the operator applied to the
+  previous stage.
+-/
 def lfp.stage.pred
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
@@ -550,6 +559,7 @@ def lfp.stage.pred
   eq.symm ▸
   lfp.stage.succEq cc op opMono n.pred
 
+-- Shows that any stage is less than any fixed point.
 def lfp.stage.leFP
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
@@ -589,7 +599,12 @@ def lfp.stage.leFP
     opFpEq ▸ stageNEq ▸ opPredLe
 termination_by n
 
-
+/-
+  Holds two ordinals `n0` and `n1` such that
+  
+      n0 < n1
+      stage n0 = stage n1 \,.
+-/
 structure lfp.OrdPair (stages: Ordinal → T) where
   n0: Ordinal
   n1: Ordinal
@@ -609,6 +624,11 @@ def IsLfp
 :=
   iIsLeast ord.le (IsFixedPoint op) t
 
+
+/-
+  Returns an ordinal `n` such that `stage n` is a the least
+  fixed point of `op`.
+-/
 noncomputable def lfp.fixedStage
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
@@ -649,6 +669,10 @@ noncomputable def lfp.fixedStage
     fun t tFP => lfp.stage.leFP cc op opMono n0 ⟨t, tFP⟩,
   ⟩
 
+/-
+  Given a chain-complete partial order and a monotonic function
+  `op`, returns the least fixed point of `op`.
+-/
 noncomputable def lfp
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
@@ -664,6 +688,10 @@ noncomputable def lfp
     fs.property,
   ⟩
 
+/-
+  Shows that all stages greater than the fixed stage equal the
+  fixed stage.
+-/
 def lfp.stage.gtLfpEqLfp
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
@@ -686,3 +714,37 @@ def lfp.stage.gtLfpEqLfp
     PartialOrder.le_antisymm _ _ leNn geNn
   
   eq ▸ isLfpNn
+
+
+/-
+  Shows that a property that holds for the fixed stage holds
+  for the least fixed point.
+-/
+def lfp.holdsOfHoldsForFixed
+  {P: T → Prop}
+  (holdsForFixed:
+    P (stage cc op opMono (lfp.fixedStage cc op opMono)))
+:
+  P (lfp cc op opMono).val
+:=
+  let eq :=
+    iIsLeast.isUnique _
+      (lfp cc op opMono).property
+      (lfp.fixedStage cc op opMono).property
+  
+  eq ▸ holdsForFixed
+
+/-
+  Shows that a property that holds for all stages holds for the
+  least fixed point.
+-/
+def lfp.holdsOfHoldsForAll
+  {P: T → Prop}
+  (holdsForAll: ∀ n: Ordinal, P (stage cc op opMono n))
+:
+  P (lfp cc op opMono).val
+:=
+  let ⟨n, isLfp⟩ := lfp.fixedStage cc op opMono
+  
+  (lfp cc op opMono).property.isUnique _ isLfp ▸
+  holdsForAll n
