@@ -2,7 +2,7 @@
   Contains stuff related to `Set3`.
 -/
 
-import WFC.Set3
+import WFC.Ch0_Set3
 
 
 namespace Set3

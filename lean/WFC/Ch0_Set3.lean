@@ -22,11 +22,15 @@
       a.defMem ⊆ b.defMem ∧ a.posMem ⊆ b.posMem  \,.
   
   A set `a` is less than or equal to `b` in the approximation
-  order if it has more undetermined members (ie. fewer definitive
-  members, and fewer definitive nonmembers), but agrees with `b`
-  on its determined members. Formally, `a ⊑ b` if
+  order if it has more undetermined members (ie. both fewer
+  definitive members and fewer definitive nonmembers), but agrees
+  with `b` on its determined members. Formally, `a ⊑ b` if
   
       a.defMem ⊆ b.defMem ∧ b.posMem ⊆ a.posMem  \,.
+  
+  The least element of the standard ordering is the empty set,
+  while the least element of the approximation ordering is the
+  wholly undetermined set.
   
   Both orders are proven chain-complete.
 -/
