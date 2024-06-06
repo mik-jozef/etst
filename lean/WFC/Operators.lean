@@ -1,4 +1,3 @@
-import WFC.Arities
 import WFC.Interpretation
 
 
