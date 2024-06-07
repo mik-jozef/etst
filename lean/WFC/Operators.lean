@@ -1,3 +1,111 @@
+/-
+  # Chapter 4: Operators B and C, and the well-founded model
+  
+  A word of warning: this description makes simplifications and
+  is a little inaccurate/incomplete here and there. It is meant
+  to give an intuitive understanding of the formal machinery.
+  
+  Here we define the semantics of definition lists. That is, we
+  will associate every definition list `dl` with a valuation
+  (called the we well-founded model of `dl`) that "agrees" with
+  the definitions in `dl`.
+  
+  Typically, the semantics of recursive definitions is defined
+  as a least fixed point of their interpretation. For example,
+  take `let T = 0 | T + 2` (to borrow syntax from TypeScript).
+  We can imagine the least fixed point as being built in stages,
+  starting with the least element of the standard ordering, the
+  empty set:
+  
+      T₀ = ∅
+      T₁ = {0}
+      T₂ = {0, 2}
+      T₃ = {0, 2, 4}
+      ⋮
+      T  = {0, 2, 4, ...}
+  
+  Formally, we would define an operator P as
+  
+      P(s) = { 0 } ∪ { n + 2 | n ∈ s }
+  
+  and define the semantics of T as the least fixed point of P.
+  
+  > Note: the stages would be
+  >
+  >     T_{n+1}   = P(T_n)
+  >     T_{limit} = sup { T_n | n < limit }
+  >
+  > and would eventually converge to the least fixed point for
+  > well-behaved definitions.
+  
+  Our problem is that least fixed points are not guaranteed to
+  exist non-monotonic operators, such as those involving complements.
+  For example, consider `let Bad = ~Bad`. The stages are:
+  
+      Bad₀ = ∅
+      Bad₁ = ℕ
+      Bad₂ = ∅
+      Bad₃ = ℕ
+      ⋮
+  
+  This sequence does not converge to a fixed point. In fact, no
+  classical (ie. two-valued) fixed point exists.
+  
+  Recall, however, that our interpretation function from Chapter 3
+  takes two valuations (background and context, or `b` and `c`),
+  and background is used to interpret complements. If background
+  is constant, then the interpretation of complements is constant
+  as well.
+  
+  This allows us to define a monotonic family of operators C
+  indexed by the background valuation like this:
+  
+      C_b(c) = interpretation(b, c)
+  
+  Since the interpretation of complements is constant, the
+  interpretation of C is monotonic (with respect to the standard
+  ordering).
+  
+  We also define the operator B as follows:
+  
+      B(b) = lfp(C_b)
+  
+  where `lfp(X)` is the least fixed point of `X`. We can show
+  that B is monotonic with respect to the approximation ordering.
+  
+  > Aside:
+  > If you're willing to entertain the idea of algorithms that
+  > terminate after potentially transfinite number of steps, then
+  > you can can imagine computing the least fixed point of B as
+  > executing the following algorithm:
+  > 
+  > ```
+  >   // Initialize the valuations to the least elements in their
+  >   // respective orderings.
+  >   let b = the undetermined valuation;
+  >   let c = the empty valuation;
+  >   
+  >   while (b has changed) {
+  >     while (c has changed) {
+  >       c = interpretation(b, c);
+  >     }
+  >     
+  >     b = c;
+  >   }
+  > ```
+  > 
+  > The background and context eventually "converge" to the same
+  > valuation, which is the fixed point of the operator B.
+  
+  The fixed point of operator B is called the well-founded model
+  of the definition list.
+  
+  This approach is called the well-founded semantics. More details
+  and references can be found in my [magister thesis][wfs-rec-types].
+  
+  [wfs-rec-types]: https://is.muni.cz/th/xr8vu/Well-founded-type-semantics.pdf
+-/
+
 import Utils.Interpretation
 
 
