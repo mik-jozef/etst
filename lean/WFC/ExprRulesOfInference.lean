@@ -10,7 +10,7 @@
   from @file:`Main/Expr.lean`.
 -/
 
-import WFC.Operators
+import WFC.Ch4_Operators
 import WFC.ExampleWFCs
 
 

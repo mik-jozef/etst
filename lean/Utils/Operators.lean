@@ -2,7 +2,7 @@
   Contains helper defs about operators B and C.
 -/
 
-import WFC.Operators
+import WFC.Ch4_Operators
 
 
 structure operatorC.FixedIndex2

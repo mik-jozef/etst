@@ -1,7 +1,7 @@
 import WFC.ExampleWFCs
 import Utils.PairFreeVars
 import Utils.LeN37
-import WFC.Operators
+import WFC.Ch4_Operators
 import WFC.Wfm
 
 /-
