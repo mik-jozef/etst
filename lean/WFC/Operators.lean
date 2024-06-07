@@ -184,66 +184,6 @@ noncomputable def operatorC.fixedIndex
   rfl,
 ⟩
 
-structure operatorC.FixedIndex2
-  (salg: Salgebra sig)
-  (dlA: DefList sig)
-  (dlB: DefList sig)
-  (bA: Valuation salg.D)
-  (bB: Valuation salg.D)
-  (n: Ordinal): Prop
-where
-  eqLfpA: operatorC.stage salg dlA bA n = (operatorC.lfp salg dlA bA).val
-  eqLfpB: operatorC.stage salg dlB bB n = (operatorC.lfp salg dlB bB).val
-
-noncomputable def operatorC.fixedIndex2
-  (salg: Salgebra sig)
-  (dlA: DefList sig)
-  (dlB: DefList sig)
-  (bA: Valuation salg.D)
-  (bB: Valuation salg.D)
-:
-  { n // operatorC.FixedIndex2 salg dlA dlB bA bB n }
-:=
-  let fixedA := operatorC.fixedIndex salg dlA bA
-  let fixedB := operatorC.fixedIndex salg dlB bB
-  
-  if h: fixedA.val ≤ fixedB.val then
-    ⟨
-      fixedB.val,
-      ⟨
-        let isLfpAtB := lfp.stage.gtLfpEqLfp
-          (Valuation.ord.standard.isChainComplete salg.D)
-          (operatorC salg dlA bA)
-          (operatorC.isMonotonic salg dlA bA)
-          h
-          ((operatorC.lfp salg dlA bA).property)
-        
-        iIsLeast.isUnique
-          (Valuation.ord.standard salg.D)
-          isLfpAtB
-          (lfp salg dlA bA).property,
-        fixedB.property,
-      ⟩
-    ⟩
-  else
-    ⟨
-      fixedA.val,
-      ⟨
-        fixedA.property,
-        let isLfpAtA := lfp.stage.gtLfpEqLfp
-          (Valuation.ord.standard.isChainComplete salg.D)
-          (operatorC salg dlB bB)
-          (operatorC.isMonotonic salg dlB bB)
-          (le_of_not_le h)
-          ((operatorC.lfp salg dlB bB).property)
-        
-        iIsLeast.isUnique
-          (Valuation.ord.standard salg.D)
-          isLfpAtA
-          (lfp salg dlB bB).property,
-      ⟩
-    ⟩
-
 noncomputable def operatorC.stage.previous
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -567,62 +507,6 @@ noncomputable def operatorB.fixedIndex
   rfl
 ⟩
 
-structure operatorB.FixedIndex2
-  (salg: Salgebra sig)
-  (dlA: DefList sig)
-  (dlB: DefList sig)
-  (n: Ordinal): Prop
-where
-  eqLfpA: operatorB.stage salg dlA n = (operatorB.lfp salg dlA).val
-  eqLfpB: operatorB.stage salg dlB n = (operatorB.lfp salg dlB).val
-
-noncomputable def operatorB.fixedIndex2
-  (salg: Salgebra sig)
-  (dlA: DefList sig)
-  (dlB: DefList sig)
-:
-  { n // operatorB.FixedIndex2 salg dlA dlB n }
-:=
-  let fixedA := operatorB.fixedIndex salg dlA
-  let fixedB := operatorB.fixedIndex salg dlB
-  
-  if h: fixedA.val ≤ fixedB.val then
-    ⟨
-      fixedB.val,
-      ⟨
-        let isLfpAtB := lfp.stage.gtLfpEqLfp
-          (Valuation.ord.approximation.isChainComplete salg.D)
-          (operatorB salg dlA)
-          (operatorB.isMonotonic salg dlA)
-          h
-          ((operatorB.lfp salg dlA).property)
-        
-        iIsLeast.isUnique
-          (Valuation.ord.approximation salg.D)
-          isLfpAtB
-          (lfp salg dlA).property,
-        fixedB.property,
-      ⟩
-    ⟩
-  else
-    ⟨
-      fixedA.val,
-      ⟨
-        fixedA.property,
-        let isLfpAtA := lfp.stage.gtLfpEqLfp
-          (Valuation.ord.approximation.isChainComplete salg.D)
-          (operatorB salg dlB)
-          (operatorB.isMonotonic salg dlB)
-          (le_of_not_le h)
-          ((operatorB.lfp salg dlB).property)
-        
-        iIsLeast.isUnique
-          (Valuation.ord.approximation salg.D)
-          isLfpAtA
-          (lfp salg dlB).property,
-      ⟩
-    ⟩
-
 noncomputable def operatorB.stage.previous
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -711,6 +595,10 @@ def operatorB.stage.isMonotonic
     (nnLt)
 
 
+/-
+  A valuation is a model of a definition list `dl` if interpreting
+  `dl` in the valuation gives the same valuation.
+-/
 def Valuation.IsModel
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -719,6 +607,10 @@ def Valuation.IsModel
 :=
   fun v => v = dl.interpretation salg v v
 
+/-
+  The well-founded model of a definition list `dl` defines the
+  semantics of the definition list.
+-/
 noncomputable def DefList.wellFoundedModel
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -727,6 +619,7 @@ noncomputable def DefList.wellFoundedModel
 :=
   (operatorB.lfp salg dl).val
 
+-- The well-founded model is a model of the definition list.
 def DefList.wellFoundedModel.isModel
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -746,6 +639,7 @@ def DefList.wellFoundedModel.isModel
   
   wfmEq.trans clfpEq
 
+-- The well-founded model is the least fixed point of the operator B.
 def DefList.wellFoundedModel.isLfp
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -758,6 +652,13 @@ def DefList.wellFoundedModel.isLfp
   (operatorB.lfp salg dl).property
 
 
+/-
+  A triset is definable in a salgebra if there exists a finitely
+  bounded definition list whose well-founded model contains the
+  triset.
+  
+  See `DefList.IsFinBounded` from Chapter 3.
+-/
 def Salgebra.IsDefinable
   (salg: Salgebra sig)
   (set: Set3 salg.D)
@@ -770,6 +671,7 @@ def Salgebra.IsDefinable
   ,
     set = dl.wellFoundedModel salg x
 
+-- The type of trisets definable in a salgebra.
 def Salgebra.Definable
   (salg: Salgebra sig)
 :

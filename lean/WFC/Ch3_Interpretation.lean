@@ -212,7 +212,7 @@ def DefList.IsFinBounded (getDef: GetDef sig): Prop :=
   ,
     dep < upperBound
 
--- A finitely bounded definition list.
+-- A finitely bounded definition list. See IsFinBounded above.
 structure FinBoundedDL (sig: Signature) extends DefList sig where
   isFinBounded: DefList.IsFinBounded getDef
 
