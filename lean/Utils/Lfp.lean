@@ -543,7 +543,7 @@ def lfp.stage.succEq
   Proves that a non-limit stage is the operator applied to the
   previous stage.
 -/
-def lfp.stage.pred
+def lfp.stage.predEq
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
   (op: T → T)

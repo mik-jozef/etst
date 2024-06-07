@@ -309,7 +309,7 @@ def operatorC.stage.succEq
     (operatorC.isMonotonic salg dl b)
     n
 
-def operatorC.stage.pred
+def operatorC.stage.predEq
   (salg: Salgebra sig)
   (dl: DefList sig)
   (b: Valuation salg.D)
@@ -411,10 +411,10 @@ def operatorC.stage.isMonotonic.approximation
     let s1Pred := operatorC.stage salg dl b1 nPred
     
     let s0Eq: operatorC.stage salg dl b0 n = opC0 s0Pred :=
-      operatorC.stage.pred salg dl b0 h
+      operatorC.stage.predEq salg dl b0 h
     
     let s1Eq: operatorC.stage salg dl b1 n = opC1 s1Pred :=
-      operatorC.stage.pred salg dl b1 h
+      operatorC.stage.predEq salg dl b1 h
     
     let s0PredLeS1Pred: s0Pred ⊑ s1Pred :=
       have: nPred < n := Ordinal.notLimitToPredLt h
