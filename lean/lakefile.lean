@@ -9,6 +9,8 @@ lean_lib HM.Compile {}
 lean_lib HM.Hamkins {}
 lean_lib HM.Uhm {}
 
+lean_lib Trisets.Trisets {}
+
 lean_lib UniSet3.Append {}
 lean_lib UniSet3.DefEncoding {}
 lean_lib UniSet3.DefListToEncoding {}
