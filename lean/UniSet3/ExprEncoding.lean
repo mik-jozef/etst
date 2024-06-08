@@ -35,9 +35,9 @@ namespace Pair
       open IsExprEncoding.Bin in
       insWfmDef.toInsWfm
         (match isEEB with
-        | Is2 eq => eq ▸ insUnL (insNatExpr _ _) _
-        | Is3 eq => eq ▸ insUnR _ (insUnL (insNatExpr _ _) _)
-        | Is4 eq => eq ▸ insUnR _ (insUnR _ (insUnL (insNatExpr _ _) _))
+        | Is2 eq => eq ▸ insUnL _ (insNatExpr _ _)
+        | Is3 eq => eq ▸ insUnR _ (insUnL _ (insNatExpr _ _))
+        | Is4 eq => eq ▸ insUnR _ (insUnR _ (insUnL _ (insNatExpr _ _)))
         | Is6 eq => eq ▸ insUnR _ (insUnR _ (insUnR _ (insNatExpr _ _))))
     
     def Inw.toIsExprEncoding.binary
@@ -61,7 +61,7 @@ namespace Pair
       open IsExprEncoding.Quantifier in
       insWfmDef.toInsWfm
         (match isEEB with
-        | Is7 eq => eq ▸ insUnL (insNatExpr _ _) _
+        | Is7 eq => eq ▸ insUnL _ (insNatExpr _ _)
         | Is8 eq => eq ▸ insUnR _ (insNatExpr _ _))
     
     def Inw.toIsExprEncoding.quantifier

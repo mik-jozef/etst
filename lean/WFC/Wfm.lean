@@ -1,4 +1,4 @@
-import WFC.ExprRulesOfInference
+import WFC.Appx0_ExprRulesOfInference
 import Utils.PairExpr
 
 

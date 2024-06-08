@@ -19,7 +19,7 @@ namespace Pair
           | zero, zero =>
             let nEqZero := depth.eqZeroOfEqZero isPoD.eqDepth
             
-            (insUnL (insPair (nEqZero ▸ insZero) insZero) _)
+            (insUnL _ (insPair (nEqZero ▸ insZero) insZero))
           | zero, pair _ _ => Nat.noConfusion isPoD.eqDepth
           | pair _ _, zero => Nat.noConfusion isPoD.eqDepth
           | pair nA nB, pair pA pB =>
@@ -97,7 +97,7 @@ namespace Pair
                                   nat502Neq500)
                                 nat503Neq500)
                               nat504Neq500)))
-                        (insUnL
+                        (insUnL _
                           (insPair
                             (insPair
                               (insFree
@@ -106,8 +106,7 @@ namespace Pair
                               (isPoD.isNat.right ▸ insZero))
                             (insPair
                               (insFree insBound nat502Neq501)
-                              insBound))
-                          _))))
+                              insBound))))))
                 
                 (fun ⟨depthEq, depthLt⟩ =>
                   let isPoDB: IsPairOfDepth (pair nA pB) := {

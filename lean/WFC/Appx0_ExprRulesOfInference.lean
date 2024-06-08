@@ -1,4 +1,6 @@
 /-
+  Appendix 0: Rules of Inference for Expressions
+  
   Defines basic rules of inference for expressions.
   Since we're working in a three-valued setting, we
   have two kinds of membership relations -- strong
@@ -15,36 +17,51 @@ import WFC.ExampleWFCs
 
 
 namespace Expr
+  -- `anyExpr` contains all elements, under any valuation.
   def anyExpr: Expr sig := Expr.Un 0 0
+  -- `noneExpr` contains no elements, under any valuation.
   def noneExpr: Expr sig := Expr.cpl anyExpr
   
-  -- Make sure n is not a free var in the domain expr.
-  def unionExpr (n: Nat) (domain body: Expr sig): Expr sig :=
-    Expr.Un n (Expr.ifThen (Expr.ir n domain) body)
+  /-
+    `unionExpr x domain body` is "syntactic sugar" that represents
+    an arbitrary union with a domain. The natural number `x`
+    becomes a bound variable in `body`, and takes on the values
+    of elements of `domain`.
+    
+    Due to the implementation of `unionExpr` (and necessarily so),
+    `x` also becomes a bound variable in `domain`. To avoid
+    unintended semantics, make sure `x` is not used (as a free
+    variable) in `domain`.
+  -/
+  def unionExpr (x: Nat) (domain body: Expr sig): Expr sig :=
+    Expr.Un x (Expr.ifThen (Expr.ir x domain) body)
   
-  -- Make sure n is not a free var in the domain expr.
-  -- `All t: T, b` === `All t, b | (!(t & domain) then any)`.
-  def irsecExpr (n: Nat) (domain body: Expr sig): Expr sig :=
+  /-
+    `irsecExpr x domain body` is "syntactic sugar" that represents
+    an arbitrary intersection with a domain. The natural number `x`
+    becomes a bound variable in `body`, and takes on the values
+    of elements of `domain`.
+    
+    Due to the implementation of `irsecExpr` (and necessarily so),
+    `x` also becomes a bound variable in `domain`. To avoid
+    unintended semantics, make sure `x` is not used (as a free
+    variable) in `domain`.
+  -/
+  def irsecExpr (x: Nat) (domain body: Expr sig): Expr sig :=
     Expr.Ir
-      n
+      x
       (Expr.un
         body
-        (Expr.ifThen (Expr.cpl (Expr.ir n domain)) (anyExpr)))
+        -- "if x is outside the domain, then anyExpr"
+        (Expr.ifThen (Expr.cpl (Expr.ir x domain)) (anyExpr)))
   
+  -- A union of finitely many expressions.
   def finUnExpr: List (Expr sig) → (Expr sig)
   | List.nil => noneExpr
   | List.cons expr tail =>
     Expr.un expr (finUnExpr (tail))
   
   
-  instance exprOfNat (n: Nat): OfNat (Expr sig) n where
-    ofNat := Expr.var n
-  
-  instance coe: Coe Nat (Expr sig) where
-    coe := fun n => Expr.var n
-  
-  
-  -- "in strong". `d "∈s" t` iff `d ∈ t.defMem`. See also `Inw`.
   def Ins
     (salg: Salgebra sig)
     (v: Valuation salg.D)
@@ -55,7 +72,6 @@ namespace Expr
   :=
     d ∈ (expr.interpretation salg v v).defMem
   
-  -- "in weak". `d "∈s" t` iff `d ∈ t.posMem`. See also `Ins`.
   def Inw
     (salg: Salgebra sig)
     (v: Valuation salg.D)
@@ -73,18 +89,18 @@ namespace Expr
   
   
   def insUnL
+    (exprR: Expr sig)
     {exprL: Expr sig}
     (s: Ins salg v exprL d)
-    (exprR: Expr sig)
   :
     Ins salg v (Expr.un exprL exprR) d
   :=
     Or.inl s
   
   def inwUnL
+    (exprR: Expr sig)
     {exprL: Expr sig}
     (w: Inw salg v exprL d)
-    (exprR: Expr sig)
   :
     Inw salg v (Expr.un exprL exprR) d
   :=
@@ -423,9 +439,9 @@ namespace Expr
   
   -- I wish Lean supported anonymous structures.
   -- And also non-Prop-typed members of prop structures
-  -- (under the condition that any two instances are only
-  -- allowed to contain the same instance). We have global
-  -- choice anyway!
+  -- (Under the condition that any two instances are only
+  -- allowed to contain the same instance, if need be).
+  -- We have global choice anyway!
   structure InsUnDomElim
     (salg: Salgebra sig)
     (v: Valuation salg.D)
@@ -511,7 +527,7 @@ namespace Expr
     match list with
     | List.cons _e0 _rest =>
       exprIn.elim
-        (fun eq => eq ▸ insUnL s _)
+        (fun eq => eq ▸ insUnL _ s)
         (fun inRest => insUnR _ (insFinUn inRest s))
   
   def inwFinUn
@@ -524,7 +540,7 @@ namespace Expr
     match list with
     | List.cons _e0 _rest =>
       exprIn.elim
-        (fun eq => eq ▸ inwUnL w _)
+        (fun eq => eq ▸ inwUnL _ w)
         (fun inRest => inwUnR _ (inwFinUn inRest w))
   
   

@@ -22,7 +22,7 @@ namespace Pair
         | zero => isShiftEnc.elim
         | pair _ _ =>
           isShiftEnc.rec
-            (insUnL (insPair insZero insZero) _)
+            (insUnL _ (insPair insZero insZero))
             (fun isShiftExpr isIncRest insIncRest =>
               insUnR _
                 (insUnDom
@@ -109,7 +109,7 @@ namespace Pair
         insWfmDef.toInsWfm
           (match isShiftDef with
           | IsShiftDefEncodingABC.ZeroShift isDefB =>
-            insUnL
+            insUnL _
               (insUnDom
                 (insFree
                   (insDefEncoding isDefB)
@@ -119,7 +119,6 @@ namespace Pair
                   (insPair
                     insBound
                     insBound)))
-              _
           | IsShiftDefEncodingABC.SuccShift isShiftPrev isInc =>
             insUnR _
               (insUnDom

@@ -13,7 +13,7 @@ namespace Pair
     :=
       insWfmDef.toInsWfm
         (match p with
-        | Pair.zero => insUnL insZero _
+        | Pair.zero => insUnL _ insZero
         | Pair.pair _ _ =>
           insUnR
             _

@@ -18,7 +18,7 @@ namespace Pair
           -- Using a match expression would require manually proving
           -- termination. Curious that using `rec` is easier :D
           (isNthDef.rec
-            (insUnL (insPair insZero insZero) _)
+            (insUnL _ (insPair insZero insZero))
             (fun _isNthPredPair isNextPair insNthPredPair =>
               insUnR _
                 (insUnDom

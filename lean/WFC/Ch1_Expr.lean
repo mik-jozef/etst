@@ -54,10 +54,10 @@ inductive Expr (sig: Signature) where
 | Ir (x: Nat) (body: Expr sig)
 
 namespace Expr
-  instance: Coe Nat (Expr s) where
+  instance coeNat: Coe Nat (Expr s) where
     coe := fun n => Expr.var n
   
-  instance (n: Nat): OfNat (Expr s) n where
+  instance exprOfNat (n: Nat): OfNat (Expr s) n where
     ofNat := Expr.var n
   
   def any: Expr s := Expr.un 0 (Expr.cpl 0)

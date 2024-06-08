@@ -23,7 +23,7 @@ namespace Pair
       | pair _ _ =>
         insWfmDef.toInsWfm
           (isEnumUpTo.rec
-            (insUnL (insPair insZero insZero) _)
+            (insUnL _ (insPair insZero insZero))
             (fun isEnumUpToSoFar isNthDl isAppend insSoFar =>
               (insUnR _
                 (insUnDom
@@ -120,7 +120,7 @@ namespace Pair
             (insUnDom
               (insDefEncoding
                 isDefToSet.isDef.right)
-              (insUnL
+              (insUnL _
                 (insPair
                   (insPair
                     (insFree
@@ -131,8 +131,7 @@ namespace Pair
                     insZero
                     (insFree
                       insBound
-                      nat501Neq500)))
-                _))
+                      nat501Neq500)))))
         
         | pair (pair dlHead dlTail) (pair (pair iPred z) expr) =>
           let atTailEq:

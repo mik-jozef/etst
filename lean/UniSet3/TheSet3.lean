@@ -82,27 +82,24 @@ namespace Pair
       InsGetBound (pair (pair hA hB) tail) hA hB
     :=
       insWfmDef.toInsWfm
-        (insUnL
-          (by -- Wtf why is this necessary?
-            exact
-              insUnDom
-                (insNatEncoding isNat)
-                (insArbUn
-                  hB
-                  (insPair
-                    (insPair
-                      (insPair
-                        (insFree
-                          insBound
-                          nat501Neq500)
-                      insBound)
-                    insAny)
+        (insUnL _
+          (insUnDom
+            (insNatEncoding isNat)
+            (insArbUn
+              hB
+              (insPair
+                (insPair
                   (insPair
                     (insFree
                       insBound
                       nat501Neq500)
-                    insBound))))
-          _)
+                  insBound)
+                insAny)
+              (insPair
+                (insFree
+                  insBound
+                  nat501Neq500)
+                insBound)))))
     
     def insGetBound.ofInsTail.neq
       (ins: InsGetBound tail xEnc p)
@@ -898,7 +895,7 @@ namespace Pair
       let insUn :=
         (insBoundVarsOrFree.ofInInterp isNat inDef).elim
           (fun insGb =>
-            insUnL
+            insUnL _
               (insCallExpr
                 (insCallExpr
                   (insFree
@@ -919,8 +916,7 @@ namespace Pair
                   (insFree
                     insBound
                     nat501Neq500)
-                  nat502Neq500))
-              _)
+                  nat502Neq500)))
           (fun ⟨inDef, ninw⟩ =>
             let inDefVar:
               Set3.defMem
@@ -986,7 +982,7 @@ namespace Pair
       let inwUn :=
         (inwBoundVarsOrFree.ofInInterp isNat inPos).elim
           (fun insGb =>
-            inwUnL
+            inwUnL _
               (inwCallExpr
                 (inwCallExpr
                   (inwFree
@@ -1007,8 +1003,7 @@ namespace Pair
                   (inwFree
                     inwBound
                     nat501Neq500)
-                  nat502Neq500))
-              _)
+                  nat502Neq500)))
           (fun ⟨inDef, nins⟩ =>
             let inDefVar:
               Set3.posMem
@@ -1416,7 +1411,7 @@ namespace Pair
             by
               unfold interp
               rw [eqFn3, eqEnc]
-              exact insUnL inl _)
+              exact insUnL _ inl)
           (fun ins =>
             let ins := insCallElimBound ins rfl nat503Neq501
             let ins := insCallElimBound ins rfl nat504Neq502
@@ -1501,7 +1496,7 @@ namespace Pair
             by
               unfold interp
               rw [eqFn3, eqEnc]
-              exact inwUnL inl _)
+              exact inwUnL _ inl)
           (fun inw =>
             let inw := inwCallElimBound inw rfl nat503Neq501
             let inw := inwCallElimBound inw rfl nat504Neq502
@@ -2760,7 +2755,7 @@ namespace Pair
                           nat502Neq501)))
                     (ih.elim
                       (fun insL =>
-                        insUnL 
+                        insUnL _
                           (insCallExpr
                             (insCallExpr
                               (insFree
@@ -2785,11 +2780,9 @@ namespace Pair
                                   insBound
                                   nat501Neq500)
                                 nat502Neq500)
-                              nat503Neq500))
-                          _)
+                              nat503Neq500)))
                       (fun insR =>
-                        insUnR
-                          _
+                        insUnR _
                           (insCallExpr
                             (insCallExpr
                               (insFree
@@ -2879,7 +2872,7 @@ namespace Pair
                           nat502Neq501)))
                     (ih.elim
                       (fun inwL =>
-                        inwUnL 
+                        inwUnL _
                           (inwCallExpr
                             (inwCallExpr
                               (inwFree
@@ -2904,11 +2897,9 @@ namespace Pair
                                   inwBound
                                   nat501Neq500)
                                 nat502Neq500)
-                              nat503Neq500))
-                          _)
+                              nat503Neq500)))
                       (fun inwR =>
-                        inwUnR
-                          _
+                        inwUnR _
                           (inwCallExpr
                             (inwCallExpr
                               (inwFree

@@ -53,8 +53,8 @@ lean_lib WFC.Ch1_Expr {}
 lean_lib WFC.Ch2_Valuation {}
 lean_lib WFC.Ch3_Interpretation {}
 lean_lib WFC.Ch4_Operators {}
+lean_lib WFC.Appx0_ExprRulesOfInference {}
 lean_lib WFC.ExampleWFCs {}
-lean_lib WFC.ExprRulesOfInference {}
 lean_lib WFC.Pair {}
 lean_lib WFC.Wfm {}
 

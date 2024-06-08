@@ -66,9 +66,8 @@ namespace Pair
               isExprA := isExprAA
             }
             
-            (insUnL
-              (insLastExprBase isLastBase)
-              _)
+            (insUnL _
+              (insLastExprBase isLastBase))
           | IsLastExprPair.LengthMore
             isExprAA
             isDefAB
@@ -126,11 +125,10 @@ namespace Pair
         insWfmDef.toInsWfm
           (isUpToLast.rec
             (fun isExpr =>
-              insUnL
+              insUnL _
                 (insPair
                   (insPair (insExprEncoding isExpr) insZero)
-                  insZero)
-                _)
+                  insZero))
             (fun
               isExprHead
               _isUpToLastTail
@@ -219,7 +217,7 @@ namespace Pair
         insWfmDef.toInsWfm
           (match isArrayAppend with
           | IsArrayAppendABC.Base isDefB =>
-            insUnL
+            insUnL _
               (insPair
                 insZero
                 (insUnDom
@@ -229,7 +227,6 @@ namespace Pair
                   (insPair
                     insBound
                     insBound)))
-              _
           | IsArrayAppendABC.Step
             isUpToLast
             isLastExpr
@@ -355,7 +352,7 @@ namespace Pair
       | zero, isArrL => isArrL.elim
       | pair zero zero, IsArrayLengthPair.Zero =>
         insWfmDef.toInsWfm
-          (insUnL (insPair insZero insZero) _)
+          (insUnL _ (insPair insZero insZero))
       | pair _ _, IsArrayLengthPair.Succ isArrLengthPrev head =>
         insWfmDef.toInsWfm
           (insUnR _

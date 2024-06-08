@@ -70,11 +70,10 @@ namespace Pair
             (fun eqDepth ltDict =>
               let isSameDepth: IsSameDepth (pair a b) := eqDepth
               
-              insUnL
+              insUnL _
                 (insIr
                   (insSameDepth isSameDepth)
-                  (insPairDictLt ltDict))
-                _)
+                  (insPairDictLt ltDict)))
           (fun depthLt =>
             let isLt:
               IsNatLt (pair (fromNat a.depth) (fromNat b.depth))

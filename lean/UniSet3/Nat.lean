@@ -11,7 +11,7 @@ namespace Pair
     def insNatEncoding (isPn: IsNatEncoding pn): Ins nat pn :=
       match pn with
       | Pair.zero =>
-        insWfmDef.toInsWfm (insUnL insZero _)
+        insWfmDef.toInsWfm (insUnL _ insZero)
       
       | Pair.pair a b =>
         let insA: Ins nat a := insNatEncoding isPn.left
@@ -83,7 +83,7 @@ namespace Pair
           }
         
         insWfmDef.toInsWfm
-          (insUnL (insNatPairAA isNatPairAA) _)
+          (insUnL _ (insNatPairAA isNatPairAA))
       else
         let natNeq: a.depth ≠ b.depth :=
           depth.nat.injNeq isNatA isNatB h
