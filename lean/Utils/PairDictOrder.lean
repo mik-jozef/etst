@@ -4,7 +4,7 @@
       zero < pair a b \,.
 -/
 
-import WFC.Pair
+import WFC.Ch5_PairSalgebra
 
 namespace Pair
   namespace dictOrder

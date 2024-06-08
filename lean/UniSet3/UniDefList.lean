@@ -12,7 +12,7 @@ import Utils.LeN37
 import Utils.PairExpr
 import Utils.PairFreeVars
 import WFC.Ch4_Operators
-import WFC.ExampleWFCs
+import WFC.Ch5_PairSalgebra
 
 
 namespace Pair

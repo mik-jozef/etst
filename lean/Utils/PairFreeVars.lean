@@ -4,7 +4,7 @@
 -/
 
 import Utils.Interpretation
-import WFC.ExampleWFCs
+import WFC.Ch5_PairSalgebra
 
 
 namespace Pair

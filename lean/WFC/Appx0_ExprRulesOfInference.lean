@@ -13,7 +13,7 @@
 -/
 
 import WFC.Ch4_Operators
-import WFC.ExampleWFCs
+import WFC.Ch5_PairSalgebra
 
 
 namespace Expr

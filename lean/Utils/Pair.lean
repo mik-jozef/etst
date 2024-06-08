@@ -3,7 +3,7 @@
   See that file for the definitions themselves.
 -/
 
-import WFC.Pair
+import WFC.Ch5_PairSalgebra
 
 
 -- Equality of pairs is decidable.
