@@ -69,6 +69,13 @@ def IsBisimilar
   ∃ tb: TrisetBisimilation isMem, ⟨a, b⟩ ∈ tb.val
 
 
+/-
+  A system of trisets (or universe) is a collection of elements,
+  called trisets, together with a three-valued membership relation,
+  that satisfies the following properties:
+  
+  TODO
+-/
 structure Trisets where
   Triset: Type u
   isMem: Trisets.IsMem Triset
