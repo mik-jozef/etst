@@ -56,7 +56,6 @@ lean_lib WFC.Ch4_Operators {}
 lean_lib WFC.Appx0_ExprRulesOfInference {}
 lean_lib WFC.ExampleWFCs {}
 lean_lib WFC.Pair {}
-lean_lib WFC.Wfm {}
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4"

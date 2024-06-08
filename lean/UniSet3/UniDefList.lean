@@ -1,9 +1,3 @@
-import WFC.ExampleWFCs
-import Utils.PairFreeVars
-import Utils.LeN37
-import WFC.Ch4_Operators
-import WFC.Wfm
-
 /-
   In this file, we define the triset of all definable
   trisets of pairs, in the sense that for any definable
@@ -13,6 +7,13 @@ import WFC.Wfm
   
   We show that this triset is itself definable.
 -/
+
+import Utils.LeN37
+import Utils.PairExpr
+import Utils.PairFreeVars
+import WFC.Ch4_Operators
+import WFC.ExampleWFCs
+
 
 namespace Pair
   open pairSignature

@@ -1,9 +1,8 @@
 /-
-  This file defines descriptions of the sets
-  defined by the definition list in `UniDefList`.
+  This file defines descriptions of the sets defined by the
+  definition list in `UniDefList`.
 -/
 
-import WFC.Wfm
 import Utils.PairDepthDictOrder
 import UniSet3.UniDefList
 
