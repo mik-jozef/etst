@@ -70,7 +70,7 @@ def IsBisimilar
 
 
 /-
-  A system of trisets (or universe) is a collection of elements,
+  A system of trisets (or a universe) is a collection of elements,
   called trisets, together with a three-valued membership relation,
   that satisfies the following properties:
   
