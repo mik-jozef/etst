@@ -80,12 +80,13 @@
   > executing the following algorithm:
   > 
   > ```
-  >   // Initialize the valuations to the least elements in their
+  >   // Valuations are initialized to the least elements in their
   >   // respective orderings.
   >   let b = the undetermined valuation;
-  >   let c = the empty valuation;
   >   
   >   while (b has changed) {
+  >     let c = the empty valuation;
+  >     
   >     while (c has changed) {
   >       c = interpretation(b, c);
   >     }
