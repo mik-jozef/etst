@@ -1,11 +1,23 @@
 /-
-  In this file, we define the triset of all definable
-  trisets of pairs, in the sense that for any definable
-  triset tDef, there exists a triset tIndex such that
+  Consider these definitions:
   
-    setOfAllDef & (tIndex, Any) = { tDef }  .
+  ```
+    def call (fn arg: Set Pair): Set Pair :=
+      { ret | ∃ a ∈ arg, (a, ret) ∈ fn }
+    
+    def call3 (fn arg: Set3 Pair): Set Pair := {
+      defMem := call fn.defMem arg.defMem
+      posMem := call fn.posMem arg.posMem
+      defLePos := sorry
+    }
+  ```
   
-  We show that this triset is itself definable.
+  In this file, we define the triset `t` of all definable trisets
+  of pairs, in the sense that for any definable triset `tDef`,
+  there exists a triset `tIndex` such that `tDef = call3 t tIndex`.
+  
+  We show that this triset is itself definable by constructing
+  a definition list that defines it.
 -/
 
 import Utils.LeN37
@@ -41,7 +53,7 @@ namespace Pair
     
     /-
       Contains (a, b) iff a and b are naturals st. a ≤ b.
-      natLe = natPairAA | Ex (a, b): natPairAA, (a, succ b)
+      natLe = natPairAA | Ex (a, b): natLe, (a, succ b)
     -/
     def natLe: Nat := 2
     def natLe.expr :=
@@ -122,8 +134,11 @@ namespace Pair
     def exprEncoding.expr := finUnExpr exprList
     
     /-
-      Contains all pairs that encode a finite prefix of
-      a definition list
+      Contains all pairs that encode a finite prefix of a definition
+      list -- ie. a list of expressions.
+      
+      The empty list is encoded as (), and `head :: tail` as
+      `pair head tailEncoding`.
     -/
     def defEncoding: Nat := 8
     def defEncoding.expr: Expr :=
@@ -157,7 +172,8 @@ namespace Pair
       finUnExpr list
     
     /-
-      Contains (n, m) such that m ≤ n.
+      Contains (n, m) such that m ≤ n, n and m being natural
+      numbers.
     -/
     def natLeFn: Nat := 10
     def natLeFn.expr: Expr :=
@@ -165,8 +181,8 @@ namespace Pair
         (pairExpr (fstMember 501 500) (zthMember 501 500))
     
     /-
-      Contains (n, p) such that p is a pair and n its
-      depth.
+      Contains (n, p) such that p is a pair and n an encoding of
+      its depth.
     -/
     def pairOfDepth: Nat := 11
     def pairOfDepth.expr: Expr :=
@@ -181,14 +197,14 @@ namespace Pair
                 (pairExpr (succExpr 500) (pairExpr 502 501))))))
     
     /-
-      The "less than" relation on natural numbers
+      The "less than" relation on natural numbers.
     -/
     def natLt: Nat := 12
     def natLt.expr: Expr :=
       Expr.ir natLe (Expr.cpl (Expr.Un 500 (pairExpr 500 500)))
     
     /-
-      Contains (a, b) if a and b have the same depth.
+      Contains (a, b) if the pairs `a` and `b` have the same depth.
     -/
     def sameDepth: Nat := 13
     def sameDepth.expr: Expr :=
@@ -222,8 +238,8 @@ namespace Pair
       Expr.ir pairLt (pairExpr defEncoding defEncoding)
     
     /-
-      Contains (a, b) iff a < x < b for some deflist
-      encoding x.
+      Contains (a, b) iff `a < x < b` for some deflist encodings
+      `a`, `b` and `x`.
     -/
     def defEncodingMinDist2: Nat := 16
     def defEncodingMinDist2.expr: Expr :=
@@ -237,8 +253,8 @@ namespace Pair
               (pairExpr 500 502))))
     
     /-
-      Contains (a, b) where b is the least defEncoding
-      greater than a.
+      Contains (a, b) where `b` is the least defEncoding greater
+      than `a`.
     -/
     def nextDef: Nat := 17
     def nextDef.expr: Expr :=
@@ -247,8 +263,8 @@ namespace Pair
         (Expr.cpl defEncodingMinDist2)
     
     /-
-      Contains (n, dl), where dl is the nth least
-      deflist in the `defEncodingLt` order.
+      Contains (n, dl), where `dl` is the `n`th least deflist
+      encoding in the `defEncodingLt` order.
     -/
     def nthDefList: Nat := 18
     def nthDefList.expr: Expr :=
@@ -267,6 +283,11 @@ namespace Pair
           (pairExpr zeroExpr 500)
           (pairExpr zeroExpr (succExpr 500)))
     
+    /-
+      Contains (eIn, eOut) such that `eIn` is an encoding
+      of an expression and `eOut` is `eIn` with variables
+      incremented by 1.
+    -/
     def incrVarsExpr: Nat := 20
     
     def incrVarsExpr.opZero: Expr :=
@@ -307,11 +328,6 @@ namespace Pair
                   (succExpr 502)
                   (callExpr 503 incrVarsExpr 501))))))
     
-    /-
-      Contains (eIn, eOut) such that eIn is an encoding
-      of an expression and eOut is eIn with variables
-      incremented by 1.
-    -/
     def incrVarsExpr.exprList: List Expr := [
       incrVarsExpr.var,
       opZero,
@@ -323,8 +339,8 @@ namespace Pair
     def incrVarsExpr.expr: Expr := finUnExpr exprList
     
     /-
-      (dlIn, dlOut) where dlIn equals dlOut except that
-      the variables of dlOut are incremented by 1.
+      (dlIn, dlOut) where `dlIn` equals `dlOut` except that the
+      variables of `dlOut` are incremented by 1.
     -/
     def incrVarsDefEncoding: Nat := 21
     def incrVarsDefEncoding.expr: Expr :=
@@ -339,7 +355,7 @@ namespace Pair
                 (callExpr 502 incrVarsDefEncoding 501)))))
     
     /-
-      (n, (dlIn, dlOut)) where dlOut is dlIn with variables
+      (n, (dlIn, dlOut)) where `dlOut` is `dlIn` with variables
       incremented by n.
     -/
     def shiftDefEncoding: Nat := 22
@@ -360,8 +376,9 @@ namespace Pair
                     501))))))
     
     /-
-      (dl, expr), where dl is a definition list of length
-      one and expr is the only its expression.
+      (dl, expr), where `dl` is (an encoding of a prefix of)
+      a definition list of length one, and `expr` is the only its
+      expression.
     -/
     def lastExpr.base: Nat := 23
     def lastExpr.base.expr: Expr :=
@@ -371,8 +388,8 @@ namespace Pair
           500)
     
     /-
-      (dl, expr), where expr is the last expression
-      of the definition list dl
+      (dl, expr), where `expr` is the last expression of (the
+      encoding of) a prefix of a definition list `dl`.
     -/
     def lastExpr: Nat := 24
     def lastExpr.expr: Expr :=
@@ -384,8 +401,12 @@ namespace Pair
             (fstMember 501 500)))
     
     /-
-      (dlIn, dlOut), where dlOut contains all but the
-      last definition.
+      (dlIn, dlOut), where `dlOut` contains all but the last
+      definition of `dlIn`.
+      
+      For every encoding of a definition list `dl`,
+      
+          dl = [ ...upToLast(dl), lastExpr(dl) ] \,.
     -/
     def upToLast: Nat := 25
     def upToLast.expr: Expr :=
@@ -399,6 +420,10 @@ namespace Pair
     
     /-
       (dlA, (dlB, dlRes)), where `dlRes = [ ...dlA, ...dlB ]`.
+      
+      Array append on definition lists. Variables are not affected,
+      breaking the semantics of the latter one. This gets fixed
+      below.
     -/
     def arrayAppend: Nat := 26
     def arrayAppend.expr: Expr :=
@@ -420,7 +445,9 @@ namespace Pair
                     501)))))))
     
     /-
-      (arr, n), where arr is an array of length n.
+      (arr, n), where `arr` is an array of length `n`.
+      
+      Note that every pair encodes some array.
     -/
     def arrayLength: Nat := 27
     def arrayLength.expr: Expr :=
@@ -432,19 +459,16 @@ namespace Pair
             (succExpr (callExpr 501 arrayLength 500))))
     
     /-
-      The append operation on definition lists is a
-      combination of the array append operation and
-      the shift operation on the first (not the zeroth)
-      array. This operation preserves the internal
-      structure of the definition lists.
+      The append operation on definition lists is a combination
+      of the array append operation and the shift operation on
+      the first (not the zeroth) array. Unlike array append, this
+      operation preserves the internal structure of both definition
+      lists, because the variables of the latter are shifted by
+      the length of the former.
       
-        (dlA, (dlB, dlRes)) \,,
+      Contains (dlA, (dlB, dlRes)), where
       
-      where
-      
-        dlRes = [ ...dlA, ...shift(dlA.length, dlB) ] \,.
-      
-      append(dlA, dlB) = arrayAppend dlA (shift (length dlA) dlB) \,.
+          dlRes = [ ...dlA, ...shift(dlA.length, dlB) ] \,.
     -/
     def append: Nat := 28
     def append.expr: Expr :=
@@ -462,16 +486,15 @@ namespace Pair
                   501)))))
     
     /-
-      Contains (n, dl), such that dl is a (finite prefix
-      of a) definition list consisting of the zeroth
-      n definition list prefixes joined together.
+      Contains (n, dl), such that dl is a (finite prefix of a)
+      definition list consisting of the zeroth n definition list
+      prefixes joined together.
       
       (Deflist prefixes are ordered by `defEncodingLt`.)
       
-      For any two deflists returned by `enumUpTo`,
-      one is a prefix of the other.
-      Every finite prefix of any definition list is
-      in some deflist prefix returned by `enumUpTo`.
+      For any two deflists returned by `enumUpTo`, one is a prefix
+      of the other. Every finite prefix of every definition list
+      is contained in some deflist prefix returned by `enumUpTo`.
     -/
     def enumUpTo: Nat := 29
     def enumUpTo.expr: Expr :=
@@ -486,8 +509,8 @@ namespace Pair
               (callExpr 502 nthDefList 500))))
     
     /-
-      Contains (dl, (n, e)) such that e is the nth
-      expression of dl ∈ defEncoding.
+      Contains (dl, (n, e)) such that `e` is the nth expression
+      of the definition list encoding `dl`.
     -/
     def defListToSet: Nat := 30
     def defListToSet.expr: Expr :=
@@ -506,6 +529,17 @@ namespace Pair
     
     /-
       Contains all deflists of enumUpTo.
+      
+      Recall that for every pair of elements of enumUpTo, one is
+      a prefix of the other. This guarantees that for any two
+      definition lists of `theDlPrefixes` (of sufficient length),
+      and any n, their nth expressions are the same.
+      
+      This in turn means that `theDlPrefixes` represents a unique
+      definition list (not just some finite prefix of it), which
+      contains all definitions up to structural equivalence.
+      Every definable triset is therefore defined in this definition
+      list.
     -/
     def theDlPrefixes: Nat := 31
     def theDlPrefixes.expr: Expr :=
@@ -513,11 +547,13 @@ namespace Pair
         (callExpr 501 enumUpTo 500)
     
     /-
-      Contains (n, expr) where expr is the nth expression
-      in any dl from `enumUpTo` whose length is greater
-      than n.
+      Contains (n, expr) where `expr` is the `n`th expression in
+      any `dl` in `theDlPrefixes`.
       
-      Defines definitions of all definable trisets.
+      This is a different representation of the definition list
+      represented by `theDlPrefixes`. While `theDlPrefixes` contains
+      its finite prefixes, `theDefList` contains its index-expression
+      pairs.
     -/
     def theDefList: Nat := 32
     def theDefList.expr: Expr :=
@@ -525,7 +561,7 @@ namespace Pair
         (callExpr 501 defListToSet 500)
     
     /-
-      ([(n, p), ...], (n, p)).
+      Contains ([(n, p), ...], (n, p)) for natural `n`.
     -/
     def getBound.baseExpr: Expr :=
       unionExpr 500 nat
@@ -535,7 +571,8 @@ namespace Pair
             (pairExpr 500 501)))
     
     /-
-      ((n, p)[], (n_i, p_i)).
+      Contains (arr, (n, p)) such that `arr` is a list containing
+      (n, p).
     -/
     def getBound: Nat := 33
     def getBound.expr: Expr :=
@@ -554,28 +591,29 @@ namespace Pair
                   500)))))
     
     /-
-      Contains (bound, expr, p) where bound is an array
-      of var-pair pairs (bound vars), `expr` is an expression
+      Contains (bound, expr, p) where bound is an array of
+      variable-pair pairs (bound vars), `expr` is an expression
       and `p` is a member of the interpretation of `expr` with
-      `theSet` (below) serving as the valuation (of free
-      variables).
+      `theSet` (below) serving as the valuation (of free variables).
       
-      The triple is contained strongly iff `s` is a definitive
+      The triple is contained strongly iff `p` is a definitive
       member of the interpretation, else it is contained
       weakly.
     -/
     def interpretation: Nat := 34
     
     /-
-      Contains (expr, s) where s is the interpretation of
-      `expr` with `theSet` serving as the valuation.
+      Contains (expr, s) where `s` is the interpretation of `expr`
+      with `theSet` serving as the valuation.
     -/
     def freeInterpretation := 35
     
     /-
-      The set of pairs (n, s) where n is a natural number.
-      For every definable triset of pairs dtp, there exists
-      a natural number n such that (n, p) ∈ theSet = p ∈ dtp.
+      A set of pairs (n, s) where `n` is a natural number. For
+      every definable triset of pairs `dtp`, there exists a natural
+      number `n` such that for every pair `p`,
+      
+          (n, p) ∈ theSet = p ∈ dtp \,.
     -/
     def theSet: Nat := 36
     
@@ -846,7 +884,7 @@ namespace Pair
           defList.hasFiniteBounds,
         ⟩
     }
-        
+    
     noncomputable def wfModel :=
       defList.wellFoundedModel pairSalgebra
     
