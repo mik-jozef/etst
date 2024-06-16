@@ -123,8 +123,9 @@ namespace Valuation
   
   
   /-
-    Under the standard order, the supremum of the empty chain is
-    the empty valuation.
+    With respect to the standard order, the supremum of the empty
+    chain (ie. the least element of the order) is the empty
+    valuation.
   -/
   def ord.standard.sup.emptyChain
     (ch: Chain (standard D))
@@ -139,8 +140,9 @@ namespace Valuation
       empty.isLeast
   
   /-
-    Under the approximation order, the supremum of the empty chain
-    is the undetermined valuation.
+    With respect to the approximation order, the supremum of the
+    empty chain (ie. the least element of the order) is the
+    undetermined valuation.
   -/
   def ord.approximation.sup.emptyChain
     (ch: Chain (approximation D))
