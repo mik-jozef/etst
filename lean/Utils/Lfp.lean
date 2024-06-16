@@ -51,7 +51,7 @@ noncomputable def lfp.stage.option
     else
       none
   else
-    have: n.pred < n := Ordinal.notLimitToPredLt hLim
+    have: n.pred < n := Ordinal.predLtOfNotLimit hLim
     let prev := lfp.stage.option cc op n.pred
     
     match prev with
@@ -264,7 +264,7 @@ def lfp.stage.option.isMono.ifChain.{u}
     
     isSup.isMember ⟨option cc op a, ⟨⟨a, abLt⟩, rfl⟩⟩
   else
-    have: b.pred < b := Ordinal.notLimitToPredLt hLim
+    have: b.pred < b := Ordinal.predLtOfNotLimit hLim
     
     let abLt := ab.lt_of_ne hEq
     
@@ -369,7 +369,7 @@ noncomputable def lfp.stage.option.notNone
     
     supNoneIffNoneIn.not.mpr noneNinPrev
   else
-    have: n.pred < n := Ordinal.notLimitToPredLt h
+    have: n.pred < n := Ordinal.predLtOfNotLimit h
     let predNotNone := notNone cc op opMono n.pred
     let nPred: { t: T // option cc op n.pred = t } :=
       match h: option cc op n.pred  with
@@ -585,7 +585,7 @@ def lfp.stage.leFP
     
     stageNIsLUB.isLeMember fpIsUB
   else
-    have: n.pred < n := Ordinal.notLimitToPredLt h
+    have: n.pred < n := Ordinal.predLtOfNotLimit h
     
     let stageNPred := stage cc op opMono n.pred
     

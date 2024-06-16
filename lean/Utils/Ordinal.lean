@@ -52,7 +52,7 @@ namespace Ordinal
       let ⟨nnLt, succNLt⟩ := nImpl.implToAnd
       pred_of_succ_not_lt nnLt succNLt
   
-  def notLimitToPredLt
+  def predLtOfNotLimit
     {n: Ordinal}
     (notLimit: ¬n.IsActualLimit)
   :

@@ -720,7 +720,7 @@ def DefList.eqDefsToEqSets.succCaseC
     defEq
     (fun isFree => invB ⟨_, areUsedDefsMapped isFree⟩)
     (fun isFree =>
-      let predLt := Ordinal.notLimitToPredLt nIsSucc
+      let predLt := Ordinal.predLtOfNotLimit nIsSucc
       
       ih _ predLt ⟨_, areUsedDefsMapped isFree⟩)
 
@@ -830,7 +830,7 @@ def DefList.eqDefsToEqSets.succCaseB
     (fun xMapped =>
       ih
         n.pred
-        (Ordinal.notLimitToPredLt nIsSucc)
+        (Ordinal.predLtOfNotLimit nIsSucc)
         xMapped)
 
 def DefList.eqDefsToEqSets

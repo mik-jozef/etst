@@ -358,7 +358,7 @@ def operatorC.stage.isMonotonic.approximation
       operatorC.stage.predEq salg dl b1 h
     
     let s0PredLeS1Pred: s0Pred ⊑ s1Pred :=
-      have: nPred < n := Ordinal.notLimitToPredLt h
+      have: nPred < n := Ordinal.predLtOfNotLimit h
       operatorC.stage.isMonotonic.approximation salg dl b0LeB1 nPred
     
     fun x =>

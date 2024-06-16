@@ -317,7 +317,7 @@ namespace HamkinsMachine
         head := 0
       }
     else
-      have: n.pred < n := Ordinal.notLimitToPredLt h
+      have: n.pred < n := Ordinal.predLtOfNotLimit h
       hm.step (hm.stage input n.pred)
     termination_by stage hm n => n
   

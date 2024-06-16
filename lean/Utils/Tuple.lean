@@ -34,6 +34,6 @@ namespace Tuple
   :=
     let i := Ordinal.pred tuple.length
     
-    tuple.elements ⟨i, Ordinal.notLimitToPredLt notLimit⟩
+    tuple.elements ⟨i, Ordinal.predLtOfNotLimit notLimit⟩
   
 end Tuple
