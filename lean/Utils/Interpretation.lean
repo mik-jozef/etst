@@ -417,7 +417,7 @@ def Expr.interpretation.isMonotonic.standard
 def Expr.interpretation.isMonotonic.approximation
   (salg: Salgebra sig)
   (e: Expr sig)
-  (b0 b1 c0 c1: Valuation salg.D)
+  {b0 b1 c0 c1: Valuation salg.D}
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
@@ -429,8 +429,7 @@ def Expr.interpretation.isMonotonic.approximation
       (fun _d dIn => (cLe x).posLe dIn)
   | Expr.op opr args =>
       let ih (arg: sig.Params opr) :=
-        interpretation.isMonotonic.approximation
-          salg (args arg) b0 b1 c0 c1 bLe cLe
+        interpretation.isMonotonic.approximation salg (args arg) bLe cLe
       
       Set3.LeApx.intro
         (fun _d dIn =>
@@ -454,10 +453,10 @@ def Expr.interpretation.isMonotonic.approximation
           
           posArgsLe dIn)
   | Expr.un left rite =>
-      let ihL := interpretation.isMonotonic.approximation
-        salg left b0 b1 c0 c1 bLe cLe
-      let ihR := interpretation.isMonotonic.approximation
-        salg rite b0 b1 c0 c1 bLe cLe
+      let ihL :=
+        interpretation.isMonotonic.approximation salg left bLe cLe
+      let ihR :=
+        interpretation.isMonotonic.approximation salg rite bLe cLe
       
       Set3.LeApx.intro
         (fun _d dIn => dIn.elim
@@ -467,10 +466,10 @@ def Expr.interpretation.isMonotonic.approximation
           (fun inL => Or.inl (ihL.posLe inL))
           (fun inR => Or.inr (ihR.posLe inR)))
   | Expr.ir left rite =>
-      let ihL := interpretation.isMonotonic.approximation
-        salg left b0 b1 c0 c1 bLe cLe
-      let ihR := interpretation.isMonotonic.approximation
-        salg rite b0 b1 c0 c1 bLe cLe
+      let ihL :=
+        interpretation.isMonotonic.approximation salg left bLe cLe
+      let ihR :=
+        interpretation.isMonotonic.approximation salg rite bLe cLe
       
       Set3.LeApx.intro
         (fun _d dIn =>
@@ -478,8 +477,8 @@ def Expr.interpretation.isMonotonic.approximation
         (fun _d dIn =>
           And.intro (ihL.posLe dIn.left) (ihR.posLe dIn.right))
   | Expr.cpl expr =>
-      let ih := interpretation.isMonotonic.approximation
-        salg expr b0 b1 b0 b1 bLe bLe
+      let ih :=
+        interpretation.isMonotonic.approximation salg expr bLe bLe
       Set3.LeApx.intro
         (fun d dIn =>
           let tmp: (d: salg.D) → _ → _ := ih.posLe
@@ -491,10 +490,10 @@ def Expr.interpretation.isMonotonic.approximation
       (fun _d dIn =>
         let dC := dIn.left.unwrap
         
-        let hC := interpretation.isMonotonic.approximation
-          salg cond b0 b1 c0 c1 bLe cLe
-        let hE := interpretation.isMonotonic.approximation
-          salg expr b0 b1 c0 c1 bLe cLe
+        let hC :=
+          interpretation.isMonotonic.approximation salg cond bLe cLe
+        let hE :=
+          interpretation.isMonotonic.approximation salg expr bLe cLe
         
         And.intro
           ⟨dC, hC.defLe dC.property⟩
@@ -502,10 +501,10 @@ def Expr.interpretation.isMonotonic.approximation
       (fun _d dIn =>
         let dC := dIn.left.unwrap
         
-        let hC := interpretation.isMonotonic.approximation
-          salg cond b0 b1 c0 c1 bLe cLe
-        let hE := interpretation.isMonotonic.approximation
-          salg expr b0 b1 c0 c1 bLe cLe
+        let hC :=
+          interpretation.isMonotonic.approximation salg cond bLe cLe
+        let hE :=
+          interpretation.isMonotonic.approximation salg expr bLe cLe
         
         And.intro
           ⟨dC, hC.posLe dC.property⟩
@@ -513,10 +512,6 @@ def Expr.interpretation.isMonotonic.approximation
   | Expr.Un x body =>
       let ihBody d :=
         interpretation.isMonotonic.approximation salg body
-          (b0.update x d)
-          (b1.update x d)
-          (c0.update x d)
-          (c1.update x d)
           (Valuation.update.isMonotonic.approximation b0 b1 bLe x d)
           (Valuation.update.isMonotonic.approximation c0 c1 cLe x d)
       
@@ -536,10 +531,6 @@ def Expr.interpretation.isMonotonic.approximation
   | Expr.Ir x body =>
       let ih d :=
         interpretation.isMonotonic.approximation salg body
-          (b0.update x d)
-          (b1.update x d)
-          (c0.update x d)
-          (c1.update x d)
           (Valuation.update.isMonotonic.approximation b0 b1 bLe x d)
           (Valuation.update.isMonotonic.approximation c0 c1 cLe x d)
       

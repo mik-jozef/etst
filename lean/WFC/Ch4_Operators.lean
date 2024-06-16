@@ -363,7 +363,7 @@ def operatorC.stage.isMonotonic.approximation
     
     fun x =>
       let ILe := Expr.interpretation.isMonotonic.approximation
-        salg (dl.getDef x) b0 b1 s0Pred s1Pred b0LeB1 s0PredLeS1Pred
+        salg (dl.getDef x) b0LeB1 s0PredLeS1Pred
   
       s0Eq ▸ s1Eq ▸ ILe
 termination_by n
