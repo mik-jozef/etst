@@ -129,6 +129,22 @@ def operatorC.isMonotonic
     Expr.interpretation.isMonotonic.standard
       salg (dl.getDef x) b cLe
 
+def operatorC.isMonotonic.approximation
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  (b: Valuation salg.D)
+:
+  IsMonotonic
+    (Valuation.ord.approximation salg.D)
+    (Valuation.ord.approximation salg.D)
+    (operatorC salg dl b)
+:=
+  let bLe: b ⊑ b := (Valuation.ord.approximation salg.D).le_refl b
+  
+  fun c0LeC1 x =>
+    Expr.interpretation.isMonotonic.approximation
+      salg (dl.getDef x) bLe c0LeC1
+
 noncomputable def operatorC.lfp
   (salg: Salgebra sig)
   (dl: DefList sig)
