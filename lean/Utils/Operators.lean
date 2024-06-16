@@ -5,7 +5,7 @@
 import WFC.Ch4_Operators
 
 
-structure operatorC.FixedIndex2
+structure operatorC.LfpIndex2
   (salg: Salgebra sig)
   (dlA: DefList sig)
   (dlB: DefList sig)
@@ -16,17 +16,17 @@ where
   eqLfpA: operatorC.stage salg dlA bA n = (operatorC.lfp salg dlA bA).val
   eqLfpB: operatorC.stage salg dlB bB n = (operatorC.lfp salg dlB bB).val
 
-noncomputable def operatorC.fixedIndex2
+noncomputable def operatorC.lfpIndex2
   (salg: Salgebra sig)
   (dlA: DefList sig)
   (dlB: DefList sig)
   (bA: Valuation salg.D)
   (bB: Valuation salg.D)
 :
-  { n // operatorC.FixedIndex2 salg dlA dlB bA bB n }
+  { n // operatorC.LfpIndex2 salg dlA dlB bA bB n }
 :=
-  let fixedA := operatorC.fixedIndex salg dlA bA
-  let fixedB := operatorC.fixedIndex salg dlB bB
+  let fixedA := operatorC.lfpIndex salg dlA bA
+  let fixedB := operatorC.lfpIndex salg dlB bB
   
   if h: fixedA.val ≤ fixedB.val then
     ⟨

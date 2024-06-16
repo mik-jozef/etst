@@ -748,7 +748,7 @@ def DefList.eqDefsToEqSets.opC
   operatorB salg dlDst bDst (varMapping xSrc)
 :=
   let ⟨fp, ⟨eqSrc, eqDst⟩⟩ :=
-    operatorC.fixedIndex2 salg dlSrc dlDst bSrc bDst
+    operatorC.lfpIndex2 salg dlSrc dlDst bSrc bDst
   
   let stagesEqualC :=
     fp.induction

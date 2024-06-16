@@ -629,7 +629,7 @@ def IsLfp
   Returns an ordinal `n` such that `stage n` is a the least
   fixed point of `op`.
 -/
-noncomputable def lfp.fixedStage
+noncomputable def lfp.fixedIndex
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
   (op: T → T)
@@ -681,11 +681,11 @@ noncomputable def lfp
 :
   Lfp ord op
 :=
-  let fs := lfp.fixedStage cc op opMono
+  let i := lfp.fixedIndex cc op opMono
   
   ⟨
-    lfp.stage cc op opMono fs,
-    fs.property,
+    lfp.stage cc op opMono i,
+    i.property,
   ⟩
 
 /-
@@ -723,14 +723,14 @@ def lfp.stage.gtLfpEqLfp
 def lfp.holdsOfHoldsForFixed
   {P: T → Prop}
   (holdsForFixed:
-    P (stage cc op opMono (lfp.fixedStage cc op opMono)))
+    P (stage cc op opMono (lfp.fixedIndex cc op opMono)))
 :
   P (lfp cc op opMono).val
 :=
   let eq :=
     iIsLeast.isUnique _
       (lfp cc op opMono).property
-      (lfp.fixedStage cc op opMono).property
+      (lfp.fixedIndex cc op opMono).property
   
   eq ▸ holdsForFixed
 
@@ -744,7 +744,7 @@ def lfp.holdsOfHoldsForAll
 :
   P (lfp cc op opMono).val
 :=
-  let ⟨n, isLfp⟩ := lfp.fixedStage cc op opMono
+  let ⟨n, isLfp⟩ := lfp.fixedIndex cc op opMono
   
   (lfp cc op opMono).property.isUnique _ isLfp ▸
   holdsForAll n

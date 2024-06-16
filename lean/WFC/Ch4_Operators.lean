@@ -156,7 +156,7 @@ noncomputable def operatorC.stage
     (operatorC.isMonotonic salg dl b)
     n
 
-noncomputable def operatorC.fixedStage
+noncomputable def operatorC.fixedIndex
   (salg: Salgebra sig)
   (dl: DefList sig)
   (b: Valuation salg.D)
@@ -168,12 +168,12 @@ noncomputable def operatorC.fixedStage
       (stage salg dl b n)
   }
 :=
-  lfp.fixedStage
+  lfp.fixedIndex
     (Valuation.ord.standard.isChainComplete salg.D)
     (operatorC salg dl b)
     (operatorC.isMonotonic salg dl b)
 
-noncomputable def operatorC.fixedIndex
+noncomputable def operatorC.lfpIndex
   (salg: Salgebra sig)
   (dl: DefList sig)
   (b: Valuation salg.D)
@@ -181,7 +181,7 @@ noncomputable def operatorC.fixedIndex
   { n: Ordinal //
     operatorC.stage salg dl b n = (operatorC.lfp salg dl b).val }
 := ⟨
-  operatorC.fixedStage salg dl b,
+  operatorC.fixedIndex salg dl b,
   rfl,
 ⟩
 
@@ -389,7 +389,7 @@ def operatorB.eqLfpC
       (operatorC.lfp salg dl b))
 
 
-noncomputable def operatorB.isMonotonic.commonFixedStage
+noncomputable def operatorB.isMonotonic.commonFixedIndex
   (salg: Salgebra sig)
   (dl: DefList sig)
   (b0 b1: Valuation salg.D)
@@ -401,8 +401,8 @@ noncomputable def operatorB.isMonotonic.commonFixedStage
     operatorC.stage salg dl b1 n = operatorB salg dl b1
   }
 :=
-  let lfpI0 := operatorC.fixedStage salg dl b0
-  let lfpI1 := operatorC.fixedStage salg dl b1
+  let lfpI0 := operatorC.fixedIndex salg dl b0
+  let lfpI1 := operatorC.fixedIndex salg dl b1
   
   if h: lfpI0.val ≤ lfpI1 then
     let isLfp:
@@ -463,7 +463,7 @@ def operatorB.isMonotonic (salg: Salgebra sig) (dl: DefList sig):
 :=
   fun {b0 b1} b0LeB1 =>
     fun x =>
-      let lfpI := isMonotonic.commonFixedStage salg dl b0 b1
+      let lfpI := isMonotonic.commonFixedIndex salg dl b0 b1
       
       let le := operatorC.stage.isMonotonic.approximation
         salg dl b0LeB1 lfpI
@@ -501,7 +501,7 @@ noncomputable def operatorB.fixedIndex
 :
   { n: Ordinal // operatorB.stage salg dl n = (operatorB.lfp salg dl).val }
 := ⟨
-  lfp.fixedStage
+  lfp.fixedIndex
     (Valuation.ord.approximation.isChainComplete salg.D)
     (operatorB salg dl)
     (operatorB.isMonotonic salg dl),
