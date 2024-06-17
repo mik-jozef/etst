@@ -8,7 +8,7 @@
     def call3 (fn arg: Set3 Pair): Set Pair := {
       defMem := call fn.defMem arg.defMem
       posMem := call fn.posMem arg.posMem
-      defLePos := sorry
+      defLePos := by [monotonicity of call]
     }
   ```
   
