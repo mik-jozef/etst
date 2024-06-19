@@ -307,57 +307,37 @@ def operatorC.stage.isMonotonic.approximation
 :
   operatorC.stage salg dl b0 n ⊑ operatorC.stage salg dl b1 n
 :=
-  let stageN0 := operatorC.stage salg dl b0 n
-  let stageN1 := operatorC.stage salg dl b1 n
-  
   if h: n.IsActualLimit then
     let lim0 := limit salg dl b0 h
     let lim1 := limit salg dl b1 h
     
-    fun x => {
-      defLe :=
-        fun d dIn0 =>
-          let exVal0 :=
-            Valuation.ord.standard.inSup.inSomeSet.defMem
-              ⟨stageN0, lim0⟩ dIn0
-          
-          let val0 := exVal0.unwrap
-          let valIndex := val0.val.property.unwrap
-          let val1 := stage salg dl b1 valIndex
-          let val0Eq: val0 = stage salg dl b0 valIndex :=
-            valIndex.property.symm
-          
-          have: valIndex < n := valIndex.val.property
-          let valLe: val0.val.val ⊑ val1 :=
-            val0Eq ▸ approximation salg dl b0LeB1 valIndex
-          
-          let dIn1 := (valLe x).defLe val0.property
-          
-          let val1LeStage1 := lim1.isMember ⟨val1, ⟨valIndex.val, rfl⟩⟩
-          
-          (val1LeStage1 x).defLe dIn1,
-      posLe :=
-        fun d dIn1 =>
-          let exVal1 :=
-            Valuation.ord.standard.inSup.inSomeSet.posMem
-              ⟨stageN1, lim1⟩ dIn1
-          
-          let val1 := exVal1.unwrap
-          let valIndex := val1.val.property.unwrap
-          let val0 := stage salg dl b0 valIndex
-          let val1Eq: val1 = stage salg dl b1 valIndex :=
-            valIndex.property.symm
-          
-          have: valIndex < n := valIndex.val.property
-          let valLe: val0 ⊑ val1 :=
-            val1Eq ▸ approximation salg dl b0LeB1 valIndex
-          
-          let dIn0 := (valLe x).posLe val1.property
-          
-          let val0LeStage0 := lim0.isMember ⟨val0, ⟨valIndex.val, rfl⟩⟩
-          
-          (val0LeStage0 x).posLe dIn0,
-    }
+    Valuation.ord.standard.supPreservesLeApx
+      lim0
+      lim1
+      (fun ⟨prevA, isPrev⟩ =>
+        let ⟨i, eqA⟩ := isPrev.unwrap
+        
+        have: i < n := i.property
+        
+        ⟨
+          ⟨
+            operatorC.stage salg dl b1 i,
+            ⟨i, rfl⟩,
+          ⟩,
+          eqA ▸ approximation salg dl b0LeB1 i,
+        ⟩)
+      (fun ⟨prevB, isPrev⟩ =>
+        let ⟨i, eqB⟩ := isPrev.unwrap
+        
+        have: i < n := i.property
+        
+        ⟨
+          ⟨
+            operatorC.stage salg dl b0 i,
+            ⟨i, rfl⟩,
+          ⟩,
+          eqB ▸ approximation salg dl b0LeB1 i,
+        ⟩)
   else
     let nPred := n.pred
     

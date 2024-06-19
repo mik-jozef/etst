@@ -506,4 +506,34 @@ namespace Valuation
       
       dNinSup (ord.approximation.allInSet.inSup.posMem sup allIn)
   
+  
+  def ord.standard.supPreservesLeApx
+    (isSupA: IsSupremum (Valuation.ord.standard T) sA supA)
+    (isSupB: IsSupremum (Valuation.ord.standard T) sB supB)
+    (ab: ∀ tA: sA, ∃ tB: sB, tA.val ⊑ tB)
+    (ba: ∀ tB: sB, ∃ tA: sA, tA.val ⊑ tB)
+  :
+    supA ⊑ supB
+  :=
+    fun x => {
+      defLe :=
+        fun _d dInSupA =>
+          let ⟨valA, dInAtX⟩ :=
+            Valuation.ord.standard.inSup.inSomeSet.defMem
+              ⟨_, isSupA⟩ dInSupA
+          
+          let ⟨tB, valALe⟩ := ab valA
+          
+          (isSupB.isMember tB x).defLe ((valALe x).defLe dInAtX)
+      posLe :=
+        fun _d dInSupB =>
+          let ⟨valB, dInBtX⟩ :=
+            Valuation.ord.standard.inSup.inSomeSet.posMem
+              ⟨_, isSupB⟩ dInSupB
+          
+          let ⟨tA, valBLe⟩ := ba valB
+          
+          (isSupA.isMember tA x).posLe ((valBLe x).posLe dInBtX)
+    }
+  
 end Valuation

@@ -467,6 +467,42 @@ def lfp.stage.previous.eqOption
 :=
   stage.eqOption cc op opMono nn
 
+def lfp.stage.previous.isChain
+  {ord: PartialOrder T}
+  (cc: IsChainComplete ord)
+  (op: T → T)
+  (opMono: IsMonotonic ord ord op)
+  (n: Ordinal)
+:
+  IsChain ord.le (previous cc op opMono n)
+:=
+  let isMono {a b: ↑n} (ab: a ≤ b) :=
+    lfp.stage.isMono cc op opMono ab
+  
+  fun _ aIn _ bIn _ =>
+    let aIndex := aIn.unwrap
+    let bIndex := bIn.unwrap
+    
+    if h: aIndex.val ≤ bIndex.val then
+      Or.inl (aIndex.prop ▸ bIndex.prop ▸ isMono h)
+    else
+      let hReverse := le_of_lt (not_le.mp h)
+      
+      Or.inr (aIndex.prop ▸ bIndex.prop ▸ isMono hReverse)
+
+def lfp.stage.previousChain
+  {ord: PartialOrder T}
+  (cc: IsChainComplete ord)
+  (op: T → T)
+  (opMono: IsMonotonic ord ord op)
+  (n: Ordinal)
+:
+  Chain ord
+:= ⟨
+  previous cc op opMono n,
+  lfp.stage.previous.isChain cc op opMono n
+⟩
+
 -- Proves that a limit stage is the supremum of the previous stages.
 def lfp.stage.limit
   {ord: PartialOrder T}
@@ -513,6 +549,26 @@ def lfp.stage.limit
       show some (stage cc op opMono n) ≤ t from
         stageEq ▸ optNLeT
   }
+
+/-
+  Proves that for any limit ordinal l and any supremum of the
+  zeroth l stages, the supremum equals the l-th stage.
+-/
+def lfp.stage.limitEq
+  {ord: PartialOrder T}
+  (cc: IsChainComplete ord)
+  (op: T → T)
+  (opMono: IsMonotonic ord ord op)
+  {n: Ordinal}
+  (nLim: n.IsActualLimit)
+  (isSup: IsSupremum ord (previous cc op opMono n) sup)
+:
+  sup = stage cc op opMono n
+:=
+  let isSupStage := limit cc op opMono nLim
+  
+  Subtype.val_eq_val
+    (Supremum.eq ⟨sup, isSup⟩ ⟨_, isSupStage⟩)
 
 /-
   Proves that a successor stage is the operator applied to the current
@@ -748,3 +804,61 @@ def lfp.holdsOfHoldsForAll
   
   (lfp cc op opMono).property.isUnique _ isLfp ▸
   holdsForAll n
+
+
+noncomputable def lfp.lfpIndex
+  {ord: PartialOrder T}
+  (cc: IsChainComplete ord)
+  (op: T → T)
+  (opMono: IsMonotonic ord ord op)
+:
+  {
+    n: Ordinal
+  //
+    stage cc op opMono n = (lfp cc op opMono).val
+  }
+:=
+  let ⟨n, isLfp⟩ := lfp.fixedIndex cc op opMono
+  
+  ⟨n, isLfp.isUnique _ (lfp cc op opMono).property⟩
+
+noncomputable def lfp.lfpIndex2
+  {ordA: PartialOrder Ta}
+  {ordB: PartialOrder Tb}
+  (ccA: IsChainComplete ordA)
+  (ccB: IsChainComplete ordB)
+  (opA: Ta → Ta)
+  (opB: Tb → Tb)
+  (opMonoA: IsMonotonic ordA ordA opA)
+  (opMonoB: IsMonotonic ordB ordB opB)
+:
+  {
+    n: Ordinal
+  //
+    And
+      (stage ccA opA opMonoA n = (lfp ccA opA opMonoA).val)
+      (stage ccB opB opMonoB n = (lfp ccB opB opMonoB).val)
+  }
+:=
+  let ⟨nA, eqLfpA⟩ := lfp.lfpIndex ccA opA opMonoA
+  let ⟨nB, eqLfpB⟩ := lfp.lfpIndex ccB opB opMonoB
+  
+  let lfpA := lfp ccA opA opMonoA
+  let lfpB := lfp ccB opB opMonoB
+  
+  if h: nA ≤ nB then
+    let isLfpA :=
+      stage.gtLfpEqLfp ccA opA opMonoA h (eqLfpA ▸ lfpA.property)
+    
+    let eqA := isLfpA.isUnique _ lfpA.property
+    
+    ⟨nB, ⟨eqA, eqLfpB⟩⟩
+  else
+    let ba: nB ≤ nA := (not_le.mp h).le
+    
+    let isLfpB :=
+      stage.gtLfpEqLfp ccB opB opMonoB ba (eqLfpB ▸ lfpB.property)
+    
+    let eqB := isLfpB.isUnique _ lfpB.property
+    
+    ⟨nA, ⟨eqLfpA, eqB⟩⟩

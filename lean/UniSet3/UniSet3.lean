@@ -1,4 +1,5 @@
 import Utils.DefListDefEq
+import Utils.LfpLeOfOpLe
 import UniSet3.DefListToEncoding
 import UniSet3.TheSet3
 
@@ -181,6 +182,152 @@ namespace Pair
         fun _ => inwTheSetOfInPosNth,
       ⟩
     
+    def theSetAsValuation.ofArbitraryValuation
+      (v: Valuation Pair)
+    :
+      Valuation Pair
+    :=
+      fun n =>
+        Set3.pairCallJust
+          (v uniDefList.theSet)
+          (fromNat n)
+    
+    def theSetAsValuation.ofArbitraryValuation.isMonoStd
+    :
+      IsMonotonic
+        (Valuation.ord.standard Pair)
+        (Valuation.ord.standard Pair)
+        ofArbitraryValuation
+    :=
+      fun valLe _ => {
+        -- Would be nice if this worked: `defLe t inVal := ...`
+        defLe :=
+          fun _ inVal => (valLe uniDefList.theSet).defLe inVal,
+        posLe :=
+          fun _ inVal => (valLe uniDefList.theSet).posLe inVal,
+      }
+    
+    def theSetAsValuation.ofArbitraryValuation.isMonoApx
+    :
+      IsMonotonic
+        (Valuation.ord.approximation Pair)
+        (Valuation.ord.approximation Pair)
+        ofArbitraryValuation
+    :=
+      fun valLe _ => {
+        defLe :=
+          fun _ inVal => (valLe uniDefList.theSet).defLe inVal,
+        posLe :=
+          fun _ inVal => (valLe uniDefList.theSet).posLe inVal,
+      }
+    
+    def theSetAsValuation.ofArbitraryValuation.preservesSupremaStd
+      (ch: Chain (Valuation.ord.standard Pair))
+    :
+      let isCc := Valuation.ord.standard.isChainComplete Pair
+      
+      IsSupremum
+        (Valuation.ord.standard Pair)
+        (ofArbitraryValuation '' ch.set)
+        (ofArbitraryValuation (ch.sup isCc).val)
+    :=
+      -- In your language, the vars of the return type should be
+      -- in scope (I guess)?
+      let isCc := Valuation.ord.standard.isChainComplete Pair
+      
+      {
+        isMember :=
+          fun ⟨v, vIn⟩ =>
+            let ⟨preV, ⟨preVInCh, isPre⟩⟩ := vIn.unwrap
+            let preLeSup :=
+              (ch.sup isCc).property.isMember ⟨preV, preVInCh⟩
+            
+            isPre ▸ isMonoStd preLeSup
+        isLeMember :=
+          fun ub isUb x => {
+            defLe :=
+              fun p inSup =>
+                let ⟨⟨v, inCh⟩, insTheSet⟩ :=
+                  Valuation.ord.standard.inSup.inSomeSet.defMem
+                    (ch.sup isCc)
+                    inSup
+                    
+                let vIsLeUb :=
+                  isUb ⟨ofArbitraryValuation v, ⟨v, ⟨inCh, rfl⟩⟩⟩ x
+                
+                vIsLeUb.defLe insTheSet
+            posLe :=
+              fun p inSup =>
+                let ⟨⟨v, inCh⟩, insTheSet⟩ :=
+                  Valuation.ord.standard.inSup.inSomeSet.posMem
+                    (ch.sup isCc)
+                    inSup
+                    
+                let vIsLeUb :=
+                  isUb ⟨ofArbitraryValuation v, ⟨v, ⟨inCh, rfl⟩⟩⟩ x
+                
+                vIsLeUb.posLe insTheSet
+          }
+      }
+    
+    def theSetAsValuation.ofArbitraryValuation.preservesSupremaApx
+      (ch: Chain (Valuation.ord.approximation Pair))
+    :
+      let isCc := Valuation.ord.approximation.isChainComplete Pair
+      
+      IsSupremum
+        (Valuation.ord.approximation Pair)
+        (ofArbitraryValuation '' ch.set)
+        (ofArbitraryValuation (ch.sup isCc).val)
+    :=
+      let isCc := Valuation.ord.approximation.isChainComplete Pair
+      
+      {
+        isMember :=
+          fun ⟨v, vIn⟩ =>
+            let ⟨preV, ⟨preVInCh, isPre⟩⟩ := vIn.unwrap
+            let preLeSup :=
+              (ch.sup isCc).property.isMember ⟨preV, preVInCh⟩
+            
+            isPre ▸ isMonoApx preLeSup
+        isLeMember :=
+          fun ub isUb x => {
+            defLe :=
+              fun p inSup =>
+                let ⟨⟨v, inCh⟩, insTheSet⟩ :=
+                  Valuation.ord.approximation.inSup.inSomeSet.defMem
+                    (ch.sup isCc)
+                    inSup
+                    
+                let vIsLeUb :=
+                  isUb ⟨ofArbitraryValuation v, ⟨v, ⟨inCh, rfl⟩⟩⟩ x
+                
+                vIsLeUb.defLe insTheSet
+            posLe :=
+              fun p inUb =>
+                Valuation.ord.approximation.allInSet.inSup.posMem
+                  (ch.sup isCc)
+                  (fun v =>
+                    let leUb :=
+                      isUb
+                        ⟨
+                          ofArbitraryValuation v,
+                          v,
+                          v.property,
+                          rfl,
+                        ⟩
+                        x
+                    
+                    leUb.posLe inUb)
+          }
+      }
+    
+    def theSetAsValuation.eqOfWfm:
+      theSetAsValuation = ofArbitraryValuation uniDefList.wfModel
+    :=
+      rfl
+    
+    
     def theSetAsValuation.isFixedPointOpC:
       IsFixedPoint
         (operatorC pairSalgebra theDefListExternal theSetAsValuation)
@@ -188,14 +335,57 @@ namespace Pair
     :=
       funext interpretationsEqual
     
+    def theSetAsValuation.interpretationLeStd
+      (isLfpC:
+        IsLfp
+          (Valuation.ord.standard Pair)
+          (operatorC pairSalgebra uniDefList.defList.toDefList b)
+          lfpC)
+      (cLe: c ≤ lfpC)
+    :
+      let b := uniDefList.wfModel
+      
+      ofArbitraryValuation
+        (uniDefList.defList.interpretation pairSalgebra b c)
+        ≤
+      theDefListExternal.interpretation
+        pairSalgebra (ofArbitraryValuation b) (ofArbitraryValuation c)
+    :=
+      sorry
+    
     def theSetAsValuation.isLeCLfp:
       (Valuation.ord.standard Pair).le
         theSetAsValuation
         (operatorC.lfp pairSalgebra theDefListExternal theSetAsValuation).val
     :=
-      -- TODO only start this proof after `theSetAsValuation.isLeWfm`,
-      -- you might need to generalize this.
-      sorry
+      let b := uniDefList.wfModel
+      let opCB :=
+        operatorC.lfp pairSalgebra uniDefList.defList.toDefList b
+      
+      let eqC:
+        b = opCB.val
+      :=
+        let opB :=
+          operatorB.lfp pairSalgebra uniDefList.defList.toDefList
+        
+        opB.property.isMember
+      
+      let eqL: ofArbitraryValuation b = _ := congr rfl eqC
+      
+      by
+        conv => lhs; rw [eqOfWfm, eqL]
+        exact
+          lfp.leOfOpLeMappedSameOrd
+            (Valuation.ord.standard.isChainComplete Pair)
+            (Valuation.ord.standard.isChainComplete Pair)
+            (operatorC pairSalgebra uniDefList.defList.toDefList b)
+            (operatorC pairSalgebra theDefListExternal (ofArbitraryValuation b))
+            (operatorC.isMonotonic pairSalgebra _ _)
+            (operatorC.isMonotonic pairSalgebra _ _)
+            ofArbitraryValuation
+            (fun isLfpC cLe =>
+              interpretationLeStd isLfpC cLe)
+            ofArbitraryValuation.preservesSupremaStd
     
     def theSetAsValuation.isFixedPointOpB:
       IsFixedPoint
@@ -217,10 +407,72 @@ namespace Pair
       
       isLfp.isLeMember theSetAsValuation.isFixedPointOpB
     
+    
+    def theSetAsValuation.interpretationLeApx
+      (isLfpB:
+        IsLfp
+          (Valuation.ord.approximation Pair)
+          (operatorB pairSalgebra uniDefList.defList.toDefList) lfpB)
+      (bLe: b ⊑ lfpB)
+      (isLfpC:
+        IsLfp
+          (Valuation.ord.standard Pair)
+          (operatorC pairSalgebra uniDefList.defList.toDefList b) lfpC)
+      (cLe: c ≤ lfpC)
+    :
+      ofArbitraryValuation
+        (uniDefList.defList.interpretation pairSalgebra b c)
+        ⊑
+      theDefListExternal.interpretation
+        pairSalgebra (ofArbitraryValuation b) (ofArbitraryValuation c)
+    :=
+      sorry
+    
+    def theSetAsValuation.isLeWfmWithPartialB
+      (isLfpB:
+        IsLfp
+          (Valuation.ord.approximation Pair)
+          (operatorB pairSalgebra uniDefList.defList.toDefList) lfpB)
+      (bLe: b ⊑ lfpB)
+    :
+      (Valuation.ord.approximation Pair).le
+        (ofArbitraryValuation
+          (Subtype.val
+            (operatorC.lfp pairSalgebra uniDefList.defList.toDefList b)))
+        (Subtype.val
+          (operatorC.lfp
+            pairSalgebra
+            theDefListExternal
+            (ofArbitraryValuation b)))
+    :=
+      lfp.leOfOpLeMapped
+        (Valuation.ord.standard.isChainComplete Pair)
+        (Valuation.ord.standard.isChainComplete Pair)
+        (operatorC pairSalgebra uniDefList.defList.toDefList b)
+        (operatorC pairSalgebra theDefListExternal (ofArbitraryValuation b))
+        (operatorC.isMonotonic pairSalgebra _ _)
+        (operatorC.isMonotonic pairSalgebra _ _)
+        ofArbitraryValuation
+        (operatorC.isMonotonic.approximation pairSalgebra _ _)
+        (fun isLfpC cLe =>
+          interpretationLeApx isLfpB bLe isLfpC cLe)
+        ofArbitraryValuation.preservesSupremaStd
+        Valuation.ord.standard.supPreservesLeApx
+    
     def theSetAsValuation.isLeWfm:
       (Valuation.ord.approximation Pair).le theSetAsValuation wfm
     :=
-      sorry
+      lfp.leOfOpLeMappedSameOrd
+        (Valuation.ord.approximation.isChainComplete Pair)
+        (Valuation.ord.approximation.isChainComplete Pair)
+        (operatorB pairSalgebra uniDefList.defList.toDefList)
+        (operatorB pairSalgebra theDefListExternal)
+        (operatorB.isMonotonic pairSalgebra _)
+        (operatorB.isMonotonic pairSalgebra _)
+        ofArbitraryValuation
+        (fun isLfpB bLe =>
+          isLeWfmWithPartialB isLfpB bLe)
+        ofArbitraryValuation.preservesSupremaApx
     
     def theSetAsValuation.eqWfm:
       wfm = theSetAsValuation
