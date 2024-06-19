@@ -330,7 +330,8 @@ namespace Set3
     
     supGeS.posLe dInSDef
   
-  def ord.standard.ninSet.ninSup.defMem
+  
+  def ord.standard.allNinSet.ninSup.defMem
     {set: Set (Set3 D)}
     (sup: Supremum (standard D) set)
     {d: D}
@@ -371,8 +372,7 @@ namespace Set3
     
     eq ▸ (fun dIn => dIn.neq rfl)
   
-
-  def ord.standard.ninSet.ninSup.posMem
+  def ord.standard.allNinSet.ninSup.posMem
     {set: Set (Set3 D)}
     (sup: Supremum (standard D) set)
     {d: D}
@@ -439,7 +439,7 @@ namespace Set3
           else
             h
       
-      ord.standard.ninSet.ninSup.defMem sup allNin dIn
+      ord.standard.allNinSet.ninSup.defMem sup allNin dIn
 
   def ord.standard.inSup.inSomeSet.posMem
     {set: Set (Set3 D)}
@@ -457,7 +457,30 @@ namespace Set3
           else
             h
       
-      ord.standard.ninSet.ninSup.posMem sup allNin dIn
+      ord.standard.allNinSet.ninSup.posMem sup allNin dIn
+  
+  
+  def ord.standard.ninSup.allNinSet.defMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (standard D) set)
+    {d: D}
+    (dNin: d ∉ sup.val.defMem)
+  :
+    ∀ s: ↑set, d ∉ s.val.defMem
+  :=
+    fun s dIn =>
+      dNin (ord.standard.inSet.inSup.defMem sup s dIn)
+  
+  def ord.standard.ninSup.allNinSet.posMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (standard D) set)
+    {d: D}
+    (dNin: d ∉ sup.val.posMem)
+  :
+    ∀ s: ↑set, d ∉ s.val.posMem
+  :=
+    fun _ dIn =>
+      dNin (ord.standard.inSet.inSup.posMem sup dIn)
   
   
   def ord.approximation.inSet.inSup.defMem
@@ -473,11 +496,11 @@ namespace Set3
     
     supGeS.defLe dInSDef
   
-  def ord.approximation.inSet.inSup.posMem
+  def ord.approximation.allInSet.inSup.posMem
     {set: Set (Set3 D)}
+    (sup: Supremum (approximation D) set)
     {d: D}
     (allIn: ∀ s: ↑set, d ∈ s.val.posMem)
-    (sup: Supremum (approximation D) set)
   :
     d ∈ sup.val.posMem
   :=
@@ -512,7 +535,7 @@ namespace Set3
     eq ▸ (Or.inr rfl)
   
   
-  def ord.approximation.ninSet.ninSup.defMem
+  def ord.approximation.allNinSet.ninSup.defMem
     {set: Set (Set3 D)}
     (sup: Supremum (approximation D) set)
     {d: D}
@@ -568,5 +591,66 @@ namespace Set3
     let dSupS: (d: D) → d ∈ sup.val.posMem → d ∈ s.val.posMem := supGeS.posLe
     
     Function.contra (dSupS d) dNin
+  
+  
+  def ord.approximation.inSup.inSomeSet.defMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (approximation D) set)
+    {d: D}
+    (dIn: d ∈ sup.val.defMem)
+  :
+    ∃ s: ↑set, d ∈ s.val.defMem
+  :=
+    byContradiction fun notEx =>
+      let allNin: ∀ s: ↑set, d ∉ s.val.defMem :=
+        fun s =>
+          if h: d ∈ s.val.defMem then
+            False.elim (notEx ⟨s, h⟩)
+          else
+            h
+      
+      ord.approximation.allNinSet.ninSup.defMem sup allNin dIn
+  
+  def ord.approximation.inSup.allInSet.posMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (approximation D) set)
+    {d: D}
+    (dIn: d ∈ sup.val.posMem)
+  :
+    ∀ s: ↑set, d ∈ s.val.posMem
+  :=
+    fun s =>
+      let supGeS := sup.property.isMember s
+      
+      supGeS.posLe dIn
+  
+  def ord.approximation.ninSup.allNinSet.defMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (approximation D) set)
+    {d: D}
+    (dNin: d ∉ sup.val.defMem)
+  :
+    ∀ s: ↑set, d ∉ s.val.defMem
+  :=
+    fun s dIn =>
+      dNin (ord.approximation.inSet.inSup.defMem s dIn sup)
+  
+  def ord.approximation.ninSup.ninSomeSet.posMem
+    {set: Set (Set3 D)}
+    (sup: Supremum (approximation D) set)
+    {d: D}
+    (dNin: d ∉ sup.val.posMem)
+  :
+    ∃ s: ↑set, d ∉ s.val.posMem
+  :=
+    byContradiction fun notEx =>
+      let allIn: ∀ s: ↑set, d ∈ s.val.posMem :=
+        fun s =>
+          if h: d ∈ s.val.posMem then
+            h
+          else
+            False.elim (notEx ⟨s, h⟩)
+      
+      dNin (ord.approximation.allInSet.inSup.posMem sup allIn)
   
 end Set3
