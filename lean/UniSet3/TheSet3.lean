@@ -1,33 +1,9 @@
 import Utils.DefListDefEq
 import UniSet3.DefListToEncoding
 import UniSet3.TheDefList
-
+import UniSet3.TheSet3Helpers
 
 set_option linter.unusedVariables false
-
-def Set3.pairCall (fn arg: Set3 Pair): Set3 Pair := {
-  defMem := fun p => ∃ (a: arg.defMem), fn.defMem (Pair.pair a p)
-  posMem := fun p => ∃ (a: arg.posMem), fn.posMem (Pair.pair a p)
-  defLePos :=
-    fun _p pInDef =>
-      let ⟨⟨a, aInArgDef⟩, apInFnDef⟩ := pInDef
-      
-      ⟨
-        ⟨a, (arg.defLePos aInArgDef)⟩,
-        fn.defLePos apInFnDef
-      ⟩
-}
-
-def Set3.pairCallJust
-  (fn: Set3 Pair)
-  (arg: Pair)
-:
-  Set3 Pair
-:= {
-  defMem := fun p => fn.defMem (Pair.pair arg p)
-  posMem := fun p => fn.posMem (Pair.pair arg p)
-  defLePos := fun _ pInDef => fn.defLePos pInDef
-}
 
 
 namespace Pair
@@ -253,9 +229,6 @@ namespace Pair
         isGetTailA.isUnique isGetTailB
     
     
-    def theSetAsValuation: Valuation Pair :=
-      fun n => Set3.pairCallJust uniSet3 (fromNat n)
-    
     noncomputable def addBoundVars
       (v: Valuation Pair)
       (boundVarsEnc: Pair)
@@ -304,8 +277,8 @@ namespace Pair
     :=
       interpretation
           pairSalgebra
-          (addBoundVars theSetAsValuation boundVars)
-          (addBoundVars theSetAsValuation boundVars)
+          (addBoundVars theInternalValuation boundVars)
+          (addBoundVars theInternalValuation boundVars)
           exprEnc.encodingToExpr
     
     def interp.eqDef
@@ -315,8 +288,8 @@ namespace Pair
         =
       interpretation
         pairSalgebra
-        (addBoundVars theSetAsValuation boundVars)
-        (addBoundVars theSetAsValuation boundVars)
+        (addBoundVars theInternalValuation boundVars)
+        (addBoundVars theInternalValuation boundVars)
         exprEnc.encodingToExpr
     :=
       rfl
@@ -359,8 +332,8 @@ namespace Pair
         Set3.defMem
           (Expr.interpretation
             pairSalgebra
-            (addBoundVars theSetAsValuation tail)
-            (addBoundVars theSetAsValuation tail)
+            (addBoundVars theInternalValuation tail)
+            (addBoundVars theInternalValuation tail)
             (Expr.var xEnc.depth))
           p
       :=
@@ -394,8 +367,8 @@ namespace Pair
         Set3.posMem
           (Expr.interpretation
             pairSalgebra
-            (addBoundVars theSetAsValuation tail)
-            (addBoundVars theSetAsValuation tail)
+            (addBoundVars theInternalValuation tail)
+            (addBoundVars theInternalValuation tail)
             (Expr.var xEnc.depth))
           p
       :=
@@ -436,12 +409,12 @@ namespace Pair
           Set3.defMem
             (interpretation
               pairSalgebra
-              ((addBoundVars theSetAsValuation tail).update hA.depth hB)
-              ((addBoundVars theSetAsValuation tail).update hA.depth hB)
+              ((addBoundVars theInternalValuation tail).update hA.depth hB)
+              ((addBoundVars theInternalValuation tail).update hA.depth hB)
               (var xEnc.depth))
               p
         :=
-          (addBoundVars.updateEq theSetAsValuation h hB tail) ▸
+          (addBoundVars.updateEq theInternalValuation h hB tail) ▸
           encodingToExpr.varEncEq isNat ▸
           inDef
         
@@ -466,8 +439,8 @@ namespace Pair
           Set3.defMem
             (interpretation
               pairSalgebra
-              (addBoundVars theSetAsValuation tail)
-              (addBoundVars theSetAsValuation tail)
+              (addBoundVars theInternalValuation tail)
+              (addBoundVars theInternalValuation tail)
               (pair zero xEnc).encodingToExpr)
               p
         := by
@@ -496,12 +469,12 @@ namespace Pair
           Set3.posMem
             (interpretation
               pairSalgebra
-              ((addBoundVars theSetAsValuation tail).update hA.depth hB)
-              ((addBoundVars theSetAsValuation tail).update hA.depth hB)
+              ((addBoundVars theInternalValuation tail).update hA.depth hB)
+              ((addBoundVars theInternalValuation tail).update hA.depth hB)
               (var xEnc.depth))
               p
         :=
-          (addBoundVars.updateEq theSetAsValuation h hB tail) ▸
+          (addBoundVars.updateEq theInternalValuation h hB tail) ▸
           encodingToExpr.varEncEq isNat ▸
           inPos
         
@@ -526,8 +499,8 @@ namespace Pair
           Set3.posMem
             (interpretation
               pairSalgebra
-              (addBoundVars theSetAsValuation tail)
-              (addBoundVars theSetAsValuation tail)
+              (addBoundVars theInternalValuation tail)
+              (addBoundVars theInternalValuation tail)
               (pair zero xEnc).encodingToExpr)
               p
         := by
@@ -604,14 +577,23 @@ namespace Pair
         by
           unfold interp
           rw [encodingToExpr.varEncEq isNat]
-          unfold interpretation theSetAsValuation addBoundVars
+          unfold
+            interpretation
+            theInternalValuation
+            addBoundVars
+            internalOfExternal
+            decodeValuation
           rw [fromNat.eqOfDepth isNat]
           exact ins
       | pair zero tail =>
         by
           unfold interp addBoundVars
           rw [encodingToExpr.varEncEq isNat]
-          unfold interpretation theSetAsValuation
+          unfold
+            interpretation
+            theInternalValuation
+            internalOfExternal
+            decodeValuation
           rw [fromNat.eqOfDepth isNat]
           exact ins
       | pair (pair hA hB) tail =>
@@ -643,14 +625,23 @@ namespace Pair
         by
           unfold interp
           rw [encodingToExpr.varEncEq isNat]
-          unfold interpretation theSetAsValuation addBoundVars
+          unfold
+            interpretation
+            theInternalValuation
+            addBoundVars
+            internalOfExternal
+            decodeValuation
           rw [fromNat.eqOfDepth isNat]
           exact inw
       | pair zero tail =>
         by
           unfold interp addBoundVars
           rw [encodingToExpr.varEncEq isNat]
-          unfold interpretation theSetAsValuation
+          unfold
+            interpretation
+            theInternalValuation
+            internalOfExternal
+            decodeValuation
           rw [fromNat.eqOfDepth isNat]
           exact inw
       | pair (pair hA hB) tail =>
@@ -922,8 +913,8 @@ namespace Pair
               Set3.defMem
                 (interpretation
                   pairSalgebra
-                  theSetAsValuation
-                  theSetAsValuation
+                  theInternalValuation
+                  theInternalValuation
                   (var xEnc.depth))
                 p
             := by
@@ -1009,8 +1000,8 @@ namespace Pair
               Set3.posMem
                 (interpretation
                   pairSalgebra
-                  theSetAsValuation
-                  theSetAsValuation
+                  theInternalValuation
+                  theInternalValuation
                   (var xEnc.depth))
                 p
             := by
@@ -1085,7 +1076,7 @@ namespace Pair
           unfold interp
           rw [encodingToExpr.zeroEncEq] 
           exact
-            @insZero (addBoundVars theSetAsValuation boundVars)
+            @insZero (addBoundVars theInternalValuation boundVars)
     
     def inInterpOfInw.exprZero
       (inw:
@@ -1113,7 +1104,7 @@ namespace Pair
           unfold interp
           rw [encodingToExpr.zeroEncEq] 
           exact
-            @inwZero (addBoundVars theSetAsValuation boundVars)
+            @inwZero (addBoundVars theInternalValuation boundVars)
     
     
     def insOfInInterp.exprZero.inList:
@@ -1132,7 +1123,7 @@ namespace Pair
     :=
       let pEqZero: p = zero :=
         @insZeroElim
-          (addBoundVars theSetAsValuation boundVars)
+          (addBoundVars theInternalValuation boundVars)
           _
           (by rw [encodingToExpr.zeroEncEq.symm]; exact inDef)
       
@@ -1158,7 +1149,7 @@ namespace Pair
     :=
       let pEqZero: p = zero :=
         @inwZeroElim
-          (addBoundVars theSetAsValuation boundVars)
+          (addBoundVars theInternalValuation boundVars)
           _
           (by rw [encodingToExpr.zeroEncEq.symm]; exact inPos)
       
@@ -2294,7 +2285,7 @@ namespace Pair
           Expr.Ins
             pairSalgebra
             (Valuation.update
-              (addBoundVars theSetAsValuation boundVars)
+              (addBoundVars theInternalValuation boundVars)
               varAlias.depth
               boundValue)
             bodyAlias.encodingToExpr
@@ -2418,7 +2409,7 @@ namespace Pair
           Expr.Inw
             pairSalgebra
             (Valuation.update
-              (addBoundVars theSetAsValuation boundVars)
+              (addBoundVars theInternalValuation boundVars)
               varAlias.depth
               boundValue)
             bodyAlias.encodingToExpr
@@ -3453,7 +3444,7 @@ namespace Pair
         insArbUnElim (eqEnc ▸ interp.eqDef _ _ ▸ eqN ▸ inDef)
       
       let addBoundsEq :=
-        addBoundVars.updateEq theSetAsValuation
+        addBoundVars.updateEq theInternalValuation
           isNatVar boundVal boundVars
       
       let inDefBody := by
@@ -3546,7 +3537,7 @@ namespace Pair
         inwArbUnElim (eqEnc ▸ interp.eqDef _ _ ▸ eqN ▸ inDef)
       
       let addBoundsEq :=
-        addBoundVars.updateEq theSetAsValuation
+        addBoundVars.updateEq theInternalValuation
           isNatVar boundVal boundVars
       
       let inDefBody := by
@@ -3650,7 +3641,7 @@ namespace Pair
             boundVal
         
         let addBoundsEq :=
-          addBoundVars.updateEq theSetAsValuation
+          addBoundVars.updateEq theInternalValuation
             isNatVar boundVal boundVars
         
         let inDefBody := by
@@ -3764,7 +3755,7 @@ namespace Pair
             boundVal
         
         let addBoundsEq :=
-          addBoundVars.updateEq theSetAsValuation
+          addBoundVars.updateEq theInternalValuation
             isNatVar boundVal boundVars
         
         let inDefBody := by
