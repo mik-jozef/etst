@@ -6,6 +6,8 @@ import UniSet3.TheSet3
 
 namespace Pair
   namespace uniSet3
+    open uniDefList
+    
     noncomputable def theDefListExternal.getDef
       (n: Nat)
     :
@@ -202,9 +204,9 @@ namespace Pair
       fun valLe _ => {
         -- Would be nice if this worked: `defLe t inVal := ...`
         defLe :=
-          fun _ inVal => (valLe uniDefList.theSet).defLe inVal,
+          fun _ inVal => (valLe theSet).defLe inVal,
         posLe :=
-          fun _ inVal => (valLe uniDefList.theSet).posLe inVal,
+          fun _ inVal => (valLe theSet).posLe inVal,
       }
     
     def theSetAsValuation.ofArbitraryValuation.isMonoApx
@@ -216,9 +218,9 @@ namespace Pair
     :=
       fun valLe _ => {
         defLe :=
-          fun _ inVal => (valLe uniDefList.theSet).defLe inVal,
+          fun _ inVal => (valLe theSet).defLe inVal,
         posLe :=
-          fun _ inVal => (valLe uniDefList.theSet).posLe inVal,
+          fun _ inVal => (valLe theSet).posLe inVal,
       }
     
     def theSetAsValuation.ofArbitraryValuation.preservesSupremaStd
@@ -323,7 +325,7 @@ namespace Pair
       }
     
     def theSetAsValuation.eqOfWfm:
-      theSetAsValuation = ofArbitraryValuation uniDefList.wfModel
+      theSetAsValuation = ofArbitraryValuation wfModel
     :=
       rfl
     
@@ -339,17 +341,17 @@ namespace Pair
       (isLfpC:
         IsLfp
           (Valuation.ord.standard Pair)
-          (operatorC pairSalgebra uniDefList.defList.toDefList b)
+          (operatorC pairSalgebra defList.toDefList wfModel)
           lfpC)
       (cLe: c ≤ lfpC)
     :
-      let b := uniDefList.wfModel
-      
       ofArbitraryValuation
-        (uniDefList.defList.interpretation pairSalgebra b c)
+        (defList.interpretation pairSalgebra wfModel c)
         ≤
       theDefListExternal.interpretation
-        pairSalgebra (ofArbitraryValuation b) (ofArbitraryValuation c)
+        pairSalgebra
+        (ofArbitraryValuation wfModel)
+        (ofArbitraryValuation c)
     :=
       sorry
     
@@ -358,17 +360,13 @@ namespace Pair
         theSetAsValuation
         (operatorC.lfp pairSalgebra theDefListExternal theSetAsValuation).val
     :=
-      let b := uniDefList.wfModel
-      let opCB :=
-        operatorC.lfp pairSalgebra uniDefList.defList.toDefList b
+      let b := wfModel
       
-      let eqC:
-        b = opCB.val
-      :=
-        let opB :=
-          operatorB.lfp pairSalgebra uniDefList.defList.toDefList
-        
-        opB.property.isMember
+      let opCB :=
+        operatorC.lfp pairSalgebra defList.toDefList b
+      
+      let eqC: b = opCB.val :=
+        (operatorB.lfp pairSalgebra defList.toDefList).property.isMember
       
       let eqL: ofArbitraryValuation b = _ := congr rfl eqC
       
@@ -378,7 +376,7 @@ namespace Pair
           lfp.leOfOpLeMappedSameOrd
             (Valuation.ord.standard.isChainComplete Pair)
             (Valuation.ord.standard.isChainComplete Pair)
-            (operatorC pairSalgebra uniDefList.defList.toDefList b)
+            (operatorC pairSalgebra defList.toDefList b)
             (operatorC pairSalgebra theDefListExternal (ofArbitraryValuation b))
             (operatorC.isMonotonic pairSalgebra _ _)
             (operatorC.isMonotonic pairSalgebra _ _)
@@ -412,16 +410,16 @@ namespace Pair
       (isLfpB:
         IsLfp
           (Valuation.ord.approximation Pair)
-          (operatorB pairSalgebra uniDefList.defList.toDefList) lfpB)
+          (operatorB pairSalgebra defList.toDefList) lfpB)
       (bLe: b ⊑ lfpB)
       (isLfpC:
         IsLfp
           (Valuation.ord.standard Pair)
-          (operatorC pairSalgebra uniDefList.defList.toDefList b) lfpC)
+          (operatorC pairSalgebra defList.toDefList b) lfpC)
       (cLe: c ≤ lfpC)
     :
       ofArbitraryValuation
-        (uniDefList.defList.interpretation pairSalgebra b c)
+        (defList.interpretation pairSalgebra b c)
         ⊑
       theDefListExternal.interpretation
         pairSalgebra (ofArbitraryValuation b) (ofArbitraryValuation c)
@@ -432,13 +430,13 @@ namespace Pair
       (isLfpB:
         IsLfp
           (Valuation.ord.approximation Pair)
-          (operatorB pairSalgebra uniDefList.defList.toDefList) lfpB)
+          (operatorB pairSalgebra defList.toDefList) lfpB)
       (bLe: b ⊑ lfpB)
     :
       (Valuation.ord.approximation Pair).le
         (ofArbitraryValuation
           (Subtype.val
-            (operatorC.lfp pairSalgebra uniDefList.defList.toDefList b)))
+            (operatorC.lfp pairSalgebra defList.toDefList b)))
         (Subtype.val
           (operatorC.lfp
             pairSalgebra
@@ -448,7 +446,7 @@ namespace Pair
       lfp.leOfOpLeMapped
         (Valuation.ord.standard.isChainComplete Pair)
         (Valuation.ord.standard.isChainComplete Pair)
-        (operatorC pairSalgebra uniDefList.defList.toDefList b)
+        (operatorC pairSalgebra defList.toDefList b)
         (operatorC pairSalgebra theDefListExternal (ofArbitraryValuation b))
         (operatorC.isMonotonic pairSalgebra _ _)
         (operatorC.isMonotonic pairSalgebra _ _)
@@ -465,7 +463,7 @@ namespace Pair
       lfp.leOfOpLeMappedSameOrd
         (Valuation.ord.approximation.isChainComplete Pair)
         (Valuation.ord.approximation.isChainComplete Pair)
-        (operatorB pairSalgebra uniDefList.defList.toDefList)
+        (operatorB pairSalgebra defList.toDefList)
         (operatorB pairSalgebra theDefListExternal)
         (operatorB.isMonotonic pairSalgebra _)
         (operatorB.isMonotonic pairSalgebra _)
