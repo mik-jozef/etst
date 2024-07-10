@@ -18,6 +18,15 @@ def Args
   
   A salgebra on a signature `sig` provides an interpretation of
   each operation in the signature.
+  
+  The reason for using salgebras rather than algebras and defining
+  the operations on sets in the standard manner (which would get
+  us monotonicity for free) is that some operations, for example
+  the dual of string concatenation, are not definable in this way.
+  Take
+      { '' } ⊙ {}      = { '' }.
+      { 'a' } ⊙ {}     = {}.
+      { '', 'a' } ⊙ {} = { '', 'a' }.
 -/
 structure Salgebra (s: Signature) where
   D: Type u
