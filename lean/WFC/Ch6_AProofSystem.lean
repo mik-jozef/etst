@@ -542,13 +542,11 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
         (areInapplicable pseudoCplCause isCplCause).rec
           False.elim
           (fun inBins notPos =>
-            -- This causes a Lean bug:
-            -- let ⟨ec, _, _, isPos⟩ := inBins
-            let ⟨ec, wtf⟩ := inBins
-            False.elim (notPos wtf.right.right))
+            let ⟨ec, _, _, isPos⟩ := inBins
+            False.elim (notPos isPos))
           (fun inBout isDef =>
-            let ⟨ec, wtf⟩ := inBout
-            False.elim (wtf.right.right isDef))
+            let ⟨ec, _, _, notDef⟩ := inBout
+            False.elim (notDef isDef))
     
     let exSatExprCause:
       ∃ cause ∈ exprCauses, cause.IsSatisfiedBy b b
@@ -717,7 +715,8 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
               outSetIsEmpty inOutSet))
     
     fun ⟨dX, inPos⟩ => ih dX inPos
-  | Expr.Ir x body => sorry
+  | Expr.Ir x body =>
+    sorry
 
 
 mutual
