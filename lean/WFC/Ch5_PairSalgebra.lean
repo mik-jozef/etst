@@ -12,7 +12,7 @@
 import Mathlib.Order.MinMax
 
 import Utils.BasicUtils
-import WFC.Ch3_Interpretation
+import WFC.Ch4_Operators
 
 
 inductive Pair where
@@ -30,6 +30,17 @@ inductive Pair where
 
 
 namespace Pair
+  /-
+    `Pair.zero` encodes the number zero, while `Pair.pair n zero`
+    encodes the successor of `n`.
+  -/
+  def IsNatEncoding: Set Pair
+  | zero => True
+  | pair a b => (IsNatEncoding a) ∧ b = zero
+  
+  def NatEncoding := { p // IsNatEncoding p }
+  
+  
   def fromNat: Nat → Pair
   | Nat.zero => Pair.zero
   | Nat.succ n => Pair.pair (fromNat n) zero
@@ -40,12 +51,18 @@ namespace Pair
   | zero => 0
   | pair a b => Nat.succ (max a.depth b.depth)
   
-  def IsNatEncoding: Set Pair
-  | zero => True
-  | pair a b => (IsNatEncoding a) ∧ b = zero
   
-  def NatEncoding := { p // IsNatEncoding p }
-  
+  /-
+    `Pair.zero` encodes the empty list, while
+    
+        Pair.pair head tailEncoding
+    
+    encodes the list
+    
+        [ head, ...tail ] \,,
+    
+    where `tail` is the list encoded by `tailEncoding`.
+  -/
   def arrayLength: Pair → Nat
   | zero => 0
   | pair _ b => Nat.succ b.arrayLength
@@ -56,6 +73,11 @@ namespace Pair
     | pair head _tail, Nat.zero => head
     | pair _head tail, Nat.succ pred => tail.arrayAt pred
   
+  
+  def arrayLast (head tail: Pair): Pair :=
+    match tail with
+    | zero => head
+    | pair tailHead tailTail => tailHead.arrayLast tailTail
   
   def arrayUpToLast (head tail: Pair): Pair :=
     match tail with

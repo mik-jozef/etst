@@ -42,6 +42,12 @@ structure Signature where
   
   Variables are natural numbers. The arguments of an operator `op`
   are indexed by the type `sig.Params op`.
+  
+  Note: Defining expressions like this has likely been a mistake.
+  Instead of having unions, intersections, and conditionals as
+  separate constructors, they should have been defined as operators
+  in the signature. This would have allowed for a more uniform
+  treatment of expressions -- ie. fewer cases to consider in proofs.
 -/
 inductive Expr (sig: Signature) where
 | var (x: Nat)
