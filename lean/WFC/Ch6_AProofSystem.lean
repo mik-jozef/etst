@@ -57,7 +57,7 @@ def Cause.union (c1 c2: Cause D): Cause D := {
   backgroundOut := c1.backgroundOut ∪ c2.backgroundOut,
 }
 
-def Cause.arbUnion (f: I → Cause D): Cause D := {
+def Cause.arbUn (f: I → Cause D): Cause D := {
   contextIns := ⋃ i, (f i).contextIns,
   backgroundIns := ⋃ i, (f i).backgroundIns,
   backgroundOut := ⋃ i, (f i).backgroundOut,
@@ -131,12 +131,7 @@ def IsCause.ir
       })
 
 def IsCause.arbUn
-  (isCauseBody:
-    IsCause
-      salg
-      cause
-      d
-      body)
+  (isCauseBody: IsCause salg cause d body)
   (cinsSat:
     ∀ {dC: salg.D}, cause.contextIns ⟨dC, x⟩ → dC = dX)
   (binsSat:
@@ -183,6 +178,65 @@ def IsCause.arbUn
         }
     ⟩
 
+def IsCause.arbIr
+  {salg: Salgebra sig}
+  {d: salg.D}
+  (cause: (dX: salg.D) → Cause salg.D)
+  (isCauseBody: (dX: salg.D) → IsCause salg (cause dX) d body)
+  (cinsSat:
+    ∀ dX {dC}, (cause dX).contextIns ⟨dC, x⟩ → dC = dX)
+  (binsSat:
+    ∀ dX {dC}, (cause dX).backgroundIns ⟨dC, x⟩ → dC = dX)
+  (boutSat:
+    ∀ dX {dC}, (cause dX).backgroundOut ⟨dC, x⟩ → dC ≠ dX)
+:
+  IsCause
+    salg
+    (Cause.arbUn fun dX => (cause dX).except x dX)
+    d
+    (Expr.Ir x body)
+:=
+  fun isSat dX =>
+    isCauseBody dX {
+      contextInsHold :=
+        fun {dd xx} inCins =>
+          if h: x = xx then
+            Valuation.update.eqBoundOfEq _ h _ ▸
+            cinsSat dX (h.symm ▸ inCins) ▸
+            rfl
+          else
+            let nin eq := (h (ValVar.eqX eq.symm)).elim
+            Valuation.update.eqOrig _ h dX ▸
+            isSat.contextInsHold ⟨
+              ((cause dX).except x dX).contextIns,
+              ⟨⟨dX, rfl⟩, ⟨inCins, nin⟩⟩
+            ⟩
+      backgroundInsHold :=
+        fun {dd xx} inBins =>
+          if h: x = xx then
+            Valuation.update.eqBoundOfEq _ h _ ▸
+            binsSat dX (h.symm ▸ inBins) ▸
+            rfl
+          else
+            let nin eq := (h (ValVar.eqX eq.symm)).elim
+            Valuation.update.eqOrig _ h dX ▸
+            isSat.backgroundInsHold ⟨
+              ((cause dX).except x dX).backgroundIns,
+              ⟨⟨dX, rfl⟩, ⟨inBins, nin⟩⟩
+            ⟩
+      backgroundOutHold :=
+        fun {dd xx} inBout =>
+          if h: x = xx then
+            Valuation.update.eqBoundOfEq _ h _ ▸
+            boutSat dX (h.symm ▸ inBout)
+          else
+            let nin := h ∘ Eq.symm ∘ And.right
+            Valuation.update.eqOrig _ h dX ▸
+            isSat.backgroundOutHold ⟨
+              ((cause dX).except x dX).backgroundOut,
+              ⟨⟨dX, rfl⟩, ⟨inBout, nin⟩⟩
+            ⟩
+    }
 
 structure Cause.RespectsBoundVar
   (cause: Cause D)
@@ -307,6 +361,7 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
 :
   ¬(expr.interpretation salg b c).posMem d
 :=
+  open Cause.IsInapplicable in
   match expr with
   | Expr.var x =>
     let cause: Cause salg.D := {
@@ -363,7 +418,7 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
           IsCause salg cause d (Expr.op op args) ∧
           ¬ cause.IsInapplicable outSet b
       := ⟨
-        Cause.arbUnion (fun i => causes i),
+        Cause.arbUn (fun i => causes i),
         And.intro
           (fun isSat =>
             let posIsDef param (dPos: posMem param) :=
@@ -395,7 +450,6 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
               (fun param dVal dPos => posIsDef param ⟨dVal, dPos⟩)
               isPos)
           (fun isInapplicable =>
-            open Cause.IsInapplicable in
             isInapplicable.rec
               (fun ⟨cins, ⟨⟨i, eq⟩, vvIn⟩⟩ inOutSet =>
                 let eq: (causes i).val.contextIns = cins := eq
@@ -501,7 +555,6 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
           :
             ec.IsInapplicable bOutSet b
           :=
-            open Cause.IsInapplicable in
             (isCplCause ec isCause).elim
               (fun ⟨vv, ⟨vvCins, vvBout⟩⟩ =>
                 let notPos := isSat.backgroundOutHold vvBout
@@ -657,7 +710,6 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
         body
         (fun vv => (vv.x = x ∧ vv.d ≠ dX) ∨ (vv.x ≠ x ∧ outSet vv))
         (fun {cause} isCauseBody =>
-          open Cause.IsInapplicable in
           if h: cause.RespectsBoundVar x dX then
             let isCause:
               IsCause salg (cause.except x dX) d (Expr.Un x body)
@@ -666,28 +718,25 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
             
             (isEveryCauseInapplicable isCause).rec
               (fun {dd xx} inCins inOutSet =>
-                let xNeq: xx ≠ x :=
-                  fun xEq =>
-                    let dEq := h.cins (xEq ▸ inCins.left)
-                    inCins.right (ValVar.eq dEq xEq)
+                let xNeq xEq :=
+                  let dEq := h.cins (xEq ▸ inCins.left)
+                  inCins.right (ValVar.eq dEq xEq)
                 let inModifiedOutSet :=
                   Or.inr (And.intro xNeq inOutSet)
                 blockedContextIns inCins.left inModifiedOutSet)
               
               (fun {dd xx} inBins notPos =>
-                let xNeq: x ≠ xx :=
-                  fun xEq =>
-                    let dEq := h.bins (xEq ▸ inBins.left)
-                    inBins.right (ValVar.eq dEq xEq.symm)
+                let xNeq (xEq: x = xx) :=
+                  let dEq := h.bins (xEq ▸ inBins.left)
+                  inBins.right (ValVar.eq dEq xEq.symm)
                 let notPosUpdated :=
                   Valuation.update.eqOrig _ xNeq _ ▸ notPos
                 blockedBackgroundIns inBins.left notPosUpdated)
               
               (fun {dd xx} inBout isDef =>
-                let xNeq: x ≠ xx :=
-                  fun xEq =>
-                    let dNeq := h.bout (xEq ▸ inBout.left)
-                    inBout.right (And.intro dNeq xEq.symm)
+                let xNeq (xEq: x = xx) :=
+                  let dNeq := h.bout (xEq ▸ inBout.left)
+                  inBout.right (And.intro dNeq xEq.symm)
                 let isDefUpdated :=
                   Valuation.update.eqOrig _ xNeq _ ▸ isDef
                 blockedBackgroundOut inBout.left isDefUpdated)
@@ -706,17 +755,133 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
                   Valuation.update.eqBound _ x dX ▸ dEq
                 blockedBackgroundOut inBout isDef)
             (fun inModifiedOutSet =>
-          inModifiedOutSet.elim
-            (fun ⟨xEq, dNeq⟩ =>
-              Valuation.update.eqBoundOfEq c xEq.symm dX ▸
-              dNeq)
-            (fun ⟨xNeq, inOutSet⟩ =>
-              Valuation.update.eqOrig c xNeq.symm dX ▸
-              outSetIsEmpty inOutSet))
+              inModifiedOutSet.elim
+                (fun ⟨xEq, dNeq⟩ =>
+                  Valuation.update.eqBoundOfEq c xEq.symm dX ▸
+                  dNeq)
+                (fun ⟨xNeq, inOutSet⟩ =>
+                  Valuation.update.eqOrig c xNeq.symm dX ▸
+                  outSetIsEmpty inOutSet))
     
     fun ⟨dX, inPos⟩ => ih dX inPos
   | Expr.Ir x body =>
-    sorry
+    fun isPos =>
+      let exApplicableBody dX:
+        ∃ cause,
+          IsCause salg cause d body ∧
+          cause.RespectsBoundVar x dX ∧
+          ¬ (cause.except x dX).IsInapplicable outSet b
+      :=
+        byContradiction fun nex =>
+          let allRespInapp :=
+            nex.toAll
+              fun cause p (i: IsCause salg cause d body) =>
+                (p.toImpl i).toImplDne
+          everyCauseInapplicableImpliesDefinitiveNonmember
+            salg
+            (b.update x dX)
+            (c.update x dX)
+            d
+            body
+            (fun vv => (vv.x = x ∧ vv.d ≠ dX) ∨ (vv.x ≠ x ∧ outSet vv))
+            (fun {cause} isCauseBody =>
+              if h: cause.RespectsBoundVar x dX then
+                (allRespInapp cause isCauseBody h).rec
+                  (fun {dd xx} inCins inOutSet =>
+                    let xNeq xEq :=
+                      let dEq := h.cins (xEq ▸ inCins.left)
+                      inCins.right (ValVar.eq dEq xEq)
+                    let inModifiedOutSet := Or.inr ⟨xNeq, inOutSet⟩
+                    blockedContextIns inCins.left inModifiedOutSet)
+                  (fun {dd xx} inBins notPos =>
+                    let xNeq (xEq: x = xx) :=
+                      let dEq := h.bins (xEq ▸ inBins.left)
+                      inBins.right (ValVar.eq dEq xEq.symm)
+                    let notPosUpdated :=
+                      Valuation.update.eqOrig _ xNeq _ ▸ notPos
+                    blockedBackgroundIns inBins.left notPosUpdated)
+                  (fun {dd xx} inBout isDef =>
+                    let xNeq (xEq: x = xx) :=
+                      let dNeq := h.bout (xEq ▸ inBout.left)
+                      inBout.right (And.intro dNeq xEq.symm)
+                    let isDefUpdated :=
+                      Valuation.update.eqOrig _ xNeq _ ▸ isDef
+                    blockedBackgroundOut inBout.left isDefUpdated)
+              else
+                let defies := Cause.DefiesBoundVar.ofNotRespects h
+                
+                match defies with
+                | Cause.DefiesBoundVar.cins inCins dNeq =>
+                  blockedContextIns inCins (Or.inl ⟨rfl, dNeq⟩)
+                | Cause.DefiesBoundVar.bins inBins dNeq =>
+                  let nPos :=
+                    Valuation.update.eqBound _ x dX ▸ dNeq
+                  blockedBackgroundIns inBins nPos
+                | Cause.DefiesBoundVar.bout inBout dEq =>
+                  let isDef :=
+                    Valuation.update.eqBound _ x dX ▸ dEq
+                  blockedBackgroundOut inBout isDef)
+            (fun inModifiedOutSet =>
+              inModifiedOutSet.elim
+                (fun ⟨xEq, dNeq⟩ =>
+                  Valuation.update.eqBoundOfEq c xEq.symm dX ▸
+                  dNeq)
+                (fun ⟨xNeq, inOutSet⟩ =>
+                  Valuation.update.eqOrig c xNeq.symm dX ▸
+                  outSetIsEmpty inOutSet))
+            (isPos dX)
+    
+    let cause := _
+    let isCause: IsCause salg cause d (Expr.Ir x body) :=
+      IsCause.arbIr
+        (fun dX => (exApplicableBody dX).unwrap)
+        (fun dX => (exApplicableBody dX).unwrap.property.left)
+        (fun dX =>
+          (exApplicableBody dX).unwrap.property.right.left.cins)
+        (fun dX =>
+          (exApplicableBody dX).unwrap.property.right.left.bins)
+        (fun dX =>
+          (exApplicableBody dX).unwrap.property.right.left.bout)
+    
+    let notInapp: ¬ cause.IsInapplicable outSet b
+    
+    | blockedContextIns inCins inOutSet =>
+      let ⟨cinsAtDxAlias, ⟨⟨dX, eqAlias⟩, inAlias⟩⟩ := inCins
+      let cins :=
+        ((exApplicableBody dX).unwrap.val.except x dX).contextIns
+      let eqAlias: cins = cinsAtDxAlias := eqAlias
+      let inCinsAtDx: _ ∈ cins := eqAlias ▸ inAlias
+      let notInappAtX :=
+        (exApplicableBody dX).unwrap.property.right.right
+      
+      notInappAtX
+        (blockedContextIns inCinsAtDx inOutSet)
+    
+    | blockedBackgroundIns inBins notPos =>
+      let ⟨binsAtDxAlias, ⟨⟨dX, eqAlias⟩, inAlias⟩⟩ := inBins
+      let bins :=
+        ((exApplicableBody dX).unwrap.val.except x dX).backgroundIns
+      let eqAlias: bins = binsAtDxAlias := eqAlias
+      let inBinsAtDx: _ ∈ bins := eqAlias ▸ inAlias
+      let notInappAtX :=
+        (exApplicableBody dX).unwrap.property.right.right
+      
+      notInappAtX
+        (blockedBackgroundIns inBinsAtDx notPos)
+    
+    | blockedBackgroundOut inBout isDef =>
+      let ⟨boutAtDxAlias, ⟨⟨dX, eqAlias⟩, inAlias⟩⟩ := inBout
+      let bout :=
+        ((exApplicableBody dX).unwrap.val.except x dX).backgroundOut
+      let eqAlias: bout = boutAtDxAlias := eqAlias
+      let inBoutAtDx: _ ∈ bout := eqAlias ▸ inAlias
+      let notInappAtX :=
+        (exApplicableBody dX).unwrap.property.right.right
+      
+      notInappAtX
+        (blockedBackgroundOut inBoutAtDx isDef)
+    
+    notInapp (isEveryCauseInapplicable isCause)
 
 
 mutual
