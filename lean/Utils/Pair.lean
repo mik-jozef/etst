@@ -166,7 +166,7 @@ namespace Pair
     a.depth < n
   :=
     (casesEq a b).elim
-      (fun ⟨eq, le⟩ =>
+      (fun ⟨eq, _⟩ =>
         Nat.lt_of_succ_lt_succ (eq ▸ ltSucc))
       (fun ⟨eq, lt⟩ =>
         let ltSucc := (Nat.succ_lt_succ lt).trans (eq ▸ ltSucc)
@@ -180,7 +180,7 @@ namespace Pair
     (casesEq a b).elim
       (fun ⟨eq, le⟩ =>
         le.trans_lt (Nat.lt_of_succ_lt_succ (eq ▸ ltSucc)))
-      (fun ⟨eq, lt⟩ =>
+      (fun ⟨eq, _⟩ =>
         Nat.lt_of_succ_lt_succ (eq ▸ ltSucc))
   
   
@@ -411,11 +411,6 @@ namespace Pair
       
       Nat.succ_lt_succ nPredLtTail
   
-  
-  def arrayLast (head tail: Pair): Pair :=
-    match tail with
-    | zero => head
-    | pair tailHead tailTail => tailHead.arrayLast tailTail
   
   def arrayLast.eqLastOfTail
     (eq: arrayLast head (pair tailHead tailTail) = p)

@@ -341,6 +341,20 @@ def Not.toOr {L R: Prop}
   else
     Or.inl hL
 
+def Not.toImpl {A B: Prop}
+  (nAnd: ¬ (A ∧ B))
+:
+  A → ¬ B
+:=
+  fun a => if h: B then (nAnd ⟨a, h⟩).elim else h
+
+def Not.toImplDne {A B: Prop}
+  (nAnd: ¬ (A ∧ ¬ B))
+:
+  A → B
+:=
+  fun a => if h: B then h else (nAnd ⟨a, h⟩).elim
+
 def Not.toAnd {L R: Prop}
   (nOr: ¬(L ∨ R))
 :
@@ -353,6 +367,14 @@ def Not.toAnd {L R: Prop}
       False.elim (nOr (Or.inr hR))
     else
       And.intro hL hR
+
+def Not.toAnd3 {L M R: Prop}
+  (nOr: ¬(L ∨ M ∨ R))
+:
+  ¬L ∧ ¬M ∧ ¬R
+:=
+  let ⟨notL, rest⟩ := Not.toAnd nOr
+  And.intro notL (Not.toAnd rest)
 
 def all.notEx {P ContradictsP: T → Prop}
   (allP: ∀ t: T, P t)

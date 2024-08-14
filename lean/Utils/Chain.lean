@@ -240,66 +240,66 @@ instance
 where
   coe chain := chain.set
 
-  def Chain.empty: Chain ord := ⟨
-    fun _ => False,
-    fun _x xInEmpty => False.elim xInEmpty
-  ⟩
-  
-  def Chain.IsEmpty (ch: Chain ord): Prop := ch = empty
-  def Chain.AllNin {ord: PartialOrder T} (ch: Chain ord): Prop :=
-    ∀ t: T, t ∉ ch.set
-  def Chain.NexIn {ord: PartialOrder T} (ch: Chain ord): Prop :=
-    ¬∃ t: T, t ∈ ch.set
-  
-  def Chain.IsEmpty.allNin
-    {ch: Chain ord}
-    (chEmpty: ch.IsEmpty)
-  :
-    ch.AllNin
-  :=
-    fun t tIn => (show t ∈ (empty).set from chEmpty ▸ tIn)
-  
-  def Chain.AllNin.isEmpty
-    {ch: Chain ord}
-    (chEmpty: ch.AllNin)
-  :
-    ch.IsEmpty
-  :=
-    Chain.eq (funext fun t => propext (Iff.intro
-      (fun nope => chEmpty t nope)
-      (fun nope => False.elim nope)))
-  
-  def Chain.NexIn.allNin
-    {ch: Chain ord}
-    (nexIn: ch.NexIn)
-  :
-    ch.AllNin
-  :=
-    nexIn.toAll (fun _ => id)
-  
-  def Chain.AllNin.nexIn
-    {ch: Chain ord}
-    (allIn: ch.AllNin)
-  :
-    ch.NexIn
-  :=
-    all.notEx allIn (fun _ => id)
-  
-  def Chain.NexIn.isEmpty
-    {ch: Chain ord}
-    (nexIn: ch.NexIn)
-  :
-    ch.IsEmpty
-  :=
-    nexIn.allNin.isEmpty
-  
-  def Chain.IsEmpty.nexIn
-    {ch: Chain ord}
-    (nexIn: ch.IsEmpty)
-  :
-    ch.NexIn
-  :=
-    nexIn.allNin.nexIn
+def Chain.empty: Chain ord := ⟨
+  Set.empty,
+  fun _ => False.elim
+⟩
+
+def Chain.IsEmpty (ch: Chain ord): Prop := ch = empty
+def Chain.AllNin {ord: PartialOrder T} (ch: Chain ord): Prop :=
+  ∀ t: T, t ∉ ch.set
+def Chain.NexIn {ord: PartialOrder T} (ch: Chain ord): Prop :=
+  ¬∃ t: T, t ∈ ch.set
+
+def Chain.IsEmpty.allNin
+  {ch: Chain ord}
+  (chEmpty: ch.IsEmpty)
+:
+  ch.AllNin
+:=
+  fun t tIn => (show t ∈ (empty).set from chEmpty ▸ tIn)
+
+def Chain.AllNin.isEmpty
+  {ch: Chain ord}
+  (chEmpty: ch.AllNin)
+:
+  ch.IsEmpty
+:=
+  Chain.eq (funext fun t => propext (Iff.intro
+    (fun nope => chEmpty t nope)
+    (fun nope => False.elim nope)))
+
+def Chain.NexIn.allNin
+  {ch: Chain ord}
+  (nexIn: ch.NexIn)
+:
+  ch.AllNin
+:=
+  nexIn.toAll (fun _ => id)
+
+def Chain.AllNin.nexIn
+  {ch: Chain ord}
+  (allIn: ch.AllNin)
+:
+  ch.NexIn
+:=
+  all.notEx allIn (fun _ => id)
+
+def Chain.NexIn.isEmpty
+  {ch: Chain ord}
+  (nexIn: ch.NexIn)
+:
+  ch.IsEmpty
+:=
+  nexIn.allNin.isEmpty
+
+def Chain.IsEmpty.nexIn
+  {ch: Chain ord}
+  (nexIn: ch.IsEmpty)
+:
+  ch.NexIn
+:=
+  nexIn.allNin.nexIn
   
 def IsChain.subset
   {set: Set T}

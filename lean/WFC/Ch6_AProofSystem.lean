@@ -999,7 +999,7 @@ def emptyCycleIsOut
   ¬(dl.wellFoundedModel salg x).posMem d
 :=
   let wfm := dl.wellFoundedModel salg
-  let ⟨isFp, _⟩ := DefList.wellFoundedModel.isLfpB salg dl
+  let ⟨isFp, _⟩ := DefList.wellFoundedModel.isLfp salg dl
   
   isFp ▸
   lfp.induction

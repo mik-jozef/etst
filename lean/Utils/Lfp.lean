@@ -794,16 +794,30 @@ def lfp.holdsOfHoldsForFixed
   Shows that a property that holds for all stages holds for the
   least fixed point.
 -/
-def lfp.holdsOfHoldsForAll
-  {P: T → Prop}
-  (holdsForAll: ∀ n: Ordinal, P (stage cc op opMono n))
+def lfp.induction
+  -- The explicit universe level is required now because of this issue:
+  -- https://github.com/leanprover/lean4/issues/5035
+  {T: Type u}
+  {ord: PartialOrder T}
+  -- The above should be deletable once the issue is resolved.
+  
+  (P: T → Prop)
+  (cc: IsChainComplete ord)
+  (op: T → T)
+  (opMono: IsMonotonic ord ord op)
+  (step:
+    (n: Ordinal.{u}) →
+    (ih: ∀ nn: ↑n, P (stage cc op opMono nn))→
+    P (stage cc op opMono n))
 :
   P (lfp cc op opMono).val
 :=
   let ⟨n, isLfp⟩ := lfp.fixedIndex cc op opMono
   
   (lfp cc op opMono).property.isUnique _ isLfp ▸
-  holdsForAll n
+  n.induction
+    fun n ih =>
+      step n (fun ⟨nn, isLt⟩ => ih nn isLt)
 
 
 noncomputable def lfp.lfpIndex

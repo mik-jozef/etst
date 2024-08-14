@@ -80,15 +80,15 @@ namespace Set3
     s0 ≤ union s0 s1
   :=
     LeStd.intro
-      (Set.subset_union_left _ _)
-      (Set.subset_union_left _ _)
+      Set.subset_union_left
+      Set.subset_union_left
   
   def union.monoRite (s0 s1: Set3 D):
     s1 ≤ union s0 s1
   :=
     LeStd.intro
-      (Set.subset_union_right _ _)
-      (Set.subset_union_right _ _)
+      Set.subset_union_right
+      Set.subset_union_right
   
   
   def inter (s0 s1: Set3 D): Set3 D := ⟨
@@ -109,15 +109,15 @@ namespace Set3
     inter s0 s1 ≤ s0
   :=
     LeStd.intro
-      (Set.inter_subset_left _ _)
-      (Set.inter_subset_left _ _)
+      Set.inter_subset_left
+      Set.inter_subset_left
   
   def inter.monoRite (s0 s1: Set3 D):
     inter s0 s1 ≤ s1
   :=
     LeStd.intro
-      (Set.inter_subset_right _ _)
-      (Set.inter_subset_right _ _)
+      Set.inter_subset_right
+      Set.inter_subset_right
   
   
   instance unionInst (D: Type u): Union (Set3 D) where

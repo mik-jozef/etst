@@ -17,6 +17,10 @@ import Utils.Valuation
     orders with respect to which the operators are monotonic.
 -/
 def lfp.leOfOpLeMapped
+  -- Needs to be explicit because of this issue:
+  -- https://github.com/leanprover/lean4/issues/5035
+  {Ta Tb: Type u}
+  
   {ordA: PartialOrder Ta}
   {ordB: PartialOrder Tb}
   (isCcA: IsChainComplete ordA)
@@ -123,6 +127,10 @@ def lfp.leOfOpLeMapped
   the same as `ordB`.
 -/
 def lfp.leOfOpLeMappedSameOrd
+  -- Needs to be explicit because of this issue:
+  -- https://github.com/leanprover/lean4/issues/5035
+  {Ta Tb: Type u}
+  
   {ordA: PartialOrder Ta}
   {ordB: PartialOrder Tb}
   (isCcA: IsChainComplete ordA)

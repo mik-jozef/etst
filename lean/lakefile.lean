@@ -1,7 +1,7 @@
 import Lake
 open Lake DSL
 
--- (I forgot what it stands for.)
+-- (I forgot what it stands for. (Extensional triset theory?))
 package Etst {}
 
 lean_lib HM.Assign {}
