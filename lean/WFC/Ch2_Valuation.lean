@@ -1,6 +1,4 @@
-/-
-  # Chapter 2: Valuations
--/
+-- # Chapter 2: Valuations
 
 import Utils.Set3
 import Utils.Pointwise

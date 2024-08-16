@@ -1,3 +1,5 @@
+-- # Chapter 3: The Interpretation Function
+
 import Utils.Valuation
 import Utils.ExprIsFreeVar
 
@@ -179,6 +181,10 @@ where
   :
     DependsOn getDef a c
 
+/-
+  If `a` depends on `b`, and `b` has a free variable `c`, then `a`
+  also depends on `c`.
+-/
 def DefList.DependsOn.push
   {getDef: GetDef sig}
   (dependsOn: DependsOn getDef a b)
@@ -186,6 +192,7 @@ def DefList.DependsOn.push
 :
   DependsOn getDef a c
 :=
+  -- Lean cannot verify termination here :/
   -- match dependsOn with
   -- | Refl _ => Uses isFree (Refl c)
   -- | Uses head tail =>
