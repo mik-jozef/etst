@@ -111,8 +111,20 @@ mutual
 variable {sig: Signature}
 
 /-
-  `Ins salg dl d x` means that `d` is a definitive member of `x`
-  in the well-founded model of `dl`.
+  `Ins salg dl d x` means that `d` is (provably) a member of `x`
+  (in the well-founded model of `dl`).
+  
+  If there exists a strong cause of `d ∈ dl.getDef x` such that
+  for every value–variable pair `(d, x)`:
+  
+  0. `(d, x) ∈ cause.contextIns` implies `d` is provably a member
+     of `x`,
+  1. `(d, x) ∈ cause.backgroundIns` also implies `d` is provably
+     a member of `x`, and
+  2. `(d, x) ∈ cause.backgroundOut` implies `d` is provably a
+     non-member of `x`,
+  
+  then `d` is provably a member of `x`.
 -/
 inductive Ins
   (salg: Salgebra sig)
@@ -182,6 +194,9 @@ inductive IsCauseInapplicable
 /-
   `Out salg dl d x` means that `d` is a definitive non-member of
   `x` in the well-founded model of `dl`.
+  
+  A `d` is provably a non-member of `x` if there exists an empty
+  cycle containing the pair `(d, x)`.
 -/
 inductive Out
   (salg: Salgebra sig)
