@@ -42,12 +42,15 @@ import Utils.BasicUtils
 import Utils.Lfp
 
 
+-- The definition of Set3.
 structure Set3 (D: Type u) where
   defMem: Set D -- The definitive members
   posMem: Set D -- The possible members
   defLePos: defMem ≤ posMem
 
 namespace Set3
+  -- If two trisets have the same definitive and possible members,
+  -- they are equal.
   protected def eq:
     {a b: Set3 D} →
     a.defMem = b.defMem →
@@ -56,14 +59,6 @@ namespace Set3
     a = b
   -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1747
   | ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl => rfl
-  
-  structure eq2
-    (s3: Set3 D)
-    (s2: Set D): Prop
-  where
-    allDefIn: ∀ d: s3.defMem, d.val ∈ s2
-    allNinNpos: ∀ d: ↑s2ᶜ, d.val ∉ s3.posMem
-  
   
   /-
     An element which is not a possible member is also not a
@@ -101,27 +96,45 @@ namespace Set3
     ⟨s, s, Preorder.le_refl _⟩
   
   
+  /-
+    The definition of the "less than or equal to" relation for
+    the standard order.
+  -/
   structure LeStd (a b: Set3 D): Prop where
     intro ::
     defLe: a.defMem ≤ b.defMem
     posLe: a.posMem ≤ b.posMem
   
+  /-
+    The definition of the "less than" relation for the standard
+    order.
+  -/
   structure LtStd (a b: Set3 D): Prop where
     intro ::
     defLe: a.defMem ≤ b.defMem
     posLe: a.posMem ≤ b.posMem
     neq: a ≠ b
   
+  
+  /-
+    The definition of the "less than or equal to" relation for
+    the approximation order.
+  -/
   structure LeApx (a b: Set3 D): Prop where
     intro ::
     defLe: a.defMem ≤ b.defMem
     posLe: b.posMem ≤ a.posMem
   
+  /-
+    The definition of the "less than" relation for the approximation
+    order.
+  -/
   structure LtApx (a b: Set3 D): Prop where
     intro ::
     defLe: a.defMem ≤ b.defMem
     posLe: b.posMem ≤ a.posMem
     neq: a ≠ b
+  
   
   def LtStd.toLe (lt: LtStd a b): LeStd a b := {
     defLe := lt.defLe
@@ -133,46 +146,56 @@ namespace Set3
     posLe := lt.posLe
   }
   
+  -- Support for the `≤` symbol (standard `le`).
   instance leInst: LE (Set3 D) where
     le := LeStd
   
+  -- Support for the `<` symbol (standard `lt`).
   instance ltInst: LT (Set3 D) where
     lt := LtStd
   
+  -- Support for the `⊑` symbol (approximation `le`).
   instance sqleInst: SqLE (Set3 D) where
     le := LeApx
   
+  -- Support for the `⊏` symbol (approximation `lt`).
   instance sqltInst: SqLT (Set3 D) where
     lt := LtApx
   
   
+  -- The approximation relation is antisymmetric.
   def ord.approximation.le_antisymm
     (a b: Set3 D)
     (ab: a ⊑ b)
     (ba: b ⊑ a)
   :=
-      let defEq: a.defMem = b.defMem :=
-        PartialOrder.le_antisymm a.defMem b.defMem ab.defLe ba.defLe;
-      let posEq: a.posMem = b.posMem :=
-        PartialOrder.le_antisymm a.posMem b.posMem ba.posLe ab.posLe;
-      Set3.eq defEq posEq
+    let defEq: a.defMem = b.defMem :=
+      PartialOrder.le_antisymm a.defMem b.defMem ab.defLe ba.defLe;
+    let posEq: a.posMem = b.posMem :=
+      PartialOrder.le_antisymm a.posMem b.posMem ba.posLe ab.posLe;
+    Set3.eq defEq posEq
   
+  -- The definition of the approximation order.
   def ord.approximation (D: Type u): PartialOrder (Set3 D) where
     le := LeApx
     lt := LtApx
     
+    -- The reflexivity of the approximation order.
     le_refl (a: Set3 D) :=
       LeApx.intro
         (Preorder.le_refl (a.defMem))
         (Preorder.le_refl (a.posMem))
     
+    -- The antisymmetry of the approximation order.
     le_antisymm := approximation.le_antisymm
     
+    -- The transitivity of the approximation order.
     le_trans (a b c: Set3 D) (ab: a ⊑ b) (bc: b ⊑ c) :=
       LeApx.intro
         (Preorder.le_trans _ _ _ ab.defLe bc.defLe)
         (Preorder.le_trans _ _ _ bc.posLe ab.posLe)
     
+    -- The compatibility of the `le` and `lt` relations. 
     lt_iff_le_not_le a b: a ⊏ b ↔ a ⊑ b ∧ ¬b ⊑ a :=
       Iff.intro
         (fun ab => And.intro
@@ -188,6 +211,7 @@ namespace Set3
             ⟨ab.defLe, ab.posLe, h⟩
   
   
+  -- The standard order is antisymmetric.
   def ord.standard.le_antisymm (a b: Set3 D) (ab: a ≤ b) (ba: b ≤ a) :=
     let defEq: a.defMem = b.defMem :=
       PartialOrder.le_antisymm a.defMem b.defMem ab.defLe ba.defLe;
@@ -195,22 +219,27 @@ namespace Set3
       PartialOrder.le_antisymm a.posMem b.posMem ab.posLe ba.posLe;
     Set3.eq defEq posEq
   
+  -- The definition of the standard order.
   def ord.standard (D: Type u): PartialOrder (Set3 D) where
     le := LeStd
     lt := LtStd
     
+    -- The reflexivity of the standard order.
     le_refl (a: Set3 D) :=
       LeStd.intro
         (Preorder.le_refl (a.defMem))
         (Preorder.le_refl (a.posMem))
     
+    -- The antisymmetry of the standard order.
     le_antisymm := standard.le_antisymm
     
+    -- The transitivity of the standard order.
     le_trans (a b c: Set3 D) (ab: a ≤ b) (bc: b ≤ c) :=
       LeStd.intro
         (Preorder.le_trans a.defMem b.defMem c.defMem ab.defLe bc.defLe)
         (Preorder.le_trans a.posMem b.posMem c.posMem ab.posLe bc.posLe)
     
+    -- The compatibility of the `le` and `lt` relations.
     lt_iff_le_not_le a b :=
       Iff.intro
         (fun ab => ⟨ab.toLe, fun ba =>
@@ -222,12 +251,19 @@ namespace Set3
           else
             ⟨ab.defLe, ab.posLe, h⟩
   
+  /-
+    The supremum of a set of trisets wrt. the standard order.
+    
+    Its definitive members are the union of the definitive
+    members of the trisets in the set, and its possible members
+    are the union of the possible members.
+  -/
   def ord.standard.sup (s: Set (Set3 D)): Supremum (standard D) s :=
-    let sup := {
+    let sup: Set3 D := {
       defMem := fun d => ∃s: ↑s, d ∈ s.val.defMem
       posMem := fun d => ∃s: ↑s, d ∈ s.val.posMem
       defLePos :=
-        fun d dDef =>
+        fun _ dDef =>
           let s := dDef.unwrap
           ⟨s, s.val.val.defLePos s.property⟩
     }
@@ -237,21 +273,19 @@ namespace Set3
         isMember :=
           (fun s =>
             LeStd.intro
-              -- Why tf is `by exact` required???
-              (fun d dMem => by exact ⟨s, dMem⟩)
-              (fun d dMem => by exact ⟨s, dMem⟩))
+              (fun _ dMem => ⟨s, dMem⟩)
+              (fun _ dMem => ⟨s, dMem⟩))
         isLeMember :=
           fun ub ubIsUB =>
             LeStd.intro
               (fun d dMemSupWtf =>
-                -- WHAT THE ACTUAL FLYING why is `by exact` necessary here???
-                let dMemSup: ∃s: ↑s, d ∈ s.val.defMem := by exact dMemSupWtf;
+                let dMemSup: ∃s: ↑s, d ∈ s.val.defMem := dMemSupWtf;
                 let s := dMemSup.unwrap
                 let sLeUb: s.val.val ≤ ub := ubIsUB s
                 let dInS: d ∈ s.val.val.defMem := s.property
                 sLeUb.defLe dInS)
               (fun d dMemSupWtf =>
-                let dMemSup: ∃s: ↑s, d ∈ s.val.posMem := by exact dMemSupWtf;
+                let dMemSup: ∃s: ↑s, d ∈ s.val.posMem := dMemSupWtf;
                 let s := dMemSup.unwrap
                 let sLeUb: s.val.val ≤ ub := ubIsUB s
                 let dInS: d ∈ s.val.val.posMem := s.property
@@ -259,12 +293,19 @@ namespace Set3
       }
     ⟩
   
+  /-
+    The supremum of a chain of trisets wrt. the approximation order.
+    
+    Its definitive members are the union of the definitive members
+    of the trisets in the chain, and its possible members are the
+    intersection of the possible members.
+  -/
   def ord.approximation.sup (ch: Chain (approximation D)):
     Supremum (approximation D) ch
   :=
     let sup: Set3 D := {
-      defMem := fun d => ∃s: ↑ch, d ∈ s.val.defMem
-      posMem := fun d => ∀s: ↑ch, d ∈ s.val.posMem
+      defMem := fun d => ∃ s: ↑ch, d ∈ s.val.defMem
+      posMem := fun d => ∀ s: ↑ch, d ∈ s.val.posMem
       defLePos :=
         fun d dDef s =>
           let sOfD := dDef.unwrap
@@ -307,6 +348,7 @@ namespace Set3
     ⟩
   
   
+  -- The standard order is chain-complete.
   def ord.standard.isChainComplete (D: Type u):
     IsChainComplete (ord.standard D)
   := {
@@ -314,6 +356,7 @@ namespace Set3
       fun ch => ⟨(sup ch.set).val, (sup ch.set).property⟩
   }
   
+  -- The approximation order is chain-complete.
   def ord.approximation.isChainComplete (D: Type u):
     IsChainComplete (ord.approximation D)
   := {
