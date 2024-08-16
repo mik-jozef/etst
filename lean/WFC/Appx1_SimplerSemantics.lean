@@ -9,7 +9,7 @@
   
   The iterative process begins with an empty valuation. The limit
   ordinals get assigned a limit infimum of the previous stages,
-  with respect to the approximation ordering.
+  with respect to the approximation order.
   
   It is unclear whether this idea is even well-founded, since
   it is not trivially clear whether this process is guaranteed

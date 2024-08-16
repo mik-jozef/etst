@@ -31,9 +31,9 @@
   
       a.defMem ⊆ b.defMem ∧ b.posMem ⊆ a.posMem  \,.
   
-  The least element of the standard ordering is the empty triset,
-  while the least element of the approximation ordering is the
-  wholly undetermined triset.
+  The least element of the standard order is the empty triset,
+  while the least element of the approximation order is the wholly
+  undetermined triset.
   
   Both orders are proven chain-complete.
 -/

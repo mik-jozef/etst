@@ -7,15 +7,15 @@
   
   Here we define the semantics of definition lists. That is, we
   will associate every definition list `dl` with a valuation
-  (called the we well-founded model of `dl`) that "agrees" with
-  the definitions in `dl`.
+  (called the well-founded model of `dl`) that "agrees" with the
+  definitions in `dl`.
   
   Typically, the semantics of recursive definitions is defined
   as a least fixed point of their interpretation. For example,
   take `let T = 0 | T + 2` (to borrow syntax from TypeScript).
   We can imagine the least fixed point as being built in stages,
-  starting with the least element of the standard ordering, the
-  empty set:
+  starting with the least element of the standard order, the empty
+  set:
   
       T₀ = ∅
       T₁ = {0}
@@ -39,8 +39,9 @@
   > well-behaved definitions.
   
   Our problem is that least fixed points are not guaranteed to
-  exist non-monotonic operators, such as those involving complements.
-  For example, consider `let Bad = ~Bad`. The stages are:
+  exist for non-monotonic operators, such as those involving
+  complements. For example, consider `let Bad = ~Bad`. The stages
+  are:
   
       Bad₀ = ∅
       Bad₁ = ℕ
@@ -62,16 +63,16 @@
   
       C_b(c) = interpretation(b, c)
   
-  Since the interpretation of complements is constant, the
-  interpretation of C is monotonic (with respect to the standard
-  ordering).
+  Since the interpretation of complements is constant, the inter-
+  pretation of C_b is monotonic (with respect to the standard
+  order).
   
   We also define the operator B as follows:
   
       B(b) = lfp(C_b)
   
   where `lfp(X)` is the least fixed point of `X`. We can show
-  that B is monotonic with respect to the approximation ordering.
+  that B is monotonic with respect to the approximation order.
   
   > Aside:
   > If you're willing to entertain the idea of algorithms that
@@ -81,7 +82,7 @@
   > 
   > ```
   >   // Valuations are initialized to the least elements in their
-  >   // respective orderings.
+  >   // respective orders.
   >   let b = the undetermined valuation;
   >   
   >   while (b has changed) {
@@ -101,8 +102,18 @@
   The fixed point of operator B is called the well-founded model
   of the definition list.
   
-  This approach is called the well-founded semantics. More details
+  This approach semantics is called the well-founded semantics,
+  and the existence of the least fixed point is guaranteed by
+  a variant of the Knaster-Tarski theorem. More details and
   and references can be found in my [magister thesis][wfs-rec-types].
+  Also see the file `Utils/Lfp.lean` for the formalization of
+  least fixed points.
+  
+  Final note: a lot of technical details have been moved to other
+  files, yet there is still plenty in this one. Feel free to skip
+  any definitions in here that are not annotated with a comment,
+  and skim over the rest. One can look into the imported files for
+  the details if so inclined.
   
   [wfs-rec-types]: https://is.muni.cz/th/xr8vu/Well-founded-type-semantics.pdf
 -/
@@ -110,11 +121,17 @@
 import Utils.Interpretation
 
 
-def operatorC (salg: Salgebra sig) (dl: DefList sig) (b: Valuation salg.D):
+-- The family of operators C (often called "the" operator C).
+def operatorC
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  (b: Valuation salg.D)
+:
   Valuation salg.D → Valuation salg.D
 :=
   fun c => dl.interpretation salg b c
 
+-- The operator C is monotonic wrt. the standard order.
 def operatorC.isMonotonic
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -129,6 +146,7 @@ def operatorC.isMonotonic
     Expr.interpretation.isMonotonic.standard
       salg (dl.getDef x) b cLe
 
+-- The operator C is monotonic wrt. the approximation order.
 def operatorC.isMonotonic.approximation
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -145,6 +163,7 @@ def operatorC.isMonotonic.approximation
     Expr.interpretation.isMonotonic.approximation
       salg (dl.getDef x) bLe c0LeC1
 
+-- The least fixed point of the operator C.
 noncomputable def operatorC.lfp
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -158,6 +177,17 @@ noncomputable def operatorC.lfp
     (operatorC.isMonotonic salg dl b)
 
 
+/-
+  The iterative construction of the least fixed point of the
+  operator C. The stages are defined as follows:
+  
+      C_{b, n+1}   = C_b(C_{b, n})
+      C_{b, limit} = sup { C_{b, n} | n < limit }
+  
+  (Note: zero is treated as a limit ordinal, so the zeroth stage
+  is the empty valuation. The supremum is wrt. the standard
+  order.)
+-/
 noncomputable def operatorC.stage
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -321,6 +351,7 @@ def operatorC.stage.isMonotonic.approximation
     n
 
 
+-- The operator B.
 noncomputable def operatorB (salg: Salgebra sig) (dl: DefList sig):
   Valuation salg.D → Valuation salg.D
 :=
@@ -407,6 +438,7 @@ noncomputable def operatorB.isMonotonic.commonFixedIndex
         ⟩)
     ⟩
 
+-- The operator B is monotonic wrt. the approximation order.
 def operatorB.isMonotonic (salg: Salgebra sig) (dl: DefList sig):
   IsMonotonic
     (Valuation.ord.approximation salg.D)
@@ -422,6 +454,9 @@ def operatorB.isMonotonic (salg: Salgebra sig) (dl: DefList sig):
       
       (lfpI.property.left ▸ lfpI.property.right ▸ le) x
 
+/-
+  The least fixed point of the operator B.
+-/
 noncomputable def operatorB.lfp
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -434,6 +469,17 @@ noncomputable def operatorB.lfp
     (operatorB.isMonotonic salg dl)
 
 
+/-
+  The iterative construction of the least fixed point of the
+  operator B. The stages are defined as follows:
+  
+      B_{n+1}   = B(B_n)
+      B_{limit} = sup { B_n | n < limit }
+  
+  (Note: the zeroth stage is the undetermined valuation, as the
+  supremum of the empty set / least element of the approximation
+  order.)
+-/
 noncomputable def operatorB.stage
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -562,7 +608,8 @@ def Valuation.IsModel
 
 /-
   The well-founded model of a definition list `dl` defines the
-  semantics of the definition list.
+  semantics of the definition list. It is the least fixed point
+  of the operator B.
 -/
 noncomputable def DefList.wellFoundedModel
   (salg: Salgebra sig)
