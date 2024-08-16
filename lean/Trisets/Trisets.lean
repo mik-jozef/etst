@@ -110,3 +110,7 @@ def Trisets.fromPairs: Trisets := {
   exUnion := sorry
   exIntersection := sorry
 }
+
+-- Is the intersection of two Triset models a triset model?
+-- What about arbitrary intersection?
+-- Is there a "least" model of trisets?
