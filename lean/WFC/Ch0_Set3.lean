@@ -9,18 +9,18 @@
   
   Elements that are either definitive members or undetermined
   members are called possible members. Trisets with no undetermined
-  elements are called classical (or two-valued).
+  elements are called *classical* (or two-valued).
   
-  Formally, a `Set3 D` is a pair `(defMem, posMem)` of sets
-  such that `defMem ⊆ posMem` (`defMem` and `posMem` contain
+  Formally, a `Set3 D` is a pair `(defMem, posMem)` of sets of
+  `D` such that `defMem ⊆ posMem` (`defMem` and `posMem` contain
   the definitive and possible members, respectively).
   
-  Two orders are defined on `Set3 D`, the standard order
-  and the approximation order.
+  Two orders are defined on `Set3 D`, the standard order and the
+  approximation order.
   
-  A triset `a` is less than or equal to `b` in the standard order
-  if it contains fewer definitive members and fewer possible
-  members than `b`. Formally, `a ≤ b` if
+  (Informally,) a triset `a` is less than or equal to `b` in the
+  standard order if it contains fewer definitive members and fewer
+  possible members than `b`. Formally, `a ≤ b` if
   
       a.defMem ⊆ b.defMem ∧ a.posMem ⊆ b.posMem  \,.
   
@@ -65,6 +65,10 @@ namespace Set3
     allNinNpos: ∀ d: ↑s2ᶜ, d.val ∉ s3.posMem
   
   
+  /-
+    An element which is not a possible member is also not a
+    definitive member.
+  -/
   def notDefOfNotPos
     (s3: Set3 D)
     (notPos: ¬ s3.posMem d)
@@ -233,9 +237,9 @@ namespace Set3
         isMember :=
           (fun s =>
             LeStd.intro
-              -- Why tf is this unfolding required???
-              (fun d dMem => by unfold defMem; exact ⟨s, dMem⟩)
-              (fun d dMem => by unfold posMem; exact ⟨s, dMem⟩))
+              -- Why tf is `by exact` required???
+              (fun d dMem => by exact ⟨s, dMem⟩)
+              (fun d dMem => by exact ⟨s, dMem⟩))
         isLeMember :=
           fun ub ubIsUB =>
             LeStd.intro
