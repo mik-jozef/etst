@@ -346,8 +346,8 @@ def Expr.interpretation.isMonotonic.standard
         let body.I0 := interpretation salg bUpdated c0Updated body
         let body.I1 := interpretation salg bUpdated c1Updated body
         
-        let cUpdatedLe := Valuation.update.isMonotonic.standard
-           c0 c1 cLe x dX.val
+        let cUpdatedLe :=
+          Valuation.update.isMonotonic.standard cLe x dX.val
         
         let bodyLe: body.I0 ≤ body.I1 := interpretation.isMonotonic.standard
           salg body bUpdated cUpdatedLe
@@ -367,8 +367,8 @@ def Expr.interpretation.isMonotonic.standard
         let body.I0 := interpretation salg bUpdated c0Updated body
         let body.I1 := interpretation salg bUpdated c1Updated body
         
-        let cUpdatedLe := Valuation.update.isMonotonic.standard
-          c0 c1 cLe x dX.val
+        let cUpdatedLe :=
+          Valuation.update.isMonotonic.standard cLe x dX.val
         
         let bodyLe: body.I0 ≤ body.I1 := interpretation.isMonotonic.standard
           salg body bUpdated cUpdatedLe
@@ -388,8 +388,8 @@ def Expr.interpretation.isMonotonic.standard
         let body.I0 := interpretation salg bUpdated c0Updated body
         let body.I1 := interpretation salg bUpdated c1Updated body
         
-        let cUpdatedLe := Valuation.update.isMonotonic.standard
-          c0 c1 cLe x xDDef
+        let cUpdatedLe :=
+          Valuation.update.isMonotonic.standard cLe x xDDef
         
         let bodyLe: body.I0 ≤ body.I1 :=
           interpretation.isMonotonic.standard salg body bUpdated cUpdatedLe
@@ -406,8 +406,8 @@ def Expr.interpretation.isMonotonic.standard
         let body.I0 := interpretation salg bUpdated c0Updated body
         let body.I1 := interpretation salg bUpdated c1Updated body
         
-        let cUpdatedLe := Valuation.update.isMonotonic.standard
-          c0 c1 cLe x xDDef
+        let cUpdatedLe :=
+          Valuation.update.isMonotonic.standard cLe x xDDef
         
         let bodyLe: body.I0 ≤ body.I1 :=
           interpretation.isMonotonic.standard salg body bUpdated cUpdatedLe
@@ -537,3 +537,53 @@ def Expr.interpretation.isMonotonic.approximation
       Set3.LeApx.intro
         (fun _d dIn dXPos1 => (ih dXPos1).defLe (dIn dXPos1))
         (fun _d dIn dXPos0 => (ih dXPos0).posLe (dIn dXPos0))
+
+
+def Expr.interpretation.contextHasDefMemPreservesDefMem
+  {salg: Salgebra sig}
+  {b c0 c1: Valuation salg.D}
+  (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
+  {expr: Expr sig}
+  {d: salg.D}
+  (dIn: (expr.interpretation salg b c0).defMem d)
+:
+  (expr.interpretation salg b c1).defMem d
+:=
+  let cLeDefUpdated x dX :=
+    Valuation.update.isMonotonic.standard.defMem cLeDef x dX
+  match expr with
+  | Expr.var x => cLeDef x dIn
+  | Expr.op opr args =>
+    let defMem param :=
+      ((args param).interpretation salg b c0).defMem
+    
+    let defMemFloor param :=
+      ((args param).interpretation salg b c1).defMem
+    
+    let isLe _ _ dIn := contextHasDefMemPreservesDefMem cLeDef dIn
+    
+    salg.isMonotonic opr defMem defMemFloor isLe dIn
+  | Expr.un _ _ =>
+    dIn.elim
+      (fun inL =>
+        Or.inl (contextHasDefMemPreservesDefMem cLeDef inL))
+      (fun inR =>
+        Or.inr (contextHasDefMemPreservesDefMem cLeDef inR))
+  | Expr.ir _ _ =>
+    And.intro
+      (contextHasDefMemPreservesDefMem cLeDef dIn.left)
+      (contextHasDefMemPreservesDefMem cLeDef dIn.right)
+  | Expr.cpl _ => dIn -- Note: cpl is not affected by context.
+  | Expr.ifThen _ _ =>
+    let ⟨dC, dCIn⟩ := dIn.left.unwrap
+    And.intro
+      ⟨dC, contextHasDefMemPreservesDefMem cLeDef dCIn⟩
+      (contextHasDefMemPreservesDefMem cLeDef dIn.right)
+  | Expr.Un x _ =>
+    let ⟨dX, dXIn⟩ := dIn.unwrap
+    let isDef :=
+      contextHasDefMemPreservesDefMem (cLeDefUpdated x dX) dXIn
+    ⟨dX, isDef⟩
+  | Expr.Ir x _ =>
+    fun dX =>
+      contextHasDefMemPreservesDefMem (cLeDefUpdated x dX) (dIn dX)

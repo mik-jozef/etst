@@ -65,6 +65,15 @@ namespace Set3
     allNinNpos: ∀ d: ↑s2ᶜ, d.val ∉ s3.posMem
   
   
+  def notDefOfNotPos
+    (s3: Set3 D)
+    (notPos: ¬ s3.posMem d)
+  :
+    ¬ s3.defMem d
+  :=
+    fun isDef => notPos (s3.defLePos isDef)
+  
+  
   -- The empty triset contains no elements.
   def empty {D: Type}: Set3 D :=
     ⟨Set.empty, Set.empty, Preorder.le_refl _⟩
@@ -83,6 +92,9 @@ namespace Set3
   -- A triset containing a single element.
   def just {D: Type} (d: D): Set3 D :=
     ⟨Set.just d, Set.just d, Preorder.le_refl _⟩
+  
+  def ofSet (s: Set D): Set3 D :=
+    ⟨s, s, Preorder.le_refl _⟩
   
   
   structure LeStd (a b: Set3 D): Prop where

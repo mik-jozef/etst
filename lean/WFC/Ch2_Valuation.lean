@@ -24,6 +24,12 @@ namespace Valuation
   -/
   def undetermined: Valuation D := fun _ => Set3.undetermined
   
+  /-
+    In the full valuation, every variable represents the full
+    triset.
+  -/
+  def full: Valuation D := fun _ => Set3.full
+  
   -- The approximation order on valuations is defined pointwise.
   def ord.approximation (D: Type u):
     PartialOrder (Valuation D)
@@ -170,6 +176,19 @@ namespace Valuation
     fun v =>
       if v = x then
         Set3.just d
+      else
+        val v
+  
+  def remove
+    (val: Valuation D)
+    (x: Nat)
+    (d: D)
+  :
+    Valuation D
+  :=
+    fun v =>
+      if v = x then
+        (val v).without d
       else
         val v
   

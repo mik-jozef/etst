@@ -34,7 +34,7 @@ structure Salgebra (s: Signature) where
   isMonotonic
     (op: s.Op)
     (args0 args1: Args s op D)
-    (le: ∀ arg: s.Params op, args0 arg ≤ args1 arg)
+    (le: ∀ param: s.Params op, args0 param ≤ args1 param)
   :
     I op args0 ≤ I op args1
 

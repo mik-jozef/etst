@@ -136,42 +136,66 @@ namespace Valuation
     eq ▸ inBound
   
   
-  def update.isMonotonic.standard
-    (val0 val1: Valuation D)
-    (le: val0 ≤ val1)
+  def update.isMonotonic.standard.defMem
+    {val0 val1: Valuation D}
+    (le: (x: Nat) → (val0 x).defMem ≤ (val1 x).defMem)
+    (xU: Nat)
+    (d: D)
     (x: Nat)
+  :
+    (val0.update xU d x).defMem ≤ (val1.update xU d x).defMem
+  :=
+    if h: x = xU then
+      fun _ ddIn =>
+        let val0Eq: val0.update xU d x = Set3.just d := dif_pos h
+        let val1Eq: val1.update xU d x = Set3.just d := dif_pos h
+        
+        let valEq: val0.update xU d x = val1.update xU d x :=
+          val0Eq.trans val1Eq.symm
+        
+        valEq ▸ ddIn
+    else
+      let val0Eq: val0.update xU d x = val0 x := dif_neg h
+      let val1Eq: val1.update xU d x = val1 x := dif_neg h
+      
+      fun _dd ddIn => val1Eq ▸ le x (val0Eq ▸ ddIn)
+  
+  def update.isMonotonic.standard.posMem
+    {val0 val1: Valuation D}
+    (le: (x: Nat) → (val0 x).posMem ≤ (val1 x).posMem)
+    (xU: Nat)
+    (d: D)
+    (x: Nat)
+  :
+    (val0.update xU d x).posMem ≤ (val1.update xU d x).posMem
+  :=
+    if h: x = xU then
+      fun _ ddIn =>
+        let val0Eq: val0.update xU d x = Set3.just d := dif_pos h
+        let val1Eq: val1.update xU d x = Set3.just d := dif_pos h
+        
+        let valEq: val0.update xU d x = val1.update xU d x :=
+          val0Eq.trans val1Eq.symm
+        
+        valEq ▸ ddIn
+    else
+      let val0Eq: val0.update xU d x = val0 x := dif_neg h
+      let val1Eq: val1.update xU d x = val1 x := dif_neg h
+      
+      fun _dd ddIn => val1Eq ▸ le x (val0Eq ▸ ddIn)
+  
+  def update.isMonotonic.standard
+    {val0 val1: Valuation D}
+    (le: val0 ≤ val1)
+    (xU: Nat)
     (d: D)
   :
-    val0.update x d ≤ val1.update x d
+    val0.update xU d ≤ val1.update xU d
   :=
-    fun xx =>
-      if h: xx = x then
-        Set3.LeStd.intro
-          (fun _ ddIn =>
-            let val0Eq: val0.update x d xx = Set3.just d := dif_pos h
-            let val1Eq: val1.update x d xx = Set3.just d := dif_pos h
-            
-            let valEq: val0.update x d xx = val1.update x d xx :=
-              val0Eq.trans val1Eq.symm
-            
-            valEq ▸ ddIn)
-          -- This function is identical to the above, but has a different type.
-          -- is there an easy way not to repeat oneself?
-          (fun _ ddIn =>
-            let val0Eq: val0.update x d xx = Set3.just d := dif_pos h
-            let val1Eq: val1.update x d xx = Set3.just d := dif_pos h
-            
-            let valEq: val0.update x d xx = val1.update x d xx :=
-              val0Eq.trans val1Eq.symm
-            
-            valEq ▸ ddIn)
-      else
-        let val0Eq: val0.update x d xx = val0 xx := dif_neg h
-        let val1Eq: val1.update x d xx = val1 xx := dif_neg h
-        
-        Set3.LeStd.intro
-          (fun _dd ddIn => val1Eq ▸ (le xx).defLe (val0Eq ▸ ddIn))
-          (fun _dd ddIn => val1Eq ▸ (le xx).posLe (val0Eq ▸ ddIn))
+    (fun x =>
+      Set3.LeStd.intro
+        (standard.defMem (fun x => (le x).defLe) xU d x)
+        (standard.posMem (fun x => (le x).posLe) xU d x))
   
   def update.isMonotonic.approximation
     (val0 val1: Valuation D)

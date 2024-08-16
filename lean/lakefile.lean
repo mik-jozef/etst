@@ -30,6 +30,7 @@ lean_lib UniSet3.TheSet3Helpers {}
 lean_lib UniSet3.UniDefList {}
 lean_lib UniSet3.UniSet3 {}
 
+lean_lib Utils.AProofSystem {}
 lean_lib Utils.BasicUtils {}
 lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
@@ -58,6 +59,8 @@ lean_lib WFC.Ch2_Valuation {}
 lean_lib WFC.Ch3_Interpretation {}
 lean_lib WFC.Ch4_Operators {}
 lean_lib WFC.Ch5_PairSalgebra {}
+lean_lib WFC.Ch6_S0_AProofSystem {}
+lean_lib WFC.Ch6_S1_AProofSystem {}
 lean_lib WFC.Appx0_ExprRulesOfInference {}
 
 require mathlib from git
