@@ -454,6 +454,20 @@ noncomputable def lfp.stage.previous
   elements := fun nn => stage cc op opMono nn
 }
 
+def lfp.stage.previous.eqAt
+  {ord: PartialOrder T}
+  (cc: IsChainComplete ord)
+  (op: T → T)
+  (opMono: IsMonotonic ord ord op)
+  (n: Ordinal)
+  (nn: ↑n)
+:
+  (lfp.stage.previous cc op opMono n).elements nn =
+    stage cc op opMono nn
+:=
+  rfl
+  
+
 def lfp.stage.previous.eqOption
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
@@ -650,7 +664,7 @@ def lfp.stage.leFP
     
     let opFpEq: fp.val = op fp.val := fp.property
     let stageNEq: stage cc op opMono n = op stageNPred :=
-      (Ordinal.succ_pred_of_not_limit h) ▸ succEq cc op opMono n.pred
+      predEq cc op opMono h
     
     opFpEq ▸ stageNEq ▸ opPredLe
 termination_by n
@@ -876,3 +890,61 @@ noncomputable def lfp.lfpIndex2
     let eqB := isLfpB.isUnique _ lfpB.property
     
     ⟨nA, ⟨eqLfpA, eqB⟩⟩
+
+
+def lfp.stage.isLeOfOpLe.multiOrder
+  {ord: PartialOrder T}
+  (cc: IsChainComplete ord)
+  (opA: T → T)
+  (opB: T → T)
+  (isMonoA: IsMonotonic ord ord opA)
+  (isMonoB: IsMonotonic ord ord opB)
+  (ordOther: PartialOrder T)
+  (isOpLe:
+    ∀ {t0 t1}, ordOther.le t0 t1 → ordOther.le (opA t0) (opB t1))
+  (supPreservesOtherOrder:
+    Supremum.SupPreservesOtherOrder ord ordOther)
+  (n: Ordinal)
+:
+  ordOther.le
+    (lfp.stage cc opA isMonoA n)
+    (lfp.stage cc opB isMonoB n)
+:=
+  if h: n.IsActualLimit then
+    
+    let isSupA := limit cc opA isMonoA h
+    let isSupB := limit cc opB isMonoB h
+    
+    supPreservesOtherOrder
+      isSupA
+      isSupB
+      (fun ⟨prevA, isPrev⟩ =>
+        let ⟨i, eqPrevA⟩ := isPrev
+        have: i < n := i.property
+        let ih := multiOrder cc opA opB isMonoA isMonoB
+          ordOther isOpLe supPreservesOtherOrder i
+        
+        ⟨
+          ⟨lfp.stage cc opB isMonoB i, ⟨i, rfl⟩⟩,
+          eqPrevA ▸ ih
+        ⟩)
+      (fun ⟨prevB, isPrev⟩ =>
+        let ⟨i, eqPrevA⟩ := isPrev
+        have: i < n := i.property
+        let ih := multiOrder cc opA opB isMonoA isMonoB
+          ordOther isOpLe supPreservesOtherOrder i
+        
+        ⟨
+          ⟨lfp.stage cc opA isMonoA i, ⟨i, rfl⟩⟩,
+          eqPrevA ▸ ih
+        ⟩)
+  else
+    have: n.pred < n := Ordinal.predLtOfNotLimit h
+    
+    let ih := multiOrder cc opA opB isMonoA isMonoB
+      ordOther isOpLe supPreservesOtherOrder n.pred
+    
+    predEq cc opA isMonoA h ▸
+    predEq cc opB isMonoB h ▸
+    isOpLe ih
+termination_by n

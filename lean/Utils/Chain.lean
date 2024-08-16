@@ -499,3 +499,34 @@ def Supremum.leUB
   sup.val ≤ t
 :=
   sup.property.isLeMember supUB
+
+def Supremum.SupPreservesOtherOrder
+  (ordSup: PartialOrder T)
+  (ordOther: PartialOrder T)
+:
+  Prop
+:=
+  {sA sB: Set T} →
+  {supA supB: T} →
+  IsSupremum ordSup sA supA →
+  IsSupremum ordSup sB supB →
+  (∀ tA: sA, ∃ tB: sB, ordOther.le tA.val tB) →
+  (∀ tB: sB, ∃ tA: sA, ordOther.le tA.val tB) →
+  ordOther.le supA supB
+
+def IsSupremum.eqOfIsMax
+  {ord: PartialOrder T}
+  (isSup: IsSupremum ord s sup)
+  (max: T)
+  (isMax: ∀ t ∈ s, t ≤ max)
+  (isIn: max ∈ s)
+:
+  sup = max
+:=
+  IsSupremum.eq
+    isSup
+    {
+      isMember := fun ⟨e, eInS⟩ => isMax e eInS
+      isLeMember := fun _ tIsUb => tIsUb ⟨max, isIn⟩
+    }
+    rfl

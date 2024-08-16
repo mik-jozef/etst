@@ -531,15 +531,12 @@ namespace Valuation
       dNinSup (ord.approximation.allInSet.inSup.posMem sup allIn)
   
   
-  def ord.standard.supPreservesLeApx
-    (isSupA: IsSupremum (Valuation.ord.standard T) sA supA)
-    (isSupB: IsSupremum (Valuation.ord.standard T) sB supB)
-    (ab: ∀ tA: sA, ∃ tB: sB, tA.val ⊑ tB)
-    (ba: ∀ tB: sB, ∃ tA: sA, tA.val ⊑ tB)
-  :
-    supA ⊑ supB
+  def ord.standard.supPreservesLeApx:
+    Supremum.SupPreservesOtherOrder
+      (Valuation.ord.standard T)
+      (Valuation.ord.approximation T)
   :=
-    fun x => {
+    fun isSupA isSupB ab ba x => {
       defLe :=
         fun _d dInSupA =>
           let ⟨valA, dInAtX⟩ :=

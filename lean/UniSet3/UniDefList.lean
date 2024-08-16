@@ -603,17 +603,17 @@ namespace Pair
     def interpretation: Nat := 34
     
     /-
-      Contains (expr, s) where `s` is the interpretation of `expr`
-      with `theSet` serving as the valuation.
+      Contains (expr, p) where `p` is a member of the interpretation
+      of `expr` with `theSet` serving as the valuation.
     -/
     def freeInterpretation := 35
     
     /-
-      A set of pairs (n, s) where `n` is a natural number. For
-      every definable triset of pairs `dtp`, there exists a natural
+      A set of pairs (n, p) where `n` is a natural number. For
+      every definable triset of pairs `s`, there exists a natural
       number `n` such that for every pair `p`,
       
-          (n, p) ∈ theSet = p ∈ dtp \,.
+          (n, p) ∈ theSet = p ∈ s \,.
     -/
     def theSet: Nat := 36
     

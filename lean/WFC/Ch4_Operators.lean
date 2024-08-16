@@ -302,67 +302,23 @@ def operatorC.stage.isMonotonic.approximation
   (salg: Salgebra sig)
   (dl: DefList sig)
   {b0 b1: Valuation salg.D}
-  (b0LeB1: b0 ⊑ b1)
+  (bLe: b0 ⊑ b1)
   (n: Ordinal)
 :
   operatorC.stage salg dl b0 n ⊑ operatorC.stage salg dl b1 n
 :=
-  if h: n.IsActualLimit then
-    let lim0 := limit salg dl b0 h
-    let lim1 := limit salg dl b1 h
-    
+  lfp.stage.isLeOfOpLe.multiOrder
+    (Valuation.ord.standard.isChainComplete salg.D)
+    (operatorC salg dl b0)
+    (operatorC salg dl b1)
+    (operatorC.isMonotonic salg dl b0)
+    (operatorC.isMonotonic salg dl b1)
+    (Valuation.ord.approximation salg.D)
+    (fun isLe x =>
+      Expr.interpretation.isMonotonic.approximation
+        salg (dl.getDef x) bLe isLe)
     Valuation.ord.standard.supPreservesLeApx
-      lim0
-      lim1
-      (fun ⟨prevA, isPrev⟩ =>
-        let ⟨i, eqA⟩ := isPrev.unwrap
-        
-        have: i < n := i.property
-        
-        ⟨
-          ⟨
-            operatorC.stage salg dl b1 i,
-            ⟨i, rfl⟩,
-          ⟩,
-          eqA ▸ approximation salg dl b0LeB1 i,
-        ⟩)
-      (fun ⟨prevB, isPrev⟩ =>
-        let ⟨i, eqB⟩ := isPrev.unwrap
-        
-        have: i < n := i.property
-        
-        ⟨
-          ⟨
-            operatorC.stage salg dl b0 i,
-            ⟨i, rfl⟩,
-          ⟩,
-          eqB ▸ approximation salg dl b0LeB1 i,
-        ⟩)
-  else
-    let nPred := n.pred
-    
-    let opC0 := operatorC salg dl b0
-    let opC1 := operatorC salg dl b1
-    
-    let s0Pred := operatorC.stage salg dl b0 nPred
-    let s1Pred := operatorC.stage salg dl b1 nPred
-    
-    let s0Eq: operatorC.stage salg dl b0 n = opC0 s0Pred :=
-      operatorC.stage.predEq salg dl b0 h
-    
-    let s1Eq: operatorC.stage salg dl b1 n = opC1 s1Pred :=
-      operatorC.stage.predEq salg dl b1 h
-    
-    let s0PredLeS1Pred: s0Pred ⊑ s1Pred :=
-      have: nPred < n := Ordinal.predLtOfNotLimit h
-      operatorC.stage.isMonotonic.approximation salg dl b0LeB1 nPred
-    
-    fun x =>
-      let ILe := Expr.interpretation.isMonotonic.approximation
-        salg (dl.getDef x) b0LeB1 s0PredLeS1Pred
-  
-      s0Eq ▸ s1Eq ▸ ILe
-termination_by n
+    n
 
 
 noncomputable def operatorB (salg: Salgebra sig) (dl: DefList sig):
@@ -616,28 +572,49 @@ noncomputable def DefList.wellFoundedModel
 :=
   (operatorB.lfp salg dl).val
 
--- The well-founded model is a model of the definition list.
-def DefList.wellFoundedModel.isModel
+def DefList.wellFoundedModel.eqLfpC
   (salg: Salgebra sig)
   (dl: DefList sig)
 :
-  (dl.wellFoundedModel salg).IsModel salg dl
+  dl.wellFoundedModel salg
+    =
+  (operatorC.lfp salg dl (dl.wellFoundedModel salg)).val
 :=
-  let wfm := dl.wellFoundedModel salg
-  let clfp := (operatorC.lfp salg dl wfm).val
-  
-  let wfmEq: wfm = clfp :=
-    (operatorB.lfp salg dl).property.isMember
-  
-  let clfpEq: clfp = dl.interpretation salg wfm wfm :=
-    let eq: clfp = dl.interpretation salg wfm clfp :=
-      (operatorC.lfp salg dl wfm).property.isMember
-    wfmEq ▸ eq
-  
-  wfmEq.trans clfpEq
+  (operatorB.lfp salg dl).property.isMember
+
+/-
+  A fixed point of the operator B is a model of the definition
+  list.
+-/
+def operatorB.lfp.isModel
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  {fp: Valuation salg.D}
+  (isFp: IsFixedPoint (operatorB salg dl) fp)
+:
+  fp.IsModel salg dl
+:= show
+  fp ∈ IsFixedPoint (operatorC salg dl fp)
+from by
+  conv => lhs; rw [isFp]
+  exact (operatorC.lfp salg dl fp).property.isMember
+
+def DefList.wellFoundedModel.isLfpC
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+:
+  IsLfp
+    (Valuation.ord.standard salg.D)
+    (operatorC salg dl (dl.wellFoundedModel salg))
+    (dl.wellFoundedModel salg)
+:=
+  by
+    conv => rhs; rw [eqLfpC salg dl]
+    exact
+    (operatorC.lfp salg dl (dl.wellFoundedModel salg)).property
 
 -- The well-founded model is the least fixed point of the operator B.
-def DefList.wellFoundedModel.isLfp
+def DefList.wellFoundedModel.isLfpB
   (salg: Salgebra sig)
   (dl: DefList sig)
 :
@@ -647,6 +624,18 @@ def DefList.wellFoundedModel.isLfp
     (dl.wellFoundedModel salg)
 :=
   (operatorB.lfp salg dl).property
+
+-- The well-founded model is a model of the definition list.
+def DefList.wellFoundedModel.isModel
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+:
+  (dl.wellFoundedModel salg).IsModel salg dl
+:=
+  operatorB.lfp.isModel
+    salg
+    dl
+    (DefList.wellFoundedModel.isLfpB salg dl).isMember
 
 
 /-

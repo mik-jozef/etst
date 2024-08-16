@@ -496,6 +496,42 @@ def Expr.mapVars.preservesInterpretation
                 from
                   eqBody dBound ▸ Iff.rfl))))
 
+/-
+  Proves that changing the values of unused variables of a valuation
+  does not change the interpretation of an expression.
+  
+  A special case of `Expr.mapVars.preservesInterpretation` where
+  the variable mapping is the identity function.
+-/
+def Expr.interpretation.ignoresUnusedVars
+  (salg: Salgebra sig)
+  (expr: Expr sig)
+  (b0 b1 c0 c1: Valuation salg.D)
+  (eqB:
+    ∀ (x: expr.IsFreeVar Set.empty),
+      b0 x = b1 x)
+  (eqC:
+    ∀ (x: expr.IsFreeVar Set.empty),
+      c0 x = c1 x)
+:
+  expr.interpretation salg b0 c0
+    =
+  expr.interpretation salg b1 c1
+:=
+  Expr.mapVars.preservesInterpretation
+    salg
+    expr
+    expr
+    b0
+    b1
+    c0
+    c1
+    id
+    id
+    (Expr.mapVars.eqOfId expr)
+    eqB
+    eqC
+
 
 def DefList.eqDefsToEqSets.Invariant
   (salg: Salgebra sig)
