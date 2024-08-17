@@ -138,5 +138,6 @@ namespace pairSalgebra
               ⟩
 end pairSalgebra
 
+-- The salgebra of pairs.
 def pairSalgebra: Salgebra pairSignature :=
   ⟨Pair, pairSalgebra.I, pairSalgebra.I.isMonotonic⟩
