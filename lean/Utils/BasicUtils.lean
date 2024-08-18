@@ -35,7 +35,10 @@ noncomputable def Exists.unwrap
 def Function.contra (ab: A → B): ¬B → ¬A :=
   fun nb => fun a => nb (ab a)
 
-theorem Not.dne {P: Prop} (h: ¬¬P): P :=
+def Function.contraDne (nba: ¬B → ¬A): A → B :=
+  fun a => byContradiction (fun nb => nba nb a)
+
+def Not.dne {P: Prop} (h: ¬¬P): P :=
   Or.elim (Classical.em P)
     (fun p: P => p)
     (fun np: ¬P => absurd np h)
