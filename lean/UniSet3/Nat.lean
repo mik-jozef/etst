@@ -8,27 +8,27 @@ namespace Pair
     open uniDefList
     
     
-    def insNatEncoding (isPn: IsNatEncoding pn): Ins nat pn :=
+    def insNatEncoding (isPn: IsNatEncoding pn): InsUdl nat pn :=
       match pn with
       | Pair.zero =>
         insWfmDef.toInsWfm (insUnL _ insZero)
       
       | Pair.pair a b =>
-        let insA: Ins nat a := insNatEncoding isPn.left
-        let insExpr: Ins nat.expr (Pair.pair a b) :=
+        let insA: InsUdl nat a := insNatEncoding isPn.left
+        let insExpr: InsUdl nat.expr (Pair.pair a b) :=
           insUnR _ (insPair insA (isPn.right ▸ insZero))
         
         insWfmDef.toInsWfm insExpr
     
-    def Inw.toIsNatEncoding (w: Inw nat pn): IsNatEncoding pn :=
-      let inwNatDef: Inw nat.expr pn :=
+    def Inw.toIsNatEncoding (w: InwUdl nat pn): IsNatEncoding pn :=
+      let inwNatDef: InwUdl nat.expr pn :=
         inwWfm.toInwWfmDef w
       
       inwNatDef.elim
-        (fun (pnInwZero: Inw zeroExpr pn) =>
+        (fun (pnInwZero: InwUdl zeroExpr pn) =>
           let pnEqZero: pn = Pair.zero := inwZeroElim pnInwZero
           pnEqZero ▸ trivial)
-        (fun (w: Inw (pairExpr nat zeroExpr) pn) =>
+        (fun (w: InwUdl (pairExpr nat zeroExpr) pn) =>
           match pn with
           | zero => trivial
           | pair _a _b =>
@@ -36,11 +36,11 @@ namespace Pair
               (Inw.toIsNatEncoding (inwPairElim w).inwL)
               (inwPairElim w).inwR)
     
-    def ninwNat: ¬IsNatEncoding pn → ¬Inw nat pn :=
+    def ninwNat: ¬IsNatEncoding pn → ¬InwUdl nat pn :=
       Inw.toIsNatEncoding.contra
     
     
-    def insNatPairAA (isPnaa: IsNatPairAA p): Ins natPairAA p :=
+    def insNatPairAA (isPnaa: IsNatPairAA p): InsUdl natPairAA p :=
       match p with
       | zero => isPnaa.elim
       | pair _ _ =>
@@ -53,11 +53,11 @@ namespace Pair
               Nat.noConfusion)
             (insPair insBound insBound))
     
-    def Inw.toIsNatPairAA (w: Inw natPairAA p): IsNatPairAA p :=
+    def Inw.toIsNatPairAA (w: InwUdl natPairAA p): IsNatPairAA p :=
       let inwDef := inwWfm.toInwWfmDef w
       let ⟨n, ⟨inwDomain, inw⟩⟩ := inwUnDomElim inwDef
       
-      let inwNatN: Inw nat n :=
+      let inwNatN: InwUdl nat n :=
         inwFreeElim inwDomain Nat.noConfusion
       
       let ⟨_pairL, ⟨_pairR, ⟨eq, inwL, inwR⟩⟩⟩ := inwPairElim.ex inw
@@ -72,7 +72,7 @@ namespace Pair
       }
     
     
-    def insNatLe.ab (isNatLe: IsNatLe (pair a b)): Ins natLe (pair a b) :=
+    def insNatLe.ab (isNatLe: IsNatLe (pair a b)): InsUdl natLe (pair a b) :=
       let ⟨isNatA, isNatB, abLe⟩ := isNatLe
       
       if h: a = b then
@@ -99,7 +99,7 @@ namespace Pair
             a.depth ≤ Nat.pred (Nat.succ (bA.depth))
           := (depth.nat.eqSuccDepthPred isNatB) ▸ hB ▸ abPredLe
           
-          let insNatLePred: Ins natLe (pair a bA) := ab {
+          let insNatLePred: InsUdl natLe (pair a bA) := ab {
             isNatA,
             isNatB := isNatB.left,
             isLe := abPredLe
@@ -115,14 +115,14 @@ namespace Pair
                     (insFstMember (insFree insBound nat501Neq500))
                     isNatB.right))))
     
-    def insNatLe (isNat: IsNatLe p): Ins natLe p :=
+    def insNatLe (isNat: IsNatLe p): InsUdl natLe p :=
       match p with
       | zero => False.elim isNat
       | pair _ _ => insNatLe.ab isNat
     
     
     def Inw.toIsNatLe.ab
-      (w: Inw natLe (Pair.pair a b))
+      (w: InwUdl natLe (Pair.pair a b))
     :
       IsNatLe (Pair.pair a b)
     :=
@@ -150,7 +150,7 @@ namespace Pair
               isLe := (isNatLeABA.isLe.trans (depthLeL _ _))
             })
     
-    def Inw.toIsNatLe (w: Inw natLe p): IsNatLe p :=
+    def Inw.toIsNatLe (w: InwUdl natLe p): IsNatLe p :=
       (inwWfm.toInwWfmDef w).elim
         (fun inwPairAA =>
           (Inw.toIsNatPairAA inwPairAA).toIsNatLe)
@@ -161,7 +161,7 @@ namespace Pair
           | pair _ _ => Inw.toIsNatLe.ab w)
     
     
-    def insNatLeFn (isNatLeFn: IsNatLeFn p): Ins natLeFn p :=
+    def insNatLeFn (isNatLeFn: IsNatLeFn p): InsUdl natLeFn p :=
       match p with
       | zero => isNatLeFn.elim
       | pair a b =>
@@ -178,7 +178,7 @@ namespace Pair
               (insFstMember (insFree insBound nat501Neq500))
               (insZthMember (insFree insBound nat501Neq500))))
     
-    def Inw.toIsNatLeFn (inw: Inw natLeFn p):
+    def Inw.toIsNatLeFn (inw: InwUdl natLeFn p):
       IsNatLeFn p
     :=
       let ⟨_pBound, inwDomain, inwBody⟩ :=
@@ -198,7 +198,7 @@ namespace Pair
     
     
     def insNatLt (isNatLt: IsNatLt p):
-      Ins natLt p
+      InsUdl natLt p
     :=
       match p with
       | zero => isNatLt.elim
@@ -220,7 +220,7 @@ namespace Pair
                 
                 neq (aEq.trans bEq.symm))))
     
-    def Inw.toIsNatLt (inw: Inw natLt p):
+    def Inw.toIsNatLt (inw: InwUdl natLt p):
       IsNatLt p
     :=
       let ⟨inwNatLe, inwNotRefl⟩ := inwIrElim (inwWfm.toInwWfmDef inw)

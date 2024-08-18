@@ -9,7 +9,7 @@ namespace Pair
     
     
     def insPairOfDepth.p p (isPoD: IsPairOfDepth p):
-      Ins pairOfDepth p
+      InsUdl pairOfDepth p
     :=
       match p with
       | zero => isPoD.elim
@@ -193,12 +193,12 @@ namespace Pair
     termination_by p.depth
     
     def insPairOfDepth (isPoD: IsPairOfDepth p):
-      Ins pairOfDepth p
+      InsUdl pairOfDepth p
     :=
       insPairOfDepth.p p isPoD
     
     
-    def Inw.toIsPairOfDepth.ab n p (inw: Inw pairOfDepth (pair n p)):
+    def Inw.toIsPairOfDepth.ab n p (inw: InwUdl pairOfDepth (pair n p)):
       IsPairOfDepth (pair n p)
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim
@@ -368,7 +368,7 @@ namespace Pair
                     (eqL.trans eqMid).trans eqR.symm
                 }))
     
-    def Inw.toIsPairOfDepth (inw: Inw pairOfDepth p):
+    def Inw.toIsPairOfDepth (inw: InwUdl pairOfDepth p):
       IsPairOfDepth p
     :=
       match p with

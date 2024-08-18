@@ -9,7 +9,7 @@ namespace Pair
     
     
     def insNthDefList (isNthDef: IsNthDefList p):
-      Ins nthDefList p
+      InsUdl nthDefList p
     :=
       match p with
       | zero => isNthDef.elim
@@ -35,7 +35,7 @@ namespace Pair
                           (insFree insBound nat501Neq500)
                           nat502Neq500)))))))
     
-    def Inw.toIsNthDefList.ab a (inw: Inw nthDefList (pair a b)):
+    def Inw.toIsNthDefList.ab a (inw: InwUdl nthDefList (pair a b)):
       IsNthDefList (pair a b)
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim
@@ -68,7 +68,7 @@ namespace Pair
             zEq ▸ IsNthDefListPair.Succ isNthPred isNextDef)
     termination_by a.depth
     
-    def Inw.toIsNthDefList (inw: Inw nthDefList p):
+    def Inw.toIsNthDefList (inw: InwUdl nthDefList p):
       IsNthDefList p
     :=
       match p with

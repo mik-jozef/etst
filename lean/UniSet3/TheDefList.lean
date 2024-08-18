@@ -16,7 +16,7 @@ namespace Pair
     
     
     def insEnumUpTo (isEnumUpTo: IsEnumUpTo p):
-      Ins enumUpTo p
+      InsUdl enumUpTo p
     :=
       match p with
       | zero => isEnumUpTo.elim
@@ -56,7 +56,7 @@ namespace Pair
                             nat501Neq500)
                           nat502Neq500))))))))
     
-    def Inw.toIsEnumUpTo (inw: Inw enumUpTo p):
+    def Inw.toIsEnumUpTo (inw: InwUdl enumUpTo p):
       IsEnumUpTo p
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim
@@ -103,7 +103,7 @@ namespace Pair
     
     
     def insDefListToSet (isDefToSet: IsDefListToSet p):
-      Ins defListToSet p
+      InsUdl defListToSet p
     :=
       insWfmDef.toInsWfm
         (match p with
@@ -184,7 +184,7 @@ namespace Pair
                           insBound
                           nat503Neq502))))))))
     
-    def Inw.toIsDefListToSet (inw: Inw defListToSet p):
+    def Inw.toIsDefListToSet (inw: InwUdl defListToSet p):
       IsDefListToSet p
     :=
       let inw := inwWfm.toInwWfmDef inw
@@ -289,7 +289,7 @@ namespace Pair
     termination_by p.depthBA
     
     def insTheDefListExpr (isTheDefListExpr: IsTheDefListExpr p):
-      Ins theDefList p
+      InsUdl theDefList p
     :=
       match p, isTheDefListExpr with
       | pair _n _expr,
@@ -312,7 +312,7 @@ namespace Pair
                 insBound
                 nat501Neq500)))
     
-    def Inw.toIsTheDefListExpr (inw: Inw theDefList p):
+    def Inw.toIsTheDefListExpr (inw: InwUdl theDefList p):
       IsTheDefListExpr p
     :=
       let inw := inwWfm.toInwWfmDef inw

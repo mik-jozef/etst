@@ -9,7 +9,7 @@ namespace Pair
     
     
     def insDefEncoding (isDefEnc: IsDefEncoding p):
-      Ins defEncoding p
+      InsUdl defEncoding p
     :=
       insWfmDef.toInsWfm
         (match p with
@@ -21,7 +21,7 @@ namespace Pair
               (insExprEncoding isDefEnc.left)
               (insDefEncoding isDefEnc.right)))
     
-    def Inw.toIsDefEncoding (w: Inw defEncoding p):
+    def Inw.toIsDefEncoding (w: InwUdl defEncoding p):
       IsDefEncoding p
     :=
       match p with

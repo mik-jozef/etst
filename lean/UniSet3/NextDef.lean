@@ -10,7 +10,7 @@ namespace Pair
     
     
     def insDefEncodingLt (isDefEncLt: IsDefEncodingLt p):
-      Ins defEncodingLt p
+      InsUdl defEncodingLt p
     :=
       match p with
       | zero => isDefEncLt.elim
@@ -22,7 +22,7 @@ namespace Pair
               (insDefEncoding isDefEncLt.isDefA)
               (insDefEncoding isDefEncLt.isDefB)))
     
-    def Inw.toIsDefEncodingLt (inw: Inw defEncodingLt p):
+    def Inw.toIsDefEncodingLt (inw: InwUdl defEncodingLt p):
       IsDefEncodingLt p
     :=
       let ⟨l, r⟩ := inwIrElim (inwWfm.toInwWfmDef inw)
@@ -40,7 +40,7 @@ namespace Pair
     
     
     def insDefEncodingMinDist2 (isDefMd2: IsDefEncodingMinDist2 p):
-      Ins defEncodingMinDist2 p
+      InsUdl defEncodingMinDist2 p
     :=
       match p with
       | zero => isDefMd2.elim
@@ -83,7 +83,7 @@ namespace Pair
                       nat502Neq500)
                     insBound)))))
     
-    def Inw.toIsDefEncodingMinDist2 (inw: Inw defEncodingMinDist2 p):
+    def Inw.toIsDefEncodingMinDist2 (inw: InwUdl defEncodingMinDist2 p):
       IsDefEncodingMinDist2 p
     :=
       let ⟨_a, inwBodyA⟩ := inwArbUnElim (inwWfm.toInwWfmDef inw)
@@ -149,7 +149,7 @@ namespace Pair
           }
     
     def insNextDef (isNextDef: IsNextDef p):
-      Ins nextDef p
+      InsUdl nextDef p
     :=
       match p with
       | zero => isNextDef.elim
@@ -180,7 +180,7 @@ namespace Pair
                 
                 ltSelf.irefl)))
     
-    def Inw.toIsNextDef (inw: Inw nextDef p):
+    def Inw.toIsNextDef (inw: InwUdl nextDef p):
       IsNextDef p
     :=
       let ⟨inwDefEnc, inwCpl⟩ := inwIrElim (inwWfm.toInwWfmDef inw)

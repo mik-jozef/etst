@@ -14,7 +14,7 @@ namespace Pair
     open PairExpr
     
     def inwTheSet.toIsNat
-      (inw: Inw uniDefList.theSet (pair xEnc p))
+      (inw: InwUdl uniDefList.theSet (pair xEnc p))
     :
       IsNatEncoding xEnc
     :=
@@ -26,7 +26,7 @@ namespace Pair
       Inw.toIsNatEncoding inwDomain
     
     def insTheSet.toIsNat
-      (ins: Ins uniDefList.theSet (pair xEnc p))
+      (ins: InsUdl uniDefList.theSet (pair xEnc p))
     :
       IsNatEncoding xEnc
     :=
@@ -34,10 +34,10 @@ namespace Pair
     
     
     def InsGetBound bv xEnc p :=
-      Ins uniDefList.getBound (pair bv (pair xEnc p))
+      InsUdl uniDefList.getBound (pair bv (pair xEnc p))
     
     def InwGetBound bv xEnc p :=
-      Inw uniDefList.getBound (pair bv (pair xEnc p))
+      InwUdl uniDefList.getBound (pair bv (pair xEnc p))
     
     inductive IsGetBound: Pair → Pair → Pair → Prop where
     | Head
@@ -565,7 +565,7 @@ namespace Pair
     
     
     def inInterpOfIns.ofFree
-      (ins: Ins uniDefList.theSet (pair xEnc p))
+      (ins: InsUdl uniDefList.theSet (pair xEnc p))
       (notBound: ¬∃ bv, InwGetBound boundVars xEnc bv)
     :
       (interp boundVars (pair zero xEnc)).defMem p
@@ -613,7 +613,7 @@ namespace Pair
         interp.inDefOfIsBoundTail inTail neq isNat
     
     def inInterpOfInw.ofFree
-      (inw: Inw uniDefList.theSet (pair xEnc p))
+      (inw: InwUdl uniDefList.theSet (pair xEnc p))
       (notBound: ¬∃ bv, InsGetBound boundVars xEnc bv)
     :
       (interp boundVars (pair zero xEnc)).posMem p
@@ -754,7 +754,7 @@ namespace Pair
     
     def inInterpOfIns.exprVar
       (ins:
-        Ins
+        InsUdl
           uniDefList.interpretation.exprVar
           (pair boundVars (pair exprEnc p)))
     :
@@ -812,7 +812,7 @@ namespace Pair
     
     def inInterpOfInw.exprVar
       (inw:
-        Inw
+        InwUdl
           uniDefList.interpretation.exprVar
           (pair boundVars (pair exprEnc p)))
     :
@@ -879,7 +879,7 @@ namespace Pair
       (isNat: IsNatEncoding xEnc)
       (inDef: (interp boundVars (pair zero xEnc)).defMem p)
     :
-      Ins
+      InsUdl
         (var uniDefList.interpretation)
         (pair boundVars (pair (pair zero xEnc) p))
     :=
@@ -922,7 +922,7 @@ namespace Pair
               exact inDef
             
             let insTheSet:
-              Ins uniDefList.theSet (pair xEnc p)
+              InsUdl uniDefList.theSet (pair xEnc p)
             :=
               fromNat.eqOfDepth isNat ▸ inDefVar
             
@@ -966,7 +966,7 @@ namespace Pair
       (isNat: IsNatEncoding xEnc)
       (inPos: (interp boundVars (pair zero xEnc)).posMem p)
     :
-      Inw
+      InwUdl
         (var uniDefList.interpretation)
         (pair boundVars (pair (pair zero xEnc) p))
     :=
@@ -1009,7 +1009,7 @@ namespace Pair
               exact inDef
             
             let inwTheSet:
-              Inw uniDefList.theSet (pair xEnc p)
+              InwUdl uniDefList.theSet (pair xEnc p)
             :=
               fromNat.eqOfDepth isNat ▸ inDefVar
             
@@ -1052,7 +1052,7 @@ namespace Pair
     
     def inInterpOfIns.exprZero
       (ins:
-        Ins
+        InsUdl
           uniDefList.interpretation.exprZero
           (pair boundVars (pair exprEnc p)))
     :
@@ -1080,7 +1080,7 @@ namespace Pair
     
     def inInterpOfInw.exprZero
       (inw:
-        Inw
+        InwUdl
           uniDefList.interpretation.exprZero
           (pair boundVars (pair exprEnc p)))
     :
@@ -1117,7 +1117,7 @@ namespace Pair
     def insOfInInterp.exprZero
       (inDef: (interp boundVars (pair (fromNat 1) zero)).defMem p)
     :
-      Ins
+      InsUdl
         (var uniDefList.interpretation)
         (pair boundVars (pair (pair (fromNat 1) zero) p))
     :=
@@ -1143,7 +1143,7 @@ namespace Pair
     def inwOfInInterp.exprZero
       (inPos: (interp boundVars (pair (fromNat 1) zero)).posMem p)
     :
-      Inw
+      InwUdl
         (var uniDefList.interpretation)
         (pair boundVars (pair (pair (fromNat 1) zero) p))
     :=
@@ -1175,7 +1175,7 @@ namespace Pair
         {exprEncA exprEncB pA pB: Pair} →
         p = pair pA pB →
         exprEnc = pair (fromNat 2) (pair exprEncA exprEncB) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncA pA)) →
         (interp boundVars exprEncA).defMem pA)
@@ -1183,12 +1183,12 @@ namespace Pair
         {exprEncA exprEncB pA pB: Pair} →
         p = pair pA pB →
         exprEnc = pair (fromNat 2) (pair exprEncA exprEncB) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncB pB)) →
         (interp boundVars exprEncB).defMem pB)
       (ins:
-        Ins
+        InsUdl
           uniDefList.interpretation.exprPair
           (pair boundVars (pair exprEnc p)))
     :
@@ -1257,7 +1257,7 @@ namespace Pair
         {exprEncA exprEncB pA pB: Pair} →
         p = pair pA pB →
         exprEnc = pair (fromNat 2) (pair exprEncA exprEncB) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncA pA)) →
         (interp boundVars exprEncA).posMem pA)
@@ -1265,12 +1265,12 @@ namespace Pair
         {exprEncA exprEncB pA pB: Pair} →
         p = pair pA pB →
         exprEnc = pair (fromNat 2) (pair exprEncA exprEncB) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncB pB)) →
         (interp boundVars exprEncB).posMem pB)
       (inw:
-        Inw
+        InwUdl
           uniDefList.interpretation.exprPair
           (pair boundVars (pair exprEnc p)))
     :
@@ -1339,19 +1339,19 @@ namespace Pair
       (ihLeft:
         {exprEncA exprEncB: Pair} →
         exprEnc = pair (fromNat 3) (pair exprEncA exprEncB) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncA p)) →
         (interp boundVars exprEncA).defMem p)
       (ihRite:
         {exprEncA exprEncB: Pair} →
         exprEnc = pair (fromNat 3) (pair exprEncA exprEncB) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncB p)) →
         (interp boundVars exprEncB).defMem p)
       (ins:
-        Ins
+        InsUdl
           uniDefList.interpretation.exprUnion
           (pair boundVars (pair exprEnc p)))
     :
@@ -1424,19 +1424,19 @@ namespace Pair
       (ihLeft:
         {exprEncA exprEncB: Pair} →
         exprEnc = pair (fromNat 3) (pair exprEncA exprEncB) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncA p)) →
         (interp boundVars exprEncA).posMem p)
       (ihRite:
         {exprEncA exprEncB: Pair} →
         exprEnc = pair (fromNat 3) (pair exprEncA exprEncB) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncB p)) →
         (interp boundVars exprEncB).posMem p)
       (inw:
-        Inw
+        InwUdl
           uniDefList.interpretation.exprUnion
           (pair boundVars (pair exprEnc p)))
     :
@@ -1510,19 +1510,19 @@ namespace Pair
       (ihLeft:
         {exprEncA exprEncB: Pair} →
         exprEnc = pair (fromNat 4) (pair exprEncA exprEncB) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncA p)) →
         (interp boundVars exprEncA).defMem p)
       (ihRite:
         {exprEncA exprEncB: Pair} →
         exprEnc = pair (fromNat 4) (pair exprEncA exprEncB) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncB p)) →
         (interp boundVars exprEncB).defMem p)
       (ins:
-        Ins
+        InsUdl
           uniDefList.interpretation.exprIntersection
           (pair boundVars (pair exprEnc p)))
     :
@@ -1587,19 +1587,19 @@ namespace Pair
       (ihLeft:
         {exprEncA exprEncB: Pair} →
         exprEnc = pair (fromNat 4) (pair exprEncA exprEncB) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncA p)) →
         (interp boundVars exprEncA).posMem p)
       (ihRite:
         {exprEncA exprEncB: Pair} →
         exprEnc = pair (fromNat 4) (pair exprEncA exprEncB) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncB p)) →
         (interp boundVars exprEncB).posMem p)
       (inw:
-        Inw
+        InwUdl
           uniDefList.interpretation.exprIntersection
           (pair boundVars (pair exprEnc p)))
     :
@@ -1667,11 +1667,11 @@ namespace Pair
         exprEnc = pair (fromNat 5) exprEncInner →
         (interp boundVars exprEncInner).posMem p →
         IsExprEncoding exprEncInner →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncInner p)))
       (ins:
-        Ins
+        InsUdl
           uniDefList.interpretation.exprCpl
           (pair boundVars (pair exprEnc p)))
     :
@@ -1695,7 +1695,7 @@ namespace Pair
           (insFreeElim insExpr nat502Neq500)
         
         let ninw
-          (inw: Inw uniDefList.interpretation
+          (inw: InwUdl uniDefList.interpretation
             (pair boundVars (pair exprInnerAlias1 p)))
         :=
           insCplElim
@@ -1735,11 +1735,11 @@ namespace Pair
         exprEnc = pair (fromNat 5) exprEncInner →
         (interp boundVars exprEncInner).defMem p →
         IsExprEncoding exprEncInner →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncInner p)))
       (inw:
-        Inw
+        InwUdl
           uniDefList.interpretation.exprCpl
           (pair boundVars (pair exprEnc p)))
     :
@@ -1763,7 +1763,7 @@ namespace Pair
           (inwFreeElim inwExpr nat502Neq500)
         
         let nins
-          (ins: Ins uniDefList.interpretation
+          (ins: InsUdl uniDefList.interpretation
             (pair boundVars (pair exprInnerAlias1 p)))
         :=
           inwCplElim
@@ -1802,19 +1802,19 @@ namespace Pair
       (ihCond:
         {exprEncCond exprEncBody c: Pair} →
         exprEnc = pair (fromNat 6) (pair exprEncCond exprEncBody) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncCond c)) →
         (interp boundVars exprEncCond).defMem c)
       (ihBody:
         {exprEncCond exprEncBody: Pair} →
         exprEnc = pair (fromNat 6) (pair exprEncCond exprEncBody) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncBody p)) →
         (interp boundVars exprEncBody).defMem p)
       (ins:
-        Ins
+        InsUdl
           uniDefList.interpretation.exprIfThen
           (pair boundVars (pair exprEnc p)))
     :
@@ -1880,19 +1880,19 @@ namespace Pair
       (ihCond:
         {exprEncCond exprEncBody c: Pair} →
         exprEnc = pair (fromNat 6) (pair exprEncCond exprEncBody) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncCond c)) →
         (interp boundVars exprEncCond).posMem c)
       (ihBody:
         {exprEncCond exprEncBody: Pair} →
         exprEnc = pair (fromNat 6) (pair exprEncCond exprEncBody) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEncBody p)) →
         (interp boundVars exprEncBody).posMem p)
       (inw:
-        Inw
+        InwUdl
           uniDefList.interpretation.exprIfThen
           (pair boundVars (pair exprEnc p)))
     :
@@ -1959,12 +1959,12 @@ namespace Pair
       (ihBody:
         {varEnc bodyEnc boundVars: Pair} →
         exprEnc = pair (fromNat 7) (pair varEnc bodyEnc) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair bodyEnc p)) →
         (interp boundVars bodyEnc).defMem p)
       (ins:
-        Ins
+        InsUdl
           uniDefList.interpretation.exprArbUnion
           (pair boundVars (pair exprEnc p)))
     :
@@ -2070,12 +2070,12 @@ namespace Pair
       (ih:
         {varEnc bodyEnc boundVars: Pair} →
         exprEnc = pair (fromNat 7) (pair varEnc bodyEnc) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair bodyEnc p)) →
         (interp boundVars bodyEnc).posMem p)
       (inw:
-        Inw
+        InwUdl
           uniDefList.interpretation.exprArbUnion
           (pair boundVars (pair exprEnc p)))
     :
@@ -2183,12 +2183,12 @@ namespace Pair
       (ihBody:
         {varEnc bodyEnc boundVars: Pair} →
         exprEnc = pair (fromNat 8) (pair varEnc bodyEnc) →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair bodyEnc p)) →
         (interp boundVars bodyEnc).defMem p)
       (ins:
-        Ins
+        InsUdl
           uniDefList.interpretation.exprArbIntersection
           (pair boundVars (pair exprEnc p)))
     :
@@ -2306,12 +2306,12 @@ namespace Pair
       (ih:
         {varEnc bodyEnc boundVars: Pair} →
         exprEnc = pair (fromNat 8) (pair varEnc bodyEnc) →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair bodyEnc p)) →
         (interp boundVars bodyEnc).posMem p)
       (inw:
-        Inw
+        InwUdl
           uniDefList.interpretation.exprArbIntersection
           (pair boundVars (pair exprEnc p)))
     :
@@ -2477,17 +2477,17 @@ namespace Pair
       (ihLeft:
         {a b: Pair} →
         p = pair a b →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair left a)))
       (ihRite:
         {a b: Pair} →
         p = pair a b →
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair rite b)))
     :
-      Ins
+      InsUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
@@ -2598,17 +2598,17 @@ namespace Pair
       (ihLeft:
         {a b: Pair} →
         p = pair a b →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair left a)))
       (ihRite:
         {a b: Pair} →
         p = pair a b →
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair rite b)))
     :
-      Inw
+      InwUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
@@ -2709,14 +2709,14 @@ namespace Pair
       (isExprRite: IsExprEncoding rite)
       (ih:
         Or
-          (Ins
+          (InsUdl
             uniDefList.interpretation
             (pair boundVars (pair left p)))
-          (Ins
+          (InsUdl
             uniDefList.interpretation
             (pair boundVars (pair rite p))))
     :
-      Ins
+      InsUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
@@ -2826,14 +2826,14 @@ namespace Pair
       (isExprRite: IsExprEncoding rite)
       (ih:
         Or
-          (Inw
+          (InwUdl
             uniDefList.interpretation
             (pair boundVars (pair left p)))
-          (Inw
+          (InwUdl
             uniDefList.interpretation
             (pair boundVars (pair rite p))))
     :
-      Inw
+      InwUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
@@ -2949,15 +2949,15 @@ namespace Pair
       (isExprLeft: IsExprEncoding left)
       (isExprRite: IsExprEncoding rite)
       (ihLeft:
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair left p)))
       (ihRite:
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair rite p)))
     :
-      Ins
+      InsUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
@@ -3042,15 +3042,15 @@ namespace Pair
       (isExprLeft: IsExprEncoding left)
       (isExprRite: IsExprEncoding rite)
       (ihLeft:
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair left p)))
       (ihRite:
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair rite p)))
     :
-      Inw
+      InwUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
@@ -3146,15 +3146,15 @@ namespace Pair
       (isExprBody: IsExprEncoding body)
       (ihCond:
         (∃ c,
-          Ins
+          InsUdl
             uniDefList.interpretation
             (pair boundVars (pair cond c))))
       (ihBody:
-        Ins
+        InsUdl
           uniDefList.interpretation
           (pair boundVars (pair body p)))
     :
-      Ins
+      InsUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair cond body)) p))
     :=
@@ -3244,15 +3244,15 @@ namespace Pair
       (isExprBody: IsExprEncoding body)
       (ihCond:
         (∃ c,
-          Inw
+          InwUdl
             uniDefList.interpretation
             (pair boundVars (pair cond c))))
       (ihBody:
-        Inw
+        InwUdl
           uniDefList.interpretation
           (pair boundVars (pair body p)))
     :
-      Inw
+      InwUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair cond body)) p))
     :=
@@ -3336,11 +3336,11 @@ namespace Pair
       (inDef: (interp boundVars (pair n exprEnc)).defMem p)
       (isExpr: IsExprEncoding exprEnc)
       (ih:
-        ¬ Inw
+        ¬ InwUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEnc p)))
     :
-      Ins
+      InsUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n exprEnc) p))
     :=
@@ -3383,11 +3383,11 @@ namespace Pair
       (inDef: (interp boundVars (pair n exprEnc)).posMem p)
       (isExpr: IsExprEncoding exprEnc)
       (ih:
-        ¬ Ins
+        ¬ InsUdl
           uniDefList.interpretation
           (pair boundVars (pair exprEnc p)))
     :
-      Inw
+      InwUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n exprEnc) p))
     :=
@@ -3429,11 +3429,11 @@ namespace Pair
       (ih:
         {boundVal: Pair} →
         (interp (pair (pair varEnc boundVal) boundVars) bodyEnc).defMem p →
-        Ins
+        InsUdl
           (var uniDefList.interpretation)
           (pair (pair (pair varEnc boundVal) boundVars) (pair bodyEnc p)))
     :
-      Ins
+      InsUdl
         (var uniDefList.interpretation)
         (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
     :=
@@ -3522,11 +3522,11 @@ namespace Pair
       (ih:
         {boundVal: Pair} →
         (interp (pair (pair varEnc boundVal) boundVars) bodyEnc).posMem p →
-        Inw
+        InwUdl
           (var uniDefList.interpretation)
           (pair (pair (pair varEnc boundVal) boundVars) (pair bodyEnc p)))
     :
-      Inw
+      InwUdl
         (var uniDefList.interpretation)
         (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
     :=
@@ -3623,11 +3623,11 @@ namespace Pair
       (ih:
         {boundVal: Pair} →
         (interp (pair (pair varEnc boundVal) boundVars) bodyEnc).defMem p →
-        Ins
+        InsUdl
           (var uniDefList.interpretation)
           (pair (pair (pair varEnc boundVal) boundVars) (pair bodyEnc p)))
     :
-      Ins
+      InsUdl
         (var uniDefList.interpretation)
         (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
     :=
@@ -3649,7 +3649,7 @@ namespace Pair
           exact addBoundsEq.symm ▸ inDefBodyUpdated
         
         let insBody:
-          Ins
+          InsUdl
             (var uniDefList.interpretation)
             (pair (pair (pair varEnc _) boundVars) (pair bodyEnc p))
         :=
@@ -3737,11 +3737,11 @@ namespace Pair
       (ih:
         {boundVal: Pair} →
         (interp (pair (pair varEnc boundVal) boundVars) bodyEnc).posMem p →
-        Inw
+        InwUdl
           (var uniDefList.interpretation)
           (pair (pair (pair varEnc boundVal) boundVars) (pair bodyEnc p)))
     :
-      Inw
+      InwUdl
         (var uniDefList.interpretation)
         (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
     :=
@@ -3847,7 +3847,7 @@ namespace Pair
       (isExprLeft: IsExprEncoding left)
       (isExprRite: IsExprEncoding rite)
     :
-      Ins
+      InsUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
@@ -3915,7 +3915,7 @@ namespace Pair
       (isExprLeft: IsExprEncoding left)
       (isExprRite: IsExprEncoding rite)
     :
-      Inw
+      InwUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair left rite)) p))
     :=
@@ -3984,7 +3984,7 @@ namespace Pair
       (isNatVar: IsNatEncoding varEnc)
       (isExprBody: IsExprEncoding bodyEnc)
     :
-      Ins
+      InsUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
     :=
@@ -4014,7 +4014,7 @@ namespace Pair
       (isNatVar: IsNatEncoding varEnc)
       (isExprBody: IsExprEncoding bodyEnc)
     :
-      Inw
+      InwUdl
         uniDefList.interpretation
         (pair boundVars (pair (pair n (pair varEnc bodyEnc)) p))
     :=
@@ -4041,7 +4041,7 @@ namespace Pair
     
     def interpretationOfIns
       (ins:
-        Ins uniDefList.interpretation
+        InsUdl uniDefList.interpretation
           (pair boundVars (pair exprEnc p)))
     :
       (interp boundVars exprEnc).defMem p
@@ -4071,7 +4071,7 @@ namespace Pair
     
     def interpretationOfInw
       (inw:
-        Inw uniDefList.interpretation
+        InwUdl uniDefList.interpretation
           (pair boundVars (pair exprEnc p)))
     :
       (interp boundVars exprEnc).posMem p
@@ -4103,7 +4103,7 @@ namespace Pair
       (inDef: (interp boundVars exprEnc).defMem p)
       (isExpr: IsExprEncoding exprEnc)
     :
-      Ins
+      InsUdl
         uniDefList.interpretation
         (pair boundVars (pair exprEnc p))
     :=
@@ -4129,7 +4129,7 @@ namespace Pair
       (inPos: (interp boundVars exprEnc).posMem p)
       (isExpr: IsExprEncoding exprEnc)
     :
-      Inw
+      InwUdl
         uniDefList.interpretation
         (pair boundVars (pair exprEnc p))
     :=
@@ -4154,7 +4154,7 @@ namespace Pair
     
     
     def freeInterpretationOfIns
-      (ins: Ins uniDefList.freeInterpretation (pair expr p))
+      (ins: InsUdl uniDefList.freeInterpretation (pair expr p))
     :
       (interp zero expr).defMem p
     :=
@@ -4166,7 +4166,7 @@ namespace Pair
       zEq ▸ interpretationOfIns insFn
     
     def freeInterpretationOfInw
-      (ins: Inw uniDefList.freeInterpretation (pair expr p))
+      (ins: InwUdl uniDefList.freeInterpretation (pair expr p))
     :
       (interp zero expr).posMem p
     :=
@@ -4182,7 +4182,7 @@ namespace Pair
       (inDef: (interp zero exprEnc).defMem p)
       (isExpr: IsExprEncoding exprEnc)
     :
-      Ins uniDefList.freeInterpretation (pair exprEnc p)
+      InsUdl uniDefList.freeInterpretation (pair exprEnc p)
     :=
       insWfmDef.toInsWfm
         (insCallExpr
@@ -4193,7 +4193,7 @@ namespace Pair
       (inPos: (interp zero expr).posMem p)
       (isExpr: IsExprEncoding expr)
     :
-      Inw uniDefList.freeInterpretation (pair expr p)
+      InwUdl uniDefList.freeInterpretation (pair expr p)
     :=
       inwWfmDef.toInwWfm
         (inwCallExpr
@@ -4202,7 +4202,7 @@ namespace Pair
     
     
     def inDefNthOfInsTheSet
-      (ins: Ins uniDefList.theSet (pair (fromNat x) p))
+      (ins: InsUdl uniDefList.theSet (pair (fromNat x) p))
     :
       Set3.defMem
         (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
@@ -4229,7 +4229,7 @@ namespace Pair
       freeInterpretationOfIns insFn
     
     def inPosNthOfInwTheSet
-      (inw: Inw uniDefList.theSet (pair (fromNat x) p))
+      (inw: InwUdl uniDefList.theSet (pair (fromNat x) p))
     :
       Set3.posMem
         (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
@@ -4262,7 +4262,7 @@ namespace Pair
           (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
           p)
     :
-      Ins uniDefList.theSet (pair (fromNat x) p)
+      InsUdl uniDefList.theSet (pair (fromNat x) p)
     :=
       let isExpr :=
         (IsTheDefListExprPair.getNthExpr x).isNth.isExpr
@@ -4290,7 +4290,7 @@ namespace Pair
           (interp zero (IsTheDefListExprPair.getNthExpr x).expr)
           p)
     :
-      Inw uniDefList.theSet (pair (fromNat x) p)
+      InwUdl uniDefList.theSet (pair (fromNat x) p)
     :=
       let isExpr :=
         (IsTheDefListExprPair.getNthExpr x).isNth.isExpr

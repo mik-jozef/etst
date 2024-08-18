@@ -10,7 +10,7 @@ namespace Pair
     
     
     def insSameDepth (isSameDepth: IsSameDepth p):
-      Ins sameDepth p
+      InsUdl sameDepth p
     :=
       match p with
       | zero => isSameDepth.elim
@@ -31,7 +31,7 @@ namespace Pair
                 (insPairOfDepth isPodB)
                 (insFree insBound nat501Neq500))))
     
-    def Inw.toIsSameDepth (inw: Inw sameDepth p):
+    def Inw.toIsSameDepth (inw: InwUdl sameDepth p):
       IsSameDepth p
     :=
       let ⟨depthEncoding, ⟨_inwDomain, inwBody⟩⟩ :=
@@ -60,7 +60,7 @@ namespace Pair
     
     
     def insPairLt (isLt: IsPairLt p):
-      Ins pairLt p
+      InsUdl pairLt p
     :=
       match p with
       | zero => isLt.elim
@@ -107,7 +107,7 @@ namespace Pair
                         (insFree insBound nat501Neq500)
                       nat502Neq500)))))))
     
-    def Inw.toIsPairLt (inw: Inw pairLt p):
+    def Inw.toIsPairLt (inw: InwUdl pairLt p):
       IsPairLt p
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim
