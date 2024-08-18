@@ -38,7 +38,6 @@ lean_lib Utils.ExprIsFreeVar {}
 lean_lib Utils.Interpretation {}
 lean_lib Utils.LeN37 {}
 lean_lib Utils.Lfp {}
-lean_lib Utils.LfpLeOfOpLe {}
 lean_lib Utils.Operators {}
 lean_lib Utils.Ordinal {}
 lean_lib Utils.Pair {}
