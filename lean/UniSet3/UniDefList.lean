@@ -1,23 +1,29 @@
 /-
-  Consider these definitions:
+  Recall from Chapter 4 the definition of a definable triset
+  (`Salgebra.IsDefinable`). In the files of this folder, we show
+  that there exists a definable triset `uni: Set3 Pair` that in
+  a sense "contains" all definable trisets of pairs.
   
-  ```
-    def call (fn arg: Set Pair): Set Pair :=
-      { ret | ∃ a ∈ arg, (a, ret) ∈ fn }
-    
-    def call3 (fn arg: Set3 Pair): Set Pair := {
-      defMem := call fn.defMem arg.defMem
-      posMem := call fn.posMem arg.posMem
-      defLePos := by [monotonicity of call]
-    }
-  ```
+  More precisely, `uni` is such that for any definable triset
+  `tDef`, there exists an `index: Pair` such that for any `p`,
   
-  In this file, we define the triset `t` of all definable trisets
-  of pairs, in the sense that for any definable triset `tDef`,
-  there exists a triset `tIndex` such that `tDef = call3 t tIndex`.
+      p ∈ tDef ↔ (index, p) ∈ uni \,,
   
-  We show that this triset is itself definable by constructing
-  a definition list that defines it.
+  where the above equivalence holds for both the definitive and
+  possible membership.
+  
+  We show that `uni` is itself definable by constructing a definition
+  list that defines it. The traditional contradictions a la Russell
+  are avoided thanks to the three-valued nature of trisets -- one
+  cannot obtain a contradiction by diagonalization because the
+  undetermined elements of a triset are undetermined in its
+  complement as well.
+  
+  This file only contains the definition of the definition list
+  itself. The file `./UniSet3.lean` contains the final part of
+  the proof of the universality of `uni`. The rest of the files
+  contain proofs that the helper definitions of the definition
+  list contain precisely those trisets they are meant to contain.
 -/
 
 import Utils.LeN37
@@ -35,25 +41,34 @@ namespace Pair
   instance exprOfNat: (n: Nat) → OfNat Expr n :=
     PairExpr.exprOfNat
   
-  -- Convention: bound variables start at 500.
+  /-
+    Here, we define the definitions of our definition list.
+    
+    By convention, bound variables start at 500. Also recall that
+    in Chapter 5, we defined an encoding of natural numbers as
+    pairs (`IsNatEncoding`).
+  -/
   namespace uniDefList
     /-
       Contains exactly the pairs that encode natural numbers.
-      nat = () | (nat, ())
+      
+          nat = () | (nat, ())
     -/
     def nat: Nat := 0
     def nat.expr := Expr.un zeroExpr (pairExpr nat zeroExpr)
     
     /-
-      Contains (a, a) iff a is a natural number.
-      natPairAA = Un n: nat, (n, n)
+      Contains (n, n) iff n is a natural number.
+      
+          natPairAA = Un n: nat, (n, n)
     -/
     def natPairAA: Nat := 1
     def natPairAA.expr := unionExpr 500 nat (pairExpr 500 500)
     
     /-
-      Contains (a, b) iff a and b are naturals st. a ≤ b.
-      natLe = natPairAA | Ex (a, b): natLe, (a, succ b)
+      Contains (n, m) iff n and m are naturals st. n ≤ m.
+      
+          natLe = natPairAA | Ex (n, m): natLe, (n, succ m)
     -/
     def natLe: Nat := 2
     def natLe.expr :=
@@ -66,7 +81,8 @@ namespace Pair
     
     /-
       Contains (0, n) for natural n.
-      expr.var = Un n: nat, ((), n)
+      
+          exprEncoding.var = Un n: nat, ((), n)
     -/
     def exprEncoding.var: Nat := 3
     def exprEncoding.var.expr: Expr :=
@@ -97,6 +113,7 @@ namespace Pair
     def exprEncoding.quantifier.expr: Expr :=
       Expr.un (natExpr 7) (natExpr 8)
     
+    -- Helpers for `exprEncoding.expr` below.
     def exprEncoding: Nat := 7
     def exprEncoding.binExpr :=
       pairExpr
@@ -114,8 +131,8 @@ namespace Pair
       
       Expressions are encoded like this:
       | var (v: Nat)                 => (0, v)
-      | op (op: zero) (args)         => (1, ())
-      | op (op: pair) (args)         => (2, (args 0, args 1))
+      | op (Op.zero) (args)          => (1, ())
+      | op (Op.pair) (args)          => (2, (args 0, args 1))
       | un (left rite: Expr sig)     => (3, (left, rite))
       | ir (left rite: Expr sig)     => (4, (left, rite))
       | cpl (expr: Expr sig)         => (5, expr)
@@ -134,7 +151,7 @@ namespace Pair
     def exprEncoding.expr := finUnExpr exprList
     
     /-
-      Contains all pairs that encode a finite prefix of a definition
+      Contains all pairs that encode a prefix of a definition
       list -- ie. a list of expressions.
       
       The empty list is encoded as (), and `head :: tail` as
@@ -146,7 +163,7 @@ namespace Pair
     
     /-
       Contains (a, b) with a and b being pairs such that a < b
-      in the dictionary order. Base case: () < (a, b).
+      in the dictionary order. (Base case: () < (a, b).)
     -/
     def pairDictLt: Nat := 9
     def pairDictLt.zeroPair: Expr :=
@@ -376,7 +393,7 @@ namespace Pair
                     501))))))
     
     /-
-      (dl, expr), where `dl` is (an encoding of a prefix of)
+      (dl, expr), where `dl` is (an encoding of) a prefix of
       a definition list of length one, and `expr` is the only its
       expression.
     -/
@@ -486,15 +503,19 @@ namespace Pair
                   501)))))
     
     /-
-      Contains (n, dl), such that dl is a (finite prefix of a)
-      definition list consisting of the zeroth n definition list
-      prefixes joined together.
+      Contains (n, dl), such that dl is a prefix of a definition
+      list consisting of the zeroth n definition list prefixes
+      joined together. (Deflist prefixes are ordered by
+      `defEncodingLt`.)
       
-      (Deflist prefixes are ordered by `defEncodingLt`.)
+      Equivalently,
+      
+          enumUpTo(0)   = []
+          enumUpTo(n+1) = [ ...enumUpTo[n], nthDefList[n] ] \,.
       
       For any two deflists returned by `enumUpTo`, one is a prefix
-      of the other. Every finite prefix of every definition list
-      is contained in some deflist prefix returned by `enumUpTo`.
+      of the other. Every prefix of every definition list is
+      contained in some deflist prefix returned by `enumUpTo`.
     -/
     def enumUpTo: Nat := 29
     def enumUpTo.expr: Expr :=
@@ -502,7 +523,7 @@ namespace Pair
         (pairExpr zeroExpr zeroExpr)
         (unionExpr 500 nat
           (pairExpr
-            (pairExpr 500 zeroExpr)
+            (succExpr 500)
             (callExpr 501
               (callExpr 502 append
                 (callExpr 503 enumUpTo 500))
@@ -528,18 +549,17 @@ namespace Pair
                   (callExpr 503 (callExpr 504 defListToSet 501) 502))))))
     
     /-
-      Contains all deflists of enumUpTo.
+      Contains all definition list prefixes of enumUpTo.
       
-      Recall that for every pair of elements of enumUpTo, one is
+      Recall that for every two elements of enumUpTo, one is
       a prefix of the other. This guarantees that for any two
-      definition lists of `theDlPrefixes` (of sufficient length),
-      and any n, their nth expressions are the same.
+      definition list prefixes of `theDlPrefixes` (of sufficient
+      length), and any n, their nth expressions are the same.
       
       This in turn means that `theDlPrefixes` represents a unique
-      definition list (not just some finite prefix of it), which
-      contains all definitions up to structural equivalence.
-      Every definable triset is therefore defined in this definition
-      list.
+      definition list. It also contains all definitions up to
+      structural equivalence. Every definable triset is therefore
+      defined in this definition list.
     -/
     def theDlPrefixes: Nat := 31
     def theDlPrefixes.expr: Expr :=
@@ -552,7 +572,7 @@ namespace Pair
       
       This is a different representation of the definition list
       represented by `theDlPrefixes`. While `theDlPrefixes` contains
-      its finite prefixes, `theDefList` contains its index-expression
+      its prefixes, `theDefList` contains its index-expression
       pairs.
     -/
     def theDefList: Nat := 32
@@ -609,11 +629,21 @@ namespace Pair
     def freeInterpretation := 35
     
     /-
-      A set of pairs (n, p) where `n` is a natural number. For
-      every definable triset of pairs `s`, there exists a natural
-      number `n` such that for every pair `p`,
+      A set of pairs (n, p) where `n` is a natural number, and
+      `p` is a member of the interpretation of the `n`th definition
+      of the definition list represented by `theDefList`.
       
-          (n, p) ∈ theSet = p ∈ s \,.
+      The pair is contained strongly iff `p` is a definitive member
+      of the interpretation, else it is contained weakly.
+      
+      For every definable triset of pairs `tDef`, there exists
+      (an encoding of) a natural number `n` such that for every
+      pair `p`,
+      
+          p ∈ tDef ↔ (n, p) ∈ theSet \,,
+      
+      where the above equivalence holds for both the definitive
+      and possible membership.
     -/
     def theSet: Nat := 36
     
@@ -756,6 +786,7 @@ namespace Pair
             freeInterpretation
             (callExpr 502 theDefList 500)))
     
+    -- The definitions of the definition list.
     def defList.getDef: Nat → Expr
     | 0 => nat.expr
     | 1 => natPairAA.expr
@@ -796,6 +827,11 @@ namespace Pair
     | 36 => theSet.expr
     | _rest + 37 => zeroExpr
     
+    /-
+      All free variables of the definition list are less than 38.
+      From this, it follows that the definition list is finitely
+      bounded.
+    -/
     def defList.usedVarsLt38
       (usedVar: IsFreeVar (getDef a) Set.empty)
     :
@@ -858,7 +894,7 @@ namespace Pair
     :
       b < max a.succ 38
     :=
-      -- Git gud @ termination showing, Lean.
+      -- Lean could get better at termination showing.
       -- match dependsOn with
       -- | DefList.DependsOn.Refl x =>
       --   lt_max_of_lt_left (Nat.lt_succ_self x)
@@ -873,6 +909,7 @@ namespace Pair
           let maxEq := max_eq_right (Nat.succ_le_of_lt bLt37)
           lt_max_of_lt_right (maxEq ▸ ih))
     
+    -- TODO rename to theDefListExternal
     def defList:
       FinBoundedDL pairSignature
     := {
