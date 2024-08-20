@@ -15,7 +15,7 @@ namespace Pair
     
     
     def insIncrVarsExpr (isShiftEnc: IsIncrVarsExpr p):
-      InsUdl incrVarsExpr p
+      InsEdl incrVarsExpr p
     :=
       match p with
       | zero => isShiftEnc.elim
@@ -137,7 +137,7 @@ namespace Pair
                               (insFree insBound nat502Neq501)
                               nat503Neq501)))))))))
     
-    def Inw.toIsIncrVarsExpr (w: InwUdl incrVarsExpr p):
+    def Inw.toIsIncrVarsExpr (w: InwEdl incrVarsExpr p):
       IsIncrVarsExpr p
     :=
       inwFinUnElim (inwWfm.toInwWfmDef w)

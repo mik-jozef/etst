@@ -15,7 +15,7 @@ namespace Pair
     
     
     def insIncrVarsDefEncoding (isShiftEnc: IsIncrVarsDefEncoding p):
-      InsUdl incrVarsDefEncoding p
+      InsEdl incrVarsDefEncoding p
     :=
       insWfmDef.toInsWfm
         (match p with
@@ -43,7 +43,7 @@ namespace Pair
                           (insWfmDef.toInsWfm insIncRest)
                           (insFree insBound nat502Neq501))))))))
     
-    def Inw.toIsIncrVarsDefEncoding (w: InwUdl incrVarsDefEncoding p):
+    def Inw.toIsIncrVarsDefEncoding (w: InwEdl incrVarsDefEncoding p):
       IsIncrVarsDefEncoding p
     :=
       open IsIncrVarsDefEncodingPair in
@@ -100,7 +100,7 @@ namespace Pair
     
     
     def insShiftDefEncoding (isShiftDef: IsShiftDefEncoding p):
-      InsUdl shiftDefEncoding p
+      InsEdl shiftDefEncoding p
     :=
       match p with
       | zero => isShiftDef.elim
@@ -163,7 +163,7 @@ namespace Pair
     termination_by p.depthA
     decreasing_by exact depthLtL _ zero
     
-    def Inw.toIsShiftDefEncoding (inw: InwUdl shiftDefEncoding p):
+    def Inw.toIsShiftDefEncoding (inw: InwEdl shiftDefEncoding p):
       IsShiftDefEncoding p
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim

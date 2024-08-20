@@ -26,7 +26,6 @@ lean_lib UniSet3.PairOfDepth {}
 lean_lib UniSet3.ShiftDefEncoding {}
 lean_lib UniSet3.TheDefList {}
 lean_lib UniSet3.TheSet3 {}
-lean_lib UniSet3.TheSet3Helpers {}
 lean_lib UniSet3.UniDefList {}
 lean_lib UniSet3.UniSet3 {}
 

@@ -9,13 +9,13 @@ namespace Pair
     
     
     def insExprEncoding.zero:
-      InsUdl exprEncoding.zero (pair (fromNat 1) zero)
+      InsEdl exprEncoding.zero (pair (fromNat 1) zero)
     :=
       (insWfmDef.toInsWfm
         (insPair (insNatExpr _ _) insZero))
     
     def Inw.toIsExprEncodinng.zero
-      (w: InwUdl exprEncoding.zero p)
+      (w: InwEdl exprEncoding.zero p)
     :
       p = (pair (fromNat 1) zero)
     :=
@@ -30,7 +30,7 @@ namespace Pair
     
     
     def insExprEncoding.binary (isEEB: IsExprEncoding.Bin p):
-      InsUdl exprEncoding.binary p
+      InsEdl exprEncoding.binary p
     :=
       open IsExprEncoding.Bin in
       insWfmDef.toInsWfm
@@ -41,7 +41,7 @@ namespace Pair
         | Is6 eq => eq ▸ insUnR _ (insUnR _ (insUnR _ (insNatExpr _ _))))
     
     def Inw.toIsExprEncoding.binary
-      (w: InwUdl exprEncoding.binary p)
+      (w: InwEdl exprEncoding.binary p)
     :
       IsExprEncoding.Bin p
     :=
@@ -56,7 +56,7 @@ namespace Pair
     
     
     def insExprEncoding.quantifier (isEEB: IsExprEncoding.Quantifier p):
-      InsUdl exprEncoding.quantifier p
+      InsEdl exprEncoding.quantifier p
     :=
       open IsExprEncoding.Quantifier in
       insWfmDef.toInsWfm
@@ -65,7 +65,7 @@ namespace Pair
         | Is8 eq => eq ▸ insUnR _ (insNatExpr _ _))
     
     def Inw.toIsExprEncoding.quantifier
-      (w: InwUdl exprEncoding.quantifier p)
+      (w: InwEdl exprEncoding.quantifier p)
     :
       IsExprEncoding.Quantifier p
     :=
@@ -76,7 +76,7 @@ namespace Pair
     
     
     def insExprEncoding (isEE: IsExprEncoding p):
-      InsUdl exprEncoding p
+      InsEdl exprEncoding p
     :=
       insWfmDef.toInsWfm
         (match isEE with
@@ -134,7 +134,7 @@ namespace Pair
               (insPair (insNatEncoding isNat) (insExprEncoding isExpr))))
     
     def Inw.toIsExprEncoding
-      (w: InwUdl exprEncoding p)
+      (w: InwEdl exprEncoding p)
     :
       IsExprEncoding p
     :=

@@ -909,8 +909,15 @@ namespace Pair
           let maxEq := max_eq_right (Nat.succ_le_of_lt bLt37)
           lt_max_of_lt_right (maxEq ▸ ih))
     
-    -- TODO rename to theDefListExternal
-    def defList:
+    /-
+      The definition list that defines the universal triset (under
+      the name `theSet`.)
+      
+      It is called the *external* definition list to disambiguate
+      it from the *internal* definition list that is represented
+      by the definition `theDefList`.
+    -/
+    def theExternalDefList:
       FinBoundedDL pairSignature
     := {
       getDef := defList.getDef
@@ -922,8 +929,8 @@ namespace Pair
         ⟩
     }
     
-    noncomputable def wfModel :=
-      defList.wellFoundedModel pairSalgebra
+    noncomputable def theExternalWfm :=
+      theExternalDefList.wellFoundedModel pairSalgebra
     
   end uniDefList  
 end Pair

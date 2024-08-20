@@ -10,7 +10,7 @@ namespace Pair
     
     
     def insLastExprBase (isLastExprBase: IsLastExprBase p):
-      InsUdl lastExpr.base p
+      InsEdl lastExpr.base p
     :=
       match p with
       | zero => isLastExprBase.elim
@@ -24,7 +24,7 @@ namespace Pair
               (insPair insBound insZero)
               (isLastExprBase.eq ▸ insBound)))
     
-    def Inw.toIsLastExprBase (inw: InwUdl lastExpr.base p):
+    def Inw.toIsLastExprBase (inw: InwEdl lastExpr.base p):
       IsLastExprBase p
     :=
       let ⟨_epxr, ⟨inwDomain, inwBody⟩⟩ :=
@@ -49,7 +49,7 @@ namespace Pair
     
     
     def insLastExpr (isLastExprBase: IsLastExpr p):
-      InsUdl lastExpr p
+      InsEdl lastExpr p
     :=
       match p with
       | zero => isLastExprBase.elim
@@ -87,7 +87,7 @@ namespace Pair
     | zero => 0
     | pair a _ => a.arrayLength
     
-    def Inw.toIsLastExpr (inw: InwUdl lastExpr p):
+    def Inw.toIsLastExpr (inw: InwEdl lastExpr p):
       IsLastExpr p
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim
@@ -117,7 +117,7 @@ namespace Pair
     
     
     def insUpToLast (isUpToLast: IsUpToLast p):
-      InsUdl upToLast p
+      InsEdl upToLast p
     :=
       match p with
       | zero => isUpToLast.elim
@@ -153,7 +153,7 @@ namespace Pair
                             (insFree insBound nat501Neq500)
                             nat502Neq500))))))))
     
-    def Inw.toIsUpToLast (inw: InwUdl upToLast p):
+    def Inw.toIsUpToLast (inw: InwEdl upToLast p):
       IsUpToLast p
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim
@@ -208,7 +208,7 @@ namespace Pair
     
     
     def insArrayAppend (isArrayAppend: IsArrayAppend p):
-      InsUdl arrayAppend p
+      InsEdl arrayAppend p
     :=
       match p with
       | zero => isArrayAppend.elim
@@ -279,7 +279,7 @@ namespace Pair
                             nat502Neq501))))))))
     termination_by arrayLengthA p
     
-    def Inw.toIsArrayAppend (inw: InwUdl arrayAppend p):
+    def Inw.toIsArrayAppend (inw: InwEdl arrayAppend p):
       IsArrayAppend p
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim
@@ -346,7 +346,7 @@ namespace Pair
     
     
     def insArrayLength (isArrayLength: IsArrayLength p):
-      InsUdl uniDefList.arrayLength p
+      InsEdl uniDefList.arrayLength p
     :=
       match p, isArrayLength with
       | zero, isArrL => isArrL.elim
@@ -370,7 +370,7 @@ namespace Pair
                       nat501Neq500))
                   insZero))))
     
-    def Inw.toIsArrayLength (inw: InwUdl uniDefList.arrayLength p):
+    def Inw.toIsArrayLength (inw: InwEdl uniDefList.arrayLength p):
       IsArrayLength p
     :=
       (inwUnElim (inwWfm.toInwWfmDef inw)).elim
@@ -413,7 +413,7 @@ namespace Pair
     
     
     def insAppend (isAppend: IsAppend p):
-      InsUdl append p
+      InsEdl append p
     :=
       match p with
       | zero => isAppend.elim
@@ -468,7 +468,7 @@ namespace Pair
                           nat502Neq501)
                         nat503Neq501)))))))
     
-    def Inw.toIsAppend (inw: InwUdl append p):
+    def Inw.toIsAppend (inw: InwEdl append p):
       IsAppend p
     :=
       let inw := inwWfm.toInwWfmDef inw

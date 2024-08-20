@@ -8,7 +8,7 @@ namespace Pair
   namespace uniSet3
     open uniDefList
     
-    noncomputable def theDefListExternal.getDef
+    noncomputable def theInternalDefList.getDef
       (n: Nat)
     :
       Expr pairSignature
@@ -16,20 +16,20 @@ namespace Pair
       encodingToExpr
         (IsTheDefListExprPair.getNthExpr n).expr
 
-    noncomputable def theDefListExternal:
+    noncomputable def theInternalDefList:
       DefList pairSignature
     := {
-      getDef := theDefListExternal.getDef
+      getDef := theInternalDefList.getDef
     }
     
-    def theDefListExternal.inListOfIsDefList
+    def theInternalDefList.inListOfIsDefList
       (isInDl: IsTheDefListExprPair (fromNat i) exprEnc)
       (eqEnc: exprEnc = exprToEncoding expr)
     :
-      expr = theDefListExternal.getDef i
+      expr = theInternalDefList.getDef i
     :=
       by
-        unfold theDefListExternal.getDef;
+        unfold theInternalDefList.getDef;
         exact
           IsTheDefListExprPair.getNthExpr.eq isInDl rfl ▸
           eqEnc ▸
@@ -106,14 +106,14 @@ namespace Pair
         shiftVarsEqMapVars.incr shiftVarsEqMapVars
     
     
-    noncomputable def wfmExternal :=
-      theDefListExternal.wellFoundedModel pairSalgebra
+    noncomputable def theInternalWfm :=
+      theInternalDefList.wellFoundedModel pairSalgebra
     
-    def theDefListExternal.hasAllDefinable
+    def theInternalDefList.hasAllDefinable
       (s3: Set3 Pair)
       (isDef: pairSalgebra.IsDefinable s3)
     :
-      ∃ x, s3 = wfmExternal x
+      ∃ x, s3 = theInternalWfm x
     :=
       let ⟨dl, x, sEq⟩ := isDef
       
@@ -137,7 +137,7 @@ namespace Pair
       let eq :=
         DefList.eqDefsToEqSets
           dl.toDefList
-          theDefListExternal
+          theInternalDefList
           pairSalgebra
           (fun i => iStart + i)
           (fun i => DefList.DependsOn dl.getDef x i)
@@ -163,7 +163,7 @@ namespace Pair
           x
           (DefList.DependsOn.Refl x)
       
-      ⟨iStart + x, by unfold wfmExternal; exact eq ▸ sEq⟩
+      ⟨iStart + x, by unfold theInternalWfm; exact eq ▸ sEq⟩
     
     
     def theInternalValuation.interpretationsEqual
@@ -186,32 +186,51 @@ namespace Pair
       ⟩
     
     def insExternalToInsInternal
-      (ins: InsUdl)
+      (ins: Ins pairSalgebra theInternalDefList p x)
     :
-      Nat
+      d ∈ (theInternalValuation x).defMem
+    :=
+      match ins with
+      | Ins.intro _ _ isCause cinsIns binsIns boutOut =>
+        
+        let insInternal:
+          Ins pairSalgebra theExternalDefList.toDefList (p) x
+        :=
+          sorry
+        sorry
+    
+    def outExternalToOutInternal
+      (out: Out pairSalgebra theInternalDefList p x)
+    :
+      ¬ d ∈ (theInternalValuation x).posMem
     :=
       sorry
     
+    
     def theInternalValuation.isGeWfm:
-      wfmExternal ⊑ theInternalValuation
+      theInternalWfm ⊑ theInternalValuation
     :=
-      fun x => {
+      fun _ => {
         defLe :=
-          fun d inExternal =>
-            sorry
+          fun _ insValExternal =>
+            let ins := Ins.isComplete _ _ insValExternal
+            insExternalToInsInternal ins
         posLe :=
-          fun p =>
-            Function.contraDne sorry
+          fun _ =>
+            Function.contraDne
+              fun outValExternal =>
+                let out := Out.isComplete _ _ outValExternal
+                outExternalToOutInternal out
       }
     
     def theInternalValuation.isLeWfm:
-      theInternalValuation ⊑ wfmExternal
+      theInternalValuation ⊑ theInternalWfm
     :=
       fun x =>
         sorry
     
     def theInternalValuation.eqWfm:
-      wfmExternal = theInternalValuation
+      theInternalWfm = theInternalValuation
     :=
       (Valuation.ord.approximation Pair).le_antisymm
         _ _ isGeWfm isLeWfm
@@ -222,7 +241,7 @@ namespace Pair
     :
       ∃ x: Nat, uniSet3.pairCallJust (fromNat x) = s3
     :=
-      let ⟨x, s3EqWfm⟩ := theDefListExternal.hasAllDefinable s3 isDef
+      let ⟨x, s3EqWfm⟩ := theInternalDefList.hasAllDefinable s3 isDef
       
       ⟨
         x,

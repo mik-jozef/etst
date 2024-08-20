@@ -9,7 +9,7 @@ namespace Pair
     
     
     def insPairDictLt (isPD: IsPairDictLt p):
-      InsUdl pairDictLt p
+      InsEdl pairDictLt p
     :=
       let inListZeroPair:
         pairDictLt.zeroPair ∈ pairDictLt.list
@@ -84,7 +84,7 @@ namespace Pair
                           (insFree insBound nat501Neq500)
                           nat502Neq500)))))))
     
-    def Inw.toIsPairDictLt.p p (inw: InwUdl pairDictLt p):
+    def Inw.toIsPairDictLt.p p (inw: InwEdl pairDictLt p):
       IsPairDictLt p
     :=
       inwFinUnElim (inwWfm.toInwWfmDef inw)
@@ -113,7 +113,7 @@ namespace Pair
               let eq: pair aA bA = pBound := inwBoundElim
                 (inwZthFstElim inwZth inwFst nat502Neq500 rfl)
               
-              let inwA: InwUdl pairDictLt (pair aA bA) :=
+              let inwA: InwEdl pairDictLt (pair aA bA) :=
                 eq ▸ inwFreeElim inwDomain nat500NeqPairDictLt
               
               have := depth.leZth aA aB bA bB
@@ -136,7 +136,7 @@ namespace Pair
               let eq := inwBoundElim
                 (inwZthFstElim inwZth inwFst nat502Neq500 rfl)
               
-              let inwB: InwUdl pairDictLt (pair aB bB) :=
+              let inwB: InwEdl pairDictLt (pair aB bB) :=
                 eq ▸ inwFreeElim inwDomain nat500NeqPairDictLt
               
               have:
@@ -158,7 +158,7 @@ namespace Pair
                   r))
     termination_by p.depth
     
-    def Inw.toIsPairDictLt (inw: InwUdl pairDictLt p):
+    def Inw.toIsPairDictLt (inw: InwEdl pairDictLt p):
       IsPairDictLt p
     :=
       Inw.toIsPairDictLt.p p inw
