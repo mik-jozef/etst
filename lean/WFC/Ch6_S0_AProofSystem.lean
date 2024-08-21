@@ -135,6 +135,7 @@ inductive Ins
 | intro:
   (d: salg.D) →
   (x: Nat) →
+  (cause: Cause salg.D) →
   IsStrongCause salg cause d (dl.getDef x) →
   (∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → Ins salg dl d x) →
   (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → Ins salg dl d x) →
@@ -207,8 +208,9 @@ inductive Out
 | intro:
   (cycle: Set (ValVar salg.D)) →
   (isEmptyCycle:
-    ∀ {d x cause},
+    ∀ {d x},
     ⟨d, x⟩ ∈ cycle →
+    (cause: Cause salg.D) →
     IsWeakCause salg cause d (dl.getDef x) →
     IsCauseInapplicable salg dl cycle cause) →
   ⟨d, x⟩ ∈ cycle →

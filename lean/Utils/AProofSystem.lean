@@ -547,8 +547,9 @@ def emptyCycleIsOut
   (dl: DefList sig)
   (cycle: Set (ValVar salg.D))
   (isEmptyCycle:
-    ∀ {d x cause},
+    ∀ {d x},
     ⟨d, x⟩ ∈ cycle →
+    (cause: Cause salg.D) →
     IsWeakCause salg cause d (dl.getDef x) →  
     cause.IsInapplicable cycle (dl.wellFoundedModel salg))
   {d x}
@@ -586,7 +587,7 @@ def emptyCycleIsOut
             salg wfm _ d
             (dl.getDef x)
             cycle
-            (isEmptyCycle isInCycle)
+            (isEmptyCycle isInCycle _)
             (ih ⟨n.pred, nPredLt⟩ _))
     ⟨d, x⟩
     inCycle
@@ -672,14 +673,14 @@ def completenessProofC
                   (fun _ _ => isSat.contextInsHold)
                   (isMono.defLe isDefOfBPred)
             
-            Ins.intro d x isCause
+            Ins.intro d x cause isCause
               (ih ⟨n.pred, nPredLt⟩)
               isComplete.insIsComplete
               isComplete.outIsComplete)
     outIsComplete :=
       Out.intro
         (fun ⟨d, x⟩ => ¬((operatorC.lfp salg dl b).val x).posMem d)
-        (fun {dd xx cause} notPos isCause =>
+        (fun {dd xx} notPos cause isCause =>
           let lfp := operatorC.lfp salg dl b
           let ⟨isFp, _⟩ := lfp.property
           

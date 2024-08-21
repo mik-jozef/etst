@@ -22,7 +22,7 @@ def Ins.isSound
     (motive_1 := fun d x _ => (dl.wellFoundedModel salg x).defMem d)
     (motive_2 := fun cycle cause _ => cause.IsInapplicable cycle (dl.wellFoundedModel salg))
     (motive_3 := fun d x _ => ¬(dl.wellFoundedModel salg x).posMem d)
-    (fun _ _ isCause _ _ _ ihCins ihBins ihBout =>
+    (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
       DefList.wellFoundedModel.isModel salg dl ▸
       isCause ⟨ihCins, ihBins, ihBout⟩)
     (fun _ _ _ => Cause.IsInapplicable.blockedContextIns)
@@ -40,7 +40,7 @@ def Out.isSound
     (motive_1 := fun d x _ => (dl.wellFoundedModel salg x).defMem d)
     (motive_2 := fun cycle cause _ => Cause.IsInapplicable cause cycle (dl.wellFoundedModel salg))
     (motive_3 := fun d x _ => ¬(dl.wellFoundedModel salg x).posMem d)
-    (fun _ _ isCause _ _ _ ihCins ihBins ihBout =>
+    (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
       DefList.wellFoundedModel.isModel salg dl ▸
       isCause ⟨ihCins, ihBins, ihBout⟩)
     (fun _ _ _ => Cause.IsInapplicable.blockedContextIns)
