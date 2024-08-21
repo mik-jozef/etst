@@ -1,10 +1,10 @@
 /-
   Recall from Chapter 4 the definition of a definable triset
   (`Salgebra.IsDefinable`). In the files of this folder, we show
-  that there exists a definable triset `uni: Set3 Pair` that in
-  a sense "contains" all definable trisets of pairs.
+  that there exists a definable triset `uniSet3: Set3 Pair` that
+  in a sense "contains" all definable trisets of pairs.
   
-  More precisely, `uni` is such that for any definable triset
+  More precisely, `uniSet3` is such that for any definable triset
   `tDef`, there exists an `index: Pair` such that for any `p`,
   
       p ∈ tDef ↔ (index, p) ∈ uni \,,
@@ -12,18 +12,18 @@
   where the above equivalence holds for both the definitive and
   possible membership.
   
-  We show that `uni` is itself definable by constructing a definition
-  list that defines it. The traditional contradictions a la Russell
-  are avoided thanks to the three-valued nature of trisets -- one
-  cannot obtain a contradiction by diagonalization because the
-  undetermined elements of a triset are undetermined in its
-  complement as well.
+  We show that `uniSet3` is itself definable by constructing a
+  definition list that defines it. The traditional contradictions
+  a la Russell are avoided thanks to the three-valued nature of
+  trisets -- one cannot obtain a contradiction by diagonalization
+  because the undetermined elements of a triset are undetermined
+  in its complement as well.
   
   This file only contains the definition of the definition list
   itself. The file `./UniSet3.lean` contains the final part of
-  the proof of the universality of `uni`. The rest of the files
-  contain proofs that the helper definitions of the definition
-  list contain precisely those trisets they are meant to contain.
+  the proof of the universality of `uniSet3`. The rest of the files
+  contain proofs that the definitions of the definition list
+  contain precisely those trisets they are meant to contain.
 -/
 
 import Utils.LeN37

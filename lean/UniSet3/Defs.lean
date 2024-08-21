@@ -1,6 +1,7 @@
 /-
-  This file defines descriptions of the sets defined by the
-  definition list in `UniDefList`.
+  This file defines descriptions of the trisets defined by the
+  definition list in `./UniDefList.lean`, along with some of
+  its properties.
 -/
 
 import Utils.PairDepthDictOrder

@@ -1,3 +1,5 @@
+-- See the file `./UniDefList.lean`.
+
 import UniSet3.DefEncoding
 import UniSet3.ShiftDefEncoding
 

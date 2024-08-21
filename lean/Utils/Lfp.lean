@@ -809,12 +809,8 @@ def lfp.holdsOfHoldsForFixed
   least fixed point.
 -/
 def lfp.induction
-  -- The explicit universe level is required now because of this issue:
-  -- https://github.com/leanprover/lean4/issues/5035
   {T: Type u}
   {ord: PartialOrder T}
-  -- The above should be deletable once the issue is resolved.
-  
   (P: T → Prop)
   (cc: IsChainComplete ord)
   (op: T → T)

@@ -1,3 +1,5 @@
+-- See the file `./UniDefList.lean`.
+
 import Utils.DefListDefEq
 import UniSet3.DefListToEncoding
 import UniSet3.TheDefList

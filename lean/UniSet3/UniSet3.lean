@@ -1,3 +1,10 @@
+/-
+  `Pair.uniSet3.isUniversal` is the main result of this file.
+  It states that any definable triset of pairs is in a sense
+  "contained" in the triset `uniSet3`. See the file `./UniDefList.lean`
+  for more info.
+-/
+
 import Utils.DefListDefEq
 import UniSet3.DefListToEncoding
 import UniSet3.TheSet3
@@ -185,21 +192,54 @@ namespace Pair
         fun _ => inwTheSetOfInPosNth,
       ⟩
     
-    def insExternalToInsInternal
+    def insInternalToInsExternal
       (ins: Ins pairSalgebra theInternalDefList p x)
     :
-      d ∈ (theInternalValuation x).defMem
+      Ins pairSalgebra
+        theExternalDefList.toDefList
+        (Pair.pair x p)
+        theSet
     :=
+      -- Cannot use s
       match ins with
-      | Ins.intro _ _ isCause cinsIns binsIns boutOut =>
+      | Ins.intro _ _
+        causeInternal
+        isCauseInternal
+        cinsIns
+        binsIns
+        boutOut
+      =>
+        let causeExternal: Cause Pair := {
+          contextIns :=
+            fun ⟨p, x⟩ =>
+              x = theSet ∧
+              ∃ vv ∈ causeInternal.contextIns,
+                p = Pair.pair vv.x vv.d,
+          backgroundIns := sorry
+          backgroundOut := sorry
+        }
         
-        let insInternal:
-          Ins pairSalgebra theExternalDefList.toDefList (p) x
+        let isCauseExternal:
+          IsStrongCause pairSalgebra causeExternal _ _
         :=
+          fun isSat =>
+            sorry
+        
+        Ins.intro
+          _
+          _
+          causeExternal
+          isCauseExternal
+          (fun ⟨xEq, ⟨vv, lr⟩⟩ =>
+            let ⟨inCinsInternal, dEq⟩ := lr
+            
+            xEq ▸
+            dEq ▸
+            insInternalToInsExternal (cinsIns inCinsInternal))
           sorry
-        sorry
+          sorry
     
-    def outExternalToOutInternal
+    def outInternalToOutExternal
       (out: Out pairSalgebra theInternalDefList p x)
     :
       ¬ d ∈ (theInternalValuation x).posMem
@@ -214,13 +254,13 @@ namespace Pair
         defLe :=
           fun _ insValExternal =>
             let ins := Ins.isComplete _ _ insValExternal
-            insExternalToInsInternal ins
+            (insInternalToInsExternal ins).isSound
         posLe :=
           fun _ =>
             Function.contraDne
               fun outValExternal =>
                 let out := Out.isComplete _ _ outValExternal
-                outExternalToOutInternal out
+                outInternalToOutExternal out
       }
     
     def theInternalValuation.isLeWfm:
