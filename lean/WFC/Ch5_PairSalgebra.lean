@@ -19,13 +19,24 @@ inductive Pair where
 | zero -- Zero is considered an improper pair.
 | pair (a b: Pair)
 
--- Does not work recursively, and the latter also with match
--- expressions :(
---
--- instance Pair.coeEmpty: Coe Unit Pair where
---   coe := fun _ => Pair.zero
--- instance Pair.coePair: Coe (Pair × Pair) Pair where
---   coe := fun ⟨a, b⟩ => Pair.pair a b
+
+/-
+  These instances allow us to denote `Pair.zero` as `()`, and
+  `Pair.pair a b` as `(a, b)`.
+-/
+instance Pair.coeZero: CoeOut Unit Pair where
+  coe := fun _ => Pair.zero
+
+instance Pair.coeId: CoeOut Pair Pair where
+  coe := id
+
+instance Pair.coePair
+  [CoeOut A Pair]
+  [CoeOut B Pair]
+:
+  CoeOut (A × B) Pair
+where
+  coe := fun ⟨a, b⟩ => Pair.pair a b
 
 
 
@@ -45,7 +56,7 @@ namespace Pair
   | Nat.zero => Pair.zero
   | Nat.succ n => Pair.pair (fromNat n) zero
   
-  def fromNat.inst: Coe Nat Pair := ⟨fromNat⟩
+  instance fromNat.inst: Coe Nat Pair := ⟨fromNat⟩
   
   def depth: Pair → Nat
   | zero => 0
