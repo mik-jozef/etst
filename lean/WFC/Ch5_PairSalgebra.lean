@@ -38,6 +38,13 @@ instance Pair.coePair
 where
   coe := fun ⟨a, b⟩ => Pair.pair a b
 
+/-
+  This instance allows chaining other coercions, like one from
+  `Nat` to `Pair` below. I feel like I'm breaking some unwritten
+  rules of Lean with this one, but it works AFAICT.
+-/
+instance Pair.coeOutCoe [Coe A Pair]: CoeOut A Pair where
+  coe := fun p => p
 
 
 namespace Pair
