@@ -88,6 +88,9 @@
   \textbf{\color{black}Conjecture~\thequestion.} \rmfamily}{}
 \newenvironment{speculation}{\refstepcounter{question}\par\noindent
   \textbf{\color{black}Wild speculation~\thequestion.} \rmfamily}{}
+
+\newenvironment{TODO}{\par\noindent
+  \textbf{\color{black}TODO:} \rmfamily}{}
 \makeatother
 
 %% We'll define several mathematical sectioning commands.
@@ -98,6 +101,7 @@
 \newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem*{warning}{Warning}
+\newtheorem*{note}{Note}
 
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}
@@ -121,8 +125,11 @@
 \newcommand{\approximates}{\sqsubseteq}
 
 \newcommand{\sig}{\var{sig}}
+\DeclareMathOperator{\arity}{arity}
 \newcommand{\op}{\var{op}}
 \newcommand{\Op}{\var{Op}}
+
+\newcommand{\st}{\var{st}}
 
 \newcommand{\Var}{\var{Var}}
 \newcommand{\SetIII}{\var{Set3}}
@@ -151,6 +158,29 @@
 \newcommand{\GPKInf}{\textsc{GPK}^+_\infty}
 
 
+\newcommand{\Nat}{\var{\mathbb{N}}}
+\newcommand{\NatC}{\var{NatC}}
+
+\newcommand{\Pair}{\var{Pair}}
+\newcommand{\pair}[2]{{(}#1, #2{)}}
+\newcommand{\pairZ}{{(}{)}}
+\newcommand{\PairC}{\var{PairC}}
+
+\newcommand{\SPair}{\var{SPair}}
+\newcommand{\SPairC}{\var{SPairC}}
+\newcommand{\sPair}[2]{{<}#1, #2{>}}
+\newcommand{\sPairZ}{{<}{>}}
+\newcommand{\nullVal}{\var{null}}
+
+\newcommand{\Word}{\var{Word}}
+\newcommand{\WordC}{\var{WordC}}
+\newcommand{\alphabet}{\var{Alph}}
+
+\DeclareMathOperator{\successor}{succ}
+\DeclareMathOperator{\zth}{zth}
+\DeclareMathOperator{\fst}{fst}
+
+
 \newcommand{\false}{\var{tt}}
 \newcommand{\true}{\var{ff}}
 
@@ -163,8 +193,7 @@
 \newcommand{\PExpr}{\var{PExpr}}
 
 \newcommand{\func}{\var{func}}
-\newcommand{\pred}{\var{pred}}
-\newcommand{\arity}{\var{arity}}
+\newcommand{\pred}{\var{pred}} % TODO these should be math operators
 \newcommand{\symb}{\var{symbol}}
 
 \newcommand\Circle{\raisebox{0.45mm}{\scalebox{0.6}{$\bigcirc$}}}
@@ -193,10 +222,12 @@
 
 
 \chapter*{Summary}
-TODO this summary got outdated pretty fast. Fix when you have a clearer picture
-of what this is about. also switch to we instead of I?
 
-This document is a work in progress where I'll try to define the syntax, semantics
+TODO this summary got outdated pretty fast. Fix when you have a clearer picture
+of what this is about. Dear reader, please skip to the introduction if you
+wish to read this very unfinished document.
+
+This document is a work in progress where we'll try to define the syntax, semantics
 and a deductive system for Boolean Set Theory, a set theory in a three-valued
 first-order
 % recursive\footnote{By recursive logic, I mean that recursive definitions,
@@ -208,20 +239,13 @@ of all intersecting sets) and complement. The construction is carried out in ZFC
 
 The work in this document is inspired by my magister thesis~\cite{MikusinecMgrThesis}
 and works cited therein. Knowledge of the thesis will [/can?] help with understanding
-BST, but is not assumed.
+ETST, but is not assumed.
 
-While this document is unfinished, do not trust anything in it -- I'll write
-certain things as facts even if I merely suspect that they hold, with the intention
-to prove them later, and rewrite those claims if they turn out to be false
-(or too hard for me to prove).
-
-In fact, the reader is strictly advised not to waste her time on this pile of half-baked
+The reader is strictly advised not to waste her time on this pile of half-baked
 ideas and unfinished senten
 
-TODO this document is experimental in the sense that if I'm sometimes unsure what
-the right approach is, I just guess or take multiple possible approaches.
-As a result, some of the concepts explored here might not be as interesting or
-fleshed out as others.
+TODO create an appendix "Reference" that has just the definitions and properties
+stated, no proofs, no intuition or whys.
 
 
 \tableofcontents
@@ -258,8 +282,8 @@ definitions cannot be contradictory.%
 by restricting which formulas may be used to specify new sets. For example,
 the most widely used set theory, ZFC, only allows one to create subsets
 of existing sets when specifying which elements belong to the new set by a logical
-formula. Positive set theories, like for instance $\GPKInf$ [TODO cite], allow
-comprehension for all positive (roughly meaning "negation-free") formulas.}
+formula. Positive set theories, like for instance $\GPKInf$~\cite{ConPosTheory},
+allow comprehension for all positive (roughly meaning "negation-free") formulas.}
 %
 Under this approach, definitions like the above are simply considered erroneous.
 A disadvantage of this approach is that it necessarily also disallows some
@@ -311,13 +335,12 @@ on their own, however, if you're here just for the set theory, you'll be ok
 [with just reading about the least fixed point semantics/with skipping the X and Y]
 
 \section{Related work}
-TL;DR: See my magister thesis~\cite{MikusinecMgrThesis}. This document generalizes
-and expands on results in the thesis. A lot of material from the thesis is used,
-sometimes even directly copied from it, and I feel no shame.
+TL;DR: See my magister thesis~\cite{MikusinecMgrThesis}.
 
 TODO For further references and prior work, see~\cite{MikusinecMgrThesis}.
 TODO perhaps copy some of that here, perhaps do some more research to find out
-if there is anything else out there that is relevant.
+if there is anything else out there that is relevant. [Note: Think there is
+something I should read & cite? Let me know.]
 
 \section{Conventions and notation}
 
@@ -353,13 +376,14 @@ or questions. They are chosen subjectively by the author, and might be informal.
 This document also includes some warnings:
 
 \begin{warning}
-  Research presented in this document has not been published or peer reviewed.
-  I do have training in formal mathematics -- I have studied theoretical computing
-  science at Masaryk University and got a Magister degree (equivalent to a master's degree). However, one can never be too confident that her thinking is free of error.
+  This document has not been published or peer reviewed. However, I'm in the process
+  of formalizing all the math in Lean 4 -- you can find the source code in the
+  GitHub repository linked in section~\ref{sectionSource}.
   
-  Also, sometimes I have doubts whether some of my definitions are natural; when
-  that is the case, it will be stated.
-  TODO Do I actually do this somewhere? If not, remove this sentence.
+  TODO sth like everything in here is proven in lean 4. Sometimes dues to
+  differences between ZFC and Lean, things are formalized differently
+  to allow using patterns that are more natural in the respective setting.
+  Such differences are noted in this document, (unless trivial or forgotten :D).
 \end{warning}
 
 \begin{warning}
@@ -374,35 +398,33 @@ bound unless otherwise stated. Our indexing is proper -- it starts at zero.%
 We'll use $a \meet b$ to express that the sets $a$ and $b$ \textit{meet} (have
 a common element).
 
-\section{Source and contributing}
-TODO create a public repo with this document's source code. Feedback and
-contributions are welcome.
+\section{Source and contributing} \label{sectionSource}
+The source code for this document can be found at:
+\[\text{\url{https://github.com/mik-jozef/etst}}\]
+Feedback and contributions are welcome.
 
-But only after this document no longer looks so fucking embarassing.
+TODO mention the formalization in Lean 4.
 
-
-\chapter{The productive fixpoint / Two-valued collections}
-In this secction, we'll introduce [] in a two-valued setting. This will make for
-an easy comparison with the three-valued one defined in the next chapter.
-
-\section{Preliminaries: partial algebras}
+% TODO make this public, once the document is finished enough.
 
 
-\chapter{Well-founded collections}
+\chapter{Well-founded collections} \label{chapterWFC}
 Fix a set $D$, for example the natural numbers, and some (monotonic) operations
-on subsets of $D$, for example addition and substraction, defined as follows:
+on subsets of $D$, for example addition, substraction (and constants
+representing zero and one), defined as follows:
 %
 \begin{gather*}
-  A + B = \{~x \mid x = a + b \text{ for some } a,b \in A,B~\} \\
-  A - B = \{~x \mid x = a - b \text{ for some } a,b \in A,B~\}
+  A + B = \{\,x \mid x = a + b \text{ for some } a,b \in A,B\,\} \\
+  A - B = \{\,x \mid x = a - b \text{ for some } a,b \in A,B\,\}
 \end{gather*}
 
 One may then define a system of recursive equations using the above operations
 together with binary unions and intersections, and arbitrary unions and
-intersections, for example:
+intersections, for example\footnote{$\{ 2 \}$ is a syntactic sugar for
+$\{ 1 \}+\{1\}$}:
 %
 \begin{align*}
-  \var{Even} &= \{~0~\} \cup \var{Even}\,+\,\{~2~\} \\
+  \var{Even} &= \{\,0\,\} \cup \var{Even}\,+\,\{\,2\,\} \\
   \var{Div6} &= \bigcup_{n \in \var{Even}}n + n + n
 \end{align*}
 
@@ -422,7 +444,7 @@ any set $D$ with any monotonic operations.}
 %
 \begin{align*}
   \var{Nat} &= \ct\{\} \\
-  \var{Even} &= \var{Nat}\,\cap~\ct(\var{Even}\,+\,\{~1~\}) \\
+  \var{Even} &= \var{Nat}\,\cap~\ct(\var{Even}\,+\,\{\,1\,\}) \\
   \var{Undetermined} &= \ct\var{Undetermined}
 \end{align*}
 
@@ -437,7 +459,7 @@ collection may be undetermined.
 An element that definitely belongs to a collection C is said to be a \textit{definite
 member} (or just a \textit{member}) of C. An element that definitely does not is
 said to be a (definite) \textit{nonmember} of C. An element whose membership in C
-is undetermined is said to \textit{border} C.
+is undetermined is said to \textit{border} C, or be a \textit{bordering element} of $C$.
 
 (Definite) members and undetermined elements are called the \textit{possible members}.
 Similarly, nonmembers and undetermined elements are called the \textit{possible
@@ -462,9 +484,6 @@ Three-valued collections can be formalized in two equivalent ways:
   \end{description}
 \end{defBox}
 
-asdf TODO say that the definition 1 will be called the characteristic function
-of trisets
-
 \noindent These two definitions are equivalent, because every element of $S$ can either
 \begin{compactenum}
   \item be a member of both $L$ and $U$ (be a definite member),
@@ -478,7 +497,8 @@ The sets $L$ and $U$ can be thought of as forming a lower and upper bound on
 the membership of elements of $D$ in the three-valued collection.
 
 The latter definition better illustrates the three-valuedness, but by default,
-we’ll keep using the former. To avoid confusion with two-valued sets, we will
+we’ll keep using the former, and we'll call the latter the \textit{characteristic
+function} of a set. To avoid confusion with two-valued sets, we will
 call the three-valued sets "trisets".
 
 \begin{defBox}
@@ -489,10 +509,10 @@ call the three-valued sets "trisets".
   Here are some examples of trisets of natural numbers:
   
   \medskip \noindent $(\emptyset, \emptyset)$ contains no numbers, and
-  $(\mathbb{N}, \mathbb{N})$ contains all of them. Neither of these trisets
+  $(\Nat, \Nat)$ contains all of them. Neither of these trisets
   borders any element.
   
-  \medskip \noindent $(\emptyset, \mathbb{N})$ definitely contains no numbers,
+  \medskip \noindent $(\emptyset, \Nat)$ definitely contains no numbers,
   but possibly contains all of them. Similarly, no number is its definite nonmember,
   but every number is its possible nonmember. It borders every number.
   
@@ -546,25 +566,15 @@ elements become determined.
 
 \section{Syntax of WFC}
 \subsection{Signatures}
-% TODO perhaps name it something else? I don't like that a signature
-% specifies not just the arity of operations, but also their implementation
-% On the other hand, there is no concept of models...
-% Also, this is under the section "Syntax of WFC" and I'm like "an interpretation
-% is ..." wtf?
-A signature specifies the particular set $D$ and the operations on it.
-Well-founded collections are defined relatively to a signature. Unlike in
-logic, a signature for WFC also specifies the interpretation of the operations.
+A signature specifies a set of operations and their arities.
+The syntax of well-founded collections is defined relatively to a signature.
 
 \begin{defBox}
-  A signature is a 4-tuple $(D, A, \Op, I)$, where
+  A signature is a pair $(\Op, \arity)$, where
   \begin{compactitem}
-    \item $D$ is an arbitrary set,
-    \item $A$ a subset of $D$ is a set of approximative values (explained later),
-    \item $\Op$ is a set of operations (just an arbitrary set)
-    \item $I$ -- the interpretation
-      of operations on D -- is a function such that for each $\op \in \Op$,
-      $I(\op)\colon \pSet(D)^n \to \pSet(D)$ is monotonic ($n$ being the arity
-      of $\op$).
+    \item $\Op$ is a set of operations (just an arbitrary set), and
+    \item $\arity\colon \Op \to \Nat$ is a function specifying the arities
+      of elements of $\Op$.
   \end{compactitem}
 \end{defBox}
 
@@ -610,11 +620,8 @@ An expression of WFC is defined recursively as follows:
 \end{multicols*}
 \end{minipage}
 
-\medskip \noindent
-The arity of the custom operations is determined by the particular signature used.
-
 \begin{defBox}
-  $\Variable = \mathbb{N}$ is the set of all variables.
+  $\Variable = \Nat$ is the set of all variables.
 
   \medskip \noindent
   Let $\sig$ be a signature, $\Var$ a set of variables, and $n$ a natural number.
@@ -646,11 +653,11 @@ In code notation, definitions will be preceded with the keyword "let":
 \begin{defBox}
   Let $\sig$ be a signature and $\Var$ a set of variables.
   
-  \medskip \noindent
-  A family of expressions is a function $f\colon \Var \to \Expr_{\sig,\Var}$.
+  \medskip \noindent A \textit{family of expressions} is a function
+  $f\colon \Var \to \Expr_{\sig,\Var}$.
   
-  \medskip \noindent A family of expressions is a \textit{definition list} iff it is
-  the union of (possibly infinitely many) finite families of expressions.
+  \medskip \noindent A \textit{definition list} is a family of expressions that
+  is a union of (possibly infinitely many) finite families of expressions.
 
   % TODO Should I also define DefList_sig,Var,n?
   \medskip \noindent $\DefList_{\sig,\Var}$ is the set of all definition lists
@@ -666,11 +673,43 @@ to dissalow "definition lists" whose definitions run on forever, like these:
   \texttt{let Def0 = Def1;} \\
   \texttt{let Def1 = Def2;} \\
   \texttt{let Def2 = Def3;} \\
-  \texttt{...}
+  \texttt{let Def3 = ...\phantom{3;}}
 \end{gather*}
 
+Such infinitely long definitions are problematic because, if allowed,
+any (tri)set of natural numbers would suddenly become definable, since
+we could just enumerate all its elements:
+\begin{gather*}
+  \texttt{let Def0 = Def1 | \{ 0 \};} \\
+  \texttt{let Def1 = Def2 | \{ 2 \};} \\
+  \texttt{let Def2 = Def3 | \{ 7 \};} \\
+  \texttt{let Def3 = ...\phantom{4 | \{ 9 \};}}
+\end{gather*}
 
-\chapter{Semantics of WFC}
+\begin{note}
+  In Lean, a definition list is simply required to be finite. This does
+  not affect the expressive power of definition lists, but makes them
+  easier to work with (in Lean).
+\end{note}
+
+
+\chapter{Semantics of WFC} \label{chapterSemanticsWFC}
+\section{Structures}
+For our purposes, we will define a structure in a nonstandard way -- instead
+of on elements of the domain, our operations will work on sets of them,
+and are required to be monotonic.
+
+\begin{defBox}
+  A structure $\st$ is a triple $(D, \sig, I)$, where
+  \begin{compactitem}
+    \item $D$ is an arbitrary set, called the domain of $\st$,
+    \item $\sig = (\Op, \arity)$ a signature, and
+    \item $I\colon (\op\colon \Op) \to \pSet(D)^{\arity(\op)} \to \pSet(D)$
+      an interpretation function that to each $\op \in \Op$ assigns
+      a monotonic function of arity $\arity(\op)$ on sets of elements of $D$.
+  \end{compactitem}
+\end{defBox}
+
 \section{Valuations}
 
 A valuation is an assignment of trisets to variables. Valuations
@@ -678,7 +717,7 @@ let us interpret expressions as representing a concrete triset.
 
 \begin{defBox}
   A valuation is a function $v\colon \Var \to \SetIII(D)$ for some
-  $\Var \subseteq \Variable$.
+  $\Var \subseteq \Variable$ and $D$.
   
   \medskip \noindent $\Valuation_{\Var,D}$ is the set of all valuations
   from $\Var$ to $\SetIII(D)$
@@ -716,10 +755,10 @@ The standard and approximation orderings can be extended to valuations as well.
 \end{corollary}
 
 \section{An informal overview}
-Our goal in this chapter is to, given a particular definition list $\dl$, associate
-a three-valued set to each definition of $\dl$. More precisely, we need to
-find a valuation that assigns to every definition of $\dl$ a triset that "agrees"
-with the expression that forms that definition.
+Our goal in this chapter is to, given a particular structure and definition list
+$\dl$, associate a three-valued set to each definition of $\dl$. More precisely,
+we need to find a valuation that assigns to every definition of $\dl$ a triset
+that "agrees" with the expression that forms that definition.
 
 Our obstacle is that definitions are typically circular. The solution is to build
 the valuation incrementally, in stages.
@@ -740,7 +779,7 @@ the previous step\footnote{Perhaps transfinitely many times.}:
 \begin{gather*}
   \texttt{\small let Nat = \{ 0 \} | Nat + \{ 1 \};} \\
   \{\} \rightarrow \{ 0 \} \rightarrow \{ 0, 1 \} \rightarrow \{ 0, 1, 2 \}
-    \rightarrow ... \rightarrow \mathbb{N}
+    \rightarrow ... \rightarrow \Nat
 \end{gather*}
 Formally, we would define an operator $O_{\dl}$ on valuations that takes the $n$th
 such valuation to the $n+1$th one, and define the semantics of $\dl$ as $O_{\dl}$'s
@@ -767,7 +806,7 @@ intersection are not monotonic. The problem is not just with the choice
 of the ordering -- definitions using them can fail to have a (least) fixpoint.
 \begin{gather*}
   \texttt{\small let Bad = \tde Bad;} \\
-  \{\} \rightarrow \mathbb{N} \rightarrow \{\} \rightarrow \mathbb{N}
+  \{\} \rightarrow \Nat \rightarrow \{\} \rightarrow \Nat
     \rightarrow ... \rightsquigarrow~\!!
 \end{gather*}
 
@@ -776,8 +815,8 @@ of the ordering -- definitions using them can fail to have a (least) fixpoint.
 To fix this flaw, we'll introduce another valuation, called "background"
 (we'll call the original valuation "context"). The interpretation gets both
 valuations as parameters, and is modified to use the background valuation when
-interpreting complements and arbitrary intersections (and their subexpressions),
-and uses the context for everything else.
+interpreting complements and (domains of) arbitrary intersections (and their
+subexpressions), and uses the context for everything else.
 
 Starting with the undetermined valuation as the background and the empty valuation
 as context, our iterative construction now proceeds in two dimensions:
@@ -854,38 +893,6 @@ while (b has changed) {
 \end{tabular}
 \end{center}
 
-\subsection{Value approximation}
-Imagine the following definition: \[\texttt{let P = (P, P);}\] If we are working
-in a setting where self-containing pairs like $p = (p, p)$ are allowed
-(ie. if our signature's $D$ contains such values), we would naturally expect
-$P$ to specify a triset containing exactly the pair $p$. However,
-without value approximation, the least fixed point of the definition would be
-the empty triset.
-
-It is for this reason that signatures contain the set $A$ of approximative
-values. The pair $p$ is approximated by values like $*$, $(*, *), (*, (*, *))$
-and so on. To cover values like $p$, during the iterative construction we add values
-to a triset if their arbitrarily precise approximations are already in that triset.
-As the last step, we remove the approximative values from our trisets so they are
-not part of the meaning of definitions.
-
-\begin{warning}
-  I am not sure whether approximative values are the best approach to dealing
-  with self-containing values. I am also not sure whether there aren't any
-  corner cases where this approach brings unintuitive results, even in cases
-  they are fine-tuned to be "right". Consider them an experimental feature.
-  
-  Alternative approaches that I considered were: greatest fixed points (unsuitable
-  for non-self-containing values, only productive definitions should have
-  greatest-fixpoint semantics, eg. \texttt{let T = T;} should be empty), letting
-  the mathematician choose per definition whether it should be a least- or greatest
-  fixpoint inducing (what if such definitions use each other?), final coalgebras
-  (no idea how that would even work).
-  
-  Update: I think I will make WFC work atop partial algebras. Then I should be (more
-  likely to be) able to do this approximation thing general and proper.
-\end{warning}
-
 
 \section{Interpretation of expressions}
 Interpretation is a function that takes two valuations and an expression, and
@@ -894,25 +901,25 @@ recursively on the structure of the expression. The valuations $b$ and $c$ stand
 for "background" and "context".
 
 \begin{defBox}
-  Let $\sig = (D, A, \Op, I_s)$ be a signature, and $\Var$ a set of variables..
+  Let $\st = (D, \sig, I_s)$ be a structure, and $\Var$ a set of variables.
   
   \bigskip \noindent
-  $I_{\sig}\colon (b, c \colon \Valuation_{\Var,D}) \to \Expr_{\sig,\Var} \to \SetIII(D)$
+  $I_{\st}\colon (b, c \colon \Valuation_{\Var,D}) \to \Expr_{\sig,\Var} \to \SetIII(D)$
 \end{defBox}
 
 The interpretation of variables is given by the context valuation,
-and the interpretation of custom operations by the signature's interpretation
-function $I_s$.
+and the interpretation of custom operations by the structures' interpretation
+function $I_s$, which is applied separately to the definitive and possible members.
 
 \begin{defBox}
-  $I_{\sig}(b,c)(\texttt{var}) = c(\texttt{var})$
+  $I_{\st}(b,c)(\texttt{var}) = c(\texttt{var})$
   
   \medskip \noindent $\begin{aligned}
-    I_{\sig}(b,c)(\texttt{f([e0], ..., [eN])}) =
+    I_{\st}(b,c)(\texttt{f([e0], ..., [eN])}) =
       (&I_s(\texttt{f})
-        (I_{\sig}(b,c)(\texttt{e0})[0], ..., I_{\sig}(b,c)(\texttt{eN})[0]), \\
+        (I_{\st}(b,c)(\texttt{e0})[0], ..., I_{\st}(b,c)(\texttt{eN})[0]), \\*
       &I_s(\texttt{f})
-        (I_{\sig}(b,c)(\texttt{e0})[1], ..., I_{\sig}(b,c)(\texttt{eN})[1]))
+        (I_{\st}(b,c)(\texttt{e0})[1], ..., I_{\st}(b,c)(\texttt{eN})[1]))
     \end{aligned}$
 \end{defBox}
 
@@ -921,15 +928,15 @@ of the definite (resp. possible) members of the arguments. Same for intersection
 
 \begin{defBox}
   $\begin{aligned}
-    I_{\sig}(b,c)(\texttt{[e0] | [e1]}) =
-    (&I_{\sig}(b,c)(\texttt{e0})[0] \cup I_{\sig}(b,c)(\texttt{e1})[0], \\
-    &I_{\sig}(b,c)(\texttt{e0})[1] \cup I_{\sig}(b,c)(\texttt{e1})[1])
+    I_{\st}(b,c)(\texttt{[e0] | [e1]}) =
+    (&I_{\st}(b,c)(\texttt{e0})[0] \cup I_{\st}(b,c)(\texttt{e1})[0], \\*
+    &I_{\st}(b,c)(\texttt{e0})[1] \cup I_{\st}(b,c)(\texttt{e1})[1])
     \end{aligned}$
   
   \bigskip \noindent $\begin{aligned}
-    I_{\sig}(b,c)(\texttt{[e0] \& [e1]}) =
-    (&I_{\sig}(b,c)(\texttt{e0})[0] \cap I_{\sig}(b,c)(\texttt{e1})[0], \\
-    &I_{\sig}(b,c)(\texttt{e0})[1] \cap I_{\sig}(b,c)(\texttt{e1})[1])
+    I_{\st}(b,c)(\texttt{[e0] \& [e1]}) =
+    (&I_{\st}(b,c)(\texttt{e0})[0] \cap I_{\st}(b,c)(\texttt{e1})[0], \\*
+    &I_{\st}(b,c)(\texttt{e0})[1] \cap I_{\st}(b,c)(\texttt{e1})[1])
     \end{aligned}$
 \end{defBox}
 
@@ -939,9 +946,9 @@ the complement is defined only in terms of the background valuation.
 
 \begin{defBox}
   $\begin{aligned}
-    I_{\sig}(b,c)(\texttt{\tde [e]}) =
-    (&D \setminus I_{\sig}(b,b)(\texttt{e})[1], \\
-    &D \setminus I_{\sig}(b,b)(\texttt{e})[0])
+    I_{\st}(b,c)(\texttt{\tde [e]}) =
+    (&D \setminus I_{\st}(b,b)(\texttt{e})[1], \\*
+    &D \setminus I_{\st}(b,b)(\texttt{e})[0])
     \end{aligned}$
 \end{defBox}
 
@@ -968,24 +975,24 @@ Note that in the case of arbitrary intersection, the domain is defined only
 in terms of the background, like in the case of complement.
 
 \begin{defBox}
-  $I_{\sig}(b,c)(\texttt{Un x: [e0] .. [e1]}) = \\
+  $I_{\st}(b,c)(\texttt{Un x: [e0] .. [e1]}) = \\*
     \phantom{aaa} \begin{aligned}
-    (&\bigcup_{r \in I_{\sig}(b,c)(\texttt{e0})[0]}
-    I_{\sig}(b[x {\mapsto} r], c[x {\mapsto} r])(\texttt{e1})[0],\\
-    &\bigcup_{r \in I_{\sig}(b,c)(\texttt{e0})[1]}
-    I_{\sig}(b[x {\mapsto} r], c[x {\mapsto} r])(\texttt{e1})[1])
+    (&\bigcup_{r \in I_{\st}(b,c)(\texttt{e0})[0]}
+    I_{\st}(b[x {\mapsto} r], c[x {\mapsto} r])(\texttt{e1})[0],\\*
+    &\bigcup_{r \in I_{\st}(b,c)(\texttt{e0})[1]}
+    I_{\st}(b[x {\mapsto} r], c[x {\mapsto} r])(\texttt{e1})[1])
     \end{aligned}$
   
-  \bigskip \noindent $I_{\sig}(b,c)(\texttt{Ir x: [e0] .. [e1]}) = \\
+  \bigskip \noindent $I_{\st}(b,c)(\texttt{Ir x: [e0] .. [e1]}) = \\*
     \phantom{aaa} \begin{aligned}
-    (&\bigcap_{r \in I_{\sig}(b,b)(\texttt{e0})[1]}
-    I_{\sig}(b[x {\mapsto} r], c[x {\mapsto} r])(\texttt{e1})[0],\\
-    &\bigcap_{r \in I_{\sig}(b,b)(\texttt{e0})[0]}
-    I_{\sig}(b[x {\mapsto} r], c[x {\mapsto} r])(\texttt{e1})[1])
+    (&\bigcap_{r \in I_{\st}(b,b)(\texttt{e0})[1]}
+    I_{\st}(b[x {\mapsto} r], c[x {\mapsto} r])(\texttt{e1})[0],\\*
+    &\bigcap_{r \in I_{\st}(b,b)(\texttt{e0})[0]}
+    I_{\st}(b[x {\mapsto} r], c[x {\mapsto} r])(\texttt{e1})[1])
     \end{aligned}$
   
   \bigskip \noindent When the background is not provided, it is assumed to
-  equal the context, that is, $I_{\sig}(c)$ is defined as $I_{\sig}(c, c)$.
+  equal the context, that is, $I_{\st}(c)$ is defined as $I_{\st}(c, c)$.
 \end{defBox}
 
 \begin{proposition}[Interpretation is a triset] \hfill \\
@@ -995,7 +1002,7 @@ in terms of the background, like in the case of complement.
 
 \begin{lemma}[Standard monotonicity of interpretation]\label{monoInterpStd} \hfill \\
   For any valuation $b\colon \Valuation_{\Var,D}$ and expression
-  $e \in \Expr_{\sig,\Var}$, the function $c \mapsto I_{\sig}(b, c)(e)$
+  $e \in \Expr_{\sig,\Var}$, the function $c \mapsto I_{\st}(b, c)(e)$
   is monotonic with respect to the standard ordering.
   
   (Informally, if the context gets more elements, the interpretation
@@ -1015,8 +1022,8 @@ in terms of the background, like in the case of complement.
   
   By the induction hypothesis, we have that
   \begin{align*}
-    I_{\sig}(b', c_0')(e_0) \leq I_{\sig}(b', c_1')(e_0) \\
-    I_{\sig}(b', c_0')(e_1) \leq I_{\sig}(b', c_1')(e_1)
+    I_{\st}(b', c_0')(e_0) \leq I_{\st}(b', c_1')(e_0) \\
+    I_{\st}(b', c_0')(e_1) \leq I_{\st}(b', c_1')(e_1)
   \end{align*}
   for any $c_0'$, $c_1'$ and $b'$ such that $c_0' \leq c_1'$, and therefore also
   for $b' = b[x {\mapsto} r]$, $c_0' = c_0[x {\mapsto} r]$
@@ -1024,17 +1031,17 @@ in terms of the background, like in the case of complement.
   
   To recap:
   \begin{gather*}
-    s_0 = I_{\sig}(b, c_0)(e_0) \leq s_1 = I_{\sig}(b, c_1)(e_0) \\
-    t_0 = I_{\sig}(b[x {\mapsto} r], c_0[x {\mapsto} r])(e_1)
-      \leq t_1 =  I_{\sig}(b[x {\mapsto} r], c_1[x {\mapsto} r])(e_1)\,.
+    s_0 = I_{\st}(b, c_0)(e_0) \leq s_1 = I_{\st}(b, c_1)(e_0) \\
+    t_0 = I_{\st}(b[x {\mapsto} r], c_0[x {\mapsto} r])(e_1)
+      \leq t_1 =  I_{\st}(b[x {\mapsto} r], c_1[x {\mapsto} r])(e_1)\,.
   \end{gather*}
   
   By the definition of the standard ordering, $s_0[j] \subseteq s_1[j]$
   and $t_0[j] \subseteq t_1[j]$. By the definition of $I$,
-  \[I_{\sig}(b, c_i)(e)[j] = \bigcup_{r \in s_i[j]}t_i[j]\,.\]
+  \[I_{\st}(b, c_i)(e)[j] = \bigcup_{r \in s_i[j]}t_i[j]\,.\]
   
   Finally, \[\bigcup_{r \in s_0[j]}t_0[j] \subseteq \bigcup_{r \in s_1[j]}t_1[j]\,.\]
-  therefore \[I_{\sig}(b, c_0)(e) \leq I_{\sig}(b, c_1)(e)\,.\]
+  therefore \[I_{\st}(b, c_0)(e) \leq I_{\st}(b, c_1)(e)\,.\]
   
   \noindent % Saving space so that the proof of the lemma below is on the same page.
   The case of the universal quantifier is a little simpler: the index set of the
@@ -1061,31 +1068,32 @@ We can extend the interpretation of expressions to entire definition lists,
 pointwise.
 
 \begin{defBox}
-  $I_{\sig}\colon (b,c\colon \Valuation_{\Var,D}) \to \DefList_{\sig,\Var}
+  $I_{\st}\colon (b,c\colon \Valuation_{\Var,D}) \to \DefList_{\sig,\Var}
     \to \Valuation_{\Var,D}$
   
   \medskip \noindent
-  $I_{\sig}(b, c)(\dl) = x \mapsto I_{\sig}(b, c)(\dl(x))$
+  $I_{\st}(b, c)(\dl) = x \mapsto I_{\st}(b, c)(\dl(x))$
 \end{defBox}
 
-This extended interpretation is monotonic with respect to the standard and
-approximation orderings in the same way as the interpretation of expressions.
+\begin{proposition} \label{extendedInterpretationBoring}
+  This extended interpretation is monotonic with respect to the standard and
+  approximation orderings in the same way as the interpretation of expressions.
+  (See lemmas~\ref{monoInterpStd} and~\ref{monoInterpKnow}.)
+\end{proposition}
 
 \begin{defBox}
   A valuation $v$ is \textit{stable} with respect to a definition list $\dl$,
-  or a \textit{model} of $\dl$, iff $I(v)(\dl) = \dl$.
+  or a \textit{model} of $\dl$, iff $I(v)(\dl) = v$.
 \end{defBox}
 
 % TODO perhaps call it [Interpretation and] Mixing?
 \subsection{A theorem about the interpretation}
 This theorem illustrates a nice property of the interpretation, although it
-isn't used later.
+isn't used later. % TODO you will probably use mixing later, tho.
 
 \begin{defBox}
   A (proper) classical completion of a triset $s$ is a classical triset
   (strictly) greater than $s$ in the approximation ordering.
-  
-  % TODO
   
   \medskip \noindent Given a nonempty set of trisets $S$, the \textit{mix} of $S$
   is the triset such that:
@@ -1101,15 +1109,19 @@ isn't used later.
   approximation ordering.
 \end{proposition}
 
-\begin{theorem} [Interpretation commutes with mixing] \hfill \\
-  The interpretation of any expression $e$ under any valuation $v$ is the mix
+\begin{theorem} [Interpretation and mixing] \hfill \\
+  The interpretation of any expression $e$ under any valuation $v$ is
+  TODO less wrt the approximation ordering than
+  the mix
   of the interpretations of $e$ under the classical completions of $v$.
-  In symbols: \[I_{\sig}(v)(e) = \mix_{v' \in V}(I_{\sig}(v')(e))\,,\]
+  In symbols: \[I_{\st}(v)(e) = \mix_{v' \in V}(I_{\st}(v')(e))\,,\]
   where $V$ is the set of classical completions of $v$.
   % I sense commutative diagrams. Mixing the classical completions and then
   % doing the interpretation equals doing the interpretations and then mixing.
   % Category theory, I really should give you a serious try.
   
+  TODO: THIS IS FALSE!!! And Trivially so! Take just "p or not p". What
+  was I smoking when I wrote this?!
 \end{theorem}
 
 \begin{proof}
@@ -1132,40 +1144,43 @@ accepts a background valuation and returns the next background,
   Let $\dl\colon \DefList_{\sig,\Var}$ a definition list, and
   $b\colon \Valuation_{\Var,D}$ a valuation.
   
-  \medskip \noindent $C_{\sig,\dl,b}
+  \medskip \noindent $C_{\st,\dl,b}
     \colon \Valuation_{\Var,D} \to \Valuation_{\Var,D}$
   
-  \nopagebreak \smallskip \noindent $C_{\sig,\dl,b}(c) = I_{\sig}(b,c)$
+  \nopagebreak \smallskip \noindent $C_{\st,\dl,b}(c) = I_{\st}(b,c)(\dl)$
   
-  \bigskip \noindent $B_{\sig,\dl}
+  \bigskip \noindent $B_{\st,\dl}
     \colon \Valuation_{\Var,D} \to \Valuation_{\Var,D}$
   
-  \nopagebreak \smallskip \noindent $B_{\sig,\dl}(b) = \lfp(C_{\sig,\dl,b})$
+  \nopagebreak \smallskip \noindent $B_{\st,\dl}(b) = \lfp(C_{\st,\dl,b})$
 \end{defBox}
 
 ...together with the corresponding iterative constructions.
 
+TODO sth like: note that the limit stages are least upper bounds
+of the previous stages in the respective orderings
+
 \begin{defBox}
   Let $n$ be any ordinal, and $l$ be any limit ordinal.
   
-  \medskip \noindent $C_{\sig,\dl,b,n}\colon \Valuation_{\Var,D}$
+  \medskip \noindent $C_{\st,\dl,b,n}\colon \Valuation_{\Var,D}$
   
   \nopagebreak \medskip \noindent
   $\begin{aligned}
-    & C_{\sig,\dl,b,0} & &= v_e \\*
-    & C_{\sig,\dl,b,n+1} & &= I_{\sig}(b, C_{\sig,\dl,b,n}) \\*
-    & C_{\sig,\dl,b,l} & &= x \mapsto (\bigcup_{i \in l}C_{\sig,\dl,b,i}(x)[0],
-      \ \bigcup_{i \in l}C_{\sig,\dl,b,i}(x)[1])
+    & C_{\st,\dl,b,0} & &= v_e \\*
+    & C_{\st,\dl,b,n+1} & &= I_{\st}(b, C_{\st,\dl,b,n})(\dl) \\*
+    & C_{\st,\dl,b,l} & &= x \mapsto (\bigcup_{i \in l}C_{\st,\dl,b,i}(x)[0],
+      \ \bigcup_{i \in l}C_{\st,\dl,b,i}(x)[1])
   \end{aligned}$
   
-  \medskip \noindent $B_{\sig,\dl,n}\colon \Valuation_{\Var,D}$
+  \medskip \noindent $B_{\st,\dl,n}\colon \Valuation_{\Var,D}$
   
   \nopagebreak \medskip \noindent
   $\begin{aligned}
-    & B_{\sig,\dl,0} & &= v_u \\*
-    & B_{\sig,\dl,n+1} & &= C_{\sig,\dl,b,|2^D|} \text{, where } b = B_{\sig,\dl,n} \\*
-    & B_{\sig,\dl,l} & &= x \mapsto (\bigcup_{i \in l}B_{\sig,\dl,i}(x)[0],
-      \ \bigcap_{i \in l}B_{\sig,\dl,i}(x)[1])
+    & B_{\st,\dl,0} & &= v_u \\*
+    & B_{\st,\dl,n+1} & &= C_{\st,\dl,b,|2^D|} \text{, where } b = B_{\st,\dl,n} \\*
+    & B_{\st,\dl,l} & &= x \mapsto (\bigcup_{i \in l}B_{\st,\dl,i}(x)[0],
+      \ \bigcap_{i \in l}B_{\st,\dl,i}(x)[1])
   \end{aligned}$
   
   \footnotetext{Recall that $v_e$ and $v_u$ are the empty and the undetermined
@@ -1175,9 +1190,13 @@ accepts a background valuation and returns the next background,
 The rest of the section is filled with proofs of the equivalence of these,
 which the reader so inclined may freely skip.
 
-\begin{proposition}
-  The operator $C_{\sig,\dl,b}$ is monotonic with respect to the standard ordering,
-\end{proposition}
+\begin{lemma}[Monotonicity of $C_b$] \hfill \\
+  The operator $C_{\st,\dl,b}$ is monotonic with respect to the standard ordering,
+\end{lemma}
+
+\begin{proof}
+  A direct consequence of the lemma~\ref{extendedInterpretationBoring}.
+\end{proof}
 
 \begin{restatable}[Well-ordered chains of valuations are small]%
 {lemma}{wellOrderedChainsSmall} \label{wellOrderedChainsSmall} \hfill \\
@@ -1216,14 +1235,14 @@ which the reader so inclined may freely skip.
 \label{coConstOpC} \hfill \\
   Let
   \begin{compactitem}
-    \item $\sig = (D, A, \Op, I)$ be a signature,
+    \item $\st = (D, \sig, I)$ be a structure,
     \item $\Var$ a set of variables,
     \item $b$ a $\Valuation_{\Var,D}$, and
     \item $\dl$ a $\DefList_{\sig,\Var}$.
   \end{compactitem}
   
-  \medskip \noindent Then the least fixed point of the operator $C_{\sig,\dl,b}$
-  equals $C_{\sig,\dl,b,|2^{D \times \mathbb{N}}|}$.
+  \medskip \noindent Then the least fixed point of the operator $C_{\st,\dl,b}$
+  equals $C_{\st,\dl,b,|2^{D \times \Nat}|}$.
 \end{lemma}
 
 \begin{proof}
@@ -1231,14 +1250,14 @@ which the reader so inclined may freely skip.
   
   $T = \Valuation_{\Var,D}$ is a set with a chain-complete partial order $\leq$
   (the standard ordering, lemma \ref{valChainComplete}) such that all well-founded
-  chains of $T$ have a cardinality at most $D \times \mathbb{N}$
-  (lemma \ref{wellOrderedChainsSmall}), and $C_{\sig,\dl,b}$ is a monotonic
+  chains of $T$ have a cardinality at most $D \times \Nat$
+  (lemma \ref{wellOrderedChainsSmall}), and $C_{\st,\dl,b}$ is a monotonic
   operator on $T$.
   
-  The iterative construction $C_{\sig,\dl,b,n}$ agrees with the one prescribed by
+  The iterative construction $C_{\st,\dl,b,n}$ agrees with the one prescribed by
   lemma \ref{coConst} (lemmas \ref{leastTrisets}, \ref{leastUpperBoundsValuations}).
   By that lemma,
-  \[\lfp(C_{\sig,\dl,b}) = C_{\sig,\dl,b,|2^{D \times \mathbb{N}}|}\,.\]
+  \[\lfp(C_{\st,\dl,b}) = C_{\st,\dl,b,|2^{D \times \Nat}|}\,.\]
   
   It remains to prove the same when $\Var$ is infinite.
   
@@ -1247,7 +1266,7 @@ which the reader so inclined may freely skip.
   of the iterative constructions of elements of $\var{fdl}$. Therefore,
   the least ordinal at which $\dl$'s fixpoint appears in $\dl$'s iterative
   construction equals the supremum of the least such ordinals of elements
-  of $\var{fdl}$. All such ordinals are at most $|2^{D+\mathbb{N}}|$.
+  of $\var{fdl}$. All such ordinals are at most $|2^{D+\Nat}|$.
   
   \footnotetext{Technically, it is the union of unions of the valuations of the
   corresponding iterative constructions at the respective ordinal stages.
@@ -1260,55 +1279,55 @@ ordering, and that its corresponding iterative construction produces $B$'s least
 fixed point.
 
 \begin{lemma}[Monotonicity of $B$] \hfill \\
-  The operator $B_{\sig,\dl}$ is monotonic with respect to the approximation ordering.
+  The operator $B_{\st,\dl}$ is monotonic with respect to the approximation ordering.
 \end{lemma}
 
 \begin{proof}
   Let $b_0, b_1\colon \Valuation_{\Var,D}$ such that $b_0 \approximates b_1$.
   We'll show that for any $n$,
-  \[C_{\sig,\dl,b_0,n} \approximates C_{\sig,\dl,b_1,n}\,,\]
+  \[C_{\st,\dl,b_0,n} \approximates C_{\st,\dl,b_1,n}\,,\]
   from which it follows that
-  \[\lfp(C_{\sig,\dl,b_0}) \approximates \lfp(C_{\sig,\dl,b_1})\,.\]
+  \[\lfp(C_{\st,\dl,b_0}) \approximates \lfp(C_{\st,\dl,b_1})\,.\]
   
-  Suppose $C_{\sig,\dl,b_0,n} \approximates C_{\sig,\dl,b_1,n}$. Then
-  $C_{\sig,\dl,b_0,n+1} \approximates C_{\sig,\dl,b_1,n+1}$ follows from
+  Suppose $C_{\st,\dl,b_0,n} \approximates C_{\st,\dl,b_1,n}$. Then
+  $C_{\st,\dl,b_0,n+1} \approximates C_{\st,\dl,b_1,n+1}$ follows from
   the approximation monotonicity of interpretation (lemma \ref{monoInterpKnow}).
   
   Suppose that for any $n$ less than some limit ordinal $l$,
-  \[C_{\sig,\dl,b_0,n} \approximates C_{\sig,\dl,b_1,n}\,.\]
+  \[C_{\st,\dl,b_0,n} \approximates C_{\st,\dl,b_1,n}\,.\]
   Then, by the definition of the approximation ordering,
   \begin{gather*}
-    C_{\sig,\dl,b_0,n}[0] \subseteq C_{\sig,\dl,b_1,n}[0]\,,\\
-    C_{\sig,\dl,b_0,n}[1] \supseteq C_{\sig,\dl,b_1,n}[1]\,.
+    C_{\st,\dl,b_0,n}[0] \subseteq C_{\st,\dl,b_1,n}[0]\,,\\
+    C_{\st,\dl,b_0,n}[1] \supseteq C_{\st,\dl,b_1,n}[1]\,.
   \end{gather*}
   
   So
   \begin{gather*}
-    \bigcup_{n \in l}C_{\sig,\dl,b_0,n}[0] \subseteq
-      \bigcup_{n \in l}C_{\sig,\dl,b_1,n}[0]\,,\\
-    \bigcup_{n \in l}C_{\sig,\dl,b_0,n}[1] \supseteq
-      \bigcup_{n \in l}C_{\sig,\dl,b_1,n}[1]\,.\\
+    \bigcup_{n \in l}C_{\st,\dl,b_0,n}[0] \subseteq
+      \bigcup_{n \in l}C_{\st,\dl,b_1,n}[0]\,,\\
+    \bigcup_{n \in l}C_{\st,\dl,b_0,n}[1] \supseteq
+      \bigcup_{n \in l}C_{\st,\dl,b_1,n}[1]\,.\\
   \end{gather*}
   
   Therefore
   \begin{gather*}
-    (\bigcup_{n \in l}C_{\sig,\dl,b_0,n}[0], \bigcup_{n \in l}C_{\sig,\dl,b_0,n}[1])
+    (\bigcup_{n \in l}C_{\st,\dl,b_0,n}[0], \bigcup_{n \in l}C_{\st,\dl,b_0,n}[1])
       \approximates
-    (\bigcup_{n \in l}C_{\sig,\dl,b_1,n}[0], \bigcup_{n \in l}C_{\sig,\dl,b_1,n}[1])\\
-    C_{\sig,\dl,b_0,l} \approximates C_{\sig,\dl,b_1,l}
+    (\bigcup_{n \in l}C_{\st,\dl,b_1,n}[0], \bigcup_{n \in l}C_{\st,\dl,b_1,n}[1])\\
+    C_{\st,\dl,b_0,l} \approximates C_{\st,\dl,b_1,l}
   \end{gather*}
 \end{proof}
 
 \begin{lemma}[Correctness of construction of $B$'s least fixed point] \hfill \\
   Let
   \begin{compactitem}
-    \item $\sig = (D, A, \Op, I)$ be a signature,
+    \item $\st = (D, \sig, I)$ be a structure,
     \item $\Var$ a set of variables, and
     \item $\dl$ a $\DefList_{\sig,\Var}$.
   \end{compactitem}
   
-  \medskip \noindent Then the least fixed point of the operator $B_{\sig,\dl}$
-  equals $B_{\sig,\dl,|2^{D \times \mathbb{N}}|}$.
+  \medskip \noindent Then the least fixed point of the operator $B_{\st,\dl}$
+  equals $B_{\st,\dl,|2^{D \times \Nat}|}$.
 \end{lemma}
 
 \begin{proof}
@@ -1320,34 +1339,54 @@ Now that we defined the operators (and the iterative constructions),
 we can finally define the semantics of WFC.
 
 \begin{defBox}
-  Let $\sig = (D, A, \Op, I)$ be a signature, and $\dl$ a $\DefList_{\sig,\Var}$.
+  Let $\st = (D, \sig, I)$ be a structure, and $\dl$ a $\DefList_{\sig,\Var}$.
   
-  \medskip \noindent $M_{\sig,\dl} = \lfp(B_{\sig,\dl}) \setminus A \\
-    \phantom{M_{\sig,\dl}} = B_{\sig,\dl,|2^{D \times \mathbb{N}}|} \setminus A$
-  \phantom{aa} is the \textit{well-founded model} of $\dl$.
+  \medskip \noindent
+  $M_{\st,\dl} = \lfp(B_{\st,\dl}) = B_{\st,\dl,|2^{D \times \Nat}|}$
+  is the \textit{well-founded model} of $\dl$.
 \end{defBox}
 
-The well-founded model $M_{\sig,\dl}$ is a valuation such that $M_{\sig,\dl}(x)$
+The well-founded model $M_{\st,\dl}$ is a valuation such that $M_{\st,\dl}(x)$
 is the triset represented by the definition $x$ of $\dl$.
-A concrete example where we use the approximative values is show in TODO.
 
-TODO: now, there should be a proposition saying the well-founded model is a model,
-BUT the approximative values fuck that up. Try to find suitable restrictions
-on how value approximation works so that for any signature, the well founded
-model is an actual model. Instead, let's have this:
-
-\begin{lemma}[If $A$ is empty, the well-founded model is a model] \hfill \\
-  Let $\sig = (D, \{\}, \Op, I)$ be a signature. Then for any definition list $\dl$,
-  $M_{\sig,\dl}$ is a model of $\dl$.
+\begin{lemma}[The well-founded model is a model] \hfill \\
+  Let $\st = (D, \sig, I)$ be a structure. Then for any definition list
+  $\dl\colon \DefList_{\sig,\Var}$, $M_{\st,\dl}$ is a model of $\dl$.
 \end{lemma}
+
+\begin{proof}
+  \begin{align*}
+    M_{\st,\dl} &= \lfp(B_{\st,\dl}) \\
+      &= \lfp(C_{\st,\dl,M_{\st,\dl}}) \\
+      &= C_{\st,\dl,M_{\st,\dl}}(M_{\st,\dl}) \\
+      &= I_{\st}(M_{\st,\dl})(\dl)
+  \end{align*}
+\end{proof}
+
+\begin{lemma}[Existence of models] \hfill \\
+  Every definition list has one or more models.
+\end{lemma}
+
+\begin{proof}
+  Every definition list has at least the well-founded model as a model.
+  A definition list can have multiple models, take the one consisting
+  of a single definition \texttt{type~T~=~T}, every its valuation is stable.
+\end{proof}
+
+\begin{defBox}
+  Given a structure $st$, a triset $s$ is definable iff there exists
+  a definition list $\dl$ such that $M_{\st,\dl}(x) = s$ for some $x$.
+\end{defBox}
+
 
 \section{Conjecture: simpler semantics}
 This iterative construction only uses one valuation, which it updates using a standard
-interpretation function (ie. eg. complements are really complements), and whose limit
-points are defined using limit mix -- an operation analogical to $\limsup$.
+interpretation function (ie. eg. complements are really complements), and whose
+stages at limit ordinals are defined using limit mix -- an operation analogical
+to $\limsup$.
 
 It seems to work for trivial examples, however, I'm not sure how I would go about
-proving equivalence. (Not that I've given it much thought.)
+proving equivalence with the semantics above. (Not that I've given it much thought.)
 
 TODO define limit of sequences of valuations, note that it corresponds with set limit
 and limit of functions when trisets are taken as characteristic functions.
@@ -1355,18 +1394,16 @@ A limit of a sequence of valuations contains the value $v$
 if from some index all valuations have $v$ as member, does not contain
 the value if from some index all valuations don't, else the limit borders $v$.
 
-asdf
-
 $\MBS$ stands for Mix-Based-Semantics.
 
 \begin{defBox}
-  Let $\sig$ be a signature. The gist of the idea is this:
+  Let $\st$ be a structure. The gist of the idea is this:
   
   \medskip \noindent
   $\begin{aligned}
-    & \MBS_{\sig,\dl,0} & &= v_e \\*
-    & \MBS_{\sig,\dl,n+1} & &= I_{\sig}(\MBS_{\sig,\dl}) \\*
-    & \MBS_{\sig,\dl,l} & &= \limMix_{n \to l} \MBS_{\sig,\dl,n}
+    & \MBS_{\st,\dl,0} & &= v_e \\*
+    & \MBS_{\st,\dl,n+1} & &= I_{\st}(\MBS_{\st,\dl}) \\*
+    & \MBS_{\st,\dl,l} & &= \limMix_{n \to l} \MBS_{\st,\dl,n}
   \end{aligned}$
 \end{defBox}
 
@@ -1379,6 +1416,11 @@ Open question: is there a natural operator whose iterative construction is MBS?
 
 
 \chapter{Tracking undeterminedness}
+Although it is possible in general that the membership of some elements in a triset
+is undetermined, it is desirable that the trisets we work with in practice are
+classical. In this chapter, we investigate conditions under which this is the case.
+
+TODO this chapter. There's a lot of stuff to copy from in my thesis.
 
 
 
@@ -1404,23 +1446,281 @@ Open question: is there a natural operator whose iterative construction is MBS?
 
 
 
+\chapter{Example WFCs}
+In this chapter, we provide a few example structures that define interesting WFCs.
+From now on, we will also use WFC as a countable noun that refers to a particular
+structure, or the set of trisets definable in it.
+
+\section{Logic programming}
+TODO $D = \{ \top \}$, signature is empty.
+
+\section{Natural numbers}
+
+\begin{defBox}
+  Let $\var{natSig} = (\{ 0, \successor,+,* \}, \{
+    (0, 0), (\successor, 1), (+, 2), (*, 2) \})$ be a signature.
+  
+  \medskip \noindent $\NatC = (\Nat, \var{natSig}, I)$, is the structure
+  of well-founded collections of natural numbers, where:
+  \begin{gather*}
+    I(0)() = \{\,0\,\} \\
+    I(\successor)(N) = \{\,n + 1 \mid n \in N\,\} \\
+    I(+)(A, B) = \{\,a + b \mid a,b \in A,B\,\} \\
+    I(*)(A, B) = \{\,a * b \mid a,b \in A,B\,\}
+  \end{gather*}
+\end{defBox}
+
+\begin{questionBox}
+  \begin{conjecture}
+    $\NatC$ is the least expressive WFC of all the example WFCs of this chapter.
+  \end{conjecture}
+  
+  \medskip \begin{question}
+    If so, why? What makes so inexpressive? What characterizes the $\NatC$-definable
+    trisets? What characterizes the classical ones?
+  \end{question}
+  
+  \medskip \begin{question}
+    Can exponentiation be defined in $\NatC$?
+  \end{question}
+\end{questionBox}
+
+\section{Pairs}
+
+This WFC consists of the zero-tuple, which for convenience is considered
+an (improper) pair, and pairs formed of other pairs.
+Zeroth we define the domain.
+
+\begin{defBox}
+  The zero tuple $\pairZ$ equals the empty set $\{\}$. Pairs are defined in stages
+  in the following way:
+  
+  % Fuck you, Latex. And fuck all aligning environments.
+  \medskip \noindent
+  $\Pair_{\mathrlap{0}\phantom{n+1}}     = \{\,\pairZ\,\}$
+  
+  \noindent \nopagebreak
+  $\Pair_{n+1} = \Pair_n \cup\,\{\, \pair{a}{b} \mid a, b \in \Pair_n \,\}$
+  
+  \noindent \nopagebreak
+  $\displaystyle \Pair_{\phantom{n+1}} = \bigcup_{n \in \Nat} \Pair_n$
+\end{defBox}
+
+The structure contains just one operation -- cartesian product.
+
+\begin{defBox}
+  Let $\var{pairSig} = (\{ \pairZ, \times \},
+    \{\,(\pairZ, 0), (\times, 2)\,\})$ be a signature.
+  
+  \medskip \noindent $\PairC = (\Pair, \var{pairSig}, I)$ is the structure
+  of well-founded collections of pairs, where:
+  \begin{gather*}
+    I(\pairZ)() = \{\,\pairZ\,\} \\
+    I(\times)(A, B) = \{\,\pair{a}{b} \mid a,b \in A,B\,\}
+  \end{gather*}
+\end{defBox}
+
+The projections can be defined as syntactic sugar:
+\begin{gather*}
+  \texttt{zth(x) = x[0] = Un a, b: Pair .. \pair{a}{b} \& x ? a : Empty} \\
+  \texttt{fst(x) = x[1] = Un a, b: Pair .. \pair{a}{b} \& x ? b : Empty}
+\end{gather*}
+
+Open question: under a natural coding of between pairs and naturals
+where in the arithmetical hierarchy are the $\PairC$-definable sets of pairs?
+And infinite time Turing machines?
+
+\section{S-Pairs}
+
+\begin{defBox}
+  Concatenation of tuples will be denoted using three dots: for example if $t$ is a tuple
+  and $v$ an arbitrary value, then $( v, ...t )$ is the tuple consisting of $v$
+  followed by the elements of $t$.
+\end{defBox}
+
+We could also allow pairs that potentially contain themselves, or pairs that contain
+such pairs, like for instance the pair $p = \pair{p}{p}$, or $\pair{\pairZ}{p}$.
+We will call such pairs self-containing, or S-pairs, and we will denote them
+$\sPair{p}{p}$, $\sPair{\sPairZ}{p}$.
+
+Because the sets of ZFC are not allowed to contain themselves, we will
+need to get a little creative to define such pairs.
+Think of how a pair $p$ might be thought of as a container that under the index
+$i$ contains the value $p[i]$. But $p[i]$ might itself be a pair, so it makes
+sense to think about $p[i][j]$, $p[i][j][k]$ and so on.
+
+We will call sequences of indices like $(i, j, k)$ \textit{index paths}, and we
+can think of pairs as functions from index paths to what these pairs contain under
+said paths, or a special set $\nullVal$ if the zero-tuple is encountered along the way.
+
+We will represent "what these pairs contain under said paths" by the set of available
+indices at those paths -- that is, if $f$ is a pair such that $f[i]$ is a proper pair,
+then $f((i)) = \{\,0, 1\,\} = 2$, else if $f[i]$ is a zero-tuple, then
+$f((i)) = \{\} = 0$, else if $f$ itself is a zero-tuple, then $f((i)) = \nullVal$.
+
+\begin{defBox}
+  A (potentially) self-containing pair is a function
+  $f\colon 2^* \to \{\,0, 2, \nullVal\,\}$ such that
+  \begin{compactitem}
+    \item $f(()) \neq \nullVal$, and
+    \item $f(s) \neq \nullVal \land~i \in f(s)$ iff $f(( ...s, i)) \neq \nullVal$.
+  \end{compactitem}
+  
+  \medskip \noindent $\SPair$ is the set of all such pairs.\footnotemark
+\end{defBox}
+
+What distinguishes self-containing from the non-self-containing pairs is that
+every non-self-containing pair $p$ has a finite depth. In other words, for every
+index path $\var{path}$ longer than some constant, $p(\var{path}) = \nullVal$,
+while this does not hold for self-containing pairs.
+
+\begin{defBox}
+  The signature of $\SPairC$ is identical to that of $\PairC$.
+  
+  \medskip \noindent $\SPairC = (\SPair, \var{pairSig}, I)$ is the structure
+  of well-founded collections of s-pairs, where:
+  \begin{gather*}
+    I(\sPairZ)() = \{\,\sPairZ\,\} \\
+    I(\times)(A, B) = \{\,\sPair{a}{b} \mid a,b \in A, B \,\} \\
+    \mpair{a}{b} = ( i, ...s ) \mapsto \begin{cases}
+      a(s) & i = 0 \\
+      b(s) & i = 1
+    \end{cases}
+  \end{gather*}
+\end{defBox}
+
+One can define the projections in the same way as for pairs.
+
+\begin{questionBox}
+  Pairs are a subset of mpairs under a reasonable coding, and one may easily define
+  the set of all non-self-containing pairs in $\SPairC$\footnote{%
+  \texttt{let p = \mpairZ | \mpair{p}{p}}}, so all trisets of pairs definable
+  in $\PairC$ are definable in $\SPairC$ as well.
+  
+  \begin{question}
+    Is the reverse true in some sense? Can one simulate (definable) mpairs and
+    collections of them in $\PairC$?
+  \end{question}
+\end{questionBox}
+
+\section{Quantified boolean grammars}
+Boolean grammars~\cite{ConBoolGrammars} are an extension of context-free grammars
+that include the connectives conjunction and negation. Quantified boolean grammars
+are a WFC that extends boolean grammars with arbitrary unions and intersections.
+
+\begin{defBox}
+  Let $\alphabet$ be an arbitrary set. $\Word_{\alphabet} = \alphabet^*$ is the set
+  of finite tuples of elements of $\alphabet$.
+  
+  \medskip \noindent $\var{wordSig}_{\alphabet} = (\Word_{\alphabet}, \{\,(), .\,\}, I)$
+  is the structure of quantified boolean grammars (well-founded collections of words),
+  where
+  \begin{gather*}
+    I(())() = \{\,()\,\} \\
+    I(.)(A, B) = \{\,( ...a, ...b) \mid a,b \in A, B\,\}
+  \end{gather*}
+\end{defBox}
+
+\begin{questionBox}
+  \begin{question}
+    How does this one compare to the other ones in terms of expressive power?
+  \end{question}
+\end{questionBox}
 
 
-.
+\section{Open problems}
+Perhaps (some of) these problems have the same answer for any (reasonable) WFC,
+but I thought it safe to ask relatively to the concrete structures defined above
+(at least at first).
 
-.
+\begin{questionBox}
+  \begin{question}
+    Is every definable triset definable in a definition list with only one model?
+  \end{question}
+  
+  \medskip \begin{question}
+    Is there a definition list that is not classical, but is desirable
+    in the sense that one might prefer it to one of its classical completions,
+    for whatever purpose?
+  \end{question}
+  
+  \medskip \begin{conjecture}
+    There is a definable type that has no definable classical completion.
+  \end{conjecture}
+\end{questionBox}
 
-Two example special cases of WFC (in addition to WFRQ) are presented in
-chapter~\ref{TODO}. These are WFPQ, whose basic operations are cartesian
-products and projections, and quantified boolean grammars, whose basic operations
-are concatenation and the constant operations representing the empty word and
-letters of the alphabet\footnote{Disallowing quantified unions and intersections
-in quantified boolean grammars results in ordinary boolean grammars~\cite{TODO}}.
+Then we have some questions that are specifically about our example WFCs:
+\begin{questionBox}
+  \begin{question}
+    How do our example WFCs compare in terms of expressive power? Where
+    are their definable sets in the arithmetical hierarchy? How can these
+    questions be made precise? (I suppose there are multiple ways of answering
+    the last question.)
+  \end{question}
+\end{questionBox}
 
+\chapter{WFCs and computation/Definable sets}
 
 TODO - HERE BE DRAGONS
 
-\chapter{The candidates for sets}
+TODO can the definable sets of PairC be computed by an ITTM? Can PairC
+define the ITTM-computable sets or their floors?
+
+TODO define a triset $s$ as computable by an (IT)TM $t$ iff
+\begin{compactenum}
+  \item $t$ accepts a member of $s$, rejects a nonmember and doesn't halt
+    on bordering elements.
+  \item alternatively $t$ is allowed to do anything on the bordering elements.
+    (TODO weakly computable?)
+\end{compactenum}
+
+How do these two notions compare? Is the latter a useful concept?
+
+A triset is semi-decidable by an (IT)TM $t$ iff
+\begin{compactenum}
+  \item $t$ accepts a member of $s$, doesn't accept a nonmember and doesn't halt
+    on a bordering element.
+  \item alternatively $t$ is allowed to do anything on the bordering elements.
+\end{compactenum}
+
+Is this the right notion of semidecidability?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\chapter{The candidates for sets/Sets as zeroth-class citizens}
 In this chapter, we describe the structures that we see as potential candidates
 for the sets of our set theory.
 
@@ -1428,9 +1728,9 @@ TODO looking for models of an unknown theory is strange.
 
 \section{The deep/rough syntactic model}
 
-TODO if the set of down-classical sets (make all undetermined elements not belong)
-of the rough model is larger than the set of classical sets, then the set of down-classical
-sets should also be considered a potential model of BST
+TODO if the set of down-classical/floored sets (make all undetermined elements
+not belong) of the rough model is larger than the set of classical sets, then
+the set of down-classical sets should also be considered a potential model of ETST
 
 TODO take into account the regularized version of the deep model (take all the classical
 sets that a set is approximating, define membership to be true if true for all combinations,
@@ -1464,7 +1764,19 @@ A shallow model is built of the classical sets of the deep model.
 
 \section{The "sets" of WFRQ}
 We hope this one is equivalent to the deep syntactic model, if not, we need to
-consider it (and its shallow version) as another potential semantics for BST.
+consider it (and its shallow version) as another potential semantics for ETST.
+
+\section{Equivalence classes of T = $\leq\omega$-tuples of T}
+Basically, the "sets" of SPairC
+
+\section{Some countable set of MRecords}
+I've played with the idea of defining MRecords as equivalence classes of
+leq-omega-tuples where swapping indices is equivalent, and then somehow
+choosing just those that are definable.
+
+One can easily define the operations on sets of MRecords (cardinality concerns:
+just relax powerset appropriately), but then selecting the "definable" ones
+seems to be a problem.
 
 
 \chapter{A general three-valued logic}
@@ -1522,7 +1834,7 @@ functions and predicates can be used in its terms and formulas.
   \begin{compactenum}
     \item $\func$ and $\pred$ are disjoint sets containing the function and predicate
       symbols, respectively, and
-    \item $\arity\colon \func \cup \pred \to \mathbb{N}$ determines the arity
+    \item $\arity\colon \func \cup \pred \to \Nat$ determines the arity
       of the symbols.
   \end{compactenum}
   
@@ -1754,11 +2066,12 @@ iff those formulas are true?
 
 
 \chapter{Definitions as syntactic sugar}
-TODO is this possible?
+Can all definitions be converted to formulas which uniquely characterize
+the triset represented by that definition?
 
 
 \chapter{Boolean set theory}
-In this chapter, we define the syntax of BST, and informally describe its meaning.
+In this chapter, we define the syntax of ETST, and informally describe its meaning.
 The syntax may be denoted using two possible notations -- math (eg. $A \cup B$)
 or code notation (eg. \texttt{A | B}). We'll use both interchangeably in this document.
 
@@ -1767,7 +2080,7 @@ on some unit element, there is another equivalent structure where all predicates
 are classical on all unit arguments (an element E is a unit element if for all
 elements A, B such that A|B=E, E = A or E = B)
 
-\section{Terms and formulas of BST}
+\section{Terms and formulas of ETST}
 Expressions are recursively defined as follows:
 
 \begin{align*}
@@ -1849,7 +2162,7 @@ but I believe less desirable, because in such semantics, quantifying over all se
 necessarily quantifies over the non-classical ones, so there's no way to avoid it).
 
 The models presented below are called syntactic models because they use the syntax
-of BST to define its semantics\footnote{In other words, they can be considered
+of ETST to define its semantics\footnote{In other words, they can be considered
 "syntax in disguise".}. This makes them countable; however, this does not imply
 there aren't (more) natural models of higher cardinalities.
 
@@ -1903,21 +2216,6 @@ Valuations let us interpret expressions by giving meaning to names.
   
 \end{defBox}
 
-\begin{defBox}
-  
-\end{defBox}
-
-\section{Shallow syntactic model}
-An attempt to define them:
-
-There are multiple possible approaches to defining the domain of sBST, and I don't
-know if any one works.
-\begin{compactenum}
-  \item Take the classical sets of dBST as the domain
-  \item Generate it using positive definitions
-\end{compactenum}
-Ideally, these would result in the same domain, but what do I know.
-
 \subsection{Positive expressions}
 
 \begin{defBox}
@@ -1930,14 +2228,6 @@ Ideally, these would result in the same domain, but what do I know.
   \end{compactenum}
   
   \medskip \noindent $\PExpr$ is the set of all positive expressions.
-\end{defBox}
-
-\subsection{Two-valuations}
-A two-valuation lets us interpret names as sets of names.
-This would make sense if I bothered to explain it. TODO.
-
-\begin{defBox}
-  A two-valuation is a function $v\colon \Name \to P(\Name)$.
 \end{defBox}
 
 \subsection{Two-interpretation}
@@ -1980,7 +2270,7 @@ TODO shit, powerset is not monotonic wrt the standard ordering.
 We need a better ordering. Or another approach.
 
 
-\chapter{Comparing deep and shallow BST}
+\chapter{Comparing deep and shallow ETST}
 
 \begin{questionBox}
   \begin{question}
@@ -2002,7 +2292,7 @@ TODO move this into other chapters
 
 \section{Rules of inference}
 
-\section{Axioms of BST}
+\section{Axioms of ETST}
 Some candidates:
 
 $\forall x\colon x \notin \Empty$
@@ -2027,8 +2317,32 @@ everywhere. Yes, this leads to non-locality of type checking, because, where a p
 in one part of the code affects the correctness of code everywhere else.
 
 A proof in [my] programming language should ideally be readable even to someone that has
-never seen the language before.\footnote{Assuming the particular proof in BST and ZFC
+never seen the language before.\footnote{Assuming the particular proof in ETST and ZFC
 would look essentially the same.}
+
+
+\chapter{The productive fixed point}
+TODO This chapter may be safely skipped.
+
+\begin{TODO}
+  Define equations as pairs of expressions that consist of variables,
+  custom operations, and perhaps also union, intersection and complement.
+  
+  Define a theory as a signature with a set of equations, define a structure
+  in terms of a theory, not a signature, and add to the definition of a structure
+  the requirement that the equations are satisfied. Perhaps define the interpretation
+  of $\op$ as a partial function of type $D^{\arity(op)} \to D$, and define
+\end{TODO}
+
+TODO define partial algebras as (D, op, I) (or similarly), define a signature
+as containing a set of equational laws (pairs of (certain) expressions)
+
+Helpful source: \url{https://books.google.com/books/about/Introduction_to_the_Theory_of_Abstract_A.html?id=8RunBAAAQBAJ&printsec=frontcover&source=kp_read_button&hl=en&redir_esc=y#v=onepage&q&f=false}
+
+or Universal Algebra by G. Gratzer
+
+then extend the interpretation such that it also accepts approximative values
+and is required to return values that are approximated to an arbitrary degree.
 
 
 \printbibliography[heading=bibintoc,resetnumbers=0]
@@ -2050,8 +2364,6 @@ has certain benefits, although I am unaware of any.}
 \wellOrderedChainsSmall*
 
 \begin{proof}
-  TODO asdf "characteristic function"
-  
   For the purposes of this proof, we'll use the definition 1 of trisets, that is,
   a triset is a function from $D$ to $\{0,\bot,1\}$. Note the standard
   ordering is the pointwise order for $0 < \bot < 1$, and the approximation
@@ -2113,7 +2425,7 @@ has certain benefits, although I am unaware of any.}
 
 \chapter{TODO notes}
 
-TODO another candidate for a model of BST: WFC of natural numbers with addition
+TODO another candidate for a model of ETST: WFC of natural numbers with addition
 and multiplication.
 
 TODO I should revisit the idea of defining the semantics using
@@ -2169,23 +2481,10 @@ could a set be formalized as `f: N* -> P(N) | null` such that
 f([]) != null,
 f(s) != null \& e in f(s) <=> f([ ...s, e ])!
 
-\section{Category theoretic stuff}
-Smart people I admire use category theory. Worse, they use it for [stuff]
-related to topics I try to explore in this document. I am not so smart as to
-think in it. (The constructions I have used so far have been very uncategorical.)
-However, because category theory's seeming relatedness/applicability, and out
-of fear of my constructions as they are could be less than natural, we'll do
-something with initial algebras and final coalgebras, to see if there's any
-connection to my constructions, and whether this excersice can give us new insights.
-
-TODO something with initial algebras and final coalgebras.
-
-TODO learn fucking category theory, or delete this section.
-
 \section{The rest}
 
 \begin{defBox}
-  Let $\Variable = \mathbb{N}$ be the set of all names.
+  Let $\Variable = \Nat$ be the set of all names.
 \end{defBox}
 
 TODO: The set containing exactly the set $a$ (ie, the set $\{ a \}$) can be defined
@@ -2202,11 +2501,11 @@ I have only looked at it very briefly, so I might be wrong.
 
 TODO does my set theory contain all the sets of ZF(C)? what extra axioms
 are necessary for that, if possible at all? More generally, what is the
-relationship between the sets of BST and ZFC
+relationship between the sets of ETST and ZFC
 
-TODO does aczel's anti-foundation "axiom" hold in BST? Is BST anti-well-founded?
+TODO does aczel's anti-foundation "axiom" hold in ETST? Is ETST anti-well-founded?
 
-TODO is BST effectively axiomatizable?
+TODO is ETST effectively axiomatizable?
 
 TODO Soft question: are there things that are only provable using three-valued
 objects? Are there things that can be proven fully classically, but where
@@ -2269,7 +2568,7 @@ is based on three-valued characteristic functions
 TODO conjecture: this is a useful sanity condition: "every triset that appears
 in the iterative construction is definable"
 .
-another conjecture: for any unsanitary (or insane? :D ... pick a better name)
+another conjecture: for any insane (pick a better name)
 WFC system, there exists a corresponding one that satisfies the condition
 
 TODO add an open question about the supremum of ordinals clockable by particular
@@ -2335,6 +2634,9 @@ https://www.sciencedirect.com/science/article/pii/S0888613X13002478?ref=pdf_down
 
 TODO given a definition in PC/WFC in productive/greatest fixpoint semantics,
 can it be mechanically transformed into an equivalent one in least fixpoint semantics?
+.
+The answer is yes for Least and greatest fixed points, and do prove it somewhere,
+and do mention it in the chapter~\ref{chapterSemanticsWFC}.
 
 TODO so we have quite a lot of semantics: least, productive, greatest, and uncommitted
 fixed point semantics, for PC and for WFC. How do they relate in terms of expressive power?
@@ -2356,5 +2658,62 @@ TODO given a (ascending/descending) chain of trisets/valuations, their limit equ
 their least upper bound/greatest lower bound
 
 TODO is there a classical definable triset that is not positive-definable?
+
+TODO is every (positive-)definable triset (positive-)definable in a definition list
+with a single model?
+
+TODO axioms to prove: for every (classical?) definable triset S, there exists
+a value V such that [V contains/expanding V gives] exactly the elements of S.
+
+TODO our model [X] is supposed to be a *candidate* model for ETST, not
+(necessarily) *the*, or the *standard* model of ETST.
+.
+It would appear more orderly to me to start with some proposed set
+of axioms of ETST, and then try to construct models satisfying those.
+However, (not only not having any particular axioms in mind, but also lacking
+a (three-valued) logic in which those axioms could be stated), we have chosen
+the opposite approach, and we've started with constructing a candidate model for
+which we can attempt to find suitable axioms (in a suitable logic). This does
+not mean other models couldn't be just as, or even more suitable for this purpose.
+.
+[other possible models: classical floor (including of other models, including
+repeatedly), s-pairs, positive vs all definable trisets, the "monotonic" models
+(thing an infinite-time-computable analogue of Scott-continuity)]
+
+TODO rename Boolean Set Theory? The problem is, it is not a boolean algebra.
+So is the fact that it has union, intersection and "complement" (which
+is not complement according to the definition of boolean algebra) enough
+to justify calling it "boolean"?
+.
+TODO perhaps unfortunately, our set theory is "boolean" only in that
+the operations set union, intersection and complement are defined on any sets.
+These operations, however, do not form a boolean algebra, because for the
+complement, \texttt{a | \tde a = 1} and \texttt{a \& \tde a = 0} do not hold.
+TODO should I pick a better name?
+
+Two sanity conditions:
+0. every definable collection is a member of the universal set (not true
+if our sets are the halting hamkins machines, bc an unhalting machine is
+a bordering element)
+1. indeterminacy "distributes". eg. { { A? } } = { {}?, { A }? }
+
+Is there a classical triset of pairs that can only be defined in a non-classical
+definition list?
+
+https://www.irif.fr/~doumane/these.pdf
+completeness of park induction  z esik
+https://logic.las.tu-berlin.de/Members/Kreutzer/Publications/lics02.pdf
+https://sci-hub.se/https://doi.org/10.1016/S0049-237X(08)71120-0
+http://ndl.ethernet.edu.et/bitstream/123456789/37633/1/32.pdf
+
+possible models of sets:
+hyperarithmetical/hyperelementary/inductive\&coinductive (nope)
+globally stratifiably definable (nope -- definitions that are not wouldn't have a set to represent)
+locally stratifiably definable (nope?)
+classical and definable
+floor of definable
+.
+none of this works -- `Ex s: Any: s nin s` must be classical, because `s` is classical
+in both context and background (being a bound variable), and thus causes paradoxes.
 
 \end{document}
