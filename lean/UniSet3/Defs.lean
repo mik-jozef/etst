@@ -1,7 +1,19 @@
 /-
   This file defines descriptions of the trisets defined by the
-  definition list in `./UniDefList.lean`, along with some of
-  its properties.
+  definition list `theExternalDefList` defined in
+  `./UniDefList.lean`, along with some of their properties.
+  
+  Most of the trisets are classical (ie. two-valued, ie. every
+  possible member is also a definite member). For every such triset
+  `t`, we can define a `s: Set Pair` such that for all `p: Pair`,
+  
+      p ∈ t.defMem  ↔  p ∈ s  ↔  p ∈ t.posMem \,.
+  
+  Indeed, defining sets like this (usually using inductive
+  propositions) for the definitions of `theExternalDefList` is
+  the main purpose of this file. Most of the other files of the
+  `/UniSet3` directory are about proving the equivalence of these
+  propositions with the definitions of `theExternalDefList`.
 -/
 
 import Utils.PairDepthDictOrder
@@ -19,6 +31,7 @@ namespace Pair
     def InwEdl := InwWfm pairSalgebra theExternalDefList.toDefList
     
     
+    -- Helper proofs of that distinct variables are distinct.
     def nat501Neq500: 501 ≠ 500 := by decide
     def nat502Neq500: 502 ≠ 500 := by decide
     def nat502Neq501: 502 ≠ 501 := by decide
@@ -74,6 +87,7 @@ namespace Pair
       isNatA: IsNatEncoding a
       eq: a = b
     
+    -- `IsNatPairAA p` holds iff `p ∈ natPairAA`
     def IsNatPairAA: Pair → Prop
     | zero => False
     | pair a b => IsNatPairAAPair a b
@@ -84,6 +98,7 @@ namespace Pair
       isNatB: IsNatEncoding b
       isLe: a.depth ≤ b.depth
     
+    -- `IsNatLe p` holds iff `p ∈ natLe`
     def IsNatLe: Pair → Prop
     | zero => False
     | pair a b => IsNatLePair a b
@@ -109,6 +124,7 @@ namespace Pair
     | Is7 (eq: p = fromNat 7)
     | Is8 (eq: p = fromNat 8)
     
+    -- Defines the set of pairs that encode an expression.
     inductive IsExprEncoding: Pair → Prop where
     | IsVar: IsNatEncoding x → IsExprEncoding (pair zero x)
     | IsZero: IsExprEncoding (pair (fromNat 1) zero)
