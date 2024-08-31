@@ -25,7 +25,7 @@ def Ins.isSound
     (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
       DefList.wellFoundedModel.isModel salg dl ▸
       isCause ⟨ihCins, ihBins, ihBout⟩)
-    (fun _ _ _ => Cause.IsInapplicable.blockedContextIns)
+    (fun _ _ _ => blockedContextIns)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundIns ihBins ihBout)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundOut ihBins ihBout)
     (fun cycle _ inCycle ih => emptyCycleIsOut salg dl cycle ih inCycle)
@@ -43,7 +43,7 @@ def Out.isSound
     (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
       DefList.wellFoundedModel.isModel salg dl ▸
       isCause ⟨ihCins, ihBins, ihBout⟩)
-    (fun _ _ _ => Cause.IsInapplicable.blockedContextIns)
+    (fun _ _ _ => blockedContextIns)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundIns ihBins ihBout)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundOut ihBins ihBout)
     (fun cycle _ inCycle ih => emptyCycleIsOut salg dl cycle ih inCycle)
