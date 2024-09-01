@@ -12,10 +12,10 @@ lean_lib HM.Uhm {}
 lean_lib Trisets.Trisets {}
 
 lean_lib UniSet3.Ch7_UniDefList {}
+lean_lib UniSet3.Ch8_S0_Defs {}
 lean_lib UniSet3.Append {}
 lean_lib UniSet3.DefEncoding {}
 lean_lib UniSet3.DefListToEncoding {}
-lean_lib UniSet3.Defs {}
 lean_lib UniSet3.ExprEncoding {}
 lean_lib UniSet3.IncrVarsExpr {}
 lean_lib UniSet3.Nat {}

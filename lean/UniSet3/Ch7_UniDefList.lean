@@ -2,9 +2,9 @@
   # Chapter 7: The Definition List of a Universal Triset
   
   Recall from Chapter 4 the definition of a definable triset
-  (`Salgebra.IsDefinable`). In the files of this folder, we show
-  that there exists a definable triset `uniSet3: Set3 Pair` that
-  in a sense "contains" all definable trisets of pairs.
+  (`Salgebra.IsDefinable`). In the chapters of this folder, we
+  show that there exists a definable triset `uniSet3: Set3 Pair`
+  that in a sense "contains" all definable trisets of pairs.
   
   More precisely, `uniSet3` is such that for any definable triset
   `tDef`, there exists an `index: Pair` such that for any `p`,

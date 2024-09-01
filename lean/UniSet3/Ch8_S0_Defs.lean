@@ -1,19 +1,30 @@
 /-
-  This file defines descriptions of the trisets defined by the
-  definition list `theExternalDefList` defined in
-  `./UniDefList.lean`, along with some of their properties.
+  # Chapter 8: The definitions of `theExternalDefList`
   
-  Most of the trisets are classical (ie. two-valued, ie. every
-  possible member is also a definite member). For every such triset
-  `t`, we can define a `s: Set Pair` such that for all `p: Pair`,
+  This chapter describes most of the trisets defined by
+  `theExternalDefList` of the previous chapter, along with some
+  of their properties.
+  
+  Most of the trisets of `theExternalDefList` are classical. For
+  every such triset `t`, we can define an `s: Set Pair` such that
+  for all `p: Pair`,
   
       p ∈ t.defMem  ↔  p ∈ s  ↔  p ∈ t.posMem \,.
   
   Indeed, defining sets like this (usually using inductive
-  propositions) for the definitions of `theExternalDefList` is
-  the main purpose of this file. Most of the other files of the
-  `/UniSet3` directory are about proving the equivalence of these
-  propositions with the definitions of `theExternalDefList`.
+  propositions) is the main purpose of this file.
+  
+  The other sections of this chapter prove the above equivalences.
+  Feel free to completely skip them, the statements are dull and
+  the proofs are unreadable. This section itself is not very
+  interesting either -- we're mostly just redefining the definitions
+  of the previous chapter. Two notable functions defined here are
+  
+      `IsTheDefListExprPair.getNthExpr`
+  
+  and
+  
+      `IsTheDefListExprPair.getIndexOf` \,.
 -/
 
 import Utils.PairDepthDictOrder
@@ -2238,6 +2249,7 @@ namespace Pair
       expr: Pair
       isNth: IsTheDefListExprPair (fromNat n) expr
     
+    -- Returns the nth expression of the internal defintion list.
     noncomputable def IsTheDefListExprPair.getNthExpr
       (n: Nat)
     :
@@ -2285,7 +2297,14 @@ namespace Pair
             (fromNat (i + n))
             (IsIncrVarsExprPair.shiftVars i expr)
     
-    
+    /-
+      Let `dl` be (an encoding of) a prefix of a definition list
+      of length `n`.
+      
+      This function returns an index `i` such that for every
+      `m < n`, `dl.arrayAt m` is (the encoding of) the `i + m`-th
+      expression of the internal definition list.
+    -/
     noncomputable def IsTheDefListExprPair.getIndexOf
       (isDef: IsDefEncoding dl)
     :
