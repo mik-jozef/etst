@@ -91,9 +91,7 @@ namespace Pair
           insFinUn
             inList
             (insWfmDef.toInsWfm
-              (insUnDom
-                (insFree (insNatEncoding isNatX) nat500NeqNat)
-                (insPair insZero insBound)))
+              (insPair insZero (insNatEncoding isNatX)))
         | IsExprEncoding.IsZero =>
           let inList:
             Expr.var exprEncoding.zero ∈ exprEncoding.exprList
@@ -143,17 +141,17 @@ namespace Pair
       open IsExprEncoding in
       inwFinUnElim (inwWfm.toInwWfmDef w)
         (fun inwVar =>
-          let ⟨_pBound, ⟨inwNatPBound, inwPairP⟩⟩ :=
-            inwUnDomElim (inwWfm.toInwWfmDef inwVar)
-          
           match p with
-          | Pair.zero => inwPairElim.nope inwPairP
+          | Pair.zero =>
+            inwPairElim.nope (inwWfm.toInwWfmDef inwVar)
           | Pair.pair (Pair.pair _ _) _ =>
-            inwZeroElim.nope (inwPairElim inwPairP).inwL
+            inwZeroElim.nope
+              (inwPairElim (inwWfm.toInwWfmDef inwVar)).inwL
           | Pair.pair zero _ =>
-            let eq := inwBoundElim (inwPairElim inwPairP).inwR
+            let ⟨_, inwNat⟩ :=
+              inwPairElim (inwWfm.toInwWfmDef inwVar)
             
-            eq ▸ IsVar (Inw.toIsNatEncoding inwNatPBound))
+            IsVar (Inw.toIsNatEncoding inwNat))
         (fun inwZero =>
           let ⟨_l, _r, ⟨eq, inwL, inwR⟩⟩ :=
             inwPairElim.ex (inwWfm.toInwWfmDef inwZero)

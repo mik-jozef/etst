@@ -1,4 +1,6 @@
 /-
+  # Chapter 7: The Definition List of a Universal Triset
+  
   Recall from Chapter 4 the definition of a definable triset
   (`Salgebra.IsDefinable`). In the files of this folder, we show
   that there exists a definable triset `uniSet3: Set3 Pair` that
@@ -7,7 +9,7 @@
   More precisely, `uniSet3` is such that for any definable triset
   `tDef`, there exists an `index: Pair` such that for any `p`,
   
-      p ∈ tDef ↔ (index, p) ∈ uni \,,
+      p ∈ tDef ↔ (index, p) ∈ uniSet3 \,,
   
   where the above equivalence holds for both the definitive and
   possible membership.
@@ -18,12 +20,6 @@
   trisets -- one cannot obtain a contradiction by diagonalization
   because the undetermined elements of a triset are undetermined
   in its complement as well.
-  
-  This file only contains the definition of the definition list
-  itself. The file `./UniSet3.lean` contains the final part of
-  the proof of the universality of `uniSet3`. The rest of the files
-  contain proofs that the definitions of the definition list
-  contain precisely those trisets they are meant to contain.
 -/
 
 import Utils.LeN37
@@ -79,25 +75,17 @@ namespace Pair
             (zthMember 501 500)
             (succExpr (fstMember 501 500))))
     
-    /-
-      Contains (0, n) for natural n.
-      
-          exprEncoding.var = Un n: nat, ((), n)
-    -/
+    -- Contains (0, n) for every natural n.
     def exprEncoding.var: Nat := 3
     def exprEncoding.var.expr: Expr :=
-      unionExpr 500 nat (pairExpr zeroExpr 500)
+      (pairExpr zeroExpr nat)
     
-    /-
-      Contains (1, ()).
-    -/
+    -- Contains (1, ()).
     def exprEncoding.zero: Nat := 4
     def exprEncoding.zero.expr: Expr :=
       (pairExpr (natExpr 1) zeroExpr)
     
-    /-
-      Contains the triset { 2, 3, 4, 6 }.
-    -/
+    -- Contains the triset { 2, 3, 4, 6 }.
     def exprEncoding.binary: Nat := 5
     def exprEncoding.binary.expr: Expr :=
       Expr.un
@@ -106,9 +94,7 @@ namespace Pair
           (natExpr 3)
           ((Expr.un (natExpr 4) (natExpr 6))))
     
-    /-
-      Contains the triset { 7, 8 }.
-    -/
+    -- Contains the triset { 7, 8 }.
     def exprEncoding.quantifier: Nat := 6
     def exprEncoding.quantifier.expr: Expr :=
       Expr.un (natExpr 7) (natExpr 8)
@@ -559,7 +545,8 @@ namespace Pair
       This in turn means that `theDlPrefixes` represents a unique
       definition list. It also contains all definitions up to
       structural equivalence. Every definable triset is therefore
-      defined in this definition list.
+      defined in this definition list. We'll call it the internal
+      definition list.
     -/
     def theDlPrefixes: Nat := 31
     def theDlPrefixes.expr: Expr :=

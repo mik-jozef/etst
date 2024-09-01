@@ -11,6 +11,7 @@ lean_lib HM.Uhm {}
 
 lean_lib Trisets.Trisets {}
 
+lean_lib UniSet3.Ch7_UniDefList {}
 lean_lib UniSet3.Append {}
 lean_lib UniSet3.DefEncoding {}
 lean_lib UniSet3.DefListToEncoding {}
@@ -26,7 +27,6 @@ lean_lib UniSet3.PairOfDepth {}
 lean_lib UniSet3.ShiftDefEncoding {}
 lean_lib UniSet3.TheDefList {}
 lean_lib UniSet3.TheSet3 {}
-lean_lib UniSet3.UniDefList {}
 lean_lib UniSet3.UniSet3 {}
 
 lean_lib Utils.AProofSystem {}

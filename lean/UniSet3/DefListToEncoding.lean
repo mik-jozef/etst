@@ -1,6 +1,6 @@
 -- See the file `./UniDefList.lean`.
 
-import UniSet3.UniDefList
+import UniSet3.Ch7_UniDefList
 import UniSet3.Defs
 
 /-
