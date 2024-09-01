@@ -37,8 +37,15 @@ namespace Pair
     open PairExpr
     open uniDefList
     
-    
+    /-
+      `InsEdl x p` means that the definition `x` of the external
+      definition list strongly contains the pair `p`.
+      
+      (Ie. let `m` be the well-founded model of the external
+      definition list, then `p` is a definite member of `m x`.)
+    -/
     def InsEdl := InsWfm pairSalgebra theExternalDefList.toDefList
+    -- Weak containment is analogous to strong containment.
     def InwEdl := InwWfm pairSalgebra theExternalDefList.toDefList
     
     
