@@ -1,4 +1,4 @@
--- See the file `./UniDefList.lean`.
+-- The second section of chapter 8. See the zeroth section.
 
 import UniSet3.Ch8_S1_Nat
 
@@ -193,6 +193,35 @@ namespace Pair
                 (Inw.toIsExprEncoding.quantifier inwL)
                 (Inw.toIsNatEncoding rInwL)
                 (Inw.toIsExprEncoding rInwR))
+    
+    
+    def insDefEncoding (isDefEnc: IsDefEncoding p):
+      InsEdl defEncoding p
+    :=
+      insWfmDef.toInsWfm
+        (match p with
+        | Pair.zero => insUnL _ insZero
+        | Pair.pair _ _ =>
+          insUnR
+            _
+            (insPair
+              (insExprEncoding isDefEnc.left)
+              (insDefEncoding isDefEnc.right)))
+    
+    def Inw.toIsDefEncoding (w: InwEdl defEncoding p):
+      IsDefEncoding p
+    :=
+      match p with
+      | Pair.zero => trivial
+      | Pair.pair _ _ =>
+        (inwWfm.toInwWfmDef w).elim
+          (fun inwL => inwZeroElim.nope inwL)
+          (fun inwR =>
+            let ⟨l, r⟩ := inwPairElim inwR
+            
+            And.intro
+              (Inw.toIsExprEncoding l)
+              (Inw.toIsDefEncoding r))
     
   end uniSet3
 end Pair

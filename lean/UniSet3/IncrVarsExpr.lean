@@ -1,7 +1,7 @@
 -- See the file `./UniDefList.lean`.
 
 import UniSet3.Ch8_S1_Nat
-import UniSet3.ExprEncoding
+import UniSet3.Ch8_S2_DefEncoding
 
 
 namespace Pair
