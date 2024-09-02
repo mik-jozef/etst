@@ -1,7 +1,6 @@
--- See the file `./UniDefList.lean`.
+-- The seventh section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S1_Nat
-import UniSet3.Ch8_S2_DefEncoding
+import UniSet3.Ch8_S6_NthDefList
 
 
 namespace Pair

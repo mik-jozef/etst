@@ -1,7 +1,6 @@
 -- See the file `./UniDefList.lean`.
 
-import UniSet3.IncrVarsExpr
-import UniSet3.Ch8_S2_DefEncoding
+import UniSet3.Ch8_S7_IncrVarsExpr
 
 namespace Pair
   
