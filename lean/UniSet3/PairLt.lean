@@ -1,7 +1,6 @@
 -- See the file `./UniDefList.lean`.
 
-import UniSet3.PairOfDepth
-import UniSet3.Ch8_S3_PairDictLt
+import UniSet3.Ch8_S4_PairOfDepth
 
 
 namespace Pair

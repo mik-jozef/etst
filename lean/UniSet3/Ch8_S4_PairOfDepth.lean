@@ -1,6 +1,6 @@
--- See the file `./UniDefList.lean`.
+-- The fourth section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S1_Nat
+import UniSet3.Ch8_S3_PairDictLt
 
 
 namespace Pair
