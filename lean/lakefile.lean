@@ -21,7 +21,7 @@ lean_lib UniSet3.Ch8_S5_PairLt {}
 lean_lib UniSet3.Ch8_S6_NthDefList {}
 lean_lib UniSet3.Ch8_S7_IncrVarsExpr {}
 lean_lib UniSet3.Ch8_S8_ShiftDefEncoding {}
-lean_lib UniSet3.Append {}
+lean_lib UniSet3.Ch8_S9_Append {}
 lean_lib UniSet3.DefListToEncoding {}
 lean_lib UniSet3.TheDefList {}
 lean_lib UniSet3.TheSet3 {}
