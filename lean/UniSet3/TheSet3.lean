@@ -2,7 +2,7 @@
 
 import Utils.DefListDefEq
 import UniSet3.DefListToEncoding
-import UniSet3.TheDefList
+import UniSet3.Ch8_S10_TheDefList
 
 set_option linter.unusedVariables false
 
