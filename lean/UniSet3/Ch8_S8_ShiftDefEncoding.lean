@@ -1,4 +1,4 @@
--- See the file `./UniDefList.lean`.
+-- The eighth section of chapter 8. See the zeroth section.
 
 import UniSet3.Ch8_S7_IncrVarsExpr
 

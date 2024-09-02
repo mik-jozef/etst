@@ -1,7 +1,6 @@
 -- See the file `./UniDefList.lean`.
 
-import UniSet3.Ch8_S2_DefEncoding
-import UniSet3.ShiftDefEncoding
+import UniSet3.Ch8_S8_ShiftDefEncoding
 
 
 namespace Pair
