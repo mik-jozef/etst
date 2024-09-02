@@ -1,6 +1,6 @@
 -- The fifth section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S4_PairOfDepth
+import UniSet3.Ch8_S04_PairOfDepth
 
 
 namespace Pair

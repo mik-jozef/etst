@@ -1,7 +1,7 @@
 -- See the file `./UniDefList.lean`.
 
 import UniSet3.Ch7_UniDefList
-import UniSet3.Ch8_S0_Defs
+import UniSet3.Ch8_S00_Defs
 
 /-
   See `exprEncoding.exprList`.

@@ -1,6 +1,6 @@
 -- The third section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S2_DefEncoding
+import UniSet3.Ch8_S02_DefEncoding
 
 
 namespace Pair

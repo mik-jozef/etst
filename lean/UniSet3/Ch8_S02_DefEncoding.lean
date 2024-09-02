@@ -1,6 +1,6 @@
 -- The second section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S1_Nat
+import UniSet3.Ch8_S01_Nat
 
 
 namespace Pair

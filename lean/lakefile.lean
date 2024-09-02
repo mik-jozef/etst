@@ -12,16 +12,16 @@ lean_lib HM.Uhm {}
 lean_lib Trisets.Trisets {}
 
 lean_lib UniSet3.Ch7_UniDefList {}
-lean_lib UniSet3.Ch8_S0_Defs {}
-lean_lib UniSet3.Ch8_S1_Nat {}
-lean_lib UniSet3.Ch8_S2_DefEncoding {}
-lean_lib UniSet3.Ch8_S3_PairDictLt {}
-lean_lib UniSet3.Ch8_S4_PairOfDepth {}
-lean_lib UniSet3.Ch8_S5_PairLt {}
-lean_lib UniSet3.Ch8_S6_NthDefList {}
-lean_lib UniSet3.Ch8_S7_IncrVarsExpr {}
-lean_lib UniSet3.Ch8_S8_ShiftDefEncoding {}
-lean_lib UniSet3.Ch8_S9_Append {}
+lean_lib UniSet3.Ch8_S00_Defs {}
+lean_lib UniSet3.Ch8_S01_Nat {}
+lean_lib UniSet3.Ch8_S02_DefEncoding {}
+lean_lib UniSet3.Ch8_S03_PairDictLt {}
+lean_lib UniSet3.Ch8_S04_PairOfDepth {}
+lean_lib UniSet3.Ch8_S05_PairLt {}
+lean_lib UniSet3.Ch8_S06_NthDefList {}
+lean_lib UniSet3.Ch8_S07_IncrVarsExpr {}
+lean_lib UniSet3.Ch8_S08_ShiftDefEncoding {}
+lean_lib UniSet3.Ch8_S09_Append {}
 lean_lib UniSet3.DefListToEncoding {}
 lean_lib UniSet3.TheDefList {}
 lean_lib UniSet3.TheSet3 {}

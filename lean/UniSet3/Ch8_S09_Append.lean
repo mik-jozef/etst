@@ -1,6 +1,6 @@
 -- The ninth section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S8_ShiftDefEncoding
+import UniSet3.Ch8_S08_ShiftDefEncoding
 
 
 namespace Pair

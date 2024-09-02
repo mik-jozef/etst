@@ -1,6 +1,6 @@
 -- See the file `./UniDefList.lean`.
 
-import UniSet3.Ch8_S9_Append
+import UniSet3.Ch8_S09_Append
 
 
 namespace Pair

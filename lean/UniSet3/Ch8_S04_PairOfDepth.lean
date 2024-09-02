@@ -1,6 +1,6 @@
 -- The fourth section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S3_PairDictLt
+import UniSet3.Ch8_S03_PairDictLt
 
 
 namespace Pair

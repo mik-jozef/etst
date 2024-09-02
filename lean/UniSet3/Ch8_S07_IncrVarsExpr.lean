@@ -1,6 +1,6 @@
 -- The seventh section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S6_NthDefList
+import UniSet3.Ch8_S06_NthDefList
 
 
 namespace Pair
