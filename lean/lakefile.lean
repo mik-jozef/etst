@@ -18,10 +18,10 @@ lean_lib UniSet3.Ch8_S2_DefEncoding {}
 lean_lib UniSet3.Ch8_S3_PairDictLt {}
 lean_lib UniSet3.Ch8_S4_PairOfDepth {}
 lean_lib UniSet3.Ch8_S5_PairLt {}
+lean_lib UniSet3.Ch8_S6_NextDef {}
 lean_lib UniSet3.Append {}
 lean_lib UniSet3.DefListToEncoding {}
 lean_lib UniSet3.IncrVarsExpr {}
-lean_lib UniSet3.NextDef {}
 lean_lib UniSet3.NthDefList {}
 lean_lib UniSet3.ShiftDefEncoding {}
 lean_lib UniSet3.TheDefList {}
