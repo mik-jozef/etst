@@ -1,6 +1,6 @@
--- See the file `./UniDefList.lean`.
+-- The third section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S0_Defs
+import UniSet3.Ch8_S2_DefEncoding
 
 
 namespace Pair
@@ -164,5 +164,6 @@ namespace Pair
       IsPairDictLt p
     :=
       Inw.toIsPairDictLt.p p inw
+    
   end uniSet3
 end Pair
