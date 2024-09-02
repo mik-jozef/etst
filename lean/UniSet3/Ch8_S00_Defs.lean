@@ -2368,5 +2368,48 @@ namespace Pair
               isDlToSet
       }
     
+    
+    def InsGetBound bv xEnc p :=
+      InsEdl uniDefList.getBound (pair bv (pair xEnc p))
+    
+    def InwGetBound bv xEnc p :=
+      InwEdl uniDefList.getBound (pair bv (pair xEnc p))
+    
+    inductive IsGetBound: Pair → Pair → Pair → Prop where
+    | Head
+      (isNat: IsNatEncoding hA)
+      (hB tail: Pair):
+        IsGetBound (pair (pair hA hB) tail) hA hB
+    | Tail
+      (isGetTail: IsGetBound tail xEnc p)
+      (hB: Pair)
+      (neq: hA ≠ xEnc):
+        IsGetBound (pair (pair hA hB) tail) xEnc p
+    
+    def IsGetBound.toIsNat
+      (isGet: IsGetBound boundVars xEnc p)
+    :
+      IsNatEncoding xEnc
+    :=
+      match isGet with
+      | IsGetBound.Head isNat _ _ => isNat
+      | IsGetBound.Tail isGetTail _ _ => toIsNat isGetTail
+    
+    def IsGetBound.isUnique
+      (isGetA: IsGetBound boundVars xEnc a)
+      (isGetB: IsGetBound boundVars xEnc b)
+    :
+      a = b
+    :=
+      match isGetA, isGetB with
+      | IsGetBound.Head _ _ _,
+        IsGetBound.Head _ _ _
+      =>
+        rfl
+      | IsGetBound.Tail isGetTailA _ _,
+        IsGetBound.Tail isGetTailB _ _
+      =>
+        isGetTailA.isUnique isGetTailB
+    
   end uniSet3
 end Pair

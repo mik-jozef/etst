@@ -1,7 +1,7 @@
 -- See the file `./UniDefList.lean`.
 
 import Utils.DefListDefEq
-import UniSet3.Ch8_S11_DefListToEncoding
+import UniSet3.Ch8_S12_DefListToEncoding
 
 set_option linter.unusedVariables false
 

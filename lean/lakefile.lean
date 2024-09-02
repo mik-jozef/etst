@@ -23,7 +23,8 @@ lean_lib UniSet3.Ch8_S07_IncrVarsExpr {}
 lean_lib UniSet3.Ch8_S08_ShiftDefEncoding {}
 lean_lib UniSet3.Ch8_S09_Append {}
 lean_lib UniSet3.Ch8_S10_TheDefList {}
-lean_lib UniSet3.Ch8_S11_DefListToEncoding {}
+lean_lib UniSet3.Ch8_S11_GetBound {}
+lean_lib UniSet3.Ch8_S12_DefListToEncoding {}
 lean_lib UniSet3.TheSet3 {}
 lean_lib UniSet3.UniSet3 {}
 

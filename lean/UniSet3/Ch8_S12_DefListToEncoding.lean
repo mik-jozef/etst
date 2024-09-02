@@ -1,6 +1,6 @@
--- The eleventh section of chapter 8. See the zeroth section.
+-- The twelfth section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S10_TheDefList
+import UniSet3.Ch8_S11_GetBound
 
 
 /-
