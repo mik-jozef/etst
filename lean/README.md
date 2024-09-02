@@ -68,13 +68,27 @@ wholly undetermined triset.)
 
 
 ## Project structure
+The project is divided into several folders, or volumes, which in
+turn are divided into chapters that may be read (or skimmed over)
+sequentially.
+
 The folder `/WFC` contains the definition of the formalism of
-well-founded collections. The folder is divided into seven
-"chapters" that may be read (or skimmed over) sequentially.
+well-founded collections. This includes formally defining trisets,
+the syntax of WFC, its semantics, and a sound and complete proof
+system for definite membership / nonmembership. An instance of WFC
+of particular interest is defined – the Well-founded collections
+of Pairs (pairs being unlabelled binary trees).
 
-TODO UniSet3
+The folder `/UniSet3` defines a special triset of pairs that in a
+sense "contains" all definable trisets of pairs. This triset is
+shown to be itself definable (in WFC). Contradictions a la Russell
+are avoided because of the three-valued nature of trisets.
 
-TODO Trisets
+The folder `/Trisets` is TODO under construction.
+
+The folder `/HM` is TODO currently broken and unused, to be fixed.
+
+The folder `/Utils` contains various utility files.
 
 
 ## Previous work
