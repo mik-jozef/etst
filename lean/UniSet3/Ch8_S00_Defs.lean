@@ -14,17 +14,27 @@
   Indeed, defining sets like this (usually using inductive
   propositions) is the main purpose of this file.
   
-  The other sections of this chapter prove the above equivalences.
-  Feel free to completely skip them, the statements are dull and
-  the proofs are unreadable. This section itself is not very
-  interesting either -- we're mostly just redefining the definitions
-  of the previous chapter. Two notable functions defined here are
+  The other sections of this chapter (except the last) prove the
+  above equivalences. Feel free to completely skip them, the
+  statements are dull and the proofs are unreadable. This section
+  itself is not very interesting either – we're mostly just
+  redefining the definitions of the previous chapter. Two notable
+  functions defined here are
   
       `IsTheDefListExprPair.getNthExpr`
   
   and
   
       `IsTheDefListExprPair.getIndexOf` \,.
+  
+  Finally, the last section defines the functions
+  
+      `Pair.exprToEncoding` \,,
+      `Pair.encodingToExpr` \,, and
+      `Pair.defListToEncoding` \,,
+  
+  which convert between `Pair` and `Expr pairSignature` (resp.
+  `DefList pairSignature`).
 -/
 
 import Utils.PairDepthDictOrder
@@ -2256,7 +2266,10 @@ namespace Pair
       expr: Pair
       isNth: IsTheDefListExprPair (fromNat n) expr
     
-    -- Returns the nth expression of the internal defintion list.
+    /-
+      Returns the nth expression of the internal defintion list.
+      See `theExternalDefList` of chapter 7.
+    -/
     noncomputable def IsTheDefListExprPair.getNthExpr
       (n: Nat)
     :
@@ -2310,7 +2323,8 @@ namespace Pair
       
       This function returns an index `i` such that for every
       `m < n`, `dl.arrayAt m` is (the encoding of) the `i + m`-th
-      expression of the internal definition list.
+      expression of the internal definition list (see
+      `theExternalDefList` of chapter 7).
     -/
     noncomputable def IsTheDefListExprPair.getIndexOf
       (isDef: IsDefEncoding dl)

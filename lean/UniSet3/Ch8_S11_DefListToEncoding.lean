@@ -1,6 +1,6 @@
--- See the file `./UniDefList.lean`.
+-- The eleventh section of chapter 8. See the zeroth section.
 
-import UniSet3.Ch8_S00_Defs
+import UniSet3.Ch8_S10_TheDefList
 
 
 /-
@@ -192,6 +192,16 @@ where
     ∀ i < val.arrayLength,
       val.arrayAt i = Pair.exprToEncoding (dl.getDef (iStart + i))
 
+/-
+  Encodes a section of a definition list as a pair (a list of
+  encodings of expressions). Recall the empty list is encoded
+  as the zero pair, and `[ head, ...tail ]` is encoded as
+  
+      `Pair.pair headEncoding tailEncoding` \,.
+  
+  The lower bound `iStart` is inclusive, while the upper bound
+  `iEnd` is exclusive.
+-/
 def Pair.defListToEncoding
   (dl: DefList pairSignature)
   (iStart iEnd: Nat)
@@ -206,6 +216,8 @@ def Pair.defListToEncoding
         (Nat.lt_of_not_le h)
         (Nat.lt_succ_self iStart)
     
+    -- Perhaps not working because of:
+    -- https://github.com/leanprover/lean4/issues/1694
     -- let ⟨headEncoding, isExprHead⟩ :=
     let tmp :=
       exprToEncoding (dl.getDef iStart)
@@ -286,6 +298,7 @@ def Pair.defListToEncoding.lengthEq
       (lengthEq dl iStart.succ iEnd ▸
       (natEqL.trans natEqR))
 termination_by iEnd - iStart
+
 
 namespace Pair
   noncomputable def encodingToExpr

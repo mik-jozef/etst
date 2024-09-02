@@ -6,7 +6,6 @@
 -/
 
 import Utils.DefListDefEq
-import UniSet3.DefListToEncoding
 import UniSet3.TheSet3
 import WFC.Ch6_S1_AProofSystem
 
