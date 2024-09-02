@@ -68,6 +68,8 @@ namespace PairExpr
     
     `sFn` can be viewed as a function that, as a set,
     contains its input-output pairs.
+    
+    `n` must not be a free variable in `fn` or `arg`.
   -/
   def callExpr (n: Nat) (fn arg: Expr): Expr :=
     fstMember n (Expr.ir fn (pairExpr arg anyExpr))
