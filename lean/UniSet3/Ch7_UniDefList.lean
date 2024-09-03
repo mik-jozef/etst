@@ -634,6 +634,10 @@ namespace Pair
       
       where the above equivalence holds for both the definitive
       and possible membership.
+      
+      As we'll prove in the next chapters, this triset is an
+      encoding of the well-founded model of the definition list
+      represented by `theDefList`.
     -/
     def theSet: Nat := 36
     
