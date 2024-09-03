@@ -20,6 +20,9 @@
   trisets -- one cannot obtain a contradiction by diagonalization
   because the undetermined elements of a triset are undetermined
   in its complement as well.
+  
+  The existence of a triset with this property is the only result
+  of these chapters that we will use in the rest of the project.
 -/
 
 import Utils.LeN37
