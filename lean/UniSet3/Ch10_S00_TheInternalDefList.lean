@@ -1,19 +1,18 @@
 /-
-  `Pair.uniSet3.isUniversal` is the main result of this file.
-  It states that any definable triset of pairs is in a sense
-  "contained" in the triset `uniSet3`. See the file `./UniDefList.lean`
-  for more info.
+  TODO chapter description
+  
+  In this section, we define the internal definition list -- the
+  definition list represented by `theDefList` of chapter 7. We
+  show that the well-founded model of the internal definition list
+  contains all definable trisets of pairs.
 -/
 
 import Utils.DefListDefEq
-import UniSet3.TheSet3
-import WFC.Ch6_S1_AProofSystem
+import UniSet3.Ch9_TheSet3
 
 
 namespace Pair
   namespace uniSet3
-    open uniDefList
-    
     noncomputable def theInternalDefList.getDef
       (n: Nat)
     :
@@ -170,122 +169,6 @@ namespace Pair
           (DefList.DependsOn.Refl x)
       
       ⟨iStart + x, by unfold theInternalWfm; exact eq ▸ sEq⟩
-    
-    
-    def theInternalValuation.interpretationsEqual
-      (x: Nat)
-    :
-      Set3.pairCallJust uniSet3 (fromNat x)
-        =
-      Expr.interpretation
-        pairSalgebra
-        theInternalValuation
-        theInternalValuation
-        (encodingToExpr (IsTheDefListExprPair.getNthExpr x).expr)
-    :=
-      Set3.ord.standard.le_antisymm _ _ ⟨
-        fun _ => inDefNthOfInsTheSet,
-        fun _ => inPosNthOfInwTheSet,
-      ⟩ ⟨
-        fun _ => insTheSetOfInDefNth,
-        fun _ => inwTheSetOfInPosNth,
-      ⟩
-    
-    def insInternalToInsExternal
-      (ins: Ins pairSalgebra theInternalDefList p x)
-    :
-      Ins pairSalgebra
-        theExternalDefList.toDefList
-        (Pair.pair x p)
-        theSet
-    :=
-      -- Cannot use s
-      match ins with
-      | Ins.intro _ _
-        causeInternal
-        isCauseInternal
-        cinsIns
-        binsIns
-        boutOut
-      =>
-        let causeExternal: Cause Pair := {
-          contextIns :=
-            fun ⟨p, x⟩ =>
-              x = theSet ∧
-              ∃ vv ∈ causeInternal.contextIns,
-                p = Pair.pair vv.x vv.d,
-          backgroundIns := sorry
-          backgroundOut := sorry
-        }
-        
-        let isCauseExternal:
-          IsStrongCause pairSalgebra causeExternal _ _
-        :=
-          fun isSat =>
-            sorry
-        
-        Ins.intro
-          _
-          _
-          causeExternal
-          isCauseExternal
-          (fun ⟨xEq, ⟨vv, lr⟩⟩ =>
-            let ⟨inCinsInternal, dEq⟩ := lr
-            
-            xEq ▸
-            dEq ▸
-            insInternalToInsExternal (cinsIns inCinsInternal))
-          sorry
-          sorry
-    
-    def outInternalToOutExternal
-      (out: Out pairSalgebra theInternalDefList p x)
-    :
-      ¬ d ∈ (theInternalValuation x).posMem
-    :=
-      sorry
-    
-    
-    def theInternalValuation.isGeWfm:
-      theInternalWfm ⊑ theInternalValuation
-    :=
-      fun _ => {
-        defLe :=
-          fun _ insValExternal =>
-            let ins := Ins.isComplete _ _ insValExternal
-            (insInternalToInsExternal ins).isSound
-        posLe :=
-          fun _ =>
-            Function.contraDne
-              fun outValExternal =>
-                let out := Out.isComplete _ _ outValExternal
-                outInternalToOutExternal out
-      }
-    
-    def theInternalValuation.isLeWfm:
-      theInternalValuation ⊑ theInternalWfm
-    :=
-      fun x =>
-        sorry
-    
-    def theInternalValuation.eqWfm:
-      theInternalWfm = theInternalValuation
-    :=
-      (Valuation.ord.approximation Pair).le_antisymm
-        _ _ isGeWfm isLeWfm
-    
-    def isUniversal
-      (s3: Set3 Pair)
-      (isDef: pairSalgebra.IsDefinable s3)
-    :
-      ∃ x: Nat, uniSet3.pairCallJust (fromNat x) = s3
-    :=
-      let ⟨x, s3EqWfm⟩ := theInternalDefList.hasAllDefinable s3 isDef
-      
-      ⟨
-        x,
-        (s3EqWfm.trans (congr theInternalValuation.eqWfm rfl)).symm
-      ⟩
     
   end uniSet3
 end Pair

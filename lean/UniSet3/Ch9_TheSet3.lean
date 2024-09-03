@@ -1,6 +1,5 @@
 -- See the file `./UniDefList.lean`.
 
-import Utils.DefListDefEq
 import UniSet3.Ch8_S12_DefListToEncoding
 
 set_option linter.unusedVariables false
@@ -32,12 +31,45 @@ namespace Pair
     :=
       fun n => Set3.pairCallJust s3 (fromNat n)
     
+    def encodeValuation
+      (v: Valuation Pair)
+    :
+      Set3 Pair
+    := {
+      defMem :=
+        fun p => ∃ (x: Nat) (d: (v x).defMem), p = Pair.pair x d
+      posMem :=
+        fun p => ∃ (x: Nat) (d: (v x).posMem), p = Pair.pair x d
+      defLePos :=
+        fun p pInDef =>
+          let ⟨x, ⟨⟨d, dIsDef⟩, eq⟩⟩ := pInDef
+          ⟨x, ⟨d, (v x).defLePos dIsDef⟩, eq⟩
+    }
+    
+    
     def internalOfExternal
       (v: Valuation Pair)
     :
       Valuation Pair
     :=
       decodeValuation (v uniDefList.theSet)
+    
+    /-
+      We only care about the valuation of `theSet`, so we may
+      ignore all the other definitions.
+    -/
+    noncomputable def externalOfInternal
+      (v: Valuation Pair)
+    :
+      Valuation Pair
+    :=
+      fun x =>
+        if x = uniDefList.theSet then
+          encodeValuation v
+        else
+          uniDefList.theExternalWfm x
+    
+    
     
     
     def theInternalValuation: Valuation Pair :=

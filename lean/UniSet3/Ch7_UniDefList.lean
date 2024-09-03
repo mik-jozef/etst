@@ -28,8 +28,7 @@
 import Utils.LeN37
 import Utils.PairExpr
 import Utils.PairFreeVars
-import WFC.Ch4_Operators
-import WFC.Ch5_PairSalgebra
+import WFC.Ch6_S1_AProofSystem
 
 
 namespace Pair

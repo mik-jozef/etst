@@ -25,8 +25,9 @@ lean_lib UniSet3.Ch8_S09_Append {}
 lean_lib UniSet3.Ch8_S10_TheDefList {}
 lean_lib UniSet3.Ch8_S11_GetBound {}
 lean_lib UniSet3.Ch8_S12_DefListToEncoding {}
-lean_lib UniSet3.TheSet3 {}
-lean_lib UniSet3.UniSet3 {}
+lean_lib UniSet3.Ch9_TheSet3 {}
+lean_lib UniSet3.Ch10_S00_TheInternalDefList {}
+lean_lib UniSet3.Ch10_S01_InternalExternalEquivalence {}
 
 lean_lib Utils.AProofSystem {}
 lean_lib Utils.BasicUtils {}
@@ -59,6 +60,7 @@ lean_lib WFC.Ch5_PairSalgebra {}
 lean_lib WFC.Ch6_S0_AProofSystem {}
 lean_lib WFC.Ch6_S1_AProofSystem {}
 lean_lib WFC.Appx0_ExprRulesOfInference {}
+lean_lib WFC.Appx1_SimplerSemantics {}
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4"
