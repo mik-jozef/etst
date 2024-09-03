@@ -69,8 +69,6 @@ inductive Cause.IsInapplicable
   IsInapplicable cause outSet b
 
 | blockedBackgroundIns
-  {d x} -- For some reason, Lean reverses their order
-        -- unless they are explicitly declared.
   (inBins: ⟨d, x⟩ ∈ cause.backgroundIns)
   (isOut: ¬(b x).posMem d)
 :
@@ -125,11 +123,7 @@ def Cause.IsWeaklySatisfiedBy.toIsApplicable
 
 
 noncomputable def IsWeakCause.exSatOfIsPos
-  {sig: Signature}
   {expr: Expr sig}
-  {salg: Salgebra sig}
-  {b c: Valuation salg.D}
-  {d: salg.D}
   (isPos: (expr.interpretation salg b c).posMem d)
 :
   { cause // IsWeakCause salg cause d expr ∧ cause.IsWeaklySatisfiedBy b c }
