@@ -8,7 +8,7 @@
   doesn't fit anywhere else.
 -/
 
-import Mathlib.Init.Set
+import Mathlib.Data.Set.Defs
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Fintype.Card
 

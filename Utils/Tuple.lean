@@ -6,7 +6,7 @@ structure Tuple (T: Type u) where
   elements: ↑length → T
 
 instance: Membership T (Tuple T) where
-  mem := fun (t: T) (tuple: Tuple T) => ∃ n: ↑tuple.length, tuple.elements n = t
+  mem := fun tuple t => ∃ n: ↑tuple.length, tuple.elements n = t
 
 instance Tuple.coe: Coe (Tuple T) (Set T) where
   coe tuple := fun t: T => t ∈ tuple

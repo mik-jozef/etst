@@ -45,7 +45,7 @@ namespace Pair
         [],
         let expr: Expr pairSignature := Expr.op pairSignature.Op.zero args
         let eq:
-          Expr.IsFreeVar (expr) fun x => x ∈ boundVars =
+          Expr.IsFreeVar expr (fun x => x ∈ boundVars) =
             fun x =>
               ∃ param,
                 (args param).IsFreeVar (fun x => x ∈ boundVars) x

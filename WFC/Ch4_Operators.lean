@@ -643,7 +643,7 @@ def operatorB.lfp.isModel
 := show
   fp ∈ IsFixedPoint (operatorC salg dl fp)
 from by
-  conv => lhs; rw [isFp]
+  conv => rhs; rw [isFp]
   exact (operatorC.lfp salg dl fp).property.isMember
 
 def DefList.wellFoundedModel.isLfpC
