@@ -616,6 +616,7 @@ namespace Expr
 end Expr
 
 
+-- TODO: move to the Expr namespace
 def InsWfm
   (salg: Salgebra sig)
   (dl: DefList sig)
