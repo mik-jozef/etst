@@ -349,24 +349,15 @@ namespace Pair
         _
         (externalOfInternalCause internalCause)
         isCauseExternal
-        (fun {dd xx} ⟨xEq, ⟨_, lr⟩⟩ =>
-          -- TODO try destructuring right in function head
-          -- when this is a part of a stable Lean release:
-          -- https://github.com/leanprover/lean4/issues/3242
-          let ⟨inCinsInternal, dEq⟩ := lr
-          
+        (fun {dd xx} ⟨xEq, ⟨_, ⟨inCinsInternal, dEq⟩⟩⟩ =>
           (show xx = _ from xEq) ▸
           (show dd = _ from dEq) ▸
           cinsIns inCinsInternal)
-        (fun {dd xx} ⟨xEq, ⟨_, lr⟩⟩ =>
-          let ⟨inBinsInternal, dEq⟩ := lr
-          
+        (fun {dd xx} ⟨xEq, ⟨_, ⟨inBinsInternal, dEq⟩⟩⟩ =>
           (show xx = _ from xEq) ▸
           (show dd = _ from dEq) ▸
           binsIns inBinsInternal)
-        (fun {dd xx} ⟨xEq, ⟨_, lr⟩⟩ =>
-          let ⟨inBoutInternal, dEq⟩ := lr
-          
+        (fun {dd xx} ⟨xEq, ⟨_, ⟨inBoutInternal, dEq⟩⟩⟩ =>
           (show xx = _ from xEq) ▸
           (show dd = _ from dEq) ▸
           boutOut inBoutInternal)

@@ -126,7 +126,7 @@ namespace Pair
           
           match bound with
           | zero =>
-            -- Bad Lean. Should work outside of match too.
+            -- Lean issue. Should work outside of match too.
             let insNatLtBound: IsNatLt zero := Inw.toIsNatLt
               (inwFreeElim inwDomain nat500NeqNatLt)
             

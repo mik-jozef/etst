@@ -14,9 +14,24 @@ def Ins.isSound
 :
   (dl.wellFoundedModel salg x).defMem d
 :=
-  -- Cannot use structural recursion, most likely because of
-  -- this issue:
-  -- https://github.com/leanprover/lean4/issues/4751
+  -- Cannot use structural recursion :(
+  -- 
+  -- ```
+  --   failed to infer structural recursion:
+  --   Cannot use parameter ins:
+  --     the type Ins salg dl does not have a `.brecOn` recursor
+  -- ```
+  -- 
+  -- This would be a terrific feature, Lean:
+  -- 
+  -- match ins with
+  -- | Ins.intro _ _ cause isCause insCins insBins outBout =>
+  --   let ihCins {d x} (inCins: ⟨d, x⟩ ∈ cause.contextIns) :=
+  --     Ins.isSound (insCins inCins)
+    
+  --   DefList.wellFoundedModel.isModel salg dl ▸
+  --   isCause ⟨ihCins, sorry, sorry⟩
+  
   open Cause.IsInapplicable in
   ins.rec
     (motive_1 := fun d x _ => (dl.wellFoundedModel salg x).defMem d)

@@ -106,10 +106,6 @@ def IsWeakCause
 
 
 mutual
--- A workaround for this bug, can be deleted when fixed:
--- https://github.com/leanprover/lean4/issues/3242
-variable {sig: Signature}
-
 /-
   `Ins salg dl d x` means that `d` is (provably) a member of `x`
   (in the well-founded model of `dl`).

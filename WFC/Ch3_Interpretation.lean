@@ -172,7 +172,9 @@ structure DefList (sig: Signature) where
   transitively.
 -/
 inductive DefList.DependsOn
-  (getDef: GetDef sig): Nat → Nat → Prop
+  (getDef: GetDef sig)
+:
+  Nat → Nat → Prop
 where
 | Refl x: DependsOn getDef x x
 | Uses

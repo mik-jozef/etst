@@ -71,20 +71,6 @@ namespace Pair
                 let freeVarIn:
                   ↑freeVar ∈ List.concatUnique freeVarsZth.val ↑freeVarsFst
                 :=
-                  /-
-                    If I remove the "[DecidableEq T]" from the
-                    append/concatUnique theorems, I get:
-                    
-                    > type mismatch
-                    >   List.concatUnique.inLeftToIn freeVarInVars ↑freeVarsFst
-                    > has type
-                    >   ↑freeVar ∈ @List.concatUnique ℕ (fun a b => propDecidable (a = b)) ↑freeVarsZth ↑freeVarsFst : Prop
-                    > but is expected to have type
-                    >   ↑freeVar ∈ @List.concatUnique ℕ (fun a b => instDecidableEqNat a b) ↑freeVarsZth ↑freeVarsFst : Prop
-                    
-                    I swear typeclass instantiation is the most fucking retarded
-                    part of Lean. And I love* the language.
-                  -/
                   List.concatUnique.inLeftToIn freeVarInVars freeVarsFst
                 freeVarIn
             | ⟨ArityTwo.fst, prop⟩ =>
