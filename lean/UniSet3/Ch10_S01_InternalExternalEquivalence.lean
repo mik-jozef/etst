@@ -3,6 +3,8 @@
   It states that any definable triset of pairs is in a sense
   "contained" in the triset `uniSet3`. See chapter 7 for more
   info.
+  
+  TODO summarize informally the proof strategy here.
 -/
 
 import UniSet3.Ch10_S00_TheInternalDefList
@@ -53,16 +55,31 @@ namespace Pair
       sorry
     
     
-    inductive IsExternalCausePart
-      (internalPart: Set (ValVar Pair))
+    /-
+      Converts an internal cause to the corresponding external
+      cause. The external cause also includes requirements that
+      are necessary for the interpretation (ie. the definition
+      number 34 in `theExternalDefList`) to work correctly in the
+      external valuation.
+    -/
+    inductive IsInExternalCause
+      (internalCause: Set (ValVar Pair))
       (isIns: Prop)
       (vv: ValVar Pair)
     :
       Prop
+    
+    -- TODO:
+    -- 0  - NatIsOk
+    -- 33 - GetBoundIsOk
+    -- 7  - ExprEncodingIsOk
+    -- 32 - TheDefListIsOk
+    
     | TheSetIsOk
       (xEq: vv.x = uniDefList.theSet)
       (matchesInternalPart:
-        ∃ vvI ∈ internalPart, vv.d = (vvI.x, vvI.d))
+        ∃ vvI ∈ internalCause, vv.d = (vvI.x, vvI.d))
+    
     
     def externalOfInternalCause
       (internalCause: Cause Pair)
@@ -71,9 +88,9 @@ namespace Pair
     :=
       let ic := internalCause
       {
-        contextIns := IsExternalCausePart ic.contextIns True
-        backgroundIns := IsExternalCausePart ic.backgroundIns True
-        backgroundOut := IsExternalCausePart ic.backgroundOut False
+        contextIns := IsInExternalCause ic.contextIns True
+        backgroundIns := IsInExternalCause ic.backgroundIns True
+        backgroundOut := IsInExternalCause ic.backgroundOut False
       }
     
     /-
@@ -121,14 +138,6 @@ namespace Pair
             ⟨Pair.pair x d, uniDefList.theSet⟩
     }
     
-    def eqAsdf
-      (cause: Cause Pair)
-    :
-      (theSetOfInternalCause (internalOfExternalCause cause))
-        =
-      cause
-    :=
-      sorry
     
     def externalOfInternalCycle
       (internalCycle: Set (ValVar Pair))
@@ -138,7 +147,147 @@ namespace Pair
       fun vv =>
         vv.x = uniDefList.theSet ∧
         ∃ vvI ∈ internalCycle, vv.d = (vvI.x, vvI.d)
-      
+    
+    def internalOfExternalCycle
+      (externalCycle: Set (ValVar Pair))
+    :
+      Set (ValVar Pair)
+    :=
+      fun ⟨d, x⟩ =>
+        externalCycle ⟨Pair.pair x d, uniDefList.theSet⟩
+    
+    
+    def causeExtIntExtSubset
+      (externalCause: Cause Pair)
+    :
+      (theSetOfInternalCause (internalOfExternalCause externalCause))
+        ⊆
+      externalCause
+    :=
+      {
+        cinsLe :=
+          fun ⟨_, _⟩ ⟨xEq, ⟨_, ⟨inCins, dEq⟩⟩⟩ =>
+            xEq ▸ dEq ▸ inCins
+        binsLe :=
+          fun ⟨_, _⟩ ⟨xEq, ⟨_, ⟨inBins, dEq⟩⟩⟩ =>
+            xEq ▸ dEq ▸ inBins
+        boutLe :=
+          fun ⟨_, _⟩ ⟨xEq, ⟨_, ⟨inBout, dEq⟩⟩⟩ =>
+            xEq ▸ dEq ▸ inBout
+      }
+    
+    
+    def isStrongExtOfInt
+      (isCauseInternal:
+        IsStrongCause
+          pairSalgebra
+          cause
+          d
+          (theInternalDefList.getDef x))
+    :
+      IsStrongCause
+        pairSalgebra
+        (externalOfInternalCause cause)
+        (Pair.pair x d)
+        (theExternalDefList.getDef uniDefList.theSet)
+    :=
+      fun {b c} isSat =>
+        let isDefInternal:
+          Set3.defMem
+            ((theInternalDefList.getDef x).interpretation
+              pairSalgebra
+              (internalOfExternal b)
+              (internalOfExternal c))
+            d
+        :=
+          open IsInExternalCause in
+          isCauseInternal {
+            contextInsHold :=
+              fun {dd xx} inCins =>
+                isSat.contextInsHold
+                  (TheSetIsOk rfl ⟨⟨dd, xx⟩, inCins, rfl⟩)
+            backgroundInsHold :=
+              fun {dd xx} inBins =>
+                isSat.backgroundInsHold
+                  (TheSetIsOk rfl ⟨⟨dd, xx⟩, inBins, rfl⟩)
+            backgroundOutHold :=
+              fun {dd xx} inBout =>
+                isSat.backgroundOutHold
+                  (TheSetIsOk rfl ⟨⟨dd, xx⟩, inBout, rfl⟩)
+          }
+        -- TODO it remains to prove that, assuming `b` and `c`
+        -- satisfy the constraints of `IsInExternalCause`,
+        -- the valuation's definite members are equal.
+        sorry
+    
+    def isWeakIntOrInappExtOfExt
+      (inCycle: ⟨d, x⟩ ∈ internalCycle)
+      (isCauseExternal:
+        IsWeakCause
+          pairSalgebra
+          externalCause
+          (Pair.pair (fromNat x) d)
+          (theExternalDefList.getDef uniDefList.theSet))
+    :
+      Or
+        (IsWeakCause
+          pairSalgebra
+          (internalOfExternalCause externalCause)
+          d
+          (theInternalDefList.getDef x))
+        (IsCauseInapplicable
+          pairSalgebra
+          theExternalDefList.toDefList
+          -- TODO should the external cycle be defined also
+          -- in terms of the external cause?
+          (externalOfInternalCycle internalCycle)
+          externalCause)
+    :=
+      -- TODO if external cause is compatible with external wfm,
+      -- then weak else inapplicable
+      if
+        hCins:
+          ∃ vv ∈ externalCause.contextIns,
+            vv.d ∉ (uniDefList.theExternalWfm vv.x).defMem
+      then
+        let ⟨⟨d, x⟩, inCins, ninDef⟩ := hCins
+        
+        Or.inr
+          (IsCauseInapplicable.blockedContextIns
+            externalCause
+            inCins
+            sorry)
+      else
+        let asdf:
+          IsWeakCause
+            pairSalgebra
+            (internalOfExternalCause externalCause)
+            d
+            (theInternalDefList.getDef x)
+        :=
+          fun {b c} isSat =>
+            let isDefExternal:
+              Set3.posMem
+                (Expr.interpretation
+                  pairSalgebra
+                  (externalOfInternal b)
+                  (externalOfInternal c)
+                  (theExternalDefList.getDef uniDefList.theSet))
+                (Pair.pair x d)
+            :=
+              isCauseExternal {
+                contextInsHold :=
+                  fun inCins =>
+                    let age :=
+                      isSat.contextInsHold
+                        inCins
+                    sorry
+                backgroundInsHold := sorry
+                backgroundOutHold := sorry
+              }
+          sorry
+        sorry
+    
     
     /-
       For a value `d` that is provably in the internal definition
@@ -152,12 +301,12 @@ namespace Pair
       (isCauseInternal:
         IsStrongCause
           pairSalgebra
-          cause
+          internalCause
           d
           (theInternalDefList.getDef x))
       (cinsIns:
         ∀ {d} {x: Nat},
-          ⟨d, x⟩ ∈ cause.contextIns →
+          ⟨d, x⟩ ∈ internalCause.contextIns →
           Ins
             pairSalgebra
             theExternalDefList.toDefList
@@ -165,7 +314,7 @@ namespace Pair
             uniDefList.theSet)
       (binsIns:
         ∀ {d} {x: Nat},
-          ⟨d, x⟩ ∈ cause.backgroundIns →
+          ⟨d, x⟩ ∈ internalCause.backgroundIns →
           Ins
             pairSalgebra
             theExternalDefList.toDefList
@@ -173,7 +322,7 @@ namespace Pair
             uniDefList.theSet)
       (boutOut:
         ∀ {d} {x: Nat},
-          ⟨d, x⟩ ∈ cause.backgroundOut →
+          ⟨d, x⟩ ∈ internalCause.backgroundOut →
           Out
             pairSalgebra
             theExternalDefList.toDefList
@@ -189,42 +338,18 @@ namespace Pair
       let isCauseExternal:
         IsStrongCause
           pairSalgebra
-          (externalOfInternalCause cause)
+          (externalOfInternalCause internalCause)
           (Pair.pair x d)
           (theExternalDefList.getDef uniDefList.theSet)
       :=
-        fun {b c} isSat =>
-          let isDefInternal:
-            Set3.defMem
-              ((theInternalDefList.getDef x).interpretation
-                pairSalgebra
-                (internalOfExternal b)
-                (internalOfExternal c))
-              d
-          :=
-            open IsExternalCausePart in
-            isCauseInternal {
-              contextInsHold :=
-                fun {dd xx} inCins =>
-                  isSat.contextInsHold
-                    (TheSetIsOk rfl ⟨⟨dd, xx⟩, inCins, rfl⟩)
-              backgroundInsHold :=
-                fun {dd xx} inBins =>
-                  isSat.backgroundInsHold
-                    (TheSetIsOk rfl ⟨⟨dd, xx⟩, inBins, rfl⟩)
-              backgroundOutHold :=
-                fun {dd xx} inBout =>
-                  isSat.backgroundOutHold
-                    (TheSetIsOk rfl ⟨⟨dd, xx⟩, inBout, rfl⟩)
-            }
-          sorry
+        isStrongExtOfInt isCauseInternal
       
       Ins.intro
         _
         _
-        (externalOfInternalCause cause)
+        (externalOfInternalCause internalCause)
         isCauseExternal
-        (fun {dd xx} ⟨xEq, ⟨vv, lr⟩⟩ =>
+        (fun {dd xx} ⟨xEq, ⟨_, lr⟩⟩ =>
           -- TODO try destructuring right in function head
           -- when this is a part of a stable Lean release:
           -- https://github.com/leanprover/lean4/issues/3242
@@ -233,27 +358,55 @@ namespace Pair
           (show xx = _ from xEq) ▸
           (show dd = _ from dEq) ▸
           cinsIns inCinsInternal)
-        (fun {dd xx} ⟨xEq, ⟨vv, lr⟩⟩ =>
+        (fun {dd xx} ⟨xEq, ⟨_, lr⟩⟩ =>
           let ⟨inBinsInternal, dEq⟩ := lr
           
           (show xx = _ from xEq) ▸
           (show dd = _ from dEq) ▸
           binsIns inBinsInternal)
-        (fun {dd xx} ⟨xEq, ⟨vv, lr⟩⟩ =>
+        (fun {dd xx} ⟨xEq, ⟨_, lr⟩⟩ =>
           let ⟨inBoutInternal, dEq⟩ := lr
           
           (show xx = _ from xEq) ▸
           (show dd = _ from dEq) ▸
           boutOut inBoutInternal)
     
+    def isCauseExternalToInsInternal
+      (isCauseExternal:
+        IsStrongCause
+          pairSalgebra
+          externalCause
+          (Pair.pair (fromNat x) d)
+          (theExternalDefList.getDef uniDefList.theSet))
+      (cinsIns:
+        ∀ {d} {x: Nat},
+          ⟨Pair.pair x d, uniDefList.theSet⟩
+            ∈ externalCause.contextIns →
+          Ins pairSalgebra theInternalDefList d x)
+      (binsIns:
+        ∀ {d} {x: Nat},
+          ⟨Pair.pair x d, uniDefList.theSet⟩
+            ∈ externalCause.backgroundIns →
+          Ins pairSalgebra theInternalDefList d x)
+      (boutOut:
+        ∀ {d} {x: Nat},
+          ⟨Pair.pair x d, uniDefList.theSet⟩
+            ∈ externalCause.backgroundOut →
+          Out pairSalgebra theInternalDefList d x)
+    :
+      Ins pairSalgebra theInternalDefList d x
+    :=
+      sorry
+    
+    
     /-
-      For a value that is provably out of the internal definition
+      For a value `d` that is provably out of the internal definition
       `x`, `(x, d)` is provably out of the external definition
       `theSet`.
       
       We proceed by induction on the structure of the proof, and
-      this is the inductive step for `Out`. TODO this description
-      is likely wrong.
+      this is the inductive step for `Out`. The induction hypothesis
+      is incorporated into the parameter `isEmptyCycle`.
     -/
     def inEmptyCycleInternalToOutExternal
       {internalCycle: Set (ValVar Pair)}
@@ -300,42 +453,47 @@ namespace Pair
             rw [show Pair.pair vvI.x vvI.d = dd from dEq.symm]
             exact isCauseExternal
           
-          let isCauseInternal:
-            IsWeakCause
-              pairSalgebra
-              (internalOfExternalCause externalCause)
-              vvI.d
-              (theInternalDefList.getDef vvI.x)
-          :=
-            fun {b c} isSat =>
-              let isDefExternal:
-                Set3.posMem
-                  (Expr.interpretation
-                    pairSalgebra
-                    (externalOfInternal b)
-                    (externalOfInternal c)
-                    (theExternalDefList.getDef uniDefList.theSet))
-                  (Pair.pair vvI.x vvI.d)
-              :=
-                isCauseExternal {
-                  contextInsHold :=
-                    fun inCins =>
-                      let age :=
-                        isSat.contextInsHold
-                          inCins
-                      sorry
-                  backgroundInsHold := sorry
-                  backgroundOutHold := sorry
-                }
-              sorry
-          
-          let asdf :=
-            isEmptyCycle
-              inCycle
-              (internalOfExternalCause externalCause)
-              isCauseInternal
-          sorry)
+          (isWeakIntOrInappExtOfExt inCycle isCauseExternal).elim
+            (fun isCauseInternal =>
+              let isInapp :=
+                isEmptyCycle
+                  inCycle
+                  (internalOfExternalCause externalCause)
+                  isCauseInternal
+              
+              isInapp.toSuperCause
+                (causeExtIntExtSubset externalCause))
+            id)
         ⟨rfl, _, inCycle, rfl⟩
+    
+    def inEmptyCycleExternalToOutInternal
+      {externalCycle: Set (ValVar Pair)}
+      {d: Pair}
+      {x: Nat}
+      (inCycle: ⟨Pair.pair x d, uniDefList.theSet⟩ ∈ externalCycle)
+      (isEmptyCycle:
+        ∀ {d x},
+          ⟨Pair.pair x d, uniDefList.theSet⟩ ∈ externalCycle →
+          (externalCause: Cause Pair) →
+          IsWeakCause
+            pairSalgebra
+            externalCause
+            (Pair.pair x d)
+            (theExternalDefList.getDef uniDefList.theSet) →
+          IsCauseInapplicable
+            pairSalgebra
+            theInternalDefList
+            (internalOfExternalCycle externalCycle)
+            (internalOfExternalCause externalCause))
+    :
+      Out
+        pairSalgebra
+        theInternalDefList
+        d
+        x
+    :=
+      sorry
+    
     
     /-
       This function invokes the induction principle whose inductive
@@ -354,7 +512,7 @@ namespace Pair
     :=
       -- Cannot use structural recursion on mutual inductives :(
       open IsCauseInapplicable in
-      open IsExternalCausePart in
+      open IsInExternalCause in
       ins.rec
         (motive_1 :=
           fun d x _ =>
@@ -409,9 +567,136 @@ namespace Pair
     def outInternalToOutExternal
       (out: Out pairSalgebra theInternalDefList d x)
     :
-      ¬ d ∈ (theInternalValuation x).posMem
+      Out
+        pairSalgebra
+        theExternalDefList.toDefList
+        (Pair.pair (fromNat x) d)
+        uniDefList.theSet
     :=
-      sorry
+      -- Cannot use structural recursion on mutual inductives :(
+      open IsCauseInapplicable in
+      open IsInExternalCause in
+      out.rec
+        (motive_1 :=
+          fun d x _ =>
+            Ins
+              pairSalgebra
+              theExternalDefList.toDefList
+              (Pair.pair x d)
+              uniDefList.theSet)
+        (motive_2 :=
+          fun cycle cause _ =>
+            IsCauseInapplicable
+              pairSalgebra
+              theExternalDefList.toDefList
+              (externalOfInternalCycle cycle)
+              (theSetOfInternalCause cause))
+        (motive_3 :=
+          fun d x _ =>
+            Out
+              pairSalgebra
+              theExternalDefList.toDefList
+              (Pair.pair x d)
+              uniDefList.theSet)
+        (fun _ _ _ isCause _ _ _ =>
+          isCauseInternalToInsExternal isCause)
+        (fun cause _ _ inCins inCycle =>
+          blockedContextIns
+            (theSetOfInternalCause cause)
+            (show
+              _ ∈ (theSetOfInternalCause _).contextIns
+            from
+              And.intro rfl ⟨_, inCins, rfl⟩)
+            (show _ ∈ externalOfInternalCycle _ from
+              ⟨rfl, _, inCycle, rfl⟩))
+        (fun cause _ _ inBins _ ihOut =>
+          blockedBackgroundIns
+            (theSetOfInternalCause cause)
+            (show
+              _ ∈ (theSetOfInternalCause _).backgroundIns
+            from
+              And.intro rfl ⟨_, inBins, rfl⟩)
+            ihOut)
+        (fun cause _ _ inBout _ ihIns =>
+          blockedBackgroundOut
+            (theSetOfInternalCause cause)
+            (show
+              _ ∈ (theSetOfInternalCause _).backgroundOut
+            from
+              And.intro rfl ⟨_, inBout, rfl⟩)
+            ihIns)
+        (fun _ _ => inEmptyCycleInternalToOutExternal)
+    
+    
+    def insExternalToInsInternal
+      (ins:
+        Ins
+          pairSalgebra
+          theExternalDefList.toDefList
+          (Pair.pair (fromNat x) d)
+          uniDefList.theSet)
+    :
+      Ins pairSalgebra theInternalDefList d x
+    :=
+      open IsCauseInapplicable in
+      ins.rec
+        (motive_1 :=
+          fun d x _ =>
+            x = uniDefList.theSet →
+            (xInt: Nat) →
+            (dInt: Pair) →
+            d = Pair.pair xInt dInt →
+            Ins pairSalgebra theInternalDefList dInt xInt)
+        (motive_2 :=
+          fun cycle cause _ =>
+            IsCauseInapplicable
+              pairSalgebra
+              theInternalDefList
+              (internalOfExternalCycle cycle)
+              (internalOfExternalCause cause))
+        (motive_3 :=
+          fun d x _ =>
+            x = uniDefList.theSet →
+            (xInt: Nat) →
+            (dInt: Pair) →
+            d = Pair.pair xInt dInt →
+            Out pairSalgebra theInternalDefList dInt xInt)
+        (fun _ _ _ isCause _ _ _
+          cinsIns binsIns boutOut
+          xEq xInt dInt dEq
+        =>
+          isCauseExternalToInsInternal
+            (xEq ▸ dEq ▸ isCause)
+            (cinsIns · rfl _ _ rfl)
+            (binsIns · rfl _ _ rfl)
+            (boutOut · rfl _ _ rfl))
+        (fun cause _ _ inCins inCycle =>
+          blockedContextIns
+            (internalOfExternalCause cause)
+            sorry
+            sorry)
+        sorry
+        sorry
+        (fun cycle _ inCycle isEmptyCycle xEq _ _ dEq =>
+          inEmptyCycleExternalToOutInternal
+            (xEq ▸ dEq ▸ inCycle)
+            isEmptyCycle)
+        rfl
+        x
+        d
+        rfl
+    
+    def outExternalToOutInternal
+      (out:
+        Out
+          pairSalgebra
+          theExternalDefList.toDefList
+          (Pair.pair (fromNat x) d)
+          uniDefList.theSet)
+    :
+      Out pairSalgebra theInternalDefList d x
+    :=
+      sorry -- TODO out.rec, like above
     
     
     def theInternalValuation.isGeWfm:
@@ -427,14 +712,24 @@ namespace Pair
             Function.contraDne
               fun outValExternal =>
                 let out := Out.isComplete _ _ outValExternal
-                outInternalToOutExternal out
+                (outInternalToOutExternal out).isSound
       }
     
     def theInternalValuation.isLeWfm:
       theInternalValuation ⊑ theInternalWfm
     :=
-      fun x =>
-        sorry
+      fun _ => {
+        defLe :=
+          fun _ insValInternal =>
+            let ins := Ins.isComplete _ _ insValInternal
+            (insExternalToInsInternal ins).isSound
+        posLe :=
+          fun _ =>
+            Function.contraDne
+              fun outValInternal =>
+                let out := Out.isComplete _ _ outValInternal
+                (outExternalToOutInternal out).isSound
+      }
     
     def theInternalValuation.eqWfm:
       theInternalValuation = theInternalWfm
@@ -454,6 +749,15 @@ namespace Pair
         x,
         s3EqWfm ▸ theInternalValuation.eqWfm ▸ rfl
       ⟩
+    
+    -- TODO an explicit proof that `uniSet3` is definable?
+    
+    -- TODO roadmap to publishing:
+    -- 0. finish this volume
+    -- 1. clean up the `HM` folder
+    -- 2. remove the pdf from the repo (it's ok if it stays
+    --    in history despite how embarassing it is)
+    -- 3. and make it public :tada:
     
   end uniSet3
 end Pair

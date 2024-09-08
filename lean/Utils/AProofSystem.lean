@@ -1,6 +1,6 @@
 /-
   This files contains the helper definitions and lemmas for the
-  chapter 6.
+  chapter 6, plus some utility defs for later chapters.
 -/
 
 import WFC.Ch6_S0_AProofSystem
@@ -22,6 +22,25 @@ def Valuation.nonmembers
 :=
   fun ⟨d, x⟩ => ¬ (v x).posMem d
 
+
+def Cause.eq:
+  {a b: Cause D} →
+  a.contextIns = b.contextIns →
+  a.backgroundIns = b.backgroundIns →
+  a.backgroundOut = b.backgroundOut →
+  a = b
+
+| ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl, rfl => rfl
+
+-- TODO is this necessary?
+structure Cause.IsSubset
+  (a b: Cause D)
+:
+  Prop
+where
+  cinsLe: a.contextIns ⊆ b.contextIns
+  binsLe: a.backgroundIns ⊆ b.backgroundIns
+  boutLe: a.backgroundOut ⊆ b.backgroundOut
 
 def Cause.union (c1 c2: Cause D): Cause D := {
   contextIns := c1.contextIns ∪ c2.contextIns,
@@ -49,6 +68,8 @@ def Cause.except
 }
 
 instance (D: Type*): Union (Cause D) := ⟨Cause.union⟩
+
+instance (D: Type*): HasSubset (Cause D) := ⟨Cause.IsSubset⟩
 
 
 /-
@@ -741,3 +762,19 @@ def completenessProofB
         let ihPred := ih ⟨n.pred, nPredLt⟩
         
         eqPred ▸ completenessProofC ihPred)
+
+
+-- TODO is this necessary?
+def IsCauseInapplicable.toSuperCause
+  (isInapp: IsCauseInapplicable salg dl cycle causeA)
+  (isSuper: causeA ⊆ causeB)
+:
+  IsCauseInapplicable salg dl cycle causeB
+:=
+  match isInapp with
+  | blockedContextIns _ inCins inCycle =>
+    blockedContextIns _ (isSuper.cinsLe inCins) inCycle
+  | blockedBackgroundIns _ inBins isOut =>
+    blockedBackgroundIns _ (isSuper.binsLe inBins) isOut
+  | blockedBackgroundOut _ inBout isIns =>
+    blockedBackgroundOut _ (isSuper.boutLe inBout) isIns
