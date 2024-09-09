@@ -392,8 +392,7 @@ namespace Pair
     
     /-
       For a value `d` that is provably out of the internal definition
-      `x`, `(x, d)` is provably out of the external definition
-      `theSet`.
+      `x`, the pair `(x, d)` is provably out of `theSet`.
       
       We proceed by induction on the structure of the proof, and
       this is the inductive step for `Out`. The induction hypothesis
