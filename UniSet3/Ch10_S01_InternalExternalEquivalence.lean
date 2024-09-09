@@ -742,12 +742,10 @@ namespace Pair
     
     -- TODO an explicit proof that `uniSet3` is definable?
     
-    -- TODO roadmap to publishing:
+    -- TODO roadmap to publishing the repo:
     -- 0. finish this volume
     -- 1. clean up the `HM` folder
-    -- 2. remove the pdf from the repo (it's ok if it stays
-    --    in history despite how embarassing it is)
-    -- 3. and make it public :tada:
+    -- 2. and make it public :tada:
     
   end uniSet3
 end Pair
