@@ -69,11 +69,49 @@ namespace Pair
         else
           uniDefList.theExternalWfm x
     
+    def externalOfInternal.eqAtTheSet
+      (v: Valuation Pair)
+    :
+      externalOfInternal v uniDefList.theSet
+        =
+      encodeValuation v
+    :=
+      rfl
     
+    def externalOfInternal.eqAtOther
+      (v: Valuation Pair)
+      {x: Nat}
+      (neq: x ≠ uniDefList.theSet)
+    :
+      externalOfInternal v x
+        =
+      uniDefList.theExternalWfm x
+    :=
+      if_neg neq
     
     
     def theInternalValuation: Valuation Pair :=
       internalOfExternal uniDefList.theExternalWfm
+    
+    
+    def inwTheSet.nopeZero
+      {P: Prop}
+      (inw: InwEdl uniDefList.theSet zero)
+    :
+      P
+    :=
+      let ⟨_, ⟨_, inw⟩⟩ :=
+        inwUnDomElim (inwWfm.toInwWfmDef inw)
+      
+      inwPairElim.nope inw
+    
+    def insTheSet.nopeZero
+      {P: Prop}
+      (ins: InsEdl uniDefList.theSet zero)
+    :
+      P
+    :=
+      inwTheSet.nopeZero ins.toInw
     
     
     def inwTheSet.toIsNat
