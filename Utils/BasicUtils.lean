@@ -33,10 +33,16 @@ noncomputable def Exists.unwrap
   Classical.choice nonempty
 
 def Function.contra (ab: A → B): ¬B → ¬A :=
-  fun nb => fun a => nb (ab a)
+  fun nb a => nb (ab a)
 
-def Function.contraDne (nba: ¬B → ¬A): A → B :=
-  fun a => byContradiction (fun nb => nba nb a)
+def Function.contraA (nab: ¬A → B): ¬B → A :=
+  fun nb => byContradiction (fun na => nb (nab na))
+
+def Function.contraB (anb: A → ¬B): B → ¬A :=
+  fun b a => anb a b
+
+def Function.contraAB (nanb: ¬A → ¬B): B → A :=
+  fun b => byContradiction (fun na => nanb na b)
 
 def Not.dne {P: Prop} (h: ¬¬P): P :=
   Or.elim (Classical.em P)

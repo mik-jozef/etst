@@ -50,7 +50,7 @@ namespace Pair
         b
         c
         (theExternalDefList.getDef uniDefList.theSet)
-      ).defMem ((fromNat x).pair d)
+      ).defMem (pair x d)
     :=
       sorry
     
@@ -145,8 +145,12 @@ namespace Pair
       Set (ValVar Pair)
     :=
       fun vv =>
-        vv.x = uniDefList.theSet ∧
-        ∃ vvI ∈ internalCycle, vv.d = (vvI.x, vvI.d)
+        Or (
+          vv.x = uniDefList.theSet ∧
+          ∃ vvI ∈ internalCycle, vv.d = (vvI.x, vvI.d)
+        ) (
+          ¬ (uniDefList.theExternalWfm vv.x).posMem vv.d
+        )
     
     def internalOfExternalCycle
       (externalCycle: Set (ValVar Pair))
@@ -220,6 +224,7 @@ namespace Pair
         -- the valuation's definite members are equal.
         sorry
     
+    -- TODO split into several functions
     def isWeakIntOrInappExtOfExt
       (inCycle: ⟨d, x⟩ ∈ internalCycle)
       (isCauseExternal:
@@ -238,7 +243,6 @@ namespace Pair
         (IsCauseInapplicable
           pairSalgebra
           theExternalDefList.toDefList
-          -- TODO needs to be extended by non-theSet val-vars
           (externalOfInternalCycle internalCycle)
           externalCause)
     :=
@@ -250,9 +254,7 @@ namespace Pair
         
         Or.inr
           (IsCauseInapplicable.blockedContextIns
-            externalCause
-            inCins
-            sorry)
+            externalCause inCins (Or.inr ninDef))
       else if hBins:
         ∃ vv ∈ externalCause.backgroundIns,
           vv.d ∉ (uniDefList.theExternalWfm vv.x).posMem
@@ -318,8 +320,7 @@ namespace Pair
                           isNatDa.toNatFromNatEq.symm ▸
                           inCins
                         
-                        hX ▸
-                        ⟨
+                        hX ▸ ⟨
                           isNatDa.toNat,
                           ⟨dB, isSat.contextInsHold inCins⟩,
                           isNatDa.toNatFromNatEq.symm ▸ rfl,
@@ -351,8 +352,7 @@ namespace Pair
                           isNatDa.toNatFromNatEq.symm ▸
                           inBins
                         
-                        hX ▸
-                        ⟨
+                        hX ▸ ⟨
                           isNatDa.toNat,
                           ⟨dB, isSat.backgroundInsHold inBins⟩,
                           isNatDa.toNatFromNatEq.symm ▸ rfl,
@@ -536,33 +536,69 @@ namespace Pair
         (externalOfInternalCycle internalCycle)
         (fun
           {dd xx}
-          ⟨xEq, vvI, inCycle, dEq⟩
+          inInternalCycle
           externalCause
           isCauseExternal
         =>
-          let isCauseExternal:
-            IsWeakCause
-              pairSalgebra
-              externalCause
-              (Pair.pair vvI.x vvI.d)
-              (theExternalDefList.getDef uniDefList.theSet)
-          := by
-            rw [xEq.symm]
-            rw [show Pair.pair vvI.x vvI.d = dd from dEq.symm]
-            exact isCauseExternal
-          
-          (isWeakIntOrInappExtOfExt inCycle isCauseExternal).elim
-            (fun isCauseInternal =>
-              let isInapp :=
-                isEmptyCycle
-                  inCycle
-                  (internalOfExternalCause externalCause)
-                  isCauseInternal
+          inInternalCycle.elim
+            (fun ⟨xEq, vvI, inCycle, dEq⟩ =>
+              let isCauseExternal:
+                IsWeakCause
+                  pairSalgebra
+                  externalCause
+                  (Pair.pair vvI.x vvI.d)
+                  (theExternalDefList.getDef uniDefList.theSet)
+              := by
+                rw [xEq.symm]
+                rw [show Pair.pair vvI.x vvI.d = dd from dEq.symm]
+                exact isCauseExternal
               
-              isInapp.toSuperCause
-                (causeExtIntExtSubset externalCause))
-            id)
-        ⟨rfl, _, inCycle, rfl⟩
+              (isWeakIntOrInappExtOfExt inCycle isCauseExternal).elim
+                (fun isCauseInternal =>
+                  let isInapp :=
+                    isEmptyCycle
+                      inCycle
+                      (internalOfExternalCause externalCause)
+                      isCauseInternal
+                  
+                  isInapp.toSuperCause
+                    (causeExtIntExtSubset externalCause))
+                id)
+            (fun notPos =>
+              -- If the cause's goal is not a member, then the
+              -- cause musn't be satisfied, ergo cannot be
+              -- applicable either.
+              
+              let notSat:
+                Not
+                  (externalCause.IsWeaklySatisfiedBy
+                    uniDefList.theExternalWfm
+                    uniDefList.theExternalWfm)
+              :=
+                notPos ∘ inwWfmDef.toInwWfm ∘ isCauseExternal
+              
+              let isInapp :=
+                Cause.IsWeaklySatisfiedBy.toIsInapplicable
+                  notSat
+              
+              open IsCauseInapplicable in
+              isInapp.rec
+                (fun inCins notPos =>
+                  blockedContextIns
+                    externalCause
+                    inCins
+                    (Or.inr notPos))
+                (fun inBins notPos =>
+                  blockedBackgroundIns
+                    externalCause
+                    inBins
+                    (Out.isComplete _ _ notPos))
+                (fun inBout isDef =>
+                  blockedBackgroundOut
+                    externalCause
+                    inBout
+                    (Ins.isComplete _ _ isDef))))
+        (Or.inl ⟨rfl, _, inCycle, rfl⟩)
     
     def inEmptyCycleExternalToOutInternal
       {externalCycle: Set (ValVar Pair)}
@@ -643,7 +679,7 @@ namespace Pair
             from
               And.intro rfl ⟨_, inCins, rfl⟩)
             (show _ ∈ externalOfInternalCycle _ from
-              ⟨rfl, _, inCycle, rfl⟩))
+              Or.inl ⟨rfl, _, inCycle, rfl⟩))
         (fun cause _ _ inBins _ ihOut =>
           blockedBackgroundIns
             (theSetOfInternalCause cause)
@@ -706,7 +742,7 @@ namespace Pair
             from
               And.intro rfl ⟨_, inCins, rfl⟩)
             (show _ ∈ externalOfInternalCycle _ from
-              ⟨rfl, _, inCycle, rfl⟩))
+              Or.inl ⟨rfl, _, inCycle, rfl⟩))
         (fun cause _ _ inBins _ ihOut =>
           blockedBackgroundIns
             (theSetOfInternalCause cause)
@@ -807,7 +843,7 @@ namespace Pair
             (insInternalToInsExternal ins).isSound
         posLe :=
           fun _ =>
-            Function.contraDne
+            Function.contraAB
               fun outValExternal =>
                 let out := Out.isComplete _ _ outValExternal
                 (outInternalToOutExternal out).isSound
@@ -823,7 +859,7 @@ namespace Pair
             (insExternalToInsInternal ins).isSound
         posLe :=
           fun _ =>
-            Function.contraDne
+            Function.contraAB
               fun outValInternal =>
                 let out := Out.isComplete _ _ outValInternal
                 (outExternalToOutInternal out).isSound

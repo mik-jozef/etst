@@ -102,10 +102,11 @@ inductive Cause.IsInapplicable
 :
   IsInapplicable cause outSet b
 
+-- Note: Accepts a negation of IsInapplicable
 def Cause.IsInapplicable.toIsWeaklySatisfiedBy
   {cause: Cause D}
   {b c: Valuation D}
-  (isInapplicable: ¬ Cause.IsInapplicable cause c.nonmembers b)
+  (isApplicable: ¬ Cause.IsInapplicable cause c.nonmembers b)
 :
   Cause.IsWeaklySatisfiedBy cause b c
 :=
@@ -114,16 +115,28 @@ def Cause.IsInapplicable.toIsWeaklySatisfiedBy
     contextInsHold :=
       fun inCins =>
         byContradiction fun notPos =>
-          isInapplicable (blockedContextIns inCins notPos)
+          isApplicable (blockedContextIns inCins notPos)
     backgroundInsHold :=
       fun inBins =>
         byContradiction fun notPos =>
-          isInapplicable (blockedBackgroundIns inBins notPos)
+          isApplicable (blockedBackgroundIns inBins notPos)
     backgroundOutHold :=
       fun inBout =>
         byContradiction fun isDef =>
-          isInapplicable (blockedBackgroundOut inBout isDef.dne)
+          isApplicable (blockedBackgroundOut inBout isDef.dne)
   }
+
+-- Note: Accepts a negation of IsWeaklySatisfiedBy
+def Cause.IsWeaklySatisfiedBy.toIsInapplicable
+  {cause: Cause D}
+  {b c: Valuation D}
+  (notSat: ¬ Cause.IsWeaklySatisfiedBy cause b c)
+:
+  Cause.IsInapplicable cause c.nonmembers b
+:=
+  Function.contraA
+    Cause.IsInapplicable.toIsWeaklySatisfiedBy
+    notSat
 
 def Cause.IsWeaklySatisfiedBy.toIsApplicable
   {b c: Valuation D}
