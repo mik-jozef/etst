@@ -743,12 +743,12 @@ namespace Pair
         (externalOfInternalCycle internalCycle)
         (fun
           {dd xx}
-          inInternalCycle
+          inExternalCycle
           externalCause
           isCauseExternal
         =>
-          inInternalCycle.elim
-            (fun ⟨xEq, vvI, inCycle, dEq⟩ =>
+          inExternalCycle.elim
+            (fun ⟨xEq, vvI, inInternalCycle, dEq⟩ =>
               let isCauseExternal:
                 IsWeakCause
                   pairSalgebra
@@ -760,11 +760,14 @@ namespace Pair
                 rw [show Pair.pair vvI.x vvI.d = dd from dEq.symm]
                 exact isCauseExternal
               
-              (isWeakIntOrInappExtOfExt inCycle isCauseExternal).elim
+              Or.elim
+                (isWeakIntOrInappExtOfExt
+                  inInternalCycle
+                  isCauseExternal)
                 (fun isCauseInternal =>
                   let isInapp :=
                     isEmptyCycle
-                      inCycle
+                      inInternalCycle
                       (internalOfExternalCause externalCause)
                       isCauseInternal
                   
