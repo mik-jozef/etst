@@ -777,7 +777,6 @@ def completenessProofB
         eqPred ▸ completenessProofC ihPred)
 
 
--- TODO is this necessary?
 def IsCauseInapplicable.toSuperCause
   (isInapp: IsCauseInapplicable salg dl cycle causeA)
   (isSuper: causeA ⊆ causeB)
