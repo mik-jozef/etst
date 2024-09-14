@@ -74,6 +74,9 @@ namespace Pair
     -- 33 - GetBoundIsOk
     -- 7  - ExprEncodingIsOk
     -- 32 - TheDefListIsOk
+    | NatIsOk
+      (xEq: vv.x = uniDefList.nat)
+      (dIsNat: IsNatEncoding vv.d ↔ isIns)
     
     | TheSetIsOk
       (xEq: vv.x = uniDefList.theSet)
@@ -228,6 +231,43 @@ namespace Pair
           fun ⟨_, _⟩ ⟨xEq, ⟨_, ⟨inBout, dEq⟩⟩⟩ =>
             xEq ▸ dEq ▸ inBout
       }
+    
+    def causeIntExtIntEq
+      (internalCause: Cause Pair)
+    :
+      internalOfExternalCause (externalOfInternalCause internalCause)
+        =
+      internalCause
+    :=
+      open IsInExternalCause in
+      Cause.eq
+        (funext fun ⟨d, x⟩ =>
+          propext (Iff.intro
+            (fun inCins =>
+              match inCins with
+              | TheSetIsOk _ ⟨_, ⟨inCins, eq⟩⟩ =>
+                let ⟨eqL, eqR⟩ := Pair.noConfusion eq And.intro
+                fromNat.injEq eqL ▸ eqR ▸ inCins)
+            (fun inCins =>
+              TheSetIsOk rfl ⟨⟨d, x⟩, inCins, rfl⟩)))
+        (funext fun ⟨d, x⟩ =>
+          propext (Iff.intro
+            (fun inBins =>
+              match inBins with
+              | TheSetIsOk _ ⟨_, ⟨inBins, eq⟩⟩ =>
+                let ⟨eqL, eqR⟩ := Pair.noConfusion eq And.intro
+                fromNat.injEq eqL ▸ eqR ▸ inBins)
+            (fun inBins =>
+              TheSetIsOk rfl ⟨⟨d, x⟩, inBins, rfl⟩)))
+        (funext fun ⟨d, x⟩ =>
+          propext (Iff.intro
+            (fun inBout =>
+              match inBout with
+              | TheSetIsOk _ ⟨_, ⟨inBout, eq⟩⟩ =>
+                let ⟨eqL, eqR⟩ := Pair.noConfusion eq And.intro
+                fromNat.injEq eqL ▸ eqR ▸ inBout)
+            (fun inBout =>
+              TheSetIsOk rfl ⟨⟨d, x⟩, inBout, rfl⟩)))
     
     
     def isStrongExtOfInt
@@ -445,6 +485,49 @@ namespace Pair
               }
           sorry
     
+    def isWeakExtOfInt
+      (isCauseInternal:
+        IsWeakCause
+          pairSalgebra
+          internalCause
+          d
+          (theInternalDefList.getDef x))
+    :
+      IsWeakCause
+        pairSalgebra
+        (externalOfInternalCause internalCause)
+        (Pair.pair x d)
+        (theExternalDefList.getDef uniDefList.theSet)
+    :=
+      fun {b c} isSat =>
+        let isDefInternal:
+          Set3.posMem
+            (Expr.interpretation
+              pairSalgebra
+              (internalOfExternal b)
+              (internalOfExternal c)
+              (theInternalDefList.getDef x))
+            d
+        :=
+          open IsInExternalCause in
+          isCauseInternal {
+            contextInsHold :=
+              fun {dd xx} inCins =>
+                isSat.contextInsHold
+                  (TheSetIsOk rfl ⟨⟨dd, xx⟩, inCins, rfl⟩)
+            backgroundInsHold :=
+              fun {dd xx} inBins =>
+                isSat.backgroundInsHold
+                  (TheSetIsOk rfl ⟨⟨dd, xx⟩, inBins, rfl⟩)
+            backgroundOutHold :=
+              fun {dd xx} inBout =>
+                isSat.backgroundOutHold
+                  (TheSetIsOk rfl ⟨⟨dd, xx⟩, inBout, rfl⟩)
+          }
+        -- TODO it remains to prove that, assuming `b` and `c`
+        -- satisfy the constraints of `IsInExternalCause`,
+        -- the valuation's definite members are equal.
+        sorry
     
     def isStrongIntOfExt
       (isCauseExternal:
@@ -623,22 +706,40 @@ namespace Pair
       :=
         isStrongExtOfInt isCauseInternal
       
+      open IsInExternalCause in
       Ins.intro
         _
         _
         (externalOfInternalCause internalCause)
         isCauseExternal
-        (fun {dd xx} ⟨xEq, ⟨_, ⟨inCinsInternal, dEq⟩⟩⟩ =>
-          (show xx = _ from xEq) ▸
-          (show dd = _ from dEq) ▸
-          cinsIns inCinsInternal)
-        (fun {dd xx} ⟨xEq, ⟨_, ⟨inBinsInternal, dEq⟩⟩⟩ =>
-          (show xx = _ from xEq) ▸
-          (show dd = _ from dEq) ▸
-          binsIns inBinsInternal)
-        (fun {dd xx} ⟨xEq, ⟨_, ⟨inBoutInternal, dEq⟩⟩⟩ =>
-          (show xx = _ from xEq) ▸
-          (show dd = _ from dEq) ▸
+        (fun {dd xx} inCinsExternal =>
+          match inCinsExternal with
+          | NatIsOk xEq isNatIff =>
+            (show xx = _ from xEq) ▸
+            Ins.isComplete
+              _ _ (insNatEncoding (isNatIff.mpr trivial))
+          | TheSetIsOk xEq ⟨_, ⟨inCinsInternal, dEq⟩⟩ =>
+            (show xx = _ from xEq) ▸
+            (show dd = _ from dEq) ▸
+            cinsIns inCinsInternal)
+        (fun {dd xx} inBinsExternal =>
+          match inBinsExternal with
+          | NatIsOk xEq isNatIff =>
+            (show xx = _ from xEq) ▸
+            Ins.isComplete
+              _ _ (insNatEncoding (isNatIff.mpr trivial))
+          | TheSetIsOk xEq ⟨_, ⟨inBinsInternal, dEq⟩⟩ =>
+            (show xx = _ from xEq) ▸
+            (show dd = _ from dEq) ▸
+            binsIns inBinsInternal)
+        (fun {dd xx} inBoutExternal =>
+          match inBoutExternal with
+          | NatIsOk xEq isNatIff =>
+            (show xx = _ from xEq) ▸
+            Out.isComplete _ _ (isNatIff.mp ∘ Inw.toIsNatEncoding)
+          | TheSetIsOk xEq ⟨_, ⟨inBoutInternal, dEq⟩⟩ =>
+            (show xx = _ from xEq) ▸
+            (show dd = _ from dEq) ▸
           boutOut inBoutInternal)
     
     /-
@@ -812,6 +913,10 @@ namespace Pair
     
     def inEmptyCycleExternalToOutInternal
       {externalCycle: Set (ValVar Pair)}
+      (notPosOfInCycle:
+        ∀ {d x},
+          ⟨d, x⟩ ∈ externalCycle →
+          ¬ (uniDefList.theExternalWfm x).posMem d)
       {d: Pair}
       {x: Nat}
       (inExternalCycle:
@@ -840,10 +945,76 @@ namespace Pair
         d
         x
     :=
+      let neqNat: uniDefList.theSet ≠ uniDefList.nat := by decide
+      
+      open IsInExternalCause in
       Out.intro
         (internalOfExternalCycle externalCycle)
         (fun inInternalCycle causeInternal isCauseInternal =>
-          sorry)
+          causeIntExtIntEq causeInternal ▸
+          isEmptyCycle
+            inInternalCycle
+            (externalOfInternalCause causeInternal)
+            (isWeakExtOfInt isCauseInternal)
+            {
+              contextInsIsOkEq :=
+                fun inExtCins xEq =>
+                  match inExtCins with
+                  | NatIsOk xEqNat _ =>
+                    False.elim (neqNat (xEq.symm.trans xEqNat))
+                  | TheSetIsOk _ ⟨⟨d, x⟩, ⟨_, eq⟩⟩ =>
+                    ⟨x, d, eq⟩
+              
+              contextInsIsOkNeq :=
+                fun {dd xx} inExtCins xNeq =>
+                  match inExtCins with
+                  | NatIsOk xEq isNatIff =>
+                    (show xx = _ from xEq) ▸
+                    (insNatEncoding (isNatIff.mpr trivial)).toInw
+                  | TheSetIsOk xEq _ =>
+                    False.elim (xNeq xEq)
+              
+              cycleIsOutNeq :=
+                fun inExternalCycle _ =>
+                  notPosOfInCycle inExternalCycle
+              
+              backgroundInsIsOkEq :=
+                fun inExtBins xEq =>
+                  match inExtBins with
+                  | NatIsOk xEqNat _ =>
+                    False.elim (neqNat (xEq.symm.trans xEqNat))
+                  | TheSetIsOk _ ⟨⟨d, x⟩, ⟨_, eq⟩⟩ =>
+                    ⟨x, d, eq⟩
+              
+              backgroundInsIsOkNeq :=
+                fun {dd xx} inExtBins xNeq =>
+                  match inExtBins with
+                  | NatIsOk xEq isNatIff =>
+                    (show xx = _ from xEq) ▸
+                    (insNatEncoding (isNatIff.mpr trivial)).toInw
+                  | TheSetIsOk xEq _ =>
+                    False.elim (xNeq xEq)
+              
+              backgroundOutIsOkEq :=
+                fun inExtBout xEq =>
+                  match inExtBout with
+                  | NatIsOk xEqNat _ =>
+                    False.elim (neqNat (xEq.symm.trans xEqNat))
+                  | TheSetIsOk _ ⟨⟨d, x⟩, ⟨_, eq⟩⟩ =>
+                    ⟨x, d, eq⟩
+              
+              backgroundOutIsOkNeq :=
+                fun {dd xx} inExtBout xNeq =>
+                  match inExtBout with
+                  | NatIsOk xEq isNatIff =>
+                    (show xx = _ from xEq) ▸
+                    fun insNat =>
+                      isNatIff.mp
+                        (Inw.toIsNatEncoding
+                          (Expr.Ins.toInw insNat))
+                  | TheSetIsOk xEq _ =>
+                    False.elim (xNeq xEq)
+            })
         inExternalCycle
     
     
@@ -1086,10 +1257,12 @@ namespace Pair
             let notDef := isApp.backgroundOutIsOkNeq inBout h
             
             False.elim (notDef isIns.isSound))
-        (fun _ _ inCycle isEmptyCycle xEq _ _ dEq =>
+        (fun cycle isEmptyCycle inCycle ihIsEmptyCycle xEq _ _ dEq =>
           inEmptyCycleExternalToOutInternal
+            (fun inCycle =>
+              (Out.intro cycle isEmptyCycle inCycle).isSound)
             (xEq ▸ dEq ▸ inCycle)
-            isEmptyCycle)
+            ihIsEmptyCycle)
         rfl
         x
         d
@@ -1105,7 +1278,112 @@ namespace Pair
     :
       Out pairSalgebra theInternalDefList d x
     :=
-      sorry -- TODO out.rec, like above
+      open IsCauseInapplicable in
+      out.rec
+        (motive_1 :=
+          fun d x _ =>
+            x = uniDefList.theSet →
+            (xInt: Nat) →
+            (dInt: Pair) →
+            d = Pair.pair xInt dInt →
+            Ins pairSalgebra theInternalDefList dInt xInt)
+        (motive_2 :=
+          fun cycle cause _ =>
+            IsCauseApplicalbeExceptForTheSet cycle cause →
+            IsCauseInapplicable
+              pairSalgebra
+              theInternalDefList
+              (internalOfExternalCycle cycle)
+              (internalOfExternalCause cause))
+        (motive_3 :=
+          fun d x _ =>
+            x = uniDefList.theSet →
+            (xInt: Nat) →
+            (dInt: Pair) →
+            d = Pair.pair xInt dInt →
+            Out pairSalgebra theInternalDefList dInt xInt)
+        (fun _ _ _ isCause
+          cinsInsExternal binsInsExternal boutOutExternal
+          cinsInsInternal binsInsInternal boutOutInternal
+          xEq _ _ dEq
+        =>
+          isCauseExternalToInsInternal
+            (xEq ▸ dEq ▸ isCause)
+            cinsInsExternal
+            binsInsExternal
+            boutOutExternal
+            (cinsInsInternal · rfl _ _ rfl)
+            (binsInsInternal · rfl _ _ rfl)
+            (boutOutInternal · rfl _ _ rfl))
+        (fun {cycle} cause _dd xx inCins inCycle isApp =>
+          if h: xx = uniDefList.theSet then
+            let ⟨n, p, eq⟩ := isApp.contextInsIsOkEq inCins h
+            blockedContextIns
+              (internalOfExternalCause cause)
+              (show ⟨p, n⟩ ∈ _ from show
+                cause.contextIns
+                  ⟨pair (fromNat n) p, uniDefList.theSet⟩
+              from
+                eq ▸ h ▸ inCins)
+              (show ⟨p, n⟩ ∈ _ from show
+                cycle ⟨pair (fromNat n) p, uniDefList.theSet⟩
+              from
+                eq ▸ h ▸ inCycle)
+          else
+            let isPos := isApp.contextInsIsOkNeq inCins h
+            let notPos := isApp.cycleIsOutNeq inCycle h
+            
+            False.elim (notPos isPos))
+        (fun cause _dd xx inBins isOut ihOut isApp =>
+          if h: xx = uniDefList.theSet then
+            let ⟨n, p, eq⟩ := isApp.backgroundInsIsOkEq inBins h
+            let isOut := ihOut h n p eq
+            blockedBackgroundIns
+              (internalOfExternalCause cause)
+              (show
+                ⟨p, n⟩
+                  ∈
+                (internalOfExternalCause cause).backgroundIns
+              from show
+                cause.backgroundIns
+                  ⟨pair (fromNat n) p, uniDefList.theSet⟩
+              from
+                eq ▸ h ▸ inBins)
+              isOut
+          else
+            let isPos := isApp.backgroundInsIsOkNeq inBins h
+            
+            False.elim (isOut.isSound isPos))
+        (fun cause _dd xx inBout isIns ihIns isApp =>
+          if h: xx = uniDefList.theSet then
+            let ⟨n, p, eq⟩ := isApp.backgroundOutIsOkEq inBout h
+            let isIns := ihIns h n p eq
+            blockedBackgroundOut
+              (internalOfExternalCause cause)
+              (show
+                ⟨p, n⟩
+                  ∈
+                (internalOfExternalCause cause).backgroundOut
+              from show
+                cause.backgroundOut
+                  ⟨pair (fromNat n) p, uniDefList.theSet⟩
+              from
+                eq ▸ h ▸ inBout)
+              isIns
+          else
+            let notDef := isApp.backgroundOutIsOkNeq inBout h
+            
+            False.elim (notDef isIns.isSound))
+        (fun cycle isEmptyCycle inCycle ihIsEmptyCycle xEq _ _ dEq =>
+          inEmptyCycleExternalToOutInternal
+            (fun inCycle =>
+              (Out.intro cycle isEmptyCycle inCycle).isSound)
+            (xEq ▸ dEq ▸ inCycle)
+            ihIsEmptyCycle)
+        rfl
+        x
+        d
+        rfl
     
     
     def theInternalValuation.isGeWfm:
