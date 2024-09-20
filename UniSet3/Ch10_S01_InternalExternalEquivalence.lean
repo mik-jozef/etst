@@ -15,16 +15,21 @@ namespace Pair
     def theExternalDefList := uniDefList.theExternalDefList
     
     
-    def theInternalValuation.interpretationsEqual
+    /-
+      Note that the internal valuation is defined as what `uniSet3`
+      represents, not as the well-founded model of the internal
+      definition list.
+    -/
+    def isModelOfInternalDefList
       (x: Nat)
     :
       Set3.pairCallJust uniSet3 (fromNat x)
         =
-      Expr.interpretation
+      theInternalDefList.interpretation
         pairSalgebra
         theInternalValuation
         theInternalValuation
-        (encodingToExpr (IsTheDefListExprPair.getNthExpr x).expr)
+        x
     :=
       Set3.ord.standard.le_antisymm _ _ ⟨
         fun _ => inDefNthOfInsTheSet,
@@ -537,15 +542,15 @@ namespace Pair
           (Pair.pair (fromNat x) d)
           (theExternalDefList.getDef uniDefList.theSet))
       (cinsInsExternal:
-        ∀ {d} {x: Nat},
+        ∀ {d x},
           ⟨d, x⟩ ∈ externalCause.contextIns →
           Ins pairSalgebra theExternalDefList.toDefList d x)
       (binsInsExternal:
-        ∀ {d} {x: Nat},
+        ∀ {d x},
           ⟨d, x⟩ ∈ externalCause.backgroundIns →
           Ins pairSalgebra theExternalDefList.toDefList d x)
       (boutOutExternal:
-        ∀ {d} {x: Nat},
+        ∀ {d x},
           ⟨d, x⟩ ∈ externalCause.backgroundOut →
           Out pairSalgebra theExternalDefList.toDefList d x)
     :
@@ -754,29 +759,29 @@ namespace Pair
           (Pair.pair (fromNat x) d)
           (theExternalDefList.getDef uniDefList.theSet))
       (cinsInsExternal:
-        ∀ {d} {x: Nat},
+        ∀ {d x},
           ⟨d, x⟩ ∈ externalCause.contextIns →
           Ins pairSalgebra theExternalDefList.toDefList d x)
       (binsInsExternal:
-        ∀ {d} {x: Nat},
+        ∀ {d x},
           ⟨d, x⟩ ∈ externalCause.backgroundIns →
           Ins pairSalgebra theExternalDefList.toDefList d x)
       (boutOutExternal:
-        ∀ {d} {x: Nat},
+        ∀ {d x},
           ⟨d, x⟩ ∈ externalCause.backgroundOut →
           Out pairSalgebra theExternalDefList.toDefList d x)
       (cinsInsInternal:
-        ∀ {d} {x: Nat},
+        ∀ {d x},
           ⟨Pair.pair x d, uniDefList.theSet⟩
             ∈ externalCause.contextIns →
           Ins pairSalgebra theInternalDefList d x)
       (binsInsInternal:
-        ∀ {d} {x: Nat},
+        ∀ {d x},
           ⟨Pair.pair x d, uniDefList.theSet⟩
             ∈ externalCause.backgroundIns →
           Ins pairSalgebra theInternalDefList d x)
       (boutOutInternal:
-        ∀ {d} {x: Nat},
+        ∀ {d x},
           ⟨Pair.pair x d, uniDefList.theSet⟩
             ∈ externalCause.backgroundOut →
           Out pairSalgebra theInternalDefList d x)
