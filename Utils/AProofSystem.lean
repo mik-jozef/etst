@@ -32,7 +32,6 @@ def Cause.eq:
 
 | ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl, rfl => rfl
 
--- TODO is this necessary?
 structure Cause.IsSubset
   (a b: Cause D)
 :
