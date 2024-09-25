@@ -16,7 +16,7 @@ namespace Pair
       match p with
       | zero => isDefEncLt.elim
       | pair _ _ =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insIr
             (insPairLt isDefEncLt.isLt)
             (insPair
@@ -26,7 +26,7 @@ namespace Pair
     def Inw.toIsDefEncodingLt (inw: InwEdl defEncodingLt p):
       IsDefEncodingLt p
     :=
-      let ⟨l, r⟩ := inwIrElim (inwWfm.toInwWfmDef inw)
+      let ⟨l, r⟩ := inwIrElim (inwWfmToInwDef inw)
       match p with
       | zero => (Inw.toIsPairLt l).elim
       | pair _ _ =>
@@ -60,7 +60,7 @@ namespace Pair
           isLt := xb
         }
         
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insArbUn a
             (insArbUn x
               (insArbUn b
@@ -87,7 +87,7 @@ namespace Pair
     def Inw.toIsDefEncodingMinDist2 (inw: InwEdl defEncodingMinDist2 p):
       IsDefEncodingMinDist2 p
     :=
-      let ⟨_a, inwBodyA⟩ := inwArbUnElim (inwWfm.toInwWfmDef inw)
+      let ⟨_a, inwBodyA⟩ := inwArbUnElim (inwWfmToInwDef inw)
       let ⟨x, inwBodyX⟩ := inwArbUnElim inwBodyA
       let ⟨_b, inwBodyB⟩ := inwArbUnElim inwBodyX
       
@@ -161,7 +161,7 @@ namespace Pair
           isLt := isNextDef.isLeast.isMember.right
         }
         
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insIr
             (insDefEncodingLt isDefLtAB)
             (insCpl
@@ -184,7 +184,7 @@ namespace Pair
     def Inw.toIsNextDef (inw: InwEdl nextDef p):
       IsNextDef p
     :=
-      let ⟨inwDefEnc, inwCpl⟩ := inwIrElim (inwWfm.toInwWfmDef inw)
+      let ⟨inwDefEnc, inwCpl⟩ := inwIrElim (inwWfmToInwDef inw)
       
       match p with
       | zero => Inw.toIsDefEncodingLt inwDefEnc
@@ -218,7 +218,7 @@ namespace Pair
       match p with
       | zero => isNthDef.elim
       | pair _ _ =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           -- Using a match expression would require manually proving
           -- termination. Curious that using `rec` is easier :D
           (isNthDef.rec
@@ -226,7 +226,7 @@ namespace Pair
             (fun _isNthPredPair isNextPair insNthPredPair =>
               insUnR _
                 (insUnDom
-                  (insWfmDef.toInsWfm insNthPredPair)
+                  (insWfmDefToIns insNthPredPair)
                   (insPair
                     (insPair
                       (insZthMember
@@ -242,7 +242,7 @@ namespace Pair
     def Inw.toIsNthDefList.ab a (inw: InwEdl nthDefList (pair a b)):
       IsNthDefList (pair a b)
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           let ⟨inwL, inwR⟩ := inwPairElim inw
           let eqL := inwZeroElim inwL
@@ -277,7 +277,7 @@ namespace Pair
     :=
       match p with
       | zero =>
-        (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+        (inwUnElim (inwWfmToInwDef inw)).elim
           inwPairElim.nope
           (fun inw =>
             inwPairElim.nope

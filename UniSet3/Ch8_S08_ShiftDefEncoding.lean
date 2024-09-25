@@ -17,7 +17,7 @@ namespace Pair
     def insIncrVarsDefEncoding (isShiftEnc: IsIncrVarsDefEncoding p):
       InsEdl incrVarsDefEncoding p
     :=
-      insWfmDef.toInsWfm
+      insWfmDefToIns
         (match p with
         | zero => isShiftEnc.elim
         | pair _ _ =>
@@ -40,14 +40,14 @@ namespace Pair
                             (insFree insBound nat501Neq500)
                             nat502Neq500))
                         (insCallExpr
-                          (insWfmDef.toInsWfm insIncRest)
+                          (insWfmDefToIns insIncRest)
                           (insFree insBound nat502Neq501))))))))
     
     def Inw.toIsIncrVarsDefEncoding (w: InwEdl incrVarsDefEncoding p):
       IsIncrVarsDefEncoding p
     :=
       open IsIncrVarsDefEncodingPair in
-      (inwUnElim (inwWfm.toInwWfmDef w)).elim
+      (inwUnElim (inwWfmToInwDef w)).elim
         (fun inw =>
           match p with
           | zero => inwPairElim.nope inw
@@ -106,7 +106,7 @@ namespace Pair
       | zero => isShiftDef.elim
       | pair _a zero => isShiftDef.elim
       | pair a (pair b c) =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (match isShiftDef with
           | IsShiftDefEncodingABC.ZeroShift isDefB =>
             insUnL _
@@ -166,7 +166,7 @@ namespace Pair
     def Inw.toIsShiftDefEncoding (inw: InwEdl shiftDefEncoding p):
       IsShiftDefEncoding p
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           let ⟨dl, ⟨inwDomain, inw⟩⟩ := inwUnDomElim inw
           let isDefDl := Inw.toIsDefEncoding inwDomain

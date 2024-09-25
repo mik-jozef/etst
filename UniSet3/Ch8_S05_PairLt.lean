@@ -21,7 +21,7 @@ namespace Pair
           eqDepth := (fromNat.depthEq _).trans isSameDepth
         }
         
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insUnDom
             (insNatEncoding (fromNat.isNatEncoding a.depth))
             (insPair
@@ -36,7 +36,7 @@ namespace Pair
       IsSameDepth p
     :=
       let ⟨depthEncoding, ⟨_inwDomain, inwBody⟩⟩ :=
-        inwUnDomElim (inwWfm.toInwWfmDef inw)
+        inwUnDomElim (inwWfmToInwDef inw)
       
       match p with
       | zero => inwPairElim.nope inwBody
@@ -66,7 +66,7 @@ namespace Pair
       match p with
       | zero => isLt.elim
       | pair a b =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (isLt.rec
             (fun eqDepth ltDict =>
               let isSameDepth: IsSameDepth (pair a b) := eqDepth
@@ -111,7 +111,7 @@ namespace Pair
     def Inw.toIsPairLt (inw: InwEdl pairLt p):
       IsPairLt p
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           let ⟨inwSameDepth, inwPairDictLt⟩ := inwIrElim inw
           match p with

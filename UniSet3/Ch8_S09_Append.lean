@@ -18,7 +18,7 @@ namespace Pair
       | pair zero _ => isLastExprBase.elim
       | pair (pair _ (pair _ _)) _ => isLastExprBase.elim
       | pair (pair _ zero) _ =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insUnDom
             (insExprEncoding isLastExprBase.isExprA)
             (insPair
@@ -29,7 +29,7 @@ namespace Pair
       IsLastExprBase p
     :=
       let ⟨_epxr, ⟨inwDomain, inwBody⟩⟩ :=
-        inwUnDomElim (inwWfm.toInwWfmDef inw)
+        inwUnDomElim (inwWfmToInwDef inw)
       
       match p with
       | zero => inwPairElim.nope inwBody
@@ -57,7 +57,7 @@ namespace Pair
       | pair zero b => isLastExprBase.nopeZeroDef
       | pair (pair aA aB) b =>
         
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (match isLastExprBase with
           | IsLastExprPair.LengthOne isExprAA =>
             let isLastBase:
@@ -91,7 +91,7 @@ namespace Pair
     def Inw.toIsLastExpr (inw: InwEdl lastExpr p):
       IsLastExpr p
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw => (toIsLastExprBase inw).toIsLastExpr)
         (fun inw =>
           let ⟨lastTail, ⟨inwDomain, inwBody⟩⟩ := inwUnDomElim inw
@@ -123,7 +123,7 @@ namespace Pair
       match p with
       | zero => isUpToLast.elim
       | pair _ _ =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (isUpToLast.rec
             (fun isExpr =>
               insUnL _
@@ -137,7 +137,7 @@ namespace Pair
             =>
               insUnR _
                 (insUnDom
-                  (insWfmDef.toInsWfm insUpToLastTail)
+                  (insWfmDefToIns insUpToLastTail)
                   (insUnDom
                     (insExprEncoding isExprHead)
                     (insPair
@@ -157,7 +157,7 @@ namespace Pair
     def Inw.toIsUpToLast (inw: InwEdl upToLast p):
       IsUpToLast p
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           match p with
           | zero => inwPairElim.nope inw
@@ -215,7 +215,7 @@ namespace Pair
       | zero => isArrayAppend.elim
       | pair _ zero => isArrayAppend.elim
       | pair a (pair b c) =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (match isArrayAppend with
           | IsArrayAppendABC.Base isDefB =>
             insUnL _
@@ -283,7 +283,7 @@ namespace Pair
     def Inw.toIsArrayAppend (inw: InwEdl arrayAppend p):
       IsArrayAppend p
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           match p with
           | zero => inwPairElim.nope inw
@@ -352,10 +352,10 @@ namespace Pair
       match p, isArrayLength with
       | zero, isArrL => isArrL.elim
       | pair zero zero, IsArrayLengthPair.Zero =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insUnL _ (insPair insZero insZero))
       | pair _ _, IsArrayLengthPair.Succ isArrLengthPrev head =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insUnR _
             (insArbUn _
               (insPair
@@ -374,7 +374,7 @@ namespace Pair
     def Inw.toIsArrayLength (inw: InwEdl uniDefList.arrayLength p):
       IsArrayLength p
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           match p with
           | zero => inwPairElim.nope inw
@@ -420,7 +420,7 @@ namespace Pair
       | zero => isAppend.elim
       | pair _ zero => isAppend.elim
       | pair a (pair _b _c) =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insUnDom
             (insDefEncoding
               isAppend.isDefA)
@@ -472,7 +472,7 @@ namespace Pair
     def Inw.toIsAppend (inw: InwEdl append p):
       IsAppend p
     :=
-      let inw := inwWfm.toInwWfmDef inw
+      let inw := inwWfmToInwDef inw
       let ⟨dlA, ⟨_inwDomainA, inw⟩⟩ := inwUnDomElim inw
       let ⟨_dlB, ⟨_inwDomainB, inw⟩⟩ := inwUnDomElim inw
       

@@ -13,18 +13,18 @@ namespace Pair
     def insNatEncoding (isPn: IsNatEncoding pn): InsEdl nat pn :=
       match pn with
       | Pair.zero =>
-        insWfmDef.toInsWfm (insUnL _ insZero)
+        insWfmDefToIns (insUnL _ insZero)
       
       | Pair.pair a b =>
         let insA: InsEdl nat a := insNatEncoding isPn.left
         let insExpr: InsEdl nat.expr (Pair.pair a b) :=
           insUnR _ (insPair insA (isPn.right ▸ insZero))
         
-        insWfmDef.toInsWfm insExpr
+        insWfmDefToIns insExpr
     
     def Inw.toIsNatEncoding (w: InwEdl nat pn): IsNatEncoding pn :=
       let inwNatDef: InwEdl nat.expr pn :=
-        inwWfm.toInwWfmDef w
+        inwWfmToInwDef w
       
       inwNatDef.elim
         (fun (pnInwZero: InwEdl zeroExpr pn) =>
@@ -47,7 +47,7 @@ namespace Pair
       | zero => isPnaa.elim
       | pair _ _ =>
         isPnaa.eq ▸
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insUnDom
             (insFree
               (insNatEncoding
@@ -56,7 +56,7 @@ namespace Pair
             (insPair insBound insBound))
     
     def Inw.toIsNatPairAA (w: InwEdl natPairAA p): IsNatPairAA p :=
-      let inwDef := inwWfm.toInwWfmDef w
+      let inwDef := inwWfmToInwDef w
       let ⟨n, ⟨inwDomain, inw⟩⟩ := inwUnDomElim inwDef
       
       let inwNatN: InwEdl nat n :=
@@ -84,7 +84,7 @@ namespace Pair
             eq := h ▸ rfl
           }
         
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insUnL _ (insNatPairAA isNatPairAA))
       else
         let natNeq: a.depth ≠ b.depth :=
@@ -107,7 +107,7 @@ namespace Pair
             isLe := abPredLe
           }
           
-          insWfmDef.toInsWfm
+          insWfmDefToIns
             (insUnR _
               (insUnDom
                 (insFree insNatLePred nat500NeqNatLe)
@@ -128,7 +128,7 @@ namespace Pair
     :
       IsNatLe (Pair.pair a b)
     :=
-      (inwWfm.toInwWfmDef w).elim
+      (inwWfmToInwDef w).elim
         (fun inwPairAA =>
           (Inw.toIsNatPairAA inwPairAA).toIsNatLe)
         (fun inwR =>
@@ -153,7 +153,7 @@ namespace Pair
             })
     
     def Inw.toIsNatLe (w: InwEdl natLe p): IsNatLe p :=
-      (inwWfm.toInwWfmDef w).elim
+      (inwWfmToInwDef w).elim
         (fun inwPairAA =>
           (Inw.toIsNatPairAA inwPairAA).toIsNatLe)
         (fun inwR =>
@@ -173,7 +173,7 @@ namespace Pair
           isLe := isNatLeFn.isLe
         }
         
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insUnDom
             (insNatLe isNatLeReverse)
             (insPair
@@ -184,7 +184,7 @@ namespace Pair
       IsNatLeFn p
     :=
       let ⟨_pBound, inwDomain, inwBody⟩ :=
-        inwUnDomElim (inwWfm.toInwWfmDef inw)
+        inwUnDomElim (inwWfmToInwDef inw)
       
       match p with
       | zero => inwPairElim.nope inwBody
@@ -209,7 +209,7 @@ namespace Pair
         let isLe := Nat.le_of_lt isLt
         let neq: a ≠ b := fun eq => isLt.ne (congr rfl eq)
         
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insIr
             (insNatLe { isNatA, isNatB, isLe })
             (insCpl
@@ -225,7 +225,7 @@ namespace Pair
     def Inw.toIsNatLt (inw: InwEdl natLt p):
       IsNatLt p
     :=
-      let ⟨inwNatLe, inwNotRefl⟩ := inwIrElim (inwWfm.toInwWfmDef inw)
+      let ⟨inwNatLe, inwNotRefl⟩ := inwIrElim (inwWfmToInwDef inw)
       
       match p with
       | zero => Inw.toIsNatLe inwNatLe

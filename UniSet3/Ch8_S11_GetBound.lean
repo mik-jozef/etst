@@ -16,7 +16,7 @@ namespace Pair
     :
       InsGetBound (pair (pair hA hB) tail) hA hB
     :=
-      insWfmDef.toInsWfm
+      insWfmDefToIns
         (insUnL _
           (insUnDom
             (insNatEncoding isNat)
@@ -42,7 +42,7 @@ namespace Pair
     :
       InsGetBound (pair (pair hA hB) tail) xEnc p
     :=
-      insWfmDef.toInsWfm
+      insWfmDefToIns
         (insUnR _
           (insArbUn
             xEnc
@@ -95,7 +95,7 @@ namespace Pair
     :
       IsGetBound boundVars xEnc p
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           let ⟨xEncAlias, ⟨inwDomain, inw⟩⟩ := inwUnDomElim inw
           let ⟨pAlias, inw⟩ := inwArbUnElim inw

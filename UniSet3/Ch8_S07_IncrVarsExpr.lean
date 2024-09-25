@@ -21,7 +21,7 @@ namespace Pair
       match p with
       | zero => isShiftEnc.elim
       | pair a b =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (match isShiftEnc with
           | IsIncrVarsExprPair.IsVar isNatX =>
             let inList:
@@ -31,7 +31,7 @@ namespace Pair
             
             insFinUn
               inList
-              (insWfmDef.toInsWfm
+              (insWfmDefToIns
                 (insUnDom
                   (insNatEncoding isNatX)
                   (insPair
@@ -141,10 +141,10 @@ namespace Pair
     def Inw.toIsIncrVarsExpr (w: InwEdl incrVarsExpr p):
       IsIncrVarsExpr p
     :=
-      inwFinUnElim (inwWfm.toInwWfmDef w)
+      inwFinUnElim (inwWfmToInwDef w)
         (fun inw =>
           let ⟨bound, ⟨inwDomain, inwBody⟩⟩ :=
-            inwUnDomElim (inwWfm.toInwWfmDef inw)
+            inwUnDomElim (inwWfmToInwDef inw)
           
           match p with
           | Pair.zero => inwPairElim.nope inwBody

@@ -891,7 +891,7 @@ namespace Pair
                     uniDefList.theExternalWfm
                     uniDefList.theExternalWfm)
               :=
-                notPos ∘ inwWfmDef.toInwWfm ∘ isCauseExternal
+                notPos ∘ Expr.inwWfmDefToInw ∘ isCauseExternal
               
               let isInapp :=
                 Cause.IsWeaklySatisfiedBy.toIsInapplicable

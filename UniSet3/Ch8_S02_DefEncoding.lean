@@ -13,7 +13,7 @@ namespace Pair
     def insExprEncoding.zero:
       InsEdl exprEncoding.zero (pair (fromNat 1) zero)
     :=
-      (insWfmDef.toInsWfm
+      (insWfmDefToIns
         (insPair (insNatExpr _ _) insZero))
     
     def Inw.toIsExprEncodinng.zero
@@ -22,11 +22,11 @@ namespace Pair
       p = (pair (fromNat 1) zero)
     :=
       match p with
-      | Pair.zero => inwPairElim.nope (inwWfm.toInwWfmDef w)
+      | Pair.zero => inwPairElim.nope (inwWfmToInwDef w)
       | Pair.pair Pair.zero _ =>
-        inwPairElim.nope (inwPairElim (inwWfm.toInwWfmDef w)).inwL
+        inwPairElim.nope (inwPairElim (inwWfmToInwDef w)).inwL
       | Pair.pair _ _ =>
-        let ⟨inwL, inwR⟩ := inwPairElim (inwWfm.toInwWfmDef w)
+        let ⟨inwL, inwR⟩ := inwPairElim (inwWfmToInwDef w)
         
         (inwNatExprElim inwL) ▸ (inwZeroElim inwR) ▸ rfl
     
@@ -35,7 +35,7 @@ namespace Pair
       InsEdl exprEncoding.binary p
     :=
       open IsExprEncoding.Bin in
-      insWfmDef.toInsWfm
+      insWfmDefToIns
         (match isEEB with
         | Is2 eq => eq ▸ insUnL _ (insNatExpr _ _)
         | Is3 eq => eq ▸ insUnR _ (insUnL _ (insNatExpr _ _))
@@ -48,7 +48,7 @@ namespace Pair
       IsExprEncoding.Bin p
     :=
       open IsExprEncoding.Bin in
-      (inwWfm.toInwWfmDef w).elim
+      (inwWfmToInwDef w).elim
         (fun inwNatExpr2 => Is2 (inwNatExprElim inwNatExpr2))
         (fun un => un.elim
           (fun inwNatExpr3 => Is3 (inwNatExprElim inwNatExpr3))
@@ -61,7 +61,7 @@ namespace Pair
       InsEdl exprEncoding.quantifier p
     :=
       open IsExprEncoding.Quantifier in
-      insWfmDef.toInsWfm
+      insWfmDefToIns
         (match isEEB with
         | Is7 eq => eq ▸ insUnL _ (insNatExpr _ _)
         | Is8 eq => eq ▸ insUnR _ (insNatExpr _ _))
@@ -72,7 +72,7 @@ namespace Pair
       IsExprEncoding.Quantifier p
     :=
       open IsExprEncoding.Quantifier in
-      (inwWfm.toInwWfmDef w).elim
+      (inwWfmToInwDef w).elim
         (fun inwNatExpr7 => Is7 (inwNatExprElim inwNatExpr7))
         (fun inwNatExpr8 => Is8 (inwNatExprElim inwNatExpr8))
     
@@ -80,7 +80,7 @@ namespace Pair
     def insExprEncoding (isEE: IsExprEncoding p):
       InsEdl exprEncoding p
     :=
-      insWfmDef.toInsWfm
+      insWfmDefToIns
         (match isEE with
         | IsExprEncoding.IsVar isNatX =>
           let inList:
@@ -90,7 +90,7 @@ namespace Pair
           
           insFinUn
             inList
-            (insWfmDef.toInsWfm
+            (insWfmDefToIns
               (insPair insZero (insNatEncoding isNatX)))
         | IsExprEncoding.IsZero =>
           let inList:
@@ -139,22 +139,22 @@ namespace Pair
       IsExprEncoding p
     :=
       open IsExprEncoding in
-      inwFinUnElim (inwWfm.toInwWfmDef w)
+      inwFinUnElim (inwWfmToInwDef w)
         (fun inwVar =>
           match p with
           | Pair.zero =>
-            inwPairElim.nope (inwWfm.toInwWfmDef inwVar)
+            inwPairElim.nope (inwWfmToInwDef inwVar)
           | Pair.pair (Pair.pair _ _) _ =>
             inwZeroElim.nope
-              (inwPairElim (inwWfm.toInwWfmDef inwVar)).inwL
+              (inwPairElim (inwWfmToInwDef inwVar)).inwL
           | Pair.pair zero _ =>
             let ⟨_, inwNat⟩ :=
-              inwPairElim (inwWfm.toInwWfmDef inwVar)
+              inwPairElim (inwWfmToInwDef inwVar)
             
             IsVar (Inw.toIsNatEncoding inwNat))
         (fun inwZero =>
           let ⟨_l, _r, ⟨eq, inwL, inwR⟩⟩ :=
-            inwPairElim.ex (inwWfm.toInwWfmDef inwZero)
+            inwPairElim.ex (inwWfmToInwDef inwZero)
           
           eq ▸ (inwNatExprElim inwL) ▸ (inwZeroElim inwR) ▸ IsZero)
         (fun inwBin =>
@@ -198,7 +198,7 @@ namespace Pair
     def insDefEncoding (isDefEnc: IsDefEncoding p):
       InsEdl defEncoding p
     :=
-      insWfmDef.toInsWfm
+      insWfmDefToIns
         (match p with
         | Pair.zero => insUnL _ insZero
         | Pair.pair _ _ =>
@@ -214,7 +214,7 @@ namespace Pair
       match p with
       | Pair.zero => trivial
       | Pair.pair _ _ =>
-        (inwWfm.toInwWfmDef w).elim
+        (inwWfmToInwDef w).elim
           (fun inwL => inwZeroElim.nope inwL)
           (fun inwR =>
             let ⟨l, r⟩ := inwPairElim inwR

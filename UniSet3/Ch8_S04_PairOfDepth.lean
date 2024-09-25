@@ -16,7 +16,7 @@ namespace Pair
       match p with
       | zero => isPoD.elim
       | pair n p =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (match n, p with
           | zero, zero =>
             let nEqZero := depth.eqZeroOfEqZero isPoD.eqDepth
@@ -203,7 +203,7 @@ namespace Pair
     def Inw.toIsPairOfDepth.ab n p (inw: InwEdl pairOfDepth (pair n p)):
       IsPairOfDepth (pair n p)
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           let ⟨l, r⟩ := inwPairElim inw
           let aEq := inwZeroElim l
@@ -375,7 +375,7 @@ namespace Pair
     :=
       match p with
       | zero =>
-          (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+          (inwUnElim (inwWfmToInwDef inw)).elim
             (fun l => inwPairElim.nope l)
             (fun r =>
               let ⟨_, ⟨_, inwBody⟩⟩ := inwUnDomElim r

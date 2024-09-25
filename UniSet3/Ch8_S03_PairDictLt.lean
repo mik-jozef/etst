@@ -32,7 +32,7 @@ namespace Pair
       | zero => isPD.elim
       | pair zero zero => isPD.elim
       | pair zero (pair _ _) =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insFinUn
             inListZeroPair
             (insPair insZero (insPair insAny insAny)))
@@ -45,7 +45,7 @@ namespace Pair
           let ipd: IsPairDictLt (pair aA bA) := ab
           let aInsAB := insPairDictLt ipd
           
-          insWfmDef.toInsWfm
+          insWfmDefToIns
             (insFinUn
               inListLtLeft
               (insUnDom aInsAB
@@ -67,7 +67,7 @@ namespace Pair
               (fun ⟨_, lt⟩ => lt)
           let bInsAB := insPairDictLt ipd
           
-          insWfmDef.toInsWfm
+          insWfmDefToIns
             (insFinUn
               inListEqLeft
               (insUnDom bInsAB
@@ -89,7 +89,7 @@ namespace Pair
     def Inw.toIsPairDictLt.p p (inw: InwEdl pairDictLt p):
       IsPairDictLt p
     :=
-      inwFinUnElim (inwWfm.toInwWfmDef inw)
+      inwFinUnElim (inwWfmToInwDef inw)
         (fun inwZeroPair =>
           match p with
           | zero => inwPairElim.nope inwZeroPair

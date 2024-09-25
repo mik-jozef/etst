@@ -22,7 +22,7 @@ namespace Pair
       match p with
       | zero => isEnumUpTo.elim
       | pair _ _ =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (isEnumUpTo.rec
             (insUnL _ (insPair insZero insZero))
             (fun isEnumUpToSoFar isNthDl isAppend insSoFar =>
@@ -39,7 +39,7 @@ namespace Pair
                         (insAppend
                           isAppend)
                         (insCallExpr
-                          (insWfmDef.toInsWfm
+                          (insWfmDefToIns
                             insSoFar)
                           (insFree
                             (insFree
@@ -60,7 +60,7 @@ namespace Pair
     def Inw.toIsEnumUpTo (inw: InwEdl enumUpTo p):
       IsEnumUpTo p
     :=
-      (inwUnElim (inwWfm.toInwWfmDef inw)).elim
+      (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           match p with
           | zero => inwPairElim.nope inw
@@ -106,7 +106,7 @@ namespace Pair
     def insDefListToSet (isDefToSet: IsDefListToSet p):
       InsEdl defListToSet p
     :=
-      insWfmDef.toInsWfm
+      insWfmDefToIns
         (match p with
         | zero => isDefToSet.elim
         | pair _ zero => isDefToSet.elim
@@ -188,7 +188,7 @@ namespace Pair
     def Inw.toIsDefListToSet (inw: InwEdl defListToSet p):
       IsDefListToSet p
     :=
-      let inw := inwWfm.toInwWfmDef inw
+      let inw := inwWfmToInwDef inw
       
       let ⟨head, ⟨inwDomainHead, inw⟩⟩ := inwUnDomElim inw
       let ⟨tail, ⟨inwDomainTail, inw⟩⟩ := inwUnDomElim inw
@@ -296,9 +296,9 @@ namespace Pair
       | pair _n _expr,
         IsTheDefListExprPair.intro i _dl isUpTo isDefToSet
       =>
-        insWfmDef.toInsWfm
+        insWfmDefToIns
           (insUnDom
-            (insWfmDef.toInsWfm
+            (insWfmDefToIns
               (insUnDom
                 (insNatEncoding
                   (fromNat.isNatEncoding i))
@@ -316,7 +316,7 @@ namespace Pair
     def Inw.toIsTheDefListExpr (inw: InwEdl theDefList p):
       IsTheDefListExpr p
     :=
-      let inw := inwWfm.toInwWfmDef inw
+      let inw := inwWfmToInwDef inw
       
       let ⟨dl, ⟨inwDomainPrefixes, inw⟩⟩ := inwUnDomElim inw
       let inw := inwCallElimBound inw rfl nat501Neq500
@@ -326,7 +326,7 @@ namespace Pair
       match p, isDefListToSet with
       | pair _n _expr, isDefListToSet =>
         
-        let inw := inwWfm.toInwWfmDef inwDomainPrefixes
+        let inw := inwWfmToInwDef inwDomainPrefixes
         let ⟨_iEnc, ⟨inwDomainI, inw⟩⟩ := inwUnDomElim inw
         let inw := inwCallElimBound inw rfl nat501Neq500
         
