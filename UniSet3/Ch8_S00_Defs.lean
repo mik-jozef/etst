@@ -2299,10 +2299,10 @@ namespace Pair
         { expr, isNth }
     
     def IsTheDefListExprPair.getNthExpr.eq
-      (is: IsTheDefListExpr (pair xEnc expr))
+      (is: IsTheDefListExpr (pair xEnc exprEnc))
       (eq: xEnc = fromNat x)
     :
-      expr = (IsTheDefListExprPair.getNthExpr x).expr
+      exprEnc = (IsTheDefListExprPair.getNthExpr x).expr
     :=
       let isX := (IsTheDefListExprPair.getNthExpr x).isNth
       
@@ -2369,18 +2369,13 @@ namespace Pair
       }
     
     
-    def InsGetBound bv xEnc p :=
-      InsEdl uniDefList.getBound (pair bv (pair xEnc p))
-    
-    def InwGetBound bv xEnc p :=
-      InwEdl uniDefList.getBound (pair bv (pair xEnc p))
-    
+    -- IsGetBound boundVarsEncoding xEnc boundValue
     inductive IsGetBound: Pair → Pair → Pair → Prop where
-    | Head
+    | InHead
       (isNat: IsNatEncoding hA)
       (hB tail: Pair):
         IsGetBound (pair (pair hA hB) tail) hA hB
-    | Tail
+    | InTail
       (isGetTail: IsGetBound tail xEnc p)
       (hB: Pair)
       (neq: hA ≠ xEnc):
@@ -2392,8 +2387,8 @@ namespace Pair
       IsNatEncoding xEnc
     :=
       match isGet with
-      | IsGetBound.Head isNat _ _ => isNat
-      | IsGetBound.Tail isGetTail _ _ => toIsNat isGetTail
+      | InHead isNat _ _ => isNat
+      | InTail isGetTail _ _ => toIsNat isGetTail
     
     def IsGetBound.isUnique
       (isGetA: IsGetBound boundVars xEnc a)
@@ -2402,12 +2397,12 @@ namespace Pair
       a = b
     :=
       match isGetA, isGetB with
-      | IsGetBound.Head _ _ _,
-        IsGetBound.Head _ _ _
+      | InHead _ _ _,
+        InHead _ _ _
       =>
         rfl
-      | IsGetBound.Tail isGetTailA _ _,
-        IsGetBound.Tail isGetTailB _ _
+      | InTail isGetTailA _ _,
+        InTail isGetTailB _ _
       =>
         isGetTailA.isUnique isGetTailB
     

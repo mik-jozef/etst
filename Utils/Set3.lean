@@ -653,4 +653,27 @@ namespace Set3
       
       dNin (ord.approximation.allInSet.inSup.posMem sup allIn)
   
+  def eqJust
+    {d: D}
+    (allEq: ∀ dPos ∈ s.posMem, dPos = d)
+    (nonEmpty: dEx ∈ s.defMem)
+  :
+    s = just d
+  :=
+    let nonEmptyPos := s.defLePos nonEmpty
+    let dEq := allEq _ nonEmptyPos
+    
+    Set3.eq
+      (funext fun _ =>
+        propext
+          (Iff.intro
+            (fun isDef => allEq _ (Set3.defLePos _ isDef))
+            (fun eq => dEq.trans eq.symm ▸ nonEmpty)))
+      (funext fun _ =>
+        propext
+          (Iff.intro
+            (allEq _)
+            (fun eq =>
+              dEq.trans eq.symm ▸ Set3.defLePos _ nonEmpty)))
+  
 end Set3

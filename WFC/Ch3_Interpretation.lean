@@ -4,12 +4,12 @@ import Utils.Valuation
 import Utils.ExprIsFreeVar
 
 
-def Args
-  (s: Signature)
-  (op: s.Op)
+def Signature.Args
+  (sig: Signature)
+  (op: sig.Op)
   (D: Type u)
 :=
-  s.Params op → Set D
+  sig.Params op → Set D
 
 /-
   Salgebras act not on elements themselves (like algebras do), but
@@ -30,13 +30,13 @@ def Args
       { 'a' } ⊙ {}     = {}.
       { '', 'a' } ⊙ {} = { '', 'a' }.
 -/
-structure Salgebra (s: Signature) where
+structure Salgebra (sig: Signature) where
   D: Type u
-  I: (op: s.Op) → Args s op D → Set D
+  I: (op: sig.Op) → sig.Args op D → Set D
   isMonotonic
-    (op: s.Op)
-    (args0 args1: Args s op D)
-    (le: ∀ param: s.Params op, args0 param ≤ args1 param)
+    (op: sig.Op)
+    (args0 args1: sig.Args op D)
+    (le: ∀ param: sig.Params op, args0 param ≤ args1 param)
   :
     I op args0 ≤ I op args1
 

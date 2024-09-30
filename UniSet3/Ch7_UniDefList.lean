@@ -640,6 +640,23 @@ namespace Pair
     -/
     def theSet: Nat := 36
     
+    def interpretation.exprVarBoundOrFree: Expr :=
+      -- Assuming 500 is a var, and 501 is bound vars.
+      Expr.un
+        -- The case where 500 is a bound var.
+        (callExpr 502 (callExpr 503 getBound 501) 500)
+        -- The case where 500 is a free var. Must be empty if 500
+        -- is a bound var, thus the `ifThen`.
+        (Expr.ifThen
+          (Expr.cpl
+            -- Turning a nonempty type into the universal
+            -- type, so that it may be complemented to test
+            -- for emptiness.
+            (Expr.ifThen
+              (callExpr 502 (callExpr 503 getBound 501) 500)
+              anyExpr))
+          (callExpr 502 theSet 500))
+    
     def interpretation.exprVar: Expr :=
       unionExpr 500 nat
         (Expr.Un 501
@@ -647,17 +664,7 @@ namespace Pair
             501
             (pairExpr
               (pairExpr zeroExpr 500)
-              (Expr.un
-                (callExpr 502 (callExpr 503 getBound 501) 500)
-                (/- if 500 is a free var -/ Expr.ifThen
-                  (Expr.cpl
-                    -- Turning a nonempty type into the universal
-                    -- type, so that it may be complemented to test
-                    -- for emptiness.
-                    (Expr.ifThen
-                      (callExpr 502 (callExpr 503 getBound 501) 500)
-                      anyExpr))
-                  (callExpr 502 theSet 500))))))
+              exprVarBoundOrFree)))
     
     def interpretation.exprZero: Expr :=
       Expr.Un 501

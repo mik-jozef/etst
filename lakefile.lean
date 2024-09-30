@@ -35,6 +35,7 @@ lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
 lean_lib Utils.ExprIsFreeVar {}
 lean_lib Utils.Interpretation {}
+lean_lib Utils.IsStrongCause {}
 lean_lib Utils.LeN37 {}
 lean_lib Utils.Lfp {}
 lean_lib Utils.Operators {}

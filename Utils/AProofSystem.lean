@@ -53,7 +53,7 @@ def Cause.arbUn (f: I → Cause D): Cause D := {
   backgroundOut := ⋃ i, (f i).backgroundOut,
 }
 
-def Cause.except
+def Cause.exceptBound
   (cause: Cause D)
   (x: Nat)
   (d: D)
@@ -66,9 +66,107 @@ def Cause.except
     cause.backgroundOut \ fun ⟨dd, xx⟩ => dd ≠ d ∧ xx = x
 }
 
+def Cause.withBound
+  (cause: Cause D)
+  (x: Nat)
+  (d: D)
+:
+  Cause D
+:= {
+  contextIns :=
+    fun ⟨dd, xx⟩ =>
+      Or
+        (cause.contextIns ⟨dd, xx⟩ ∧ xx ≠ x)
+        (dd = d ∧ xx = x)
+  backgroundIns :=
+    fun ⟨dd, xx⟩ =>
+      Or
+        (cause.backgroundIns ⟨dd, xx⟩ ∧ xx ≠ x)
+        (dd = d ∧ xx = x)
+  backgroundOut :=
+    fun ⟨dd, xx⟩ =>
+      Or
+        (cause.backgroundOut ⟨dd, xx⟩ ∧ xx ≠ x)
+        (dd ≠ d ∧ xx = x)
+}
+
+def Cause.backgroundOnly
+  (cause: Cause D)
+:
+  Cause D
+:= {
+  contextIns := ∅
+  backgroundIns := cause.backgroundIns
+  backgroundOut := cause.backgroundOut
+}
+
 instance (D: Type*): Union (Cause D) := ⟨Cause.union⟩
 
 instance (D: Type*): HasSubset (Cause D) := ⟨Cause.IsSubset⟩
+
+def Cause.withBoundSatOfSatStrong
+  {cause: Cause D}
+  (isSat: cause.IsStronglySatisfiedBy b c)
+:
+  (cause.withBound x d).IsStronglySatisfiedBy
+    (Valuation.update b x d)
+    (Valuation.update c x d)
+:=
+  open Cause.IsStronglySatisfiedBy in {
+    contextInsHold :=
+      fun {dd xx} inCinsWith =>
+        inCinsWith.elim
+          (fun ⟨inCins, xNeq⟩ =>
+            Valuation.update.eqOrig _ xNeq.symm d ▸
+            isSat.contextInsHold inCins)
+          (fun ⟨dEq, xEq⟩ =>
+            Valuation.update.eqBoundOfEq _ xEq.symm d ▸
+            dEq ▸ rfl)
+    backgroundInsHold :=
+      fun {dd xx} inBinsWith =>
+        inBinsWith.elim
+          (fun ⟨inBins, xNeq⟩ =>
+            Valuation.update.eqOrig _ xNeq.symm d ▸
+            isSat.backgroundInsHold inBins)
+          (fun ⟨dEq, xEq⟩ =>
+            Valuation.update.eqBoundOfEq _ xEq.symm d ▸
+            dEq ▸ rfl)
+    backgroundOutHold :=
+      fun {dd xx} inBoutWith =>
+        inBoutWith.elim
+          (fun ⟨inBout, xNeq⟩ =>
+            Valuation.update.eqOrig _ xNeq.symm d ▸
+            isSat.backgroundOutHold inBout)
+          (fun ⟨dNeq, xEq⟩ =>
+            Valuation.update.eqBoundOfEq _ xEq.symm d ▸
+            dNeq)
+  }
+
+
+structure Cause.SatisfiesBoundVar
+  (cause: Cause D)
+  (x: Nat)
+  (d: D)
+where
+  cinsSat:
+    ∀ vv ∈ cause.contextIns, vv.x = x → vv.d = d
+  binsSat:
+    ∀ vv ∈ cause.backgroundIns, vv.x = x → vv.d = d
+  boutSat:
+    ∀ vv ∈ cause.backgroundOut, vv.x = x → vv.d ≠ d
+
+def Cause.SatisfiesBoundVar.ninBinsBout
+  {cause: Cause D}
+  (sat: cause.SatisfiesBoundVar x dBound)
+  (d: D)
+:
+  ⟨d, x⟩ ∉ cause.backgroundIns ∨ ⟨d, x⟩ ∉ cause.backgroundOut
+:=
+  if h: ⟨d, x⟩ ∈ cause.backgroundIns then
+    let dEq := sat.binsSat ⟨d, x⟩ h rfl
+    Or.inr (sat.boutSat _ · rfl dEq)
+  else
+    Or.inl h
 
 
 /-
@@ -346,7 +444,7 @@ noncomputable def IsWeakCause.exSatOfIsPos
     let ⟨dX, isPosBody⟩ := isPos.unwrap
     let ⟨causeBody, isCauseBody, isSatBody⟩ := exSatOfIsPos isPosBody
     ⟨
-      causeBody.except x dX,
+      causeBody.exceptBound x dX,
       fun isSat =>
         ⟨
           dX,
@@ -421,7 +519,7 @@ noncomputable def IsWeakCause.exSatOfIsPos
     -- https://github.com/leanprover/lean4/issues/1694
     let ih dX := exSatOfIsPos (isPos dX)
     ⟨
-      Cause.arbUn (fun dX => (ih dX).val.except x dX),
+      Cause.arbUn (fun dX => (ih dX).val.exceptBound x dX),
       fun isSat dX =>
         -- This ought to work, Lean:
         -- let ⟨causeBody, isCauseBody, isSatBody⟩ := ofIsPos (isPos dX)
@@ -468,7 +566,7 @@ noncomputable def IsWeakCause.exSatOfIsPos
             let ⟨cinsAtDxAlias, ⟨dX, eq⟩, inAlias⟩ := inCins.unwrap
             
             let cause := exSatOfIsPos (isPos dX)
-            let causeBody := cause.val.except x dX
+            let causeBody := cause.val.exceptBound x dX
             let isSatBody := cause.property.right
             
             let eq: causeBody.contextIns = cinsAtDxAlias := eq
@@ -487,7 +585,7 @@ noncomputable def IsWeakCause.exSatOfIsPos
             let ⟨binsAtDxAlias, ⟨dX, eq⟩, inAlias⟩ := inBins.unwrap
             
             let cause := exSatOfIsPos (isPos dX)
-            let causeBody := cause.val.except x dX
+            let causeBody := cause.val.exceptBound x dX
             let isSatBody := cause.property.right
             
             let eq: causeBody.backgroundIns = binsAtDxAlias := eq
@@ -506,7 +604,7 @@ noncomputable def IsWeakCause.exSatOfIsPos
             let ⟨boutAtDxAlias, ⟨dX, eq⟩, inAlias⟩ := inBout.unwrap
             
             let cause := exSatOfIsPos (isPos dX)
-            let causeBody := cause.val.except x dX
+            let causeBody := cause.val.exceptBound x dX
             let isSatBody := cause.property.right
             
             let eq: causeBody.backgroundOut = boutAtDxAlias := eq

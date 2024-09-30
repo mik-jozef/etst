@@ -10,6 +10,13 @@ namespace Pair
     open uniDefList
     
     
+    def InsGetBound bv xEnc p :=
+      InsEdl uniDefList.getBound (pair bv (pair xEnc p))
+    
+    def InwGetBound bv xEnc p :=
+      InwEdl uniDefList.getBound (pair bv (pair xEnc p))
+    
+    
     def insGetBound.head
       (isNat: IsNatEncoding hA)
       (hB tail: Pair)
@@ -84,9 +91,9 @@ namespace Pair
       InsGetBound boundVars xEnc p
     :=
       match isGetBound with
-      | IsGetBound.Head isNat hB tail =>
+      | IsGetBound.InHead isNat hB tail =>
         insGetBound.head isNat hB tail
-      | IsGetBound.Tail isGetTail hB neq =>
+      | IsGetBound.InTail isGetTail hB neq =>
         insGetBound.ofInsTailNeqHead (insGetBound isGetTail) neq
     
     
@@ -122,7 +129,7 @@ namespace Pair
             let eqHb := inwBoundElim inwHb
             
             eqHa ▸ eqHb ▸ eqXEnc ▸ eqP ▸
-            IsGetBound.Head isNat _ _)
+            IsGetBound.InHead isNat _ _)
         (fun inw =>
           let ⟨xEncAlias, inw⟩ := inwArbUnElim inw
           let ⟨tail, inw⟩ := inwArbUnElim inw
@@ -151,7 +158,7 @@ namespace Pair
               inwBoundElim (inwFreeElim inwXEnc nat501Neq500)
             
             eqT ▸ eqXEnc ▸
-            IsGetBound.Tail ih _ neq)
+            IsGetBound.InTail ih _ neq)
     
     def Inw.toInsGetBound
       (inw: InwGetBound boundVars xEnc p)

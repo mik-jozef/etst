@@ -130,7 +130,7 @@ namespace pairSalgebra
     I(Op.zero) = { Pair.zero }
     I(Op.pair, arg0, arg1) = { Pair.pair a b | a ∈ arg0, b ∈ arg1 }
   -/
-  def I: (op: Op) → (args: Args pairSignature op Pair) → Set Pair
+  def I: (op: Op) → (args: pairSignature.Args op Pair) → Set Pair
     | Op.zero => fun _ p => p = Pair.zero
     | Op.pair => fun args p =>
         ∃ (a: ↑(args ArityTwo.zth))
@@ -140,7 +140,7 @@ namespace pairSalgebra
   
   theorem I.isMonotonic
     (op: Op)
-    (args0 args1: Args pairSignature op Pair)
+    (args0 args1: pairSignature.Args op Pair)
     (le: ∀ param: Params op, args0 param ≤ args1 param)
   :
     I op args0 ≤ I op args1
