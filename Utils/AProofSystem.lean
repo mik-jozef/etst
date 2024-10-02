@@ -90,6 +90,39 @@ def Cause.withBound
         (dd ≠ d ∧ xx = x)
 }
 
+def Cause.inCinsOfInWithAndNotBound
+  {cause: Cause D}
+  (inCinsWith: ⟨d, x⟩ ∈ (cause.withBound xB dB).contextIns)
+  (xNeq: x ≠ xB)
+:
+  ⟨d, x⟩ ∈ cause.contextIns
+:=
+  inCinsWith.elim
+    (fun ⟨inCins, _⟩ => inCins)
+    (fun ⟨_, xEq⟩ => absurd xEq xNeq)
+
+def Cause.inBinsOfInWithAndNotBound
+  {cause: Cause D}
+  (inBinsWith: ⟨d, x⟩ ∈ (cause.withBound xB dB).backgroundIns)
+  (xNeq: x ≠ xB)
+:
+  ⟨d, x⟩ ∈ cause.backgroundIns
+:=
+  inBinsWith.elim
+    (fun ⟨inBins, _⟩ => inBins)
+    (fun ⟨_, xEq⟩ => absurd xEq xNeq)
+
+def Cause.inBoutOfInWithAndNotBound
+  {cause: Cause D}
+  (inBoutWith: ⟨d, x⟩ ∈ (cause.withBound xB dB).backgroundOut)
+  (xNeq: x ≠ xB)
+:
+  ⟨d, x⟩ ∈ cause.backgroundOut
+:=
+  inBoutWith.elim
+    (fun ⟨inBout, _⟩ => inBout)
+    (fun ⟨_, xEq⟩ => absurd xEq xNeq)
+
 def Cause.backgroundOnly
   (cause: Cause D)
 :
@@ -147,6 +180,8 @@ structure Cause.SatisfiesBoundVar
   (cause: Cause D)
   (x: Nat)
   (d: D)
+:
+  Prop
 where
   cinsSat:
     ∀ vv ∈ cause.contextIns, vv.x = x → vv.d = d
