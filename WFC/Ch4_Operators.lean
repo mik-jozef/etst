@@ -121,7 +121,7 @@
 import Utils.Interpretation
 
 
--- The family of operators C (often called "the" operator C).
+-- The family of operators C_b (often called "the" operator C).
 def operatorC
   (salg: Salgebra sig)
   (dl: DefList sig)

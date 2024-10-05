@@ -1,14 +1,7 @@
-/-
-  TODO chapter description
-  
-  In this section, we define the internal definition list -- the
-  definition list represented by `theDefList` of chapter 7. We
-  show that the well-founded model of the internal definition list
-  contains all definable trisets of pairs.
--/
+-- The thirteenth section of chapter 8. See the zeroth section.
 
 import Utils.DefListDefEq
-import UniSet3.Ch9_TheSet3
+import UniSet3.Ch8_S12_DefListToEncoding
 
 
 namespace Pair
@@ -26,6 +19,17 @@ namespace Pair
     := {
       getDef := theInternalDefList.getDef
     }
+    
+    def theInternalDefList.eqEnc
+      (x: Nat)
+    :
+      exprToEncoding (theInternalDefList.getDef x)
+        =
+      (IsTheDefListExprPair.getNthExpr x).expr
+    := by
+      unfold theInternalDefList.getDef
+      rw [exprToEncoding.isInverse]
+      exact (IsTheDefListExprPair.getNthExpr x).isNth.isExpr
     
     def theInternalDefList.inListOfIsDefList
       (isInDl: IsTheDefListExprPair (fromNat i) exprEnc)

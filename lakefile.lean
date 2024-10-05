@@ -25,8 +25,8 @@ lean_lib UniSet3.Ch8_S09_Append {}
 lean_lib UniSet3.Ch8_S10_TheDefList {}
 lean_lib UniSet3.Ch8_S11_GetBound {}
 lean_lib UniSet3.Ch8_S12_DefListToEncoding {}
+lean_lib UniSet3.Ch8_S13_TheInternalDefList {}
 lean_lib UniSet3.Ch9_TheSet3 {}
-lean_lib UniSet3.Ch10_S00_TheInternalDefList {}
 lean_lib UniSet3.Ch10_S01_InternalExternalEquivalence {}
 
 lean_lib Utils.AProofSystem {}

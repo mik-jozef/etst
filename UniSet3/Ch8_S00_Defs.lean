@@ -5,36 +5,67 @@
   `theExternalDefList` of the previous chapter, along with some
   of their properties.
   
-  Most of the trisets of `theExternalDefList` are classical. For
-  every such triset `t`, we can define an `s: Set Pair` such that
-  for all `p: Pair`,
+  Most of the trisets defined in `theExternalDefList` are classical.
+  For every such triset `t`, we can define an `s: Set Pair` such
+  that for all `p: Pair`,
   
-      p ∈ t.defMem  ↔  p ∈ s  ↔  p ∈ t.posMem \,.
+      p ∈ t.defMem  ↔  p ∈ s  ↔  p ∈ t.posMem \,.              (0)
   
   Indeed, defining sets like this (usually using inductive
-  propositions) is the main purpose of this file.
+  propositions) is the main purpose of this section.
   
-  The other sections of this chapter (except the last) prove the
-  above equivalences. Feel free to completely skip them, the
-  statements are dull and the proofs are unreadable. This section
-  itself is not very interesting either – we're mostly just
-  redefining the definitions of the previous chapter. Two notable
-  functions defined here are
+  ## Section 0: Definitions
+  For almost every definition of `theExternalDefList`, we define
+  a corresponding set `s`. For example, the definition
+  `exprEncoding` is described by the indcutively defined set
+  `IsExprEncoding: Pair → Prop`.
   
-      `IsTheDefListExprPair.getNthExpr`
+  Additionally, we prove some basic properties of these sets.
+  For example, the lemma `IsExprEncoding.withIsBin` shows that
+  if `pair n (pair a b)` is a pair encoding an expression, and
+  `n` is a pair indicating a binary operation, then `a` and `b`
+  are also pairs encoding expressions.
   
-  and
+  ## Sections [1 to 12)
+  These sections prove the equivalence (0) between the definitions
+  of `theExternalDefList` and the sets defined in this section.
+  Feel free to completely skip them, the statements are dull and
+  the proofs are unreadable.
   
-      `IsTheDefListExprPair.getIndexOf` \,.
-  
-  Finally, the last section defines the functions
+  ## Section 12
+  The section defines the functions
   
       `Pair.exprToEncoding` \,,
       `Pair.encodingToExpr` \,, and
       `Pair.defListToEncoding` \,,
   
-  which convert between `Pair` and `Expr pairSignature` (resp.
-  `DefList pairSignature`).
+  which convert between expressions (with the signature for pairs)
+  and their encodings.
+  
+  ## Section 13
+  Finally, the last section defines the definition list represented
+  by the definition `theDefList` of the previous chapter, called
+  the internal definition list. It uses two notable functions of
+  section 0:
+  
+      `IsTheDefListExprPair.getNthExpr` \,,
+  
+  which returns the `n`-th definition of the internal definition
+  list, and
+  
+      `IsTheDefListExprPair.getIndexOf` \,,
+  
+  which for any finite prefix of any definition list, returns the
+  index `i` where the prefix is contained in the internal definition
+  list (in the sense that the `m`th definition of the prefix equals
+  the `i + m`th definition of the internal definition list).
+  
+  Using the latter function, it is proven that the internal
+  definition list contains all definable trisets of pairs.
+  
+  In later chapters, we show that the well-founded model of the
+  internal definition list is encoded by `uniSet3`, the triset
+  defined by the definition `theSet` of the previous chapter.
 -/
 
 import Utils.PairDepthDictOrder
@@ -2322,7 +2353,7 @@ namespace Pair
       of length `n`.
       
       This function returns an index `i` such that for every
-      `m < n`, `dl.arrayAt m` is (the encoding of) the `i + m`-th
+      `m < n`, `dl.arrayAt m` equals (the encoding of) the `i + m`-th
       expression of the internal definition list (see
       `theExternalDefList` of chapter 7).
     -/

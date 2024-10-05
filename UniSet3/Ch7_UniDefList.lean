@@ -1,4 +1,5 @@
 /-
+  Volume 1: The Universal Set
   # Chapter 7: The Definition List of a Universal Triset
   
   Recall from Chapter 4 the definition of a definable triset
@@ -22,7 +23,10 @@
   in its complement as well.
   
   The existence of a triset with this property is the only result
-  of these chapters that we will use in the rest of the project.
+  of this volume that we will use in the rest of the project. Those
+  willing to skip the proof of correctness of the construction may
+  skip all its chapters but this one, while those happy with just
+  knowing that such a triset exists may skip the whole volume.
 -/
 
 import Utils.LeN37
