@@ -612,12 +612,6 @@ namespace Pair
     def interpretation: Nat := 34
     
     /-
-      Contains (expr, p) where `p` is a member of the interpretation
-      of `expr` with `theSet` serving as the valuation.
-    -/
-    def freeInterpretation := 35
-    
-    /-
       A set of pairs (n, p) where `n` is a natural number, and
       `p` is a member of the interpretation of the `n`th definition
       of the definition list represented by `theDefList`.
@@ -638,7 +632,7 @@ namespace Pair
       encoding of the well-founded model of the definition list
       represented by `theDefList`.
     -/
-    def theSet: Nat := 36
+    def theSet: Nat := 35
     
     def interpretation.exprVarBoundOrFree: Expr :=
       -- Assuming 500 is a var, and 501 is bound vars.
@@ -776,14 +770,11 @@ namespace Pair
     
     def interpretation.expr: Expr := finUnExpr exprList
     
-    def freeInterpretation.expr :=
-      callExpr 502 interpretation zeroExpr
-    
     def theSet.expr: Expr :=
       unionExpr 500 nat
         (pairExpr 500
           (callExpr 501
-            freeInterpretation
+            (callExpr 502 interpretation zeroExpr)
             (callExpr 502 theDefList 500)))
     
     -- The definitions of the definition list.
@@ -823,9 +814,8 @@ namespace Pair
     | 32 => theDefList.expr
     | 33 => getBound.expr
     | 34 => interpretation.expr
-    | 35 => freeInterpretation.expr
-    | 36 => theSet.expr
-    | _rest + 37 => zeroExpr
+    | 35 => theSet.expr
+    | _rest + 36 => zeroExpr
     
     /-
       All free variables of the definition list are less than 38.
@@ -885,9 +875,8 @@ namespace Pair
       | 31 => prf 31 [ 0, 29 ] rfl (by simp[leN37]) usedVar
       | 32 => prf 32 [ 31, 30 ] rfl (by simp[leN37]) usedVar
       | 33 => prf 33 [ 0, 33 ] rfl (by simp[leN37]) usedVar
-      | 34 => prf 34 [ 0, 33, 36, 7, 34 ] rfl (by simp[leN37]) usedVar
-      | 35 => prf 35 [ 34 ] rfl (by simp[leN37]) usedVar
-      | 36 => prf 36 [ 0, 35, 32 ] rfl (by simp[leN37]) usedVar
+      | 34 => prf 34 [ 0, 33, 35, 7, 34 ] rfl (by simp[leN37]) usedVar
+      | 35 => prf 35 [ 0, 34, 32 ] rfl (by simp[leN37]) usedVar
     
     def defList.hasFiniteBounds
       (dependsOn: DefList.DependsOn getDef a b)

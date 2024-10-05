@@ -243,7 +243,7 @@ namespace Pair
       (internalCause: Cause Pair)
       (boundVars: List (ValVar Pair))
     :=
-      ∀ {d} {x: Nat},
+      ∀ {d x},
         ⟨d, x⟩ ∈ internalCause.contextIns →
         ¬IsBound boundVars x →
         Ins
@@ -256,7 +256,7 @@ namespace Pair
       (internalCause: Cause Pair)
       (boundVars: List (ValVar Pair))
     :=
-      ∀ {d} {x: Nat},
+      ∀ {d x},
         ⟨d, x⟩ ∈ internalCause.backgroundIns →
         ¬IsBound boundVars x →
         Ins
@@ -269,7 +269,7 @@ namespace Pair
       (internalCause: Cause Pair)
       (boundVars: List (ValVar Pair))
     :=
-      ∀ {d} {x: Nat},
+      ∀ {d x},
         ⟨d, x⟩ ∈ internalCause.backgroundOut →
         ¬IsBound boundVars x →
         Out
@@ -909,7 +909,7 @@ namespace Pair
             vv ∈ internalCause.backgroundOut
           then
             if hB: IsBound boundVars vv.x then
-              let ⟨d, isGetBound⟩ := hB
+              let ⟨_d, isGetBound⟩ := hB
               let boundVarSat := boundVarsSat rfl isGetBound
               boundVarSat.ninBinsBout vv.d
             else
@@ -920,17 +920,17 @@ namespace Pair
             hI.toOr
       
       match expr with
-      | var x =>
+      | var _ =>
         isCauseToInsInterp.var
           isInternalCause
           isConsistent
           boundVars
           boundVarsSat
           cinsIns
-      | op pairSignature.Op.zero args =>
+      | op pairSignature.Op.zero _ =>
         isCauseToInsInterp.exprZero isInternalCause isConsistent
-      | op pairSignature.Op.pair args =>
-        let ⟨args, ⟨dLeft, dRite, eq⟩, areStrong⟩ :=
+      | op pairSignature.Op.pair _ =>
+        let ⟨_, ⟨dLeft, dRite, eq⟩, areStrong⟩ :=
         isInternalCause.elimOp (Or.inl isConsistent)
       
         let ihL := isCauseToInsInterp
@@ -942,7 +942,7 @@ namespace Pair
           boundVars boundVarsSat cinsIns binsIns boutOut
         
         eq ▸ isCauseToInsInterp.exprPair ihL ihR
-      | un left rite =>
+      | un _ _ =>
         isInternalCause.elimUn.elim
           (fun isCauseLeft =>
             let ih := isCauseToInsInterp
@@ -956,7 +956,7 @@ namespace Pair
               cinsIns binsIns boutOut
             
             isCauseToInsInterp.exprUnRite ih)
-      | ir left rite =>
+      | ir _ _ =>
         let ⟨isCauseLeft, isCauseRite⟩ := isInternalCause.elimIr
         
         let ihL := isCauseToInsInterp
@@ -982,7 +982,7 @@ namespace Pair
           cinsIns binsIns boutOut
         
         isCauseToInsInterp.exprIfThen ihCond ihBody
-      | Un x body =>
+      | Un x _body =>
         let ⟨dX, isCauseWith⟩ :=
           isInternalCause.elimArbUn isConsistent
         
@@ -1008,7 +1008,7 @@ namespace Pair
                 (IsBound.Not.notBoundTail notBound xNeq))
         
         isCauseToInsInterp.arbUn dX ih
-      | Ir x body =>
+      | Ir x _body =>
         let isCauseWith :=
           isInternalCause.elimArbIr isConsistent
         
@@ -1052,10 +1052,9 @@ namespace Pair
             (insPair
               insBound
               (insCallExpr
-                (insWfmDefToIns
-                  (insCallExpr
-                    ins.isSound
-                    insZero))
+                (insCallExpr
+                  ins.isSound
+                  insZero)
                 (insCallExpr
                   (insTheDefListExpr
                     (IsTheDefListExprPair.getNthExpr x).isNth)
