@@ -101,15 +101,19 @@ feature the existential and universal quantifier.
 
 ### References
 For more references and context, mostly from the area of programming
-language theory, see [my magister thesis](https://is.muni.cz/th/xr8vu/Well-founded-type-semantics.pdf) (the Czech equivalent of the master's thesis).
+language theory, see my magister thesis [[2]][my-mgr-thesis] (the
+Czech equivalent of the master's thesis).
 
 [van-gelder-wfs]: https://dl.acm.org/doi/10.1145/116825.116838
 [wfs-bg]: https://www.sciencedirect.com/science/article/pii/S0890540109001473
+[my-mgr-thesis]: https://is.muni.cz/th/xr8vu/Well-founded-type-semantics.pdf
 
 0. Allen Van Gelder, Kenneth A. Ross, John S. Schlipf (July 1991):
    [The well-founded semantics for general logic programs][van-gelder-wfs]
 1. Vassilis Kountouriotis, Christos Nomikos, Panos Rondogiannis (2009):
    [Well-founded semantics for Boolean grammars][wfs-bg]
+2. Jozef Mikušinec (2022): Well-founded semantics for dependent,
+   recursive record types with type complement
 
 
 ## Future plans
