@@ -212,7 +212,7 @@ namespace Pair
         insWfmDefToIns
           (insIr
             (insNatLe { isNatA, isNatB, isLe })
-            (insCpl
+            (insCpl _
               (fun inw =>
                 let ⟨_, inw⟩ := inwArbUnElim inw
                 let ⟨inwA, inwB⟩ := inwPairElim inw

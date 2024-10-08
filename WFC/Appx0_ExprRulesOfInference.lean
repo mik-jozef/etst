@@ -64,45 +64,64 @@ namespace Expr
   
   def Ins
     (salg: Salgebra sig)
-    (v: Valuation salg.D)
+    (b: Valuation salg.D)
+    (c: Valuation salg.D)
     (expr: Expr sig)
     (d: salg.D)
   :
     Prop
   :=
-    d ∈ (expr.interpretation salg v v).defMem
+    d ∈ (expr.interpretation salg b c).defMem
   
   def Inw
+    (salg: Salgebra sig)
+    (b: Valuation salg.D)
+    (c: Valuation salg.D)
+    (expr: Expr sig)
+    (d: salg.D)
+  :
+    Prop
+  :=
+    d ∈ (expr.interpretation salg b c).posMem
+  
+  def Ins.toInw (s: Ins salg b c expr d):
+    Inw salg b c expr d
+  :=
+    (Expr.interpretation salg b c expr).defLePos s
+  
+  
+  def Ins2
     (salg: Salgebra sig)
     (v: Valuation salg.D)
     (expr: Expr sig)
     (d: salg.D)
-  :
-    Prop
   :=
-    d ∈ (expr.interpretation salg v v).posMem
+    Ins salg v v expr d
   
-  def Ins.toInw (s: Ins salg v expr d):
-    Inw salg v expr d
+  def Inw2
+    (salg: Salgebra sig)
+    (v: Valuation salg.D)
+    (expr: Expr sig)
+    (d: salg.D)
   :=
-    (Expr.interpretation salg v v expr).defLePos s
+    Inw salg v v expr d
   
   
   def insUnL
     (exprR: Expr sig)
     {exprL: Expr sig}
-    (s: Ins salg v exprL d)
+    (s: Ins salg b c exprL d)
   :
-    Ins salg v (Expr.un exprL exprR) d
+    Ins salg b c (Expr.un exprL exprR) d
   :=
     Or.inl s
   
   def inwUnL
     (exprR: Expr sig)
     {exprL: Expr sig}
-    (w: Inw salg v exprL d)
+    (w: Inw salg b c exprL d)
   :
-    Inw salg v (Expr.un exprL exprR) d
+    Inw salg b c (Expr.un exprL exprR) d
   :=
     Or.inl w
   
@@ -110,216 +129,226 @@ namespace Expr
   def insUnR
     {exprR: Expr sig}
     (exprL: Expr sig)
-    (s: Ins salg v exprR d)
+    (s: Ins salg b c exprR d)
   :
-    Ins salg v (Expr.un exprL exprR) d
+    Ins salg b c (Expr.un exprL exprR) d
   :=
     Or.inr s
   
   def inwUnR
     {exprR: Expr sig}
     (exprL: Expr sig)
-    (w: Inw salg v exprR d)
+    (w: Inw salg b c exprR d)
   :
-    Inw salg v (Expr.un exprL exprR) d
+    Inw salg b c (Expr.un exprL exprR) d
   :=
     Or.inr w
   
   
   def insUnElim
-    (s: Ins salg v (Expr.un exprL exprR) d)
+    (s: Ins salg b c (Expr.un exprL exprR) d)
   :
     Or
-      (Ins salg v exprL d)
-      (Ins salg v exprR d)
+      (Ins salg b c exprL d)
+      (Ins salg b c exprR d)
   :=
     s
   
   def inwUnElim
-    (s: Inw salg v (Expr.un exprL exprR) d)
+    (s: Inw salg b c (Expr.un exprL exprR) d)
   :
     Or
-      (Inw salg v exprL d)
-      (Inw salg v exprR d)
+      (Inw salg b c exprL d)
+      (Inw salg b c exprR d)
   :=
     s
   
   
   def insArbUn
     dBound
-    (s: Ins salg (v.update x dBound) body d)
+    (s: Ins salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Ins salg v (Expr.Un x body) d
+    Ins salg b c (Expr.Un x body) d
   :=
     ⟨dBound, s⟩
   
   def inwArbUn
     dBound
-    (s: Inw salg (v.update x dBound) body d)
+    (s: Inw salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Inw salg v (Expr.Un x body) d
+    Inw salg b c (Expr.Un x body) d
   :=
     ⟨dBound, s⟩
   
   
   def insArbUnElim
-    (s: Ins salg v (Expr.Un x body) d)
+    (s: Ins salg b c (Expr.Un x body) d)
   :
-    ∃ dBound, Ins salg (v.update x dBound) body d
+    ∃ dBound,
+      Ins salg (b.update x dBound) (c.update x dBound) body d
   :=
     s
   
   def inwArbUnElim
-    (s: Inw salg v (Expr.Un x body) d)
+    (s: Inw salg b c (Expr.Un x body) d)
   :
-    ∃ dBound, Inw salg (v.update x dBound) body d
+    ∃ dBound,
+      Inw salg (b.update x dBound) (c.update x dBound) body d
   :=
     s
   
   
   def insArbIr
     {salg: Salgebra sig}
-    {v: Valuation salg.D}
+    {b c: Valuation salg.D}
     {d: salg.D}
-    (s: ∀ dBound, Ins salg (v.update x dBound) body d)
+    (s:
+      ∀ dBound,
+        Ins salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Ins salg v (Expr.Ir x body) d
+    Ins salg b c (Expr.Ir x body) d
   :=
     fun d => s d
   
   def inwArbIr
     {salg: Salgebra sig}
-    {v: Valuation salg.D}
+    {b c: Valuation salg.D}
     {d: salg.D}
-    (s: ∀ dBound, Inw salg (v.update x dBound) body d)
+    (s:
+      ∀ dBound,
+        Inw salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Inw salg v (Expr.Ir x body) d
+    Inw salg b c (Expr.Ir x body) d
   :=
     fun d => s d
   
   
   def insArbIrElim
-    (s: Ins salg v (Expr.Ir x body) d)
+    (s: Ins salg b c (Expr.Ir x body) d)
     (dBound: salg.D)
   :
-    Ins salg (v.update x dBound) body d
+    Ins salg (b.update x dBound) (c.update x dBound) body d
   :=
     s dBound
   
   def inwArbIrElim
-    (s: Inw salg v (Expr.Ir x body) d)
+    (s: Inw salg b c (Expr.Ir x body) d)
     (dBound: salg.D)
   :
-    Inw salg (v.update x dBound) body d
+    Inw salg (b.update x dBound) (c.update x dBound) body d
   :=
     s dBound
   
   
   def insCpl
-    (w: ¬Inw salg v expr d)
+    (c: Valuation salg.D)
+    (w: ¬Inw salg b b expr d)
   :
-    Ins salg v (Expr.cpl expr) d
+    Ins salg b c (Expr.cpl expr) d
   :=
     w
   
   def inwCpl
-    (s: ¬Ins salg v expr d)
+    (c: Valuation salg.D)
+    (s: ¬Ins salg b b expr d)
   :
-    Inw salg v (Expr.cpl expr) d
+    Inw salg b c (Expr.cpl expr) d
   :=
     s
   
   def insCplElim
-    (s: Ins salg v (Expr.cpl expr) d)
+    (s: Ins salg b c (Expr.cpl expr) d)
   :
-    ¬Inw salg v expr d
+    ¬Inw salg b b expr d
   :=
     s
   
   def inwCplElim
-    (w: Inw salg v (Expr.cpl expr) d)
+    (w: Inw salg b c (Expr.cpl expr) d)
   :
-    ¬Ins salg v expr d
+    ¬Ins salg b b expr d
   :=
     w
   
   
   def ninsCpl
-    (w: Inw salg v expr d)
+    (c: Valuation salg.D)
+    (w: Inw salg b b expr d)
   :
-    ¬Ins salg v (Expr.cpl expr) d
+    ¬Ins salg b c (Expr.cpl expr) d
   :=
     fun ins => ins w
   
   def ninwCpl
-    (s: Ins salg v expr d)
+    (c: Valuation salg.D)
+    (s: Ins salg b b expr d)
   :
-    ¬Inw salg v (Expr.cpl expr) d
+    ¬Inw salg b c (Expr.cpl expr) d
   :=
     fun inw => inw s
   
   
   def insIr
-    (l: Ins salg v exprL d)
-    (r: Ins salg v exprR d)
+    (l: Ins salg b c exprL d)
+    (r: Ins salg b c exprR d)
   :
-    Ins salg v (Expr.ir exprL exprR) d
+    Ins salg b c (Expr.ir exprL exprR) d
   :=
     ⟨l, r⟩
   
   def inwIr
-    (l: Inw salg v exprL d)
-    (r: Inw salg v exprR d)
+    (l: Inw salg b c exprL d)
+    (r: Inw salg b c exprR d)
   :
-    Inw salg v (Expr.ir exprL exprR) d
+    Inw salg b c (Expr.ir exprL exprR) d
   :=
     ⟨l, r⟩
   
   def insIrElim
-    (s: Ins salg v (Expr.ir exprL exprR) d)
+    (s: Ins salg b c (Expr.ir exprL exprR) d)
   :
     And
-      (Ins salg v exprL d)
-      (Ins salg v exprR d)
+      (Ins salg b c exprL d)
+      (Ins salg b c exprR d)
   :=
     s
   
   def inwIrElim
-    (s: Inw salg v (Expr.ir exprL exprR) d)
+    (s: Inw salg b c (Expr.ir exprL exprR) d)
   :
     And
-      (Inw salg v exprL d)
-      (Inw salg v exprR d)
+      (Inw salg b c exprL d)
+      (Inw salg b c exprR d)
   :=
     s
   
   
   def insIfThen
     {cond: Expr sig}
-    (insCond: Ins salg v cond c)
-    (insBody: Ins salg v body d)
+    (insCond: Ins salg b c cond dC)
+    (insBody: Ins salg b c body d)
   :
-    Ins salg v (Expr.ifThen cond body) d
+    Ins salg b c (Expr.ifThen cond body) d
   :=
-    ⟨⟨c, insCond⟩, insBody⟩
+    ⟨⟨dC, insCond⟩, insBody⟩
   
   def inwIfThen
     {cond: Expr sig}
-    (insCond: Inw salg v cond c)
-    (insBody: Inw salg v body d)
+    (insCond: Inw salg b c cond dC)
+    (insBody: Inw salg b c body d)
   :
-    Inw salg v (Expr.ifThen cond body) d
+    Inw salg b c (Expr.ifThen cond body) d
   :=
-    ⟨⟨c, insCond⟩, insBody⟩
+    ⟨⟨dC, insCond⟩, insBody⟩
   
   
   def insIfThenElim
     {cond: Expr sig}
-    (s: Ins salg v (Expr.ifThen cond body) d)
+    (s: Ins salg b c (Expr.ifThen cond body) d)
   :
     And
-      (∃c, Ins salg v cond c)
-      (Ins salg v body d)
+      (∃ dC, Ins salg b c cond dC)
+      (Ins salg b c body d)
   :=
     let ⟨exCond, insBody⟩ := s
     
@@ -327,85 +356,81 @@ namespace Expr
   
   def inwIfThenElim
     {cond: Expr sig}
-    (s: Inw salg v (Expr.ifThen cond body) d)
+    (s: Inw salg b c (Expr.ifThen cond body) d)
   :
     And
-      (∃c, Inw salg v cond c)
-      (Inw salg v body d)
+      (∃ dC, Inw salg b c cond dC)
+      (Inw salg b c body d)
   :=
     let ⟨exCond, insBody⟩ := s
     
     And.intro exCond insBody
   
   
-  def insBound {v: Valuation salg.D}:
-    Ins salg (v.update x dBound) (var x) dBound
+  def insBound:
+    Ins salg b (Valuation.update c x dBound) (var x) dBound
   :=
-    Valuation.update.inEq.defMem v x dBound
+    Valuation.update.inEq.defMem c x dBound
   
-  def inwBound {v: Valuation salg.D}:
-    Inw salg (v.update x dBound) (var x) dBound
+  def inwBound:
+    Inw salg b (Valuation.update c x dBound) (var x) dBound
   :=
-    Valuation.update.inEq.posMem v x dBound
+    Valuation.update.inEq.posMem c x dBound
   
   def insBoundElim
-    {v: Valuation salg.D}
-    (s: Ins salg (v.update x dBound) (var x) d)
+    (s: Ins salg b (Valuation.update c x dBound) (var x) d)
   :
     d = dBound
   :=
     Valuation.update.inDef.eq s
   
   def inwBoundElim
-    {v: Valuation salg.D}
-    (w: Inw salg (v.update x dBound) (var x) d)
+    (w: Inw salg b (Valuation.update c x dBound) (var x) d)
   :
     d = dBound
   :=
     Valuation.update.inPos.eq w
   
   def insFree
-    {v: Valuation salg.D}
     {d: salg.D}
-    (ins: Ins salg v (var x) d)
+    (ins: Ins salg b c (var x) d)
     (neq: xB ≠ x)
   :
-    Ins salg (v.update xB dBound) (var x) d
+    Ins salg b (c.update xB dBound) (var x) d
   :=
-    Valuation.update.inNeq.defMem v neq ins
+    Valuation.update.inNeq.defMem c neq ins
   
   def inwFree
-    {v: Valuation salg.D}
     {d: salg.D}
-    (isPos: Inw salg v (var x) d)
+    (isPos: Inw salg b c (var x) d)
     (neq: xB ≠ x)
   :
-    Inw salg (v.update xB dBound) (var x) d
+    Inw salg b (Valuation.update c xB dBound) (var x) d
   :=
-    Valuation.update.inNeq.posMem v neq isPos
+    Valuation.update.inNeq.posMem c neq isPos
   
   def insFreeElim
-    (s: Ins salg (v.update xB dBound) (var x) d)
+    (s: Ins salg b (Valuation.update c xB dBound) (var x) d)
     (neq: xB ≠ x)
   :
-    Ins salg v (var x) d
+    Ins salg b c (var x) d
   :=
     Valuation.update.inNeqElim.defMem s neq
   
   def inwFreeElim
-    (w: Inw salg (v.update xB dBound) (var x) d)
+    (w: Inw salg b (Valuation.update c xB dBound) (var x) d)
     (neq: xB ≠ x)
   :
-    Inw salg v (var x) d
+    Inw salg b c (var x) d
   :=
     Valuation.update.inNeqElim.posMem w neq
   
   
-  def insAny: Ins salg v anyExpr d := insArbUn _ insBound
-  def inwAny: Inw salg v anyExpr d := inwArbUn _ inwBound
+  def insAny: Ins salg b c anyExpr d := insArbUn _ insBound
+  def inwAny: Inw salg b c anyExpr d := inwArbUn _ inwBound
   
-  def ninsNone: ¬Ins salg v noneExpr d := ninsCpl inwAny
-  def ninwNone: ¬Inw salg v noneExpr d := ninwCpl insAny
+  def ninsNone: ¬Ins salg b c noneExpr d := ninsCpl c inwAny
+  def ninwNone: ¬Inw salg b c noneExpr d := ninwCpl c insAny
   
   
   /-
@@ -415,24 +440,30 @@ namespace Expr
     of `unionExpr` to see for yourself.
   -/
   def insUnDom
-    (insDomain: Ins salg (v.update x dBound) domain dBound)
-    (insBody: Ins salg (v.update x dBound) body d)
+    {b c: Valuation salg.D}
+    (insDomain:
+      Ins salg (b.update x dBound) (c.update x dBound) domain dBound)
+    (insBody:
+      Ins salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Ins salg v (unionExpr x domain body) d
+    Ins salg b c (unionExpr x domain body) d
   :=
-    let inUpdated: ((v.update x dBound) x).defMem dBound :=
-      Valuation.update.inEq.defMem v x dBound
+    let inUpdated: ((c.update x dBound) x).defMem dBound :=
+      Valuation.update.inEq.defMem c x dBound
     
     insArbUn _ ⟨⟨dBound, ⟨inUpdated, insDomain⟩⟩, insBody⟩
   
   def inwUnDom
-    (inwDomain: Inw salg (v.update x dBound) domain dBound)
-    (inwBody: Inw salg (v.update x dBound) body d)
+    {b c: Valuation salg.D}
+    (inwDomain:
+      Inw salg (b.update x dBound) (c.update x dBound) domain dBound)
+    (inwBody:
+      Inw salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Inw salg v (unionExpr x domain body) d
+    Inw salg b c (unionExpr x domain body) d
   :=
-    let inUpdated: ((v.update x dBound) x).posMem dBound :=
-      Valuation.update.inEq.posMem v x dBound
+    let inUpdated: ((c.update x dBound) x).posMem dBound :=
+      Valuation.update.inEq.posMem c x dBound
     
     inwArbUn _ ⟨⟨dBound, ⟨inUpdated, inwDomain⟩⟩, inwBody⟩
   
@@ -444,30 +475,35 @@ namespace Expr
   -- We have global choice anyway!
   structure InsUnDomElim
     (salg: Salgebra sig)
-    (v: Valuation salg.D)
+    (b c: Valuation salg.D)
     (x: Nat)
     (dBound: salg.D)
     (domain body: Expr sig)
     (d: salg.D): Prop
   where
-    insDomain: Ins salg (v.update x dBound) domain dBound
-    insBody: Ins salg (v.update x dBound) body d
+    insDomain:
+      Ins salg (b.update x dBound) (c.update x dBound) domain dBound
+    insBody: Ins salg (b.update x dBound) (c.update x dBound) body d
   
   def insUnDomElim
-    (insUnDom: Ins salg v (unionExpr x domain body) d)
+    (insUnDom: Ins salg b c (unionExpr x domain body) d)
   :
-    ∃ dBound, InsUnDomElim salg v x dBound domain body d
+    ∃ dBound, InsUnDomElim salg b c x dBound domain body d
   :=
     let dBound := insUnDom.unwrap
     let dInIr := dBound.property.left.unwrap
     
-    let vUpdated := v.update x dBound
+    -- Inlining these vars causes a "failed to compute motive"
+    -- error, and that's why I distrust tactics and hiding
+    -- imperative code in them.
+    let bUpdated := b.update x dBound
+    let cUpdated := c.update x dBound
     
     let dEq: dInIr.val = dBound.val :=
       insBoundElim dInIr.property.left
     
     let insDomain:
-      Ins salg vUpdated domain dBound.val
+      Ins salg bUpdated cUpdated domain dBound.val
     :=
       dEq ▸ dInIr.property.right
     
@@ -481,30 +517,32 @@ namespace Expr
   
   structure InwUnDomElim
     (salg: Salgebra sig)
-    (v: Valuation salg.D)
+    (b c: Valuation salg.D)
     (x: Nat)
     (dBound: salg.D)
     (domain body: Expr sig)
     (d: salg.D): Prop
   where
-    inwDomain: Inw salg (v.update x dBound) domain dBound
-    inwBody: Inw salg (v.update x dBound) body d
+    inwDomain:
+      Inw salg (b.update x dBound) (c.update x dBound) domain dBound
+    inwBody: Inw salg (b.update x dBound) (c.update x dBound) body d
   
   def inwUnDomElim
-    (insUnDom: Inw salg v (unionExpr x domain body) d)
+    (insUnDom: Inw salg b c (unionExpr x domain body) d)
   :
-    ∃ dBound, InwUnDomElim salg v x dBound domain body d
+    ∃ dBound, InwUnDomElim salg b c x dBound domain body d
   :=
     let dBound := insUnDom.unwrap
     let dInIr := dBound.property.left.unwrap
     
-    let vUpdated := v.update x dBound
+    let bUpdated := b.update x dBound
+    let cUpdated := c.update x dBound
     
     let dEq: dInIr.val = dBound.val :=
       inwBoundElim dInIr.property.left
     
     let insDomain:
-      Inw salg vUpdated domain dBound.val
+      Inw salg bUpdated cUpdated domain dBound.val
     :=
       dEq ▸ dInIr.property.right
     
@@ -520,9 +558,9 @@ namespace Expr
   def insFinUn
     {list: List (Expr sig)}
     (exprIn: expr ∈ list)
-    (s: Ins salg v expr p)
+    (s: Ins salg b c expr p)
   :
-    Ins salg v (finUnExpr list) p
+    Ins salg b c (finUnExpr list) p
   :=
     match list with
     | List.cons _e0 _rest =>
@@ -533,9 +571,9 @@ namespace Expr
   def inwFinUn
     {list: List (Expr sig)}
     (exprIn: expr ∈ list)
-    (w: Inw salg v expr p)
+    (w: Inw salg b c expr p)
   :
-    Inw salg v (finUnExpr list) p
+    Inw salg b c (finUnExpr list) p
   :=
     match list with
     | List.cons _e0 _rest =>
@@ -546,29 +584,29 @@ namespace Expr
   
   def InsFinUnElim
     (salg: Salgebra sig)
-    (v: Valuation salg.D)
+    (b c: Valuation salg.D)
     (d: salg.D)
     (P: Prop)
   :
     List (Expr sig) → Prop
   | List.nil => P
   | List.cons head tail =>
-    (Ins salg v head d → P) → InsFinUnElim salg v d P tail
+    (Ins salg b c head d → P) → InsFinUnElim salg b c d P tail
   
   def InsFinUnElim.ofP
     (list: List (Expr sig))
     (p: P)
   :
-    InsFinUnElim salg v d P list
+    InsFinUnElim salg b c d P list
   :=
     match list with
     | List.nil => p
     | List.cons _head tail => fun _ => ofP tail p
   
   def insFinUnElim
-    (s: Ins salg v (finUnExpr list) d)
+    (s: Ins salg b c (finUnExpr list) d)
   :
-    InsFinUnElim salg v d P list
+    InsFinUnElim salg b c d P list
   :=
     match list with
     | List.nil => False.elim (ninsNone s)
@@ -581,29 +619,29 @@ namespace Expr
   
   def InwFinUnElim
     (salg: Salgebra sig)
-    (v: Valuation salg.D)
+    (b c: Valuation salg.D)
     (d: salg.D)
     (P: Prop)
   :
     List (Expr sig) → Prop
   | List.nil => P
   | List.cons head tail =>
-    (Inw salg v head d → P) → InwFinUnElim salg v d P tail
+    (Inw salg b c head d → P) → InwFinUnElim salg b c d P tail
   
   def inwFinUnElim.ofP
     (list: List (Expr sig))
     (p: P)
   :
-    InwFinUnElim salg v d P list
+    InwFinUnElim salg b c d P list
   :=
     match list with
     | List.nil => p
     | List.cons _head tail => fun _ => ofP tail p
   
   def inwFinUnElim
-    (s: Inw salg v (finUnExpr list) d)
+    (s: Inw salg b c (finUnExpr list) d)
   :
-    InwFinUnElim salg v d P list
+    InwFinUnElim salg b c d P list
   :=
     match list with
     | List.nil => False.elim (ninwNone s)
@@ -622,7 +660,7 @@ namespace Expr
   :
     Prop
   :=
-    expr.Ins salg (dl.wellFoundedModel salg) d
+    expr.Ins2 salg (dl.wellFoundedModel salg) d
   
   def InwWfm
     (salg: Salgebra sig)
@@ -632,7 +670,7 @@ namespace Expr
   :
     Prop
   :=
-    expr.Inw salg (dl.wellFoundedModel salg) d
+    expr.Inw2 salg (dl.wellFoundedModel salg) d
   
   
   def insWfmDefToIns

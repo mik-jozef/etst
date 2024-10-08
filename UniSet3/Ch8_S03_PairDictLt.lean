@@ -136,7 +136,9 @@ namespace Pair
               let ⟨inw501B, inwFst⟩ := inwPairElim r
               
               let eq := inwBoundElim
-                (inwZthFstElim inwZth inwFst nat502Neq500 rfl)
+                (inwFreeElim
+                  (inwZthFstElim inwZth inwFst nat502Neq500 rfl)
+                  nat501Neq500)
               
               let inwB: InwEdl pairDictLt (pair aB bB) :=
                 eq ▸ inwFreeElim inwDomain nat500NeqPairDictLt

@@ -63,9 +63,10 @@
   Using the latter function, it is proven that the internal
   definition list contains all definable trisets of pairs.
   
-  In later chapters, we show that the well-founded model of the
-  internal definition list is encoded by `uniSet3`, the triset
-  defined by the definition `theSet` of the previous chapter.
+  In subsequent chapters, we show that the well-founded model
+  of the internal definition list is encoded by `uniSet3`, the
+  triset defined by the definition `theSet` of the previous
+  chapter.
 -/
 
 import Utils.PairDepthDictOrder

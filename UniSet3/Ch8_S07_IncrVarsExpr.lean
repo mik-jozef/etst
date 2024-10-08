@@ -95,9 +95,9 @@ namespace Pair
               (insUnDom
                 (insExprEncoding isShift.isExprA)
                 (insPair
-                  (insPair (insNatExpr _ _) insBound)
+                  (insPair (insNatExpr _ _ _) insBound)
                   (insPair
-                    (insNatExpr _ _)
+                    (insNatExpr _ _ _)
                     (insCallExpr
                       (insIncrVarsExpr isShift)
                       (insFree insBound nat503Neq501)))))

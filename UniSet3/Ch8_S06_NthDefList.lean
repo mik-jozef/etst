@@ -164,7 +164,7 @@ namespace Pair
         insWfmDefToIns
           (insIr
             (insDefEncodingLt isDefLtAB)
-            (insCpl
+            (insCpl _
               (fun inwMinDist2 =>
                 let ⟨_, _, ⟨x, ⟨axLt, xbLt, isDefX⟩⟩⟩ :=
                   Inw.toIsDefEncodingMinDist2 inwMinDist2
