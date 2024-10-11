@@ -12,6 +12,10 @@ All the math is formalized in the theorem prover
 
 
 ## Quick introduction
+Here we give a basic overview of the *what* without the *how*.
+See the section [Project structure](#Project-structure) for where
+to look further.
+
 ### Trisets
 A triset is a three-valued version of a set. To a triset, any
 element is related in one of three ways:
@@ -25,7 +29,7 @@ is called a *possible member*, analogously there are *possible
 nonmembers*. A triset whose elements are all determined is called
 *classical*, or two-valued, and corresponds to a set.
 
-### What well-founded collections are
+### What well-founded collections are about
 Let's assume we are working with natural numbers, and our operations
 on them are the constant zero and the successor function.
 
@@ -51,9 +55,9 @@ example, take
 ```
 
 Here, `bad` is meant to contain exactly those elements it does not
-contain, which is contradictory. Well-founded collections nevertheless
+contain, which is contradictory. **Well-founded collections nevertheless
 gives a natural semantics to recursive definitions that employ
-complements in arbitrary way.
+complements in an arbitrary way.**
 
 This is achieved while preserving the standard semantics of those
 definitions that are complement-free, or whose complements are not
