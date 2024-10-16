@@ -377,6 +377,27 @@ def Not.toAnd {L R: Prop}
     else
       And.intro hL hR
 
+def Not.toAndL {L R: Prop}
+  (nOr: ¬ (¬ L ∨ R))
+:
+  L ∧ ¬ R
+:=
+  And.intro nOr.toAnd.left.dne nOr.toAnd.right
+
+def Not.toAndR {L R: Prop}
+  (nOr: ¬ (L ∨ ¬ R))
+:
+  ¬ L ∧ R
+:=
+  And.intro nOr.toAnd.left nOr.toAnd.right.dne
+
+def Not.toAndLR {L R: Prop}
+  (nOr: ¬ (¬ L ∨ ¬ R))
+:
+  L ∧ R
+:=
+  And.intro nOr.toAndL.left nOr.toAndR.right
+
 def Not.toAnd3 {L M R: Prop}
   (nOr: ¬(L ∨ M ∨ R))
 :
@@ -414,6 +435,12 @@ def Or.toNand (p: ¬L ∨ ¬R): ¬(L ∧ R) :=
   fun lr => p.elim
     (fun nl => nl lr.left)
     (fun nr => nr lr.right)
+
+def Or.inlEm {L R: Prop} (f: ¬R → L): L ∨ R :=
+  if h: R then Or.inr h else Or.inl (f h)
+
+def Or.inrEm {L R: Prop} (f: ¬L → R): L ∨ R :=
+  if h: L then Or.inl h else Or.inr (f h)
 
 def Not.implToAnd {A B: Prop} (ab: ¬(A → B)): A ∧ ¬B :=
   if hA: A then

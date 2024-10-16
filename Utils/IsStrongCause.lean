@@ -1,9 +1,39 @@
 /-
   This file defines constructors and eliminators for the predicate
-  `IsStrongCause`.
+  `IsStrongCause`, as well as some related helper definitions.
 -/
 
-import Utils.AProofSystem
+import WFC.Ch6_S1_AProofSystem
+import Utils.PairExpr
+
+
+def Cause.IsInapplicable.toIsCauseInapplicable
+  {salg: Salgebra sig}
+  {cause: Cause salg.D}
+  
+  (dl: DefList sig)
+  (isInapplicable:
+    Cause.IsInapplicable
+      cause
+      (dl.wellFoundedModel salg).nonmembers
+      (dl.wellFoundedModel salg))
+:
+  IsCauseInapplicable
+    salg
+    dl
+    (dl.wellFoundedModel salg).nonmembers
+    cause
+:=
+  match isInapplicable with
+  | IsInapplicable.blockedContextIns inCins inOutSet =>
+    IsCauseInapplicable.blockedContextIns _ inCins inOutSet
+  | IsInapplicable.blockedBackgroundIns inBins notPos =>
+    let isOut := Out.isComplete _ _ notPos
+    IsCauseInapplicable.blockedBackgroundIns _ inBins isOut
+  | IsInapplicable.blockedBackgroundOut inBout isDef =>
+    let isIns := Ins.isComplete _ _ isDef
+    IsCauseInapplicable.blockedBackgroundOut _ inBout isIns
+
 
 /-
   A cause is (strongly) consistent if there exists a valuation
@@ -17,11 +47,26 @@ def Cause.IsConsistent
 :=
   ∀ vv, vv ∉ cause.backgroundIns ∨ vv ∉ cause.backgroundOut
 
+def Cause.IsConsistent.Not.isStrong
+  (isNotConsistent: ¬ cause.IsConsistent)
+  (d: salg.D)
+  (expr: Expr sig)
+:
+  IsStrongCause salg cause d expr
+:=
+  let ⟨_, inIns, inOut⟩ :=
+    isNotConsistent.toEx fun _ tmp => tmp.toAndLR
+  fun isSat =>
+    let isDef := isSat.backgroundInsHold inIns
+    let niPos := isSat.backgroundOutHold inOut
+    False.elim (niPos (Set3.defLePos _ isDef))
+
+
 /-
   The least valuation in the approximation order that strongly
   satisfies the background part of a cause.
 -/
-def Cause.IsConsistent.leastBackground
+def Cause.IsConsistent.leastBackgroundApx
   {cause: Cause D}
   (isConsistent: cause.IsConsistent)
 :
@@ -42,7 +87,7 @@ def Cause.IsConsistent.leastBackground
   The least valuation in the approximation order that strongly
   satisfies the context part of a cause.
 -/
-def Cause.leastContext
+def Cause.leastContextApx
   (cause: Cause D)
 :
   Valuation D
@@ -53,13 +98,13 @@ def Cause.leastContext
     defLePos := fun _ _ => trivial
   }
 
-def Cause.IsConsistent.leastBackgroundIsSat
+def Cause.IsConsistent.leastBackgroundApxIsSat
   {cause: Cause D}
   (isConsistent: cause.IsConsistent)
   (c: Valuation D)
 :
   cause.backgroundOnly.IsStronglySatisfiedBy
-    (isConsistent.leastBackground)
+    (isConsistent.leastBackgroundApx)
     c
 := {
   contextInsHold := nofun
@@ -71,28 +116,28 @@ def Cause.IsConsistent.leastBackgroundIsSat
         (fun ninbout => False.elim (ninbout inBout))
 }
 
-def Cause.IsConsistent.leastValsAreSat
+def Cause.IsConsistent.leastValsApxAreSat
   {cause: Cause D}
   (isConsistent: cause.IsConsistent)
 :
   cause.IsStronglySatisfiedBy
-    (leastBackground isConsistent)
-    (leastContext cause)
+    (leastBackgroundApx isConsistent)
+    (leastContextApx cause)
 := {
   contextInsHold := id
   backgroundInsHold := id
   backgroundOutHold :=
     Cause.IsStronglySatisfiedBy.backgroundOutHold
-      (leastBackgroundIsSat isConsistent (leastContext cause))
+      (leastBackgroundApxIsSat isConsistent (leastContextApx cause))
 }
 
-def Cause.IsConsistent.leastIsLeast
+def Cause.IsConsistent.leastIsLeApx
   {cause: Cause D}
   (isConsistent: cause.IsConsistent)
   (b: Valuation D)
   (bSat: cause.backgroundOnly.IsStronglySatisfiedBy b b)
 :
-  isConsistent.leastBackground ⊑ b
+  isConsistent.leastBackgroundApx ⊑ b
 :=
   fun _ => {
     defLe := fun _ => bSat.backgroundInsHold
@@ -133,74 +178,69 @@ def Cause.IsConsistent.withBound
               (fun ⟨inBins, _⟩ => ninBout inBins)
               (fun ⟨dNeq, xEq⟩ => h ⟨xEq, dNeq⟩)))
 
-def Cause.IsConsistent.leastBackgroundUpdateEq
+def Cause.IsConsistent.leastBackgroundApxUpdateLe
   {cause: Cause D}
   (isCons: cause.IsConsistent)
   (x: Nat)
   (d: D)
+  (isSat: (cause.withBound x d).IsStronglySatisfiedBy b c)
 :
-  let isConsWith: (cause.withBound x d).IsConsistent :=
-    isCons.withBound x d
-  
-  isCons.leastBackground.update x d
-    =
-  isConsWith.leastBackground
+  isCons.leastBackgroundApx.update x d ⊑ b
 :=
-  funext fun xx =>
+  fun xx =>
     if h: xx = x then
-      Valuation.update.eqBoundOfEq _ h.symm d ▸
-      Eq.symm
-        (Set3.eqJust
-          (fun _ isPos =>
-            byContradiction fun dNeq =>
-              isPos (Or.inr ⟨dNeq, h⟩))
-          (Or.inr (And.intro rfl h)))
+      Valuation.update.eqBoundOfEq _ h.symm d ▸ {
+        defLe :=
+          fun _ dEq => isSat.backgroundInsHold (Or.inr ⟨dEq, h⟩)
+        posLe :=
+          fun _ isPos =>
+            byContradiction fun neq =>
+              isSat.backgroundOutHold (Or.inr ⟨neq, h⟩) isPos
+      }
     else
-      Valuation.update.eqOrig _ (Ne.symm h) _ ▸
-      Set3.eq
-        (funext fun _ =>
-          propext
-            (Iff.intro
-              (fun isDef => Or.inl ⟨isDef, h⟩)
-              (fun isDefWith =>
-                isDefWith.elim
-                  And.left
-                  (fun ⟨_, xEq⟩ => (h xEq).elim))))
-        (funext fun _ =>
-          propext
-            (Iff.intro
-              (fun isPos inBoutWith =>
-                inBoutWith.elim
-                  (fun ⟨inBout, _⟩ => isPos inBout)
-                  (fun ⟨_, xEq⟩ => h xEq))
-              (fun isPosWith inBout =>
-                isPosWith (Or.inl ⟨inBout, h⟩))))
+      Valuation.update.eqOrig _ (Ne.symm h) _ ▸ {
+        defLe :=
+          fun _ dIn => isSat.backgroundInsHold (Or.inl ⟨dIn, h⟩)
+        posLe :=
+          fun _ isPos isOut =>
+            isSat.backgroundOutHold (Or.inl ⟨isOut, h⟩) isPos
+      }
 
-def Cause.leastContextUpdateLe
+def Cause.leastContextApxUpdateLeDefMem
   (cause: Cause D)
   (x: Nat)
   (d: D)
+  (isSat: (cause.withBound x d).IsStronglySatisfiedBy b c)
+  (xx: Nat)
 :
-  cause.leastContext.update x d
-    ≤
-  (cause.withBound x d).leastContext
+  (cause.leastContextApx.update x d xx).defMem ⊆ (c xx).defMem
 :=
-  fun xx => {
-    defLe :=
-      fun _ isDefWith =>
-        if h: xx = x then
-          Or.inr ⟨
-            Valuation.update.inDef.eq (h ▸ isDefWith),
-            h,
-          ⟩
-        else
-          Or.inl ⟨
-            Valuation.update.inNeqElim.defMem
-              isDefWith (Ne.symm h),
-            h,
-          ⟩
-    posLe := fun _ _ => trivial
-  }
+fun _ inUpdatedLeast =>
+  let inDefWith :=
+    if h: xx = x then
+      let dEq :=
+        Valuation.update.inDef.eq (h ▸ inUpdatedLeast)
+      Or.inr ⟨dEq, h⟩
+    else
+      Or.inl ⟨
+        Valuation.update.inNeqElim.defMem
+          inUpdatedLeast (Ne.symm h),
+        h,
+      ⟩
+  isSat.contextInsHold inDefWith
+
+
+def Cause.IsStronglySatisfiedBy.backgroundOnly
+  {cause: Cause D}
+  (isSat: cause.IsStronglySatisfiedBy b c)
+  (cNew: Valuation D)
+:
+  cause.backgroundOnly.IsStronglySatisfiedBy b cNew
+:= {
+  contextInsHold := nofun
+  backgroundInsHold := isSat.backgroundInsHold
+  backgroundOutHold := isSat.backgroundOutHold
+}
 
 
 def IsStrongCause.Not.exSatNotDef
@@ -236,10 +276,34 @@ def IsStrongCause.var
 :=
   fun isSat => isSat.contextInsHold isIns
 
+def IsStrongCause.elimVar
+  (isCause: IsStrongCause salg cause d (Expr.var x))
+  (isConsistent: cause.IsConsistent)
+:
+  ⟨d, x⟩ ∈ cause.contextIns
+:=
+  isCause isConsistent.leastValsApxAreSat
+
+def IsStrongCause.notVar
+  (isConsistent: cause.IsConsistent)
+  (ninCins: ⟨d, x⟩ ∉ cause.contextIns)
+:
+  ¬ IsStrongCause salg cause d (Expr.var x)
+:=
+  fun isCause => ninCins (isCause.elimVar isConsistent)
+
+def IsStrongCause.Not.elimVar
+  (isNotCause: ¬ IsStrongCause salg cause d (Expr.var x))
+:
+  ⟨d, x⟩ ∉ cause.contextIns
+:=
+  fun isIns => isNotCause (IsStrongCause.var isIns)
+
+
 def IsStrongCause.op
   {salg: Salgebra sig}
-  {d: salg.D}
   {cause: Cause salg.D}
+  {d: salg.D}
   
   (argVals: sig.Args opr salg.D)
   (argsCauseD: d ∈ salg.I opr argVals)
@@ -259,89 +323,32 @@ def IsStrongCause.op
         isCauseArgs param ⟨d, inArgVals⟩ isSat)
       argsCauseD
 
-def IsStrongCause.unL
-  (isCause: IsStrongCause salg cause d left)
-  (rite: Expr _)
-:
-  IsStrongCause salg cause d (Expr.un left rite)
-:=
-  Or.inl ∘ isCause
-
-def IsStrongCause.unR
-  (isCause: IsStrongCause salg cause d rite)
-  (left: Expr _)
-:
-  IsStrongCause salg cause d (Expr.un left rite)
-:=
-  Or.inr ∘ isCause
-
-def IsStrongCause.ir
-  (isCauseLeft: IsStrongCause salg cause d left)
-  (isCauseRite: IsStrongCause salg cause d rite)
-:
-  IsStrongCause salg cause d (Expr.ir left rite)
-:=
-  fun isSat =>
-    And.intro (isCauseLeft isSat) (isCauseRite isSat)
-
-def IsStrongCause.not
-  {expr: Expr sig}
-  (cause: Cause salg.D)
-  (isCauseOut:
-    {b: Valuation salg.D} →
-    cause.backgroundOnly.IsStronglySatisfiedBy b b →
-    ¬ (expr.interpretation salg b b).posMem d)
-:
-  IsStrongCause salg cause d (Expr.cpl expr)
-:=
-  fun isSat => isCauseOut {
-    contextInsHold := nofun
-    backgroundInsHold := isSat.backgroundInsHold
-    backgroundOutHold := isSat.backgroundOutHold
-  }
-
-def IsStrongCause.ifThen
-  {cond}
-  (isCauseCond: IsStrongCause salg cause dC cond)
-  (isCauseBody: IsStrongCause salg cause d body)
-:
-  IsStrongCause salg cause d (Expr.ifThen cond body)
-:=
-  fun isSat =>
-    And.intro
-      ⟨dC, (isCauseCond isSat)⟩
-      (isCauseBody isSat)
-
-def IsStrongCause.arbUn
-  {cause: Cause salg.D}
-  (isCause: IsStrongCause salg (cause.withBound x dX) d body)
-:
-  IsStrongCause salg cause d (Expr.Un x body)
-:=
-  fun isSat => ⟨
-    dX,
-    isCause (cause.withBoundSatOfSatStrong isSat),
-  ⟩
-
-def IsStrongCause.arbIr
+def IsStrongCause.elimOp
   {salg: Salgebra sig}
   {cause: Cause salg.D}
   {d: salg.D}
-  (isCause:
-    ∀ dX, IsStrongCause salg (cause.withBound x dX) d body)
+  
+  (isCause: IsStrongCause salg cause d (Expr.op opr argExprs))
+  (isConsistent: cause.IsConsistent)
 :
-  IsStrongCause salg cause d (Expr.Ir x body)
-:=
-  fun isSat dX =>
-    isCause dX (cause.withBoundSatOfSatStrong isSat)
-
-
-def IsStrongCause.Not.elimVar
-  (isNotCause: ¬ IsStrongCause salg cause d (Expr.var x))
-:
-  ¬ ⟨d, x⟩ ∈ cause.contextIns
-:=
-  fun isIns => isNotCause (IsStrongCause.var isIns)
+  ∃ (argVals: sig.Args opr salg.D),
+    d ∈ salg.I opr argVals ∧
+    ∀ param (dArg: argVals param),
+      IsStrongCause salg cause dArg (argExprs param)
+:= ⟨
+  fun param =>
+    Set3.defMem
+      ((argExprs param).interpretation
+        salg
+        isConsistent.leastBackgroundApx
+        cause.leastContextApx),
+  isCause isConsistent.leastValsApxAreSat,
+  fun param ⟨_, dArgInArgs⟩ b _ isSat =>
+    let bLe := isConsistent.leastIsLeApx _ (isSat.backgroundOnly b)
+    let cLe := fun _ _ => isSat.contextInsHold
+    Expr.interpretation.isMonotonic.apxDefMem
+      salg (argExprs param) bLe cLe dArgInArgs,
+⟩
 
 def IsStrongCause.Not.elimOp
   {salg: Salgebra sig}
@@ -362,12 +369,101 @@ def IsStrongCause.Not.elimOp
     :=
       nex.toAll fun _ tmp => tmp.toAll fun _ isCause => isCause.dne
     
-    let isCause:
-      IsStrongCause salg cause d (Expr.op opr argExprs)
-    :=
-      IsStrongCause.op argVals argsCauseD allHaveCause
-    
-    isNotCause isCause
+    isNotCause (op argVals argsCauseD allHaveCause)
+
+def IsStrongCause.notOp
+  {salg: Salgebra sig}
+  {cause: Cause salg.D}
+  {d: salg.D}
+  
+  (isConsistent: cause.IsConsistent)
+  (allCausesNot:
+    ∀ argVals: sig.Args opr salg.D,
+      d ∈ salg.I opr argVals →
+    ∃ param, ∃ (dArg: argVals param),
+      ¬ IsStrongCause salg cause dArg (argExprs param))
+:
+  ¬ IsStrongCause salg cause d (Expr.op opr argExprs)
+:=
+  fun isCause =>
+    let ⟨argVals, dIn, argsStrong⟩ := isCause.elimOp isConsistent
+    let ⟨param, dArg, notStrong⟩ := allCausesNot argVals dIn
+    notStrong (argsStrong param dArg)
+
+def IsStrongCause.elimZeroExpr
+  (isCause: IsStrongCause pairSalgebra cause d PairExpr.zeroExpr)
+  (isConsistent: cause.IsConsistent)
+:
+  d = Pair.zero
+:=
+  let ⟨_, dEq, _⟩ := isCause.elimOp isConsistent
+  dEq
+
+def IsStrongCause.elimPairExpr
+  (isCause:
+    IsStrongCause pairSalgebra cause d (PairExpr.pairExpr left rite))
+  (isConsistent: cause.IsConsistent)
+:
+  ∃ (dLeft dRite: Pair),
+    d = Pair.pair dLeft dRite ∧
+    IsStrongCause pairSalgebra cause dLeft left ∧
+    IsStrongCause pairSalgebra cause dRite rite
+:=
+  let ⟨_, ⟨dLeft, dRite, eq⟩, areStrong⟩ :=
+    isCause.elimOp isConsistent
+  open ArityTwo in
+  ⟨dLeft, dRite, eq, areStrong zth _, areStrong fst _⟩
+
+
+def IsStrongCause.unL
+  (isCause: IsStrongCause salg cause d left)
+  (rite: Expr _)
+:
+  IsStrongCause salg cause d (Expr.un left rite)
+:=
+  Or.inl ∘ isCause
+
+def IsStrongCause.unR
+  (isCause: IsStrongCause salg cause d rite)
+  (left: Expr _)
+:
+  IsStrongCause salg cause d (Expr.un left rite)
+:=
+  Or.inr ∘ isCause
+
+def IsStrongCause.elimUn
+  (isCause: IsStrongCause salg cause d (Expr.un left rite))
+:
+  Or
+    (IsStrongCause salg cause d left)
+    (IsStrongCause salg cause d rite)
+:=
+  if h: cause.IsConsistent then
+    (isCause h.leastValsApxAreSat).elim
+      (fun isDefLeft =>
+        Or.inl
+          fun isSat =>
+            let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+            let cLe := fun _ _ => isSat.contextInsHold
+            Expr.interpretation.isMonotonic.apxDefMem
+              salg left bLe cLe isDefLeft)
+      (fun isDefRite =>
+        Or.inr
+          fun isSat =>
+            let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+            let cLe := fun _ _ => isSat.contextInsHold
+            Expr.interpretation.isMonotonic.apxDefMem
+              salg rite bLe cLe isDefRite)
+  else
+    Or.inl (Cause.IsConsistent.Not.isStrong h d left)
+
+def IsStrongCause.notUn
+  (notCauseLeft: ¬ IsStrongCause salg cause d left)
+  (notCauseRite: ¬ IsStrongCause salg cause d rite)
+:
+  ¬ IsStrongCause salg cause d (Expr.un left rite)
+:=
+  elimUn.contra (Or.elim · notCauseLeft notCauseRite)
 
 def IsStrongCause.Not.elimUnL
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.un left rite))
@@ -383,6 +479,55 @@ def IsStrongCause.Not.elimUnR
 :=
   fun isCause => isNotCause (isCause.unR left)
 
+
+def IsStrongCause.ir
+  (isCauseLeft: IsStrongCause salg cause d left)
+  (isCauseRite: IsStrongCause salg cause d rite)
+:
+  IsStrongCause salg cause d (Expr.ir left rite)
+:=
+  fun isSat =>
+    And.intro (isCauseLeft isSat) (isCauseRite isSat)
+
+def IsStrongCause.elimIr
+  (isCause: IsStrongCause salg cause d (Expr.ir left rite))
+:
+  And
+    (IsStrongCause salg cause d left)
+    (IsStrongCause salg cause d rite)
+:=
+  if h: cause.IsConsistent then
+    let ⟨isDefLeft, isDefRite⟩ := isCause h.leastValsApxAreSat
+    And.intro
+      (fun isSat =>
+        let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+        let cLe := fun _ _ => isSat.contextInsHold
+        Expr.interpretation.isMonotonic.apxDefMem
+          salg left bLe cLe isDefLeft)
+      (fun isSat =>
+        let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+        let cLe := fun _ _ => isSat.contextInsHold
+        Expr.interpretation.isMonotonic.apxDefMem
+          salg rite bLe cLe isDefRite)
+  else
+    And.intro
+      (Cause.IsConsistent.Not.isStrong h d left)
+      (Cause.IsConsistent.Not.isStrong h d rite)
+
+def IsStrongCause.notIrLeft
+  (notCauseLeft: ¬ IsStrongCause salg cause d left)
+:
+  ¬ IsStrongCause salg cause d (Expr.ir left rite)
+:=
+  elimIr.contra (fun ⟨left, _⟩ => notCauseLeft left)
+
+def IsStrongCause.notIrRite
+  (notCauseRite: ¬ IsStrongCause salg cause d rite)
+:
+  ¬ IsStrongCause salg cause d (Expr.ir left rite)
+:=
+  elimIr.contra (fun ⟨_, rite⟩ => notCauseRite rite)
+
 def IsStrongCause.Not.elimIr
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.ir left rite))
 :
@@ -394,6 +539,42 @@ def IsStrongCause.Not.elimIr
     let ⟨isCauseLeft, isCauseRite⟩ := nor.toAnd
     
     isNotCause (IsStrongCause.ir isCauseLeft.dne isCauseRite.dne)
+
+
+def IsStrongCause.not
+  {expr: Expr sig}
+  (cause: Cause salg.D)
+  (isCauseOut:
+    {b: Valuation salg.D} →
+    cause.backgroundOnly.IsStronglySatisfiedBy b b →
+    ¬ (expr.interpretation salg b b).posMem d)
+:
+  IsStrongCause salg cause d (Expr.cpl expr)
+:=
+  fun isSat => isCauseOut (isSat.backgroundOnly _)
+
+def IsStrongCause.elimNot
+  {salg: Salgebra sig}
+  {cause: Cause salg.D}
+  {d: salg.D}
+  
+  (isCauseCpl: IsStrongCause salg cause d (Expr.cpl expr))
+  (dl: DefList sig)
+  (isSat: cause.IsStronglySatisfiedBy
+    (dl.wellFoundedModel salg)
+    (dl.wellFoundedModel salg))
+  (isCauseExpr: IsWeakCause salg cause d expr)
+:
+  IsCauseInapplicable
+    salg
+    dl
+    (dl.wellFoundedModel salg).nonmembers
+    cause
+:=
+  let insCpl := isCauseCpl isSat
+  let notSat isSat := insCpl (isCauseExpr isSat)
+  let isInapp := Cause.IsWeaklySatisfiedBy.toIsInapplicable notSat
+  isInapp.toIsCauseInapplicable
 
 def IsStrongCause.Not.elimNotEx
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.cpl expr))
@@ -410,22 +591,84 @@ def IsStrongCause.Not.elimNot
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.cpl expr))
 :
   let isConsistent := IsStrongCause.Not.isConsistent isNotCause
-  let b := isConsistent.leastBackground
+  let b := isConsistent.leastBackgroundApx
   
   cause.backgroundOnly.IsStronglySatisfiedBy b b ∧
   (expr.interpretation salg b b).posMem d
 :=
   let isConsistent := IsStrongCause.Not.isConsistent isNotCause
   let ⟨b, isSat, isPos⟩ := IsStrongCause.Not.elimNotEx isNotCause
-  let isLeB := isConsistent.leastIsLeast b isSat
+  let isLeB := isConsistent.leastIsLeApx b isSat
   
   let isLeExpr :=
     Expr.interpretation.isMonotonic.approximation
       salg expr isLeB isLeB
   
   And.intro
-    (isConsistent.leastBackgroundIsSat _)
+    (isConsistent.leastBackgroundApxIsSat _)
     (isLeExpr.posLe isPos)
+
+
+def IsStrongCause.ifThen
+  {cond}
+  (isCauseCond: IsStrongCause salg cause dC cond)
+  (isCauseBody: IsStrongCause salg cause d body)
+:
+  IsStrongCause salg cause d (Expr.ifThen cond body)
+:=
+  fun isSat =>
+    And.intro
+      ⟨dC, (isCauseCond isSat)⟩
+      (isCauseBody isSat)
+
+def IsStrongCause.elimIfThen
+  {cond}
+  (isCause: IsStrongCause salg cause d (Expr.ifThen cond body))
+:
+  And
+    (∃ dC, IsStrongCause salg cause dC cond)
+    (IsStrongCause salg cause d body)
+:=
+  if h: cause.IsConsistent then
+    let ⟨⟨dC, isDefCond⟩, isDefBody⟩ := isCause h.leastValsApxAreSat
+    And.intro
+      ⟨
+        dC,
+        fun isSat =>
+          let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+          let cLe := fun _ _ => isSat.contextInsHold
+          Expr.interpretation.isMonotonic.apxDefMem
+            salg cond bLe cLe isDefCond
+      ⟩
+      (fun isSat =>
+        let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+        let cLe := fun _ _ => isSat.contextInsHold
+        Expr.interpretation.isMonotonic.apxDefMem
+          salg body bLe cLe isDefBody)
+  else
+    And.intro
+      ⟨d, Cause.IsConsistent.Not.isStrong h d cond⟩
+      (Cause.IsConsistent.Not.isStrong h d body)
+
+def IsStrongCause.notIfThenCond
+  {cond}
+  (notCauseCond: ∀ dC, ¬ IsStrongCause salg cause dC cond)
+  (d: salg.D)
+  (body: Expr _)
+:
+  ¬ IsStrongCause salg cause d (Expr.ifThen cond body)
+:=
+  fun isCause =>
+    notCauseCond _ isCause.elimIfThen.left.unwrap.property
+
+def IsStrongCause.notIfThenBody
+  (notCauseBody: ¬ IsStrongCause salg cause d body)
+  (cond: Expr _)
+:
+  ¬ IsStrongCause salg cause d (Expr.ifThen cond body)
+:=
+  fun isCause =>
+    notCauseBody isCause.elimIfThen.right
 
 def IsStrongCause.Not.elimIfThen
   {cond}
@@ -442,313 +685,33 @@ def IsStrongCause.Not.elimIfThen
     
     isNotCause (isCauseCond.ifThen isCauseBody.dne)
 
-def IsStrongCause.Not.elimArbUn
-  (isNotCause: ¬ IsStrongCause salg cause d (Expr.Un x body))
-  (dX: salg.D)
+
+def IsStrongCause.arbUn
+  {cause: Cause salg.D}
+  (isCause: IsStrongCause salg (cause.withBound x dX) d body)
 :
-  ¬ IsStrongCause salg (cause.withBound x dX) d body
+  IsStrongCause salg cause d (Expr.Un x body)
 :=
-  fun isCause => isNotCause isCause.arbUn
+  fun isSat => ⟨
+    dX,
+    isCause (cause.withBoundSatOfSatStrong isSat),
+  ⟩
 
-def IsStrongCause.Not.elimArbIr
-  (isNotCause: ¬ IsStrongCause salg cause d (Expr.Ir x body))
-:
-  ∃ dX, ¬ IsStrongCause salg (cause.withBound x dX) d body
-:=
-  byContradiction fun nex =>
-    let allHaveCause:
-      ∀ dX, IsStrongCause salg (cause.withBound x dX) d body
-    :=
-      nex.toAll fun _ isCause => isCause.dne
-    
-    isNotCause (IsStrongCause.arbIr allHaveCause)
-
-
-def IsStrongCause.Not.notDefUnderLeast
-  (notCause: ¬ IsStrongCause salg cause d expr)
-:
-  let isConsistent := IsStrongCause.Not.isConsistent notCause
-  
-  Not
-    (Set3.defMem
-      (expr.interpretation
-        salg
-        isConsistent.leastBackground
-        cause.leastContext)
-      d)
-:=
-  match expr with
-  | Expr.var _ =>
-    fun isDef => (IsStrongCause.Not.elimVar notCause isDef).elim
-  |
-    Expr.op _ argExprs =>
-    let isConsistent := IsStrongCause.Not.isConsistent notCause
-    let isDefToExNotCause :=
-      IsStrongCause.Not.elimOp
-        notCause
-        (fun param d =>
-          Set3.defMem
-            ((argExprs param).interpretation
-              salg isConsistent.leastBackground cause.leastContext)
-            d)
-    fun isDef =>
-      let ⟨_param, ⟨_dArg, isDefArg⟩, notCause⟩ :=
-        isDefToExNotCause isDef
-      
-      (notDefUnderLeast notCause) isDefArg
-  |
-    Expr.un _ _ =>
-    let notCauseLeft := IsStrongCause.Not.elimUnL notCause
-    let notCauseRite := IsStrongCause.Not.elimUnR notCause
-    let ihLeft := notDefUnderLeast notCauseLeft
-    let ihRite := notDefUnderLeast notCauseRite
-    (Or.elim · ihLeft ihRite)
-  |
-    Expr.ir _ _ =>
-    let notCauseLeftOrRite := IsStrongCause.Not.elimIr notCause
-    notCauseLeftOrRite.elim
-      (fun notCauseLeft =>
-        let ihLeft := notDefUnderLeast notCauseLeft
-        fun isDef => ihLeft isDef.left)
-      (fun notCauseRite =>
-        let ihRite := notDefUnderLeast notCauseRite
-        fun isDef => ihRite isDef.right)
-  |
-    Expr.cpl _ =>
-    let ⟨_isSat, isPos⟩ := IsStrongCause.Not.elimNot notCause
-    (· isPos)
-  |
-    Expr.ifThen _ _ =>
-    let notCauseCondOrBody := IsStrongCause.Not.elimIfThen notCause
-    notCauseCondOrBody.elim
-      (fun notCauseCond =>
-        fun ⟨⟨dC, isDef⟩, _⟩ =>
-          notDefUnderLeast (notCauseCond dC) isDef)
-      (fun notCauseBody =>
-        let ihBody := notDefUnderLeast notCauseBody
-        fun ⟨_, isDef⟩ => ihBody isDef)
-  |
-    Expr.Un x body =>
-      let isConsistent := IsStrongCause.Not.isConsistent notCause
-      fun ⟨dX, isDef⟩ =>
-        let notCause := IsStrongCause.Not.elimArbUn notCause dX
-        let ih := notDefUnderLeast notCause
-        let leastBEq := isConsistent.leastBackgroundUpdateEq x dX
-        
-        let interpLe :=
-          Expr.interpretation.isMonotonic.standard
-            salg
-            body
-            (isConsistent.leastBackground.update x dX)
-            (cause.leastContextUpdateLe x dX)
-        
-        ih (leastBEq ▸ interpLe.defLe isDef)
-  |
-    Expr.Ir x body =>
-      let isConsistent := IsStrongCause.Not.isConsistent notCause
-      fun isDef =>
-        let ⟨dX, notCause⟩ := IsStrongCause.Not.elimArbIr notCause
-        let leastBEq := isConsistent.leastBackgroundUpdateEq x dX
-        
-        let interpLe :=
-          Expr.interpretation.isMonotonic.standard
-            salg
-            body
-            (isConsistent.leastBackground.update x dX)
-            (cause.leastContextUpdateLe x dX)
-        
-        notDefUnderLeast
-          notCause (leastBEq ▸ interpLe.defLe (isDef dX))
-
-
-def IsStrongCause.elimVar
-  (isCause: IsStrongCause salg cause d (Expr.var x))
+def IsStrongCause.elimArbUn
+  (isCause: IsStrongCause salg cause d (Expr.Un x body))
   (isConsistent: cause.IsConsistent)
 :
-  ⟨d, x⟩ ∈ cause.contextIns
+  ∃ dX, IsStrongCause salg (cause.withBound x dX) d body
 :=
-  isCause isConsistent.leastValsAreSat
-
-def IsStrongCause.notVar
-  (isConsistent: cause.IsConsistent)
-  (ninCins: ⟨d, x⟩ ∉ cause.contextIns)
-:
-  ¬ IsStrongCause salg cause d (Expr.var x)
-:=
-  fun isCause => ninCins (isCause.elimVar isConsistent)
-
-
-def IsStrongCause.notOp
-  {salg: Salgebra sig}
-  {d: salg.D}
-  {cause: Cause salg.D}
-  
-  (causeIsConsistentOrDInOpIsPossible:
-    cause.IsConsistent ∨ ∃ argVals, d ∈ salg.I opr argVals)
-  (allCausesNot:
-    ∀ argVals: sig.Args opr salg.D,
-      d ∈ salg.I opr argVals →
-    ∃ param, ∃ (dArg: argVals param),
-      ¬ IsStrongCause salg cause dArg (argExprs param))
-:
-  ¬ IsStrongCause salg cause d (Expr.op opr argExprs)
-:=
-  let isConsistent :=
-    causeIsConsistentOrDInOpIsPossible.elim
-      id
-      (fun ⟨argVals, dIn⟩ =>
-        let ⟨_, _, notCause⟩ := allCausesNot argVals dIn
-        IsStrongCause.Not.isConsistent notCause)
-  
-  fun isCause =>
-    let isDef := isCause isConsistent.leastValsAreSat
-    let ⟨_param, ⟨_dArg, dArgIsDef⟩, notCause⟩ :=
-      allCausesNot
-        (fun param d =>
-          Set3.defMem
-            ((argExprs param).interpretation
-              salg
-              isConsistent.leastBackground
-              cause.leastContext)
-            d)
-        isDef
-    Not.notDefUnderLeast notCause dArgIsDef
-
-def IsStrongCause.elimOp
-  {salg: Salgebra sig}
-  {d: salg.D}
-  {cause: Cause salg.D}
-  
-  (isCause: IsStrongCause salg cause d (Expr.op opr argExprs))
-  (causeIsConsistentOrDInOpIsPossible:
-    cause.IsConsistent ∨ ∃ argVals, d ∈ salg.I opr argVals)
-:
-  ∃ (argVals: sig.Args opr salg.D),
-    d ∈ salg.I opr argVals ∧
-    ∀ param (dArg: argVals param),
-      IsStrongCause salg cause dArg (argExprs param)
-:=
-  byContradiction fun nex =>
-    let allExNotCause :=
-      nex.toAll
-        fun _ nand dIn =>
-          (nand.toImpl dIn).toEx
-            fun _ nall => nall.toEx fun _ => id
-    
-    IsStrongCause.notOp
-      causeIsConsistentOrDInOpIsPossible
-      allExNotCause
-      isCause
-
-
-def IsStrongCause.notUn
-  (notCauseLeft: ¬ IsStrongCause salg cause d left)
-  (notCauseRite: ¬ IsStrongCause salg cause d rite)
-:
-  ¬ IsStrongCause salg cause d (Expr.un left rite)
-:=
-  fun isCause => 
-    let isConsistent := IsStrongCause.Not.isConsistent notCauseLeft
-    (isCause isConsistent.leastValsAreSat).elim
-      (Not.notDefUnderLeast notCauseLeft)
-      (Not.notDefUnderLeast notCauseRite)
-
-def IsStrongCause.elimUn
-  (isCause: IsStrongCause salg cause d (Expr.un left rite))
-:
-  Or
-    (IsStrongCause salg cause d left)
-    (IsStrongCause salg cause d rite)
-:=
-  byContradiction fun nor =>
-    let ⟨notCauseLeft, notCauseRite⟩ := nor.toAnd
-    IsStrongCause.notUn notCauseLeft notCauseRite isCause
-
-
-def IsStrongCause.notIrLeft
-  (notCauseLeft: ¬ IsStrongCause salg cause d left)
-:
-  ¬ IsStrongCause salg cause d (Expr.ir left rite)
-:=
-  let isConsistent := IsStrongCause.Not.isConsistent notCauseLeft
-  fun isCause =>
-    let ⟨isDef, _⟩ := isCause isConsistent.leastValsAreSat
-    Not.notDefUnderLeast notCauseLeft isDef
-
-def IsStrongCause.notIrRite
-  (notCauseRite: ¬ IsStrongCause salg cause d rite)
-:
-  ¬ IsStrongCause salg cause d (Expr.ir left rite)
-:=
-  let isConsistent := IsStrongCause.Not.isConsistent notCauseRite
-  fun isCause =>
-    let ⟨_, isDef⟩ := isCause isConsistent.leastValsAreSat
-    Not.notDefUnderLeast notCauseRite isDef
-
-def IsStrongCause.elimIr
-  (isCause: IsStrongCause salg cause d (Expr.ir left rite))
-:
-  And
-    (IsStrongCause salg cause d left)
-    (IsStrongCause salg cause d rite)
-:=
-  byContradiction fun nand =>
-    nand.toOr.elim
-      (IsStrongCause.notIrLeft · isCause)
-      (IsStrongCause.notIrRite · isCause)
-
-
-def IsStrongCause.elimNot
-  (_isCause: IsStrongCause salg cause d (Expr.cpl expr))
-  (_isConsistent: cause.IsConsistent)
-:
-  True -- TODO is there anything useful that can be returned???
-:=
-  trivial
-
-
-def IsStrongCause.notIfThenCond
-  {cond}
-  (notCauseCond: ∀ dC, ¬ IsStrongCause salg cause dC cond)
-  (d: salg.D)
-  (body: Expr _)
-:
-  ¬ IsStrongCause salg cause d (Expr.ifThen cond body)
-:=
-  fun isCause =>
-    let isConsistent :=
-      IsStrongCause.Not.isConsistent (notCauseCond d)
-    let ⟨⟨dC, isDef⟩, _⟩ := isCause isConsistent.leastValsAreSat
-    Not.notDefUnderLeast (notCauseCond dC) isDef
-
-def IsStrongCause.notIfThenBody
-  (notCauseBody: ¬ IsStrongCause salg cause d body)
-  (cond: Expr _)
-:
-  ¬ IsStrongCause salg cause d (Expr.ifThen cond body)
-:=
-  fun isCause =>
-    let isConsistent :=
-      IsStrongCause.Not.isConsistent notCauseBody
-    let ⟨_, isDef⟩ := isCause isConsistent.leastValsAreSat
-    Not.notDefUnderLeast notCauseBody isDef
-
-def IsStrongCause.elimIfThen
-  {cond}
-  (isCause: IsStrongCause salg cause d (Expr.ifThen cond body))
-:
-  And
-    (∃ dC, IsStrongCause salg cause dC cond)
-    (IsStrongCause salg cause d body)
-:=
-  byContradiction fun nand =>
-    nand.toOr.elim
-      (fun nex =>
-        let allCause := nex.toAll fun _ => id
-        IsStrongCause.notIfThenCond allCause d body isCause)
-      (fun notCause =>
-        IsStrongCause.notIfThenBody notCause cond isCause)
-
+  let ⟨dX, isDef⟩ := isCause isConsistent.leastValsApxAreSat
+  ⟨
+    dX,
+    fun isSat =>
+      let bLe := isConsistent.leastBackgroundApxUpdateLe x dX isSat
+      let cLe := cause.leastContextApxUpdateLeDefMem x dX isSat
+      Expr.interpretation.isMonotonic.apxDefMem
+        salg body bLe cLe isDef
+  ⟩
 
 def IsStrongCause.notArbUn
   {salg: Salgebra sig}
@@ -761,29 +724,42 @@ def IsStrongCause.notArbUn
   ¬ IsStrongCause salg cause d (Expr.Un x body)
 :=
   fun isCause =>
-    let ⟨dX, isDef⟩ := isCause isConsistent.leastValsAreSat
-    let leastBEq := isConsistent.leastBackgroundUpdateEq x dX
-    
-    let interpLe :=
-      Expr.interpretation.isMonotonic.standard
-        salg
-        body
-        (isConsistent.leastBackground.update x dX)
-        (cause.leastContextUpdateLe x dX)
-    
-    Not.notDefUnderLeast
-      (notCause dX) (leastBEq ▸ interpLe.defLe isDef)
+    notCause _ (isCause.elimArbUn isConsistent).unwrap.property
 
-def IsStrongCause.elimArbUn
-  (isCause: IsStrongCause salg cause d (Expr.Un x body))
+def IsStrongCause.Not.elimArbUn
+  (isNotCause: ¬ IsStrongCause salg cause d (Expr.Un x body))
+  (dX: salg.D)
+:
+  ¬ IsStrongCause salg (cause.withBound x dX) d body
+:=
+  fun isCause => isNotCause isCause.arbUn
+
+
+def IsStrongCause.arbIr
+  {salg: Salgebra sig}
+  {cause: Cause salg.D}
+  {d: salg.D}
+  
+  (isCause:
+    ∀ dX, IsStrongCause salg (cause.withBound x dX) d body)
+:
+  IsStrongCause salg cause d (Expr.Ir x body)
+:=
+  fun isSat dX =>
+    isCause dX (cause.withBoundSatOfSatStrong isSat)
+
+def IsStrongCause.elimArbIr
+  (isCause: IsStrongCause salg cause d (Expr.Ir x body))
   (isConsistent: cause.IsConsistent)
 :
-  ∃ dX, IsStrongCause salg (cause.withBound x dX) d body
+  ∀ dX, IsStrongCause salg (cause.withBound x dX) d body
 :=
-  byContradiction fun nex =>
-    let allNotCause := nex.toAll fun _ => id
-    IsStrongCause.notArbUn allNotCause isConsistent isCause
-
+  fun dX {_ _} isSat =>
+    let isDef := isCause isConsistent.leastValsApxAreSat dX
+    let bLe := isConsistent.leastBackgroundApxUpdateLe x dX isSat
+    let cLe := cause.leastContextApxUpdateLeDefMem x dX isSat
+    Expr.interpretation.isMonotonic.apxDefMem
+      salg body bLe cLe isDef
 
 def IsStrongCause.notArbIr
   {salg: Salgebra sig}
@@ -797,25 +773,17 @@ def IsStrongCause.notArbIr
 :=
   fun isCause =>
     let ⟨dX, notCause⟩ := notCause
-    let leastBEq := isConsistent.leastBackgroundUpdateEq x dX
-    let isDef := isCause isConsistent.leastValsAreSat dX
-    
-    let interpLe :=
-      Expr.interpretation.isMonotonic.standard
-        salg
-        body
-        (isConsistent.leastBackground.update x dX)
-        (cause.leastContextUpdateLe x dX)
-    
-    Not.notDefUnderLeast
-      notCause (leastBEq ▸ interpLe.defLe isDef)
+    notCause (isCause.elimArbIr isConsistent dX)
 
-def IsStrongCause.elimArbIr
-  (isCause: IsStrongCause salg cause d (Expr.Ir x body))
-  (isConsistent: cause.IsConsistent)
+def IsStrongCause.Not.elimArbIr
+  (isNotCause: ¬ IsStrongCause salg cause d (Expr.Ir x body))
 :
-  ∀ dX, IsStrongCause salg (cause.withBound x dX) d body
+  ∃ dX, ¬ IsStrongCause salg (cause.withBound x dX) d body
 :=
-  byContradiction fun nall =>
-    let exHasNoCause := nall.toEx fun _ => id
-    IsStrongCause.notArbIr exHasNoCause isConsistent isCause
+  byContradiction fun nex =>
+    let allHaveCause:
+      ∀ dX, IsStrongCause salg (cause.withBound x dX) d body
+    :=
+      nex.toAll fun _ isCause => isCause.dne
+    
+    isNotCause (IsStrongCause.arbIr allHaveCause)

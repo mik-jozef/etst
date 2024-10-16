@@ -1,6 +1,6 @@
 /-
   This files contains the helper definitions and lemmas for the
-  chapter 6, plus some utility defs for later chapters.
+  chapter 6, plus related utility defs for later chapters.
 -/
 
 import WFC.Ch6_S0_AProofSystem
@@ -14,7 +14,7 @@ def ValVar.eq: d0 = d1 → x0 = x1 → ValVar.mk d0 x0 = ⟨d1, x1⟩
 def ValVar.eqX: @Eq (ValVar D) ⟨d0, x0⟩ ⟨d1, x1⟩ → x0 = x1
 | rfl => rfl
 
--- The (definitive) nonmembers of a valuation.
+-- The (definite) nonmembers of a valuation.
 def Valuation.nonmembers
   (v: Valuation D)
 :
@@ -829,7 +829,7 @@ def completenessProofC
                     salg (dl.getDef x) isLe
                     ((Valuation.ord.approximation _).le_refl _)
                 
-                Expr.interpretation.contextHasDefMemPreservesDefMem
+                Expr.interpretation.isMonotonic.defMem
                   (fun _ _ => isSat.contextInsHold)
                   (isMono.defLe isDefOfBPred)
             

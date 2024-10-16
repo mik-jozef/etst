@@ -102,7 +102,7 @@
   The fixed point of operator B is called the well-founded model
   of the definition list.
   
-  This approach semantics is called the well-founded semantics,
+  This approach to semantics is called the well-founded semantics,
   and the existence of the least fixed point is guaranteed by
   a variant of the Knaster-Tarski theorem. More details and
   and references can be found in my [magister thesis][wfs-rec-types].
@@ -698,8 +698,7 @@ def Salgebra.IsDefinable
 :
   Prop
 :=
-  ∃
-    (dl: FinBoundedDL sig)
+  ∃ (dl: FinBoundedDL sig)
     (x: Nat)
   ,
     set = dl.wellFoundedModel salg x
