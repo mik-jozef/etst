@@ -116,8 +116,8 @@ Czech equivalent of the master's thesis).
    [The well-founded semantics for general logic programs][van-gelder-wfs]
 1. Vassilis Kountouriotis, Christos Nomikos, Panos Rondogiannis (2009):
    [Well-founded semantics for Boolean grammars][wfs-bg]
-2. Jozef Mikušinec (2022): Well-founded semantics for dependent,
-   recursive record types with type complement
+2. Jozef Mikušinec (2022): [Well-founded semantics for dependent,
+   recursive record types with type complement][my-mgr-thesis]
 
 
 ## Future plans
