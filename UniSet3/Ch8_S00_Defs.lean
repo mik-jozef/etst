@@ -131,6 +131,9 @@ namespace Pair
     def nat502NeqShiftDefEncoding: 502 ≠ 22 := by decide
     def nat503NeqShiftDefEncoding: 503 ≠ 22 := by decide
     def nat504NeqShiftDefEncoding: 504 ≠ 22 := by decide
+    def nat500NeqTheDefList: 500 ≠ 32 := by decide
+    def nat501NeqTheDefList: 501 ≠ 32 := by decide
+    def nat502NeqTheDefList: 502 ≠ 32 := by decide
     def nat500NeqGetBounds: 500 ≠ 33 := by decide
     def nat501NeqGetBounds: 501 ≠ 33 := by decide
     def nat502NeqGetBounds: 502 ≠ 33 := by decide

@@ -31,15 +31,20 @@ lean_lib UniSet3.Ch10_S01_InternalExternalEquivalence {}
 
 lean_lib Utils.AProofSystem {}
 lean_lib Utils.BasicUtils {}
+lean_lib Utils.CauseSatisfiesBoundVars {}
 lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
 lean_lib Utils.ExprIsFreeVar {}
+lean_lib Utils.InsInterp {}
 lean_lib Utils.Interpretation {}
 lean_lib Utils.IsStrongCause {}
+lean_lib Utils.IsWeakCause {}
 lean_lib Utils.LeN37 {}
 lean_lib Utils.Lfp {}
+lean_lib Utils.NopeInterp {}
 lean_lib Utils.Operators {}
 lean_lib Utils.Ordinal {}
+lean_lib Utils.OutIntro4 {}
 lean_lib Utils.Pair {}
 lean_lib Utils.PairDepthDictOrder {}
 lean_lib Utils.PairDictOrder {}

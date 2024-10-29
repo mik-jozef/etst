@@ -445,3 +445,19 @@ def Expr.interpretation.isMonotonic.apxDefMem
   let isMonoB := isMonotonic.approximation salg e bLe c0LeSelf
   let isMonoC := isMonotonic.defMem cLeDef
   isMonoB.defLe.trans isMonoC
+
+def Expr.interpretation.isMonotonic.apxPosMem
+  (salg: Salgebra sig)
+  (e: Expr sig)
+  {b0 b1 c0 c1: Valuation salg.D}
+  (bLe: b0 ⊑ b1)
+  (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
+:
+  (interpretation salg b1 c1 e).posMem
+    ⊆
+  (interpretation salg b0 c0 e).posMem
+:=
+  let c0LeSelf := (Valuation.ord.approximation salg.D).le_refl c1
+  let isMonoB := isMonotonic.approximation salg e bLe c0LeSelf
+  let isMonoC := isMonotonic.posMem cLePos
+  isMonoB.posLe.trans isMonoC

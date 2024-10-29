@@ -46,33 +46,74 @@ structure Cause (D: Type*) where
   backgroundOut: Set (ValVar D)
 
 
--- Defines when a cause is strongly satisfied by a pair of valuations.
-structure Cause.IsStronglySatisfiedBy
+structure Cause.IsStronglySatisfiedByContext
   (cause: Cause D)
-  (b c: Valuation D)
+  (c: Valuation D)
 :
   Prop
 where
   contextInsHold:
     ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).defMem d
+
+structure Cause.IsStronglySatisfiedByBackground
+  (cause: Cause D)
+  (b: Valuation D)
+:
+  Prop
+where
   backgroundInsHold:
     ∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → (b x).defMem d
   backgroundOutHold:
     ∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundOut → ¬(b x).posMem d
 
--- Defines when a cause is weakly satisfied by a pair of valuations.
-structure Cause.IsWeaklySatisfiedBy
+/-
+  Defines when a cause is strongly satisfied by a context-background
+  pair of valuations. The properties are all inherited from the
+  above two structures.
+-/
+structure Cause.IsStronglySatisfiedBy
   (cause: Cause D)
   (b c: Valuation D)
+extends
+  Cause.IsStronglySatisfiedByContext cause c,
+  Cause.IsStronglySatisfiedByBackground cause b
+:
+  Prop
+
+
+structure Cause.IsWeaklySatisfiedByContext
+  (cause: Cause D)
+  (c: Valuation D)
 :
   Prop
 where
   contextInsHold:
     ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).posMem d
+
+structure Cause.IsWeaklySatisfiedByBackground
+  (cause: Cause D)
+  (b: Valuation D)
+:
+  Prop
+where
   backgroundInsHold:
     ∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → (b x).posMem d
   backgroundOutHold:
     ∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundOut → ¬(b x).defMem d
+
+/-
+  Defines when a cause is weakly satisfied by a context-background
+  pair of valuations. The properties are all inherited from the
+  above two structures.
+-/
+structure Cause.IsWeaklySatisfiedBy
+  (cause: Cause D)
+  (b c: Valuation D)
+extends
+  Cause.IsWeaklySatisfiedByContext cause c,
+  Cause.IsWeaklySatisfiedByBackground cause b
+:
+  Prop
 
 /-
   `Is[X]Cause salg cause d expr` means that for every pair of

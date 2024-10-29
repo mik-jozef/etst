@@ -13,7 +13,7 @@ namespace Valuation
   :
     val.update x d x = Set3.just d
   :=
-    by unfold update; exact if_pos rfl
+    if_pos rfl
   
   def update.eqBoundOfEq
     (val: Valuation D)
@@ -33,7 +33,7 @@ namespace Valuation
   :
     val.update xBound d xReq = val xReq
   :=
-    by unfold update; exact if_neg xNeq.symm
+    if_neg xNeq.symm
   
   def update.inEq.defMem
     (val: Valuation D)
@@ -63,7 +63,7 @@ namespace Valuation
         =
       (update val x dBound x).defMem d
     :=
-      by unfold update; rw [if_pos rfl]; unfold Set3.just; exact rfl
+      by unfold update; rw [if_pos rfl]; exact rfl
     
     show Set.just dBound d from eq ▸ inUpdated
   
@@ -77,7 +77,7 @@ namespace Valuation
         =
       (update val x dBound x).posMem d
     :=
-      by unfold update; rw [if_pos rfl]; unfold Set3.just; exact rfl
+      by unfold update; rw [if_pos rfl]; exact rfl
     
     show Set.just dBound d from eq ▸ inUpdated
   
@@ -134,6 +134,70 @@ namespace Valuation
       by unfold update; rw [if_neg neq.symm]
     
     eq ▸ inBound
+  
+  def update.cancelsPrevious
+    (val: Valuation D)
+    (x: Nat)
+    (dA dB: D)
+  :
+    (val.update x dA).update x dB = val.update x dB
+  :=
+    funext fun xx =>
+      if h: x = xx then
+        by rw [h, update.eqBound, update.eqBound]
+      else
+        by rw [
+          update.eqOrig _ h,
+          update.eqOrig _ h,
+          update.eqOrig _ h,
+        ]
+  
+  
+  def updateSet3
+    (val: Valuation D)
+    (x: Nat)
+    (s: Set3 D)
+  :
+    Valuation D
+  :=
+    fun xx => if xx = x then s else val xx
+  
+  def updateSet3.eqBound
+    (val: Valuation D)
+    (x: Nat)
+    (s: Set3 D)
+  :
+    val.updateSet3 x s x = s
+  :=
+    if_pos rfl
+  
+  def updateSet3.eqOrig
+    (val: Valuation D)
+    {xBound xReq: Nat}
+    (xNeq: xBound ≠ xReq)
+    (s: Set3 D)
+  :
+    val.updateSet3 xBound s xReq = val xReq
+  :=
+    if_neg xNeq.symm
+  
+  def update.cancelsPreviousSet3
+    (val: Valuation D)
+    (x: Nat)
+    (sA: Set3 D)
+    (dB: D)
+  :
+    (val.updateSet3 x sA).update x dB = val.update x dB
+  :=
+    funext fun xx =>
+      if h: x = xx then
+        by rw [h, update.eqBound, update.eqBound]
+      else
+        by rw [
+          update.eqOrig _ h,
+          update.eqOrig _ h,
+          updateSet3.eqOrig _ h,
+        ]
   
   
   def update.isMonotonic.standard.defMem

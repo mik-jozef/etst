@@ -448,6 +448,10 @@ def Not.implToAnd {A B: Prop} (ab: ¬(A → B)): A ∧ ¬B :=
   else
     False.elim (ab ((fun a => False.elim (hA a))))
 
+def Not.implToAnd2 (ab: ¬(A → B)) (nbc: ¬B → C): A ∧ C :=
+  let ⟨a, nb⟩ := ab.implToAnd
+  And.intro a (nbc nb)
+
 
 noncomputable def existsDistinctOfNotInjective
   {f: A → B}

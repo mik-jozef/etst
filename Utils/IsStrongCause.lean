@@ -7,6 +7,46 @@ import WFC.Ch6_S1_AProofSystem
 import Utils.PairExpr
 
 
+def Cause.IsStronglySatisfiedBy.withBound
+  {cause: Cause D}
+  (isSat: cause.IsStronglySatisfiedBy b c)
+  (x: Nat)
+  (d: D)
+:
+  (cause.withBound x d).IsStronglySatisfiedBy
+    (b.update x d)
+    (c.update x d)
+:=
+  open Cause.IsStronglySatisfiedBy in {
+    contextInsHold :=
+      fun inCinsWith =>
+        inCinsWith.elim
+          (fun ⟨inCins, xNeq⟩ =>
+            Valuation.update.eqOrig _ xNeq.symm d ▸
+            isSat.contextInsHold inCins)
+          (fun ⟨dEq, xEq⟩ =>
+            Valuation.update.eqBoundOfEq _ xEq.symm d ▸
+            dEq ▸ rfl)
+    backgroundInsHold :=
+      fun inBinsWith =>
+        inBinsWith.elim
+          (fun ⟨inBins, xNeq⟩ =>
+            Valuation.update.eqOrig _ xNeq.symm d ▸
+            isSat.backgroundInsHold inBins)
+          (fun ⟨dEq, xEq⟩ =>
+            Valuation.update.eqBoundOfEq _ xEq.symm d ▸
+            dEq ▸ rfl)
+    backgroundOutHold :=
+      fun inBoutWith =>
+        inBoutWith.elim
+          (fun ⟨inBout, xNeq⟩ =>
+            Valuation.update.eqOrig _ xNeq.symm d ▸
+            isSat.backgroundOutHold inBout)
+          (fun ⟨dNeq, xEq⟩ =>
+            Valuation.update.eqBoundOfEq _ xEq.symm d ▸
+            dNeq)
+  }
+
 def Cause.IsInapplicable.toIsCauseInapplicable
   {salg: Salgebra sig}
   {cause: Cause salg.D}
@@ -101,13 +141,10 @@ def Cause.leastContextApx
 def Cause.IsConsistent.leastBackgroundApxIsSat
   {cause: Cause D}
   (isConsistent: cause.IsConsistent)
-  (c: Valuation D)
 :
-  cause.backgroundOnly.IsStronglySatisfiedBy
+  cause.IsStronglySatisfiedByBackground
     (isConsistent.leastBackgroundApx)
-    c
 := {
-  contextInsHold := nofun
   backgroundInsHold := id
   backgroundOutHold :=
     fun {dd xx} inBout =>
@@ -127,15 +164,14 @@ def Cause.IsConsistent.leastValsApxAreSat
   contextInsHold := id
   backgroundInsHold := id
   backgroundOutHold :=
-    Cause.IsStronglySatisfiedBy.backgroundOutHold
-      (leastBackgroundApxIsSat isConsistent (leastContextApx cause))
+    (leastBackgroundApxIsSat isConsistent).backgroundOutHold
 }
 
 def Cause.IsConsistent.leastIsLeApx
   {cause: Cause D}
   (isConsistent: cause.IsConsistent)
   (b: Valuation D)
-  (bSat: cause.backgroundOnly.IsStronglySatisfiedBy b b)
+  (bSat: cause.IsStronglySatisfiedByBackground b)
 :
   isConsistent.leastBackgroundApx ⊑ b
 :=
@@ -233,11 +269,9 @@ fun _ inUpdatedLeast =>
 def Cause.IsStronglySatisfiedBy.backgroundOnly
   {cause: Cause D}
   (isSat: cause.IsStronglySatisfiedBy b c)
-  (cNew: Valuation D)
 :
-  cause.backgroundOnly.IsStronglySatisfiedBy b cNew
+  cause.IsStronglySatisfiedByBackground b
 := {
-  contextInsHold := nofun
   backgroundInsHold := isSat.backgroundInsHold
   backgroundOutHold := isSat.backgroundOutHold
 }
@@ -343,8 +377,8 @@ def IsStrongCause.elimOp
         isConsistent.leastBackgroundApx
         cause.leastContextApx),
   isCause isConsistent.leastValsApxAreSat,
-  fun param ⟨_, dArgInArgs⟩ b _ isSat =>
-    let bLe := isConsistent.leastIsLeApx _ (isSat.backgroundOnly b)
+  fun param ⟨_, dArgInArgs⟩ _ _ isSat =>
+    let bLe := isConsistent.leastIsLeApx _ isSat.backgroundOnly
     let cLe := fun _ _ => isSat.contextInsHold
     Expr.interpretation.isMonotonic.apxDefMem
       salg (argExprs param) bLe cLe dArgInArgs,
@@ -443,14 +477,14 @@ def IsStrongCause.elimUn
       (fun isDefLeft =>
         Or.inl
           fun isSat =>
-            let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+            let bLe := h.leastIsLeApx _ isSat.backgroundOnly
             let cLe := fun _ _ => isSat.contextInsHold
             Expr.interpretation.isMonotonic.apxDefMem
               salg left bLe cLe isDefLeft)
       (fun isDefRite =>
         Or.inr
           fun isSat =>
-            let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+            let bLe := h.leastIsLeApx _ isSat.backgroundOnly
             let cLe := fun _ _ => isSat.contextInsHold
             Expr.interpretation.isMonotonic.apxDefMem
               salg rite bLe cLe isDefRite)
@@ -500,12 +534,12 @@ def IsStrongCause.elimIr
     let ⟨isDefLeft, isDefRite⟩ := isCause h.leastValsApxAreSat
     And.intro
       (fun isSat =>
-        let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+        let bLe := h.leastIsLeApx _ isSat.backgroundOnly
         let cLe := fun _ _ => isSat.contextInsHold
         Expr.interpretation.isMonotonic.apxDefMem
           salg left bLe cLe isDefLeft)
       (fun isSat =>
-        let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+        let bLe := h.leastIsLeApx _ isSat.backgroundOnly
         let cLe := fun _ _ => isSat.contextInsHold
         Expr.interpretation.isMonotonic.apxDefMem
           salg rite bLe cLe isDefRite)
@@ -541,63 +575,63 @@ def IsStrongCause.Not.elimIr
     isNotCause (IsStrongCause.ir isCauseLeft.dne isCauseRite.dne)
 
 
-def IsStrongCause.not
+def IsStrongCause.cpl
   {expr: Expr sig}
   (cause: Cause salg.D)
   (isCauseOut:
     {b: Valuation salg.D} →
-    cause.backgroundOnly.IsStronglySatisfiedBy b b →
+    cause.IsStronglySatisfiedByBackground b →
     ¬ (expr.interpretation salg b b).posMem d)
 :
   IsStrongCause salg cause d (Expr.cpl expr)
 :=
-  fun isSat => isCauseOut (isSat.backgroundOnly _)
+  fun isSat => isCauseOut isSat.backgroundOnly
 
-def IsStrongCause.elimNot
+def IsStrongCause.elimCpl
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {causeCpl causeExpr: Cause salg.D}
   {d: salg.D}
   
-  (isCauseCpl: IsStrongCause salg cause d (Expr.cpl expr))
+  (isCauseCpl: IsStrongCause salg causeCpl d (Expr.cpl expr))
   (dl: DefList sig)
-  (isSat: cause.IsStronglySatisfiedBy
+  (isSat: causeCpl.IsStronglySatisfiedBy
     (dl.wellFoundedModel salg)
     (dl.wellFoundedModel salg))
-  (isCauseExpr: IsWeakCause salg cause d expr)
+  (isCauseExpr: IsWeakCause salg causeExpr d expr)
 :
   IsCauseInapplicable
     salg
     dl
     (dl.wellFoundedModel salg).nonmembers
-    cause
+    causeExpr
 :=
   let insCpl := isCauseCpl isSat
   let notSat isSat := insCpl (isCauseExpr isSat)
   let isInapp := Cause.IsWeaklySatisfiedBy.toIsInapplicable notSat
   isInapp.toIsCauseInapplicable
 
-def IsStrongCause.Not.elimNotEx
+def IsStrongCause.Not.elimCplEx
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.cpl expr))
 :
   ∃ b,
-    cause.backgroundOnly.IsStronglySatisfiedBy b b ∧
+    cause.IsStronglySatisfiedByBackground b ∧
     (expr.interpretation salg b b).posMem d
 :=
   byContradiction fun nex =>
     let allSatPos := nex.toAll fun _ nand => nand.toImpl
-    isNotCause (IsStrongCause.not cause (allSatPos _))
+    isNotCause (IsStrongCause.cpl cause (allSatPos _))
 
-def IsStrongCause.Not.elimNot
+def IsStrongCause.Not.elimCpl
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.cpl expr))
 :
   let isConsistent := IsStrongCause.Not.isConsistent isNotCause
   let b := isConsistent.leastBackgroundApx
   
-  cause.backgroundOnly.IsStronglySatisfiedBy b b ∧
+  cause.IsStronglySatisfiedByBackground b ∧
   (expr.interpretation salg b b).posMem d
 :=
   let isConsistent := IsStrongCause.Not.isConsistent isNotCause
-  let ⟨b, isSat, isPos⟩ := IsStrongCause.Not.elimNotEx isNotCause
+  let ⟨b, isSat, isPos⟩ := IsStrongCause.Not.elimCplEx isNotCause
   let isLeB := isConsistent.leastIsLeApx b isSat
   
   let isLeExpr :=
@@ -605,7 +639,7 @@ def IsStrongCause.Not.elimNot
       salg expr isLeB isLeB
   
   And.intro
-    (isConsistent.leastBackgroundApxIsSat _)
+    isConsistent.leastBackgroundApxIsSat
     (isLeExpr.posLe isPos)
 
 
@@ -635,13 +669,13 @@ def IsStrongCause.elimIfThen
       ⟨
         dC,
         fun isSat =>
-          let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+          let bLe := h.leastIsLeApx _ isSat.backgroundOnly
           let cLe := fun _ _ => isSat.contextInsHold
           Expr.interpretation.isMonotonic.apxDefMem
             salg cond bLe cLe isDefCond
       ⟩
       (fun isSat =>
-        let bLe := h.leastIsLeApx _ (isSat.backgroundOnly _)
+        let bLe := h.leastIsLeApx _ isSat.backgroundOnly
         let cLe := fun _ _ => isSat.contextInsHold
         Expr.interpretation.isMonotonic.apxDefMem
           salg body bLe cLe isDefBody)
@@ -692,10 +726,7 @@ def IsStrongCause.arbUn
 :
   IsStrongCause salg cause d (Expr.Un x body)
 :=
-  fun isSat => ⟨
-    dX,
-    isCause (cause.withBoundSatOfSatStrong isSat),
-  ⟩
+  fun isSat => ⟨dX, isCause (isSat.withBound x dX)⟩
 
 def IsStrongCause.elimArbUn
   (isCause: IsStrongCause salg cause d (Expr.Un x body))
@@ -745,8 +776,7 @@ def IsStrongCause.arbIr
 :
   IsStrongCause salg cause d (Expr.Ir x body)
 :=
-  fun isSat dX =>
-    isCause dX (cause.withBoundSatOfSatStrong isSat)
+  fun isSat dX => isCause dX (isSat.withBound x dX)
 
 def IsStrongCause.elimArbIr
   (isCause: IsStrongCause salg cause d (Expr.Ir x body))

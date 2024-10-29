@@ -586,4 +586,31 @@ namespace Pair
           rw [exprToEncoding.isInverseSubtype isExpr]
           rw [fromNat.eqOfDepth isNat]))
   
+  
+  def boundVarsEncoding:
+    List (ValVar Pair)
+  →
+    Pair
+
+  | [] => Pair.zero
+  | ⟨d, x⟩ :: rest =>
+    Pair.pair (Pair.pair x d) (boundVarsEncoding rest)
+  
+  def InterpEnc
+    (boundVars: List (ValVar Pair))
+    (expr: Expr pairSignature)
+    (d: Pair)
+  :=
+    pair
+      (boundVarsEncoding boundVars)
+      (pair (exprToEncoding expr) d)
+  
+  def IsBound
+    (boundVars: List (ValVar Pair))
+    (x: Nat)
+  :
+    Prop
+  :=
+    ∃ d, uniSet3.IsGetBound (boundVarsEncoding boundVars) x d
+  
 end Pair    

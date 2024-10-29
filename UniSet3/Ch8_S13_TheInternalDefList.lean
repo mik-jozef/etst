@@ -31,6 +31,16 @@ namespace Pair
       rw [exprToEncoding.isInverse]
       exact (IsTheDefListExprPair.getNthExpr x).isNth.isExpr
     
+    def theInternalDefList.eqExpr
+      (x: Nat)
+    :
+      (theInternalDefList.getDef x)
+        =
+      (IsTheDefListExprPair.getNthExpr x).expr.encodingToExpr
+    :=
+      theInternalDefList.eqEnc x ▸
+      (encodingToExpr.isInverse (getDef x)).symm
+    
     def theInternalDefList.inListOfIsDefList
       (isInDl: IsTheDefListExprPair (fromNat i) exprEnc)
       (eqEnc: exprEnc = exprToEncoding expr)

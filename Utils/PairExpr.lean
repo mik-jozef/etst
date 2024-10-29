@@ -605,6 +605,22 @@ namespace PairExpr
   :=
     inwNatExprElim s.toInw
   
+  def inwNatExprElimNope
+    (w: InwP b c (natExpr n) (fromNat m))
+    (neq: n ≠ m)
+  :
+    P
+  :=
+    (neq (fromNat.injEq (Eq.symm (inwNatExprElim w)))).elim
+  
+  def insNatExprElimNope
+    (s: InsP b c (natExpr n) (fromNat m))
+    (neq: n ≠ m)
+  :
+    p = fromNat n
+  :=
+    inwNatExprElimNope s.toInw neq
+  
   def inwNatExprElimDepth
     (w: InwP b c (natExpr n) p)
   :

@@ -362,9 +362,7 @@ namespace Expr
       (∃ dC, Inw salg b c cond dC)
       (Inw salg b c body d)
   :=
-    let ⟨exCond, insBody⟩ := s
-    
-    And.intro exCond insBody
+    s
   
   
   def insBound:

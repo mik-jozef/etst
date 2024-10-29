@@ -159,3 +159,22 @@ end pairSalgebra
 -- The salgebra of pairs.
 def pairSalgebra: Salgebra pairSignature :=
   ⟨Pair, pairSalgebra.I, pairSalgebra.I.isMonotonic⟩
+
+
+/-
+  `fn.pairCallJust arg` is the triset of pairs `b` such that
+  `(arg, b)` is in `fn`.
+  
+  You can think of `fn` as a set of input-output pairs representing
+  a function `f: Pair → Set3 Pair`.
+-/
+def Set3.pairCallJust
+  (fn: Set3 Pair)
+  (arg: Pair)
+:
+  Set3 Pair
+:= {
+  defMem := fun p => fn.defMem (Pair.pair arg p)
+  posMem := fun p => fn.posMem (Pair.pair arg p)
+  defLePos := fun _ pInDef => fn.defLePos pInDef
+}
