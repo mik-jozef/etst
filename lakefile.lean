@@ -34,6 +34,7 @@ lean_lib Utils.BasicUtils {}
 lean_lib Utils.CauseSatisfiesBoundVars {}
 lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
+lean_lib Utils.ElimExternal {}
 lean_lib Utils.ExprIsFreeVar {}
 lean_lib Utils.InsInterp {}
 lean_lib Utils.Interpretation {}
