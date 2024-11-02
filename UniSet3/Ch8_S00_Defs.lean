@@ -61,7 +61,7 @@
   the `i + m`th definition of the internal definition list).
   
   Using the latter function, it is proven that the internal
-  definition list contains all definable trisets of pairs.
+  definition list defines all definable trisets of pairs.
   
   In subsequent chapters, we show that the well-founded model
   of the internal definition list is encoded by `uniSet3`, the
