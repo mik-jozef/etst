@@ -1,10 +1,48 @@
 import UniSet3.Ch8_S12_DefListToEncoding
+import Utils.CauseSatisfiesBoundVars
 import Utils.NopeInterp
+import Utils.OutIntro4
 
 open Expr
 open Pair
 open Pair.uniSet3
 open PairExpr
+
+def IsVarFree
+  (x: Nat)
+  (boundVars: List (ValVar D))
+:
+  Prop
+:=
+  ∀ d, ⟨d, x⟩ ∉ boundVars
+
+def IsVarFree.nopeGetBound
+  (isFree: IsVarFree x boundVars)
+  (isBound: IsGetBound (boundVarsEncoding boundVars) x d)
+:
+  P
+:=
+  False.elim (isFree d isBound.inBoundVars)
+
+def IsVarFree.ofEmpty
+  {D: Type*}
+  (x: Nat)
+:
+  IsVarFree (D := D) x []
+:=
+  nofun
+
+def IsVarFree.ofTail
+  (isFree: IsVarFree x boundVars)
+  (neqHead: xH ≠ x)
+  dH
+:
+  IsVarFree x (⟨dH, xH⟩ :: boundVars)
+:=
+  fun _ isBound =>
+    match List.mem_cons.mp isBound with
+    | Or.inl eq => ValVar.noConfusion eq fun _ => Ne.symm neqHead
+    | Or.inr inBoundTail => isFree _ inBoundTail
 
 
 def elimExternalVar
@@ -100,8 +138,6 @@ def elimExternalVar
     (nopeInterpArbIr fun inw =>
       let ⟨inw, _⟩ := inwPairElim inw
       inwNatExprElimNope (eqZ ▸ inw) (by decide))
-    
-  
 
 def elimExternalUn
   (inw:
@@ -666,3 +702,143 @@ def elimExternalArbIr
             eqBvUpd.symm,
           ]
           exact inwInterp)
+
+
+def Cause.minBoundVars
+  (boundVars: List (ValVar Pair))
+:
+  Cause Pair
+:= {
+  contextIns :=
+    fun ⟨d, x⟩ => IsGetBound (boundVarsEncoding boundVars) x d
+  backgroundIns :=
+    fun ⟨d, x⟩ => IsGetBound (boundVarsEncoding boundVars) x d
+  backgroundOut := fun ⟨d, x⟩ =>
+    ∃ dBound,
+      dBound ≠ d ∧
+      IsGetBound (boundVarsEncoding boundVars) x dBound
+}
+
+def Cause.minBoundVarsSat
+  (boundVars: List (ValVar Pair))
+:
+  (minBoundVars boundVars).SatisfiesBoundVars boundVars
+:=
+  fun xEncEq isGetBound => {
+    cinsSat := fun _ inCins xEq =>
+      inCins.isUnique (xEq ▸ xEncEq ▸ isGetBound)
+    binsSat := fun _ inBins xEq =>
+      inBins.isUnique (xEq ▸ xEncEq ▸ isGetBound)
+    boutSat := fun _ ⟨_dBound, dNeq, isGetBound1⟩ xEq dEq =>
+      (dEq ▸ dNeq)
+        (isGetBound1.isUnique (xEq ▸ xEncEq ▸ isGetBound))
+  }
+
+def Cause.minBoundVarsWeakCause
+  (boundVars: List (ValVar Pair))
+  (isGetBound:
+    IsGetBound (boundVarsEncoding boundVars) (fromNat x) d)
+:
+  IsWeakCause pairSalgebra (minBoundVars boundVars) d x
+:=
+  fun isSat => isSat.contextInsHold isGetBound
+
+
+def Cause.minBvAndVar
+  (boundVars: List (ValVar Pair))
+  (x: Nat)
+  (d: Pair)
+:
+  Cause Pair
+:=
+  (Cause.minBoundVars boundVars).union (Cause.var x d)
+
+def Cause.minBvAndVarSat
+  (boundVars: List (ValVar Pair))
+  (notBound:
+    ¬ ∃ d, IsGetBound (boundVarsEncoding boundVars) (fromNat x) d)
+  (d: Pair)
+:
+  Cause.SatisfiesBoundVars
+    (minBvAndVar boundVars x d)
+    boundVars
+:=
+  Cause.SatisfiesBoundVars.union
+    (Cause.minBoundVarsSat boundVars)
+    (fun {_xx _xxEnc dd} eqXxEnc isBound =>
+      {
+        cinsSat :=
+          -- Lean improvement idea: make ⟨_, _⟩ unnecessary.
+          fun ⟨_, _⟩ ⟨_, eqAliasX⟩ eqAliasXx =>
+            let eqX := eqAliasX.symm.trans eqAliasXx
+            False.elim (notBound ⟨dd, eqX ▸ eqXxEnc ▸ isBound⟩)
+        binsSat := fun ⟨_, _⟩ nope => nope.elim
+        boutSat := fun ⟨_, _⟩ nope => nope.elim
+      })
+
+def Cause.minBvAndVarWeakCause
+  (boundVars: List (ValVar Pair))
+  (x: Nat)
+  (d: Pair)
+:
+  IsWeakCause pairSalgebra (minBvAndVar boundVars x d) d x
+:=
+  fun isSat => isSat.contextInsHold (Or.inr ⟨rfl, rfl⟩)
+
+
+def Cause.minBvCinsNopeFree
+  (inCins: (Cause.minBoundVars boundVars).contextIns ⟨d, x⟩)
+  (isFree: IsVarFree x boundVars)
+:
+  P
+:=
+  isFree.nopeGetBound inCins
+
+def Cause.minBvBinsNopeFree
+  (inBins: (Cause.minBoundVars boundVars).backgroundIns ⟨d, x⟩)
+  (isFree: IsVarFree x boundVars)
+:
+  P
+:=
+  isFree.nopeGetBound inBins
+
+def Cause.minBvBoutNopeFree
+  {P: Prop}
+  (inBout: (Cause.minBoundVars boundVars).backgroundOut ⟨d, x⟩)
+  (isFree: IsVarFree x boundVars)
+:
+  P
+:=
+  let ⟨_, _, isGetBound⟩ := inBout
+  isFree.nopeGetBound isGetBound
+
+
+def Cause.inVarOfIsFree
+  (inCins: (Cause.minBvAndVar boundVars x d).contextIns ⟨dd, xx⟩)
+  (isFree: IsVarFree xx boundVars)
+:
+  dd = d ∧ xx = x
+:=
+  inCins.elim
+    (minBvCinsNopeFree · isFree)
+    id
+
+def Cause.minBvAndVarBinsNopeFree
+  (inBins: (Cause.minBvAndVar boundVars x d).backgroundIns ⟨dd, xx⟩)
+  (isFree: IsVarFree xx boundVars)
+:
+  P
+:=
+  inBins.elim
+    (minBvBinsNopeFree · isFree)
+    False.elim
+
+def Cause.minBvAndVarBoutNopeFree
+  (inBout: (Cause.minBvAndVar boundVars x d).backgroundOut ⟨dd, xx⟩)
+  (isFree: IsVarFree xx boundVars)
+:
+  P
+:=
+  inBout.elim
+    (minBvBoutNopeFree · isFree)
+    False.elim

@@ -47,8 +47,8 @@ def WeakSatIsStrongCauseOutUpdated
 
 def Cause.IsWeaklySatisfiedBy.toWithBound
   {cause: Cause D}
-  (isSat: cause.IsWeaklySatisfiedBy b c)
-  (x: Nat)
+  {x: Nat}
+  (isSat: (cause.exceptX x).IsWeaklySatisfiedBy b c)
   (d: D)
 :
   (cause.withBound x d).IsWeaklySatisfiedBy
@@ -60,7 +60,7 @@ def Cause.IsWeaklySatisfiedBy.toWithBound
       inCinsWith.elim
         (fun ⟨inCins, xNeq⟩ =>
           Valuation.update.eqOrig _ xNeq.symm d ▸
-          isSat.contextInsHold inCins)
+          isSat.contextInsHold ⟨inCins, xNeq⟩)
         (fun ⟨dEq, xEq⟩ =>
           Valuation.update.eqBoundOfEq _ xEq.symm d ▸
           dEq ▸ rfl)
@@ -69,7 +69,7 @@ def Cause.IsWeaklySatisfiedBy.toWithBound
       inBinsWith.elim
         (fun ⟨inBins, xNeq⟩ =>
           Valuation.update.eqOrig _ xNeq.symm d ▸
-          isSat.backgroundInsHold inBins)
+          isSat.backgroundInsHold ⟨inBins, xNeq⟩)
         (fun ⟨dEq, xEq⟩ =>
           Valuation.update.eqBoundOfEq _ xEq.symm d ▸
           dEq ▸ rfl)
@@ -78,7 +78,7 @@ def Cause.IsWeaklySatisfiedBy.toWithBound
       inBoutWith.elim
         (fun ⟨inBout, xNeq⟩ =>
           Valuation.update.eqOrig _ xNeq.symm d ▸
-          isSat.backgroundOutHold inBout)
+          isSat.backgroundOutHold ⟨inBout, xNeq⟩)
         (fun ⟨dNeq, xEq⟩ =>
           Valuation.update.eqBoundOfEq _ xEq.symm d ▸
           dNeq)
@@ -199,6 +199,21 @@ def Cause.leastBackgroundStd
   }
 
 /-
+  The greatest valuation in the standard order that weakly satisfies
+  the background part of a cause.
+-/
+def Cause.greatestBackgroundStd
+  (cause: Cause D)
+:
+  Valuation D
+:=
+  fun x => {
+    defMem := fun d => ⟨d, x⟩ ∉ cause.backgroundOut
+    posMem := Set.full
+    defLePos := fun _ _ => trivial
+  }
+
+/-
   The least valuation in the standard order that weakly satisfies
   the context part of a cause.
   
@@ -215,6 +230,7 @@ def Cause.leastContextStd
     posMem := fun d => ⟨d, x⟩ ∈ cause.contextIns
     defLePos := nofun
   }
+
 
 def Cause.leastBackgroundStdIsSat
   (cause: Cause D)
@@ -279,6 +295,26 @@ namespace IsWeakCause
     P
   :=
     goalInC (isCause cause.leastValsStdAreSat)
+  
+  def hurrDurrElimGreat
+    (isCause: IsWeakCause salg cause d expr)
+    {P: Prop}
+    (goalInC:
+      Set3.posMem
+        (expr.interpretation
+          salg
+          cause.greatestBackgroundStd
+          cause.leastContextStd)
+        d →
+      P)
+  :
+    P
+  :=
+    goalInC (isCause {
+      contextInsHold := id
+      backgroundInsHold := fun _ => trivial
+      backgroundOutHold := nofun
+    })
   
   
   def var
@@ -695,9 +731,9 @@ namespace IsWeakCause
     {cause: Cause salg.D}
     (isCause: IsWeakCause salg (cause.withBound x dX) d body)
   :
-    IsWeakCause salg cause d (Expr.Un x body)
+    IsWeakCause salg (cause.exceptX x) d (Expr.Un x body)
   :=
-    fun isSat => ⟨dX, isCause (isSat.toWithBound x dX)⟩
+    fun isSat => ⟨dX, isCause (isSat.toWithBound dX)⟩
   
   def elimArbUn
     (isCause: IsWeakCause salg cause d (Expr.Un x body))
@@ -738,8 +774,17 @@ namespace IsWeakCause
     
     (isCause: ∀ dX, IsWeakCause salg (cause.withBound x dX) d body)
   :
-    IsWeakCause salg cause d (Expr.Ir x body)
+    IsWeakCause salg (cause.exceptX x) d (Expr.Ir x body)
   :=
-    fun isSat dX => isCause dX (isSat.toWithBound x dX)
-    
+    fun isSat dX => isCause dX (isSat.toWithBound dX)
+  
+  
+  def toSuperCause
+    (isCause: IsWeakCause salg cause d expr)
+    (le: cause ⊆ causeSuper)
+  :
+    IsWeakCause salg causeSuper d expr
+  :=
+    fun isSat => isCause (isSat.ofSuper le)
+  
 end IsWeakCause

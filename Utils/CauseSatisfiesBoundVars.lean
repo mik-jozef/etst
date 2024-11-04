@@ -75,3 +75,23 @@ def Cause.SatisfiesBoundVars.withBoundSat
           (fun ⟨_, xEqXb⟩ =>
             absurd (xEqXb ▸ xEqX ▸ xEncEq.symm) xEncNeq)
   }
+
+def Cause.SatisfiesBoundVars.satTailExceptHead
+  {cause: Cause Pair}
+  (boundVarsSat: cause.SatisfiesBoundVars (⟨d, x⟩ :: tail))
+:
+  (cause.exceptX x).SatisfiesBoundVars tail
+:=
+  fun {xx _xxEnc _d} xEncEq isBoundTail =>
+    if h: xx = x then
+      {
+        cinsSat := fun _ ⟨_, xNeq⟩ xEq => (xNeq (xEq.trans h)).elim
+        binsSat := fun _ ⟨_, xNeq⟩ xEq => (xNeq (xEq.trans h)).elim
+        boutSat := fun _ ⟨_, xNeq⟩ xEq => (xNeq (xEq.trans h)).elim
+      }
+    else
+      open Pair.uniSet3.IsGetBound in
+      let xEncNeq := xEncEq ▸ Pair.fromNat.injNeq (Ne.symm h)
+      let causeSat :=
+        boundVarsSat xEncEq (InTail isBoundTail _ xEncNeq)
+      causeSat.toSubCause (Cause.exceptXIsSub cause x)

@@ -1,13 +1,5 @@
 import WFC.Ch6_S1_AProofSystem
 
-def IsVarFree
-  (boundVars: List (ValVar D))
-  (x: Nat)
-:
-  Prop
-:=
-  ∀ d, ⟨d, x⟩ ∉ boundVars
-
 /-
   A convenience helper type for `Out.intro4` below. Includes support
   for bound variables in case one needs to account for them.
@@ -17,41 +9,36 @@ inductive IsCauseInappExtended
   (dl: DefList sig)
   (cycle: Set (ValVar salg.D))
   (cause: Cause salg.D)
-  (boundVars: List (ValVar salg.D))
 :
   Prop
 |
   cinsFailsCycle
   {d x}
-  (inContextIns: ⟨d, x⟩ ∈ cause.contextIns)
-  (isFree: IsVarFree boundVars x)
+  (inCins: ⟨d, x⟩ ∈ cause.contextIns)
   (inCycle: ⟨d, x⟩ ∈ cycle)
 :
-  IsCauseInappExtended salg dl cycle cause boundVars
+  IsCauseInappExtended salg dl cycle cause
 |
   cinsFailsOut
   {d x}
   (inCins: ⟨d, x⟩ ∈ cause.contextIns)
-  (isFree: IsVarFree boundVars x)
   (isOut: Out salg dl d x)
 :
-  IsCauseInappExtended salg dl cycle cause boundVars
+  IsCauseInappExtended salg dl cycle cause
 |
   binsFails
   {d x}
   (inBins: ⟨d, x⟩ ∈ cause.backgroundIns)
-  (isFree: IsVarFree boundVars x)
   (isOut: Out salg dl d x)
 :
-  IsCauseInappExtended salg dl cycle cause boundVars
+  IsCauseInappExtended salg dl cycle cause
 |
   boutFails
   {d x}
   (inBout: ⟨d, x⟩ ∈ cause.backgroundOut)
-  (isFree: IsVarFree boundVars x)
   (isIns: Ins salg dl d x)
 :
-  IsCauseInappExtended salg dl cycle cause boundVars
+  IsCauseInappExtended salg dl cycle cause
 
 
 /-
@@ -81,7 +68,7 @@ def Out.intro4
     ⟨d, x⟩ ∈ cycle →
     (cause: Cause salg.D) →
     IsWeakCause salg cause d (dl.getDef x) →
-    IsCauseInappExtended salg dl cycle cause [])
+    IsCauseInappExtended salg dl cycle cause)
   {d x}
   (inCycle: ⟨d, x⟩ ∈ cycle)
 :
@@ -100,13 +87,13 @@ def Out.intro4
         (fun inCycle =>
           let isInappExtended := isEmptyCycle inCycle cause isCause
           match isInappExtended with
-          | cinsFailsOut inCins _ isOut =>
+          | cinsFailsOut inCins isOut =>
             blockedContextIns cause inCins (Or.inr isOut.isSound)
-          | cinsFailsCycle inCins _ inCycle =>
+          | cinsFailsCycle inCins inCycle =>
             blockedContextIns cause inCins (Or.inl inCycle)
-          | binsFails inBins _ isOut =>
+          | binsFails inBins isOut =>
             blockedBackgroundIns cause inBins isOut
-          | boutFails inBout _ isIns =>
+          | boutFails inBout isIns =>
             blockedBackgroundOut cause inBout isIns)
         (fun notPos =>
           match Out.isComplete _ _ notPos with
@@ -125,113 +112,102 @@ def Out.intro4
 def IsCauseInapplicable.toExtended
   (isInapp: IsCauseInapplicable salg dl cycle cause)
 :
-  IsCauseInappExtended salg dl cycle cause []
+  IsCauseInappExtended salg dl cycle cause
 :=
   open IsCauseInappExtended in
   match isInapp with
   | blockedContextIns cause inCins inCycle =>
-    cinsFailsCycle inCins nofun inCycle
+    cinsFailsCycle inCins inCycle
   | blockedBackgroundIns cause inBins isOut =>
-    binsFails inBins nofun isOut
+    binsFails inBins isOut
   | blockedBackgroundOut cause inBout isIns =>
-    boutFails inBout nofun isIns
+    boutFails inBout isIns
 
 def IsCauseInappExtended.toSuperCause
-  (isInapp: IsCauseInappExtended salg dl cycle causeA boudVars)
+  (isInapp: IsCauseInappExtended salg dl cycle causeA)
   (isSuper: causeA ⊆ causeB)
 :
-  IsCauseInappExtended salg dl cycle causeB boudVars
+  IsCauseInappExtended salg dl cycle causeB
 :=
   match isInapp with
-  | cinsFailsCycle inCins bv inCycle =>
-    cinsFailsCycle (isSuper.cinsLe inCins) bv inCycle
-  | cinsFailsOut inCins bv isOut =>
-    cinsFailsOut (isSuper.cinsLe inCins) bv isOut
-  | binsFails inBins bv isOut =>
-    binsFails (isSuper.binsLe inBins) bv isOut
-  | boutFails inBout bv isIns =>
-    boutFails (isSuper.boutLe inBout) bv isIns
+  | cinsFailsCycle inCins inCycle =>
+    cinsFailsCycle (isSuper.cinsLe inCins) inCycle
+  | cinsFailsOut inCins isOut =>
+    cinsFailsOut (isSuper.cinsLe inCins) isOut
+  | binsFails inBins isOut =>
+    binsFails (isSuper.binsLe inBins) isOut
+  | boutFails inBout isIns =>
+    boutFails (isSuper.boutLe inBout) isIns
 
 def IsCauseInappExtended.toSuperCycle
-  (isInapp: IsCauseInappExtended salg dl cycleA cause boudVars)
+  (isInapp: IsCauseInappExtended salg dl cycleA cause)
   (isSuper: cycleA ⊆ cycleB)
 :
-  IsCauseInappExtended salg dl cycleB cause boudVars
+  IsCauseInappExtended salg dl cycleB cause
 :=
   match isInapp with
-  | cinsFailsCycle inCins bv inCycle =>
-    cinsFailsCycle inCins bv (isSuper inCycle)
-  | cinsFailsOut inCins bv isOut =>
-    cinsFailsOut inCins bv isOut
-  | binsFails inBins bv isOut =>
-    binsFails inBins bv isOut
-  | boutFails inBout bv isIns =>
-    boutFails inBout bv isIns
+  | cinsFailsCycle inCins inCycle =>
+    cinsFailsCycle inCins (isSuper inCycle)
+  | cinsFailsOut inCins isOut =>
+    cinsFailsOut inCins isOut
+  | binsFails inBins isOut =>
+    binsFails inBins isOut
+  | boutFails inBout isIns =>
+    boutFails inBout isIns
 
 def IsCauseInappExtended.toSuper
-  (isInapp: IsCauseInappExtended salg dl cycleA causeA boudVars)
+  (isInapp: IsCauseInappExtended salg dl cycleA causeA)
   (isSuper: cycleA ⊆ cycleB)
   (isSuperCause: causeA ⊆ causeB)
 :
-  IsCauseInappExtended salg dl cycleB causeB boudVars
+  IsCauseInappExtended salg dl cycleB causeB
 :=
   let isInapp := isInapp.toSuperCause isSuperCause
   isInapp.toSuperCycle isSuper
 
-def IsCauseInappExtended.toEmptyBoundVars
-  (isInapp: IsCauseInappExtended salg dl cycle cause boundVars)
-:
-  IsCauseInappExtended salg dl cycle cause []
-:=
-  match isInapp with
-  | cinsFailsCycle inCins _ inCycle =>
-    cinsFailsCycle inCins nofun inCycle
-  | cinsFailsOut inCins _ isOut =>
-    cinsFailsOut inCins nofun isOut
-  | binsFails inBins _ isOut =>
-    binsFails inBins nofun isOut
-  | boutFails inBout _ isIns =>
-    boutFails inBout nofun isIns
-
 
 def IsCauseInappExtended.Not.union
   (isAppLeft:
-    ¬ IsCauseInappExtended salg dl cycle causeLeft boundVars)
+    ¬ IsCauseInappExtended salg dl cycle causeLeft)
   (isAppRite:
-    ¬ IsCauseInappExtended salg dl cycle causeRite boundVars)
+    ¬ IsCauseInappExtended salg dl cycle causeRite)
 :
   Not
     (IsCauseInappExtended
-      salg
-      dl
-      cycle
-      (causeLeft.union causeRite)
-      boundVars)
+      salg dl cycle (causeLeft.union causeRite))
 |
-  cinsFailsCycle inCins bv inCycle =>
+  cinsFailsCycle inCins inCycle =>
     inCins.elim
       (fun inCinsLeft =>
-        isAppLeft (cinsFailsCycle inCinsLeft bv inCycle))
+        isAppLeft (cinsFailsCycle inCinsLeft inCycle))
       (fun inCinsRite =>
-        isAppRite (cinsFailsCycle inCinsRite bv inCycle))
+        isAppRite (cinsFailsCycle inCinsRite inCycle))
 |
-  cinsFailsOut inCins bv isOut =>
+  cinsFailsOut inCins isOut =>
     inCins.elim
       (fun inCinsLeft =>
-        isAppLeft (cinsFailsOut inCinsLeft bv isOut))
+        isAppLeft (cinsFailsOut inCinsLeft isOut))
       (fun inCinsRite =>
-        isAppRite (cinsFailsOut inCinsRite bv isOut))
+        isAppRite (cinsFailsOut inCinsRite isOut))
 |
-  binsFails inBins bv isOut =>
+  binsFails inBins isOut =>
     inBins.elim
       (fun inBinsLeft =>
-        isAppLeft (binsFails inBinsLeft bv isOut))
+        isAppLeft (binsFails inBinsLeft isOut))
       (fun inBinsRite =>
-        isAppRite (binsFails inBinsRite bv isOut))
+        isAppRite (binsFails inBinsRite isOut))
 |
-  boutFails inBout bv isIns =>
+  boutFails inBout isIns =>
     inBout.elim
       (fun inBoutLeft =>
-        isAppLeft (boutFails inBoutLeft bv isIns))
+        isAppLeft (boutFails inBoutLeft isIns))
       (fun inBoutRite =>
-        isAppRite (boutFails inBoutRite bv isIns))
+        isAppRite (boutFails inBoutRite isIns))
+
+def IsCauseInappExtended.Not.arbUn
+  {causes: salg.D → Cause salg.D}
+  (isApp: ∀ dX, ¬ IsCauseInappExtended salg dl cycle (causes dX))
+:
+  ¬ IsCauseInappExtended salg dl cycle (Cause.arbUn causes)
+:=
+  sorry

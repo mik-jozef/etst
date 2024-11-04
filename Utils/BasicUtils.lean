@@ -320,7 +320,7 @@ def Option.neqConfusion (neq: a ≠ b): some a ≠ some b :=
   fun eqSome => neq (Option.noConfusion eqSome id)
 
 
-def Not.toAll {P ImpliedByNotP: T → Prop}
+def Not.toAll {P: T → Prop} {ImpliedByNotP: T → Sort*}
   (nEx: ¬(∃ t: T, P t))
   (nptImpl: ∀ t, ¬P t → ImpliedByNotP t)
 :

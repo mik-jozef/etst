@@ -69,11 +69,17 @@
   chapter.
 -/
 
-import Utils.PairDepthDictOrder
 import UniSet3.Ch7_UniDefList
+import Utils.PairDepthDictOrder
 
 
 namespace Pair
+  def boundVarsEncoding: List (ValVar Pair) → Pair
+  | [] => Pair.zero
+  | ⟨d, x⟩ :: rest =>
+    Pair.pair (Pair.pair x d) (boundVarsEncoding rest)
+  
+  
   namespace uniSet3
     open Expr
     open PairExpr
@@ -2440,6 +2446,37 @@ namespace Pair
         InTail isGetTailB _ _
       =>
         isGetTailA.isUnique isGetTailB
+    
+    -- Recursing on IsGetBound with `boundVarsEncoding` directly
+    -- causes the match expression to error (even when unfolded
+    -- once). Seems like a bug to me, but I've already submitted
+    -- one issue today, plus a few others some time ago that are
+    -- still open, and I'm getting a bit anxious about bothering
+    -- them too much lol.
+    def IsGetBound.inBoundVarsHelper
+      (eq: boundVarsEnc = boundVarsEncoding boundVars)
+      (isGet: IsGetBound boundVarsEnc (fromNat x) d)
+    :
+      ⟨d, x⟩ ∈ boundVars
+    :=
+      match boundVars, isGet with
+      |
+        _ :: _, InHead _ _ _ =>
+          let eq := Pair.noConfusion eq (Function.const _)
+          let ⟨eqXEnc, eqD⟩ := Pair.noConfusion eq And.intro
+          (fromNat.injEq eqXEnc) ▸ eqD ▸ List.Mem.head _
+      |
+        _ :: _, InTail isGetTail _ _ =>
+        let ⟨_, eqTail⟩ := Pair.noConfusion eq And.intro
+        List.Mem.tail _ (inBoundVarsHelper eqTail isGetTail)
+    
+    def IsGetBound.inBoundVars
+      (isGet:
+        IsGetBound (boundVarsEncoding boundVars) (fromNat x) d)
+    :
+      ⟨d, x⟩ ∈ boundVars
+    :=
+      inBoundVarsHelper rfl isGet
     
   end uniSet3
 end Pair

@@ -587,15 +587,6 @@ namespace Pair
           rw [fromNat.eqOfDepth isNat]))
   
   
-  def boundVarsEncoding:
-    List (ValVar Pair)
-  →
-    Pair
-
-  | [] => Pair.zero
-  | ⟨d, x⟩ :: rest =>
-    Pair.pair (Pair.pair x d) (boundVarsEncoding rest)
-  
   def InterpEnc
     (boundVars: List (ValVar Pair))
     (expr: Expr pairSignature)
