@@ -45,7 +45,7 @@ def WeakSatIsStrongCauseOutUpdated
         (c.update x dX))
       d)
 
-def Cause.IsWeaklySatisfiedBy.toWithBound
+def Cause.IsWeaklySatisfiedBy.exceptToWithBound
   {cause: Cause D}
   {x: Nat}
   (isSat: (cause.exceptX x).IsWeaklySatisfiedBy b c)
@@ -83,6 +83,18 @@ def Cause.IsWeaklySatisfiedBy.toWithBound
           Valuation.update.eqBoundOfEq _ xEq.symm d ▸
           dNeq)
 }
+
+def Cause.IsWeaklySatisfiedBy.toWithBound
+  {cause: Cause D}
+  {x: Nat}
+  (isSat: cause.IsWeaklySatisfiedBy b c)
+  (d: D)
+:
+  (cause.withBound x d).IsWeaklySatisfiedBy
+    (b.update x d)
+    (c.update x d)
+:=
+  (isSat.ofSuper (cause.exceptXIsSub x)).exceptToWithBound d
 
 def Cause.IsWeaklySatisfiedBy.fromWithBound
   {cause: Cause D}
@@ -733,7 +745,7 @@ namespace IsWeakCause
   :
     IsWeakCause salg (cause.exceptX x) d (Expr.Un x body)
   :=
-    fun isSat => ⟨dX, isCause (isSat.toWithBound dX)⟩
+    fun isSat => ⟨dX, isCause (isSat.exceptToWithBound dX)⟩
   
   def elimArbUn
     (isCause: IsWeakCause salg cause d (Expr.Un x body))
@@ -776,7 +788,7 @@ namespace IsWeakCause
   :
     IsWeakCause salg (cause.exceptX x) d (Expr.Ir x body)
   :=
-    fun isSat dX => isCause dX (isSat.toWithBound dX)
+    fun isSat dX => isCause dX (isSat.exceptToWithBound dX)
   
   
   def toSuperCause
@@ -786,5 +798,42 @@ namespace IsWeakCause
     IsWeakCause salg causeSuper d expr
   :=
     fun isSat => isCause (isSat.ofSuper le)
+  
+  def arbUnOf
+    {causes: salg.D → Cause _}
+    (isCause:
+      ∀ dX, IsWeakCause salg ((causes dX).withBound x dX) d body)
+  :
+    IsWeakCause
+      salg
+      (Cause.arbUn fun dX => (causes dX).exceptX x)
+      d
+      (Expr.Ir x body)
+  :=
+    fun isSat dX =>
+      let isSatArbUn := isSat.toWithBound dX
+      isCause dX {
+        contextInsHold :=
+          fun inCins =>
+            isSatArbUn.contextInsHold
+              (inCins.elim
+                (fun ⟨inCins, xNeq⟩ =>
+                  Or.inl ⟨⟨dX, inCins, xNeq⟩, xNeq⟩)
+                Or.inr)
+        backgroundInsHold :=
+          fun inBins =>
+            isSatArbUn.backgroundInsHold
+              (inBins.elim
+                (fun ⟨inBins, xNeq⟩ =>
+                  Or.inl ⟨⟨dX, inBins, xNeq⟩, xNeq⟩)
+                Or.inr)
+        backgroundOutHold :=
+          fun inBout =>
+            isSatArbUn.backgroundOutHold
+              (inBout.elim
+                (fun ⟨inBout, xNeq⟩ =>
+                  Or.inl ⟨⟨dX, inBout, xNeq⟩, xNeq⟩)
+                Or.inr)
+      }
   
 end IsWeakCause
