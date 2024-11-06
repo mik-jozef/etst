@@ -209,5 +209,12 @@ def IsCauseInappExtended.Not.arbUn
   (isApp: ∀ dX, ¬ IsCauseInappExtended salg dl cycle (causes dX))
 :
   ¬ IsCauseInappExtended salg dl cycle (Cause.arbUn causes)
-:=
-  sorry
+|
+  cinsFailsCycle ⟨dX, inCins⟩ inCycle =>
+    isApp dX (cinsFailsCycle inCins inCycle)
+| cinsFailsOut ⟨dX, inCins⟩ isOut =>
+    isApp dX (cinsFailsOut inCins isOut)
+| binsFails ⟨dX, inBins⟩ isOut =>
+    isApp dX (binsFails inBins isOut)
+| boutFails ⟨dX, inBout⟩ isIns =>
+    isApp dX (boutFails inBout isIns)

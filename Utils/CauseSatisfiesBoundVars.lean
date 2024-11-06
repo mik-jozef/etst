@@ -20,6 +20,38 @@ def Cause.SatisfiesBoundVars.union
 :=
   fun eq isBound => (satL eq isBound).union (satR eq isBound)
 
+def Cause.SatisfiesBoundVars.arbUn
+  (causes: Pair → Cause Pair)
+  (x: Nat)
+  (sat: ∀ dH, (causes dH).SatisfiesBoundVars (⟨dH, x⟩ :: boundVars))
+:
+  Cause.SatisfiesBoundVars
+    (Cause.arbUn fun dH => (causes dH).exceptX x)
+    boundVars
+:=
+  open Pair.uniSet3 in
+  fun xEncEq isBound =>
+    {
+      cinsSat := fun vv ⟨dH, ⟨inCins, xNeq⟩⟩ xEq =>
+        let xEncNeq :=
+          xEncEq ▸ Pair.fromNat.injNeq (xEq ▸ Ne.symm xNeq)
+        let isBound := IsGetBound.InTail isBound dH xEncNeq
+        let satBoundVar := sat dH xEncEq isBound
+        satBoundVar.cinsSat vv inCins xEq
+      binsSat := fun vv ⟨dH, ⟨inBins, xNeq⟩⟩ xEq =>
+        let xEncNeq :=
+          xEncEq ▸ Pair.fromNat.injNeq (xEq ▸ Ne.symm xNeq)
+        let isBound := IsGetBound.InTail isBound dH xEncNeq
+        let satBoundVar := sat dH xEncEq isBound
+        satBoundVar.binsSat vv inBins xEq
+      boutSat := fun vv ⟨dH, ⟨inBout, xNeq⟩⟩ xEq =>
+        let xEncNeq :=
+          xEncEq ▸ Pair.fromNat.injNeq (xEq ▸ Ne.symm xNeq)
+        let isBound := IsGetBound.InTail isBound dH xEncNeq
+        let satBoundVar := sat dH xEncEq isBound
+        satBoundVar.boutSat vv inBout xEq
+    }
+
 def Cause.SatisfiesBoundVars.withBoundSat
   {cause: Cause Pair}
   (boundVarsSat: cause.SatisfiesBoundVars boundVars)
