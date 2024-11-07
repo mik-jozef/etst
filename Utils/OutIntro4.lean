@@ -50,14 +50,12 @@ inductive IsCauseInappExtended
   all such elements.
   
   TODO consider:
-  0. There is one more thing that probably could (ought?) be done
-  to make the proof system more convenient to use: the
+  There is one more thing that probably could (ought?) be done to
+  make the proof system more convenient to use: the
   `Is[Strongly|Weakly]SatisfiedBy` predicates could be made to
   only consider valuations that are models of the definition list.
   This would make the proofs easier to construct, but destructing
   them would give less information.
-  1. Is tracking bound variables really necessary in Ch9? Figure
-  this out.
 -/
 def Out.intro4
   {salg: Salgebra sig}
