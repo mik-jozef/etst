@@ -320,7 +320,7 @@ namespace Pair
     :
       And
         (∃ boundVars expr d,
-          optOrdPo.lt (sizeOf expr) sizeBound ∧
+          optOrdPo.lt expr.sizeOf sizeBound ∧
           AllCausesInapp Set.empty boundVars expr d ∧
           Eq
             dExt
@@ -453,29 +453,25 @@ namespace Pair
       let out :=
         Out.isComplete _ _ fun inw =>
         let isGetBound := Inw.toIsGetBound inw
-        let isCause :=
-          @Cause.minBoundVarsWeakCause
-            x d boundVars isGetBound
         let isInapp :=
           allInapp
-            (Cause.minBoundVars boundVars)
-            (Cause.minBoundVarsSat boundVars)
-            isCause
+            (Cause.var x d)
+            (Cause.boundVarSat isGetBound)
+            (fun isSat => isSat.contextInsHold ⟨rfl, rfl⟩)
         open IsCauseInappExtended in
         match isInapp with
         | cinsFailsCycle inCins _ =>
-          let ⟨_, ⟨_, isBound, _, isFree⟩⟩ := inCins
-          isFree.nopeGetBound isBound
+          let ⟨_, ⟨_, ⟨dEq, xEq⟩, _, isFree⟩⟩ := inCins
+          isFree.nopeGetBound (dEq ▸ xEq ▸ isGetBound)
         | cinsFailsOut inCins _ =>
-          let ⟨_, ⟨_, isBound, _, isFree⟩⟩ := inCins
-          isFree.nopeGetBound isBound
+          let ⟨_, ⟨_, ⟨dEq, xEq⟩, _, isFree⟩⟩ := inCins
+          isFree.nopeGetBound (dEq ▸ xEq ▸ isGetBound)
         | binsFails inBins _ =>
-          let ⟨_, ⟨_, isBound, _, isFree⟩⟩ := inBins
-          isFree.nopeGetBound isBound
+          let ⟨_, ⟨_, nope, _, _⟩⟩ := inBins
+          nope.elim
         | boutFails inBout _ =>
-          let ⟨_, ⟨_, isBound, _, isFree⟩⟩ := inBout
-          let ⟨_, _, isBoundOther⟩ := isBound
-          isFree.nopeGetBound isBoundOther
+          let ⟨_, ⟨_, nope, _, _⟩⟩ := inBout
+          nope.elim
     IsCauseInappExtended.cinsFailsOut inw out
     
     def inappExtFreeVar
@@ -512,27 +508,27 @@ namespace Pair
       else
         let isInapp :=
           allInapp
-            (Cause.minBvAndVar boundVars x d)
-            (Cause.minBvAndVarSat boundVars h d)
-            (Cause.minBvAndVarWeakCause boundVars x d)
+            (Cause.var x d)
+            (Cause.freeVarSat h)
+            (fun isSat => isSat.contextInsHold ⟨rfl, rfl⟩)
         match isInapp with
-        | cinsFailsCycle ⟨eqX, vv, inCins, eq, isFree⟩ inCycle =>
+        | cinsFailsCycle
+          ⟨eqX, vv, ⟨eqVvD, eqVvX⟩, eq, _⟩ inCycle
+        =>
           let eq: _ = (fromNat vv.x).pair vv.d := eq
-          let ⟨eqVvD, eqVvX⟩ := Cause.inVarOfIsFree inCins isFree
           cinsFailsCycle
             inw
             (bareLeFull
               sizeBound
               internalCycle
               (eqX ▸ eqVvD ▸ eqVvX ▸ eq ▸ inCycle))
-        | cinsFailsOut ⟨eqX, vv, inCins, eq, isFree⟩ out =>
+        | cinsFailsOut
+          ⟨eqX, vv, ⟨eqVvD, eqVvX⟩, eq, _⟩ out
+        =>
           let eq: _ = (fromNat vv.x).pair vv.d := eq
-          let ⟨eqVvD, eqVvX⟩ := Cause.inVarOfIsFree inCins isFree
           cinsFailsOut inw (eqX ▸ eqVvD ▸ eqVvX ▸ eq ▸ out)
-        | binsFails ⟨_, _, inBins, _, isFree⟩ _ =>
-          Cause.minBvAndVarBinsNopeFree inBins isFree
-        | boutFails ⟨_, _, inBout, _, isFree⟩ _ =>
-          Cause.minBvAndVarBoutNopeFree inBout isFree
+        | binsFails ⟨_, _, nope, _, _⟩ _ => nope.elim
+        | boutFails ⟨_, _, nope, _, _⟩ _ => nope.elim
     
     
     mutual
@@ -753,7 +749,7 @@ namespace Pair
       IsCauseInappExtended
         pairSalgebra
         uniDefList.theExternalDefList.toDefList
-        (extOfIntCycleFull (sizeOf expr) internalCycle)
+        (extOfIntCycleFull expr.sizeOf internalCycle)
         externalCause
     :=
       match expr with
@@ -765,7 +761,20 @@ namespace Pair
           (fun ⟨inw, notBound⟩ =>
             inappExtFreeVar allInapp inw notBound)
       |
-        op pairSignature.Op.zero _ => sorry
+        op pairSignature.Op.zero _ =>
+        let dEqZero := isCause.hurrDurrElimGreat elimExternalZero
+        let isInapp :=
+          allInapp
+            (Cause.empty)
+            (Cause.emptySat boundVars)
+            (dEqZero ▸ fun _ => rfl)
+        isInapp.toSuper
+          (bareLeFull _ internalCycle)
+          {
+            cinsLe := nofun
+            binsLe := nofun
+            boutLe := nofun
+          }
       |
         op pairSignature.Op.pair _ => sorry
       |

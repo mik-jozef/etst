@@ -23,6 +23,12 @@ def Valuation.nonmembers
   fun ⟨d, x⟩ => ¬ (v x).posMem d
 
 
+def Cause.empty: Cause D := {
+  contextIns := ∅
+  backgroundIns := ∅
+  backgroundOut := ∅
+}
+
 def Cause.eq:
   {a b: Cause D} →
   a.contextIns = b.contextIns →
