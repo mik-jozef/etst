@@ -67,54 +67,54 @@ namespace Expr
     ofNat := Expr.var n
   
   def any: Expr s := Expr.un 0 (Expr.cpl 0)
-end Expr
-
-/-
-  The set of free variables of `expr`, given a set of bound
-  variables.
--/
-def Expr.IsFreeVar
-  (expr: Expr sig)
-  (boundVars: Set Nat)
-:
-  Set Nat
-:=
-  fun x =>
-    match expr with
-      | var v => x = v ∧ v ∉ boundVars
-      | op _ args => ∃ param, (args param).IsFreeVar boundVars x
-      | un left rite =>
-          Or
-            (left.IsFreeVar boundVars x)
-            (rite.IsFreeVar boundVars x)
-      | ir left rite =>
-          Or
-            (left.IsFreeVar boundVars x)
-            (rite.IsFreeVar boundVars x)
-      | cpl expr => expr.IsFreeVar boundVars x
-      | ifThen cond expr =>
-          Or
-            (cond.IsFreeVar boundVars x)
-            (expr.IsFreeVar boundVars x)
-      | Un bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
-      | Ir bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
-
-
-/-
-  A positive expression is an expression that does not contain
-  complements of expressions, with the exception of complements
-  of bound variables.
   
-  Complementing a bound variable is allowed because it cannot
-  result in a contradictory definition, even with self-reference.
--/
-def Expr.IsPositive: Expr sig → (boundVars: Set Nat) → Prop
-| Expr.var _, _ => True
-| Expr.op _ args, bv => ∀ param, (args param).IsPositive bv
-| Expr.un left rite, bv => left.IsPositive bv ∧ rite.IsPositive bv
-| Expr.ir left rite, bv => left.IsPositive bv ∧ rite.IsPositive bv
-| Expr.cpl (Expr.var v), bv => v ∈ bv
-| Expr.cpl _, _ => False
-| Expr.ifThen cond expr, bv => cond.IsPositive bv ∧ expr.IsPositive bv
-| Expr.Un xUn body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xUn)
-| Expr.Ir xIr body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xIr)
+  /-
+    The set of free variables of `expr`, given a set of bound
+    variables.
+  -/
+  def IsFreeVar
+    (expr: Expr sig)
+    (boundVars: Set Nat)
+  :
+    Set Nat
+  :=
+    fun x =>
+      match expr with
+        | var v => x = v ∧ v ∉ boundVars
+        | op _ args => ∃ param, (args param).IsFreeVar boundVars x
+        | un left rite =>
+            Or
+              (left.IsFreeVar boundVars x)
+              (rite.IsFreeVar boundVars x)
+        | ir left rite =>
+            Or
+              (left.IsFreeVar boundVars x)
+              (rite.IsFreeVar boundVars x)
+        | cpl expr => expr.IsFreeVar boundVars x
+        | ifThen cond expr =>
+            Or
+              (cond.IsFreeVar boundVars x)
+              (expr.IsFreeVar boundVars x)
+        | Un bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
+        | Ir bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
+  
+  
+  /-
+    A positive expression is an expression that does not contain
+    complements of expressions, with the exception of complements
+    of bound variables.
+    
+    Complementing a bound variable is allowed because it cannot
+    result in a contradictory definition, even with self-reference.
+  -/
+  def IsPositive: Expr sig → (boundVars: Set Nat) → Prop
+  | Expr.var _, _ => True
+  | Expr.op _ args, bv => ∀ param, (args param).IsPositive bv
+  | Expr.un left rite, bv => left.IsPositive bv ∧ rite.IsPositive bv
+  | Expr.ir left rite, bv => left.IsPositive bv ∧ rite.IsPositive bv
+  | Expr.cpl (Expr.var v), bv => v ∈ bv
+  | Expr.cpl _, _ => False
+  | Expr.ifThen cond expr, bv => cond.IsPositive bv ∧ expr.IsPositive bv
+  | Expr.Un xUn body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xUn)
+  | Expr.Ir xIr body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xIr)
+end Expr
