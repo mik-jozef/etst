@@ -16,6 +16,14 @@ def IsVarFree
 :=
   ∀ d, ⟨d, x⟩ ∉ boundVars
 
+def IsVarFree.Not.exBoundOfNot
+  {boundVars: List (ValVar D)}
+  (notFree: ¬ IsVarFree x boundVars)
+:
+  ∃ d, ⟨d, x⟩ ∈ boundVars
+:=
+  notFree.toEx fun _ => Not.dne
+
 def IsVarFree.nopeGetBound
   (isFree: IsVarFree x boundVars)
   (isBound: IsGetBound (boundVarsEncoding boundVars) x d)

@@ -213,4 +213,6 @@ namespace Ordinal
   def zero.isLimit: IsActualLimit 0 :=
     fun n nLtZero => False.elim (Ordinal.not_lt_zero n nLtZero)
   
+  def lt_succ (n: Ordinal): n < n.succ := Order.lt_succ n
+  
 end Ordinal

@@ -417,7 +417,38 @@ def InsInterp.exprIr
                           nat502Neq501)
                         nat503Neq501))))))))))
 
--- TODO? InsInterp.exprCpl
+def InsInterp.exprCpl
+  (notPos:
+    Not
+      (Set3.posMem
+        (uniDefList.theExternalWfm uniDefList.interpretation)
+        (InterpEnc boundVars expr d)))
+:
+  InsInterp boundVars d expr.cpl
+:=
+  Ins.isComplete _ _
+    (insWfmDefToIns
+      (insFinUn
+        (interpretationInExprList.exprCpl)
+        (insUnDom
+          (insExprEncoding
+            (exprToEncoding expr).property)
+          (insArbUn
+            (boundVarsEncoding
+              boundVars)
+            (insPair
+              insBound
+              (insPair
+                (insPair
+                  (insNatExpr _ _ _)
+                  (insFree
+                    insBound
+                    nat502Neq500))
+                (insCpl _
+                  fun inw =>
+                    let inw := inwCallElimBound inw rfl nat503Neq500
+                    let inw := inwCallElimBound inw rfl nat504Neq502
+                    notPos inw)))))))
 
 def InsInterp.exprIfThen
   {cond}

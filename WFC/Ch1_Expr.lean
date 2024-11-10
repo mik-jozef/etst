@@ -1,5 +1,8 @@
 -- # Chapter 1: Expressions
 
+import Mathlib.SetTheory.Ordinal.Basic
+import Mathlib.SetTheory.Ordinal.Arithmetic
+
 import Utils.BasicUtils
 
 /-
@@ -117,4 +120,22 @@ namespace Expr
   | Expr.ifThen cond expr, bv => cond.IsPositive bv ∧ expr.IsPositive bv
   | Expr.Un xUn body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xUn)
   | Expr.Ir xIr body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xIr)
+  
+  /-
+    A helper function that we can use to show termination of
+    functions defined recursively over expressions.
+    
+    This is a proper version of the sizeOf function defined natively
+    by Lean.
+  -/
+  def sizeOf: Expr sig → Ordinal.{0}
+  | Expr.var _ => 0
+  | Expr.op _ args =>
+    Ordinal.sup (fun arg => (args arg).sizeOf) + 1
+  | Expr.un left rite => max left.sizeOf rite.sizeOf + 1
+  | Expr.ir left rite => max left.sizeOf rite.sizeOf + 1
+  | Expr.cpl expr => expr.sizeOf + 1
+  | Expr.ifThen cond expr => max cond.sizeOf expr.sizeOf + 1
+  | Expr.Un _ body => body.sizeOf + 1
+  | Expr.Ir _ body => body.sizeOf + 1
 end Expr

@@ -28,6 +28,12 @@ import Utils.NopeInterp
 import Utils.OutIntro4
 
 
+noncomputable def optOrdPo :=
+  PartialOrder.optionTop Ordinal.linearOrder.toPartialOrder
+
+noncomputable def optOrdPreOrd := optOrdPo.toPreorder
+
+
 namespace Pair
   noncomputable def uniSet3 :=
     uniDefList.theExternalWfm uniDefList.theSet
@@ -252,18 +258,14 @@ namespace Pair
     
     inductive extOfIntCycleBare
       (internalCycle: Set (ValVar Pair))
-      -- TODO maybe can be removed if presence in cause is enough
-      -- (boundVars: List (ValVar Pair) := [])
     :
       Set (ValVar Pair)
     |
       theSet
         (vvIntIn: vvInt ∈ internalCycle)
-        -- (isVarFree: IsVarFree vvInt.x boundVars)
       :
         extOfIntCycleBare
           internalCycle
-          -- boundVars
           ⟨(vvInt.x, vvInt.d), uniDefList.theSet⟩
     
     def AllCausesInapp
@@ -284,6 +286,7 @@ namespace Pair
         (externalOfInternalCause internalCause boundVars)
     
     inductive extOfIntCycleFull
+      (sizeBound: Option Ordinal)
       (internalCycle: Set (ValVar Pair))
     :
       Set (ValVar Pair)
@@ -291,10 +294,11 @@ namespace Pair
       interp
         (boundVars: List (ValVar Pair))
         (expr: Expr)
+        (exprSizeIsBound: optOrdPo.lt expr.sizeOf sizeBound)
         (d: Pair)
         (allInapp: AllCausesInapp internalCycle boundVars expr d)
       :
-        extOfIntCycleFull internalCycle ⟨
+        extOfIntCycleFull sizeBound internalCycle ⟨
           pair
             (boundVarsEncoding boundVars)
             (pair
@@ -307,33 +311,130 @@ namespace Pair
         (vvIntIn: vvInt ∈ internalCycle)
       :
         extOfIntCycleFull
+          sizeBound
           internalCycle
           ⟨(vvInt.x, vvInt.d), uniDefList.theSet⟩
     
+    def extOfIntCycleFull.ofInEmpty
+      (inCycle: extOfIntCycleFull sizeBound Set.empty ⟨dExt, xExt⟩)
+    :
+      And
+        (∃ boundVars expr d,
+          optOrdPo.lt (sizeOf expr) sizeBound ∧
+          AllCausesInapp Set.empty boundVars expr d ∧
+          Eq
+            dExt
+            (pair
+              (boundVarsEncoding boundVars)
+              (pair (exprToEncoding expr) d)))
+        (xExt = uniDefList.interpretation)
+    :=
+      match inCycle with
+      | extOfIntCycleFull.interp _ _ sizeIsBound _ allInapp =>
+        And.intro ⟨_, _, _, sizeIsBound, allInapp, rfl⟩ rfl
+    
+    def extOfIntCycleFull.toLargerBound
+      (internalCycle: Set (ValVar Pair))
+      (boundLe: optOrdPo.le b0 b1)
+    :
+      extOfIntCycleFull b0 internalCycle
+        ⊆
+      extOfIntCycleFull b1 internalCycle
+    |
+      _,
+      extOfIntCycleFull.interp
+        boundVars expr sizeIsBound d allInapp
+    =>
+      extOfIntCycleFull.interp
+        boundVars
+        expr
+        (optOrdPo.lte_trans sizeIsBound boundLe)
+        d
+        allInapp
+    |
+      _,
+      extOfIntCycleFull.theSet inIntCycle
+    =>
+      extOfIntCycleFull.theSet inIntCycle
+    
     def bareLeFull
+      (sizeBound: Ordinal)
       (internalCycle: Set (ValVar Pair))
     :
       extOfIntCycleBare internalCycle
         ⊆
-      extOfIntCycleFull internalCycle
+      extOfIntCycleFull sizeBound internalCycle
     |
       _, extOfIntCycleBare.theSet inIntCycle =>
         extOfIntCycleFull.theSet inIntCycle
     
     
-    def OutInterp
-      (boundVars: List (ValVar Pair))
-      (d: Pair)
-      (expr: Expr)
+    def allInappOfIsCauseCpl
+      (isInternalCause:
+        IsStrongCause pairSalgebra internalCause d expr.cpl)
+      (isConsistent: internalCause.IsConsistent)
+      (boundVarsSat: internalCause.SatisfiesBoundVars boundVars)
+      (binsIns: BinsInsExternal internalCause boundVars)
+      (boutOut: BoutOutExternal internalCause boundVars)
+    :
+      AllCausesInapp Set.empty boundVars expr d
     :=
-      Out
-        pairSalgebra
-        uniDefList.theExternalDefList.toDefList
-        (InterpEnc boundVars expr d)
-        uniDefList.interpretation
+      fun _cause satBoundVars isCause =>
+        let causeInapp :=
+          isInternalCause.elimCpl isConsistent isCause
+        
+        open Cause.IsInapplicable in
+        open IsCauseInappExtended in
+        match causeInapp with
+        | blockedContextIns inCins inBout =>
+          let isFree :=
+            byContradiction fun notFree =>
+              let ⟨_, inBoundVars⟩ :=
+                IsVarFree.Not.exBoundOfNot notFree
+              let ⟨_, isGetBound⟩ :=
+                IsGetBound.exOfInBoundVars inBoundVars
+              let cinsSat := (satBoundVars rfl isGetBound).cinsSat
+              let boutSat := (boundVarsSat rfl isGetBound).boutSat
+              boutSat _ inBout.dne rfl (cinsSat _ inCins rfl)
+          let notBound isBound :=
+            isFree.nopeGetBound isBound.unwrap.property
+          cinsFailsOut
+            ⟨rfl, _, inCins, rfl, isFree⟩
+            (boutOut inBout.dne notBound)
+        | blockedBackgroundIns inBins inBout =>
+          let isFree :=
+            byContradiction fun notFree =>
+              let ⟨_, inBoundVars⟩ :=
+                IsVarFree.Not.exBoundOfNot notFree
+              let ⟨_, isGetBound⟩ :=
+                IsGetBound.exOfInBoundVars inBoundVars
+              let binsSat := (satBoundVars rfl isGetBound).binsSat
+              let boutSat := (boundVarsSat rfl isGetBound).boutSat
+              boutSat _ inBout.dne rfl (binsSat _ inBins rfl)
+          let notBound isBound :=
+            isFree.nopeGetBound isBound.unwrap.property
+          binsFails
+            ⟨rfl, _, inBins, rfl, isFree⟩
+            (boutOut inBout.dne notBound)
+        | blockedBackgroundOut inBout inBins =>
+          let isFree :=
+            byContradiction fun notFree =>
+              let ⟨_, inBoundVars⟩ :=
+                IsVarFree.Not.exBoundOfNot notFree
+              let ⟨_, isGetBound⟩ :=
+                IsGetBound.exOfInBoundVars inBoundVars
+              let binsSat := (boundVarsSat rfl isGetBound).binsSat
+              let boutSat := (satBoundVars rfl isGetBound).boutSat
+              boutSat _ inBout rfl (binsSat _ inBins rfl)
+          let notBound isBound :=
+            isFree.nopeGetBound isBound.unwrap.property
+          boutFails
+            ⟨rfl, _, inBout, rfl, isFree⟩
+            (binsIns inBins notBound)
     
     
     def inappExtBoundVar
+      {sizeBound: Ordinal}
       (allInapp: AllCausesInapp internalCycle boundVars (var x) d)
       (inw:
         externalCause.contextIns ⟨
@@ -346,7 +447,7 @@ namespace Pair
       IsCauseInappExtended
         pairSalgebra
         uniDefList.theExternalDefList.toDefList
-        (extOfIntCycleFull internalCycle)
+        (extOfIntCycleFull sizeBound internalCycle)
         externalCause
     :=
       let out :=
@@ -378,6 +479,7 @@ namespace Pair
     IsCauseInappExtended.cinsFailsOut inw out
     
     def inappExtFreeVar
+      {sizeBound: Ordinal}
       (allInapp: AllCausesInapp internalCycle boundVars (var x) d)
       (inw:
         externalCause.contextIns ⟨
@@ -396,7 +498,7 @@ namespace Pair
       IsCauseInappExtended
         pairSalgebra
         uniDefList.theExternalDefList.toDefList
-        (extOfIntCycleFull internalCycle)
+        (extOfIntCycleFull sizeBound internalCycle)
         externalCause
     :=
       open IsCauseInappExtended in
@@ -420,6 +522,7 @@ namespace Pair
           cinsFailsCycle
             inw
             (bareLeFull
+              sizeBound
               internalCycle
               (eqX ▸ eqVvD ▸ eqVvX ▸ eq ▸ inCycle))
         | cinsFailsOut ⟨eqX, vv, inCins, eq, isFree⟩ out =>
@@ -471,34 +574,59 @@ namespace Pair
           cinsIns
       | op pairSignature.Op.zero _ =>
         InsInterp.exprZero isInternalCause isConsistent
-      | op pairSignature.Op.pair _ =>
+      | op pairSignature.Op.pair args =>
         let ⟨_dLeft, _dRite, eq, isStrongLeft, isStrongRite⟩ :=
           isInternalCause.elimPairExpr isConsistent
       
+        have:
+          (args ArityTwo.zth).sizeOf
+            <
+          (@op pairSignature pairSignature.Op.pair args).sizeOf
+        :=
+          Order.lt_succ_of_le (Ordinal.le_sup _ ArityTwo.zth)
+        
         let ihL := isCauseToInsInterp
           isStrongLeft boundVars boundVarsSat
           cinsIns binsIns boutOut
+        
+        have:
+          (args ArityTwo.fst).sizeOf
+            <
+          (@op pairSignature pairSignature.Op.pair args).sizeOf
+        :=
+          Order.lt_succ_of_le (Ordinal.le_sup _ ArityTwo.fst)
         
         let ihR := isCauseToInsInterp
           isStrongRite boundVars boundVarsSat
           cinsIns binsIns boutOut
         
         eq ▸ InsInterp.exprPair ihL ihR
-      | un _ _ =>
+      | un left rite =>
         isInternalCause.elimUn.elim
           (fun isCauseLeft =>
+            have: left.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
+              Order.lt_succ_of_le (le_max_left _ _)
+            
             let ih := isCauseToInsInterp
               isCauseLeft boundVars boundVarsSat
               cinsIns binsIns boutOut
             
             InsInterp.exprUnLeft ih)
           (fun isCauseRite =>
+            have: rite.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
+              Order.lt_succ_of_le (le_max_right _ _)
+            
             let ih := isCauseToInsInterp
               isCauseRite boundVars boundVarsSat
               cinsIns binsIns boutOut
             
             InsInterp.exprUnRite ih)
-      | ir _ _ =>
+      | ir left rite =>
+        have: left.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_max_left _ _)
+        have: rite.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_max_right _ _)
+        
         let ⟨isCauseLeft, isCauseRite⟩ := isInternalCause.elimIr
         
         let ihL := isCauseToInsInterp
@@ -510,12 +638,34 @@ namespace Pair
           cinsIns binsIns boutOut
         
         InsInterp.exprIr ihL ihR
-      | cpl _ =>
-        -- let asdf := isInternalCause.elimCpl theInternalDefList
-        -- InsInterp.exprCpl isInternalCause
-        -- let asdf := inappExtOfAllInappInt
-        sorry
-      | ifThen _ _ =>
+      | cpl expr =>
+        let allInapp :=
+          allInappOfIsCauseCpl
+            isInternalCause isConsistent boundVarsSat
+            binsIns boutOut
+        let out :=
+          Out.intro4
+            (extOfIntCycleFull expr.sizeOf.succ Set.empty)
+            (fun inCycle cause isCause =>
+              let ⟨
+                ⟨bvC, eC, dC, sizeIsBound, allInapp, dEq⟩,
+                xEq
+              ⟩ :=
+                inCycle.ofInEmpty
+              let isInapp :=
+                inappExtOfAllInappInt allInapp (xEq ▸ dEq ▸ isCause)
+              isInapp.toSuperCycle
+                (extOfIntCycleFull.toLargerBound
+                  _ (@le_of_lt _ optOrdPreOrd _ _ sizeIsBound)))
+            (extOfIntCycleFull.interp
+              boundVars expr (Ordinal.lt_succ _) d allInapp)
+        InsInterp.exprCpl (Out.isSound out)
+      | ifThen cond body =>
+        have: cond.sizeOf < max cond.sizeOf body.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_max_left _ _)
+        have: body.sizeOf < max cond.sizeOf body.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_max_right _ _)
+        
         let ⟨⟨_dC, isCauseCond⟩, isCauseBody⟩ :=
           isInternalCause.elimIfThen
         
@@ -528,7 +678,10 @@ namespace Pair
           cinsIns binsIns boutOut
         
         InsInterp.exprIfThen ihCond ihBody
-      | Un x _body =>
+      | Un x body =>
+        have: body.sizeOf < body.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_refl _)
+        
         let ⟨dX, isCauseWith⟩ :=
           isInternalCause.elimArbUn isConsistent
         
@@ -554,7 +707,10 @@ namespace Pair
                 (IsBound.Not.notBoundTail notBound xNeq))
         
         InsInterp.arbUn dX ih
-      | Ir x _body =>
+      | Ir x body =>
+        have: body.sizeOf < body.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_refl _)
+        
         let isCauseWith := isInternalCause.elimArbIr isConsistent
         
         InsInterp.arbIr fun dX =>
@@ -577,6 +733,7 @@ namespace Pair
               boutOut
                 (Cause.inBoutOfInWithAndNotBound inBoutWith xNeq)
                 (IsBound.Not.notBoundTail notBound xNeq))
+    termination_by expr.sizeOf
     
     
     def inappExtOfAllInappInt
@@ -596,7 +753,7 @@ namespace Pair
       IsCauseInappExtended
         pairSalgebra
         uniDefList.theExternalDefList.toDefList
-        (extOfIntCycleFull internalCycle)
+        (extOfIntCycleFull (sizeOf expr) internalCycle)
         externalCause
     :=
       match expr with
@@ -618,23 +775,34 @@ namespace Pair
         
         inCinsLeftOrRite.elim
           (fun inCinsLeft =>
+            let isLe: left.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
+              Order.lt_succ_of_le (le_max_left _ _)
+            
             let allInappLeft cause satBoundVars isCause :=
               allInapp cause satBoundVars (isCause.unLeft _)
             
             IsCauseInappExtended.cinsFailsCycle
               inCinsLeft
               (extOfIntCycleFull.interp
-                boundVars left d allInappLeft))
+                boundVars left isLe d allInappLeft))
           (fun inCinsRite =>
+            let isLe: rite.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
+              Order.lt_succ_of_le (le_max_right _ _)
+            
             let allInappRite cause satBoundVars isCause :=
               allInapp cause satBoundVars (isCause.unRite _)
             
             IsCauseInappExtended.cinsFailsCycle
               inCinsRite
               (extOfIntCycleFull.interp
-                boundVars rite d allInappRite))
+                boundVars rite isLe d allInappRite))
       |
         ir left rite =>
+        let isLeL: left.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_max_left _ _)
+        let isLeR: rite.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_max_right _ _)
+        
         let ⟨inCinsLeft, inCinsRite⟩ :=
           isCause.hurrDurrElim elimExternalIr
         
@@ -643,13 +811,13 @@ namespace Pair
         then
           IsCauseInappExtended.cinsFailsCycle
             inCinsLeft
-            (extOfIntCycleFull.interp boundVars left d hL)
+            (extOfIntCycleFull.interp boundVars left isLeL d hL)
         else if hR:
           AllCausesInapp internalCycle boundVars rite d
         then
           IsCauseInappExtended.cinsFailsCycle
             inCinsRite
-            (extOfIntCycleFull.interp boundVars rite d hR)
+            (extOfIntCycleFull.interp boundVars rite isLeR d hR)
         else
           let ⟨causeL, satBoundsL, isCauseL, isAppL⟩ :=
             hL.toEx fun _ p => p.implToAnd2 fun p => p.implToAnd
@@ -667,22 +835,27 @@ namespace Pair
               isAppL isAppR isInappUnion)
       |
         cpl expr =>
+        have: expr.sizeOf < expr.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_refl _)
+        
         let inBout :=
           (isCause.hurrDurrElimGreat elimExternalCpl).dne
         IsCauseInappExtended.boutFails
           inBout
-          sorry
-          -- (isCauseToInsInterp
-          --   sorry
-          --   boundVars
-          --   sorry
-          --   sorry
-          --   sorry
-          --   sorry)
+          (isCauseToInsInterp
+            (internalCause := sorry)
+            (fun isSat => sorry)
+            boundVars
+            sorry
+            sorry
+            sorry
+            sorry)
       |
         ifThen _ _ => sorry
       |
         Un x body =>
+        let isLe: body.sizeOf < body.sizeOf + 1 :=
+          Ordinal.lt_succ body.sizeOf
         let ⟨dX, inCins⟩ :=
           isCause.hurrDurrElim elimExternalArbUn
         let allInapp cause satBoundVars isCause:
@@ -712,10 +885,13 @@ namespace Pair
         IsCauseInappExtended.cinsFailsCycle
           inCins
           (extOfIntCycleFull.interp
-            (⟨dX, x⟩ :: boundVars) body d allInapp)
+            (⟨dX, x⟩ :: boundVars) body isLe d allInapp)
       |
         Ir x body =>
-          let inCins := isCause.hurrDurrElim elimExternalArbIr
+        let isLe: body.sizeOf < body.sizeOf + 1 :=
+          Ordinal.lt_succ body.sizeOf
+        
+        let inCins := isCause.hurrDurrElim elimExternalArbIr
         
         if h:
           ∃ dB,
@@ -728,6 +904,7 @@ namespace Pair
             (extOfIntCycleFull.interp
               (⟨dB, x⟩ :: boundVars)
               body
+              isLe
               d
               allInapp)
         else
@@ -783,6 +960,7 @@ namespace Pair
               (fun (dX: pairSalgebra.D) =>
                 (allApplicable dX).property.right.right)
               (isInappArbUn.toSuperCause isLe))
+    termination_by expr.sizeOf
     end
     
     def inEmptyCycleInternalToIsEmptyCycleExternal
@@ -802,7 +980,7 @@ namespace Pair
             (externalOfInternalCause internalCause))
       
       (inCycle:
-        ⟨dExt, xExt⟩ ∈ extOfIntCycleFull internalCycle)
+        extOfIntCycleFull Option.none internalCycle ⟨dExt, xExt⟩)
       (externalCause: Cause Pair)
       (isCauseExternal:
         IsWeakCause
@@ -814,15 +992,18 @@ namespace Pair
       IsCauseInappExtended
         pairSalgebra
         uniDefList.theExternalDefList.toDefList
-        (extOfIntCycleFull internalCycle)
+        (extOfIntCycleFull Option.none internalCycle)
         externalCause
     :=
       open IsCauseInappExtended in
       byContradiction fun isApp =>
         match inCycle with
-        | extOfIntCycleFull.interp _ _ d allCausesInapp =>
-          isApp (inappExtOfAllInappInt allCausesInapp isCauseExternal)
-        | @extOfIntCycleFull.theSet _ ⟨dInt, xInt⟩ inIntCycle =>
+        | extOfIntCycleFull.interp _ _ sizeBound d allCausesInapp =>
+          let isInapp :=
+            inappExtOfAllInappInt allCausesInapp isCauseExternal
+          isApp (isInapp.toSuperCycle
+            (extOfIntCycleFull.toLargerBound internalCycle sizeBound))
+        | @extOfIntCycleFull.theSet _ _ ⟨dInt, xInt⟩ inIntCycle =>
           -- A Lean bug, this breaks def equality:
           -- let ⟨xthDefEnc, isDlExpr⟩ :=
           let xthExpr := IsTheDefListExprPair.getNthExpr xInt
@@ -869,6 +1050,7 @@ namespace Pair
             extOfIntCycleFull.interp
               []
               xthExpr.expr.encodingToExpr
+              trivial
               dInt
               (fun internalCause _ isCause =>
                 let isInapp :=
@@ -984,7 +1166,7 @@ namespace Pair
         uniDefList.theSet
     :=
       Out.intro4
-        (extOfIntCycleFull internalCycle)
+        (extOfIntCycleFull Option.none internalCycle)
         (inEmptyCycleInternalToIsEmptyCycleExternal
           isEmptyCycle)
         (extOfIntCycleFull.theSet inCycle)

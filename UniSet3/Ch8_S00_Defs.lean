@@ -2478,5 +2478,21 @@ namespace Pair
     :=
       inBoundVarsHelper rfl isGet
     
+    def IsGetBound.exOfInBoundVars
+      (isInBound: ⟨d, x⟩ ∈ boundVars)
+    :
+      ∃ dB, IsGetBound (boundVarsEncoding boundVars) (fromNat x) dB
+    :=
+      match boundVars, isInBound with
+      | _, List.Mem.head _ =>
+        ⟨d, IsGetBound.InHead (fromNat.isNatEncoding x) _ _⟩
+      | head :: _, List.Mem.tail _ isInBoundTail =>
+        let ⟨dB, isGetTail⟩ := exOfInBoundVars isInBoundTail
+        if h: head.x = x then
+          let isNat := fromNat.isNatEncoding x
+          ⟨head.d, h ▸ IsGetBound.InHead isNat _ _⟩
+        else
+          ⟨dB, IsGetBound.InTail isGetTail _ (fromNat.injNeq h)⟩
+    
   end uniSet3
 end Pair

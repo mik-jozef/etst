@@ -589,26 +589,21 @@ def IsStrongCause.cpl
 
 def IsStrongCause.elimCpl
   {salg: Salgebra sig}
-  {causeCpl causeExpr: Cause salg.D}
   {d: salg.D}
   
+  {causeCpl: Cause salg.D}
   (isCauseCpl: IsStrongCause salg causeCpl d (Expr.cpl expr))
-  (dl: DefList sig)
-  (isSat: causeCpl.IsStronglySatisfiedBy
-    (dl.wellFoundedModel salg)
-    (dl.wellFoundedModel salg))
+  (isConsistent: causeCpl.IsConsistent)
+  {causeExpr: Cause salg.D}
   (isCauseExpr: IsWeakCause salg causeExpr d expr)
 :
-  IsCauseInapplicable
-    salg
-    dl
-    (dl.wellFoundedModel salg).nonmembers
-    causeExpr
+  causeExpr.IsInapplicable
+    isConsistent.leastBackgroundApx.nonmembers
+    isConsistent.leastBackgroundApx
 :=
-  let insCpl := isCauseCpl isSat
+  let insCpl := isCauseCpl isConsistent.leastValsApxAreSat
   let notSat isSat := insCpl (isCauseExpr isSat)
-  let isInapp := Cause.IsWeaklySatisfiedBy.toIsInapplicable notSat
-  isInapp.toIsCauseInapplicable
+  Cause.IsWeaklySatisfiedBy.toIsInapplicable notSat
 
 def IsStrongCause.Not.elimCplEx
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.cpl expr))
