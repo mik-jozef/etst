@@ -157,7 +157,7 @@ namespace pairSalgebra
 end pairSalgebra
 
 -- The salgebra of pairs.
-def pairSalgebra: Salgebra pairSignature :=
+@[reducible] def pairSalgebra: Salgebra pairSignature :=
   ⟨Pair, pairSalgebra.I, pairSalgebra.I.isMonotonic⟩
 
 
@@ -178,3 +178,15 @@ def Set3.pairCallJust
   posMem := fun p => fn.posMem (Pair.pair arg p)
   defLePos := fun _ pInDef => fn.defLePos pInDef
 }
+
+def Set3.PairMem
+  (s e: Set3 Pair)
+:
+  Prop
+:=
+  ∃ i: Pair, s.pairCallJust i = e
+
+instance Set3.pairInstMem:
+  Membership (Set3 Pair) (Set3 Pair)
+:=
+  ⟨Set3.PairMem⟩

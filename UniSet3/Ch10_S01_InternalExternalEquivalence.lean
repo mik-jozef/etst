@@ -112,15 +112,21 @@ namespace Pair
         s3EqWfm ▸ theInternalWfmEncoding.eqWfm ▸ rfl
       ⟩
     
-    -- TODO an explicit proof that `uniSet3` is definable
-    -- TODO a proof that `uniSet3` contains itself
-    -- TODO define pairCallJust and
-    --   HasMem (Set3 Pair) (Set3 Pair) in Ch5, use here
+    def isDefinable: pairSalgebra.IsDefinable uniSet3 := ⟨
+      uniDefList.theExternalDefList,
+      ⟨uniDefList.theSet, rfl⟩,
+    ⟩
     
-    -- TODO roadmap to publishing the repo:
+    def containsItself: uniSet3 ∈ uniSet3 :=
+      let ⟨x, eq⟩ := isUniversal isDefinable
+      ⟨fromNat x, eq⟩
+    
+    -- TODO:
     -- 0. finish this volume
-    -- 1. clean up the `HM` folder
-    -- 2. and make it public :tada:
+    -- 1. make monotonic Exprs part of Salgebra
+    -- 2. Make variables `T: Type*` instead of Nat
+    -- 3. clean up the `HM` folder
+    -- 4. Trisets
     
   end uniSet3
 end Pair
