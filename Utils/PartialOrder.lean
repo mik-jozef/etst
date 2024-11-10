@@ -10,6 +10,31 @@ import Mathlib.Order.Defs
 
 
 namespace PartialOrder
+  def lt_trans (_ord: PartialOrder T) {a b c: T}
+    (ab: a < b)
+    (bc: b < c)
+  :
+    a < c
+  :=
+    _root_.lt_trans ab bc
+  
+  def lte_trans (_ord: PartialOrder T) {a b c: T}
+    (ab: a < b)
+    (bc: b ≤ c)
+  :
+    a < c
+  :=
+    _root_.lt_of_lt_of_le ab bc
+  
+  def let_trans (_ord: PartialOrder T) {a b c: T}
+    (ab: a ≤ b)
+    (bc: b < c)
+  :
+    a < c
+  :=
+    _root_.lt_of_le_of_lt ab bc
+  
+  
   def Option.Le (ord: PartialOrder T): Option T → Option T → Prop
     | none, none => True
     | none, some _ => False
