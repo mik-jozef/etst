@@ -762,7 +762,7 @@ namespace Pair
             inappExtFreeVar allInapp inw notBound)
       |
         op pairSignature.Op.zero _ =>
-        let dEqZero := isCause.hurrDurrElimGreat elimExternalZero
+        let dEqZero := isCause.hurrDurrElim elimExternalZero
         let isInapp :=
           allInapp
             (Cause.empty)
@@ -776,7 +776,71 @@ namespace Pair
             boutLe := nofun
           }
       |
-        op pairSignature.Op.pair _ => sorry
+        op pairSignature.Op.pair args =>
+        let ⟨dL, dR, dEq, inCinsLeft, inCinsRite⟩ :=
+          isCause.hurrDurrElim elimExternalPair
+        
+        let left := args ArityTwo.zth
+        let rite := args ArityTwo.fst
+        
+        let isLeL:
+          left.sizeOf
+            <
+          Ordinal.sup (fun param => (args param).sizeOf) + 1
+        :=
+          Order.lt_succ_of_le (Ordinal.le_sup _ ArityTwo.zth)
+        
+        let isLeR:
+          rite.sizeOf
+            <
+          Ordinal.sup (fun param => (args param).sizeOf) + 1
+        :=
+          Order.lt_succ_of_le (Ordinal.le_sup _ ArityTwo.fst)
+        
+        if hL:
+          AllCausesInapp internalCycle boundVars left dL
+        then
+          IsCauseInappExtended.cinsFailsCycle
+            inCinsLeft
+            (extOfIntCycleFull.interp boundVars left isLeL dL hL)
+        else if hR:
+          AllCausesInapp internalCycle boundVars rite dR
+        then
+          IsCauseInappExtended.cinsFailsCycle
+            inCinsRite
+            (extOfIntCycleFull.interp boundVars rite isLeR dR hR)
+        else
+          let ⟨causeL, satBoundsL, isCauseL, isAppL⟩ :=
+            hL.toEx fun _ p => p.implToAnd2 fun p => p.implToAnd
+          let ⟨causeR, satBoundsR, isCauseR, isAppR⟩ :=
+            hR.toEx fun _ p => p.implToAnd2 fun p => p.implToAnd
+          
+          let isInappUnion :=
+            extOfIntCauseDistributesUnion causeL causeR boundVars ▸
+            allInapp
+              (causeL.union causeR)
+              (satBoundsL.union satBoundsR)
+              (fun isSat =>
+                let dlPos := isCauseL {
+                  contextInsHold :=
+                    isSat.contextInsHold ∘ Or.inl
+                  backgroundInsHold :=
+                    isSat.backgroundInsHold ∘ Or.inl
+                  backgroundOutHold :=
+                    isSat.backgroundOutHold ∘ Or.inl
+                }
+                let drPos := isCauseR {
+                  contextInsHold :=
+                    isSat.contextInsHold ∘ Or.inr
+                  backgroundInsHold :=
+                    isSat.backgroundInsHold ∘ Or.inr
+                  backgroundOutHold :=
+                    isSat.backgroundOutHold ∘ Or.inr
+                }
+                ⟨⟨dL, dlPos⟩, ⟨dR, drPos⟩, dEq⟩)
+          False.elim
+            (IsCauseInappExtended.Not.union
+              isAppL isAppR isInappUnion)
       |
         un left rite =>
         let inCinsLeftOrRite :=
@@ -860,7 +924,59 @@ namespace Pair
             sorry
             sorry)
       |
-        ifThen _ _ => sorry
+        ifThen cond body =>
+        let isLeC: cond.sizeOf < max cond.sizeOf body.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_max_left _ _)
+        let isLeB: body.sizeOf < max cond.sizeOf body.sizeOf + 1 :=
+          Order.lt_succ_of_le (le_max_right _ _)
+        
+        let ⟨⟨dC, inCinsCond⟩, inCinsBody⟩ :=
+          isCause.hurrDurrElim elimExternalIfThen
+        
+        if hC:
+          AllCausesInapp internalCycle boundVars cond dC
+        then
+          IsCauseInappExtended.cinsFailsCycle
+            inCinsCond
+            (extOfIntCycleFull.interp boundVars cond isLeC dC hC)
+        else if hB:
+          AllCausesInapp internalCycle boundVars body d
+        then
+          IsCauseInappExtended.cinsFailsCycle
+            inCinsBody
+            (extOfIntCycleFull.interp boundVars body isLeB d hB)
+        else
+          let ⟨causeCond, satBoundsCond, isCauseCond, isAppCond⟩ :=
+            hC.toEx fun _ p => p.implToAnd2 fun p => p.implToAnd
+          let ⟨causeBody, satBoundsBody, isCauseBody, isAppBody⟩ :=
+            hB.toEx fun _ p => p.implToAnd2 fun p => p.implToAnd
+          
+          let isInappUnion :=
+            extOfIntCauseDistributesUnion causeCond causeBody boundVars ▸
+            allInapp
+              (causeCond.union causeBody)
+              (satBoundsCond.union satBoundsBody)
+              (fun isSat =>
+                let dcPos := isCauseCond {
+                  contextInsHold :=
+                    isSat.contextInsHold ∘ Or.inl
+                  backgroundInsHold :=
+                    isSat.backgroundInsHold ∘ Or.inl
+                  backgroundOutHold :=
+                    isSat.backgroundOutHold ∘ Or.inl
+                }
+                let dbPos := isCauseBody {
+                  contextInsHold :=
+                    isSat.contextInsHold ∘ Or.inr
+                  backgroundInsHold :=
+                    isSat.backgroundInsHold ∘ Or.inr
+                  backgroundOutHold :=
+                    isSat.backgroundOutHold ∘ Or.inr
+                }
+                ⟨⟨dC, dcPos⟩, dbPos⟩)
+          False.elim
+            (IsCauseInappExtended.Not.union
+              isAppCond isAppBody isInappUnion)
       |
         Un x body =>
         let isLe: body.sizeOf < body.sizeOf + 1 :=
