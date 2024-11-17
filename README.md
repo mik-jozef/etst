@@ -55,9 +55,9 @@ example, take
 ```
 
 Here, `bad` is meant to contain exactly those elements it does not
-contain, which is contradictory. **Well-founded collections nevertheless
+contain, which is contradictory. *Well-founded collections nevertheless
 gives a natural semantics to recursive definitions that employ
-complements in an arbitrary way.**
+complements in an arbitrary way.*
 
 This is achieved while preserving the standard semantics of those
 definitions that are complement-free, or whose complements are not
