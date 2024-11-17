@@ -434,10 +434,8 @@ namespace IsWeakCause
   -- For which any cause is a weak cause, but that gives us zero
   -- information about the causes of x and ¬ x.
   -- 
-  -- I think that in general, union-like expressions, ie. where
-  -- two non-comparable valuations may both induce `d ∈ expr` may
-  -- only be eliminated into a sub-expression when all but one of
-  -- the possible weak causes are strongly eliminated.
+  -- I don't know if there is a nice & general way to eliminate
+  -- weak causes.
   
   def elimZeroExpr
     (isCause: IsWeakCause pairSalgebra cause d PairExpr.zeroExpr)
