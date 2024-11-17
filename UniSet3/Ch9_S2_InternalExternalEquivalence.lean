@@ -3,11 +3,9 @@
   It states that any definable triset of pairs is in a sense
   "contained" in the triset `uniSet3`. See chapter 7 for more
   info.
-  
-  TODO summarize informally the proof strategy here.
 -/
 
-import UniSet3.Ch9_TheSet3
+import UniSet3.Ch9_S1_InternalGe
 
 
 namespace Pair
@@ -15,49 +13,6 @@ namespace Pair
   open PairExpr
   
   namespace uniSet3
-    
-    
-    def insExternalToInsInternal
-      (ins:
-        Ins
-          pairSalgebra
-          uniDefList.theExternalDefList.toDefList
-          (Pair.pair (fromNat x) d)
-          uniDefList.theSet)
-    :
-      Ins pairSalgebra theInternalDefList d x
-    :=
-      sorry
-    
-    def outExternalToOutInternal
-      (out:
-        Out
-          pairSalgebra
-          uniDefList.theExternalDefList.toDefList
-          (Pair.pair (fromNat x) d)
-          uniDefList.theSet)
-    :
-      Out pairSalgebra theInternalDefList d x
-    :=
-      sorry
-    
-    
-    def theInternalWfmEncoding.isLeWfm:
-      uniDefList.theInternalWfmEncoding ⊑ theInternalWfm
-    :=
-      fun _ => {
-        defLe :=
-          fun _ insValExternal =>
-            let ins := Ins.isComplete _ _ insValExternal
-            (insExternalToInsInternal ins).isSound
-        posLe :=
-          fun _ =>
-            Function.contraAB
-              fun outValExternal =>
-                let out := Out.isComplete _ _ outValExternal
-                (outExternalToOutInternal out).isSound
-      }
-    
     def theInternalWfmEncoding.eqWfm:
       uniDefList.theInternalWfmEncoding = theInternalWfm
     :=
