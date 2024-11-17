@@ -413,7 +413,7 @@ namespace Pair
       (dlIn, dlOut), where `dlOut` contains all but the last
       definition of `dlIn`.
       
-      For every encoding of a definition list `dl`,
+      For every list of expressions `dl`,
       
           dl = [ ...upToLast(dl), lastExpr(dl) ] \,.
     -/
@@ -922,8 +922,34 @@ namespace Pair
         ⟩
     }
     
+    -- The well-founded model of the external definition list.
     noncomputable def theExternalWfm :=
       theExternalDefList.wellFoundedModel pairSalgebra
+    
+    def decodeValuation
+      (s3: Set3 Pair)
+    :
+      Valuation Pair
+    :=
+      fun n => Set3.pairCallJust s3 (fromNat n)
+    
+    def internalOfExternal
+      (v: Valuation Pair)
+    :
+      Valuation Pair
+    :=
+      decodeValuation (v theSet)
+    
+    /-
+      An encoding of the well-founded model of the internal
+      definition list. The internal definition list itself
+      is defined in Chapter 8, section 13.
+      
+      That this encoding actually encodes the well-founded
+      model is proven in Chapter 9.
+    -/
+    def theInternalWfmEncoding: Valuation Pair :=
+      internalOfExternal theExternalWfm
     
   end uniDefList  
 end Pair

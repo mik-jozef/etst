@@ -233,6 +233,16 @@ def Cause.inBoutOfInWithAndNotBound
     (fun ⟨inBout, _⟩ => inBout)
     (fun ⟨_, xEq⟩ => absurd xEq xNeq)
 
+def Cause.background
+  (cause: Cause D)
+:
+  Cause D
+:= {
+  contextIns := Set.empty
+  backgroundIns := cause.backgroundIns
+  backgroundOut := cause.backgroundOut
+}
+
 
 structure Cause.SatisfiesBoundVar
   (cause: Cause D)

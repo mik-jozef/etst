@@ -95,10 +95,10 @@ def Expr.interpretation
       iE0.defMem ∪ iE1.defMem,
       iE0.posMem ∪ iE1.posMem,
       
-      fun d dDef =>
-        Or.elim (dDef: d ∈ iE0.defMem ∨ d ∈ iE1.defMem)
-          (fun dIE0 => Or.inl (iE0.defLePos dIE0))
-          (fun dIE1 => Or.inr (iE1.defLePos dIE1))
+      fun _d dDef =>
+        dDef.elim
+          (fun dIE0 => Or.inl dIE0.toPos)
+          (fun dIE1 => Or.inr dIE1.toPos)
     ⟩
 | Expr.ir e0 e1 =>
     let iE0 := interpretation salg b c e0
@@ -107,8 +107,7 @@ def Expr.interpretation
       iE0.defMem ∩ iE1.defMem,
       iE0.posMem ∩ iE1.posMem,
       
-      fun _d dDef =>
-        And.intro (iE0.defLePos dDef.left) (iE1.defLePos dDef.right)
+      fun _d dDef => And.intro dDef.left.toPos dDef.right.toPos
     ⟩
 | Expr.cpl e =>
     let ie := (interpretation salg b b e)
@@ -116,8 +115,7 @@ def Expr.interpretation
       ie.posMemᶜ,
       ie.defMemᶜ,
       
-      fun d dInNPos =>
-        show d ∉ ie.defMem from fun dInDef => dInNPos (ie.defLePos dInDef)
+      fun _d dInNPos => fun dInDef => dInNPos dInDef.toPos
     ⟩
 | Expr.ifThen cond expr =>
     let cond.I: Set3 salg.D := interpretation salg b c cond
@@ -129,9 +127,7 @@ def Expr.interpretation
       
       fun _d dIn =>
         let dC := dIn.left.unwrap
-        And.intro
-          ⟨dC, cond.I.defLePos dC.property⟩
-          (expr.I.defLePos dIn.right)
+        And.intro ⟨dC, dC.property.toPos⟩ dIn.right.toPos
     ⟩
 | Expr.Un x body =>
     let body.I (dX: salg.D): Set3 salg.D :=
@@ -141,8 +137,7 @@ def Expr.interpretation
       fun d => ∃ dX, d ∈ (body.I dX).defMem,
       fun d => ∃ dX, d ∈ (body.I dX).posMem,
       
-      fun _d dDef => dDef.elim fun dX iXDef =>
-        ⟨dX, (body.I dX).defLePos iXDef⟩
+      fun _d dDef => dDef.elim fun dX iXDef => ⟨dX, iXDef.toPos⟩
     ⟩
 | Expr.Ir x body =>
     let body.I (dX: salg.D): Set3 salg.D :=
@@ -152,8 +147,7 @@ def Expr.interpretation
       fun d => ∀ dX, d ∈ (body.I dX).defMem,
       fun d => ∀ dX, d ∈ (body.I dX).posMem,
       
-      fun _d dDefBody xDDef =>
-        (body.I xDDef).defLePos (dDefBody xDDef)
+      fun _d dDefBody xDDef => (dDefBody xDDef).toPos
     ⟩
 
 

@@ -1,21 +1,28 @@
 /-
-  This whole chapter is dedicated to proving that the interpretation
-  as defined in the external definition list works as intended.
+  This chapter is divided into three sections. The zeroth section
+  proves that in the approximation order, the internal definition
+  list is less than or equal to its encoding in the external
+  definition list, while the first section proves the reverse
+  inequality.
   
-  The four main results,
+  In other words, we prove:
   
-      `inDefNthOfInsTheSet` \,,
-      `inPosNthOfInwTheSet` \,,
-      `insTheSetOfInDefNth` \,, and
-      `inwTheSetOfInPosNth` \,,
+  0. every member (or non-member) `d` of `x` in the internal
+     definition list is also a member (or non-member) of `x` in
+     the encoding (section 0),
+  1. the same holds in the reverse direction (section 1).
   
-  are used in Chapter 10 to prove
+  It follows, as shown in the short section 2, that the internal
+  definition list is equal to its encoding in the external
+  definition list.
   
-      `uniSet3.isModelOfInternalDefList` \,.
-  
-  TODO rewrite the chapter description
-  
-  TODO go through the chapter and make sure there is no unused code.
+  The proofs of the zeroth two sections are by structural recursion
+  on the proofs of (non-)membership in the respective definition
+  lists. (Recall we have a sound and complete proof system for
+  WFC. For every `d ∈ x`, there is a "reason" (proof) that `d ∈ x`.
+  Informally, the inductive argument shows that for every such
+  reason, there is a corresponding reason that `d ∈ x` in the
+  encoding, and vice versa.)
 -/
 
 import UniSet3.Ch8_S13_TheInternalDefList
@@ -432,6 +439,169 @@ namespace Pair
             ⟨rfl, _, inBout, rfl, isFree⟩
             (binsIns inBins notBound)
     
+    def isCauseOfAllInappCpl.cause
+      (boundVars: List (ValVar Pair))
+    :
+      Cause Pair
+    := {
+      contextIns :=
+        fun ⟨dd, xx⟩ =>
+          Or
+            (IsGetBound (boundVarsEncoding boundVars) xx dd)
+            (¬ IsBound boundVars xx ∧
+            _root_.Ins
+              pairSalgebra
+              uniDefList.theExternalDefList.toDefList
+              (pair xx dd)
+              uniDefList.theSet)
+      backgroundIns :=
+        fun ⟨dd, xx⟩ =>
+          Or
+            (IsGetBound (boundVarsEncoding boundVars) xx dd)
+            (¬ IsBound boundVars xx ∧
+            _root_.Ins
+              pairSalgebra
+              uniDefList.theExternalDefList.toDefList
+              (pair xx dd)
+              uniDefList.theSet)
+      backgroundOut :=
+        fun ⟨dd, xx⟩ =>
+          Or
+            (∃ dOther,
+              dd ≠ dOther ∧
+              IsGetBound (boundVarsEncoding boundVars) xx dOther)
+            (¬ IsBound boundVars xx ∧
+            _root_.Out
+              pairSalgebra
+              uniDefList.theExternalDefList.toDefList
+              (pair xx dd)
+              uniDefList.theSet)
+    }
+    
+    def isCauseOfAllInappCpl.causeIsConsistent
+      (boundVars: List (ValVar Pair))
+    :
+      (cause boundVars).IsConsistent
+    :=
+      fun _ =>
+        Or.inrEm fun inBinsDn inBout =>
+          match inBout, inBinsDn.dne with
+          | Or.inl ⟨_dOther, neq, isBoundOther⟩,
+            Or.inl isBound
+          =>
+            neq (isBound.isUnique isBoundOther)
+          |
+            Or.inl ⟨dOther, _, isBoundOther⟩,
+            Or.inr ⟨notBound, _⟩
+          =>
+            notBound ⟨dOther, isBoundOther⟩
+          |
+            Or.inr ⟨notBound, _⟩, Or.inl isBound =>
+            notBound ⟨_, isBound⟩
+          |
+            Or.inr ⟨_, isOut⟩, Or.inr ⟨_, isIns⟩ =>
+            isOut.nopeIns isIns
+    
+    def isCauseOfAllInappCpl.satBoundVars
+      (boundVars: List (ValVar Pair))
+    :
+      (cause boundVars).SatisfiesBoundVars boundVars
+    :=
+      (fun eqEnc isGetBound => {
+        cinsSat :=
+          fun _ inCins xEq =>
+            inCins.elim
+              (fun isBound =>
+                isBound.isUnique (xEq ▸ eqEnc ▸ isGetBound))
+              (fun ⟨notBound, _⟩ =>
+                False.elim
+                  (notBound (xEq ▸ ⟨_, eqEnc ▸ isGetBound⟩)))
+        binsSat :=
+          fun _ inBins xEq =>
+            inBins.elim
+              (fun isBound =>
+                isBound.isUnique (xEq ▸ eqEnc ▸ isGetBound))
+              (fun ⟨notBound, _⟩ =>
+                False.elim
+                  (notBound (xEq ▸ ⟨_, eqEnc ▸ isGetBound⟩)))
+        boutSat :=
+          fun _ inBout xEq dEq =>
+            inBout.elim
+              (fun ⟨_, neq, isBoundOther⟩ =>
+                neq
+                  (dEq ▸
+                  isGetBound.isUnique
+                    (eqEnc ▸ xEq ▸ isBoundOther)))
+              (fun ⟨notBound, _⟩ =>
+                notBound ⟨_, xEq ▸ eqEnc ▸ isGetBound⟩)
+      })
+    
+    def isCauseOfAllInappCpl
+      (allInapp:
+        AllCausesInapp internalCycle boundVars (Expr.cpl expr) d)
+    :
+      IsStrongCause
+        pairSalgebra
+        (isCauseOfAllInappCpl.cause boundVars)
+        d
+        expr
+    :=
+      let isConsistent :=
+        isCauseOfAllInappCpl.causeIsConsistent boundVars
+      let b := isConsistent.leastBackgroundApx
+      IsStrongCause.ofLeastBackground
+        rfl
+        isConsistent
+        (byContradiction fun notDef =>
+          let isPosCpl:
+            Set3.posMem
+              (expr.cpl.interpretation pairSalgebra b b)
+              d
+          :=
+            notDef
+          let ⟨
+            cause,
+            isCauseCpl,
+            isSatCpl
+          ⟩ :=
+            IsWeakCause.exSatOfIsPos isPosCpl
+          let isInapp :=
+            allInapp
+              cause.background
+              (fun eqEnc isGetBound => {
+                cinsSat := fun _ nope _ => nope.elim
+                binsSat :=
+                  fun _ inBins xEq =>
+                    let notBout := isSatCpl.backgroundInsHold inBins
+                    let otherNotBound :=
+                      notBout.toAnd.left.toAll fun _ nand =>
+                        nand.toImpl
+                    byContradiction fun neq =>
+                      otherNotBound
+                        _ neq (xEq ▸ eqEnc ▸ isGetBound)
+                boutSat :=
+                  fun _ inBout xEq dEq =>
+                    let notBins :=
+                      isSatCpl.backgroundOutHold inBout
+                    let ⟨notBound, _⟩ := notBins.toAnd
+                    notBound (xEq ▸ dEq ▸ eqEnc ▸ isGetBound)
+              })
+              isCauseCpl.toEmptyCinsCpl
+          open IsCauseInappExtended in
+          match isInapp with
+          | cinsFailsCycle ⟨_, ⟨_, nope, _, _⟩⟩ _ => nope
+          | cinsFailsOut ⟨_, ⟨_, nope, _, _⟩⟩ _ => nope
+          | binsFails ⟨xEq, ⟨vv, inBins, dEq, isFree⟩⟩ isOut =>
+            let dEq: _ = pair vv.x vv.d := dEq
+            isSatCpl.backgroundInsHold
+              inBins
+              (Or.inr ⟨isFree.toNotBound, xEq ▸ dEq ▸ isOut⟩)
+          | boutFails ⟨xEq, ⟨vv, inBout, dEq, isFree⟩⟩ isIns =>
+            let dEq: _ = pair vv.x vv.d := dEq
+            isSatCpl.backgroundOutHold
+              inBout
+              (Or.inr ⟨isFree.toNotBound, xEq ▸ dEq ▸ isIns⟩))
+    
     
     def inappExtBoundVar
       {sizeBound: Ordinal}
@@ -556,7 +726,7 @@ namespace Pair
             else
               False.elim
                 ((boutOut hI.right hB).isSound
-                  (Set3.defLePos _ (binsIns hI.left hB).isSound))
+                  (binsIns hI.left hB).isSound.toPos)
           else
             hI.toOr
       
@@ -913,16 +1083,28 @@ namespace Pair
         
         let inBout :=
           (isCause.hurrDurrElimGreat elimExternalCpl).dne
+        
         IsCauseInappExtended.boutFails
           inBout
           (isCauseToInsInterp
-            (internalCause := sorry)
-            (fun isSat => sorry)
+            (isCauseOfAllInappCpl allInapp)
             boundVars
-            sorry
-            sorry
-            sorry
-            sorry)
+            (isCauseOfAllInappCpl.satBoundVars boundVars)
+            (fun inCins notBound =>
+              inCins.elim
+                (fun isBound =>
+                  False.elim (notBound ⟨_, isBound⟩))
+                (fun ⟨_, isIns⟩ => isIns))
+            (fun inBins notBound =>
+              inBins.elim
+                (fun isBound =>
+                  False.elim (notBound ⟨_, isBound⟩))
+                (fun ⟨_, isIns⟩ => isIns))
+            (fun inBout notBound =>
+              inBout.elim
+                (fun ⟨_, _, isBound⟩ =>
+                  False.elim (notBound ⟨_, isBound⟩))
+                (fun ⟨_, isOut⟩ => isOut)))
       |
         ifThen cond body =>
         let isLeC: cond.sizeOf < max cond.sizeOf body.sizeOf + 1 :=
@@ -1434,6 +1616,23 @@ namespace Pair
               And.intro rfl ⟨_, inBout, rfl, nofun⟩)
             ihIns)
         (fun _ _ => inEmptyCycleInternalToOutExternal)
+    
+    
+    def theInternalWfmEncoding.isGeWfm:
+      theInternalWfm ⊑ uniDefList.theInternalWfmEncoding
+    :=
+      fun _ => {
+        defLe :=
+          fun _ insValInternal =>
+            let ins := Ins.isComplete _ _ insValInternal
+            (insInternalToInsExternal ins).isSound
+        posLe :=
+          fun _ =>
+            Function.contraAB
+              fun outValInternal =>
+                let out := Out.isComplete _ _ outValInternal
+                (outInternalToOutExternal out).isSound
+      }
     
   end uniSet3
 end Pair

@@ -85,3 +85,20 @@ def Out.isComplete
   Out salg dl d x
 :=
   (completenessProofB salg dl).outIsComplete out
+
+
+def Ins.nopeOut
+  (isIns: Ins salg dl d x)
+  (isOut: Out salg dl d x)
+:
+  P
+:=
+  False.elim (isOut.isSound isIns.isSound.toPos)
+
+def Out.nopeIns
+  (isOut: Out salg dl d x)
+  (isIns: Ins salg dl d x)
+:
+  P
+:=
+  False.elim (isOut.isSound isIns.isSound.toPos)

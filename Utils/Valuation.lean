@@ -392,7 +392,7 @@ namespace Valuation
               False.elim
                 (allNin
                   valOfTriset
-                  (valOfTriset.property ▸ h ▸ Set3.defLePos _ ddIn))
+                  (valOfTriset.property ▸ h ▸ ddIn.toPos))
             else
               Set3.without.DefMem.intro
                 (ord.standard.inSet.inSup.defMem

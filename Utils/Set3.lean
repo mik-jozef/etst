@@ -52,9 +52,7 @@ namespace Set3
       (funext fun d =>
         propext
           (Iff.intro
-            (fun dInSDef =>
-              let dInSPos := s.defLePos dInSDef
-              noPos d dInSPos)
+            (fun dInSDef => noPos d dInSDef.toPos)
             (fun nope => False.elim nope)))
       (funext fun d =>
         propext
@@ -67,8 +65,8 @@ namespace Set3
     s0.posMem ∪ s1.posMem,
     fun _d dIn =>
       dIn.elim
-        (fun dIn0 => Or.inl (s0.defLePos dIn0))
-        (fun dIn1 => Or.inr (s1.defLePos dIn1))
+        (fun dIn0 => Or.inl dIn0.toPos)
+        (fun dIn1 => Or.inr dIn1.toPos)
   ⟩
   
   def memUnion (s0 s1: Set3 D) (d: D):
@@ -94,10 +92,7 @@ namespace Set3
   def inter (s0 s1: Set3 D): Set3 D := ⟨
     s0.defMem ∩ s1.defMem,
     s0.posMem ∩ s1.posMem,
-    fun _d dIn =>
-      And.intro
-        (s0.defLePos dIn.left)
-        (s1.defLePos dIn.right)
+    fun _d dIn => And.intro dIn.left.toPos dIn.right.toPos
   ⟩
   
   def memInter (s0 s1: Set3 D) (d: D):
@@ -128,7 +123,7 @@ namespace Set3
   
   
   def ninPos.ninDef {s: Set3 D} (dNin: d ∉ s.posMem): d ∉ s.defMem :=
-    fun dIn => dNin (s.defLePos dIn)
+    fun dIn => dNin dIn.toPos
   
   structure without.DefMem
     (s: Set3 D)
@@ -151,7 +146,7 @@ namespace Set3
     posMem := without.PosMem s d
     defLePos :=
       fun _dd ddDef => {
-        dIn := (s.defLePos ddDef.dIn)
+        dIn := ddDef.dIn.toPos
         neq := ddDef.neq
       }
   }
@@ -184,7 +179,7 @@ namespace Set3
   def withoutDef (s: Set3 D) (d: D): Set3 D := {
     defMem := fun dd => without.DefMem s d dd
     posMem := fun dd => dd ∈ s.posMem
-    defLePos := fun _d dDef => (s.defLePos dDef.dIn)
+    defLePos := fun _d dDef => dDef.dIn.toPos
   }
   
   def withoutDef.ninDef (s: Set3 D) (d: D): d ∉ (s.withoutDef d).defMem :=
@@ -244,7 +239,7 @@ namespace Set3
     defLePos :=
       fun _dd ddDef =>
         ddDef.elim
-          (fun ddInS => Or.inl (s.defLePos ddInS))
+          (fun ddInS => Or.inl ddInS.toPos)
           (fun eq => Or.inr eq)
   }
   
@@ -270,7 +265,7 @@ namespace Set3
   def withPos (s: Set3 D) (d: D): Set3 D := {
     defMem := fun dd => dd ∈ s.defMem
     posMem := fun dd => dd ∈ s.posMem ∨ dd = d
-    defLePos := fun _dd ddDef => Or.inl (s.defLePos ddDef)
+    defLePos := fun _dd ddDef => Or.inl ddDef.toPos
   }
   
   def withPos.defMemEq (s: Set3 D) (d: D):
@@ -390,7 +385,7 @@ namespace Set3
           Set3.eq
             (funext (fun _dd => (propext (Iff.intro
               (fun ddIn => without.DefMem.intro
-                ddIn (fun eq => h (eq ▸ (sup.val.defLePos ddIn))))
+                ddIn (fun eq => h (eq ▸ ddIn.toPos)))
               (fun ddIn => ddIn.dIn)))))
             (funext (fun _dd => (propext (Iff.intro
               (fun ddIn => without.PosMem.intro
@@ -406,7 +401,7 @@ namespace Set3
             let dNinS := allNin s
             without.DefMem.intro
               dInSup
-              (fun eq => dNinS (eq ▸ (s.val.defLePos ddInS))))
+              (fun eq => dNinS (eq ▸ ddInS.toPos)))
           (fun _dd ddInS =>
             let ddInSup := (sup.property.isMember s).posLe ddInS
             let dNinS := allNin s
@@ -660,20 +655,18 @@ namespace Set3
   :
     s = just d
   :=
-    let nonEmptyPos := s.defLePos nonEmpty
-    let dEq := allEq _ nonEmptyPos
+    let dEq := allEq _ nonEmpty.toPos
     
     Set3.eq
       (funext fun _ =>
         propext
           (Iff.intro
-            (fun isDef => allEq _ (Set3.defLePos _ isDef))
+            (fun isDef => allEq _ isDef.toPos)
             (fun eq => dEq.trans eq.symm ▸ nonEmpty)))
       (funext fun _ =>
         propext
           (Iff.intro
             (allEq _)
-            (fun eq =>
-              dEq.trans eq.symm ▸ Set3.defLePos _ nonEmpty)))
+            (fun eq => dEq.trans eq.symm ▸ nonEmpty.toPos)))
   
 end Set3

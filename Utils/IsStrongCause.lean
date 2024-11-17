@@ -99,7 +99,18 @@ def Cause.IsConsistent.Not.isStrong
   fun isSat =>
     let isDef := isSat.backgroundInsHold inIns
     let niPos := isSat.backgroundOutHold inOut
-    False.elim (niPos (Set3.defLePos _ isDef))
+    False.elim (niPos isDef.toPos)
+
+def Cause.IsStronglySatisfiedByBackground.toIsConsistent
+  (isSat: IsStronglySatisfiedByBackground cause b)
+:
+  IsConsistent cause
+:=
+  fun _ =>
+    Or.inrEm fun inBinsDn inBout =>
+      isSat.backgroundOutHold
+        inBout
+        (isSat.backgroundInsHold inBinsDn.dne).toPos
 
 
 /-
@@ -812,3 +823,73 @@ def IsStrongCause.Not.elimArbIr
       nex.toAll fun _ isCause => isCause.dne
     
     isNotCause (IsStrongCause.arbIr allHaveCause)
+
+
+def IsStrongCause.ofLeastApx
+  {salg: Salgebra sig}
+  {cause: Cause salg.D}
+  {d: salg.D}
+  
+  (isConsistent: cause.IsConsistent)
+  (isDef:
+    let b := isConsistent.leastBackgroundApx
+    let c := cause.leastContextApx
+    (Expr.interpretation salg b c expr).defMem d)
+:
+  IsStrongCause salg cause d expr
+:=
+  fun isSat =>
+    let isSatBg := isSat.toIsStronglySatisfiedByBackground
+    Expr.interpretation.isMonotonic.apxDefMem
+      salg
+      expr
+      (isConsistent.leastIsLeApx _ isSatBg)
+      (fun _ _ => isSat.contextInsHold)
+      isDef
+
+def IsStrongCause.ofBackground
+  {salg: Salgebra sig}
+  {cause: Cause salg.D}
+  {d: salg.D}
+  
+  (eqVal: cause.contextIns = cause.backgroundIns)
+  (isCause:
+    {b: Valuation salg.D} →
+    cause.IsStronglySatisfiedByBackground b →
+    (expr.interpretation salg b b).defMem d)
+:
+  IsStrongCause salg cause d expr
+:=
+  fun isSat =>
+    let isSatBg := isSat.toIsStronglySatisfiedByBackground
+    let isConsistent := isSat.toIsConsistent
+    let isDefB := isCause isConsistent.leastBackgroundApxIsSat
+    Expr.interpretation.isMonotonic.apxDefMem
+      salg
+      expr
+      (isConsistent.leastIsLeApx _ isSatBg)
+      (fun _ _ inBins => isSat.contextInsHold (eqVal ▸ inBins))
+      isDefB
+
+def IsStrongCause.ofLeastBackground
+  {salg: Salgebra sig}
+  {cause: Cause salg.D}
+  {d: salg.D}
+  
+  (eqVal: cause.contextIns = cause.backgroundIns)
+  (isConsistent: cause.IsConsistent)
+  (isDef:
+    let b := isConsistent.leastBackgroundApx
+    (expr.interpretation salg b b).defMem d)
+:
+  IsStrongCause salg cause d expr
+:=
+  fun isSat =>
+    let isSatBg := isSat.toIsStronglySatisfiedByBackground
+    let isConsistent := isSat.toIsConsistent
+    Expr.interpretation.isMonotonic.apxDefMem
+      salg
+      expr
+      (isConsistent.leastIsLeApx _ isSatBg)
+      (fun _ _ inBins => isSat.contextInsHold (eqVal ▸ inBins))
+      isDef

@@ -32,6 +32,13 @@ def IsVarFree.nopeGetBound
 :=
   False.elim (isFree d isBound.inBoundVars)
 
+def IsVarFree.toNotBound
+  (isFree: IsVarFree x boundVars)
+:
+  ¬ IsBound boundVars x
+:=
+  fun ⟨_, isGetBound⟩ => isFree.nopeGetBound isGetBound
+
 def IsVarFree.ofEmpty
   {D: Type*}
   (x: Nat)

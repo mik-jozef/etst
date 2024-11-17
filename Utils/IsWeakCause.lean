@@ -836,4 +836,18 @@ namespace IsWeakCause
                 Or.inr)
       }
   
+  
+  def toEmptyCinsCpl
+    (isCause: IsWeakCause salg cause d (Expr.cpl expr))
+  :
+    IsWeakCause salg cause.background d (Expr.cpl expr)
+  :=
+  fun isSat isDef =>
+    let isSatB: cause.IsWeaklySatisfiedBy _ Valuation.full := {
+      contextInsHold := fun _ => trivial
+      backgroundInsHold := isSat.backgroundInsHold
+      backgroundOutHold := isSat.backgroundOutHold
+    }
+    isCause isSatB isDef
+  
 end IsWeakCause

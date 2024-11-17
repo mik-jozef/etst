@@ -87,7 +87,7 @@ namespace Expr
   def Ins.toInw (s: Ins salg b c expr d):
     Inw salg b c expr d
   :=
-    (Expr.interpretation salg b c expr).defLePos s
+    s.toPos
   
   
   def Ins2

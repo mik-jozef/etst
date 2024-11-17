@@ -50,6 +50,11 @@ structure Set3 (D: Type u) where
   defLePos: defMem ≤ posMem
 
 namespace Set3
+  -- A convenience function allowing us to use `isDef.toPos` on
+  -- instances of `Set3.defMem s d`.
+  def defMem.toPos (isDef: Set3.defMem s d) : s.posMem d :=
+    s.defLePos isDef
+  
   -- If two trisets have the same definitive and possible members,
   -- they are equal.
   protected def eq:
@@ -71,7 +76,7 @@ namespace Set3
   :
     ¬ s3.defMem d
   :=
-    fun isDef => notPos (s3.defLePos isDef)
+    fun isDef => notPos isDef.toPos
   
   
   -- The empty triset contains no elements.
@@ -265,8 +270,8 @@ namespace Set3
       posMem := fun d => ∃s: ↑s, d ∈ s.val.posMem
       defLePos :=
         fun _ dDef =>
-          let s := dDef.unwrap
-          ⟨s, s.val.val.defLePos s.property⟩
+          let ⟨s, isDef⟩ := dDef
+          ⟨s, isDef.toPos⟩
     }
     ⟨
       sup,
@@ -308,23 +313,16 @@ namespace Set3
       defMem := fun d => ∃ s: ↑ch, d ∈ s.val.defMem
       posMem := fun d => ∀ s: ↑ch, d ∈ s.val.posMem
       defLePos :=
-        fun d dDef s =>
+        fun _d dDef s =>
           let sOfD := dDef.unwrap
           let sSOfDComparable := ch.isChain s.property sOfD.val.property
           
           if h: s.val = sOfD then
-            let dPos := sOfD.val.val.defLePos sOfD.property
-            h ▸ dPos
+            h ▸ sOfD.property.toPos
           else
             (sSOfDComparable h).elim
-              (fun sLe =>
-                let dSOfDPos: d ∈ sOfD.val.val.posMem :=
-                  sOfD.val.val.defLePos sOfD.property
-                sLe.posLe dSOfDPos)
-              (fun sGe =>
-                let dSDef: d ∈ s.val.defMem :=
-                  sGe.defLe sOfD.property
-                s.val.defLePos dSDef)
+              (fun sLe => sLe.posLe sOfD.property.toPos)
+              (fun sGe => (sGe.defLe sOfD.property).toPos)
     }
     ⟨
       sup,
