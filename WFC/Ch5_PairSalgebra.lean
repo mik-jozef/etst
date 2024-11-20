@@ -48,6 +48,9 @@ instance Pair.coeOutCoe [Coe A Pair]: CoeOut A Pair where
 
 
 namespace Pair
+  def eq: l0 = l1 → r0 = r1 → pair l0 r0 = pair l1 r1
+  | rfl, rfl => rfl
+  
   /-
     `Pair.zero` encodes the number zero, while `Pair.pair n zero`
     encodes the successor of `n`.

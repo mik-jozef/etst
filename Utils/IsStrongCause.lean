@@ -893,3 +893,20 @@ def IsStrongCause.ofLeastBackground
       (isConsistent.leastIsLeApx _ isSatBg)
       (fun _ _ inBins => isSat.contextInsHold (eqVal ▸ inBins))
       isDef
+
+def IsStrongCause.hurrDurrElim
+  (isCause: IsStrongCause salg cause d expr)
+  (isConsistent: cause.IsConsistent)
+  {P: Prop}
+  (goalInC:
+    Set3.defMem
+      (expr.interpretation
+        salg
+        isConsistent.leastBackgroundApx
+        cause.leastContextApx)
+      d →
+    P)
+:
+  P
+:=
+  goalInC (isCause isConsistent.leastValsApxAreSat)

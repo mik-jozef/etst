@@ -17,22 +17,10 @@ import WFC.Appx0_ExprRulesOfInference
 
 
 /-
-  `ValVar` encodes some (usage-specific) relation between a variable
-  and an element. For example, it may be used to represent the
-  assertion that a certain variable contains a certain element in
-  some valuation.
-  
-  That the variable `x` contains the element `d` may be denoted
-  as `d ∈ x`.
--/
-structure ValVar (D: Type*) where
-  d: D
-  x: Nat
-
-/-
-  If expressions `a` and `c` contain an element `d`, then the
-  expression `a ∩ (b ∪ c)` also contains that element. For this
-  reason, we may call `d ∈ a ∧ d ∈ c` a cause of `d ∈ a ∪ (b ∪ c)`.
+  If (under some valuation) expressions `a` and `c` contain an
+  element `d`, then the expression `a ∩ (b ∪ c)` also contains
+  that element. For this reason, we may call `d ∈ a ∧ d ∈ c`
+  a cause of `d ∈ a ∪ (b ∪ c)`.
   
   We encode the causes as sets of `ValVar` instances. A cause
   consists of three such sets:

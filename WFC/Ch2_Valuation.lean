@@ -190,4 +190,27 @@ namespace Valuation
       else
         val v
   
+  
+  /-
+    `ValVar` encodes some (usage-specific) relation between a variable
+    and an element. For example, it may be used to represent the
+    assertion that a certain variable contains a certain element in
+    some valuation.
+    
+    That the variable `x` contains the element `d` may be denoted
+    as `d ∈ x`.
+  -/
+  structure _root_.ValVar (D: Type*) where
+    d: D
+    x: Nat
+
+  def withBoundVars
+    (val: Valuation D)
+  :
+    (boundVars: List (ValVar D)) →
+    Valuation D
+  |
+    [] => val
+  | ⟨d, x⟩ :: tail => (val.withBoundVars tail).update x d
+  
 end Valuation
