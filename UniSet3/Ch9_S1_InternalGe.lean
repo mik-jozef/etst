@@ -84,26 +84,6 @@ namespace Pair
         (neqSet: x ≠ uniDefList.theSet)
     
     
-    -- TODO unused, delete?
-    -- def isConsistentOfSatMotive
-    --   (cause: Cause Pair)
-    --   (cinsIns:
-    --     ∀ {d} {x: Nat},
-    --       ⟨d, x⟩ ∈ cause.contextIns →
-    --       MotiveIns d x)
-    --   (binsIns:
-    --     ∀ {d} {x: Nat},
-    --       ⟨d, x⟩ ∈ cause.backgroundIns →
-    --       MotiveIns d x)
-    --   (boutOut:
-    --     ∀ {d} {x: Nat},
-    --       ⟨d, x⟩ ∈ cause.backgroundOut →
-    --       MotiveOut d x)
-    -- :
-    --   cause.IsConsistent
-    -- :=
-    --   sorry
-    
     def isCauseExternalToInsInternal
       (isCauseExternal:
         IsStrongCause
