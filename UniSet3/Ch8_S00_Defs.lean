@@ -2304,8 +2304,8 @@ namespace Pair
           Option.some.inj (isAtB.eq.symm.trans isSome)
     
     structure IsTheDefListExprPair.NthExpr (n: Nat) where
-      expr: Pair
-      isNth: IsTheDefListExprPair (fromNat n) expr
+      exprEnc: Pair
+      isNth: IsTheDefListExprPair (fromNat n) exprEnc
     
     /-
       Returns the nth expression of the internal defintion list.
@@ -2325,7 +2325,7 @@ namespace Pair
       | none =>
         False.elim (arrayAt.nopeNoneOfWithinBounds hasNthDef h)
       
-      | some expr =>
+      | some exprEnc =>
         let isNth :=
           intro
             i
@@ -2337,13 +2337,13 @@ namespace Pair
               eq := fromNat.depthEq _ ▸ h
             }
         
-        { expr, isNth }
+        { exprEnc, isNth }
     
     def IsTheDefListExprPair.getNthExpr.eq
       (is: IsTheDefListExpr (pair xEnc exprEnc))
       (eq: xEnc = fromNat x)
     :
-      exprEnc = (IsTheDefListExprPair.getNthExpr x).expr
+      exprEnc = (IsTheDefListExprPair.getNthExpr x).exprEnc
     :=
       let isX := (IsTheDefListExprPair.getNthExpr x).isNth
       
@@ -2352,11 +2352,11 @@ namespace Pair
     structure IsTheDefListExprPair.IndexOfDefList (dl: Pair) where
       i: Nat
       eqAt:
-        ∀ (_isSome: dl.arrayAt n = some expr)
+        ∀ (_isSome: dl.arrayAt n = some exprEnc)
         ,
           IsTheDefListExprPair
             (fromNat (i + n))
-            (IsIncrVarsExprPair.shiftVars i expr)
+            (IsIncrVarsExprPair.shiftVars i exprEnc)
     
     /-
       Let `dl` be (an encoding of) a prefix of a definition list

@@ -1317,7 +1317,7 @@ namespace Pair
           
           let notXthNins
             p
-            (neq: p ≠ xthExpr.expr)
+            (neq: p ≠ xthExpr.exprEnc)
             (inCins:
               ⟨pair xInt p, uniDefList.theDefList⟩
                 ∈
@@ -1336,7 +1336,7 @@ namespace Pair
           let interpInCins :=
             isCauseExternal.hurrDurrElim
               (P := externalCause.contextIns ⟨
-                pair zero (pair xthExpr.expr dInt),
+                pair zero (pair xthExpr.exprEnc dInt),
                 uniDefList.interpretation,
               ⟩)
               fun inw =>
@@ -1345,7 +1345,7 @@ namespace Pair
                 let xEncEqX := inwBoundElim inwL
                 let ⟨expr, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwR
                 let inwDl := inwCallElimBound inwArg rfl nat502Neq500
-                let exprEq: expr = xthExpr.expr :=
+                let exprEq: expr = xthExpr.exprEnc :=
                   byContradiction fun neq =>
                     notXthNins _ neq (xEncEqX ▸ inwDl)
                 let ⟨_z, inw, inwZero⟩ := inwCallExprElim inwFn
@@ -1356,7 +1356,7 @@ namespace Pair
             exprToEncoding.isInverse xthExpr.isNth.isExpr ▸
             extOfIntCycleFull.interp
               []
-              xthExpr.expr.encodingToExpr
+              xthExpr.exprEnc.encodingToExpr
               trivial
               dInt
               (fun internalCause _ isCause =>

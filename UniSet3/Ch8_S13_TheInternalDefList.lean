@@ -12,7 +12,7 @@ namespace Pair
       Expr pairSignature
     :=
       encodingToExpr
-        (IsTheDefListExprPair.getNthExpr n).expr
+        (IsTheDefListExprPair.getNthExpr n).exprEnc
 
     noncomputable def theInternalDefList:
       DefList pairSignature
@@ -25,7 +25,7 @@ namespace Pair
     :
       exprToEncoding (theInternalDefList.getDef x)
         =
-      (IsTheDefListExprPair.getNthExpr x).expr
+      (IsTheDefListExprPair.getNthExpr x).exprEnc
     := by
       unfold theInternalDefList.getDef
       rw [exprToEncoding.isInverse]
@@ -36,7 +36,7 @@ namespace Pair
     :
       (theInternalDefList.getDef x)
         =
-      (IsTheDefListExprPair.getNthExpr x).expr.encodingToExpr
+      (IsTheDefListExprPair.getNthExpr x).exprEnc.encodingToExpr
     :=
       theInternalDefList.eqEnc x ▸
       (encodingToExpr.isInverse (getDef x)).symm
