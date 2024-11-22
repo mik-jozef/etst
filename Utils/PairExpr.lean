@@ -617,7 +617,7 @@ namespace PairExpr
     (s: InsP b c (natExpr n) (fromNat m))
     (neq: n ≠ m)
   :
-    p = fromNat n
+    P
   :=
     inwNatExprElimNope s.toInw neq
   

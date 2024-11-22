@@ -67,13 +67,18 @@ namespace Pair
     
     def IsBound.Not.notBoundTail
       (notBound: ¬ IsBound (⟨dB, xB⟩ :: boundVars) x)
-      (xNeq: x ≠ xB)
     :
       ¬ IsBound boundVars x
     :=
-      let encNeq := fromNat.injNeq xNeq.symm
       fun ⟨d, isGetBound⟩ =>
-        notBound ⟨d, IsGetBound.InTail isGetBound dB encNeq⟩
+        if h: xB = x then
+          notBound ⟨
+            dB,
+            h ▸ IsGetBound.InHead (fromNat.isNatEncoding xB) _ _,
+          ⟩
+        else
+          let encNeq := fromNat.injNeq h
+          notBound ⟨d, IsGetBound.InTail isGetBound dB encNeq⟩
     
     
     def externalOfInternalCause
@@ -673,7 +678,7 @@ namespace Pair
       then
         let ⟨d, isGetBound⟩ := h
         boutFails
-          (notBound.toAll (fun _ => Not.dne) d )
+          (notBound.toAll (fun _ => Not.dne) d)
           (Ins.isComplete _ _ (insGetBound isGetBound))
       else
         let isInapp :=
@@ -860,17 +865,17 @@ namespace Pair
               let xNeq := IsBound.Not.notBoundHeadNotEq notBound
               cinsIns
                 (Cause.inCinsOfInWithAndNotBound inCinsWith xNeq)
-                (IsBound.Not.notBoundTail notBound xNeq))
+                (IsBound.Not.notBoundTail notBound))
             (fun inBinsWith notBound =>
               let xNeq := IsBound.Not.notBoundHeadNotEq notBound
               binsIns
                 (Cause.inBinsOfInWithAndNotBound inBinsWith xNeq)
-                (IsBound.Not.notBoundTail notBound xNeq))
+                (IsBound.Not.notBoundTail notBound))
             (fun inBoutWith notBound =>
               let xNeq := IsBound.Not.notBoundHeadNotEq notBound
               boutOut
                 (Cause.inBoutOfInWithAndNotBound inBoutWith xNeq)
-                (IsBound.Not.notBoundTail notBound xNeq))
+                (IsBound.Not.notBoundTail notBound))
         
         InsInterp.arbUn dX ih
       | Ir x body =>
@@ -888,17 +893,17 @@ namespace Pair
               let xNeq := IsBound.Not.notBoundHeadNotEq notBound
               cinsIns
                 (Cause.inCinsOfInWithAndNotBound inCinsWith xNeq)
-                (IsBound.Not.notBoundTail notBound xNeq))
+                (IsBound.Not.notBoundTail notBound))
             (fun inBinsWith notBound =>
               let xNeq := IsBound.Not.notBoundHeadNotEq notBound
               binsIns
                 (Cause.inBinsOfInWithAndNotBound inBinsWith xNeq)
-                (IsBound.Not.notBoundTail notBound xNeq))
+                (IsBound.Not.notBoundTail notBound))
             (fun inBoutWith notBound =>
               let xNeq := IsBound.Not.notBoundHeadNotEq notBound
               boutOut
                 (Cause.inBoutOfInWithAndNotBound inBoutWith xNeq)
-                (IsBound.Not.notBoundTail notBound xNeq))
+                (IsBound.Not.notBoundTail notBound))
     termination_by expr.sizeOf
     
     
@@ -925,14 +930,14 @@ namespace Pair
       match expr with
       | var x =>
         let boundOrFree :=
-          isCause.hurrDurrElimGreat elimExternalVar
+          isCause.hurrDurrElimGreat elimPosExternalVar
         boundOrFree.elim
           (inappExtBoundVar allInapp)
           (fun ⟨inw, notBound⟩ =>
             inappExtFreeVar allInapp inw notBound)
       |
         op pairSignature.Op.zero _ =>
-        let dEqZero := isCause.hurrDurrElim elimExternalZero
+        let dEqZero := isCause.hurrDurrElim elimPosExternalZero
         let isInapp :=
           allInapp
             (Cause.empty)
@@ -948,7 +953,7 @@ namespace Pair
       |
         op pairSignature.Op.pair args =>
         let ⟨dL, dR, dEq, inCinsLeft, inCinsRite⟩ :=
-          isCause.hurrDurrElim elimExternalPair
+          isCause.hurrDurrElim elimPosExternalPair
         
         let left := args ArityTwo.zth
         let rite := args ArityTwo.fst
@@ -1014,7 +1019,7 @@ namespace Pair
       |
         un left rite =>
         let inCinsLeftOrRite :=
-          isCause.hurrDurrElim elimExternalUn
+          isCause.hurrDurrElim elimPosExternalUn
         
         inCinsLeftOrRite.elim
           (fun inCinsLeft =>
@@ -1047,7 +1052,7 @@ namespace Pair
           Order.lt_succ_of_le (le_max_right _ _)
         
         let ⟨inCinsLeft, inCinsRite⟩ :=
-          isCause.hurrDurrElim elimExternalIr
+          isCause.hurrDurrElim elimPosExternalIr
         
         if hL:
           AllCausesInapp internalCycle boundVars left d
@@ -1082,7 +1087,7 @@ namespace Pair
           Order.lt_succ_of_le (le_refl _)
         
         let inBout :=
-          (isCause.hurrDurrElimGreat elimExternalCpl).dne
+          (isCause.hurrDurrElimGreat elimPosExternalCpl).dne
         
         IsCauseInappExtended.boutFails
           inBout
@@ -1113,7 +1118,7 @@ namespace Pair
           Order.lt_succ_of_le (le_max_right _ _)
         
         let ⟨⟨dC, inCinsCond⟩, inCinsBody⟩ :=
-          isCause.hurrDurrElim elimExternalIfThen
+          isCause.hurrDurrElim elimPosExternalIfThen
         
         if hC:
           AllCausesInapp internalCycle boundVars cond dC
@@ -1164,7 +1169,7 @@ namespace Pair
         let isLe: body.sizeOf < body.sizeOf + 1 :=
           Ordinal.lt_succ body.sizeOf
         let ⟨dX, inCins⟩ :=
-          isCause.hurrDurrElim elimExternalArbUn
+          isCause.hurrDurrElim elimPosExternalArbUn
         let allInapp cause satBoundVars isCause:
           IsCauseInappExtended
             pairSalgebra
@@ -1198,7 +1203,7 @@ namespace Pair
         let isLe: body.sizeOf < body.sizeOf + 1 :=
           Ordinal.lt_succ body.sizeOf
         
-        let inCins := isCause.hurrDurrElim elimExternalArbIr
+        let inCins := isCause.hurrDurrElim elimPosExternalArbIr
         
         if h:
           ∃ dB,
