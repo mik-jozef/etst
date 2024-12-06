@@ -195,9 +195,6 @@ def Cause.isWeaklySatByUndetermined
 /-
   The least valuation in the standard order that weakly satisfies
   the background part of a cause.
-  
-  Useful in this file for (also) being a maximal such valuation
-  in the approximation order.
 -/
 def Cause.leastBackgroundStd
   (cause: Cause D)
@@ -228,9 +225,6 @@ def Cause.greatestBackgroundStd
 /-
   The least valuation in the standard order that weakly satisfies
   the context part of a cause.
-  
-  Useful in this file for (also) being a maximal such valuation
-  in the approximation order.
 -/
 def Cause.leastContextStd
   (cause: Cause D)
@@ -294,7 +288,7 @@ def Cause.leastContextIsLeStd
 namespace IsWeakCause
   def hurrDurrElim
     (isCause: IsWeakCause salg cause d expr)
-    {P: Prop}
+    {R: Sort*}
     (goalInC:
       Set3.posMem
         (expr.interpretation
@@ -302,9 +296,9 @@ namespace IsWeakCause
           cause.leastBackgroundStd
           cause.leastContextStd)
         d →
-      P)
+      R)
   :
-    P
+    R
   :=
     goalInC (isCause cause.leastValsStdAreSat)
   
