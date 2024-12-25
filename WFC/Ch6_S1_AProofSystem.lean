@@ -95,6 +95,23 @@ def Ins.nopeOut
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
 
+def Ins.nopeNotDef
+  (isIns: Ins salg dl d x)
+  (notDef: ¬(dl.wellFoundedModel salg x).defMem d)
+:
+  P
+:=
+  False.elim (notDef (isIns.isSound))
+
+def Ins.nopeNotPos
+  (isIns: Ins salg dl d x)
+  (notPos: ¬(dl.wellFoundedModel salg x).posMem d)
+:
+  P
+:=
+  False.elim (notPos (isIns.isSound.toPos))
+
+
 def Out.nopeIns
   (isOut: Out salg dl d x)
   (isIns: Ins salg dl d x)
@@ -102,3 +119,19 @@ def Out.nopeIns
   P
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
+
+def Out.nopeDef
+  (isOut: Out salg dl d x)
+  (isDef: (dl.wellFoundedModel salg x).defMem d)
+:
+  P
+:=
+  False.elim (isOut.isSound (isDef.toPos))
+
+def Out.nopePos
+  (isOut: Out salg dl d x)
+  (isPos: (dl.wellFoundedModel salg x).posMem d)
+:
+  P
+:=
+  False.elim (isOut.isSound isPos)

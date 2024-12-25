@@ -39,6 +39,7 @@ lean_lib Utils.ElimExternal {}
 lean_lib Utils.ExprIsFreeVar {}
 lean_lib Utils.InsInterp {}
 lean_lib Utils.Interpretation {}
+lean_lib Utils.InwExternal {}
 lean_lib Utils.IsStrongCause {}
 lean_lib Utils.IsWeakCause {}
 lean_lib Utils.LeN37 {}

@@ -55,9 +55,12 @@ namespace Pair
     -- TODO:
     -- 0. finish this volume
     -- 1. make monotonic Exprs part of Salgebra
+    --   1.1. Generalize WFC for any monotonic exprs
     -- 2. Make variables `T: Type*` instead of Nat
     -- 3. clean up the `HM` folder
-    -- 4. Trisets
+    -- 4. Clean up the IsBound / IsGetBound stuff? define IsBound
+    --    in Utils/Valuation.lean and define IsGetBound in terms of it?
+    -- 5. Trisets
     
   end uniSet3
 end Pair

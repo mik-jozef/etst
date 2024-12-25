@@ -1,49 +1,29 @@
 /-
   This file defines constructors and eliminators for the predicate
   `IsWeakCause`, as well as some related helper definitions.
-  
-  At least, that was the plan. Turns out, weak causes aren't
-  eliminable as easily and conveniently as strong causes (although
-  what I have most likely can be improved further). However, it
-  turns out I can make do with a hacky solution I've named
-  `hurrDurrElim`. Feels a little improper, but it works.
 -/
 
 import WFC.Ch6_S1_AProofSystem
 import Utils.PairExpr
 
 
-def WeakSatIsStrongCauseOut
-  (salg: Salgebra sig)
-  (cause: Cause salg.D)
-  (d: salg.D)
-  (expr: Expr sig)
+def Cause.IsWeaklySatisfiedBy.toSubcause
+  {cause: Cause D}
+  (isSat: cause.IsWeaklySatisfiedBy b c)
+  (isSub: subcause ⊆ cause)
 :
-  Prop
-:=
-  {b c: Valuation salg.D} →
-  cause.IsWeaklySatisfiedBy b c →
-  ¬ (expr.interpretation salg b c).posMem d
-
-def WeakSatIsStrongCauseOutUpdated
-  (salg: Salgebra sig)
-  (cause: Cause salg.D)
-  (d: salg.D)
-  (expr: Expr sig)
-  (x: Nat)
-  (dX: salg.D)
-:
-  Prop
-:=
-  {b c: Valuation salg.D} →
-  cause.IsWeaklySatisfiedBy b c →
-  Not
-    (Set3.posMem
-      (expr.interpretation
-        salg
-        (b.update x dX)
-        (c.update x dX))
-      d)
+  subcause.IsWeaklySatisfiedBy b c
+:= {
+  contextInsHold :=
+    fun inCinsWith =>
+      isSat.contextInsHold (isSub.cinsLe inCinsWith)
+  backgroundInsHold :=
+    fun inBinsWith =>
+      isSat.backgroundInsHold (isSub.binsLe inBinsWith)
+  backgroundOutHold :=
+    fun inBoutWith =>
+      isSat.backgroundOutHold (isSub.boutLe inBoutWith)
+}
 
 def Cause.IsWeaklySatisfiedBy.exceptToWithBound
   {cause: Cause D}
@@ -96,89 +76,6 @@ def Cause.IsWeaklySatisfiedBy.toWithBound
 :=
   (isSat.ofSuper (cause.exceptXIsSub x)).exceptToWithBound d
 
-def Cause.IsWeaklySatisfiedBy.fromWithBound
-  {cause: Cause D}
-  (isSat: (cause.withBound x dX).IsWeaklySatisfiedBy b c)
-:
-  cause.IsWeaklySatisfiedBy
-    (b.updateSet3 x Set3.undetermined)
-    (c.updateSet3 x Set3.undetermined)
-:= {
-  contextInsHold :=
-    fun {_dd xx} inCins =>
-      if h: x = xx then
-        h ▸
-        Valuation.updateSet3.eqBound c x _ ▸
-        trivial
-      else
-        Valuation.updateSet3.eqOrig c h _ ▸
-        isSat.contextInsHold (Or.inl ⟨inCins, (Ne.symm h)⟩)
-  backgroundInsHold :=
-    fun {_dd xx} inBins =>
-      if h: x = xx then
-        h ▸
-        Valuation.updateSet3.eqBound b x _ ▸
-        trivial
-      else
-        Valuation.updateSet3.eqOrig b h _ ▸
-        isSat.backgroundInsHold (Or.inl ⟨inBins, (Ne.symm h)⟩)
-  backgroundOutHold :=
-    fun {_dd xx} inBout =>
-      if h: x = xx then
-        h ▸
-        Valuation.updateSet3.eqBound b x _ ▸
-        id
-      else
-        Valuation.updateSet3.eqOrig b h _ ▸
-        isSat.backgroundOutHold (Or.inl ⟨inBout, (Ne.symm h)⟩)
-}
-
-
-def Cause.IsWeaklySatisfiedBy.satLeUpdatedB
-  {cause: Cause D}
-  (isSat: (cause.withBound x dX).IsWeaklySatisfiedBy b c)
-:
-  b ⊑ b.update x dX
-:=
-  fun xx => {
-    defLe :=
-      fun d isDef =>
-        if h: x = xx then
-          Valuation.update.eqBoundOfEq b h dX ▸
-          byContradiction fun neq: d ≠ dX =>
-            isSat.backgroundOutHold (Or.inr ⟨neq, h.symm⟩) isDef
-        else
-          Valuation.update.eqOrig b h dX ▸
-          isDef
-    posLe :=
-      fun d isPos =>
-        if h: x = xx then
-          let dEq: d ∈ (Set3.just dX).posMem :=
-            Valuation.update.eqBoundOfEq b h dX ▸
-            isPos
-          isSat.backgroundInsHold (Or.inr ⟨dEq, h.symm⟩)
-        else
-          Valuation.update.eqOrig b h _ ▸
-          isPos
-  }
-
-def Cause.IsWeaklySatisfiedBy.satLeUpdatedCPos
-  {cause: Cause D}
-  (isSat: (cause.withBound x dX).IsWeaklySatisfiedBy b c)
-:
-  ∀ xx, (c.update x dX xx).posMem ⊆ (c xx).posMem
-:=
-  fun xx d isPos =>
-    if h: x = xx then
-      let dEq: d ∈ (Set3.just dX).posMem :=
-        Valuation.update.eqBoundOfEq c h dX ▸
-        isPos
-      isSat.contextInsHold (Or.inr ⟨dEq, h.symm⟩)
-    else
-      Valuation.update.eqOrig c h _ ▸
-      isPos
-
-
 def Cause.isWeaklySatByUndetermined
   (cause: Cause D)
 :
@@ -208,6 +105,21 @@ def Cause.leastBackgroundStd
   }
 
 /-
+  The least valuation in the standard order that weakly satisfies
+  the context part of a cause.
+-/
+def Cause.leastContextStd
+  (cause: Cause D)
+:
+  Valuation D
+:=
+  fun x => {
+    defMem := Set.empty
+    posMem := fun d => ⟨d, x⟩ ∈ cause.contextIns
+    defLePos := nofun
+  }
+
+/-
   The greatest valuation in the standard order that weakly satisfies
   the background part of a cause.
 -/
@@ -223,29 +135,26 @@ def Cause.greatestBackgroundStd
   }
 
 /-
-  The least valuation in the standard order that weakly satisfies
-  the context part of a cause.
+  Returns the valuation closest to `v` that satisfies `cause`.
+  
+  Distance: think Hamming distance, with "undetermined" being
+  closer to "definite non/member" than these are to each other.
 -/
-def Cause.leastContextStd
+def Cause.closestWeakSatVal
   (cause: Cause D)
+  (v: Valuation D)
 :
   Valuation D
 :=
   fun x => {
-    defMem := Set.empty
-    posMem := fun d => ⟨d, x⟩ ∈ cause.contextIns
-    defLePos := nofun
+    defMem :=
+      fun d => (v x).defMem d ∧ ¬ cause.backgroundOut ⟨d, x⟩
+    posMem :=
+      fun d => (v x).posMem d ∨ cause.backgroundIns ⟨d, x⟩
+    defLePos :=
+      fun _ ⟨isDef, _⟩ => Or.inl isDef.toPos
   }
 
-
-def Cause.leastBackgroundStdIsSat
-  (cause: Cause D)
-:
-  cause.IsWeaklySatisfiedByBackground cause.leastBackgroundStd
-:= {
-  backgroundInsHold := id
-  backgroundOutHold := nofun
-}
 
 def Cause.leastValsStdAreSat
   (cause: Cause D)
@@ -259,31 +168,44 @@ def Cause.leastValsStdAreSat
   backgroundOutHold := nofun
 }
 
-def Cause.leastBackgroundIsLeStd
+def Cause.closestWeakSatValIsSat
   (cause: Cause D)
-  (b: Valuation D)
-  (bSat: cause.IsWeaklySatisfiedByBackground b)
+  (v: Valuation D)
 :
-  cause.leastBackgroundStd ≤ b
+  cause.IsWeaklySatisfiedBy
+    (cause.closestWeakSatVal v)
+    cause.leastContextStd
+:= {
+  contextInsHold := id
+  backgroundInsHold :=
+    fun inBins => Or.inr inBins
+  backgroundOutHold :=
+    fun inBout ⟨_, ninBout⟩ => ninBout inBout
+}
+
+
+def Cause.leClosestOfSatUnionB
+  (isSat:
+    Cause.IsWeaklySatisfiedBy
+      (Cause.union cause (Cause.ofValPos v Valuation.empty))
+      b
+      c)
+:
+  b ⊑ cause.closestWeakSatVal v
 :=
-  fun _ => {
-    defLe := nofun
-    posLe := fun _ => bSat.backgroundInsHold
+  fun _ =>
+  {
+    defLe :=
+      fun _ isDef =>
+        byContradiction fun notDefClosest =>
+          let inBout :=
+            notDefClosest.toOr.elim
+              Or.inr (Or.inl ∘ Not.dne)
+          isSat.backgroundOutHold inBout isDef
+    posLe :=
+      fun _ => isSat.backgroundInsHold ∘ Or.symm
   }
 
-def Cause.leastContextIsLeStd
-  (cause: Cause D)
-  (c: Valuation D)
-  (cSat: cause.IsWeaklySatisfiedByContext c)
-:
-  cause.leastContextStd ≤ c
-:=
-  fun _ => {
-    defLe := nofun
-    posLe := fun _ => cSat.contextInsHold
-  }
-
--- TODO review everything above this line
 
 namespace IsWeakCause
   def hurrDurrElim
@@ -410,26 +332,7 @@ namespace IsWeakCause
   --   sorry
   -- 
   -- elimOp would be nice, but more complex & we don't need it.
-  -- Imagine we have an operator that happens to be a triset union.
-  -- Then in general,
-  --
-  --     IsWeakCause unionSalg cause d (unionExpr left rite)
-  -- 
-  -- does not imply
-  -- 
-  --     Or
-  --       IsWeakCause unionSalg cause d left
-  --       IsWeakCause unionSalg cause d rite \,.
-  -- 
-  -- As a counterexample, consider the expression
-  -- 
-  --     x | ¬ x \,,
-  -- 
-  -- For which any cause is a weak cause, but that gives us zero
-  -- information about the causes of x and ¬ x.
-  -- 
-  -- I don't know if there is a nice & general way to eliminate
-  -- weak causes.
+  -- I suppose the same trick that works for elimUn could work here.
   
   def elimZeroExpr
     (isCause: IsWeakCause pairSalgebra cause d PairExpr.zeroExpr)
@@ -544,37 +447,36 @@ namespace IsWeakCause
   :=
     Or.inr ∘ isCause
   
-  def elimUnLeft
+  def elimUn
     (isCause: IsWeakCause salg cause d (Expr.un left rite))
-    -- Note: This feels like a hack, or at least a very partial
-    -- solution. For example, we cannot use it to eliminate
-    -- 
-    --     IsWeakCause salg cause d (Expr.un x x) \,.
-    -- 
-    -- I don't know if there is anythign better, though.
-    (notCauseRite:
-      WeakSatIsStrongCauseOut salg cause d rite)
+    (v: Valuation salg.D)
   :
-    IsWeakCause salg cause d left
+    Or
+      (IsWeakCause
+        salg
+        (cause.union (Cause.ofValPos v Valuation.empty))
+        d
+        left)
+      (IsWeakCause
+        salg
+        (cause.union (Cause.ofValPos v Valuation.empty))
+        d
+        rite)
   :=
-    fun isSat =>
-      (isCause isSat).elim
-        id
-        (fun isPosRite =>
-          False.elim (notCauseRite isSat isPosRite))
+    (isCause (cause.closestWeakSatValIsSat v)).elim
+      (fun isPosL =>
+        Or.inl fun isSat =>
+          Expr.interpretation.isMonotonic.apxPosMem
+            (cause.leClosestOfSatUnionB isSat)
+            (fun _ _ => isSat.contextInsHold ∘ Or.inl)
+            isPosL)
+      (fun isPosR =>
+        Or.inr fun isSat =>
+          Expr.interpretation.isMonotonic.apxPosMem
+            (cause.leClosestOfSatUnionB isSat)
+            (fun _ _ => isSat.contextInsHold ∘ Or.inl)
+            isPosR)
   
-  def elimUnRite
-    (isCause: IsWeakCause salg cause d (Expr.un left rite))
-    (notCauseLeft:
-      WeakSatIsStrongCauseOut salg cause d left)
-  :
-    IsWeakCause salg cause d rite
-  :=
-    fun isSat =>
-      (isCause isSat).elim
-        (fun isPosLeft =>
-          False.elim (notCauseLeft isSat isPosLeft))
-        id
   
   def Not.elimUnLeft
     (isNotCause: ¬ IsWeakCause salg cause d (Expr.un left rite))
@@ -688,23 +590,8 @@ namespace IsWeakCause
         ⟨dC, (isCauseCond isSat)⟩
         (isCauseBody isSat)
   
-  def elimIfThenCond
-    {cond}
-    (isCause: IsWeakCause salg cause d (Expr.ifThen cond body))
-    (dC: salg.D)
-    (otherDcOut:
-      ∀ dOther,
-        dOther ≠ dC →
-        WeakSatIsStrongCauseOut salg cause dOther cond)
-  :
-    IsWeakCause salg cause dC cond
-  :=
-    fun isSat =>
-      let ⟨⟨dCAlias, isPosCond⟩, _⟩ := isCause isSat
-      let dEq: dCAlias = dC :=
-        byContradiction fun neq =>
-          otherDcOut dCAlias neq isSat isPosCond
-      dEq ▸ isPosCond
+  -- def elimIfThenCond
+  -- TODO
   
   def elimIfThenBody
     {cond}
@@ -739,36 +626,8 @@ namespace IsWeakCause
   :=
     fun isSat => ⟨dX, isCause (isSat.exceptToWithBound dX)⟩
   
-  def elimArbUn
-    (isCause: IsWeakCause salg cause d (Expr.Un x body))
-    (dX: salg.D)
-    -- Conjecture: this argument is unnecessary.
-    -- If not, question: can we do with a weaker condition still?
-    (otherDxOut:
-      ∀ dOther,
-        dOther ≠ dX →
-        WeakSatIsStrongCauseOutUpdated
-          salg cause d body x dOther)
-  :
-    IsWeakCause salg (cause.withBound x dX) d body
-  :=
-    fun {b c} isSat =>
-      let ⟨dXAlias, isPos⟩ := isCause isSat.fromWithBound
-      let dEq: dXAlias = dX :=
-        byContradiction fun neq =>
-          otherDxOut dXAlias neq isSat.fromWithBound isPos
-      let cancelsPrev := Valuation.update.cancelsPreviousSet3
-      let isPos :=
-        cancelsPrev b x Set3.undetermined dX ▸
-        cancelsPrev c x Set3.undetermined dX ▸
-        dEq ▸
-        isPos
-      Expr.interpretation.isMonotonic.apxPosMem
-        salg
-        body
-        isSat.satLeUpdatedB
-        isSat.satLeUpdatedCPos
-        isPos
+  -- def elimArbUn
+  -- TODO
   
   
   def arbIr

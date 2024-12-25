@@ -16,6 +16,15 @@ import WFC.Ch5_PairSalgebra
 import WFC.Appx0_ExprRulesOfInference
 
 
+-- See `Cause` below.
+structure ContextCause (D: Type*) where
+  contextIns: Set (ValVar D)
+
+-- See `Cause` below.
+structure BackgroundCause (D: Type*) where
+  backgroundIns: Set (ValVar D)
+  backgroundOut: Set (ValVar D)
+
 /-
   If (under some valuation) expressions `a` and `c` contain an
   element `d`, then the expression `a ∩ (b ∪ c)` also contains
@@ -27,11 +36,35 @@ import WFC.Appx0_ExprRulesOfInference
   - those that need to be present in the context,
   - those that need to be present in the background, and
   - those that need to be *absent* from the background.
+  
+  Note that it never happens that a value would need to be absent
+  from context in order to cause something.
 -/
-structure Cause (D: Type*) where
-  contextIns: Set (ValVar D)
-  backgroundIns: Set (ValVar D)
-  backgroundOut: Set (ValVar D)
+structure Cause (D: Type*) extends
+  ContextCause D, BackgroundCause D
+
+def ContextCause.toCause
+  (cause: ContextCause D)
+:
+  Cause D
+:= {
+  contextIns := cause.contextIns
+  backgroundIns := Set.empty
+  backgroundOut := Set.empty
+}
+
+def BackgroundCause.toCause
+  (cause: BackgroundCause D)
+:
+  Cause D
+:= {
+  contextIns := Set.empty
+  backgroundIns := cause.backgroundIns
+  backgroundOut := cause.backgroundOut
+}
+
+instance: Coe (ContextCause D) (Cause D) := ⟨ContextCause.toCause⟩
+instance: Coe (BackgroundCause D) (Cause D) := ⟨BackgroundCause.toCause⟩
 
 
 structure Cause.IsStronglySatisfiedByContext

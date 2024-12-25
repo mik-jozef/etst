@@ -176,14 +176,8 @@ def elimDefExternalVar
           (pair (boundVarsEncoding boundVars) (pair x d))))
 :=
   let eqZ: zero = fromNat 0 := rfl
-  @insFinUnElim
-    pairSignature
-    pairSalgebra
-    b
-    c
-    uniDefList.interpretation.exprList
-    (InterpEnc boundVars (Expr.var x) d)
-    _
+  insFinUnElim
+    (list := uniDefList.interpretation.exprList)
     ins
     (fun ins =>
       let ⟨xEnc, _, ins⟩ := insUnDomElim ins
@@ -312,14 +306,8 @@ def elimDefExternalZero
 :
   d = zero
 :=
-  @insFinUnElim
-    pairSignature
-    pairSalgebra
-    b
-    c
-    uniDefList.interpretation.exprList
-    (InterpEnc boundVars zeroExpr d)
-    _
+  insFinUnElim
+    (list := uniDefList.interpretation.exprList)
     ins
     (nopeDefInterpVar fun ins =>
       let ⟨ins, _⟩ := insPairElim ins
@@ -452,14 +440,8 @@ def elimDefExternalPair
 := by
   unfold InterpEnc
   exact
-    @insFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (pairExpr left rite) d)
-      _
+    insFinUnElim
+      (list := uniDefList.interpretation.exprList)
       ins
       (nopeDefInterpVar fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
@@ -609,14 +591,8 @@ def elimDefExternalUn
 := by
   unfold InterpEnc
   exact
-    @insFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.un left rite) d)
-      _
+    insFinUnElim
+      (list := uniDefList.interpretation.exprList)
       ins
       (nopeDefInterpVar fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
@@ -769,14 +745,8 @@ def elimDefExternalIr
 := by
   unfold InterpEnc
   exact
-    @insFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.ir left rite) d)
-      _
+    insFinUnElim
+      (list := uniDefList.interpretation.exprList)
       ins
       (nopeDefInterpVar fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
@@ -926,14 +896,8 @@ def elimDefExternalCpl
 := by
   unfold InterpEnc
   exact
-    @insFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.cpl expr) d)
-      _
+    insFinUnElim
+      (list := uniDefList.interpretation.exprList)
       ins
       (nopeDefInterpVar fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
@@ -1096,14 +1060,8 @@ def elimDefExternalIfThen
 := by
   unfold InterpEnc
   exact
-    @insFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.ifThen cond body) d)
-      _
+    insFinUnElim
+      (list := uniDefList.interpretation.exprList)
       ins
       (nopeDefInterpVar fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
@@ -1298,14 +1256,8 @@ def elimDefExternalArbUn
 := by
   unfold InterpEnc
   exact
-    @insFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.Un x body) d)
-      _
+    insFinUnElim
+      (list := uniDefList.interpretation.exprList)
       ins
       (nopeDefInterpVar fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
@@ -1544,14 +1496,8 @@ def elimDefExternalArbIr
   unfold InterpEnc
   intro dX
   exact
-    @insFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.Ir x body) d)
-      _
+    insFinUnElim
+      (list := uniDefList.interpretation.exprList)
       ins
       (nopeDefInterpVar fun ins =>
         let ⟨ins, _⟩ := insPairElim ins

@@ -108,6 +108,92 @@ def Cause.SatisfiesBoundVars.withBoundSat
             absurd (xEqXb ▸ xEqX ▸ xEncEq.symm) xEncNeq)
   }
 
+-- TODO move to Valuation.lean.
+def Valuation.withBoundVars.eqOfIsGetBound
+  (b: Valuation Pair)
+  (isGetBound:
+    Pair.uniSet3.IsGetBound
+      (Pair.boundVarsEncoding boundVars)
+    (Pair.fromNat x)
+    d)
+:
+  (b.withBoundVars boundVars x) = Set3.just d
+:=
+  match boundVars with
+  | ⟨dd, xx⟩ :: tail => by
+    unfold Valuation.withBoundVars
+    exact  
+      if h: x = xx then
+        Valuation.update.eqBoundOfEq _ h.symm dd ▸
+        congr rfl (isGetBound.listHead h).symm
+      else
+        Valuation.update.eqOrig _ (Ne.symm h) dd ▸
+        eqOfIsGetBound b (isGetBound.listToTail h)
+
+-- TODO move to Valuation.lean.
+def Valuation.withBoundVars.eqOrigOfIsFree
+  (b: Valuation Pair)
+  (isFree: ¬ Pair.IsBound boundVars x)
+:
+  (b.withBoundVars boundVars x) = b x
+:=
+  match boundVars with
+  | [] => rfl
+  | ⟨dd, xx⟩ :: tail =>
+    if h: x = xx then
+      let isGetBound := Pair.uniSet3.IsGetBound.InHead
+        (Pair.fromNat.isNatEncoding x) _ _
+      
+      absurd ⟨dd, h ▸ isGetBound⟩ isFree
+    else by
+      unfold Valuation.withBoundVars
+      exact
+        Valuation.update.eqOrig _ (Ne.symm h) dd ▸
+        eqOrigOfIsFree b (Pair.IsBound.Not.notBoundTail isFree)
+
+-- TODO move to AProofSystem to other SatisfiesBoundVar stuff.
+def Cause.SatisfiesBoundVar.backgroundWithBoundsSat
+  (b: Valuation Pair)
+  (isGetBound:
+    Pair.uniSet3.IsGetBound
+      (Pair.boundVarsEncoding boundVars)
+    (Pair.fromNat x)
+    d)
+:
+  Cause.SatisfiesBoundVar
+    (ofValPos
+      (b.withBoundVars boundVars)
+      Valuation.empty)
+    x
+    d
+:=
+  let eq :=
+    Valuation.withBoundVars.eqOfIsGetBound b isGetBound
+  {
+    cinsSat := nofun
+    binsSat :=
+      fun vv inBins xEq =>
+        show (Set3.just d).posMem vv.d from eq ▸ xEq ▸ inBins
+    boutSat :=
+      fun vv inBout xEq =>
+        show ¬ (Set3.just d).defMem vv.d from eq ▸ xEq ▸ inBout
+  }
+
+def Cause.SatisfiesBoundVars.backgroundWithBoundsSat
+  (b: Valuation Pair)
+  (boundVars: List (ValVar Pair))
+:
+  Cause.SatisfiesBoundVars
+    (Cause.ofValPos
+      (b.withBoundVars boundVars)
+      Valuation.empty)
+    boundVars
+:=
+  fun xEncEq isGetBound =>
+    SatisfiesBoundVar.backgroundWithBoundsSat
+      b
+      (xEncEq ▸ isGetBound)
+
 def Cause.SatisfiesBoundVars.satTailExceptHead
   {cause: Cause Pair}
   (boundVarsSat: cause.SatisfiesBoundVars (⟨d, x⟩ :: tail))
@@ -127,3 +213,37 @@ def Cause.SatisfiesBoundVars.satTailExceptHead
       let causeSat :=
         boundVarsSat xEncEq (InTail isBoundTail _ xEncNeq)
       causeSat.toSubCause (Cause.exceptXIsSub cause x)
+
+
+def Cause.FulfillsBoundVars
+  (cause: Cause Pair)
+  (boundVars: List (ValVar Pair))
+:=
+  ∀ {x xEnc d},
+    xEnc = Pair.fromNat x →
+    Pair.uniSet3.IsGetBound
+      (Pair.boundVarsEncoding boundVars) xEnc d →
+    cause.FulfillsBoundVar x d
+
+def Cause.FulfillsBoundVars.unionSat
+  {causeL causeR: Cause Pair}
+  (fulfillsL: causeL.FulfillsBoundVars boundVars)
+  (satR: causeR.SatisfiesBoundVars boundVars)
+:
+  (causeL.union causeR).FulfillsBoundVars boundVars
+:=
+  fun eq isBound => {
+    cinsSat := fun
+    | _, Or.inl inCins => (fulfillsL eq isBound).cinsSat _ inCins
+    | _, Or.inr inCins => (satR eq isBound).cinsSat _ inCins
+    binsSat := fun
+    | _, Or.inl inBins => (fulfillsL eq isBound).binsSat _ inBins
+    | _, Or.inr inBins => (satR eq isBound).binsSat _ inBins
+    boutSat := fun
+    | _, Or.inl inBout => (fulfillsL eq isBound).boutSat _ inBout
+    | _, Or.inr inBout => (satR eq isBound).boutSat _ inBout
+    cinsFulfills := Or.inl (fulfillsL eq isBound).cinsFulfills
+    binsFulfills := Or.inl (fulfillsL eq isBound).binsFulfills
+    boutFulfills := fun dOther dNeq =>
+      Or.inl ((fulfillsL eq isBound).boutFulfills dOther dNeq)
+  }

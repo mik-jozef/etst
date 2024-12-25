@@ -350,6 +350,27 @@ def Not.toOr {L R: Prop}
   else
     Or.inl hL
 
+def Not.toOrL {L R: Prop}
+  (nAnd: ¬ (¬ L ∧ R))
+:
+  L ∨ ¬ R
+:=
+  nAnd.toOr.elim (Or.inl ∘ Not.dne) Or.inr
+
+def Not.toOrR {L R: Prop}
+  (nAnd: ¬ (L ∧ ¬ R))
+:
+  ¬ L ∨ R
+:=
+  nAnd.toOr.elim Or.inl (Or.inr ∘ Not.dne)
+
+def Not.toOrLR {L R: Prop}
+  (nAnd: ¬ (¬ L ∧ ¬ R))
+:
+  L ∨ R
+:=
+  nAnd.toOrL.elim Or.inl (Or.inr ∘ Not.dne)
+
 def Not.toImpl {A B: Prop}
   (nAnd: ¬ (A ∧ B))
 :

@@ -193,7 +193,6 @@ def Expr.interpretation.arbIrEqPos
 
 
 def Expr.interpretation.isMonotonic.defMem
-  {salg: Salgebra sig}
   {b c0 c1: Valuation salg.D}
   (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
   {expr: Expr sig}
@@ -243,7 +242,6 @@ def Expr.interpretation.isMonotonic.defMem
         isMonotonic.defMem (cLeDefUpdated x dX) (dIn dX)
 
 def Expr.interpretation.isMonotonic.posMem
-  {salg: Salgebra sig}
   {b c0 c1: Valuation salg.D}
   (cLePos: (x: Nat) → (c0 x).posMem ⊆ (c1 x).posMem)
   {expr: Expr sig}
@@ -291,6 +289,18 @@ def Expr.interpretation.isMonotonic.posMem
     | Expr.Ir x _ =>
       fun dX =>
         isMonotonic.posMem (cLePosUpdated x dX) (dIn dX)
+
+def Expr.interpretation.isMonotonic.notPosMem
+  {b c0 c1: Valuation salg.D}
+  (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
+  {expr: Expr sig}
+:
+  ¬ (expr.interpretation salg b c0).posMem d
+    →
+  ¬ (expr.interpretation salg b c1).posMem d
+:=
+  let le := Expr.interpretation.isMonotonic.posMem cLePos
+  Function.contra (@le d)
 
 def Expr.interpretation.isMonotonic.standard
   (salg: Salgebra sig)
@@ -431,8 +441,8 @@ def Expr.interpretation.isMonotonic.approximation
 
 
 def Expr.interpretation.isMonotonic.apxDefMem
-  (salg: Salgebra sig)
-  (e: Expr sig)
+  {salg: Salgebra sig}
+  {e: Expr sig}
   {b0 b1 c0 c1: Valuation salg.D}
   (bLe: b0 ⊑ b1)
   (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
@@ -447,8 +457,7 @@ def Expr.interpretation.isMonotonic.apxDefMem
   isMonoB.defLe.trans isMonoC
 
 def Expr.interpretation.isMonotonic.apxPosMem
-  (salg: Salgebra sig)
-  (e: Expr sig)
+  {e: Expr sig}
   {b0 b1 c0 c1: Valuation salg.D}
   (bLe: b0 ⊑ b1)
   (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
@@ -461,3 +470,16 @@ def Expr.interpretation.isMonotonic.apxPosMem
   let isMonoB := isMonotonic.approximation salg e bLe c0LeSelf
   let isMonoC := isMonotonic.posMem cLePos
   isMonoB.posLe.trans isMonoC
+
+def Expr.interpretation.isMonotonic.apxNotPosMem
+  {e: Expr sig}
+  {b0 b1 c0 c1: Valuation salg.D}
+  (bLe: b0 ⊑ b1)
+  (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
+:
+  ¬ (interpretation salg b0 c0 e).posMem d
+    →
+  ¬ (interpretation salg b1 c1 e).posMem d
+:=
+  let le := Expr.interpretation.isMonotonic.apxPosMem bLe cLePos
+  Function.contra (@le d)

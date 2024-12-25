@@ -50,38 +50,7 @@ namespace Pair
     open PairExpr
     
     
-    def IsBound.Not.notBoundHeadNotEq
-      (notBound: ¬ IsBound (⟨dB, xB⟩ :: boundVars) x)
-    :
-      x ≠ xB
-    :=
-      fun xEq =>
-        notBound ⟨
-          dB,
-          xEq ▸
-          IsGetBound.InHead
-            (fromNat.isNatEncoding x)
-            dB
-            (boundVarsEncoding boundVars)
-        ⟩
-    
-    def IsBound.Not.notBoundTail
-      (notBound: ¬ IsBound (⟨dB, xB⟩ :: boundVars) x)
-    :
-      ¬ IsBound boundVars x
-    :=
-      fun ⟨d, isGetBound⟩ =>
-        if h: xB = x then
-          notBound ⟨
-            dB,
-            h ▸ IsGetBound.InHead (fromNat.isNatEncoding xB) _ _,
-          ⟩
-        else
-          let encNeq := fromNat.injNeq h
-          notBound ⟨d, IsGetBound.InTail isGetBound dB encNeq⟩
-    
-    
-    def externalOfInternalCause
+    def extOfIntCause
       (internalCause: Cause Pair)
       (boundVars: List (ValVar Pair) := [])
     :
@@ -107,54 +76,15 @@ namespace Pair
             IsVarFree vvI.x boundVars
     }
     
-    def internalOfExternalCause
-      (externalCause: Cause Pair)
-    :
-      Cause Pair
-    := {
-      contextIns :=
-        fun ⟨d, x⟩ =>
-          externalCause.contextIns
-            ⟨Pair.pair x d, uniDefList.theSet⟩
-      backgroundIns :=
-        fun ⟨d, x⟩ =>
-          externalCause.backgroundIns
-            ⟨Pair.pair x d, uniDefList.theSet⟩
-      backgroundOut :=
-        fun ⟨d, x⟩ =>
-          externalCause.backgroundOut
-            ⟨Pair.pair x d, uniDefList.theSet⟩
-    }
-    
-    def causeExtIntExtSubset
-      (externalCause: Cause Pair)
-    :
-      (externalOfInternalCause
-        (internalOfExternalCause externalCause))
-        ⊆
-      externalCause
-    :=
-      {
-        cinsLe :=
-          fun ⟨_, _⟩ ⟨xEq, ⟨_, ⟨inCins, dEq, _⟩⟩⟩ =>
-            xEq ▸ dEq ▸ inCins
-        binsLe :=
-          fun ⟨_, _⟩ ⟨xEq, ⟨_, ⟨inBins, dEq, _⟩⟩⟩ =>
-            xEq ▸ dEq ▸ inBins
-        boutLe :=
-          fun ⟨_, _⟩ ⟨xEq, ⟨_, ⟨inBout, dEq, _⟩⟩⟩ =>
-            xEq ▸ dEq ▸ inBout
-      }
-    
     def extOfIntCauseDistributesUnion
       (causeLeft causeRite: Cause Pair)
       (boundVars: List (ValVar Pair))
     :
-      externalOfInternalCause (causeLeft.union causeRite) boundVars
+      extOfIntCause (causeLeft.union causeRite) boundVars
         =
       Cause.union
-        (externalOfInternalCause causeLeft boundVars)
-        (externalOfInternalCause causeRite boundVars)
+        (extOfIntCause causeLeft boundVars)
+        (extOfIntCause causeRite boundVars)
     :=
       Cause.eq
         (funext fun _ =>
@@ -218,11 +148,11 @@ namespace Pair
       --       (causes dX)
       --       (⟨dX, x⟩ :: boundVars))
       Cause.IsSubset
-        (externalOfInternalCause
+        (extOfIntCause
           (Cause.arbUn fun dX => (causes dX).exceptX x)
           boundVars)
         (Cause.arbUn fun dX =>
-          externalOfInternalCause
+          extOfIntCause
             (causes dX)
             ({ d := dX, x := x } :: boundVars))
     := {
@@ -249,9 +179,9 @@ namespace Pair
       (d: Pair)
       (x: Nat)
     :
-      externalOfInternalCause (cause.exceptX x) boundVars
+      extOfIntCause (cause.exceptX x) boundVars
         ⊆
-      externalOfInternalCause cause (⟨d, x⟩ :: boundVars)
+      extOfIntCause cause (⟨d, x⟩ :: boundVars)
     := {
       cinsLe :=
         fun _ ⟨xEq, ⟨vv, ⟨inCins, dEq, isFree⟩⟩⟩ =>
@@ -295,7 +225,7 @@ namespace Pair
         pairSalgebra
         uniDefList.theExternalDefList.toDefList
         (extOfIntCycleBare internalCycle)
-        (externalOfInternalCause internalCause boundVars)
+        (extOfIntCause internalCause boundVars)
     
     inductive extOfIntCycleFull
       (sizeBound: Option Ordinal)
@@ -564,15 +494,11 @@ namespace Pair
               d
           :=
             notDef
-          let ⟨
-            cause,
-            isCauseCpl,
-            isSatCpl
-          ⟩ :=
-            IsWeakCause.exSatOfIsPos isPosCpl
+          let isSatCpl :=
+            Cause.IsWeaklySatisfiedBy.ofValPos b b
           let isInapp :=
             allInapp
-              cause.background
+              (Cause.ofValPos b b).background
               (fun eqEnc isGetBound => {
                 cinsSat := fun _ nope _ => nope.elim
                 binsSat :=
@@ -591,7 +517,8 @@ namespace Pair
                     let ⟨notBound, _⟩ := notBins.toAnd
                     notBound (xEq ▸ dEq ▸ eqEnc ▸ isGetBound)
               })
-              isCauseCpl.toEmptyCinsCpl
+              (IsWeakCause.toEmptyCinsCpl
+                (IsWeakCause.ofValPos isPosCpl))
           open IsCauseInappExtended in
           match isInapp with
           | cinsFailsCycle ⟨_, ⟨_, nope, _, _⟩⟩ _ => nope
@@ -1175,7 +1102,7 @@ namespace Pair
             pairSalgebra
             uniDefList.theExternalDefList.toDefList
             (extOfIntCycleBare internalCycle)
-            (externalOfInternalCause
+            (extOfIntCause
               cause
               (⟨dX, x⟩ :: boundVars))
         :=
@@ -1238,13 +1165,9 @@ namespace Pair
                 (fun dX => allApplicable dX)
                 x
                 (fun dX => (allApplicable dX).property.left))
-              (@IsWeakCause.arbUnOf
-                pairSignature
-                pairSalgebra
-                x
-                d
-                body
-                (fun dX => (allApplicable dX).val)
+              (IsWeakCause.arbUnOf
+                (salg := pairSalgebra)
+                (causes := fun dX => (allApplicable dX).val)
                 (fun dX =>
                   let satBoundVars :=
                     (allApplicable dX).property.left
@@ -1252,11 +1175,7 @@ namespace Pair
                     IsGetBound.InHead (fromNat.isNatEncoding x) dX _
                   let causeSatBound := satBoundVars rfl isGetBound
                   let causeLeWith := causeSatBound.leWithBound
-                  let whyIsTypeInferenceBroken:
-                    IsWeakCause
-                      pairSalgebra
-                      ((allApplicable dX).val.withBound x dX) d body
-                  :=
+                  let whyIsTypeInferenceBroken :=
                     @IsWeakCause.toSuperCause
                       pairSignature
                       pairSalgebra
@@ -1289,7 +1208,7 @@ namespace Pair
             pairSalgebra
             uniDefList.theExternalDefList.toDefList
             (extOfIntCycleBare internalCycle)
-            (externalOfInternalCause internalCause))
+            (extOfIntCause internalCause))
       
       (inCycle:
         extOfIntCycleFull Option.none internalCycle ⟨dExt, xExt⟩)
@@ -1340,7 +1259,7 @@ namespace Pair
           
           let interpInCins :=
             isCauseExternal.hurrDurrElim
-              (P := externalCause.contextIns ⟨
+              (R := externalCause.contextIns ⟨
                 pair zero (pair xthExpr.exprEnc dInt),
                 uniDefList.interpretation,
               ⟩)
@@ -1469,7 +1388,7 @@ namespace Pair
             pairSalgebra
             uniDefList.theExternalDefList.toDefList
             (extOfIntCycleBare internalCycle)
-            (externalOfInternalCause internalCause))
+            (extOfIntCause internalCause))
     :
       Out
         pairSalgebra
@@ -1509,7 +1428,7 @@ namespace Pair
               pairSalgebra
               uniDefList.theExternalDefList.toDefList
               (extOfIntCycleBare cycle)
-              (externalOfInternalCause cause))
+              (extOfIntCause cause))
         (motive_3 :=
           fun d x _ =>
             Out
@@ -1526,31 +1445,31 @@ namespace Pair
           cause dd xx inCins inCycle
         =>
           blockedContextIns
-            (externalOfInternalCause cause)
+            (extOfIntCause cause)
             (show
               ⟨pair (fromNat xx) dd, uniDefList.theSet⟩
                 ∈
-              (externalOfInternalCause cause).contextIns
+              (extOfIntCause cause).contextIns
             from
               And.intro rfl ⟨_, inCins, rfl, nofun⟩)
             (extOfIntCycleBare.theSet inCycle))
         (fun cause dd xx inBins _ ihOut =>
           blockedBackgroundIns
-            (externalOfInternalCause cause)
+            (extOfIntCause cause)
             (show
               ⟨pair (fromNat xx) dd, uniDefList.theSet⟩
                 ∈
-              (externalOfInternalCause cause).backgroundIns
+              (extOfIntCause cause).backgroundIns
             from
               And.intro rfl ⟨_, inBins, rfl, nofun⟩)
             ihOut)
         (fun cause dd xx inBout _ ihIns =>
           blockedBackgroundOut
-            (externalOfInternalCause cause)
+            (extOfIntCause cause)
             (show
               ⟨pair (fromNat xx) dd, uniDefList.theSet⟩
                 ∈
-              (externalOfInternalCause cause).backgroundOut
+              (extOfIntCause cause).backgroundOut
             from
               And.intro rfl ⟨_, inBout, rfl, nofun⟩)
             ihIns)
@@ -1581,7 +1500,7 @@ namespace Pair
               pairSalgebra
               uniDefList.theExternalDefList.toDefList
               (extOfIntCycleBare cycle)
-              (externalOfInternalCause cause))
+              (extOfIntCause cause))
         (motive_3 :=
           fun d x _ =>
             Out
@@ -1598,25 +1517,25 @@ namespace Pair
           cause _ _ inCins inCycle
         =>
           blockedContextIns
-            (externalOfInternalCause cause)
+            (extOfIntCause cause)
             (show
-              _ ∈ (externalOfInternalCause _).contextIns
+              _ ∈ (extOfIntCause _).contextIns
             from
               And.intro rfl ⟨_, inCins, rfl, nofun⟩)
             (extOfIntCycleBare.theSet inCycle))
         (fun cause _ _ inBins _ ihOut =>
           blockedBackgroundIns
-            (externalOfInternalCause cause)
+            (extOfIntCause cause)
             (show
-              _ ∈ (externalOfInternalCause _).backgroundIns
+              _ ∈ (extOfIntCause _).backgroundIns
             from
               And.intro rfl ⟨_, inBins, rfl, nofun⟩)
             ihOut)
         (fun cause _ _ inBout _ ihIns =>
           blockedBackgroundOut
-            (externalOfInternalCause cause)
+            (extOfIntCause cause)
             (show
-              _ ∈ (externalOfInternalCause _).backgroundOut
+              _ ∈ (extOfIntCause _).backgroundOut
             from
               And.intro rfl ⟨_, inBout, rfl, nofun⟩)
             ihIns)

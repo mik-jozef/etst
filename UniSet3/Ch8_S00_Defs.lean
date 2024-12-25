@@ -140,16 +140,19 @@ namespace Pair
     def nat500NeqTheDefList: 500 ≠ 32 := by decide
     def nat501NeqTheDefList: 501 ≠ 32 := by decide
     def nat502NeqTheDefList: 502 ≠ 32 := by decide
-    def nat500NeqGetBounds: 500 ≠ 33 := by decide
-    def nat501NeqGetBounds: 501 ≠ 33 := by decide
-    def nat502NeqGetBounds: 502 ≠ 33 := by decide
-    def nat503NeqGetBounds: 503 ≠ 33 := by decide
+    def nat500NeqGetBound: 500 ≠ 33 := by decide
+    def nat501NeqGetBound: 501 ≠ 33 := by decide
+    def nat502NeqGetBound: 502 ≠ 33 := by decide
+    def nat503NeqGetBound: 503 ≠ 33 := by decide
     def nat500NeqInterpretation: 500 ≠ 34 := by decide
     def nat501NeqInterpretation: 501 ≠ 34 := by decide
     def nat502NeqInterpretation: 502 ≠ 34 := by decide
     def nat503NeqInterpretation: 503 ≠ 34 := by decide
     def nat504NeqInterpretation: 504 ≠ 34 := by decide
     def nat505NeqInterpretation: 505 ≠ 34 := by decide
+    def nat500NeqTheSet: 500 ≠ 35 := by decide
+    def nat501NeqTheSet: 501 ≠ 35 := by decide
+    def nat502NeqTheSet: 502 ≠ 35 := by decide
     
     
     structure IsNatPairAAPair (a b: Pair): Prop where
@@ -2303,9 +2306,9 @@ namespace Pair
         | CaseSome isSome =>
           Option.some.inj (isAtB.eq.symm.trans isSome)
     
-    structure IsTheDefListExprPair.NthExpr (n: Nat) where
+    structure IsTheDefListExprPair.NthExprEnc (n: Nat) where
       exprEnc: Pair
-      isNth: IsTheDefListExprPair (fromNat n) exprEnc
+      isNth: IsTheDefListExpr (pair (fromNat n) exprEnc)
     
     /-
       Returns the nth expression of the internal defintion list.
@@ -2314,7 +2317,7 @@ namespace Pair
     noncomputable def IsTheDefListExprPair.getNthExpr
       (n: Nat)
     :
-      NthExpr n
+      NthExprEnc n
     :=
       let {
         dlEncoding, i, isEnumUpTo, hasNthDef
@@ -2493,6 +2496,60 @@ namespace Pair
           ⟨head.d, h ▸ IsGetBound.InHead isNat _ _⟩
         else
           ⟨dB, IsGetBound.InTail isGetTail _ (fromNat.injNeq h)⟩
+    
+    def IsGetBound.listHead
+      (isGetBound:
+        IsGetBound
+          (boundVarsEncoding (⟨dd, xx⟩ :: tail))
+          (fromNat x)
+          d)
+      (eq: x = xx)
+    :
+      d = dd
+    :=
+      let boundVarsEnc :=
+        (pair (pair xx dd) (boundVarsEncoding tail))
+      
+      let isGetBound: IsGetBound boundVarsEnc (fromNat x) d :=
+        isGetBound
+      
+      match hBv: boundVarsEnc, isGetBound with
+      | _, InHead _ _ _ =>
+        let ⟨headEq, _⟩ := Pair.noConfusion hBv And.intro
+        let ⟨_, dEq⟩ := Pair.noConfusion headEq And.intro
+        dEq.symm
+      | _, InTail _ _ neq =>
+        let ⟨headEq, _⟩ := Pair.noConfusion hBv And.intro
+        let ⟨encEq, _⟩ := Pair.noConfusion headEq And.intro
+        False.elim (neq (encEq.symm.trans (congr rfl eq.symm)))
+    
+    def IsGetBound.listToTail
+      (isGetBound:
+        IsGetBound
+          (boundVarsEncoding (⟨dd, xx⟩ :: tail))
+          (fromNat x)
+          d)
+      (neq: x ≠ xx)
+    :
+      IsGetBound
+        (boundVarsEncoding tail)
+        (fromNat x)
+        d
+    :=
+      let boundVarsEnc :=
+        (pair (pair xx dd) (boundVarsEncoding tail))
+      
+      let isGetBound: IsGetBound boundVarsEnc (fromNat x) d :=
+        isGetBound
+      
+      match hBv: boundVarsEnc, isGetBound with
+      | _, InHead _ _ _ =>
+        let ⟨headEq, _⟩ := Pair.noConfusion hBv And.intro
+        let ⟨encEq, _⟩ := Pair.noConfusion headEq And.intro
+        False.elim (neq (fromNat.injEq encEq.symm))
+      | _, InTail isGetTail _ _ =>
+        let ⟨_, tailEq⟩ := Pair.noConfusion hBv And.intro
+        tailEq ▸ isGetTail
     
   end uniSet3
 end Pair

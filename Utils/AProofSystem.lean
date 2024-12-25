@@ -22,6 +22,40 @@ def Valuation.nonmembers
 :=
   fun ⟨d, x⟩ => ¬ (v x).posMem d
 
+-- The possible nonmembers of a valuation.
+def Valuation.posNonmembers
+  (v: Valuation D)
+:
+  Set (ValVar D)
+:=
+  fun ⟨d, x⟩ => ¬ (v x).defMem d
+
+-- The (definite) members of a valuation.
+def Valuation.members
+  (v: Valuation D)
+:
+  Set (ValVar D)
+:=
+  fun ⟨d, x⟩ => (v x).defMem d
+
+-- The possible members of a valuation.
+def Valuation.posMembers
+  (v: Valuation D)
+:
+  Set (ValVar D)
+:=
+  fun ⟨d, x⟩ => (v x).posMem d
+
+
+def Cause.ofValPos
+  (b c: Valuation D)
+:
+  Cause D
+:= {
+  contextIns := c.posMembers
+  backgroundIns := b.posMembers
+  backgroundOut := b.posNonmembers
+}
 
 def Cause.empty: Cause D := {
   contextIns := ∅
@@ -36,7 +70,7 @@ def Cause.eq:
   a.backgroundOut = b.backgroundOut →
   a = b
 
-| ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl, rfl => rfl
+| ⟨⟨_⟩, _, _⟩, ⟨_, _, _⟩, rfl, rfl, rfl => rfl
 
 structure Cause.IsSubset
   (a b: Cause D)
@@ -85,6 +119,23 @@ def Cause.arbUn (f: I → Cause D): Cause D := {
   backgroundIns := fun vv => ∃ i, vv ∈ (f i).backgroundIns,
   backgroundOut := fun vv => ∃ i, vv ∈ (f i).backgroundOut,
 }
+
+def Cause.unionSymm (c0 c1: Cause D): c0 ∪ c1 = c1 ∪ c0 :=
+  Cause.eq
+    (Set.union_comm c0.contextIns c1.contextIns)
+    (Set.union_comm c0.backgroundIns c1.backgroundIns)
+    (Set.union_comm c0.backgroundOut c1.backgroundOut)
+
+def Cause.unionEqRightSub
+  {c0 c1: Cause D}
+  (isSub: c1 ⊆ c0)
+:
+  c0 ∪ c1 = c0
+:=
+  Cause.eq
+    (Set.union_eq_self_of_subset_right isSub.cinsLe)
+    (Set.union_eq_self_of_subset_right isSub.binsLe)
+    (Set.union_eq_self_of_subset_right isSub.boutLe)
 
 def Cause.exceptX
   (cause: Cause D)
@@ -346,6 +397,21 @@ def Cause.SatisfiesBoundVar.toSubCause
 }
 
 
+structure Cause.FulfillsBoundVar
+  (cause: Cause D)
+  (x: Nat)
+  (d: D)
+extends
+  Cause.SatisfiesBoundVar cause x d
+where
+  cinsFulfills:
+    ⟨d, x⟩ ∈ cause.contextIns
+  binsFulfills:
+    ⟨d, x⟩ ∈ cause.backgroundIns
+  boutFulfills:
+    ∀ dOther, dOther ≠ d → ⟨dOther, x⟩ ∈ cause.backgroundOut
+
+
 /-
   This definition differs from `IsCauseInapplicable` in that it
   is semantic instead of proof-theoretic.
@@ -376,8 +442,7 @@ inductive Cause.IsInapplicable
 :
   IsInapplicable cause outSet b
 
--- Note: Accepts a negation of IsInapplicable
-def Cause.IsInapplicable.toIsWeaklySatisfiedBy
+def Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
   {cause: Cause D}
   {b c: Valuation D}
   (isApplicable: ¬ Cause.IsInapplicable cause c.nonmembers b)
@@ -400,8 +465,7 @@ def Cause.IsInapplicable.toIsWeaklySatisfiedBy
           isApplicable (blockedBackgroundOut inBout isDef.dne)
   }
 
--- Note: Accepts a negation of IsWeaklySatisfiedBy
-def Cause.IsWeaklySatisfiedBy.toIsInapplicable
+def Cause.IsWeaklySatisfiedBy.Not.toIsInapplicable
   {cause: Cause D}
   {b c: Valuation D}
   (notSat: ¬ Cause.IsWeaklySatisfiedBy cause b c)
@@ -409,7 +473,7 @@ def Cause.IsWeaklySatisfiedBy.toIsInapplicable
   Cause.IsInapplicable cause c.nonmembers b
 :=
   Function.contraA
-    Cause.IsInapplicable.toIsWeaklySatisfiedBy
+    Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
     notSat
 
 def Cause.IsWeaklySatisfiedBy.toIsApplicable
@@ -428,6 +492,16 @@ def Cause.IsWeaklySatisfiedBy.toIsApplicable
 
 | IsInapplicable.blockedBackgroundOut inBout isDef =>
   isSat.backgroundOutHold inBout isDef
+
+def Cause.IsWeaklySatisfiedBy.ofValPos
+  (b c: Valuation D)
+:
+  (Cause.ofValPos b c).IsWeaklySatisfiedBy b c
+:= {
+  contextInsHold := id
+  backgroundInsHold := id
+  backgroundOutHold := id
+}
 
 def Cause.IsWeaklySatisfiedBy.union
   (isSatLeft: Cause.IsWeaklySatisfiedBy causeLeft b c)
@@ -490,328 +564,21 @@ def IsWeakCause.union
         backgroundOutHold := isSat.backgroundOutHold ∘ Or.inr
       })
 
-noncomputable def IsWeakCause.exSatOfIsPos
-  {expr: Expr sig}
+noncomputable def IsWeakCause.ofValPos
   (isPos: (expr.interpretation salg b c).posMem d)
 :
-  { cause // IsWeakCause salg cause d expr ∧ cause.IsWeaklySatisfiedBy b c }
+  IsWeakCause salg (Cause.ofValPos b c) d expr
 :=
-  match expr with
-  | Expr.var x => ⟨
-    {
-      contextIns := fun ⟨dd, xx⟩ => dd = d ∧ xx = x
-      backgroundIns := ∅
-      backgroundOut := ∅
-    },
-    (fun isSat => isSat.contextInsHold ⟨rfl, rfl⟩),
-    {
-      contextInsHold := fun ⟨dEq, xEq⟩ => dEq ▸ xEq ▸ isPos
-      backgroundInsHold := False.elim
-      backgroundOutHold := False.elim
-    },
-  ⟩
-  
-  | Expr.op op args =>
-    let posMem param :=
-      ((args param).interpretation salg b c).posMem
-    
-    let causes (param: sig.Params op) (d: posMem param) :=
-      exSatOfIsPos d.property
-    
-    ⟨
-      Cause.arbUn fun (i: Σ param, posMem param) =>
-        let ⟨param, d⟩ := i
-        causes param d,
-      fun {b1 c1} isSat =>
-        let posMem1 param :=
-          ((args param).interpretation salg b1 c1).posMem
-        
-        let posMemLe param: posMem param ≤ posMem1 param :=
-          fun dd isPos =>
-            (causes param ⟨dd, isPos⟩).property.left {
-              contextInsHold :=
-                fun inCins =>
-                  isSat.contextInsHold
-                    ⟨⟨param, dd, isPos⟩, inCins⟩
-              backgroundInsHold :=
-                fun inBins =>
-                  isSat.backgroundInsHold
-                    ⟨⟨param, dd, isPos⟩, inBins⟩
-              backgroundOutHold :=
-                fun inBout =>
-                  isSat.backgroundOutHold
-                    ⟨⟨param, dd, isPos⟩, inBout⟩
-            }
-        
-        salg.isMonotonic op posMem posMem1 posMemLe isPos,
-      {
-        contextInsHold :=
-          fun {dd xx} ⟨⟨param, d⟩, inCins⟩ =>
-            (causes param d).property.right.contextInsHold inCins
-        backgroundInsHold :=
-          fun {dd xx} ⟨⟨param, d⟩, inBins⟩ =>
-            (causes param d).property.right.backgroundInsHold inBins
-        backgroundOutHold :=
-          fun {dd xx} ⟨⟨param, d⟩, inBout⟩ =>
-            (causes param d).property.right.backgroundOutHold inBout
-      },
-    ⟩
-  | Expr.un left rite =>
-    if hL: (left.interpretation salg b c).posMem d then
-      let ⟨cause, isCause, isSat⟩ := exSatOfIsPos hL
-      ⟨cause, Or.inl ∘ isCause, isSat⟩
-    else if hR: (rite.interpretation salg b c).posMem d then
-      let ⟨cause, isCause, isSat⟩ := exSatOfIsPos hR
-      ⟨cause, Or.inr ∘ isCause, isSat⟩
-    else
-      (isPos.elim hL hR).elim
-  | Expr.ir left rite =>
-    let ⟨causeLeft, isCauseLeft, isSatLeft⟩ := exSatOfIsPos isPos.left
-    let ⟨causeRite, isCauseRite, isSatRite⟩ := exSatOfIsPos isPos.right
-    
-    ⟨
-      Cause.union causeLeft causeRite,
-      isCauseLeft.union isCauseRite,
-      isSatLeft.union isSatRite,
-    ⟩
-  | Expr.cpl expr =>
-    ⟨
-      {
-        contextIns := ∅
-        backgroundIns := fun ⟨d, x⟩ => (b x).posMem d
-        backgroundOut := fun ⟨d, x⟩ => ¬(b x).defMem d
-      },
-      fun {b1 c1} isSat =>
-        let isLe: b1 ⊑ b :=
-          fun x => {
-            defLe := fun d isDef =>
-              byContradiction fun notDef =>
-                isSat.backgroundOutHold notDef isDef
-            posLe := fun _ => isSat.backgroundInsHold
-          }
-        
-        let isMono :=
-          Expr.interpretation.isMonotonic.approximation
-            salg expr.cpl isLe isLe
-        
-        isMono.posLe isPos,
-      {
-        contextInsHold := False.elim
-        backgroundInsHold := id
-        backgroundOutHold := id
-      },
-    ⟩
-  | Expr.ifThen cond body =>
-    let ⟨dC, isPosCond⟩ := isPos.left.unwrap
-    let ⟨causeCond, isCauseCond, isSatCond⟩ := exSatOfIsPos isPosCond
-    let ⟨causeBody, isCauseBody, isSatBody⟩ := exSatOfIsPos isPos.right
-    
-    ⟨
-      Cause.union causeCond causeBody,
-      fun isSat =>
-        And.intro
-          ⟨
-            dC,
-            (isCauseCond {
-              contextInsHold := isSat.contextInsHold ∘ Or.inl
-              backgroundInsHold := isSat.backgroundInsHold ∘ Or.inl
-              backgroundOutHold := isSat.backgroundOutHold ∘ Or.inl
-            })
-          ⟩
-          (isCauseBody {
-            contextInsHold := isSat.contextInsHold ∘ Or.inr
-            backgroundInsHold := isSat.backgroundInsHold ∘ Or.inr
-            backgroundOutHold := isSat.backgroundOutHold ∘ Or.inr
-          }),
-      {
-        contextInsHold :=
-          fun inCins =>
-            inCins.elim
-              isSatCond.contextInsHold
-              isSatBody.contextInsHold,
-        backgroundInsHold :=
-          fun inBins =>
-            inBins.elim
-              isSatCond.backgroundInsHold
-              isSatBody.backgroundInsHold,
-        backgroundOutHold :=
-          fun inBout =>
-            inBout.elim
-              isSatCond.backgroundOutHold
-              isSatBody.backgroundOutHold,
-      },
-    ⟩
-  | Expr.Un x body =>
-    let ⟨dX, isPosBody⟩ := isPos.unwrap
-    let ⟨causeBody, isCauseBody, isSatBody⟩ := exSatOfIsPos isPosBody
-    ⟨
-      causeBody.exceptBound x dX,
-      fun isSat =>
-        ⟨
-          dX,
-          isCauseBody {
-            contextInsHold :=
-              fun {dd xx} inCins =>
-                if h: x = xx then
-                  Valuation.update.eqBoundOfEq _ h dX ▸
-                  Valuation.update.eqBoundOfEq c h dX ▸
-                  isSatBody.contextInsHold inCins
-                else
-                  Valuation.update.eqOrig _ h _ ▸
-                  isSat.contextInsHold
-                    ⟨inCins, h ∘ Eq.symm ∘ ValVar.eqX⟩
-            backgroundInsHold :=
-              fun {dd xx} inBins =>
-                if h: x = xx then
-                  Valuation.update.eqBoundOfEq _ h dX ▸
-                  Valuation.update.eqBoundOfEq b h dX ▸
-                  isSatBody.backgroundInsHold inBins
-                else
-                  Valuation.update.eqOrig _ h _ ▸
-                  isSat.backgroundInsHold
-                    ⟨inBins, h ∘ Eq.symm ∘ ValVar.eqX⟩
-            backgroundOutHold :=
-              fun {dd xx} inBout =>
-                if h: x = xx then
-                  Valuation.update.eqBoundOfEq _ h dX ▸
-                  Valuation.update.eqBoundOfEq b h dX ▸
-                  isSatBody.backgroundOutHold inBout
-                else
-                  Valuation.update.eqOrig _ h _ ▸
-                  isSat.backgroundOutHold
-                    ⟨inBout, fun ⟨_, eqX⟩ => h eqX.symm⟩
-          },
-        ⟩,
-      {
-        contextInsHold :=
-          fun {dd xx} inCins =>
-            if h: x = xx then
-              let dEq: (Set3.just dX).posMem dd :=
-                Valuation.update.eqBound _ xx dX ▸
-                (h ▸ isSatBody.contextInsHold) inCins.left
-              (inCins.right (ValVar.eq dEq h.symm)).elim
-            else
-              Valuation.update.eqOrig c h _ ▸
-              isSatBody.contextInsHold inCins.left
-        backgroundInsHold :=
-          fun {dd xx} inBins =>
-            if h: x = xx then
-              let dEq: (Set3.just dX).posMem dd :=
-                Valuation.update.eqBound _ xx dX ▸
-                (h ▸ isSatBody.backgroundInsHold) inBins.left
-              (inBins.right (ValVar.eq dEq h.symm)).elim
-            else
-              Valuation.update.eqOrig b h _ ▸
-              isSatBody.backgroundInsHold inBins.left
-        backgroundOutHold :=
-          fun {dd xx} inBout =>
-            if h: x = xx then
-              let dNeq: ¬(Set3.just dX).defMem dd :=
-                Valuation.update.eqBound _ xx dX ▸
-                (h ▸ isSatBody.backgroundOutHold) inBout.left
-              (inBout.right ⟨dNeq, h.symm⟩).elim
-            else
-              Valuation.update.eqOrig b h _ ▸
-              isSatBody.backgroundOutHold inBout.left
-      },
-    ⟩
-  | Expr.Ir x body =>
-    -- Has to be a separate variable because of
-    -- https://github.com/leanprover/lean4/issues/1694
-    let ih dX := exSatOfIsPos (isPos dX)
-    ⟨
-      Cause.arbUn (fun dX => (ih dX).val.exceptBound x dX),
-      fun isSat dX =>
-        -- This ought to work, Lean:
-        -- let ⟨causeBody, isCauseBody, isSatBody⟩ := ofIsPos (isPos dX)
-        let cause := exSatOfIsPos (isPos dX)
-        let causeBody := cause.val
-        let isCauseBody := cause.property.left
-        let isSatBody := cause.property.right
-        
-        isCauseBody {
-          contextInsHold :=
-            fun {dd xx} inCins =>
-              if h: x = xx then
-                Valuation.update.eqBoundOfEq _ h dX ▸
-                Valuation.update.eqBoundOfEq c h dX ▸
-                isSatBody.contextInsHold inCins
-              else
-                Valuation.update.eqOrig _ h _ ▸
-                isSat.contextInsHold
-                  ⟨dX, inCins, h ∘ Eq.symm ∘ ValVar.eqX⟩
-          backgroundInsHold :=
-            fun {dd xx} inBins =>
-              if h: x = xx then
-                Valuation.update.eqBoundOfEq _ h dX ▸
-                Valuation.update.eqBoundOfEq b h dX ▸
-                isSatBody.backgroundInsHold inBins
-              else
-                Valuation.update.eqOrig _ h _ ▸
-                isSat.backgroundInsHold
-                  ⟨dX, inBins, h ∘ Eq.symm ∘ ValVar.eqX⟩
-          backgroundOutHold :=
-            fun {dd xx} inBout =>
-              if h: x = xx then
-                Valuation.update.eqBoundOfEq _ h dX ▸
-                Valuation.update.eqBoundOfEq b h dX ▸
-                isSatBody.backgroundOutHold inBout
-              else
-                Valuation.update.eqOrig _ h _ ▸
-                isSat.backgroundOutHold
-                  ⟨dX, inBout, fun ⟨_, eqX⟩ => h eqX.symm⟩
-        },
-      {
-        contextInsHold :=
-          fun {dd xx} inCins =>
-            let ⟨dX, inCinsAtDx⟩ := inCins.unwrap
-            
-            let cause := exSatOfIsPos (isPos dX)
-            let causeBody := cause.val.exceptBound x dX
-            let isSatBody := cause.property.right
-            
-            if h: x = xx then
-              let dEq: (Set3.just dX).posMem dd :=
-                Valuation.update.eqBoundOfEq _ h dX ▸
-                isSatBody.contextInsHold inCinsAtDx.left
-              (inCinsAtDx.right (ValVar.eq dEq h.symm)).elim
-            else
-              Valuation.update.eqOrig c h _ ▸
-              isSatBody.contextInsHold inCinsAtDx.left
-        backgroundInsHold :=
-          fun {dd xx} inBins =>
-            let ⟨dX, inBinsAtDx⟩ := inBins.unwrap
-            
-            let cause := exSatOfIsPos (isPos dX)
-            let causeBody := cause.val.exceptBound x dX
-            let isSatBody := cause.property.right
-            
-            if h: x = xx then
-              let dEq: (Set3.just dX).posMem dd :=
-                Valuation.update.eqBoundOfEq _ h dX ▸
-                isSatBody.backgroundInsHold inBinsAtDx.left
-              (inBinsAtDx.right (ValVar.eq dEq h.symm)).elim
-            else
-              Valuation.update.eqOrig b h _ ▸
-              isSatBody.backgroundInsHold inBinsAtDx.left
-        backgroundOutHold :=
-          fun {dd xx} inBout =>
-            let ⟨dX, inBoutAtDx⟩ := inBout.unwrap
-            
-            let cause := exSatOfIsPos (isPos dX)
-            let causeBody := cause.val.exceptBound x dX
-            let isSatBody := cause.property.right
-            
-            if h: x = xx then
-              let dNeq: ¬(Set3.just dX).defMem dd :=
-                Valuation.update.eqBoundOfEq _ h dX ▸
-                isSatBody.backgroundOutHold inBoutAtDx.left
-              (inBoutAtDx.right ⟨dNeq, h.symm⟩).elim
-            else
-              Valuation.update.eqOrig b h _ ▸
-              isSatBody.backgroundOutHold inBoutAtDx.left
-      },
-    ⟩
+  fun isSat =>
+    Expr.interpretation.isMonotonic.apxPosMem
+      (fun _ => {
+        defLe :=
+          fun _ isDef =>
+            byContradiction (isSat.backgroundOutHold · isDef)
+        posLe := fun _ => isSat.backgroundInsHold
+      })
+      (fun _ _ => isSat.contextInsHold)
+      isPos
 
 def IsWeakCause.isPosOfIsApplicable
   {salg: Salgebra sig}
@@ -823,7 +590,7 @@ def IsWeakCause.isPosOfIsApplicable
 :
   (expr.interpretation salg b c).posMem d
 :=
-  isCause (Cause.IsInapplicable.toIsWeaklySatisfiedBy isApp)
+  isCause (Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy isApp)
 
 def IsWeakCause.isInapplicableOfIsNonmember
   {salg: Salgebra sig}
@@ -853,11 +620,10 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
 :
   ¬(expr.interpretation salg b c).posMem d
 :=
-  fun isPos =>
-    let ⟨cause, isCause, isSat⟩ := IsWeakCause.exSatOfIsPos isPos
-    let isApp := isSat.toIsApplicable outSet outSetIsEmpty
-    
-    isApp (isEveryCauseInapplicable isCause)
+  let isSat := Cause.IsWeaklySatisfiedBy.ofValPos b c
+  let isApp := isSat.toIsApplicable outSet outSetIsEmpty
+  
+  isApp ∘ isEveryCauseInapplicable ∘ IsWeakCause.ofValPos
 
 def emptyCycleIsOut
   (salg: Salgebra sig)

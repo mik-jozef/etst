@@ -169,7 +169,7 @@ def Cause.IsConsistent.leastValsApxAreSat
   (isConsistent: cause.IsConsistent)
 :
   cause.IsStronglySatisfiedBy
-    (leastBackgroundApx isConsistent)
+    (isConsistent.leastBackgroundApx)
     (leastContextApx cause)
 := {
   contextInsHold := id
@@ -178,12 +178,12 @@ def Cause.IsConsistent.leastValsApxAreSat
     (leastBackgroundApxIsSat isConsistent).backgroundOutHold
 }
 
-def Cause.IsConsistent.leastIsLeApx
+def Cause.IsStronglySatisfiedByBackground.leastIsLeApx
   {cause: Cause D}
-  (isConsistent: cause.IsConsistent)
   (b: Valuation D)
   (bSat: cause.IsStronglySatisfiedByBackground b)
 :
+  let isConsistent := bSat.toIsConsistent
   isConsistent.leastBackgroundApx ⊑ b
 :=
   fun _ => {
@@ -225,14 +225,14 @@ def Cause.IsConsistent.withBound
               (fun ⟨inBins, _⟩ => ninBout inBins)
               (fun ⟨dNeq, xEq⟩ => h ⟨xEq, dNeq⟩)))
 
-def Cause.IsConsistent.leastBackgroundApxUpdateLe
+def Cause.IsStronglySatisfiedBy.leastBackgroundApxUpdateLe
   {cause: Cause D}
-  (isCons: cause.IsConsistent)
+  (isConsistent: cause.IsConsistent)
   (x: Nat)
   (d: D)
   (isSat: (cause.withBound x d).IsStronglySatisfiedBy b c)
 :
-  isCons.leastBackgroundApx.update x d ⊑ b
+  isConsistent.leastBackgroundApx.update x d ⊑ b
 :=
   fun xx =>
     if h: xx = x then
@@ -253,10 +253,8 @@ def Cause.IsConsistent.leastBackgroundApxUpdateLe
             isSat.backgroundOutHold (Or.inl ⟨isOut, h⟩) isPos
       }
 
-def Cause.leastContextApxUpdateLeDefMem
-  (cause: Cause D)
-  (x: Nat)
-  (d: D)
+def Cause.IsStronglySatisfiedBy.leastContextApxUpdateLeDefMem
+  {cause: Cause D}
   (isSat: (cause.withBound x d).IsStronglySatisfiedBy b c)
   (xx: Nat)
 :
@@ -388,11 +386,11 @@ def IsStrongCause.elimOp
         isConsistent.leastBackgroundApx
         cause.leastContextApx),
   isCause isConsistent.leastValsApxAreSat,
-  fun param ⟨_, dArgInArgs⟩ _ _ isSat =>
-    let bLe := isConsistent.leastIsLeApx _ isSat.backgroundOnly
+  fun _ ⟨_, dArgInArgs⟩ _ _ isSat =>
+    let bLe := isSat.leastIsLeApx
     let cLe := fun _ _ => isSat.contextInsHold
     Expr.interpretation.isMonotonic.apxDefMem
-      salg (argExprs param) bLe cLe dArgInArgs,
+      bLe cLe dArgInArgs,
 ⟩
 
 def IsStrongCause.Not.elimOp
@@ -488,17 +486,17 @@ def IsStrongCause.elimUn
       (fun isDefLeft =>
         Or.inl
           fun isSat =>
-            let bLe := h.leastIsLeApx _ isSat.backgroundOnly
+            let bLe := isSat.leastIsLeApx
             let cLe := fun _ _ => isSat.contextInsHold
             Expr.interpretation.isMonotonic.apxDefMem
-              salg left bLe cLe isDefLeft)
+              bLe cLe isDefLeft)
       (fun isDefRite =>
         Or.inr
           fun isSat =>
-            let bLe := h.leastIsLeApx _ isSat.backgroundOnly
+            let bLe := isSat.leastIsLeApx
             let cLe := fun _ _ => isSat.contextInsHold
             Expr.interpretation.isMonotonic.apxDefMem
-              salg rite bLe cLe isDefRite)
+              bLe cLe isDefRite)
   else
     Or.inl (Cause.IsConsistent.Not.isStrong h d left)
 
@@ -545,15 +543,15 @@ def IsStrongCause.elimIr
     let ⟨isDefLeft, isDefRite⟩ := isCause h.leastValsApxAreSat
     And.intro
       (fun isSat =>
-        let bLe := h.leastIsLeApx _ isSat.backgroundOnly
+        let bLe := isSat.leastIsLeApx
         let cLe := fun _ _ => isSat.contextInsHold
         Expr.interpretation.isMonotonic.apxDefMem
-          salg left bLe cLe isDefLeft)
+          bLe cLe isDefLeft)
       (fun isSat =>
-        let bLe := h.leastIsLeApx _ isSat.backgroundOnly
+        let bLe := isSat.leastIsLeApx
         let cLe := fun _ _ => isSat.contextInsHold
         Expr.interpretation.isMonotonic.apxDefMem
-          salg rite bLe cLe isDefRite)
+          bLe cLe isDefRite)
   else
     And.intro
       (Cause.IsConsistent.Not.isStrong h d left)
@@ -614,7 +612,7 @@ def IsStrongCause.elimCpl
 :=
   let insCpl := isCauseCpl isConsistent.leastValsApxAreSat
   let notSat isSat := insCpl (isCauseExpr isSat)
-  Cause.IsWeaklySatisfiedBy.toIsInapplicable notSat
+  Cause.IsWeaklySatisfiedBy.Not.toIsInapplicable notSat
 
 def IsStrongCause.Not.elimCplEx
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.cpl expr))
@@ -637,12 +635,11 @@ def IsStrongCause.Not.elimCpl
   (expr.interpretation salg b b).posMem d
 :=
   let isConsistent := IsStrongCause.Not.isConsistent isNotCause
-  let ⟨b, isSat, isPos⟩ := IsStrongCause.Not.elimCplEx isNotCause
-  let isLeB := isConsistent.leastIsLeApx b isSat
+  let ⟨_, isSat, isPos⟩ := IsStrongCause.Not.elimCplEx isNotCause
   
   let isLeExpr :=
     Expr.interpretation.isMonotonic.approximation
-      salg expr isLeB isLeB
+      salg expr isSat.leastIsLeApx isSat.leastIsLeApx
   
   And.intro
     isConsistent.leastBackgroundApxIsSat
@@ -675,16 +672,16 @@ def IsStrongCause.elimIfThen
       ⟨
         dC,
         fun isSat =>
-          let bLe := h.leastIsLeApx _ isSat.backgroundOnly
+          let bLe := isSat.leastIsLeApx
           let cLe := fun _ _ => isSat.contextInsHold
           Expr.interpretation.isMonotonic.apxDefMem
-            salg cond bLe cLe isDefCond
+            bLe cLe isDefCond
       ⟩
       (fun isSat =>
-        let bLe := h.leastIsLeApx _ isSat.backgroundOnly
+        let bLe := isSat.leastIsLeApx
         let cLe := fun _ _ => isSat.contextInsHold
         Expr.interpretation.isMonotonic.apxDefMem
-          salg body bLe cLe isDefBody)
+          bLe cLe isDefBody)
   else
     And.intro
       ⟨d, Cause.IsConsistent.Not.isStrong h d cond⟩
@@ -744,10 +741,10 @@ def IsStrongCause.elimArbUn
   ⟨
     dX,
     fun isSat =>
-      let bLe := isConsistent.leastBackgroundApxUpdateLe x dX isSat
-      let cLe := cause.leastContextApxUpdateLeDefMem x dX isSat
+      let bLe := isSat.leastBackgroundApxUpdateLe isConsistent
+      let cLe := isSat.leastContextApxUpdateLeDefMem
       Expr.interpretation.isMonotonic.apxDefMem
-        salg body bLe cLe isDef
+        bLe cLe isDef
   ⟩
 
 def IsStrongCause.notArbUn
@@ -792,10 +789,10 @@ def IsStrongCause.elimArbIr
 :=
   fun dX {_ _} isSat =>
     let isDef := isCause isConsistent.leastValsApxAreSat dX
-    let bLe := isConsistent.leastBackgroundApxUpdateLe x dX isSat
-    let cLe := cause.leastContextApxUpdateLeDefMem x dX isSat
+    let bLe := isSat.leastBackgroundApxUpdateLe isConsistent
+    let cLe := isSat.leastContextApxUpdateLeDefMem
     Expr.interpretation.isMonotonic.apxDefMem
-      salg body bLe cLe isDef
+      bLe cLe isDef
 
 def IsStrongCause.notArbIr
   {salg: Salgebra sig}
@@ -826,10 +823,7 @@ def IsStrongCause.Not.elimArbIr
 
 
 def IsStrongCause.ofLeastApx
-  {salg: Salgebra sig}
   {cause: Cause salg.D}
-  {d: salg.D}
-  
   (isConsistent: cause.IsConsistent)
   (isDef:
     let b := isConsistent.leastBackgroundApx
@@ -841,9 +835,7 @@ def IsStrongCause.ofLeastApx
   fun isSat =>
     let isSatBg := isSat.toIsStronglySatisfiedByBackground
     Expr.interpretation.isMonotonic.apxDefMem
-      salg
-      expr
-      (isConsistent.leastIsLeApx _ isSatBg)
+      isSatBg.leastIsLeApx
       (fun _ _ => isSat.contextInsHold)
       isDef
 
@@ -865,10 +857,9 @@ def IsStrongCause.ofBackground
     let isConsistent := isSat.toIsConsistent
     let isDefB := isCause isConsistent.leastBackgroundApxIsSat
     Expr.interpretation.isMonotonic.apxDefMem
-      salg
-      expr
-      (isConsistent.leastIsLeApx _ isSatBg)
-      (fun _ _ inBins => isSat.contextInsHold (eqVal ▸ inBins))
+      isSatBg.leastIsLeApx
+      (fun _ _ inBins =>
+        isSat.contextInsHold (eqVal ▸ inBins))
       isDefB
 
 def IsStrongCause.ofLeastBackground
@@ -886,12 +877,10 @@ def IsStrongCause.ofLeastBackground
 :=
   fun isSat =>
     let isSatBg := isSat.toIsStronglySatisfiedByBackground
-    let isConsistent := isSat.toIsConsistent
     Expr.interpretation.isMonotonic.apxDefMem
-      salg
-      expr
-      (isConsistent.leastIsLeApx _ isSatBg)
-      (fun _ _ inBins => isSat.contextInsHold (eqVal ▸ inBins))
+      isSatBg.leastIsLeApx
+      (fun _ _ inBins =>
+        isSat.contextInsHold (eqVal ▸ inBins))
       isDef
 
 def IsStrongCause.hurrDurrElim

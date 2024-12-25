@@ -94,10 +94,10 @@ def InsInterp.var
                   (insFree
                     (insGetBound
                       isGetBound)
-                    nat500NeqGetBounds)
-                  nat501NeqGetBounds)
-                nat502NeqGetBounds)
-              nat503NeqGetBounds)
+                    nat500NeqGetBound)
+                  nat501NeqGetBound)
+                nat502NeqGetBound)
+              nat503NeqGetBound)
             (insFree
               (insFree
                 insBound

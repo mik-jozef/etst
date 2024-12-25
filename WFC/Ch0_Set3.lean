@@ -71,7 +71,7 @@ namespace Set3
     definitive member.
   -/
   def notDefOfNotPos
-    (s3: Set3 D)
+    {s3: Set3 D}
     (notPos: ¬ s3.posMem d)
   :
     ¬ s3.defMem d
