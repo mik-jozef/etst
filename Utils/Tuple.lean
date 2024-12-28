@@ -28,12 +28,12 @@ namespace Tuple
   
   noncomputable def last
     (tuple: Tuple T)
-    (notLimit: ¬ tuple.length.IsActualLimit)
+    (notLimit: ¬ tuple.length.IsSuccPrelimit)
   :
     T
   :=
     let i := Ordinal.pred tuple.length
     
-    tuple.elements ⟨i, Ordinal.predLtOfNotLimit notLimit⟩
+    tuple.elements ⟨i, Ordinal.predLtOfNotPrelimit notLimit⟩
   
 end Tuple

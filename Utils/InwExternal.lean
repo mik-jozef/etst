@@ -188,7 +188,7 @@ namespace InwExternal
               (inwCpl _ fun ins =>
                 let ⟨⟨dBound, ins⟩, insAny⟩ := insIfThenElim ins
                 -- W/o this, Lean errors bc cannot synthetize the type
-                have: Expr.Ins _ _ _ _ zero := insAny
+                have: Expr.Ins pairSalgebra _ _ _ zero := insAny
                 let ins := insCallElimBound ins rfl nat502Neq500
                 let ins := insCallElimBound ins rfl nat503Neq501
                 ninwGetBound dBound ins)

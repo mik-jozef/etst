@@ -562,8 +562,16 @@ def DefList.eqDefsToEqSets.InvariantB
 def DefList.eqDefsToEqSets.limitCaseB
   {varMapping: Nat → Nat}
   {n: Ordinal}
-  (nIsLim: n.IsActualLimit)
-  (ih: ∀ nn < n, eqDefsToEqSets.InvariantB salg dlSrc dlDst varMapping IsDefMapped nn)
+  (nIsLim: n.IsSuccPrelimit)
+  (ih:
+    ∀ nn < n,
+      eqDefsToEqSets.InvariantB
+        salg
+        dlSrc
+        dlDst
+        varMapping
+        IsDefMapped
+        nn)
   (isSrcMapped: IsDefMapped xSrc)
 :
   operatorB.stage salg dlSrc n xSrc
@@ -638,7 +646,7 @@ def DefList.eqDefsToEqSets.InvariantC
 def DefList.eqDefsToEqSets.limitCaseC
   {varMapping: Nat → Nat}
   {n: Ordinal}
-  (nIsLim: n.IsActualLimit)
+  (nIsLim: n.IsSuccPrelimit)
   (ih:
     ∀ nn < n,
       eqDefsToEqSets.InvariantC
@@ -700,7 +708,7 @@ def DefList.eqDefsToEqSets.limitCaseC
     atEq
 
 def DefList.eqDefsToEqSets.succCaseC
-  (nIsSucc: ¬ n.IsActualLimit)
+  (nIsSucc: ¬ n.IsSuccPrelimit)
   (ih:
     ∀ nn < n,
       eqDefsToEqSets.InvariantC
@@ -724,7 +732,7 @@ def DefList.eqDefsToEqSets.succCaseC
   let xDst := varMapping xSrc
   
   let succPredEq :=
-    Ordinal.succ_pred_of_not_limit nIsSucc
+    Ordinal.succ_pred_of_not_prelimit nIsSucc
   
   let eqStage dl b:
     operatorC.stage salg dl b n
@@ -756,7 +764,7 @@ def DefList.eqDefsToEqSets.succCaseC
     defEq
     (fun isFree => invB ⟨_, areUsedDefsMapped isFree⟩)
     (fun isFree =>
-      let predLt := Ordinal.predLtOfNotLimit nIsSucc
+      let predLt := Ordinal.predLtOfNotPrelimit nIsSucc
       
       ih _ predLt ⟨_, areUsedDefsMapped isFree⟩)
 
@@ -795,7 +803,7 @@ def DefList.eqDefsToEqSets.opC
             bSrc bDst n
         from
           fun xMapped =>
-            if h: n.IsActualLimit then
+            if h: n.IsSuccPrelimit then
               limitCaseC h ih xMapped.property
             else
               succCaseC
@@ -816,7 +824,7 @@ def DefList.eqDefsToEqSets.opC
 def DefList.eqDefsToEqSets.succCaseB
   {varMapping: Nat → Nat}
   {n: Ordinal}
-  (nIsSucc: ¬ n.IsActualLimit)
+  (nIsSucc: ¬ n.IsSuccPrelimit)
   (ih:
     ∀ nn < n,
       eqDefsToEqSets.InvariantB
@@ -840,7 +848,7 @@ def DefList.eqDefsToEqSets.succCaseB
   operatorB.stage salg dlDst n (varMapping xSrc)
 :=
   let succPredEq :=
-    Ordinal.succ_pred_of_not_limit nIsSucc
+    Ordinal.succ_pred_of_not_prelimit nIsSucc
   
   let eqStage dl:
     operatorB.stage salg dl n
@@ -866,7 +874,7 @@ def DefList.eqDefsToEqSets.succCaseB
     (fun xMapped =>
       ih
         n.pred
-        (Ordinal.predLtOfNotLimit nIsSucc)
+        (Ordinal.predLtOfNotPrelimit nIsSucc)
         xMapped)
 
 def DefList.eqDefsToEqSets
@@ -903,7 +911,7 @@ def DefList.eqDefsToEqSets
             salg dlSrc dlDst varMapping IsDefMapped n
         from
           fun xMapped =>
-            if h: n.IsActualLimit then
+            if h: n.IsSuccPrelimit then
               eqDefsToEqSets.limitCaseB h ih xMapped.property
             else
               eqDefsToEqSets.succCaseB

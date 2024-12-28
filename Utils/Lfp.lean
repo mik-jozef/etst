@@ -45,13 +45,13 @@ noncomputable def lfp.stage.option
         have: nn < n := nn.property
         lfp.stage.option cc op nn
   }
-  if hLim: n.IsActualLimit then
+  if hLim: n.IsSuccPrelimit then
     if hChain: IsChain ord.optionTop.le previousStages then
       (cc.optionTop.supExists ⟨previousStages, hChain⟩).unwrap
     else
       none
   else
-    have: n.pred < n := Ordinal.predLtOfNotLimit hLim
+    have: n.pred < n := Ordinal.predLtOfNotPrelimit hLim
     let prev := lfp.stage.option cc op n.pred
     
     match prev with
@@ -107,7 +107,7 @@ def lfp.stage.option.limit.ifChain
   (cc: IsChainComplete ord)
   (op: T → T)
   (n: Ordinal)
-  (nIsLimit: n.IsActualLimit)
+  (nIsLimit: n.IsSuccPrelimit)
   (isChain: IsChain ord.optionTop.le (previous cc op n))
 :
   IsSupremum ord.optionTop (previous cc op n) (lfp.stage.option cc op n)
@@ -125,7 +125,7 @@ def lfp.stage.option.pred.ifSome
   (cc: IsChainComplete ord)
   (op: T → T)
   (n: Ordinal)
-  (nNotLimit: ¬n.IsActualLimit)
+  (nNotLimit: ¬ n.IsSuccPrelimit)
   {t: T}
   (eqSome: option cc op n.pred = t)
 :
@@ -140,7 +140,7 @@ def lfp.stage.option.pred.ifNone
   (cc: IsChainComplete ord)
   (op: T → T)
   (n: Ordinal)
-  (nNotLimit: ¬n.IsActualLimit)
+  (nNotLimit: ¬ n.IsSuccPrelimit)
   (eqNone: option cc op n.pred = none)
 :
   option cc op n = none
@@ -160,7 +160,7 @@ def lfp.stage.option.succ.ifSome
   option cc op n.succ = op t
 :=
   pred.ifSome cc op n.succ
-    (Ordinal.succ_not_limit n)
+    (Ordinal.succ_not_prelimit n)
     ((Ordinal.pred_succ n).symm ▸ eqSome)
 
 def lfp.stage.option.succ.ifNone
@@ -173,7 +173,7 @@ def lfp.stage.option.succ.ifNone
   option cc op n.succ = none
 :=
   pred.ifNone cc op n.succ
-    (Ordinal.succ_not_limit n)
+    (Ordinal.succ_not_prelimit n)
     ((Ordinal.pred_succ n).symm ▸ eqNone)
 
 def lfp.stage.option.isMono.ifChain.limit
@@ -182,7 +182,7 @@ def lfp.stage.option.isMono.ifChain.limit
   (op: T → T)
   (opMono: IsMonotonic ord ord op)
   (n: Ordinal)
-  (nIsLimit: n.IsActualLimit)
+  (nIsLimit: n.IsSuccPrelimit)
   (isChain: IsChain ord.optionTop.le (previous cc op n))
   (isMono: ∀ nn0 nn1: ↑n, nn0 ≤ nn1 →
     ord.optionTop.le (option cc op nn0) (option cc op nn1))
@@ -258,13 +258,13 @@ def lfp.stage.option.isMono.ifChain.{u}
   
   if hEq: a = b then
     hEq ▸ ord.optionTop.le_refl (option cc op a)
-  else if hLim: b.IsActualLimit then
+  else if hLim: b.IsSuccPrelimit then
     let isSup := option.limit.ifChain cc op b hLim isChain
     let abLt := ab.lt_of_ne hEq
     
     isSup.isMember ⟨option cc op a, ⟨⟨a, abLt⟩, rfl⟩⟩
   else
-    have: b.pred < b := Ordinal.predLtOfNotLimit hLim
+    have: b.pred < b := Ordinal.predLtOfNotPrelimit hLim
     
     let abLt := ab.lt_of_ne hEq
     
@@ -279,7 +279,7 @@ def lfp.stage.option.isMono.ifChain.{u}
       option.isMono.ifChain cc op opMono aLeBPred isChainPred
     
     let bpb: option cc op b.pred ≤ option cc op b :=
-      if hPredLim: b.pred.IsActualLimit then
+      if hPredLim: b.pred.IsSuccPrelimit then
         let isMono (aa bb: ↑b.pred) aabb :=
           let bbLtB: bb < b := bb.property.trans_le (b.pred_le_self)
           option.isMono.ifChain cc op opMono aabb
@@ -288,7 +288,7 @@ def lfp.stage.option.isMono.ifChain.{u}
         let leSuccPred :=
           ifChain.limit cc op opMono b.pred hPredLim isChainPred isMono
         let succPredEq: option cc op b.pred.succ = option cc op b :=
-          congr rfl (Ordinal.succ_pred_of_not_limit hLim)
+          congr rfl (Ordinal.succ_pred_of_not_prelimit hLim)
         
         succPredEq ▸ leSuccPred
       else
@@ -354,7 +354,7 @@ noncomputable def lfp.stage.option.notNone
 :
   option cc op n ≠ none
 :=
-  if h: n.IsActualLimit then
+  if h: n.IsSuccPrelimit then
     let prev := previous cc op n
     let prevIsChain := previous.isChain cc op opMono n
     let isSup := limit.ifChain cc op n h prevIsChain
@@ -369,7 +369,7 @@ noncomputable def lfp.stage.option.notNone
     
     supNoneIffNoneIn.not.mpr noneNinPrev
   else
-    have: n.pred < n := Ordinal.predLtOfNotLimit h
+    have: n.pred < n := Ordinal.predLtOfNotPrelimit h
     let predNotNone := notNone cc op opMono n.pred
     let nPred: { t: T // option cc op n.pred = t } :=
       match h: option cc op n.pred  with
@@ -524,7 +524,7 @@ def lfp.stage.limit
   (op: T → T)
   (opMono: IsMonotonic ord ord op)
   {n: Ordinal}
-  (nLim: n.IsActualLimit)
+  (nLim: n.IsSuccPrelimit)
 :
   IsSupremum ord (previous cc op opMono n) (stage cc op opMono n)
 :=
@@ -574,7 +574,7 @@ def lfp.stage.limitEq
   (op: T → T)
   (opMono: IsMonotonic ord ord op)
   {n: Ordinal}
-  (nLim: n.IsActualLimit)
+  (nLim: n.IsSuccPrelimit)
   (isSup: IsSupremum ord (previous cc op opMono n) sup)
 :
   sup = stage cc op opMono n
@@ -619,11 +619,12 @@ def lfp.stage.predEq
   (op: T → T)
   (opMono: IsMonotonic ord ord op)
   {n: Ordinal}
-  (nNotLimit: ¬n.IsActualLimit)
+  (nNotLimit: ¬n.IsSuccPrelimit)
 :
   stage cc op opMono n = op (stage cc op opMono n.pred)
 :=
-  let eq: n.pred.succ = n := Ordinal.succ_pred_of_not_limit nNotLimit
+  let eq: n.pred.succ = n :=
+    Ordinal.succ_pred_of_not_prelimit nNotLimit
   
   eq ▸
   eq.symm ▸
@@ -640,7 +641,7 @@ def lfp.stage.leFP
 :
   stage cc op opMono n ≤ fp.val
 :=
-  if h: n.IsActualLimit then
+  if h: n.IsSuccPrelimit then
     let prev := previous cc op opMono n
     let stageN := stage cc op opMono n
     
@@ -655,7 +656,7 @@ def lfp.stage.leFP
     
     stageNIsLUB.isLeMember fpIsUB
   else
-    have: n.pred < n := Ordinal.predLtOfNotLimit h
+    have: n.pred < n := Ordinal.predLtOfNotPrelimit h
     
     let stageNPred := stage cc op opMono n.pred
     
@@ -906,8 +907,7 @@ def lfp.stage.isLeOfOpLe.multiOrder
     (lfp.stage cc opA isMonoA n)
     (lfp.stage cc opB isMonoB n)
 :=
-  if h: n.IsActualLimit then
-    
+  if h: n.IsSuccPrelimit then
     let isSupA := limit cc opA isMonoA h
     let isSupB := limit cc opB isMonoB h
     
@@ -935,7 +935,7 @@ def lfp.stage.isLeOfOpLe.multiOrder
           eqPrevA ▸ ih
         ⟩)
   else
-    have: n.pred < n := Ordinal.predLtOfNotLimit h
+    have: n.pred < n := Ordinal.predLtOfNotPrelimit h
     
     let ih := multiOrder cc opA opB isMonoA isMonoB
       ordOther isOpLe supPreservesOtherOrder n.pred

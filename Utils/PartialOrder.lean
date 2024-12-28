@@ -6,7 +6,7 @@
   This file also contains some related helper proofs.
 -/
 
-import Mathlib.Order.Defs
+import Mathlib.Order.Defs.PartialOrder
 
 
 namespace PartialOrder

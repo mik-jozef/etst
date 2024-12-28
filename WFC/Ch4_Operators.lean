@@ -250,7 +250,7 @@ def operatorC.stage.limit
   (dl: DefList sig)
   (b: Valuation salg.D)
   {n: Ordinal}
-  (nIsLimit: n.IsActualLimit)
+  (nIsLimit: n.IsSuccPrelimit)
 :
   IsSupremum
     (Valuation.ord.standard salg.D)
@@ -268,7 +268,7 @@ def operatorC.stage.limitAt
   (dl: DefList sig)
   (b: Valuation salg.D)
   {n: Ordinal}
-  (nIsLimit: n.IsActualLimit)
+  (nIsLimit: n.IsSuccPrelimit)
   (x: Nat)
 :
   IsSupremum
@@ -301,12 +301,14 @@ def operatorC.stage.predEq
   (dl: DefList sig)
   (b: Valuation salg.D)
   {n: Ordinal}
-  (nNotLim: ¬n.IsActualLimit)
+  (nNotLim: ¬ n.IsSuccPrelimit)
 :
   operatorC.stage salg dl b n =
     (operatorC salg dl b) (operatorC.stage salg dl b n.pred)
 :=
-  let nEq: n.pred.succ = n := Ordinal.succ_pred_of_not_limit nNotLim
+  let nEq: n.pred.succ = n :=
+    Ordinal.succ_pred_of_not_prelimit nNotLim
+  
   let stageEq:
     operatorC.stage salg dl b n.pred.succ =
       operatorC.stage salg dl b n
@@ -523,7 +525,7 @@ def operatorB.stage.limit
   (salg: Salgebra sig)
   (dl: DefList sig)
   {n: Ordinal}
-  (nIsLimit: n.IsActualLimit)
+  (nIsLimit: n.IsSuccPrelimit)
 :
   IsSupremum
     (Valuation.ord.approximation salg.D)
@@ -540,7 +542,7 @@ def operatorB.stage.limitAt
   (salg: Salgebra sig)
   (dl: DefList sig)
   {n: Ordinal}
-  (nIsLimit: n.IsActualLimit)
+  (nIsLimit: n.IsSuccPrelimit)
   (x: Nat)
 :
   IsSupremum

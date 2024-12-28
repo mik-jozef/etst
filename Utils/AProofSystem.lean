@@ -645,7 +645,7 @@ def emptyCycleIsOut
     (operatorC salg dl wfm)
     (operatorC.isMonotonic salg dl wfm)
     (fun n ih ⟨d, x⟩ isInCycle =>
-      if h: n.IsActualLimit then
+      if h: n.IsSuccPrelimit then
         let isSup := operatorC.stage.limit salg dl wfm h
         
         Valuation.ord.standard.allNinSet.ninSup.posMem
@@ -654,7 +654,7 @@ def emptyCycleIsOut
       else
         let eqPred := operatorC.stage.predEq salg dl wfm h
         
-        let nPredLt := Ordinal.predLtOfNotLimit h
+        let nPredLt := Ordinal.predLtOfNotPrelimit h
         
         show
           ¬(operatorC.stage salg dl wfm n x).posMem d
@@ -701,7 +701,7 @@ def completenessProofC
         opC
         isMono
         (fun n ih d x isDefN =>
-          if h: n.IsActualLimit then
+          if h: n.IsSuccPrelimit then
             let isSup := lfp.stage.limit isCc opC isMono h
             let ⟨⟨v, ⟨nn, vEqStageNn⟩⟩, inDefPrev⟩ :=
               Valuation.ord.standard.inSup.inSomeSet.defMem
@@ -711,7 +711,7 @@ def completenessProofC
             ih nn (eq ▸ inDefPrev)
           else
             let eqPred := lfp.stage.predEq isCc opC isMono h
-            let nPredLt := Ordinal.predLtOfNotLimit h
+            let nPredLt := Ordinal.predLtOfNotPrelimit h
             let predStage := lfp.stage isCc opC isMono n.pred
             
             let isDefOfBPred:
@@ -798,7 +798,7 @@ def completenessProofB
     opB
     isMono
     (fun n ih =>
-      if h: n.IsActualLimit then
+      if h: n.IsSuccPrelimit then
         {
           insIsComplete :=
             fun isDefN =>
@@ -821,7 +821,7 @@ def completenessProofB
         }
       else
         let eqPred := lfp.stage.predEq isCc opB isMono h
-        let nPredLt := Ordinal.predLtOfNotLimit h
+        let nPredLt := Ordinal.predLtOfNotPrelimit h
         let ihPred := ih ⟨n.pred, nPredLt⟩
         
         eqPred ▸ completenessProofC ihPred)

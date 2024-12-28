@@ -36,7 +36,7 @@ import Utils.OutIntro4
 
 
 noncomputable def optOrdPo :=
-  PartialOrder.optionTop Ordinal.linearOrder.toPartialOrder
+  PartialOrder.optionTop Ordinal.instLinearOrder.toPartialOrder
 
 noncomputable def optOrdPreOrd := optOrdPo.toPreorder
 
@@ -672,7 +672,7 @@ namespace Pair
             <
           (@op pairSignature pairSignature.Op.pair args).sizeOf
         :=
-          Order.lt_succ_of_le (Ordinal.le_sup _ ArityTwo.zth)
+          Order.lt_succ_of_le (Ordinal.le_iSup _ ArityTwo.zth)
         
         let ihL := isCauseToInsInterp
           isStrongLeft boundVars boundVarsSat
@@ -683,7 +683,7 @@ namespace Pair
             <
           (@op pairSignature pairSignature.Op.pair args).sizeOf
         :=
-          Order.lt_succ_of_le (Ordinal.le_sup _ ArityTwo.fst)
+          Order.lt_succ_of_le (Ordinal.le_iSup _ ArityTwo.fst)
         
         let ihR := isCauseToInsInterp
           isStrongRite boundVars boundVarsSat
@@ -879,16 +879,16 @@ namespace Pair
         let isLeL:
           left.sizeOf
             <
-          Ordinal.sup (fun param => (args param).sizeOf) + 1
+          iSup (fun param => (args param).sizeOf) + 1
         :=
-          Order.lt_succ_of_le (Ordinal.le_sup _ ArityTwo.zth)
+          Order.lt_succ_of_le (Ordinal.le_iSup _ ArityTwo.zth)
         
         let isLeR:
           rite.sizeOf
             <
-          Ordinal.sup (fun param => (args param).sizeOf) + 1
+          iSup (fun param => (args param).sizeOf) + 1
         :=
-          Order.lt_succ_of_le (Ordinal.le_sup _ ArityTwo.fst)
+          Order.lt_succ_of_le (Ordinal.le_iSup _ ArityTwo.fst)
         
         if hL:
           AllCausesInapp internalCycle boundVars left dL
@@ -1433,36 +1433,24 @@ namespace Pair
           -- TODO try removing after this issue is fixed:
           -- https://github.com/leanprover/lean4/issues/5925
           {_: Set (ValVar pairSalgebra.D)}
-          cause dd xx inCins inCycle
+          cause _ _ inCins inCycle
         =>
           blockedContextIns
+            (salg := pairSalgebra)
             (extOfIntCause cause)
-            (show
-              ⟨pair (fromNat xx) dd, uniDefList.theSet⟩
-                ∈
-              (extOfIntCause cause).contextIns
-            from
-              And.intro rfl ⟨_, inCins, rfl, nofun⟩)
+            (And.intro rfl ⟨_, inCins, rfl, nofun⟩)
             (extOfIntCycleBare.theSet inCycle))
-        (fun cause dd xx inBins _ ihOut =>
+        (fun cause _ _ inBins _ ihOut =>
           blockedBackgroundIns
+            (salg := pairSalgebra)
             (extOfIntCause cause)
-            (show
-              ⟨pair (fromNat xx) dd, uniDefList.theSet⟩
-                ∈
-              (extOfIntCause cause).backgroundIns
-            from
-              And.intro rfl ⟨_, inBins, rfl, nofun⟩)
+            (And.intro rfl ⟨_, inBins, rfl, nofun⟩)
             ihOut)
-        (fun cause dd xx inBout _ ihIns =>
+        (fun cause _ _ inBout _ ihIns =>
           blockedBackgroundOut
+            (salg := pairSalgebra)
             (extOfIntCause cause)
-            (show
-              ⟨pair (fromNat xx) dd, uniDefList.theSet⟩
-                ∈
-              (extOfIntCause cause).backgroundOut
-            from
-              And.intro rfl ⟨_, inBout, rfl, nofun⟩)
+            (And.intro rfl ⟨_, inBout, rfl, nofun⟩)
             ihIns)
         (fun _ _ => inEmptyCycleInternalToOutExternal)
     
@@ -1508,19 +1496,15 @@ namespace Pair
           cause _ _ inCins inCycle
         =>
           blockedContextIns
+            (salg := pairSalgebra)
             (extOfIntCause cause)
-            (show
-              _ ∈ (extOfIntCause _).contextIns
-            from
-              And.intro rfl ⟨_, inCins, rfl, nofun⟩)
+            (And.intro rfl ⟨_, inCins, rfl, nofun⟩)
             (extOfIntCycleBare.theSet inCycle))
         (fun cause _ _ inBins _ ihOut =>
           blockedBackgroundIns
+            (salg := pairSalgebra)
             (extOfIntCause cause)
-            (show
-              _ ∈ (extOfIntCause _).backgroundIns
-            from
-              And.intro rfl ⟨_, inBins, rfl, nofun⟩)
+            (And.intro rfl ⟨_, inBins, rfl, nofun⟩)
             ihOut)
         (fun cause _ _ inBout _ ihIns =>
           blockedBackgroundOut

@@ -13,18 +13,28 @@ instance _.u: Coe (Ordinal.{u}) (Type (u + 1)) where
 namespace Ordinal
   def succ (n: Ordinal) := Order.succ n
   
-  -- IsLimit from Mathlib considers, regrettably,
-  -- zero not to be a limit ordinal.
-  def IsActualLimit (n: Ordinal): Prop :=
-    ∀ a < n, a.succ < n
+  def not_min_of_not_zero
+    {n: Ordinal}
+    (notZero: n ≠ 0)
+  :
+    ¬ IsMin n
+  :=
+    fun isMin =>
+      let leZero := isMin (Ordinal.zero_le n)
+      let eqZero := Ordinal.le_zero.mp leZero
+      notZero eqZero
   
-  def IsActualLimit.toIsLimit
-    (ial: IsActualLimit n)
+  def IsSuccPrelimit (n: Ordinal): Prop := Order.IsSuccPrelimit n
+  
+  def IsSuccPrelimit.toIsLimit
+    (ispl: IsSuccPrelimit n)
     (notZero: n ≠ 0)
   :
     IsLimit n
   :=
-    And.intro notZero ial
+    And.intro
+      (not_min_of_not_zero notZero)
+      ispl
   
   def pred_of_succ_not_lt
     {nn n: Ordinal}
@@ -42,23 +52,23 @@ namespace Ordinal
   
   def IsSucc (n: Ordinal) := ∃ nn: Ordinal, nn.succ = n
   
-  def IsSucc.fromNotLimit
+  def IsSucc.fromNotPrelimit
     {n: Ordinal}
-    (notLimit: ¬IsActualLimit n)
+    (notPrelimit: ¬ IsSuccPrelimit n)
   :
     IsSucc n
   :=
-    notLimit.toEx fun _nn nImpl =>
-      let ⟨nnLt, succNLt⟩ := nImpl.implToAnd
-      pred_of_succ_not_lt nnLt succNLt
+    notPrelimit.toEx fun nn nImpl =>
+      let ⟨nnLt, succNLt⟩ := nImpl.dne
+      pred_of_succ_not_lt nnLt (succNLt (Order.lt_succ nn))
   
-  def predLtOfNotLimit
+  def predLtOfNotPrelimit
     {n: Ordinal}
-    (notLimit: ¬n.IsActualLimit)
+    (notLimit: ¬ n.IsSuccPrelimit)
   :
     n.pred < n
   :=
-    let isSucc := Ordinal.IsSucc.fromNotLimit notLimit
+    let isSucc := Ordinal.IsSucc.fromNotPrelimit notLimit
     let pred := isSucc.unwrap
     
     Ordinal.pred_lt_iff_is_succ.mpr ⟨pred, pred.property.symm⟩
@@ -66,13 +76,7 @@ namespace Ordinal
   def succ.isInjective: Function.Injective succ := Order.succ_injective
   
   def not_max (n: Ordinal): ¬IsMax n :=
-    fun isMax =>
-      let ⟨m, nLtM⟩ := (noMaxOrder.exists_gt n).unwrap
-      let mLeN := isMax (le_of_lt nLtM)
-      
-      let eq: n = m := (le_of_lt nLtM).antisymm mLeN
-      
-      nLtM.ne eq
+    not_isMax_of_lt (Order.lt_succ n)
   
   def lt_succ_self (n: Ordinal): n < n.succ :=
     Order.lt_succ_of_not_isMax (not_max n)
@@ -148,13 +152,13 @@ namespace Ordinal
       (fun eqX => lt_irrefl x (eqX ▸ nx))
       (fun eqPred => lt_irrefl x (eqPred ▸ xnSucc)))
   
-  def succ_pred_of_not_limit
+  def succ_pred_of_not_prelimit
     {n: Ordinal}
-    (notLimit: ¬n.IsActualLimit)
+    (notLimit: ¬n.IsSuccPrelimit)
   :
     n.pred.succ = n
   :=
-    let nPred := (IsSucc.fromNotLimit notLimit).unwrap
+    let nPred := (IsSucc.fromNotPrelimit notLimit).unwrap
     
     succ_pred_iff_is_succ.mpr ⟨nPred, nPred.property.symm⟩
   
@@ -164,24 +168,24 @@ namespace Ordinal
   :
     a ≤ b.pred
   :=
-    (Ordinal.linearOrder.le_total a b.pred).elim
+    (Ordinal.instLinearOrder.le_total a b.pred).elim
       (id)
       (fun bPredLeA =>
         if h: a = b.pred then
-          h ▸ Ordinal.linearOrder.le_refl _
+          h ▸ Ordinal.instLinearOrder.le_refl _
         else
           let bPredLtA := lt_of_le_of_ne' bPredLeA h
           False.elim (pred_no_middle ab bPredLtA))
   
-  def succ_not_limit (n: Ordinal): ¬IsActualLimit n.succ :=
-    fun isLimit =>
-      let ltSelf := isLimit n (lt_succ_self n)
-      lt_irrefl n.succ ltSelf
+  def succ_not_prelimit (n: Ordinal): ¬ IsSuccPrelimit n.succ :=
+    fun isPrelimit =>
+      let notMin := not_min_of_not_zero (succ_ne_zero n)
+      Ordinal.not_succ_isLimit _ ⟨notMin, isPrelimit⟩
   
-  def IsActualLimit.succ_lt
+  def IsSuccPrelimit.succ_lt
     {n: Ordinal}
     (nn: ↑n)
-    (nIsLimit: n.IsActualLimit)
+    (nIsLimit: n.IsSuccPrelimit)
   :
     nn.val.succ < n
   :=
@@ -210,8 +214,8 @@ namespace Ordinal
       
       eqA.symm ▸ (le_of_not_le h)
   
-  def zero.isLimit: IsActualLimit 0 :=
-    fun n nLtZero => False.elim (Ordinal.not_lt_zero n nLtZero)
+  def zero.isLimit: IsSuccPrelimit 0 :=
+    fun n nLtZero => (Ordinal.not_lt_zero n nLtZero.left)
   
   def lt_succ (n: Ordinal): n < n.succ := Order.lt_succ n
   
