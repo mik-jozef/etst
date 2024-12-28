@@ -171,6 +171,15 @@ namespace Valuation
   :=
     if_pos rfl
   
+  def updateSet3.eqBoundOfEq
+    (val: Valuation D)
+    (xEq: xBound = xReq)
+    (s: Set3 D)
+  :
+    val.updateSet3 xBound s xReq = s
+  :=
+    xEq ▸ updateSet3.eqBound val xReq s
+  
   def updateSet3.eqOrig
     (val: Valuation D)
     {xBound xReq: Nat}

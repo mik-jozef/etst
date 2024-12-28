@@ -9,6 +9,14 @@ namespace InwExternal
   open uniDefList
   open uniSet3
   
+  def causeNat: Cause Pair := {
+    contextIns :=
+      fun ⟨dC, xC⟩ =>
+        xC = uniDefList.nat ∧ dC.IsNatEncoding
+    backgroundIns := Set.empty
+    backgroundOut := Set.empty
+  }
+  
   def causeTheSet
     (x: Nat)
     (d: Pair)
@@ -17,10 +25,9 @@ namespace InwExternal
   :=
     let xthExpr := IsTheDefListExprPair.getNthExpr x
     
-    {
+    causeNat.union {
       contextIns :=
         fun ⟨dC, xC⟩ =>
-          xC = uniDefList.nat ∧ dC.IsNatEncoding ∨
           xC = uniDefList.theDefList ∧ IsTheDefListExpr dC ∨
           (And
             (xC = uniDefList.interpretation)
@@ -259,6 +266,34 @@ namespace InwExternal
       (Cause.union
         (causeInterp boundVars left d)
         (causeInterp boundVars rite d))
+  
+  def causeArbUn
+    (boundVars: List (ValVar Pair))
+    (x: Nat)
+    (dX: Pair)
+    (body: Expr)
+    (d: Pair)
+  :
+    Cause Pair
+  :=
+    causeExpr.union
+      (Cause.union
+        causeNat
+        (causeInterp (⟨dX, x⟩ :: boundVars) body d))
+  
+  def causeArbIr
+    (boundVars: List (ValVar Pair))
+    (x: Nat)
+    (body: Expr)
+    (d: Pair)
+  :
+    Cause Pair
+  :=
+    causeExpr.union
+      (Cause.union
+        causeNat
+        (Cause.arbUn fun dX =>
+          causeInterp (⟨dX, x⟩ :: boundVars) body d))
   
   
   def isCauseZero
@@ -602,5 +637,208 @@ namespace InwExternal
                           inwBound
                           nat502Neq501)
                         nat503Neq501))))))))
+  
+  def isCauseArbUn
+    (boundVars: List (ValVar Pair))
+    (x: Nat)
+    (dX: Pair)
+    (body: Expr)
+    (d: Pair)
+  :
+    IsWeakCause
+      pairSalgebra
+      (causeArbUn boundVars x dX body d)
+      (pair
+        (boundVarsEncoding boundVars)
+        (pair
+          (exprToEncoding (Expr.Un x body))
+          d))
+      (theExternalDefList.getDef uniDefList.interpretation)
+  :=
+    fun isSat =>
+      let isExprEncBody := (exprToEncoding body).property
+      let inCinsExprBody := Or.inl ⟨rfl, isExprEncBody⟩
+      let inwExprBody := isSat.contextInsHold inCinsExprBody
+      
+      let inCinsNat :=
+        Or.inr (Or.inl ⟨rfl, fromNat.isNatEncoding x⟩)
+      let inwNat := isSat.contextInsHold inCinsNat
+      
+      let inCinsBody := Or.inr (Or.inr ⟨rfl, rfl⟩)
+      let inwBody := isSat.contextInsHold inCinsBody
+      
+      inwFinUn
+        interpretationInExprList.arbUn
+        (inwUnDom
+          inwNat
+          (inwUnDom
+            inwExprBody
+            (inwArbUn
+              (boundVarsEncoding
+                boundVars)
+              (inwPair
+                inwBound
+                (inwPair
+                  (inwPair
+                    (inwNatExpr _ _ _)
+                    (inwPair
+                      (inwFree
+                        (inwFree
+                          inwBound
+                          nat501Neq500)
+                        nat502Neq500)
+                      (inwFree
+                        inwBound
+                        nat502Neq501)))
+                  (inwArbUn
+                    dX
+                    (inwCallExpr
+                      (inwCallExpr
+                        (inwFree
+                          (inwFree
+                            (inwFree
+                              (inwFree
+                                (inwFree
+                                  (inwFree
+                                    inwBody
+                                    nat500NeqInterpretation)
+                                  nat501NeqInterpretation)
+                                nat502NeqInterpretation)
+                              nat503NeqInterpretation)
+                            nat504NeqInterpretation)
+                          nat505NeqInterpretation)
+                        (inwPair
+                          (inwPair
+                            (inwFree
+                              (inwFree
+                                (inwFree
+                                  (inwFree
+                                    (inwFree
+                                      inwBound
+                                      nat501Neq500)
+                                    nat502Neq500)
+                                  nat503Neq500)
+                                nat504Neq500)
+                              nat505Neq500)
+                            (inwFree
+                              (inwFree
+                                inwBound
+                                nat504Neq503)
+                              nat505Neq503))
+                          (inwFree
+                            (inwFree
+                              (inwFree
+                                inwBound
+                                nat503Neq502)
+                              nat504Neq502)
+                            nat505Neq502)))
+                      (inwFree
+                        (inwFree
+                          (inwFree
+                            inwBound
+                            nat502Neq501)
+                          nat503Neq501)
+                        nat504Neq501))))))))
+  
+  def isCauseArbIr
+    (boundVars: List (ValVar Pair))
+    (x: Nat)
+    (body: Expr)
+    (d: Pair)
+  :
+    IsWeakCause
+      pairSalgebra
+      (causeArbIr boundVars x body d)
+      (pair
+        (boundVarsEncoding boundVars)
+        (pair
+          (exprToEncoding (Expr.Ir x body))
+          d))
+      (theExternalDefList.getDef uniDefList.interpretation)
+  :=
+    fun isSat =>
+      let isExprEncBody := (exprToEncoding body).property
+      let inCinsExprBody := Or.inl ⟨rfl, isExprEncBody⟩
+      let inwExprBody := isSat.contextInsHold inCinsExprBody
+      
+      let inCinsNat :=
+        Or.inr (Or.inl ⟨rfl, fromNat.isNatEncoding x⟩)
+      let inwNat := isSat.contextInsHold inCinsNat
+      
+      let inCinsBody dX := Or.inr (Or.inr ⟨dX, rfl, rfl⟩)
+      let inwBody dX := isSat.contextInsHold (inCinsBody dX)
+      
+      inwFinUn
+        interpretationInExprList.arbIr
+        (inwUnDom
+          inwNat
+          (inwUnDom
+            inwExprBody
+            (inwArbUn
+              (boundVarsEncoding
+                boundVars)
+              (inwPair
+                inwBound
+                (inwPair
+                  (inwPair
+                    (inwNatExpr _ _ _)
+                    (inwPair
+                      (inwFree
+                        (inwFree
+                          inwBound
+                          nat501Neq500)
+                        nat502Neq500)
+                      (inwFree
+                        inwBound
+                        nat502Neq501)))
+                  (inwArbIr
+                    fun dX =>
+                      inwCallExpr
+                        (inwCallExpr
+                          (inwFree
+                            (inwFree
+                              (inwFree
+                                (inwFree
+                                  (inwFree
+                                    (inwFree
+                                      (inwBody dX)
+                                      nat500NeqInterpretation)
+                                    nat501NeqInterpretation)
+                                  nat502NeqInterpretation)
+                                nat503NeqInterpretation)
+                              nat504NeqInterpretation)
+                            nat505NeqInterpretation)
+                          (inwPair
+                            (inwPair
+                              (inwFree
+                                (inwFree
+                                  (inwFree
+                                    (inwFree
+                                      (inwFree
+                                        inwBound
+                                        nat501Neq500)
+                                      nat502Neq500)
+                                    nat503Neq500)
+                                  nat504Neq500)
+                                nat505Neq500)
+                              (inwFree
+                                (inwFree
+                                  inwBound
+                                  nat504Neq503)
+                                nat505Neq503))
+                            (inwFree
+                              (inwFree
+                                (inwFree
+                                  inwBound
+                                  nat503Neq502)
+                                nat504Neq502)
+                              nat505Neq502)))
+                        (inwFree
+                          (inwFree
+                            (inwFree
+                              inwBound
+                              nat502Neq501)
+                            nat503Neq501)
+                          nat504Neq501)))))))
   
 end InwExternal

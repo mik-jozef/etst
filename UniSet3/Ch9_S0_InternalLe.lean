@@ -138,18 +138,9 @@ namespace Pair
       (boundVars: List (ValVar Pair))
       (x: Nat)
     :
-      -- externalOfInternalCause
-      --   (Cause.arbUn causes)
-      --   boundVars
-      --   =
-      -- Cause.arbUn
-      --   (fun dX =>
-      --     externalOfInternalCause
-      --       (causes dX)
-      --       (⟨dX, x⟩ :: boundVars))
       Cause.IsSubset
         (extOfIntCause
-          (Cause.arbUn fun dX => (causes dX).exceptX x)
+          (Cause.arbUn fun dX => (causes dX).exceptVar x)
           boundVars)
         (Cause.arbUn fun dX =>
           extOfIntCause
@@ -179,7 +170,7 @@ namespace Pair
       (d: Pair)
       (x: Nat)
     :
-      extOfIntCause (cause.exceptX x) boundVars
+      extOfIntCause (cause.exceptVar x) boundVars
         ⊆
       extOfIntCause cause (⟨d, x⟩ :: boundVars)
     := {
@@ -787,7 +778,7 @@ namespace Pair
           isCauseToInsInterp
             isCauseWith
             (⟨dX, x⟩ :: boundVars)
-            boundVarsSat.withBoundSat
+            boundVarsSat.satWithBound
             (fun inCinsWith notBound =>
               let xNeq := IsBound.Not.notBoundHeadNotEq notBound
               cinsIns
@@ -815,7 +806,7 @@ namespace Pair
           isCauseToInsInterp
             (isCauseWith dX)
             (⟨dX, x⟩ :: boundVars)
-            boundVarsSat.withBoundSat
+            boundVarsSat.satWithBound
             (fun inCinsWith notBound =>
               let xNeq := IsBound.Not.notBoundHeadNotEq notBound
               cinsIns
@@ -1116,8 +1107,8 @@ namespace Pair
             isCause.toSuperCause causeLeWith
           let isInapp :=
             allInapp
-              (cause.exceptX x)
-              satBoundVars.satTailExceptHead
+              (cause.exceptVar x)
+              satBoundVars.exceptHeadSatTail
               whyIsTypeInferenceBroken.arbUn
           isInapp.toSuperCause
             (extOfIntExceptLeBoundHead cause dX x)
@@ -1160,7 +1151,7 @@ namespace Pair
           let isInappArbUn :=
             allInapp
               (Cause.arbUn fun dX =>
-                (allApplicable dX).val.exceptX x)
+                (allApplicable dX).val.exceptVar x)
               (Cause.SatisfiesBoundVars.arbUn
                 (fun dX => allApplicable dX)
                 x

@@ -137,23 +137,33 @@ def Cause.unionEqRightSub
     (Set.union_eq_self_of_subset_right isSub.binsLe)
     (Set.union_eq_self_of_subset_right isSub.boutLe)
 
-def Cause.exceptX
+def Cause.except
+  (a b: Cause D)
+:
+  Cause D
+:= {
+  contextIns := a.contextIns \ b.contextIns
+  backgroundIns := a.backgroundIns \ b.backgroundIns
+  backgroundOut := a.backgroundOut \ b.backgroundOut
+}
+
+def Cause.exceptVar
   (cause: Cause D)
   (x: Nat)
 :
   Cause D
-:= {
-  contextIns := cause.contextIns \ fun vv => vv.x = x
-  backgroundIns := cause.backgroundIns \ fun vv => vv.x = x
-  backgroundOut :=
-    cause.backgroundOut \ fun vv => vv.x = x
-}
+:=
+  cause.except {
+    contextIns := fun vv => vv.x = x
+    backgroundIns := fun vv => vv.x = x
+    backgroundOut := fun vv => vv.x = x
+  }
 
-def Cause.exceptXIsSub
+def Cause.exceptVarIsSub
   (cause: Cause D)
   (x: Nat)
 :
-  cause.exceptX x ⊆ cause
+  cause.exceptVar x ⊆ cause
 := {
   cinsLe := fun _ => And.left
   binsLe := fun _ => And.left
@@ -166,12 +176,12 @@ def Cause.exceptBound
   (d: D)
 :
   Cause D
-:= {
-  contextIns := cause.contextIns \ {⟨d, x⟩}
-  backgroundIns := cause.backgroundIns \ {⟨d, x⟩}
-  backgroundOut :=
-    cause.backgroundOut \ fun ⟨dd, xx⟩ => dd ≠ d ∧ xx = x
-}
+:=
+  cause.except {
+    contextIns := {⟨d, x⟩}
+    backgroundIns := {⟨d, x⟩}
+    backgroundOut := fun ⟨dd, xx⟩ => dd ≠ d ∧ xx = x
+  }
 
 def Cause.withBound
   (cause: Cause D)
@@ -329,27 +339,15 @@ def Cause.SatisfiesBoundVar.union
 :
   (causeL ∪ causeR).SatisfiesBoundVar x dBound
 := {
-  cinsSat :=
-    fun vv inCins xEq =>
-      inCins.elim
-        (fun inCinsL =>
-          satL.cinsSat vv inCinsL xEq)
-        (fun inCinsR =>
-          satR.cinsSat vv inCinsR xEq),
-  binsSat :=
-    fun vv inBins xEq =>
-      inBins.elim
-        (fun inBinsL =>
-          satL.binsSat vv inBinsL xEq)
-        (fun inBinsR =>
-          satR.binsSat vv inBinsR xEq),
-  boutSat :=
-    fun vv inBout xEq =>
-      inBout.elim
-        (fun inBoutL =>
-          satL.boutSat vv inBoutL xEq)
-        (fun inBoutR =>
-          satR.boutSat vv inBoutR xEq),
+  cinsSat := fun
+    | _, Or.inl inCins => satL.cinsSat _ inCins
+    | _, Or.inr inCins => satR.cinsSat _ inCins
+  binsSat := fun
+    | _, Or.inl inBins => satL.binsSat _ inBins
+    | _, Or.inr inBins => satR.binsSat _ inBins
+  boutSat := fun
+    | _, Or.inl inBout => satL.boutSat _ inBout
+    | _, Or.inr inBout => satR.boutSat _ inBout
 }
 
 def Cause.SatisfiesBoundVar.leWithBound
@@ -395,21 +393,6 @@ def Cause.SatisfiesBoundVar.toSubCause
     fun vv inBout xEq =>
       sat.boutSat vv (isLe.boutLe inBout) xEq
 }
-
-
-structure Cause.FulfillsBoundVar
-  (cause: Cause D)
-  (x: Nat)
-  (d: D)
-extends
-  Cause.SatisfiesBoundVar cause x d
-where
-  cinsFulfills:
-    ⟨d, x⟩ ∈ cause.contextIns
-  binsFulfills:
-    ⟨d, x⟩ ∈ cause.backgroundIns
-  boutFulfills:
-    ∀ dOther, dOther ≠ d → ⟨dOther, x⟩ ∈ cause.backgroundOut
 
 
 /-
@@ -540,6 +523,26 @@ def Cause.IsWeaklySatisfiedBy.ofSuper
     fun inBout => isSat.backgroundOutHold (le.boutLe inBout)
 }
 
+def Cause.IsWeaklySatisfiedBy.elimUnL
+  (isSat: Cause.IsWeaklySatisfiedBy (causeL ∪ causeR) b c)
+:
+  Cause.IsWeaklySatisfiedBy causeL b c
+:= {
+  contextInsHold := isSat.contextInsHold ∘ Or.inl
+  backgroundInsHold := isSat.backgroundInsHold ∘ Or.inl
+  backgroundOutHold := isSat.backgroundOutHold ∘ Or.inl
+}
+
+def Cause.IsWeaklySatisfiedBy.elimUnR
+  (isSat: Cause.IsWeaklySatisfiedBy (causeL ∪ causeR) b c)
+:
+  Cause.IsWeaklySatisfiedBy causeR b c
+:= {
+  contextInsHold := isSat.contextInsHold ∘ Or.inr
+  backgroundInsHold := isSat.backgroundInsHold ∘ Or.inr
+  backgroundOutHold := isSat.backgroundOutHold ∘ Or.inr
+}
+
 
 def IsWeakCause.union
   (isCauseLeft: IsWeakCause salg causeLeft d exprLeft)
@@ -553,16 +556,8 @@ def IsWeakCause.union
 :=
   fun isSat =>
     And.intro
-      (isCauseLeft {
-        contextInsHold := isSat.contextInsHold ∘ Or.inl
-        backgroundInsHold := isSat.backgroundInsHold ∘ Or.inl
-        backgroundOutHold := isSat.backgroundOutHold ∘ Or.inl
-      })
-      (isCauseRite {
-        contextInsHold := isSat.contextInsHold ∘ Or.inr
-        backgroundInsHold := isSat.backgroundInsHold ∘ Or.inr
-        backgroundOutHold := isSat.backgroundOutHold ∘ Or.inr
-      })
+      (isCauseLeft isSat.elimUnL)
+      (isCauseRite isSat.elimUnR)
 
 noncomputable def IsWeakCause.ofValPos
   (isPos: (expr.interpretation salg b c).posMem d)

@@ -6,6 +6,29 @@ import UniSet3.Ch9_S0_InternalLe
 import Utils.InwExternal
 
 
+-- TODO moveto Utils/Cause.lean when you fix IsGetBound.
+def Cause.exceptBoundVars
+  (cause: Cause Pair)
+  (boundVars: List (ValVar Pair))
+:
+  Cause Pair
+:=
+  cause.except {
+    contextIns := fun ⟨_, x⟩ => Pair.IsBound boundVars x,
+    backgroundIns := fun ⟨_, x⟩ => Pair.IsBound boundVars x,
+    backgroundOut := fun ⟨_, x⟩ => Pair.IsBound boundVars x,
+  }
+
+def Cause.exceptBoundVars.eqEmpty
+  (cause: Cause Pair)
+:
+  cause.exceptBoundVars [] = cause
+:=
+  Cause.eq
+    (Set.eqIffH (Iff.intro And.left (And.intro · nofun)))
+    (Set.eqIffH (Iff.intro And.left (And.intro · nofun)))
+    (Set.eqIffH (Iff.intro And.left (And.intro · nofun)))
+
 namespace Pair
   namespace uniSet3
     open Expr
@@ -437,70 +460,196 @@ namespace Pair
       MotiveInapplicable externalCycle externalCause
     
     
-    def isInappOfInappWithBounds
+    def isInappOfInappUn
+      {internalCause: Cause Pair}
       (isInapp:
         IsCauseInappExtended
           pairSalgebra
           theInternalDefList
           (internalOfExternalCycle externalCycle)
-          (internalCause.union
-            (Cause.ofValPos
-              (theInternalWfm.withBoundVars boundVars)
-              Valuation.empty)))
-      (fulfillsBounds: internalCause.FulfillsBoundVars boundVars)
+          (Cause.exceptBoundVars
+            (internalCause.union
+              (Cause.ofValPos
+                (theInternalWfm.withBoundVars boundVars)
+                Valuation.empty))
+              boundVars))
     :
       IsCauseInappExtended
         pairSalgebra
         theInternalDefList
         (internalOfExternalCycle externalCycle)
-        internalCause
+        (internalCause.exceptBoundVars boundVars)
     :=
       open IsCauseInappExtended in
       match isInapp with
-      | cinsFailsCycle (Or.inl inCins) inCycle =>
-        cinsFailsCycle inCins inCycle
-      | cinsFailsOut (Or.inl inCins) out =>
-        cinsFailsOut inCins out
-      | binsFails (Or.inl inBins) out =>
-        binsFails inBins out
-      | @binsFails _ _ _ _ _ dd xx (Or.inr inBins) out =>
-        if h: IsBound boundVars xx then
-          let ⟨dBound, isGetBound⟩ := h
-          let eqAtXx :=
-            Valuation.withBoundVars.eqOfIsGetBound
-              theInternalWfm isGetBound
-          let dEq: (Set3.just dBound).posMem dd :=
-            eqAtXx ▸ inBins
-          let fulfillsBound := fulfillsBounds rfl isGetBound
-          let dIn := dEq ▸ fulfillsBound.binsFulfills
-          binsFails dIn out
-        else
-          let eqAtXx :=
-            Valuation.withBoundVars.eqOrigOfIsFree
-              theInternalWfm h
-          let inBins: (theInternalWfm xx).posMem dd :=
-            eqAtXx ▸ inBins
-          out.nopePos inBins
-      | boutFails (Or.inl inBout) ins =>
-        boutFails inBout ins
-      | @boutFails _ _ _ _ _ dd xx (Or.inr inBout) ins =>
-        if h: IsBound boundVars xx then
-          let ⟨dBound, isGetBound⟩ := h
-          let eqAtXx :=
-            Valuation.withBoundVars.eqOfIsGetBound
-              theInternalWfm isGetBound
-          let notDef: ¬ (Set3.just dBound).defMem dd :=
-            eqAtXx ▸ inBout
-          let fulfillsBound := fulfillsBounds rfl isGetBound
-          let dIn := fulfillsBound.boutFulfills dd notDef
-          boutFails dIn ins
-        else
-          let eqAtXx :=
-            Valuation.withBoundVars.eqOrigOfIsFree
-              theInternalWfm h
-          let inBout: ¬ (theInternalWfm xx).defMem dd :=
-            eqAtXx ▸ inBout
-          ins.nopeNotDef inBout
+      | cinsFailsCycle ⟨Or.inl inCins, ninBounds⟩ inCycle =>
+        cinsFailsCycle ⟨inCins, ninBounds⟩ inCycle
+      | cinsFailsOut ⟨Or.inl inCins, ninBounds⟩ out =>
+        cinsFailsOut ⟨inCins, ninBounds⟩ out
+      | binsFails ⟨Or.inl inBins, ninBounds⟩ out =>
+        binsFails ⟨inBins, ninBounds⟩ out
+      | @binsFails
+        _ _ _ _ _ dd xx ⟨Or.inr inBins, ninBounds⟩ out
+      =>
+        let eqAtXx :=
+          Valuation.withBoundVars.eqOrigOfIsFree
+            theInternalWfm ninBounds
+        let inBins: (theInternalWfm xx).posMem dd :=
+          eqAtXx ▸ inBins
+        out.nopePos inBins
+      | boutFails ⟨Or.inl inBout, ninBounds⟩ ins =>
+        boutFails ⟨inBout, ninBounds⟩ ins
+      | @boutFails
+        _ _ _ _ _ dd xx ⟨Or.inr inBout, ninBounds⟩ ins
+      =>
+        let eqAtXx :=
+          Valuation.withBoundVars.eqOrigOfIsFree
+            theInternalWfm ninBounds
+        let inBout: ¬ (theInternalWfm xx).defMem dd :=
+          eqAtXx ▸ inBout
+        ins.nopeNotDef inBout
+    
+    def isInappOfInappArbUn
+      {internalCause: Cause Pair}
+      (isInapp:
+        IsCauseInappExtended
+          pairSalgebra
+          theInternalDefList
+          (internalOfExternalCycle externalCycle)
+          (Cause.exceptBoundVars
+            ((internalCause.withBound x dX).union
+              (Cause.ofValPos
+                (theInternalWfm.withBoundVars
+                  (⟨dX, x⟩ :: boundVars))
+                Valuation.empty))
+            (⟨dX, x⟩ :: boundVars)))
+    :
+      IsCauseInappExtended
+        pairSalgebra
+        theInternalDefList
+        (internalOfExternalCycle externalCycle)
+        (internalCause.exceptBoundVars boundVars)
+    :=
+      open IsCauseInappExtended in
+      match isInapp with
+      | cinsFailsCycle
+        ⟨Or.inl (Or.inl ⟨inCins, _⟩), ninBounds⟩
+        inCycle
+      =>
+        let ninBoundsTail := IsBound.Not.notBoundTail ninBounds
+        cinsFailsCycle ⟨inCins, ninBoundsTail⟩ inCycle
+      |
+        cinsFailsCycle ⟨Or.inl (Or.inr ⟨_, xEq⟩), ninBounds⟩ _
+      =>
+        let isGetBound :=
+          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
+        False.elim (ninBounds ⟨dX, isGetBound⟩)
+      |
+        cinsFailsOut ⟨Or.inl (Or.inl ⟨inCins, _⟩), ninBins⟩ out
+      =>
+        let ninBinsTail := IsBound.Not.notBoundTail ninBins
+        cinsFailsOut ⟨inCins, ninBinsTail⟩ out
+      |
+        cinsFailsOut ⟨Or.inl (Or.inr ⟨_, xEq⟩), ninBins⟩ _ =>
+        let isGetBound :=
+          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
+        False.elim (ninBins ⟨dX, isGetBound⟩)
+      |
+        binsFails ⟨Or.inl (Or.inl ⟨inBins, _⟩), ninBounds⟩ out =>
+        let ninBoundsTail := IsBound.Not.notBoundTail ninBounds
+        binsFails ⟨inBins, ninBoundsTail⟩ out
+      |
+        binsFails ⟨Or.inl (Or.inr ⟨_, xEq⟩), ninBounds⟩ _ =>
+        let isGetBound :=
+          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
+        
+        False.elim (ninBounds ⟨dX, isGetBound⟩)
+      |
+        @binsFails _ _ _ _ _ dd xx ⟨Or.inr inBins, ninBounds⟩ out
+      =>
+        let isPos: (theInternalWfm xx).posMem dd :=
+          Valuation.withBoundVars.eqOrigOfIsFree
+            theInternalWfm ninBounds ▸
+          inBins
+        
+        out.nopePos isPos
+      |
+        boutFails ⟨Or.inl (Or.inl ⟨inBout, _⟩), ninBounds⟩ ins =>
+        let ninBoundsTail := IsBound.Not.notBoundTail ninBounds
+        boutFails ⟨inBout, ninBoundsTail⟩ ins
+      |
+        boutFails ⟨Or.inl (Or.inr ⟨_, xEq⟩), ninBounds⟩ _ =>
+        let isGetBound :=
+          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
+        False.elim (ninBounds ⟨dX, isGetBound⟩)
+      |
+        @boutFails _ _ _ _ _ dd xx ⟨Or.inr inBout, ninBounds⟩ ins
+      =>
+        let isNotDef: ¬ (theInternalWfm xx).defMem dd :=
+          Valuation.withBoundVars.eqOrigOfIsFree
+            theInternalWfm ninBounds ▸
+          inBout
+        
+        ins.nopeNotDef isNotDef
+    
+    def isInappOfInappArbIr
+      {internalCause: Cause Pair}
+      (isInapp:
+        IsCauseInappExtended
+          pairSalgebra
+          theInternalDefList
+          (internalOfExternalCycle externalCycle)
+          (Cause.exceptBoundVars
+            (internalCause.withBound x dX)
+            (⟨dX, x⟩ :: boundVars)))
+    :
+      IsCauseInappExtended
+        pairSalgebra
+        theInternalDefList
+        (internalOfExternalCycle externalCycle)
+        (internalCause.exceptBoundVars boundVars)
+    :=
+      open IsCauseInappExtended in
+      match isInapp with
+      | cinsFailsCycle ⟨Or.inl ⟨inCins, _⟩, ninBounds⟩ inCycle
+      =>
+        let ninBoundsTail := IsBound.Not.notBoundTail ninBounds
+        cinsFailsCycle ⟨inCins, ninBoundsTail⟩ inCycle
+      |
+        cinsFailsCycle ⟨Or.inr ⟨_, xEq⟩, ninBounds⟩ _
+      =>
+        let isGetBound :=
+          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
+        False.elim (ninBounds ⟨dX, isGetBound⟩)
+      |
+        cinsFailsOut ⟨Or.inl ⟨inCins, _⟩, ninBins⟩ out
+      =>
+        let ninBinsTail := IsBound.Not.notBoundTail ninBins
+        cinsFailsOut ⟨inCins, ninBinsTail⟩ out
+      |
+        cinsFailsOut ⟨Or.inr ⟨_, xEq⟩, ninBins⟩ _ =>
+        let isGetBound :=
+          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
+        False.elim (ninBins ⟨dX, isGetBound⟩)
+      |
+        binsFails ⟨Or.inl ⟨inBins, _⟩, ninBounds⟩ out =>
+        let ninBoundsTail := IsBound.Not.notBoundTail ninBounds
+        binsFails ⟨inBins, ninBoundsTail⟩ out
+      |
+        binsFails ⟨Or.inr ⟨_, xEq⟩, ninBounds⟩ _ =>
+        let isGetBound :=
+          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
+        
+        False.elim (ninBounds ⟨dX, isGetBound⟩)
+      |
+        boutFails ⟨Or.inl ⟨inBout, _⟩, ninBounds⟩ ins =>
+        let ninBoundsTail := IsBound.Not.notBoundTail ninBounds
+        boutFails ⟨inBout, ninBoundsTail⟩ ins
+      |
+        boutFails ⟨Or.inr ⟨_, xEq⟩, ninBounds⟩ _ =>
+        let isGetBound :=
+          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
+        False.elim (ninBounds ⟨dX, isGetBound⟩)
     
     def allInternalInapplicableInterp
       (isEmptyCycle: IsEmptyCycle externalCycle)
@@ -512,15 +661,18 @@ namespace Pair
         uniDefList.interpretation
       ⟩)
       {internalCause: Cause Pair}
-      (fulfillsBounds: internalCause.FulfillsBoundVars boundVars)
+      (satisfiesBounds: internalCause.SatisfiesBoundVars boundVars)
       (isCause: IsWeakCause pairSalgebra internalCause d expr)
     :
       IsCauseInappExtended
         pairSalgebra
         theInternalDefList
         (internalOfExternalCycle externalCycle)
-        internalCause
+        (internalCause.exceptBoundVars boundVars)
     :=
+      let updatedInternalWfm :=
+        theInternalWfm.withBoundVars boundVars
+      
       open MotiveInapplicable in
       open IsCauseInappExtended in
       match expr with
@@ -530,7 +682,7 @@ namespace Pair
         
         if h: IsBound boundVars xx then
           let ⟨dBound, isGetBound⟩ := h
-          let satBound := fulfillsBounds rfl isGetBound
+          let satBound := satisfiesBounds rfl isGetBound
           let dEq: d = dBound := satBound.cinsSat _ dInCins rfl
           let out := Out.intro externalCycle isEmptyCycle inCycle
           out.nopePos (InwExternal.boundVar (dEq ▸ isGetBound))
@@ -544,10 +696,10 @@ namespace Pair
           match isInapp with
           | blockedCins (Or.inl ⟨xEq, dNat⟩) inCycle =>
             let out := Out.intro externalCycle isEmptyCycle inCycle
-            out.nopePos (xEq ▸ (insNatEncoding dNat).toPos)
+            out.nopeDef (xEq ▸ (insNatEncoding dNat))
           | blockedCins (Or.inr ⟨xEq, dEq⟩) inCycle =>
             cinsFailsCycle
-              dInCins
+              ⟨dInCins, h⟩
               (show externalCycle _ from xEq ▸ dEq ▸ inCycle)
           | blockedBout ⟨xEq, ⟨dB, dEq⟩⟩ isIns _ =>
             let isIns := xEq ▸ dEq ▸ isIns
@@ -578,20 +730,20 @@ namespace Pair
         match isInapp with
         | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
           let out := Out.intro externalCycle isEmptyCycle inCycle
-          out.nopePos (xEq ▸ (insExprEncoding isExpr).toPos)
+          out.nopeDef (xEq ▸ (insExprEncoding isExpr))
         | blockedCins (Or.inr (Or.inl ⟨xEq, dEq⟩)) inCycle =>
           allInternalInapplicableInterp
             isEmptyCycle
             isEmptyCycleIh
             (xEq ▸ dEq ▸ inCycle)
-            fulfillsBounds
+            satisfiesBounds
             isCauseL
         | blockedCins (Or.inr (Or.inr ⟨xEq, dEq⟩)) inCycle =>
           allInternalInapplicableInterp
             isEmptyCycle
             isEmptyCycleIh
             (xEq ▸ dEq ▸ inCycle)
-            fulfillsBounds
+            satisfiesBounds
             isCauseR
       |
         Expr.un left rite =>
@@ -611,7 +763,7 @@ namespace Pair
           match isInappL with
           | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
             let out := Out.intro externalCycle isEmptyCycle inCycle
-            out.nopePos (xEq ▸ (insExprEncoding isExpr).toPos)
+            out.nopeDef (xEq ▸ (insExprEncoding isExpr))
           | blockedCins (Or.inr ⟨xEq, dEq⟩) inCycle =>
             xEq ▸ dEq ▸ inCycle
         
@@ -619,12 +771,9 @@ namespace Pair
           match isInappR with
           | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
             let out := Out.intro externalCycle isEmptyCycle inCycle
-            out.nopePos (xEq ▸ (insExprEncoding isExpr).toPos)
+            out.nopeDef (xEq ▸ (insExprEncoding isExpr))
           | blockedCins (Or.inr ⟨xEq, dEq⟩) inCycle =>
             xEq ▸ dEq ▸ inCycle
-        
-        let updatedInternalWfm :=
-          theInternalWfm.withBoundVars boundVars
         
         let isInapp :=
           match isCause.elimUn updatedInternalWfm with
@@ -633,8 +782,8 @@ namespace Pair
                 isEmptyCycle
                 isEmptyCycleIh
                 inCycleL
-                (fulfillsBounds.unionSat
-                  (Cause.SatisfiesBoundVars.backgroundWithBoundsSat
+                (satisfiesBounds.union
+                  (Cause.SatisfiesBoundVars.bWithBoundsSatBoundVars
                     _ boundVars))
                 isCauseL
           | Or.inr isCauseR =>
@@ -642,12 +791,12 @@ namespace Pair
                 isEmptyCycle
                 isEmptyCycleIh
                 inCycleR
-                (fulfillsBounds.unionSat
-                  (Cause.SatisfiesBoundVars.backgroundWithBoundsSat
+                (satisfiesBounds.union
+                  (Cause.SatisfiesBoundVars.bWithBoundsSatBoundVars
                     _ boundVars))
                 isCauseR
         
-        isInappOfInappWithBounds isInapp fulfillsBounds
+        isInappOfInappUn isInapp
       |
         Expr.ir left rite =>
         let ⟨isCauseL, isCauseR⟩ := isCause.elimIr
@@ -661,20 +810,20 @@ namespace Pair
         match isInapp with
         | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
           let out := Out.intro externalCycle isEmptyCycle inCycle
-          out.nopePos (xEq ▸ (insExprEncoding isExpr).toPos)
+          out.nopeDef (xEq ▸ (insExprEncoding isExpr))
         | blockedCins (Or.inr (Or.inl ⟨xEq, dEqL⟩)) inCycle =>
           allInternalInapplicableInterp
             isEmptyCycle
             isEmptyCycleIh
             (xEq ▸ dEqL ▸ inCycle)
-            fulfillsBounds
+            satisfiesBounds
             isCauseL
         | blockedCins (Or.inr (Or.inr ⟨xEq, dEqR⟩)) inCycle =>
           allInternalInapplicableInterp
             isEmptyCycle
             isEmptyCycleIh
             (xEq ▸ dEqR ▸ inCycle)
-            fulfillsBounds
+            satisfiesBounds
             isCauseR
       |
         Expr.cpl expr =>
@@ -684,10 +833,69 @@ namespace Pair
         sorry
       |
         Expr.Un x body =>
-        sorry
+        let ⟨dX, isCauseBody⟩ :=
+          isCause.elimArbUn updatedInternalWfm
+        
+        let isInappIh :=
+          isEmptyCycleIh
+            inCycle
+            (InwExternal.causeArbUn boundVars x dX body d)
+            (InwExternal.isCauseArbUn boundVars x dX body d)
+        
+        let inCycle :=
+          match isInappIh with
+          | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
+            let out := Out.intro externalCycle isEmptyCycle inCycle
+            out.nopeDef (xEq ▸ (insExprEncoding isExpr))
+          | blockedCins (Or.inr (Or.inl ⟨xEq, dEq⟩)) inCycle =>
+            let out := Out.intro externalCycle isEmptyCycle inCycle
+            out.nopeDef (xEq ▸ (insNatEncoding dEq))
+          | blockedCins (Or.inr (Or.inr ⟨xEq, dEq⟩)) inCycle =>
+            xEq ▸ dEq ▸ inCycle
+        
+        let isInapp :=
+          allInternalInapplicableInterp
+            isEmptyCycle
+            isEmptyCycleIh
+            inCycle
+            (Cause.SatisfiesBoundVars.union
+              satisfiesBounds.satWithBound
+              (Cause.SatisfiesBoundVars.bWithBoundsSatBoundVars
+                theInternalWfm
+                (⟨dX, x⟩ :: boundVars)))
+            isCauseBody
+        
+        isInappOfInappArbUn isInapp
       |
         Expr.Ir x body =>
-        sorry
+        let isInappIh :=
+          isEmptyCycleIh
+            inCycle
+            (InwExternal.causeArbIr boundVars x body d)
+            (InwExternal.isCauseArbIr boundVars x body d)
+        
+        let ⟨dX, inCycle⟩: ∃ dX, _ :=
+          match isInappIh with
+          | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
+            let out := Out.intro externalCycle isEmptyCycle inCycle
+            out.nopeDef (xEq ▸ (insExprEncoding isExpr))
+          | blockedCins (Or.inr (Or.inl ⟨xEq, dEq⟩)) inCycle =>
+            let out := Out.intro externalCycle isEmptyCycle inCycle
+            out.nopeDef (xEq ▸ (insNatEncoding dEq))
+          | blockedCins (Or.inr (Or.inr ⟨d, xEq, dEq⟩)) inCycle => ⟨
+            d,
+            xEq ▸ dEq ▸ inCycle,
+          ⟩
+        
+        let isInapp :=
+          allInternalInapplicableInterp
+            isEmptyCycle
+            isEmptyCycleIh
+            inCycle
+            satisfiesBounds.satWithBound
+            (isCause.elimArbIr dX)
+        
+        isInappOfInappArbIr isInapp
     
     def allInternalInapplicableTheSet
       (isEmptyCycle: IsEmptyCycle externalCycle)
@@ -716,11 +924,12 @@ namespace Pair
       match isInapp with
       | blockedCins (Or.inl ⟨xEq, dNat⟩) inCycle =>
         let out := Out.intro externalCycle isEmptyCycle inCycle
-        out.nopePos (xEq ▸ (insNatEncoding dNat).toPos)
+        out.nopeDef (xEq ▸ (insNatEncoding dNat))
       | blockedCins (Or.inr (Or.inl ⟨xEq, dDlExpr⟩)) inCycle =>
         let out := Out.intro externalCycle isEmptyCycle inCycle
-        out.nopePos (xEq ▸ (insTheDefListExpr dDlExpr).toPos)
+        out.nopeDef (xEq ▸ (insTheDefListExpr dDlExpr))
       | blockedCins (Or.inr (Or.inr ⟨xEq, dEq⟩)) inCycle =>
+        Cause.exceptBoundVars.eqEmpty internalCause ▸
         allInternalInapplicableInterp
           (boundVars := [])
           isEmptyCycle
@@ -739,15 +948,66 @@ namespace Pair
       if hInterp: x = uniDefList.interpretation then
         MotiveOut.interp
           hInterp
-          fun boundVars expr _dd dEq isPos =>
-            sorry
+          fun boundVars _expr _dd dEq isPos =>
+            let isInapp :=
+              allInternalInapplicableInterp
+                isEmptyCycle
+                isEmptyCycleIh
+                (hInterp ▸ dEq ▸ inCycle)
+                (Cause.SatisfiesBoundVars.withBoundsSatBoundVars
+                  boundVars theInternalWfm)
+                (IsWeakCause.ofValPos isPos)
+            
+            open IsCauseInappExtended in
+            match isInapp with
+            | @cinsFailsCycle
+              _ _ _ _ _ d x ⟨inCins, ninBounds⟩ inCycle
+            =>
+              let eqOfFree := Valuation.withBoundVars.eqOrigOfIsFree
+              let isPos: (theInternalWfm x).posMem d :=
+                eqOfFree theInternalWfm ninBounds ▸ inCins
+              
+              let out :=
+                Out.intro4
+                  (salg := pairSalgebra)
+                  (internalOfExternalCycle externalCycle)
+                  (fun inCycle _ isCause =>
+                    allInternalInapplicableTheSet
+                      isEmptyCycle
+                      isEmptyCycleIh
+                      inCycle
+                      isCause)
+                  inCycle
+              
+              out.nopePos isPos
+            | @cinsFailsOut
+              _ _ _ _ _ d x ⟨inCins, ninBounds⟩ out
+            =>
+              let eqOfFree := Valuation.withBoundVars.eqOrigOfIsFree
+              let isPos: (theInternalWfm x).posMem d :=
+                eqOfFree theInternalWfm ninBounds ▸ inCins
+              out.nopePos isPos
+            | @binsFails
+              _ _ _ _ _ d x ⟨inBins, ninBounds⟩ out
+            =>
+              let eqOfFree := Valuation.withBoundVars.eqOrigOfIsFree
+              let isPos: (theInternalWfm x).posMem d :=
+                eqOfFree theInternalWfm ninBounds ▸ inBins
+              out.nopePos isPos
+            | @boutFails
+              _ _ _ _ _ d x ⟨inBout, ninBounds⟩ ins
+            =>
+              let eqOfFree := Valuation.withBoundVars.eqOrigOfIsFree
+              let isNotDef: ¬ (theInternalWfm x).defMem d :=
+                eqOfFree theInternalWfm ninBounds ▸ inBout
+              ins.nopeNotDef isNotDef
       else if hSet: x = uniDefList.theSet then
         MotiveOut.theSet
           hSet
-          fun dd xx dEq =>
+          fun _dd _xx dEq =>
             Out.intro4
               (internalOfExternalCycle externalCycle)
-              (fun inCycle cause isCause =>
+              (fun inCycle _cause isCause =>
                 allInternalInapplicableTheSet
                   isEmptyCycle
                   isEmptyCycleIh

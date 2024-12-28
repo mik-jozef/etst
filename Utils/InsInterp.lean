@@ -526,77 +526,77 @@ def InsInterp.arbUn
       (insFinUn
         interpretationInExprList.arbUn
         (insUnDom
-        (insNatEncoding
-          (fromNat.isNatEncoding x))
-        (insUnDom
-          (insExprEncoding
-            (exprToEncoding body).property)
-          (insArbUn
-            (boundVarsEncoding
-              boundVars)
-            (insPair
-              insBound
+          (insNatEncoding
+            (fromNat.isNatEncoding x))
+          (insUnDom
+            (insExprEncoding
+              (exprToEncoding body).property)
+            (insArbUn
+              (boundVarsEncoding
+                boundVars)
               (insPair
+                insBound
                 (insPair
-                  (insNatExpr _ _ _)
                   (insPair
-                    (insFree
-                      (insFree
-                        insBound
-                        nat501Neq500)
-                      nat502Neq500)
-                    (insFree
-                      insBound
-                      nat502Neq501)))
-                (insArbUn
-                  dX
-                  (insCallExpr
-                    (insCallExpr
+                    (insNatExpr _ _ _)
+                    (insPair
                       (insFree
                         (insFree
-                          (insFree
-                            (insFree
-                              (insFree
-                                (insFree
-                                  insBody.isSound
-                                  nat500NeqInterpretation)
-                                nat501NeqInterpretation)
-                              nat502NeqInterpretation)
-                            nat503NeqInterpretation)
-                          nat504NeqInterpretation)
-                        nat505NeqInterpretation)
-                      (insPair
-                        (insPair
+                          insBound
+                          nat501Neq500)
+                        nat502Neq500)
+                      (insFree
+                        insBound
+                        nat502Neq501)))
+                  (insArbUn
+                    dX
+                    (insCallExpr
+                      (insCallExpr
+                        (insFree
                           (insFree
                             (insFree
                               (insFree
                                 (insFree
                                   (insFree
-                                    insBound
-                                    nat501Neq500)
-                                  nat502Neq500)
-                                nat503Neq500)
-                              nat504Neq500)
-                            nat505Neq500)
+                                    insBody.isSound
+                                    nat500NeqInterpretation)
+                                  nat501NeqInterpretation)
+                                nat502NeqInterpretation)
+                              nat503NeqInterpretation)
+                            nat504NeqInterpretation)
+                          nat505NeqInterpretation)
+                        (insPair
+                          (insPair
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    (insFree
+                                      insBound
+                                      nat501Neq500)
+                                    nat502Neq500)
+                                  nat503Neq500)
+                                nat504Neq500)
+                              nat505Neq500)
+                            (insFree
+                              (insFree
+                                insBound
+                                nat504Neq503)
+                              nat505Neq503))
                           (insFree
                             (insFree
-                              insBound
-                              nat504Neq503)
-                            nat505Neq503))
-                        (insFree
-                          (insFree
-                            (insFree
-                              insBound
-                              nat503Neq502)
-                            nat504Neq502)
-                          nat505Neq502)))
-                    (insFree
+                              (insFree
+                                insBound
+                                nat503Neq502)
+                              nat504Neq502)
+                            nat505Neq502)))
                       (insFree
                         (insFree
-                          insBound
-                          nat502Neq501)
-                        nat503Neq501)
-                      nat504Neq501))))))))))
+                          (insFree
+                            insBound
+                            nat502Neq501)
+                          nat503Neq501)
+                        nat504Neq501))))))))))
 
 def InsInterp.arbIr
   (insBody:

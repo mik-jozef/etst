@@ -28,7 +28,7 @@ def Cause.IsWeaklySatisfiedBy.toSubcause
 def Cause.IsWeaklySatisfiedBy.exceptToWithBound
   {cause: Cause D}
   {x: Nat}
-  (isSat: (cause.exceptX x).IsWeaklySatisfiedBy b c)
+  (isSat: (cause.exceptVar x).IsWeaklySatisfiedBy b c)
   (d: D)
 :
   (cause.withBound x d).IsWeaklySatisfiedBy
@@ -66,7 +66,6 @@ def Cause.IsWeaklySatisfiedBy.exceptToWithBound
 
 def Cause.IsWeaklySatisfiedBy.toWithBound
   {cause: Cause D}
-  {x: Nat}
   (isSat: cause.IsWeaklySatisfiedBy b c)
   (d: D)
 :
@@ -74,7 +73,38 @@ def Cause.IsWeaklySatisfiedBy.toWithBound
     (b.update x d)
     (c.update x d)
 :=
-  (isSat.ofSuper (cause.exceptXIsSub x)).exceptToWithBound d
+  (isSat.ofSuper (cause.exceptVarIsSub x)).exceptToWithBound d
+
+def Cause.IsWeaklySatisfiedBy.updateSet3SatOfSatWithBound
+  {cause: Cause D}
+  (isSat: (cause.withBound x dX).IsWeaklySatisfiedBy b c)
+:
+  cause.IsWeaklySatisfiedBy
+    (b.updateSet3 x Set3.undetermined)
+    (c.updateSet3 x Set3.undetermined)
+:= {
+  contextInsHold :=
+    fun {_dd xx} inCins =>
+      if h: x = xx then
+        Valuation.updateSet3.eqBoundOfEq c h _ ▸ trivial
+      else
+        Valuation.updateSet3.eqOrig c h _ ▸
+        isSat.contextInsHold (Or.inl ⟨inCins, Ne.symm h⟩)
+  backgroundInsHold :=
+    fun {_dd xx} inBins =>
+      if h: x = xx then
+        Valuation.updateSet3.eqBoundOfEq b h _ ▸ trivial
+      else
+        Valuation.updateSet3.eqOrig b h _ ▸
+        isSat.backgroundInsHold (Or.inl ⟨inBins, Ne.symm h⟩)
+  backgroundOutHold :=
+    fun {_dd xx} inBout =>
+      if h: x = xx then
+        Valuation.updateSet3.eqBoundOfEq b h _ ▸ nofun
+      else
+        Valuation.updateSet3.eqOrig b h _ ▸
+        isSat.backgroundOutHold (Or.inl ⟨inBout, Ne.symm h⟩)
+}
 
 def Cause.isWeaklySatByUndetermined
   (cause: Cause D)
@@ -183,7 +213,6 @@ def Cause.closestWeakSatValIsSat
     fun inBout ⟨_, ninBout⟩ => ninBout inBout
 }
 
-
 def Cause.leClosestOfSatUnionB
   (isSat:
     Cause.IsWeaklySatisfiedBy
@@ -193,8 +222,7 @@ def Cause.leClosestOfSatUnionB
 :
   b ⊑ cause.closestWeakSatVal v
 :=
-  fun _ =>
-  {
+  fun _ => {
     defLe :=
       fun _ isDef =>
         byContradiction fun notDefClosest =>
@@ -205,6 +233,57 @@ def Cause.leClosestOfSatUnionB
     posLe :=
       fun _ => isSat.backgroundInsHold ∘ Or.symm
   }
+
+def Cause.leClosestOfSatUnionBUpdated
+  {cause: Cause D}
+  (isSat:
+    Cause.IsWeaklySatisfiedBy
+      (Cause.union
+        (cause.withBound x dX)
+        (Cause.ofValPos (v.update x dX) Valuation.empty))
+      b
+      c)
+:
+  b ⊑ (cause.closestWeakSatVal v).update x dX
+:=
+  fun xx =>
+    if h: x = xx then
+      Valuation.update.eqBoundOfEq _ h dX ▸
+      {
+        defLe :=
+          fun _ isDef =>
+            byContradiction fun neq =>
+              (isSat.elimUnL.backgroundOutHold
+                (Or.inr ⟨neq, h.symm⟩)
+                isDef)
+        posLe :=
+          fun _ dEq =>
+            isSat.elimUnL.backgroundInsHold (Or.inr ⟨dEq, h.symm⟩)
+      }
+    else
+      Valuation.update.eqOrig _ h dX ▸
+      {
+        defLe :=
+          fun _ isDef =>
+            byContradiction fun notDefClosest =>
+              let inBout :=
+                notDefClosest.toOr.elim
+                  (fun notDef =>
+                    show _ ∨ ¬ (v.update x dX xx).defMem _ from
+                    Valuation.update.eqOrig v h dX ▸
+                    Or.inr notDef)
+                  (fun inBout =>
+                    Or.inl (Or.inl ⟨inBout.dne, Ne.symm h⟩))
+              isSat.backgroundOutHold inBout isDef
+        posLe :=
+          fun _ => isSat.backgroundInsHold ∘ fun isPosClosest =>
+            isPosClosest.elim
+              (fun isPos =>
+                let isPosUpdated: (v.update x dX xx).posMem _ :=
+                  Valuation.update.eqOrig v h dX ▸ isPos
+                Or.inr isPosUpdated)
+              (fun inBins => Or.inl (Or.inl ⟨inBins, Ne.symm h⟩))
+      }
 
 
 namespace IsWeakCause
@@ -622,33 +701,9 @@ namespace IsWeakCause
     {cause: Cause salg.D}
     (isCause: IsWeakCause salg (cause.withBound x dX) d body)
   :
-    IsWeakCause salg (cause.exceptX x) d (Expr.Un x body)
+    IsWeakCause salg (cause.exceptVar x) d (Expr.Un x body)
   :=
     fun isSat => ⟨dX, isCause (isSat.exceptToWithBound dX)⟩
-  
-  -- def elimArbUn
-  -- TODO
-  
-  
-  def arbIr
-    {salg: Salgebra sig}
-    {cause: Cause salg.D}
-    {d: salg.D}
-    
-    (isCause: ∀ dX, IsWeakCause salg (cause.withBound x dX) d body)
-  :
-    IsWeakCause salg (cause.exceptX x) d (Expr.Ir x body)
-  :=
-    fun isSat dX => isCause dX (isSat.exceptToWithBound dX)
-  
-  
-  def toSuperCause
-    (isCause: IsWeakCause salg cause d expr)
-    (le: cause ⊆ causeSuper)
-  :
-    IsWeakCause salg causeSuper d expr
-  :=
-    fun isSat => isCause (isSat.ofSuper le)
   
   def arbUnOf
     {causes: salg.D → Cause _}
@@ -657,7 +712,7 @@ namespace IsWeakCause
   :
     IsWeakCause
       salg
-      (Cause.arbUn fun dX => (causes dX).exceptX x)
+      (Cause.arbUn fun dX => (causes dX).exceptVar x)
       d
       (Expr.Ir x body)
   :=
@@ -687,6 +742,118 @@ namespace IsWeakCause
                 Or.inr)
       }
   
+  def elimArbUn
+    (isCause: IsWeakCause salg cause d (Expr.Un x body))
+    (v: Valuation salg.D)
+  :
+    ∃ dX,
+      IsWeakCause
+        salg
+        ((cause.withBound x dX).union
+          (Cause.ofValPos (v.update x dX) Valuation.empty))
+        d
+        body
+:=
+  let ⟨dX, isPos⟩ := isCause (cause.closestWeakSatValIsSat v)
+  
+  ⟨
+    dX,
+    fun isSat =>
+      Expr.interpretation.isMonotonic.apxPosMem
+        (Cause.leClosestOfSatUnionBUpdated isSat)
+        (fun xx dd inCinsUpdated =>
+          if h: x = xx then
+            let dEq: dd ∈ (Set3.just dX).posMem :=
+              Valuation.update.eqBoundOfEq _ h dX ▸
+              inCinsUpdated
+            isSat.contextInsHold (Or.inl (Or.inr ⟨dEq, h.symm⟩))
+          else
+            let inCins: (cause.leastContextStd xx).posMem dd :=
+              Valuation.update.eqOrig (cause.leastContextStd) h dX ▸
+              inCinsUpdated
+            isSat.contextInsHold
+              (Or.inl (Or.inl ⟨inCins, Ne.symm h⟩)))
+        isPos
+  ⟩
+  
+  
+  def arbIr
+    {salg: Salgebra sig}
+    {cause: Cause salg.D}
+    {d: salg.D}
+    
+    (isCause: ∀ dX, IsWeakCause salg (cause.withBound x dX) d body)
+  :
+    IsWeakCause salg (cause.exceptVar x) d (Expr.Ir x body)
+  :=
+    fun isSat dX => isCause dX (isSat.exceptToWithBound dX)
+  
+  def elimArbIr
+    (isCause: IsWeakCause salg cause d (Expr.Ir x body))
+  :
+    ∀ dX, IsWeakCause salg (cause.withBound x dX) d body
+  :=
+    fun dX b c isSat =>
+      let bLe:
+        b ⊑ (b.updateSet3 x Set3.undetermined).update x dX
+      :=
+        fun xx =>
+          {
+            defLe :=
+              fun _ isDef =>
+                if h: x = xx then
+                  Valuation.update.eqBoundOfEq _ h dX ▸
+                  byContradiction fun neq =>
+                    isSat.backgroundOutHold
+                      (Or.inr ⟨neq, rfl⟩)
+                      (h ▸ isDef)
+                else
+                  Valuation.update.eqOrig _ h dX ▸
+                  Valuation.updateSet3.eqOrig _ h _ ▸
+                  isDef
+            posLe :=
+              fun _ isPosUpdated =>
+                if h: x = xx then
+                  let dEq: (Set3.just dX).posMem _ :=
+                    Valuation.update.eqBoundOfEq _ h dX ▸
+                    isPosUpdated
+                  isSat.backgroundInsHold
+                    (Or.inr ⟨dEq, h.symm⟩)
+                else
+                  Valuation.updateSet3.eqOrig b h _ ▸
+                  Valuation.update.eqOrig _ h dX ▸
+                  isPosUpdated
+          }
+      
+      let cLe xx:
+        ((c.updateSet3 x Set3.undetermined).update x dX xx).posMem
+          ⊆
+        (c xx).posMem
+      :=
+        fun dd inCinsUpdated =>
+          if h: x = xx then
+            let dEq: dd ∈ (Set3.just dX).posMem :=
+              Valuation.update.eqBoundOfEq _ h dX ▸
+              inCinsUpdated
+            isSat.contextInsHold (Or.inr ⟨dEq, h.symm⟩)
+          else
+            Valuation.updateSet3.eqOrig c h _ ▸
+            Valuation.update.eqOrig _ h dX ▸
+            inCinsUpdated
+      
+      Expr.interpretation.isMonotonic.apxPosMem
+        bLe
+        cLe
+        (isCause isSat.updateSet3SatOfSatWithBound dX)
+  
+  
+  def toSuperCause
+    (isCause: IsWeakCause salg cause d expr)
+    (le: cause ⊆ causeSuper)
+  :
+    IsWeakCause salg causeSuper d expr
+  :=
+    fun isSat => isCause (isSat.ofSuper le)
   
   def toEmptyCinsCpl
     (isCause: IsWeakCause salg cause d (Expr.cpl expr))

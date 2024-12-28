@@ -726,6 +726,15 @@ namespace Set
       ⟩
     
   end HasListOfAll
+  
+  -- Equality from Iff with a hidden (implicit) parameter.
+  def eqIffH
+    {A B: X → Prop}
+    (iff: {x: X} → Iff (A x) (B x))
+  :
+    A = B
+  :=
+    funext fun _ => propext iff
 end Set
 
 def Nat.imageNotFiniteOfInjecive
