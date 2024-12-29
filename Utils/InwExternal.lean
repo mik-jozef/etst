@@ -216,23 +216,42 @@ namespace InwExternal
       backgroundOut := Set.empty
     }
   
+  def setInterp
+    (boundVars: List (ValVar Pair))
+    (expr: Expr)
+    (d: Pair)
+  :
+    Set (ValVar Pair)
+  :=
+    let bvEnc := boundVarsEncoding boundVars
+    fun ⟨dC, xC⟩ =>
+      And
+        (xC = uniDefList.interpretation)
+        (dC = pair bvEnc (pair (exprToEncoding expr) d))
+  
   def causeInterp
     (boundVars: List (ValVar Pair))
     (expr: Expr)
     (d: Pair)
   :
     Cause Pair
-  :=
-    let bvEnc := boundVarsEncoding boundVars
-    {
-      contextIns :=
-        fun ⟨dC, xC⟩ =>
-          And
-            (xC = uniDefList.interpretation)
-            (dC = pair bvEnc (pair (exprToEncoding expr) d))
-      backgroundIns := Set.empty
-      backgroundOut := Set.empty
-    }
+  := {
+    contextIns := setInterp boundVars expr d
+    backgroundIns := Set.empty
+    backgroundOut := Set.empty
+  }
+  
+  def causeInterpBout
+    (boundVars: List (ValVar Pair))
+    (expr: Expr)
+    (d: Pair)
+  :
+    Cause Pair
+  := {
+    contextIns := Set.empty
+    backgroundIns := Set.empty
+    backgroundOut := setInterp boundVars expr d
+  }
   
   def causePair
     (boundVars: List (ValVar Pair))
@@ -266,6 +285,15 @@ namespace InwExternal
       (Cause.union
         (causeInterp boundVars left d)
         (causeInterp boundVars rite d))
+  
+  def causeCpl
+    (boundVars: List (ValVar Pair))
+    (expr: Expr)
+    (d: Pair)
+  :
+    Cause Pair
+  :=
+    causeExpr.union (causeInterpBout boundVars expr d)
   
   def causeArbUn
     (boundVars: List (ValVar Pair))
@@ -637,6 +665,50 @@ namespace InwExternal
                           inwBound
                           nat502Neq501)
                         nat503Neq501))))))))
+  
+  def isCauseCpl
+    (boundVars: List (ValVar Pair))
+    (expr: Expr)
+    (d: Pair)
+  :
+    IsWeakCause
+      pairSalgebra
+      (causeCpl boundVars expr d)
+      (pair
+        (boundVarsEncoding boundVars)
+        (pair
+          (exprToEncoding (Expr.cpl expr))
+          d))
+      (theExternalDefList.getDef uniDefList.interpretation)
+  :=
+    fun isSat =>
+      let isExprEnc := (exprToEncoding expr).property
+      let inCinsExpr := Or.inl ⟨rfl, isExprEnc⟩
+      let inwExpr := isSat.contextInsHold inCinsExpr
+      
+      let inBoutExpr := Or.inr ⟨rfl, rfl⟩
+      let ninsExpr := isSat.backgroundOutHold inBoutExpr
+      
+      inwFinUn
+        (interpretationInExprList.exprCpl)
+        (inwUnDom
+          inwExpr
+          (inwArbUn
+            (boundVarsEncoding
+              boundVars)
+            (inwPair
+              inwBound
+              (inwPair
+                (inwPair
+                  (inwNatExpr _ _ _)
+                  (inwFree
+                    inwBound
+                    nat502Neq500))
+                (inwCpl _
+                  fun ins =>
+                    let ins := insCallElimBound ins rfl nat503Neq500
+                    let ins := insCallElimBound ins rfl nat504Neq502
+                    ninsExpr ins)))))
   
   def isCauseArbUn
     (boundVars: List (ValVar Pair))

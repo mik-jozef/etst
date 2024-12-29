@@ -419,7 +419,6 @@ inductive Cause.IsInapplicable
   IsInapplicable cause outSet b
 
 | blockedBackgroundOut
-  {d x}
   (inBout: ⟨d, x⟩ ∈ cause.backgroundOut)
   (isIns: (b x).defMem d)
 :

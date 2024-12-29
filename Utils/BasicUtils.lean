@@ -49,6 +49,9 @@ def Not.dne {P: Prop} (h: ¬¬P): P :=
     (fun p: P => p)
     (fun np: ¬P => absurd np h)
 
+def Not.dni {P: Prop} (h: P): ¬¬P :=
+  fun np => np h
+
 
 instance Set.ord: PartialOrder (Set D) where
   le (a: Set D) (b: Set D): Prop := ∀ d: D, d ∈ a → d ∈ b
