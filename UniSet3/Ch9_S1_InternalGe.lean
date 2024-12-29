@@ -460,7 +460,7 @@ namespace Pair
       MotiveInapplicable externalCycle externalCause
     
     
-    def isInappOfInappUn
+    def isInappOfInappUnOrIfThen
       {internalCause: Cause Pair}
       (isInapp:
         IsCauseInappExtended
@@ -472,7 +472,7 @@ namespace Pair
               (Cause.ofValPos
                 (theInternalWfm.withBoundVars boundVars)
                 Valuation.empty))
-              boundVars))
+            boundVars))
     :
       IsCauseInappExtended
         pairSalgebra
@@ -488,6 +488,8 @@ namespace Pair
         cinsFailsOut ⟨inCins, ninBounds⟩ out
       | binsFails ⟨Or.inl inBins, ninBounds⟩ out =>
         binsFails ⟨inBins, ninBounds⟩ out
+      | boutFails ⟨Or.inl inBout, ninBounds⟩ ins =>
+        boutFails ⟨inBout, ninBounds⟩ ins
       | @binsFails
         _ _ _ _ _ dd xx ⟨Or.inr inBins, ninBounds⟩ out
       =>
@@ -497,8 +499,6 @@ namespace Pair
         let inBins: (theInternalWfm xx).posMem dd :=
           eqAtXx ▸ inBins
         out.nopePos inBins
-      | boutFails ⟨Or.inl inBout, ninBounds⟩ ins =>
-        boutFails ⟨inBout, ninBounds⟩ ins
       | @boutFails
         _ _ _ _ _ dd xx ⟨Or.inr inBout, ninBounds⟩ ins
       =>
@@ -854,7 +854,7 @@ namespace Pair
                     _ boundVars))
                 isCauseR
         
-        isInappOfInappUn isInapp
+        isInappOfInappUnOrIfThen isInapp
       |
         Expr.ir left rite =>
         let ⟨isCauseL, isCauseR⟩ := isCause.elimIr
@@ -904,7 +904,7 @@ namespace Pair
           | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
             let out := Out.intro externalCycle isEmptyCycle inCycle
             out.nopeDef (xEq ▸ (insExprEncoding isExpr))
-          | blockedBout (Or.inr ⟨xEq, dEq⟩) _ (interp _ toIsDef) =>
+          | blockedBout (Or.inr ⟨_, dEq⟩) _ (interp _ toIsDef) =>
             toIsDef boundVars expr d dEq
         
         let causeInapp :=
@@ -915,7 +915,44 @@ namespace Pair
         isInappOfInappCpl satisfiesBounds causeInapp
       |
         Expr.ifThen cond expr =>
-        sorry
+        let ⟨⟨dC, isCauseCond⟩, isCauseBody⟩ :=
+          isCause.elimIfThen updatedInternalWfm
+        
+        let isInappIh :=
+          isEmptyCycleIh
+            inCycle
+            (InwExternal.causeIfThen boundVars dC cond expr d)
+            (InwExternal.isCauseIfThen boundVars dC cond expr d)
+        
+        let inCycleCondOrBody :=
+          match isInappIh with
+          | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
+            let out := Out.intro externalCycle isEmptyCycle inCycle
+            out.nopeDef (xEq ▸ (insExprEncoding isExpr))
+          | blockedCins (Or.inr (Or.inl ⟨xEq, dEq⟩)) inCycle =>
+            Or.inl (xEq ▸ dEq ▸ inCycle)
+          | blockedCins (Or.inr (Or.inr ⟨xEq, dEq⟩)) inCycle =>
+            Or.inr (xEq ▸ dEq ▸ inCycle)
+        
+        inCycleCondOrBody.elim
+          (fun inCycleCond =>
+            let isInapp :=
+              allInternalInapplicableInterp
+                isEmptyCycle
+                isEmptyCycleIh
+                inCycleCond
+                (satisfiesBounds.union
+                  (Cause.SatisfiesBoundVars.bWithBoundsSatBoundVars
+                    _ boundVars))
+                isCauseCond
+            isInappOfInappUnOrIfThen isInapp)
+          (fun inCycleBody =>
+            allInternalInapplicableInterp
+              isEmptyCycle
+              isEmptyCycleIh
+              inCycleBody
+              satisfiesBounds
+              isCauseBody)
       |
         Expr.Un x body =>
         let ⟨dX, isCauseBody⟩ :=
@@ -959,7 +996,7 @@ namespace Pair
             (InwExternal.causeArbIr boundVars x body d)
             (InwExternal.isCauseArbIr boundVars x body d)
         
-        let ⟨dX, inCycle⟩: ∃ dX, _ :=
+        let ⟨dX, inCycle⟩: ∃ _, _ :=
           match isInappIh with
           | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
             let out := Out.intro externalCycle isEmptyCycle inCycle

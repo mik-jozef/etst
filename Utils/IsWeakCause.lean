@@ -669,8 +669,24 @@ namespace IsWeakCause
         ⟨dC, (isCauseCond isSat)⟩
         (isCauseBody isSat)
   
-  -- def elimIfThenCond
-  -- TODO
+  def elimIfThenCond
+    {cond}
+    (isCause: IsWeakCause salg cause d (Expr.ifThen cond body))
+    (v: Valuation salg.D)
+  :
+    let extCause := cause.union (Cause.ofValPos v Valuation.empty)
+    ∃ dC, IsWeakCause salg extCause dC cond
+  :=
+    let ⟨⟨dC, isPosCond⟩, _⟩ :=
+      isCause (cause.closestWeakSatValIsSat v)
+    ⟨
+      dC,
+      fun isSat =>
+        Expr.interpretation.isMonotonic.apxPosMem
+          (cause.leClosestOfSatUnionB isSat)
+          (fun _ _ => isSat.contextInsHold ∘ Or.inl)
+          isPosCond
+    ⟩
   
   def elimIfThenBody
     {cond}
@@ -679,6 +695,21 @@ namespace IsWeakCause
     IsWeakCause salg cause d body
   :=
     fun isSat => (isCause isSat).right
+  
+  def elimIfThen
+    {cond}
+    (isCause: IsWeakCause salg cause d (Expr.ifThen cond body))
+    (v: Valuation salg.D)
+  :
+    let extCause := cause.union (Cause.ofValPos v Valuation.empty)
+    And
+      (∃ dC, IsWeakCause salg extCause dC cond)
+      (IsWeakCause salg cause d body)
+  :=
+    And.intro
+      (elimIfThenCond isCause v)
+      (elimIfThenBody isCause)
+      
   
   def Not.elimIfThen
     {cond}
