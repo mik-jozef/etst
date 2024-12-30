@@ -36,11 +36,11 @@ def Expr.IsFreeVar.boundNotFree
       isFreeVar.elim
         (boundNotFree _ isBound)
         (boundNotFree _ isBound)
-    | Un xUn body =>
+    | arbUn xUn body =>
       let xIn: x ∈ boundVarsUpdated xUn := Or.inl isBound
       
       boundNotFree body xIn isFreeVar
-    | Ir xUn body =>
+    | arbIr xUn body =>
       let xIn: x ∈ boundVarsUpdated xUn := Or.inl isBound
       
       boundNotFree body xIn isFreeVar
@@ -54,7 +54,7 @@ def Expr.IsFreeVar.getBoundVars
   boundVars
 
 def Expr.IsFreeVar.nopeFreeInUn
-  (isFreeVar: x ∈ (Expr.Un x body).IsFreeVar boundVars)
+  (isFreeVar: x ∈ (arbUn x body).IsFreeVar boundVars)
 :
   P
 :=
@@ -113,7 +113,7 @@ def Expr.IsFreeVar.toOtherBounds
           (fun ifvR =>
             Or.inr (elimInB (toOtherBounds ifvR boundVarsOther))))
     
-    | Un xUn body =>
+    | arbUn xUn body =>
       let ifvBody:
         body.IsFreeVar (fun v => v ∈ boundVars ∨ v = xUn) x
       :=
@@ -131,7 +131,7 @@ def Expr.IsFreeVar.toOtherBounds
             (fun inOther => Or.inr (elimInB (Or.inl inOther)))
             (fun eq => nopeFreeInUn (eq ▸ isFreeVar)))
     
-    | Ir xUn body =>
+    | arbIr xUn body =>
       let ifvBody:
         body.IsFreeVar (fun v => v ∈ boundVars ∨ v = xUn) x
       :=
@@ -256,7 +256,7 @@ def Expr.IsFreeVar.arbUn
   {body: Expr sig}
   (isFreeVar: xf ∈ body.IsFreeVar boundVars)
 :
-  xf ∈ IsFreeVar (Un x body) boundVars ∨ xf = x
+  xf ∈ IsFreeVar (arbUn x body) boundVars ∨ xf = x
 :=
   if eq: xf = x then
     Or.inr eq

@@ -18,7 +18,7 @@ import WFC.Ch5_PairSalgebra
 
 namespace Expr
   -- `anyExpr` contains all elements, under any valuation.
-  def anyExpr: Expr sig := Expr.Un 0 0
+  def anyExpr: Expr sig := Expr.arbUn 0 0
   -- `noneExpr` contains no elements, under any valuation.
   def noneExpr: Expr sig := Expr.cpl anyExpr
   
@@ -34,7 +34,7 @@ namespace Expr
     variable) in `domain`.
   -/
   def unionExpr (x: Nat) (domain body: Expr sig): Expr sig :=
-    Expr.Un x (Expr.ifThen (Expr.ir x domain) body)
+    Expr.arbUn x (Expr.ifThen (Expr.ir x domain) body)
   
   /-
     `irsecExpr x domain body` is "syntactic sugar" that represents
@@ -48,7 +48,7 @@ namespace Expr
     variable) in `domain`.
   -/
   def irsecExpr (x: Nat) (domain body: Expr sig): Expr sig :=
-    Expr.Ir
+    Expr.arbIr
       x
       (Expr.un
         body
@@ -168,7 +168,7 @@ namespace Expr
     dBound
     (s: Ins salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Ins salg b c (Expr.Un x body) d
+    Ins salg b c (Expr.arbUn x body) d
   :=
     ⟨dBound, s⟩
   
@@ -176,13 +176,13 @@ namespace Expr
     dBound
     (s: Inw salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Inw salg b c (Expr.Un x body) d
+    Inw salg b c (Expr.arbUn x body) d
   :=
     ⟨dBound, s⟩
   
   
   def insArbUnElim
-    (s: Ins salg b c (Expr.Un x body) d)
+    (s: Ins salg b c (Expr.arbUn x body) d)
   :
     ∃ dBound,
       Ins salg (b.update x dBound) (c.update x dBound) body d
@@ -190,7 +190,7 @@ namespace Expr
     s
   
   def inwArbUnElim
-    (s: Inw salg b c (Expr.Un x body) d)
+    (s: Inw salg b c (Expr.arbUn x body) d)
   :
     ∃ dBound,
       Inw salg (b.update x dBound) (c.update x dBound) body d
@@ -206,7 +206,7 @@ namespace Expr
       ∀ dBound,
         Ins salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Ins salg b c (Expr.Ir x body) d
+    Ins salg b c (Expr.arbIr x body) d
   :=
     fun d => s d
   
@@ -218,13 +218,13 @@ namespace Expr
       ∀ dBound,
         Inw salg (b.update x dBound) (c.update x dBound) body d)
   :
-    Inw salg b c (Expr.Ir x body) d
+    Inw salg b c (Expr.arbIr x body) d
   :=
     fun d => s d
   
   
   def insArbIrElim
-    (s: Ins salg b c (Expr.Ir x body) d)
+    (s: Ins salg b c (Expr.arbIr x body) d)
     (dBound: salg.D)
   :
     Ins salg (b.update x dBound) (c.update x dBound) body d
@@ -232,7 +232,7 @@ namespace Expr
     s dBound
   
   def inwArbIrElim
-    (s: Inw salg b c (Expr.Ir x body) d)
+    (s: Inw salg b c (Expr.arbIr x body) d)
     (dBound: salg.D)
   :
     Inw salg (b.update x dBound) (c.update x dBound) body d

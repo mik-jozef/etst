@@ -732,7 +732,7 @@ namespace IsWeakCause
     {cause: Cause salg.D}
     (isCause: IsWeakCause salg (cause.withBound x dX) d body)
   :
-    IsWeakCause salg (cause.exceptVar x) d (Expr.Un x body)
+    IsWeakCause salg (cause.exceptVar x) d (Expr.arbUn x body)
   :=
     fun isSat => ⟨dX, isCause (isSat.exceptToWithBound dX)⟩
   
@@ -745,7 +745,7 @@ namespace IsWeakCause
       salg
       (Cause.arbUn fun dX => (causes dX).exceptVar x)
       d
-      (Expr.Ir x body)
+      (Expr.arbIr x body)
   :=
     fun isSat dX =>
       let isSatArbUn := isSat.toWithBound dX
@@ -774,7 +774,7 @@ namespace IsWeakCause
       }
   
   def elimArbUn
-    (isCause: IsWeakCause salg cause d (Expr.Un x body))
+    (isCause: IsWeakCause salg cause d (Expr.arbUn x body))
     (v: Valuation salg.D)
   :
     ∃ dX,
@@ -815,12 +815,12 @@ namespace IsWeakCause
     
     (isCause: ∀ dX, IsWeakCause salg (cause.withBound x dX) d body)
   :
-    IsWeakCause salg (cause.exceptVar x) d (Expr.Ir x body)
+    IsWeakCause salg (cause.exceptVar x) d (Expr.arbIr x body)
   :=
     fun isSat dX => isCause dX (isSat.exceptToWithBound dX)
   
   def elimArbIr
-    (isCause: IsWeakCause salg cause d (Expr.Ir x body))
+    (isCause: IsWeakCause salg cause d (Expr.arbIr x body))
   :
     ∀ dX, IsWeakCause salg (cause.withBound x dX) d body
   :=

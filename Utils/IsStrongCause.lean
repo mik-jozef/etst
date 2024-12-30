@@ -727,12 +727,12 @@ def IsStrongCause.arbUn
   {cause: Cause salg.D}
   (isCause: IsStrongCause salg (cause.withBound x dX) d body)
 :
-  IsStrongCause salg cause d (Expr.Un x body)
+  IsStrongCause salg cause d (Expr.arbUn x body)
 :=
   fun isSat => ⟨dX, isCause (isSat.withBound x dX)⟩
 
 def IsStrongCause.elimArbUn
-  (isCause: IsStrongCause salg cause d (Expr.Un x body))
+  (isCause: IsStrongCause salg cause d (Expr.arbUn x body))
   (isConsistent: cause.IsConsistent)
 :
   ∃ dX, IsStrongCause salg (cause.withBound x dX) d body
@@ -755,13 +755,13 @@ def IsStrongCause.notArbUn
   (notCause: ∀ dX, ¬ IsStrongCause salg (cause.withBound x dX) d body)
   (isConsistent: cause.IsConsistent)
 :
-  ¬ IsStrongCause salg cause d (Expr.Un x body)
+  ¬ IsStrongCause salg cause d (Expr.arbUn x body)
 :=
   fun isCause =>
     notCause _ (isCause.elimArbUn isConsistent).unwrap.property
 
 def IsStrongCause.Not.elimArbUn
-  (isNotCause: ¬ IsStrongCause salg cause d (Expr.Un x body))
+  (isNotCause: ¬ IsStrongCause salg cause d (Expr.arbUn x body))
   (dX: salg.D)
 :
   ¬ IsStrongCause salg (cause.withBound x dX) d body
@@ -777,12 +777,12 @@ def IsStrongCause.arbIr
   (isCause:
     ∀ dX, IsStrongCause salg (cause.withBound x dX) d body)
 :
-  IsStrongCause salg cause d (Expr.Ir x body)
+  IsStrongCause salg cause d (Expr.arbIr x body)
 :=
   fun isSat dX => isCause dX (isSat.withBound x dX)
 
 def IsStrongCause.elimArbIr
-  (isCause: IsStrongCause salg cause d (Expr.Ir x body))
+  (isCause: IsStrongCause salg cause d (Expr.arbIr x body))
   (isConsistent: cause.IsConsistent)
 :
   ∀ dX, IsStrongCause salg (cause.withBound x dX) d body
@@ -802,14 +802,14 @@ def IsStrongCause.notArbIr
   (notCause: ∃ dX, ¬ IsStrongCause salg (cause.withBound x dX) d body)
   (isConsistent: cause.IsConsistent)
 :
-  ¬ IsStrongCause salg cause d (Expr.Ir x body)
+  ¬ IsStrongCause salg cause d (Expr.arbIr x body)
 :=
   fun isCause =>
     let ⟨dX, notCause⟩ := notCause
     notCause (isCause.elimArbIr isConsistent dX)
 
 def IsStrongCause.Not.elimArbIr
-  (isNotCause: ¬ IsStrongCause salg cause d (Expr.Ir x body))
+  (isNotCause: ¬ IsStrongCause salg cause d (Expr.arbIr x body))
 :
   ∃ dX, ¬ IsStrongCause salg (cause.withBound x dX) d body
 :=

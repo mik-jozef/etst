@@ -46,7 +46,7 @@ namespace PairExpr
     `n` must not be a free variable in `expr`.
   -/
   def zthMember (n: Nat) (expr: Expr): Expr :=
-    Expr.Un n (Expr.ifThen (Expr.ir (pairExpr n anyExpr) expr) n)
+    Expr.arbUn n (Expr.ifThen (Expr.ir (pairExpr n anyExpr) expr) n)
   
   /-
     Let `expr` be an expression that represets a set of
@@ -57,7 +57,7 @@ namespace PairExpr
     `n` must not be a free variable in `expr`.
   -/
   def fstMember (n: Nat) (expr: Expr): Expr :=
-    Expr.Un n (Expr.ifThen (Expr.ir (pairExpr anyExpr n) expr) n)
+    Expr.arbUn n (Expr.ifThen (Expr.ir (pairExpr anyExpr n) expr) n)
   
   /-
     Let `fn` and `arg` be expressions that represent

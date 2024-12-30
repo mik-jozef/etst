@@ -755,7 +755,7 @@ namespace Pair
           cinsIns binsIns boutOut
         
         InsInterp.exprIfThen ihCond ihBody
-      | Un x body =>
+      | arbUn x body =>
         have: body.sizeOf < body.sizeOf + 1 :=
           Order.lt_succ_of_le (le_refl _)
         
@@ -784,7 +784,7 @@ namespace Pair
                 (IsBound.Not.notBoundTail notBound))
         
         InsInterp.arbUn dX ih
-      | Ir x body =>
+      | arbIr x body =>
         have: body.sizeOf < body.sizeOf + 1 :=
           Order.lt_succ_of_le (le_refl _)
         
@@ -1071,7 +1071,7 @@ namespace Pair
             (IsCauseInappExtended.Not.union
               isAppCond isAppBody isInappUnion)
       |
-        Un x body =>
+        arbUn x body =>
         let isLe: body.sizeOf < body.sizeOf + 1 :=
           Ordinal.lt_succ body.sizeOf
         let ⟨dX, inCins⟩ :=
@@ -1103,7 +1103,7 @@ namespace Pair
           (extOfIntCycleFull.interp
             (⟨dX, x⟩ :: boundVars) body isLe d allInapp)
       |
-        Ir x body =>
+        arbIr x body =>
         let isLe: body.sizeOf < body.sizeOf + 1 :=
           Ordinal.lt_succ body.sizeOf
         

@@ -519,7 +519,7 @@ def InsInterp.arbUn
   (insBody:
     InsInterp (⟨dX, x⟩ :: boundVars) d body)
 :
-  InsInterp boundVars d (Expr.Un x body)
+  InsInterp boundVars d (Expr.arbUn x body)
 :=
   Ins.isComplete _ _
     (insWfmDefToIns
@@ -603,7 +603,7 @@ def InsInterp.arbIr
     ∀ dX: Pair,
       InsInterp (⟨dX, x⟩ :: boundVars) d body)
 :
-  InsInterp boundVars d (Expr.Ir x body)
+  InsInterp boundVars d (Expr.arbIr x body)
 :=
   Ins.isComplete _ _
     (insWfmDefToIns

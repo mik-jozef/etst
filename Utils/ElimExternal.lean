@@ -1074,7 +1074,7 @@ def elimPosExternalArbUn
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.Un x body) d))
+      (InterpEnc boundVars (Expr.arbUn x body) d))
 :
   ∃ dX,
     Set3.posMem
@@ -1089,7 +1089,7 @@ def elimPosExternalArbUn
       b
       c
       uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.Un x body) d)
+      (InterpEnc boundVars (Expr.arbUn x body) d)
       _
       inw
       (nopePosInterpVar fun inw =>
@@ -1197,7 +1197,7 @@ def elimDefExternalArbUn
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.Un x body) d))
+      (InterpEnc boundVars (Expr.arbUn x body) d))
 :
   ∃ dX,
     Set3.defMem
@@ -1315,7 +1315,7 @@ def elimPosExternalArbIr
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.Ir x body) d))
+      (InterpEnc boundVars (Expr.arbIr x body) d))
 :
   ∀ dX,
     Set3.posMem
@@ -1331,7 +1331,7 @@ def elimPosExternalArbIr
       b
       c
       uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.Ir x body) d)
+      (InterpEnc boundVars (Expr.arbIr x body) d)
       _
       inw
       (nopePosInterpVar fun inw =>
@@ -1436,7 +1436,7 @@ def elimDefExternalArbIr
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.Ir x body) d))
+      (InterpEnc boundVars (Expr.arbIr x body) d))
 :
   ∀ dX,
     Set3.defMem

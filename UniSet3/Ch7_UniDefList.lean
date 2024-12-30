@@ -167,7 +167,7 @@ namespace Pair
           (pairExpr (fstMember 502 500) anyExpr))
     def pairDictLt.eqLeft: Expr :=
       unionExpr 500 pairDictLt
-        (Expr.Un 501
+        (Expr.arbUn 501
           (pairExpr
             (pairExpr 501 (zthMember 502 500))
             (pairExpr 501 (fstMember 502 500))))
@@ -210,7 +210,7 @@ namespace Pair
     -/
     def natLt: Nat := 12
     def natLt.expr: Expr :=
-      Expr.ir natLe (Expr.cpl (Expr.Un 500 (pairExpr 500 500)))
+      Expr.ir natLe (Expr.cpl (Expr.arbUn 500 (pairExpr 500 500)))
     
     /-
       Contains (a, b) if the pairs `a` and `b` have the same depth.
@@ -252,9 +252,9 @@ namespace Pair
     -/
     def defEncodingMinDist2: Nat := 16
     def defEncodingMinDist2.expr: Expr :=
-      Expr.Un 500
-        (Expr.Un 501
-          (Expr.Un 502
+      Expr.arbUn 500
+        (Expr.arbUn 501
+          (Expr.arbUn 502
             (Expr.ifThen
               (pairExpr
                 (Expr.ir defEncodingLt (pairExpr 500 501))
@@ -462,7 +462,7 @@ namespace Pair
     def arrayLength.expr: Expr :=
       Expr.un
         (pairExpr zeroExpr zeroExpr)
-        (Expr.Un 500
+        (Expr.arbUn 500
           (pairExpr
             (pairExpr anyExpr 500)
             (succExpr (callExpr 501 arrayLength 500))))
@@ -578,7 +578,7 @@ namespace Pair
     -/
     def getBound.baseExpr: Expr :=
       unionExpr 500 nat
-        (Expr.Un 501
+        (Expr.arbUn 501
           (pairExpr
             (pairExpr (pairExpr 500 501) anyExpr)
             (pairExpr 500 501)))
@@ -591,8 +591,8 @@ namespace Pair
     def getBound.expr: Expr :=
       Expr.un
         getBound.baseExpr
-        (Expr.Un 500
-          (Expr.Un 501
+        (Expr.arbUn 500
+          (Expr.arbUn 501
             (pairExpr
               (pairExpr
                 (pairExpr (Expr.cpl 500) anyExpr)
@@ -657,7 +657,7 @@ namespace Pair
     
     def interpretation.exprVar: Expr :=
       unionExpr 500 nat
-        (Expr.Un 501
+        (Expr.arbUn 501
           (pairExpr
             501
             (pairExpr
@@ -665,7 +665,7 @@ namespace Pair
               exprVarBoundOrFree)))
     
     def interpretation.exprZero: Expr :=
-      Expr.Un 501
+      Expr.arbUn 501
         (pairExpr
           501
           (pairExpr
@@ -675,7 +675,7 @@ namespace Pair
     def interpretation.exprPair: Expr :=
       unionExpr 500 exprEncoding
         (unionExpr 501 exprEncoding
-          (Expr.Un 502
+          (Expr.arbUn 502
             (pairExpr
               502
               (pairExpr
@@ -687,7 +687,7 @@ namespace Pair
     def interpretation.exprUnion: Expr :=
       unionExpr 500 exprEncoding
         (unionExpr 501 exprEncoding
-          (Expr.Un 502
+          (Expr.arbUn 502
             (pairExpr
               502
               (pairExpr
@@ -699,7 +699,7 @@ namespace Pair
     def interpretation.exprIntersection: Expr :=
       unionExpr 500 exprEncoding
         (unionExpr 501 exprEncoding
-          (Expr.Un 502
+          (Expr.arbUn 502
             (pairExpr
               502
               (pairExpr
@@ -710,7 +710,7 @@ namespace Pair
     
     def interpretation.exprCpl: Expr :=
       unionExpr 500 exprEncoding
-        (Expr.Un 502
+        (Expr.arbUn 502
           (pairExpr
             502
             (pairExpr
@@ -721,7 +721,7 @@ namespace Pair
     def interpretation.exprIfThen: Expr :=
       unionExpr 500 exprEncoding
         (unionExpr 501 exprEncoding
-          (Expr.Un 502
+          (Expr.arbUn 502
             (pairExpr
               502
               (pairExpr
@@ -733,12 +733,12 @@ namespace Pair
     def interpretation.exprArbUnion: Expr :=
       unionExpr 500 nat
         (unionExpr 501 exprEncoding
-          (Expr.Un 502
+          (Expr.arbUn 502
             (pairExpr
               502
               (pairExpr
                 (pairExpr (natExpr 7) (pairExpr 500 501))
-                (Expr.Un 503
+                (Expr.arbUn 503
                   (callExpr 504
                     (callExpr 505
                       interpretation
@@ -748,12 +748,12 @@ namespace Pair
     def interpretation.exprArbIntersection: Expr :=
       unionExpr 500 nat
         (unionExpr 501 exprEncoding
-          (Expr.Un 502
+          (Expr.arbUn 502
             (pairExpr
               502
               (pairExpr
                 (pairExpr (natExpr 8) (pairExpr 500 501))
-                (Expr.Ir 503
+                (Expr.arbIr 503
                   (callExpr 504
                     (callExpr 505
                       interpretation

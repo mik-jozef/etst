@@ -140,7 +140,7 @@ def Expr.interpretation.arbUnEqDef
   let interpretationBody dX :=
     interpretation salg (b.update x dX) (c.update x dX) body
   
-  (interpretation salg b c (Expr.Un x body)).defMem
+  (interpretation salg b c (arbUn x body)).defMem
     =
   (fun d => ∃ dX, d ∈ (interpretationBody dX).defMem)
 :=
@@ -155,7 +155,7 @@ def Expr.interpretation.arbUnEqPos
   let interpretationBody dX :=
     interpretation salg (b.update x dX) (c.update x dX) body
   
-  (interpretation salg b c (Expr.Un x body)).posMem
+  (interpretation salg b c (arbUn x body)).posMem
     =
   (fun d => ∃ dX, d ∈ (interpretationBody dX).posMem)
 :=
@@ -170,7 +170,7 @@ def Expr.interpretation.arbIrEqDef
   let interpretationBody dX :=
     interpretation salg (b.update x dX) (c.update x dX) body
   
-  (interpretation salg b c (Expr.Ir x body)).defMem
+  (interpretation salg b c (arbIr x body)).defMem
     =
   (fun d => ∀ dX, d ∈ (interpretationBody dX).defMem)
 :=
@@ -185,7 +185,7 @@ def Expr.interpretation.arbIrEqPos
   let interpretationBody dX :=
     interpretation salg (b.update x dX) (c.update x dX) body
   
-  (interpretation salg b c (Expr.Ir x body)).posMem
+  (interpretation salg b c (arbIr x body)).posMem
     =
   (fun d => ∀ dX, d ∈ (interpretationBody dX).posMem)
 :=
@@ -232,12 +232,12 @@ def Expr.interpretation.isMonotonic.defMem
       And.intro
         ⟨dC, isMonotonic.defMem cLeDef dCIn⟩
         (isMonotonic.defMem cLeDef dIn.right)
-    | Expr.Un x _ =>
+    | Expr.arbUn x _ =>
       let ⟨dX, dXIn⟩ := dIn.unwrap
       let isDef :=
         isMonotonic.defMem (cLeDefUpdated x dX) dXIn
       ⟨dX, isDef⟩
-    | Expr.Ir x _ =>
+    | Expr.arbIr x _ =>
       fun dX =>
         isMonotonic.defMem (cLeDefUpdated x dX) (dIn dX)
 
@@ -281,12 +281,12 @@ def Expr.interpretation.isMonotonic.posMem
       And.intro
         ⟨dC, isMonotonic.posMem cLePos dCIn⟩
         (isMonotonic.posMem cLePos dIn.right)
-    | Expr.Un x _ =>
+    | Expr.arbUn x _ =>
       let ⟨dX, dXIn⟩ := dIn.unwrap
       let isDef :=
         isMonotonic.posMem (cLePosUpdated x dX) dXIn
       ⟨dX, isDef⟩
-    | Expr.Ir x _ =>
+    | Expr.arbIr x _ =>
       fun dX =>
         isMonotonic.posMem (cLePosUpdated x dX) (dIn dX)
 
@@ -410,7 +410,7 @@ def Expr.interpretation.isMonotonic.approximation
         And.intro
           ⟨dC, hC.posLe dC.property⟩
           (hE.posLe dIn.right))
-  | Expr.Un x body =>
+  | Expr.arbUn x body =>
       let ihBody d :=
         interpretation.isMonotonic.approximation salg body
           (Valuation.update.isMonotonic.approximation b0 b1 bLe x d)
@@ -429,7 +429,7 @@ def Expr.interpretation.isMonotonic.approximation
             dX.val,
             (ihBody dX.val).posLe dX.property⟩
           )
-  | Expr.Ir x body =>
+  | Expr.arbIr x body =>
       let ih d :=
         interpretation.isMonotonic.approximation salg body
           (Valuation.update.isMonotonic.approximation b0 b1 bLe x d)

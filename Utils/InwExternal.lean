@@ -821,7 +821,7 @@ namespace InwExternal
       (pair
         (boundVarsEncoding boundVars)
         (pair
-          (exprToEncoding (Expr.Un x body))
+          (exprToEncoding (Expr.arbUn x body))
           d))
       (theExternalDefList.getDef uniDefList.interpretation)
   :=
@@ -922,7 +922,7 @@ namespace InwExternal
       (pair
         (boundVarsEncoding boundVars)
         (pair
-          (exprToEncoding (Expr.Ir x body))
+          (exprToEncoding (Expr.arbIr x body))
           d))
       (theExternalDefList.getDef uniDefList.interpretation)
   :=

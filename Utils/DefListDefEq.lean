@@ -42,11 +42,11 @@ def Expr.mapVars
 | ifThen cond body =>
   ifThen (cond.mapVars varMapping) (body.mapVars varMapping)
 
-| Un x body =>
-  Un (varMapping x) (body.mapVars varMapping)
+| arbUn x body =>
+  arbUn (varMapping x) (body.mapVars varMapping)
 
-| Ir x body =>
-  Ir (varMapping x) (body.mapVars varMapping)
+| arbIr x body =>
+  arbIr (varMapping x) (body.mapVars varMapping)
 
 def Expr.mapVars.eqOfId
   (expr: Expr sig)
@@ -65,9 +65,9 @@ def Expr.mapVars.eqOfId
     @congr _ _ cpl cpl _ _ rfl (eqOfId expr)
   | Expr.ifThen cond body =>
     congrBin rfl (eqOfId cond) (eqOfId body)
-  | Expr.Un _ body =>
+  | Expr.arbUn _ body =>
     congrBin rfl rfl (eqOfId body)
-  | Expr.Ir _ body =>
+  | Expr.arbIr _ body =>
     congrBin rfl rfl (eqOfId body)
 
 def Expr.mapVars.eqOfIsId
@@ -139,17 +139,17 @@ def Expr.mapVars.eqOfIsComposition
         rfl
         (eqOfIsComposition cond varMapping mapping1 mapping0 eqMapping)
         (eqOfIsComposition body varMapping mapping1 mapping0 eqMapping)
-  | Expr.Un x body =>
+  | Expr.arbUn x body =>
     show
-      Un (varMapping x) (body.mapVars varMapping) = _
+      arbUn (varMapping x) (body.mapVars varMapping) = _
     from
       congrBin
         rfl
         (eqMapping x)
         (eqOfIsComposition body varMapping mapping1 mapping0 eqMapping)
-  | Expr.Ir x body =>
+  | Expr.arbIr x body =>
     show
-      Ir (varMapping x) (body.mapVars varMapping) = _
+      arbIr (varMapping x) (body.mapVars varMapping) = _
     from
       congrBin
         rfl
@@ -392,7 +392,7 @@ def Expr.mapVars.preservesInterpretation
       ((interpretation.ifThenEqPos salg bSrc cSrc cond body).trans
         (eqCond ▸ eqBody ▸ rfl))
   
-  | Expr.Un x body =>
+  | Expr.arbUn x body =>
     let eqBody d :=
       preservesInterpretation
         salg
@@ -444,7 +444,7 @@ def Expr.mapVars.preservesInterpretation
                 from
                   eqBody dBound ▸ Iff.rfl))))
   
-  | Expr.Ir x body =>
+  | Expr.arbIr x body =>
     let eqBody d :=
       preservesInterpretation
         salg

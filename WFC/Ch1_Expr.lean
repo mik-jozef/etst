@@ -59,8 +59,8 @@ inductive Expr (sig: Signature) where
 | ir (left rite: Expr sig)
 | cpl (expr: Expr sig)
 | ifThen (cond expr: Expr sig)
-| Un (x: Nat) (body: Expr sig)
-| Ir (x: Nat) (body: Expr sig)
+| arbUn (x: Nat) (body: Expr sig)
+| arbIr (x: Nat) (body: Expr sig)
 
 namespace Expr
   instance coeNat: Coe Nat (Expr s) where
@@ -98,8 +98,8 @@ namespace Expr
             Or
               (cond.IsFreeVar boundVars x)
               (expr.IsFreeVar boundVars x)
-        | Un bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
-        | Ir bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
+        | arbUn bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
+        | arbIr bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
   
   
   /-
@@ -118,8 +118,8 @@ namespace Expr
   | Expr.cpl (Expr.var v), bv => v ∈ bv
   | Expr.cpl _, _ => False
   | Expr.ifThen cond expr, bv => cond.IsPositive bv ∧ expr.IsPositive bv
-  | Expr.Un xUn body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xUn)
-  | Expr.Ir xIr body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xIr)
+  | Expr.arbUn xUn body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xUn)
+  | Expr.arbIr xIr body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xIr)
   
   /-
     A helper function that we can use to show termination of
@@ -136,6 +136,6 @@ namespace Expr
   | Expr.ir left rite => max left.sizeOf rite.sizeOf + 1
   | Expr.cpl expr => expr.sizeOf + 1
   | Expr.ifThen cond expr => max cond.sizeOf expr.sizeOf + 1
-  | Expr.Un _ body => body.sizeOf + 1
-  | Expr.Ir _ body => body.sizeOf + 1
+  | Expr.arbUn _ body => body.sizeOf + 1
+  | Expr.arbIr _ body => body.sizeOf + 1
 end Expr

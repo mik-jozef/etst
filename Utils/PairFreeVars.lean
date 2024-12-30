@@ -131,7 +131,7 @@ namespace Pair
                   freeVarsExpr.property ⟨freeVar, isFreeInExpr⟩
                 List.concatUnique.inRiteToIn freeVarsCond isInFreeVarsExpr),
         ⟩
-    | Expr.Un x expr =>
+    | Expr.arbUn x expr =>
         let freeVarsExpr := givenBounds expr (boundVars.appendUnique x)
         ⟨
           freeVarsExpr,
@@ -156,7 +156,7 @@ namespace Pair
             
             freeVarsExpr.property ⟨freeVar, eq ▸ freeVar.property⟩,
         ⟩
-    | Expr.Ir x expr =>
+    | Expr.arbIr x expr =>
         let freeVarsExpr := givenBounds expr (boundVars.appendUnique x)
         ⟨
           freeVarsExpr,

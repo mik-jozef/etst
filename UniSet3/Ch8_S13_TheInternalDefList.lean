@@ -80,10 +80,10 @@ namespace Pair
       | Expr.ifThen _ _ =>
         incrVars.eqBin (Is6 rfl) _ _ ▸
         congr rfl (congrBin rfl incrVarsEqMapVars incrVarsEqMapVars)
-      | Expr.Un _ _ =>
+      | Expr.arbUn _ _ =>
         incrVars.eqQuant (Is7 rfl) _ _ ▸
         congrBin rfl rfl (congr rfl incrVarsEqMapVars)
-      | Expr.Ir _ _ =>
+      | Expr.arbIr _ _ =>
         incrVars.eqQuant (Is8 rfl) _ _ ▸
         congrBin rfl rfl (congr rfl incrVarsEqMapVars)
     

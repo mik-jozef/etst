@@ -311,7 +311,7 @@ namespace Pair
           insIfThen
             (insCond boundVars cond dC rfl)
             (insExpr boundVars expr d rfl)
-      | Expr.Un x body =>
+      | Expr.arbUn x body =>
         let ⟨dX, inCins⟩ :=
           isCauseExternal.hurrDurrElim
             externalCauseIsSat.toIsConsistent
@@ -319,7 +319,7 @@ namespace Pair
         match cinsIns inCins with
         | MotiveIns.interp _ ins =>
           insArbUn dX (ins (⟨dX, x⟩ :: boundVars) body d rfl)
-      | Expr.Ir x body =>
+      | Expr.arbIr x body =>
         let inCins :=
           isCauseExternal.hurrDurrElim
             externalCauseIsSat.toIsConsistent
@@ -918,7 +918,7 @@ namespace Pair
               satisfiesBounds
               isCauseBody)
       |
-        Expr.Un x body =>
+        Expr.arbUn x body =>
         let ⟨dX, isCauseBody⟩ :=
           isCause.elimArbUn updatedInternalWfm
         
@@ -953,7 +953,7 @@ namespace Pair
         
         isInappOfInappArbUn isInapp
       |
-        Expr.Ir x body =>
+        Expr.arbIr x body =>
         let isInappIh :=
           isEmptyCycleIh
             inCycle

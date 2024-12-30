@@ -60,14 +60,14 @@ def Pair.exprToEncoding
       IsBin (Is6 rfl) isEncC isEncB,
     ⟩
 
-  | Expr.Un x body =>
+  | Expr.arbUn x body =>
     let ⟨b, isEncB⟩ := exprToEncoding body
     ⟨
       pair (fromNat 7) (pair (fromNat x) b),
       IsQuantifier (Is7 rfl) (fromNat.isNatEncoding _) isEncB
     ⟩
 
-  | Expr.Ir x body =>
+  | Expr.arbIr x body =>
     let ⟨b, isEncB⟩ := exprToEncoding body
     ⟨
       pair (fromNat 8) (pair (fromNat x) b),
@@ -149,7 +149,7 @@ def Pair.exprToEncoding.injEq
             let bodyEq := exprToEncoding.injEq (Subtype.eq bodyEq)
             congrBin rfl condEq bodyEq
   
-  | Expr.Un _xA _bodyA, Expr.Un _xB _bodyB =>
+  | Expr.arbUn _xA _bodyA, Expr.arbUn _xB _bodyB =>
     Pair.noConfusion
       (Subtype.val_eq_val eq)
       fun _ eqP =>
@@ -160,7 +160,7 @@ def Pair.exprToEncoding.injEq
             let bodyEq := exprToEncoding.injEq (Subtype.eq bodyEq)
             congrBin rfl xEq bodyEq
   
-  | Expr.Ir _xA _bodyA, Expr.Ir _xB _bodyB =>
+  | Expr.arbIr _xA _bodyA, Expr.arbIr _xB _bodyB =>
     Pair.noConfusion
       (Subtype.val_eq_val eq)
       fun _ eqP =>
@@ -369,13 +369,13 @@ namespace Pair
       
       match isQuant with
       | Is7 eq7 => ⟨
-        Expr.Un isNat.toNat expr,
+        Expr.arbUn isNat.toNat expr,
         Subtype.val_eq _ _ ▸
         isNat.toNatFromNatEq.symm ▸
         eq7 ▸ eq ▸ rfl,
       ⟩
       | Is8 eq8 => ⟨
-        Expr.Ir isNat.toNat expr,
+        Expr.arbIr isNat.toNat expr,
         Subtype.val_eq _ _ ▸
         isNat.toNatFromNatEq.symm ▸
         eq8 ▸ eq ▸ rfl,
@@ -560,11 +560,11 @@ namespace Pair
   :
     (pair (fromNat 7) (pair xEnc exprEnc)).encodingToExpr
       =
-    Expr.Un xEnc.depth (encodingToExpr exprEnc)
+    Expr.arbUn xEnc.depth (encodingToExpr exprEnc)
   :=
     Eq.symm
       (exprToEncoding.toEqEncodingToExpr
-        (Expr.Un xEnc.depth (encodingToExpr exprEnc))
+        (Expr.arbUn xEnc.depth (encodingToExpr exprEnc))
         (pair (fromNat 7) (pair xEnc exprEnc))
         (show pair (fromNat 7) _ = _ from by
           rw [exprToEncoding.isInverseSubtype isExpr]
@@ -576,11 +576,11 @@ namespace Pair
   :
     (pair (fromNat 8) (pair xEnc exprEnc)).encodingToExpr
       =
-    Expr.Ir xEnc.depth (encodingToExpr exprEnc)
+    Expr.arbIr xEnc.depth (encodingToExpr exprEnc)
   :=
     Eq.symm
       (exprToEncoding.toEqEncodingToExpr
-        (Expr.Ir xEnc.depth (encodingToExpr exprEnc))
+        (Expr.arbIr xEnc.depth (encodingToExpr exprEnc))
         (pair (fromNat 8) (pair xEnc exprEnc))
         (show pair (fromNat 8) _ = _ from by
           rw [exprToEncoding.isInverseSubtype isExpr]
