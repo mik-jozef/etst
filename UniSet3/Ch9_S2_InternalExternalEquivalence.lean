@@ -58,9 +58,7 @@ namespace Pair
     --   1.1. Generalize WFC for any monotonic exprs
     -- 2. Make variables `T: Type*` instead of Nat
     -- 3. clean up the `HM` folder
-    -- 4. Clean up the IsBound / IsGetBound stuff? define IsBound
-    --    in Utils/Valuation.lean and define IsGetBound in terms of it?
-    -- 5. Trisets
+    -- 4. Trisets
     
   end uniSet3
 end Pair

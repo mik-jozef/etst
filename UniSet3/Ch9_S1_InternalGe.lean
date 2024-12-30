@@ -239,8 +239,7 @@ namespace Pair
           (fun isBoundInCause =>
             let insBound :=
               externalCauseIsSat.contextInsHold isBoundInCause
-            let isGetBound := Inw.toIsGetBound insBound.toPos
-            boundVar isGetBound.toIsBoundTo)
+            boundVar (Inw.toIsBoundTo insBound.toPos))
           (fun ⟨insTheSet, notBound⟩ =>
             let notBound isBound :=
               let ⟨d, isBoundTo⟩ := isBound
@@ -249,7 +248,7 @@ namespace Pair
                 fun inBout =>
                   externalCauseIsSat.backgroundOutHold
                     inBout
-                    (insGetBound isBoundTo.toIsGetBound).toInw,
+                    (insGetBound isBoundTo).toInw,
               ⟩
             freeVar (cinsIns insTheSet) notBound)
       | Expr.op pairSignature.Op.zero _ =>
@@ -727,8 +726,7 @@ namespace Pair
               (show externalCycle _ from xEq ▸ dEq ▸ inCycle)
           | blockedBout ⟨xEq, ⟨dB, dEq⟩⟩ ins _ =>
             let insGetBound := xEq ▸ dEq ▸ ins.isSound
-            let inwGetBound := Inw.toIsGetBound insGetBound.toPos
-            absurd ⟨dB, inwGetBound.toIsBoundTo⟩ h
+            absurd ⟨dB, (Inw.toIsBoundTo insGetBound.toPos)⟩ h
       |
         Expr.op pairSignature.Op.zero _ =>
         let dEq := isCause.elimZeroExpr

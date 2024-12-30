@@ -93,7 +93,7 @@ def InsInterp.var
                 (insFree
                   (insFree
                     (insGetBound
-                      isBoundTo.toIsGetBound)
+                      isBoundTo)
                     nat500NeqGetBound)
                   nat501NeqGetBound)
                 nat502NeqGetBound)
@@ -117,8 +117,7 @@ def InsInterp.var
           let inw := inwCallElimBound inw rfl nat502Neq500
           let inw := inwCallElimBound inw rfl nat503Neq501
         let insGetBound := Inw.toInsGetBound inw
-        let isGetBound := Inw.toIsGetBound insGetBound.toInw
-        h ⟨boundVal, isGetBound.toIsBoundTo⟩
+        h ⟨boundVal, Inw.toIsBoundTo insGetBound.toInw⟩
       
       insUnR _
         (insIfThen

@@ -535,7 +535,7 @@ namespace Pair
     :=
       let out :=
         Out.isComplete _ _ fun inw =>
-        let isBoundTo := (Inw.toIsGetBound inw).toIsBoundTo
+        let isBoundTo := Inw.toIsBoundTo inw
         let isInapp :=
           allInapp
             (Cause.var x d)
@@ -585,8 +585,7 @@ namespace Pair
         let ⟨d, isBoundTo⟩ := h
         boutFails
           (notBound.toAll (fun _ => Not.dne) d)
-          (Ins.isComplete
-            _ _ (insGetBound isBoundTo.toIsGetBound))
+          (Ins.isComplete _ _ (insGetBound isBoundTo))
       else
         let isInapp :=
           allInapp

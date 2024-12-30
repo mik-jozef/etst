@@ -109,7 +109,7 @@ namespace InwExternal
                             (inwFree
                               (Ins.toInw
                                 (insGetBound
-                                  isBoundTo.toIsGetBound))
+                                  isBoundTo))
                               nat500NeqGetBound)
                             nat501NeqGetBound)
                           nat502NeqGetBound)

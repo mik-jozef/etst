@@ -18,17 +18,17 @@ namespace Pair
     
     
     def insGetBound.head
-      (isNat: IsNatEncoding hA)
-      (hB tail: Pair)
+      (isNat: IsNatEncoding x)
+      {d tail: Pair}
     :
-      InsGetBound (pair (pair hA hB) tail) hA hB
+      InsGetBound (pair (pair x d) tail) x d
     :=
       insWfmDefToIns
         (insUnL _
           (insUnDom
             (insNatEncoding isNat)
             (insArbUn
-              hB
+              d
               (insPair
                 (insPair
                   (insPair
@@ -45,9 +45,9 @@ namespace Pair
     
     def insGetBound.ofInsTailNeqHead
       (ins: InsGetBound tail xEnc p)
-      (neq: hA ≠ xEnc)
+      (neq: headX ≠ xEnc)
     :
-      InsGetBound (pair (pair hA hB) tail) xEnc p
+      InsGetBound (pair (pair headX headD) tail) xEnc p
     :=
       insWfmDefToIns
         (insUnR _
@@ -86,86 +86,91 @@ namespace Pair
                       nat502Neq500)))))))
     
     def insGetBound
-      (isGetBound: IsGetBound boundVars xEnc p)
+      (isBoundTo: IsBoundTo boundVars x d)
     :
-      InsGetBound boundVars xEnc p
+      InsGetBound (boundVarsEncoding boundVars) (fromNat x) d
     :=
-      match isGetBound with
-      | IsGetBound.InHead isNat hB tail =>
-        insGetBound.head isNat hB tail
-      | IsGetBound.InTail isGetTail hB neq =>
-        insGetBound.ofInsTailNeqHead (insGetBound isGetTail) neq
+      match isBoundTo with
+      | IsBoundTo.InHead =>
+        insGetBound.head (fromNat.isNatEncoding x)
+      | IsBoundTo.InTail isGetTail neq _ =>
+        insGetBound.ofInsTailNeqHead
+          (insGetBound isGetTail)
+          (fromNat.injNeq neq.symm)
     
     
-    def Inw.toIsGetBound
-      (inw: InwGetBound boundVars xEnc p)
+    def Inw.toIsBoundTo
+      (inw:
+        InwGetBound (boundVarsEncoding boundVars) (fromNat x) d)
     :
-      IsGetBound boundVars xEnc p
+      IsBoundTo boundVars x d
     :=
       (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
-          let ⟨xEncAlias, ⟨inwDomain, inw⟩⟩ := inwUnDomElim inw
-          let ⟨pAlias, inw⟩ := inwArbUnElim inw
+          let ⟨_, ⟨_, inw⟩⟩ := inwUnDomElim inw
+          let ⟨_, inw⟩ := inwArbUnElim inw
           let ⟨inwL, inwR⟩ := inwPairElim inw
-          let ⟨inwXEnc, inwP⟩ := inwPairElim inwR
+          let ⟨inwXEnc, inwD⟩ := inwPairElim inwR
           
-          let eqXEnc :=
+          let eqXR :=
             inwBoundElim (inwFreeElim inwXEnc nat501Neq500)
-          let eqP := inwBoundElim inwP
-          
-          let isNat: IsNatEncoding xEnc :=
-            eqXEnc ▸ Inw.toIsNatEncoding inwDomain
+          let eqD := inwBoundElim inwD
           
           match boundVars with
-          | zero => inwPairElim.nope inwL
-          | pair zero _ =>
-            inwPairElim.nope (inwPairElim inwL).inwL
-          | pair (pair hA hB) tail =>
-            let ⟨inwH, _⟩ := inwPairElim inwL
-            let ⟨inwHa, inwHb⟩ := inwPairElim inwH
+          | ⟨_, _⟩ :: _ =>
+            let ⟨inwHead, _⟩ := inwPairElim inwL
+            let ⟨inwHeadX, inwHeadD⟩ := inwPairElim inwHead
             
-            let eqHa :=
-              inwBoundElim (inwFreeElim inwHa nat501Neq500)
-            let eqHb := inwBoundElim inwHb
+            let eqHeadD := inwBoundElim inwHeadD
+            let eqHeadXL :=
+              inwBoundElim (inwFreeElim inwHeadX nat501Neq500)
             
-            eqHa ▸ eqHb ▸ eqXEnc ▸ eqP ▸
-            IsGetBound.InHead isNat _ _)
+            let eqHeadX :=
+              fromNat.injEq (eqHeadXL.trans eqXR.symm)
+            
+            eqHeadD ▸ eqHeadX ▸ eqD ▸ IsBoundTo.InHead)
         (fun inw =>
-          let ⟨xEncAlias, inw⟩ := inwArbUnElim inw
-          let ⟨tail, inw⟩ := inwArbUnElim inw
+          let ⟨_, inw⟩ := inwArbUnElim inw
+          let ⟨_, inw⟩ := inwArbUnElim inw
           -- Renaming `inw_c` to `inw` triggers a Lean bug.
           let ⟨inwBv, inw_c⟩ := inwPairElim inw
           
           match boundVars with
-          | zero => inwPairElim.nope inwBv
-          | pair zero _ =>
-            inwPairElim.nope (inwPairElim inwBv).inwL
-          | pair (pair hA hB) t =>
+          | ⟨_, headX⟩ :: _ =>
             let ⟨inwBvH, inwBvT⟩ := inwPairElim inwBv
-            let ⟨inwHa, _⟩ := inwPairElim inwBvH
+            let ⟨inwHeadX, _⟩ := inwPairElim inwBvH
             
-            let ninsHa := inwCplElim inwHa
-            let neq: hA ≠ xEncAlias := fun eq =>
-              ninsHa (insFree (eq ▸ insBound) nat501Neq500)
+            let ninsHeadX := inwCplElim inwHeadX
             let eqT := inwBoundElim inwBvT
             
             let ⟨inwXEnc, inw⟩ := inwPairElim inw_c
-            let inw := inwCallElimBound inw rfl nat502Neq500
-            let inw := inwCallElimBound inw rfl nat503Neq501
-            let ih := toIsGetBound inw
-            
             let eqXEnc :=
               inwBoundElim (inwFreeElim inwXEnc nat501Neq500)
             
-            eqT ▸ eqXEnc ▸
-            IsGetBound.InTail ih _ neq)
+            let inw := inwCallElimBound inw rfl nat502Neq500
+            let inw := inwCallElimBound inw rfl nat503Neq501
+            let ih := toIsBoundTo (eqT ▸ eqXEnc ▸ inw)
+            
+            let neq: x ≠ headX :=
+              fun eq =>
+                let ins500 := eqXEnc ▸ eq ▸ insBound
+                ninsHeadX (insFree ins500 nat501Neq500)
+            
+            IsBoundTo.InTail ih neq _)
     
     def Inw.toInsGetBound
-      (inw: InwGetBound boundVars xEnc p)
+      (inw:
+        InwGetBound
+          (boundVarsEncoding boundVars)
+          (fromNat x)
+          d)
     :
-      InsGetBound boundVars xEnc p
+      InsGetBound
+        (boundVarsEncoding boundVars)
+        (fromNat x)
+        d
     :=
-      insGetBound (Inw.toIsGetBound inw)
+      insGetBound (Inw.toIsBoundTo inw)
     
   end uniSet3
 end Pair
