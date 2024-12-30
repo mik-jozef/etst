@@ -128,10 +128,10 @@ namespace Expr
     This is a proper version of the sizeOf function defined natively
     by Lean.
   -/
-  def sizeOf: Expr sig → Ordinal.{0}
+  noncomputable def sizeOf: Expr sig → Ordinal.{0}
   | Expr.var _ => 0
   | Expr.op _ args =>
-    Ordinal.sup (fun arg => (args arg).sizeOf) + 1
+    iSup (fun arg => (args arg).sizeOf) + 1
   | Expr.un left rite => max left.sizeOf rite.sizeOf + 1
   | Expr.ir left rite => max left.sizeOf rite.sizeOf + 1
   | Expr.cpl expr => expr.sizeOf + 1
