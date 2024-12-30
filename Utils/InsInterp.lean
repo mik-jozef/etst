@@ -80,8 +80,8 @@ def InsInterp.var
     let inCins := isInternalCause.elimVar isConsistent
     
     if h: IsBound boundVars x then
-      let ⟨dAlias, isGetBound⟩ := h
-      let boundVarSat := boundVarsSat rfl isGetBound
+      let ⟨dAlias, isBoundTo⟩ := h
+      let boundVarSat := boundVarsSat isBoundTo
       let dEq: d = dAlias := boundVarSat.cinsSat _ inCins rfl
       
       dEq ▸ 
@@ -93,7 +93,7 @@ def InsInterp.var
                 (insFree
                   (insFree
                     (insGetBound
-                      isGetBound)
+                      isBoundTo.toIsGetBound)
                     nat500NeqGetBound)
                   nat501NeqGetBound)
                 nat502NeqGetBound)
@@ -117,7 +117,8 @@ def InsInterp.var
           let inw := inwCallElimBound inw rfl nat502Neq500
           let inw := inwCallElimBound inw rfl nat503Neq501
         let insGetBound := Inw.toInsGetBound inw
-        h ⟨boundVal, Inw.toIsGetBound insGetBound.toInw⟩
+        let isGetBound := Inw.toIsGetBound insGetBound.toInw
+        h ⟨boundVal, isGetBound.toIsBoundTo⟩
       
       insUnR _
         (insIfThen

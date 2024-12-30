@@ -76,8 +76,7 @@ namespace InwExternal
   
   
   def boundVar
-    (isGetBound:
-      IsGetBound (boundVarsEncoding boundVars) (fromNat x) d)
+    (isBoundTo: IsBoundTo boundVars x d)
   :
     InwEdl
       interpretation
@@ -108,7 +107,9 @@ namespace InwExternal
                         (inwFree
                           (inwFree
                             (inwFree
-                              (insGetBound isGetBound).toInw
+                              (Ins.toInw
+                                (insGetBound
+                                  isBoundTo.toIsGetBound))
                               nat500NeqGetBound)
                             nat501NeqGetBound)
                           nat502NeqGetBound)

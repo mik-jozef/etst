@@ -70,14 +70,15 @@
 -/
 
 import UniSet3.Ch7_UniDefList
+import Utils.IsBound
 import Utils.PairDepthDictOrder
 
 
 namespace Pair
   def boundVarsEncoding: List (ValVar Pair) → Pair
-  | [] => Pair.zero
+  | [] => zero
   | ⟨d, x⟩ :: rest =>
-    Pair.pair (Pair.pair x d) (boundVarsEncoding rest)
+    pair (pair x d) (boundVarsEncoding rest)
   
   
   namespace uniSet3
@@ -186,13 +187,13 @@ namespace Pair
         }
     
     
-    inductive IsExprEncoding.Bin (p: Pair): Prop :=
+    inductive IsExprEncoding.Bin (p: Pair): Prop where
     | Is2 (eq: p = fromNat 2)
     | Is3 (eq: p = fromNat 3)
     | Is4 (eq: p = fromNat 4)
     | Is6 (eq: p = fromNat 6)
     
-    inductive IsExprEncoding.Quantifier (p: Pair): Prop :=
+    inductive IsExprEncoding.Quantifier (p: Pair): Prop where
     | Is7 (eq: p = fromNat 7)
     | Is8 (eq: p = fromNat 8)
     
@@ -2413,17 +2414,17 @@ namespace Pair
       }
     
     
-    -- IsGetBound boundVarsEncoding xEnc boundValue
+    -- IsGetBound boundVarsEnc xEnc boundValue
     inductive IsGetBound: Pair → Pair → Pair → Prop where
     | InHead
-      (isNat: IsNatEncoding hA)
-      (hB tail: Pair):
-        IsGetBound (pair (pair hA hB) tail) hA hB
+      (isNat: IsNatEncoding hX)
+      (hD tail: Pair):
+        IsGetBound (pair (pair hX hD) tail) hX hD
     | InTail
-      (isGetTail: IsGetBound tail xEnc p)
-      (hB: Pair)
-      (neq: hA ≠ xEnc):
-        IsGetBound (pair (pair hA hB) tail) xEnc p
+      (isGetTail: IsGetBound tail xEnc d)
+      (hD: Pair)
+      (neq: hX ≠ xEnc):
+        IsGetBound (pair (pair hX hD) tail) xEnc d
     
     def IsGetBound.toIsNat
       (isGet: IsGetBound boundVars xEnc p)
@@ -2434,122 +2435,51 @@ namespace Pair
       | InHead isNat _ _ => isNat
       | InTail isGetTail _ _ => toIsNat isGetTail
     
-    def IsGetBound.isUnique
-      (isGetA: IsGetBound boundVars xEnc a)
-      (isGetB: IsGetBound boundVars xEnc b)
-    :
-      a = b
-    :=
-      match isGetA, isGetB with
-      | InHead _ _ _,
-        InHead _ _ _
-      =>
-        rfl
-      | InTail isGetTailA _ _,
-        InTail isGetTailB _ _
-      =>
-        isGetTailA.isUnique isGetTailB
-    
-    -- Recursing on IsGetBound with `boundVarsEncoding` directly
-    -- causes the match expression to error (even when unfolded
-    -- once). Seems like a bug to me, but I've already submitted
-    -- one issue today, plus a few others some time ago that are
-    -- still open, and I'm getting a bit anxious about bothering
-    -- them too much lol.
-    def IsGetBound.inBoundVarsHelper
+    def IsGetBound.toIsBoundToHelper
       (eq: boundVarsEnc = boundVarsEncoding boundVars)
       (isGet: IsGetBound boundVarsEnc (fromNat x) d)
     :
-      ⟨d, x⟩ ∈ boundVars
+      IsBoundTo boundVars x d
     :=
       match boundVars, isGet with
-      |
-        _ :: _, InHead _ _ _ =>
-          let eq := Pair.noConfusion eq (Function.const _)
-          let ⟨eqXEnc, eqD⟩ := Pair.noConfusion eq And.intro
-          (fromNat.injEq eqXEnc) ▸ eqD ▸ List.Mem.head _
-      |
-        _ :: _, InTail isGetTail _ _ =>
-        let ⟨_, eqTail⟩ := Pair.noConfusion eq And.intro
-        List.Mem.tail _ (inBoundVarsHelper eqTail isGetTail)
+      | _ :: _, InHead isNat hD _ =>
+        let ⟨headEncEq, _⟩ := Pair.noConfusion eq And.intro
+        let ⟨xEncEq, dEq⟩ := Pair.noConfusion headEncEq And.intro
+        let xEq := fromNat.injEq xEncEq
+        xEq ▸ dEq ▸ IsBoundTo.InHead
+      | _ :: _, InTail isGetTail _ neq =>
+        let ⟨headEncEq, tailEq⟩ := Pair.noConfusion eq And.intro
+        let ⟨xEncEq, _⟩ := Pair.noConfusion headEncEq And.intro
+        IsBoundTo.InTail
+          (isGetTail.toIsBoundToHelper tailEq)
+          (fun eq => (xEncEq ▸ neq) (congr rfl eq.symm))
+          _
     
-    def IsGetBound.inBoundVars
+    def IsGetBound.toIsBoundTo
       (isGet:
-        IsGetBound (boundVarsEncoding boundVars) (fromNat x) d)
-    :
-      ⟨d, x⟩ ∈ boundVars
-    :=
-      inBoundVarsHelper rfl isGet
-    
-    def IsGetBound.exOfInBoundVars
-      (isInBound: ⟨d, x⟩ ∈ boundVars)
-    :
-      ∃ dB, IsGetBound (boundVarsEncoding boundVars) (fromNat x) dB
-    :=
-      match boundVars, isInBound with
-      | _, List.Mem.head _ =>
-        ⟨d, IsGetBound.InHead (fromNat.isNatEncoding x) _ _⟩
-      | head :: _, List.Mem.tail _ isInBoundTail =>
-        let ⟨dB, isGetTail⟩ := exOfInBoundVars isInBoundTail
-        if h: head.x = x then
-          let isNat := fromNat.isNatEncoding x
-          ⟨head.d, h ▸ IsGetBound.InHead isNat _ _⟩
-        else
-          ⟨dB, IsGetBound.InTail isGetTail _ (fromNat.injNeq h)⟩
-    
-    def IsGetBound.listHead
-      (isGetBound:
         IsGetBound
-          (boundVarsEncoding (⟨dd, xx⟩ :: tail))
+          (boundVarsEncoding boundVars)
           (fromNat x)
           d)
-      (eq: x = xx)
     :
-      d = dd
+      IsBoundTo boundVars x d
     :=
-      let boundVarsEnc :=
-        (pair (pair xx dd) (boundVarsEncoding tail))
-      
-      let isGetBound: IsGetBound boundVarsEnc (fromNat x) d :=
-        isGetBound
-      
-      match hBv: boundVarsEnc, isGetBound with
-      | _, InHead _ _ _ =>
-        let ⟨headEq, _⟩ := Pair.noConfusion hBv And.intro
-        let ⟨_, dEq⟩ := Pair.noConfusion headEq And.intro
-        dEq.symm
-      | _, InTail _ _ neq =>
-        let ⟨headEq, _⟩ := Pair.noConfusion hBv And.intro
-        let ⟨encEq, _⟩ := Pair.noConfusion headEq And.intro
-        False.elim (neq (encEq.symm.trans (congr rfl eq.symm)))
-    
-    def IsGetBound.listToTail
-      (isGetBound:
-        IsGetBound
-          (boundVarsEncoding (⟨dd, xx⟩ :: tail))
-          (fromNat x)
-          d)
-      (neq: x ≠ xx)
-    :
-      IsGetBound
-        (boundVarsEncoding tail)
-        (fromNat x)
-        d
-    :=
-      let boundVarsEnc :=
-        (pair (pair xx dd) (boundVarsEncoding tail))
-      
-      let isGetBound: IsGetBound boundVarsEnc (fromNat x) d :=
-        isGetBound
-      
-      match hBv: boundVarsEnc, isGetBound with
-      | _, InHead _ _ _ =>
-        let ⟨headEq, _⟩ := Pair.noConfusion hBv And.intro
-        let ⟨encEq, _⟩ := Pair.noConfusion headEq And.intro
-        False.elim (neq (fromNat.injEq encEq.symm))
-      | _, InTail isGetTail _ _ =>
-        let ⟨_, tailEq⟩ := Pair.noConfusion hBv And.intro
-        tailEq ▸ isGetTail
+      isGet.toIsBoundToHelper rfl
     
   end uniSet3
 end Pair
+
+open Pair
+open Pair.uniSet3
+
+def IsBoundTo.toIsGetBound:
+  IsBoundTo boundVars x d →
+  IsGetBound (boundVarsEncoding boundVars) x d
+|
+  IsBoundTo.InHead =>
+    IsGetBound.InHead (fromNat.isNatEncoding x) _ _
+| IsBoundTo.InTail isBoundTail neq _ =>
+  IsGetBound.InTail
+    isBoundTail.toIsGetBound
+    _
+    (fromNat.injNeq (Ne.symm neq))

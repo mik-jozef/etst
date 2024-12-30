@@ -1,5 +1,6 @@
 import UniSet3.Ch8_S12_DefListToEncoding
 import Utils.CauseSatisfiesBoundVars
+import Utils.IsBound
 import Utils.NopeInterp
 import Utils.OutIntro4
 
@@ -7,57 +8,6 @@ open Expr
 open Pair
 open Pair.uniSet3
 open PairExpr
-
-def IsVarFree
-  (x: Nat)
-  (boundVars: List (ValVar D))
-:
-  Prop
-:=
-  ∀ d, ⟨d, x⟩ ∉ boundVars
-
-def IsVarFree.Not.exBoundOfNot
-  {boundVars: List (ValVar D)}
-  (notFree: ¬ IsVarFree x boundVars)
-:
-  ∃ d, ⟨d, x⟩ ∈ boundVars
-:=
-  notFree.toEx fun _ => Not.dne
-
-def IsVarFree.nopeGetBound
-  (isFree: IsVarFree x boundVars)
-  (isBound: IsGetBound (boundVarsEncoding boundVars) x d)
-:
-  P
-:=
-  False.elim (isFree d isBound.inBoundVars)
-
-def IsVarFree.toNotBound
-  (isFree: IsVarFree x boundVars)
-:
-  ¬ IsBound boundVars x
-:=
-  fun ⟨_, isGetBound⟩ => isFree.nopeGetBound isGetBound
-
-def IsVarFree.ofEmpty
-  {D: Type*}
-  (x: Nat)
-:
-  IsVarFree (D := D) x []
-:=
-  nofun
-
-def IsVarFree.ofTail
-  (isFree: IsVarFree x boundVars)
-  (neqHead: xH ≠ x)
-  dH
-:
-  IsVarFree x (⟨dH, xH⟩ :: boundVars)
-:=
-  fun _ isBound =>
-    match List.mem_cons.mp isBound with
-    | Or.inl eq => ValVar.noConfusion eq fun _ => Ne.symm neqHead
-    | Or.inr inBoundTail => isFree _ inBoundTail
 
 
 def elimPosExternalVar
@@ -1595,17 +1545,13 @@ def elimDefExternalArbIr
 
 
 def Cause.boundVarSat
-  (isGetBound:
-    Pair.uniSet3.IsGetBound
-      (boundVarsEncoding boundVars)
-      (fromNat x)
-      d)
+  (isBoundTo: IsBoundTo boundVars x d)
 :
   (Cause.var x d).SatisfiesBoundVars boundVars
 :=
-  fun {xx _xxEnc _dd} xxEncEq isBound =>
+  fun {xx _dd} isBound =>
     if h: xx = x then
-      let dEq := isGetBound.isUnique (h ▸ xxEncEq ▸ isBound)
+      let dEq := isBoundTo.isUnique (h ▸ isBound)
       {
         cinsSat := fun _ ⟨eqVvD, _⟩ _ => eqVvD.trans dEq
         binsSat := nofun
@@ -1619,15 +1565,14 @@ def Cause.boundVarSat
     }
 
 def Cause.freeVarSat
-  (notBound:
-    ¬∃ dB, IsGetBound (boundVarsEncoding boundVars) (fromNat x) dB)
+  (notBound: ¬ IsBound boundVars x)
 :
   (Cause.var x d).SatisfiesBoundVars boundVars
 :=
-  fun xxEncEq isBound => {
-    cinsSat := fun _ ⟨_, eqVvX⟩ xxEq =>
-      False.elim
-        (notBound ⟨_, eqVvX ▸ xxEq ▸ xxEncEq ▸ isBound⟩)
+  fun isBound => {
+    cinsSat :=
+      fun _ ⟨_, eqVvX⟩ xxEq =>
+        absurd ⟨_, eqVvX ▸ xxEq ▸ isBound⟩ notBound
     binsSat := nofun
     boutSat := nofun
   }
@@ -1637,7 +1582,7 @@ def Cause.emptySat
 :
   Cause.empty.SatisfiesBoundVars boundVars
 :=
-  fun _ _ => {
+  fun _ => {
     cinsSat := nofun
     binsSat := nofun
     boutSat := nofun

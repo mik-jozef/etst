@@ -596,44 +596,4 @@ namespace Pair
       (boundVarsEncoding boundVars)
       (pair (exprToEncoding expr) d)
   
-  def IsBound
-    (boundVars: List (ValVar Pair))
-    (x: Nat)
-  :
-    Prop
-  :=
-    ∃ d, uniSet3.IsGetBound (boundVarsEncoding boundVars) x d
-  
-  def IsBound.Not.notBoundHeadNotEq
-      (notBound: ¬ IsBound (⟨dB, xB⟩ :: boundVars) x)
-    :
-      x ≠ xB
-    :=
-      fun xEq =>
-        notBound ⟨
-          dB,
-          xEq ▸
-          uniSet3.IsGetBound.InHead
-            (fromNat.isNatEncoding x)
-            dB
-            (boundVarsEncoding boundVars)
-        ⟩
-    
-    def IsBound.Not.notBoundTail
-      (notBound: ¬ IsBound (⟨dB, xB⟩ :: boundVars) x)
-    :
-      ¬ IsBound boundVars x
-    :=
-      fun ⟨d, isGetBound⟩ =>
-        if h: xB = x then
-          let isNatEnc := fromNat.isNatEncoding xB
-          notBound ⟨
-            dB,
-            h ▸ uniSet3.IsGetBound.InHead isNatEnc _ _,
-          ⟩
-        else
-          let encNeq := fromNat.injNeq h
-          let isBound :=
-            uniSet3.IsGetBound.InTail isGetBound dB encNeq
-          notBound ⟨d, isBound⟩
 end Pair    

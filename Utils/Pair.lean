@@ -294,7 +294,7 @@ namespace Pair
   def IsNatEncoding.toNatFromNatEq
     (isNat: IsNatEncoding p)
   :
-    fromNat (IsNatEncoding.toNat isNat) = p
+    fromNat isNat.toNat = p
   :=
     -- Termination ought to be automatically inferred here.
     -- match p with
@@ -303,13 +303,15 @@ namespace Pair
     --   isNat.right ▸
     --   fromNat.eqSuccOfEq (toNatFromNatEq isNat.left)
     
-    let isNatToEq: ∀ (isNat : IsNatEncoding p), fromNat (toNat isNat) = p := p.rec
-      (fun _ => rfl)
-      (fun _ _ ihPred _ isNat =>
-        -- Inlining this variable causes an error.
-        let eqWithZ := fromNat.eqSuccOfEq (ihPred isNat.left)
-        
-        isNat.right ▸ eqWithZ)
+    let isNatToEq:
+      ∀ (isNat : IsNatEncoding p), fromNat (toNat isNat) = p
+    :=
+      p.rec
+        (fun _ => rfl)
+        (fun _ _ ihPred _ isNat =>
+          -- Inlining this variable causes an error.
+          let eqWithZ := fromNat.eqSuccOfEq (ihPred isNat.left)
+          isNat.right ▸ eqWithZ)
     
     isNatToEq isNat
   

@@ -14,9 +14,9 @@ def Cause.exceptBoundVars
   Cause Pair
 :=
   cause.except {
-    contextIns := fun ⟨_, x⟩ => Pair.IsBound boundVars x,
-    backgroundIns := fun ⟨_, x⟩ => Pair.IsBound boundVars x,
-    backgroundOut := fun ⟨_, x⟩ => Pair.IsBound boundVars x,
+    contextIns := fun ⟨_, x⟩ => IsBound boundVars x,
+    backgroundIns := fun ⟨_, x⟩ => IsBound boundVars x,
+    backgroundOut := fun ⟨_, x⟩ => IsBound boundVars x,
   }
 
 def Cause.exceptBoundVars.eqEmpty
@@ -157,8 +157,7 @@ namespace Pair
     
     
     def isCauseExternalToInsInternal.boundVar
-      (isBound:
-        IsGetBound (boundVarsEncoding boundVars) (fromNat x) d)
+      (isBoundTo: IsBoundTo boundVars x d)
     :
       Set3.defMem
         (interpretation
@@ -168,22 +167,10 @@ namespace Pair
         (var x))
         d
     :=
-      let boundVarsEnc := boundVarsEncoding boundVars
-      let encEq: boundVarsEnc = boundVarsEncoding boundVars := rfl
-      match h: boundVars, hEnc: boundVarsEnc, encEq ▸ isBound with
-      | _ :: _, _, IsGetBound.InHead _ _ _ =>
-        let encEq: _ = pair _ _ := h ▸ hEnc ▸ encEq
-        let ⟨headEq, _⟩ := Pair.noConfusion encEq And.intro
-        let ⟨xEqFromNat, dEq⟩ := Pair.noConfusion headEq And.intro
-        let xEq := fromNat.injEq xEqFromNat
-        xEq ▸ dEq ▸ insBound
-      | _ :: _, _, IsGetBound.InTail isBoundTail _ neq =>
-        let encEq: _ = pair _ _ := h ▸ hEnc ▸ encEq
-        let ⟨headEq, tailEq⟩ := Pair.noConfusion encEq And.intro
-        let ⟨xEqFromNat, _⟩ := Pair.noConfusion headEq And.intro
-        insFree
-          (boundVar (tailEq ▸ isBoundTail))
-          (fun eq => neq (eq ▸ xEqFromNat))
+      match isBoundTo with
+      | IsBoundTo.InHead => insBound
+      | IsBoundTo.InTail isBoundTail neq _ =>
+        insFree (boundVar isBoundTail) (neq ∘ Eq.symm)
     
     def isCauseExternalToInsInternal.freeVar
       (motiveIns:
@@ -200,13 +187,10 @@ namespace Pair
     :=
       match boundVars, motiveIns with
       | [], MotiveIns.theSet _ ins => (ins d x rfl).isSound
-      | ⟨dB, xB⟩ :: _, _ =>
+      | ⟨dB, _⟩ :: _, _ =>
         insFree
           (freeVar motiveIns (IsBound.Not.notBoundTail notBound))
-          (fun eq =>
-            let isBound :=
-              IsGetBound.InHead (fromNat.isNatEncoding xB) _ _
-            notBound ⟨dB, (eq ▸ isBound)⟩)
+          (fun eq => notBound ⟨dB, (eq ▸ IsBoundTo.InHead)⟩)
     
     def isCauseExternalToInsInternal.interp
       (isCauseExternal:
@@ -255,17 +239,17 @@ namespace Pair
           (fun isBoundInCause =>
             let insBound :=
               externalCauseIsSat.contextInsHold isBoundInCause
-            let isBound := Inw.toIsGetBound insBound.toPos
-            boundVar isBound)
+            let isGetBound := Inw.toIsGetBound insBound.toPos
+            boundVar isGetBound.toIsBoundTo)
           (fun ⟨insTheSet, notBound⟩ =>
             let notBound isBound :=
-              let ⟨d, isGetBound⟩ := isBound
+              let ⟨d, isBoundTo⟩ := isBound
               notBound ⟨
                 d,
                 fun inBout =>
                   externalCauseIsSat.backgroundOutHold
                     inBout
-                    (insGetBound isGetBound).toInw,
+                    (insGetBound isBoundTo.toIsGetBound).toInw,
               ⟩
             freeVar (cinsIns insTheSet) notBound)
       | Expr.op pairSignature.Op.zero _ =>
@@ -530,13 +514,13 @@ namespace Pair
         absurd trivial notInFull
       | @blockedBackgroundIns _ _ _ _ xx dd inBins notPos =>
         if h: IsBound boundVars xx then
-          let ⟨dBound, isGetBound⟩ := h
-          let satBound := satisfiesBounds rfl isGetBound
+          let ⟨dBound, isBoundTo⟩ := h
+          let satBound := satisfiesBounds isBoundTo
           let dEq := satBound.binsSat _ inBins rfl
           
           let dNeq: ¬ (Set3.just dBound).posMem dd :=
-            Valuation.withBoundVars.eqOfIsGetBound
-              theInternalWfm isGetBound ▸
+            Valuation.withBoundVars.eqOfIsBoundTo
+              theInternalWfm isBoundTo ▸
             notPos
           
           absurd dEq dNeq
@@ -549,13 +533,13 @@ namespace Pair
           binsFails ⟨inBins, h⟩ out
       | @blockedBackgroundOut _ _ _ _ xx dd inBout isDef =>
         if h: IsBound boundVars xx then
-          let ⟨dBound, isGetBound⟩ := h
-          let satBound := satisfiesBounds rfl isGetBound
+          let ⟨dBound, isBoundTo⟩ := h
+          let satBound := satisfiesBounds isBoundTo
           let dNeq := satBound.boutSat _ inBout rfl
           
           let dEq: (Set3.just dBound).defMem dd :=
-            Valuation.withBoundVars.eqOfIsGetBound
-              theInternalWfm isGetBound ▸
+            Valuation.withBoundVars.eqOfIsBoundTo
+              theInternalWfm isBoundTo ▸
             isDef
           
           absurd dEq dNeq
@@ -599,9 +583,7 @@ namespace Pair
       |
         cinsFailsCycle ⟨Or.inl (Or.inr ⟨_, xEq⟩), ninBounds⟩ _
       =>
-        let isGetBound :=
-          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
-        False.elim (ninBounds ⟨dX, isGetBound⟩)
+        absurd ⟨dX, xEq ▸ IsBoundTo.InHead⟩ ninBounds
       |
         cinsFailsOut ⟨Or.inl (Or.inl ⟨inCins, _⟩), ninBins⟩ out
       =>
@@ -609,19 +591,14 @@ namespace Pair
         cinsFailsOut ⟨inCins, ninBinsTail⟩ out
       |
         cinsFailsOut ⟨Or.inl (Or.inr ⟨_, xEq⟩), ninBins⟩ _ =>
-        let isGetBound :=
-          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
-        False.elim (ninBins ⟨dX, isGetBound⟩)
+        absurd ⟨dX, xEq ▸ IsBoundTo.InHead⟩ ninBins
       |
         binsFails ⟨Or.inl (Or.inl ⟨inBins, _⟩), ninBounds⟩ out =>
         let ninBoundsTail := IsBound.Not.notBoundTail ninBounds
         binsFails ⟨inBins, ninBoundsTail⟩ out
       |
         binsFails ⟨Or.inl (Or.inr ⟨_, xEq⟩), ninBounds⟩ _ =>
-        let isGetBound :=
-          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
-        
-        False.elim (ninBounds ⟨dX, isGetBound⟩)
+        absurd ⟨dX, xEq ▸ IsBoundTo.InHead⟩ ninBounds
       |
         @binsFails _ _ _ _ _ dd xx ⟨Or.inr inBins, ninBounds⟩ out
       =>
@@ -637,9 +614,7 @@ namespace Pair
         boutFails ⟨inBout, ninBoundsTail⟩ ins
       |
         boutFails ⟨Or.inl (Or.inr ⟨_, xEq⟩), ninBounds⟩ _ =>
-        let isGetBound :=
-          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
-        False.elim (ninBounds ⟨dX, isGetBound⟩)
+        absurd ⟨dX, xEq ▸ IsBoundTo.InHead⟩ ninBounds
       |
         @boutFails _ _ _ _ _ dd xx ⟨Or.inr inBout, ninBounds⟩ ins
       =>
@@ -676,9 +651,7 @@ namespace Pair
       |
         cinsFailsCycle ⟨Or.inr ⟨_, xEq⟩, ninBounds⟩ _
       =>
-        let isGetBound :=
-          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
-        False.elim (ninBounds ⟨dX, isGetBound⟩)
+        absurd ⟨dX, xEq ▸ IsBoundTo.InHead⟩ ninBounds
       |
         cinsFailsOut ⟨Or.inl ⟨inCins, _⟩, ninBins⟩ out
       =>
@@ -686,28 +659,21 @@ namespace Pair
         cinsFailsOut ⟨inCins, ninBinsTail⟩ out
       |
         cinsFailsOut ⟨Or.inr ⟨_, xEq⟩, ninBins⟩ _ =>
-        let isGetBound :=
-          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
-        False.elim (ninBins ⟨dX, isGetBound⟩)
+        absurd ⟨dX, xEq ▸ IsBoundTo.InHead⟩ ninBins
       |
         binsFails ⟨Or.inl ⟨inBins, _⟩, ninBounds⟩ out =>
         let ninBoundsTail := IsBound.Not.notBoundTail ninBounds
         binsFails ⟨inBins, ninBoundsTail⟩ out
       |
         binsFails ⟨Or.inr ⟨_, xEq⟩, ninBounds⟩ _ =>
-        let isGetBound :=
-          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
-        
-        False.elim (ninBounds ⟨dX, isGetBound⟩)
+        absurd ⟨dX, xEq ▸ IsBoundTo.InHead⟩ ninBounds
       |
         boutFails ⟨Or.inl ⟨inBout, _⟩, ninBounds⟩ ins =>
         let ninBoundsTail := IsBound.Not.notBoundTail ninBounds
         boutFails ⟨inBout, ninBoundsTail⟩ ins
       |
         boutFails ⟨Or.inr ⟨_, xEq⟩, ninBounds⟩ _ =>
-        let isGetBound :=
-          xEq ▸ IsGetBound.InHead (fromNat.isNatEncoding x) _ _
-        False.elim (ninBounds ⟨dX, isGetBound⟩)
+        absurd ⟨dX, xEq ▸ IsBoundTo.InHead⟩ ninBounds
     
     def allInternalInapplicableInterp
       (isEmptyCycle: IsEmptyCycle externalCycle)
@@ -739,11 +705,11 @@ namespace Pair
         let dInCins := isCause.elimVar
         
         if h: IsBound boundVars xx then
-          let ⟨dBound, isGetBound⟩ := h
-          let satBound := satisfiesBounds rfl isGetBound
+          let ⟨dBound, isBoundTo⟩ := h
+          let satBound := satisfiesBounds isBoundTo
           let dEq: d = dBound := satBound.cinsSat _ dInCins rfl
           let out := Out.intro externalCycle isEmptyCycle inCycle
-          out.nopePos (InwExternal.boundVar (dEq ▸ isGetBound))
+          out.nopePos (InwExternal.boundVar (dEq ▸ isBoundTo))
         else
           let isInapp :=
             isEmptyCycleIh
@@ -759,10 +725,10 @@ namespace Pair
             cinsFailsCycle
               ⟨dInCins, h⟩
               (show externalCycle _ from xEq ▸ dEq ▸ inCycle)
-          | blockedBout ⟨xEq, ⟨dB, dEq⟩⟩ isIns _ =>
-            let isIns := xEq ▸ dEq ▸ isIns
-            let inwGetBound := isIns.isSound.toPos
-            False.elim (h ⟨dB, Inw.toIsGetBound inwGetBound⟩)
+          | blockedBout ⟨xEq, ⟨dB, dEq⟩⟩ ins _ =>
+            let insGetBound := xEq ▸ dEq ▸ ins.isSound
+            let inwGetBound := Inw.toIsGetBound insGetBound.toPos
+            absurd ⟨dB, inwGetBound.toIsBoundTo⟩ h
       |
         Expr.op pairSignature.Op.zero _ =>
         let dEq := isCause.elimZeroExpr

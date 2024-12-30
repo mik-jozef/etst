@@ -3,9 +3,9 @@
 -/
 
 import WFC.Ch2_Valuation
+import Utils.IsBound
 
 namespace Valuation
-  
   def update.eqBound
     (val: Valuation D)
     (x: Nat)
@@ -629,5 +629,39 @@ namespace Valuation
           
           (isSupA.isMember tA x).posLe ((valBLe x).posLe dInBtX)
     }
+  
+  def withBoundVars.eqOfIsBoundTo
+    (b: Valuation Pair)
+    (isBoundTo: IsBoundTo boundVars x d)
+  :
+    (b.withBoundVars boundVars x) = Set3.just d
+  :=
+    match boundVars with
+    | ⟨dd, xx⟩ :: tail => by
+      unfold Valuation.withBoundVars
+      exact  
+        if h: x = xx then
+          Valuation.update.eqBoundOfEq _ h.symm dd ▸
+          congr rfl (isBoundTo.listHeadEq h).symm
+        else
+          Valuation.update.eqOrig _ (Ne.symm h) dd ▸
+          eqOfIsBoundTo b (isBoundTo.listHeadNeq h)
+  
+  def withBoundVars.eqOrigOfIsFree
+    (b: Valuation Pair)
+    (isFree: ¬ IsBound boundVars x)
+  :
+    (b.withBoundVars boundVars x) = b x
+  :=
+    match boundVars with
+    | [] => rfl
+    | ⟨dd, xx⟩ :: tail =>
+      if h: x = xx then
+        absurd ⟨dd, h ▸ IsBoundTo.InHead⟩ isFree
+      else by
+        unfold Valuation.withBoundVars
+        exact
+          Valuation.update.eqOrig _ (Ne.symm h) dd ▸
+          eqOrigOfIsFree b (IsBound.Not.notBoundTail isFree)
   
 end Valuation

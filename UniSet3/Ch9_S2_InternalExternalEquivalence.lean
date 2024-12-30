@@ -53,7 +53,7 @@ namespace Pair
     def containsItself: uniSet3 ∈ uniSet3 := isUniversal isDefinable
     
     -- TODO:
-    -- 0. finish this volume
+    -- 0. split AProofSystem.lean into multiple utility files.
     -- 1. make monotonic Exprs part of Salgebra
     --   1.1. Generalize WFC for any monotonic exprs
     -- 2. Make variables `T: Type*` instead of Nat

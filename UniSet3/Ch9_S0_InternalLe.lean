@@ -61,19 +61,19 @@ namespace Pair
           x = uniDefList.theSet ∧
           ∃ vvI ∈ internalCause.contextIns,
             d = (vvI.x, vvI.d) ∧
-            IsVarFree vvI.x boundVars
+            IsVarFree boundVars vvI.x
       backgroundIns :=
         fun ⟨d, x⟩ =>
           x = uniDefList.theSet ∧
           ∃ vvI ∈ internalCause.backgroundIns,
             d = (vvI.x, vvI.d) ∧
-            IsVarFree vvI.x boundVars
+            IsVarFree boundVars vvI.x
       backgroundOut :=
         fun ⟨d, x⟩ =>
           x = uniDefList.theSet ∧
           ∃ vvI ∈ internalCause.backgroundOut,
             d = (vvI.x, vvI.d) ∧
-            IsVarFree vvI.x boundVars
+            IsVarFree boundVars vvI.x
     }
     
     def extOfIntCauseDistributesUnion
@@ -322,45 +322,39 @@ namespace Pair
         | blockedContextIns inCins inBout =>
           let isFree :=
             byContradiction fun notFree =>
-              let ⟨_, inBoundVars⟩ :=
-                IsVarFree.Not.exBoundOfNot notFree
-              let ⟨_, isGetBound⟩ :=
-                IsGetBound.exOfInBoundVars inBoundVars
-              let cinsSat := (satBoundVars rfl isGetBound).cinsSat
-              let boutSat := (boundVarsSat rfl isGetBound).boutSat
+              let ⟨_, isBoundTo⟩ :=
+                IsVarFree.Not.exBoundTo notFree
+              let cinsSat := (satBoundVars isBoundTo).cinsSat
+              let boutSat := (boundVarsSat isBoundTo).boutSat
               boutSat _ inBout.dne rfl (cinsSat _ inCins rfl)
           let notBound isBound :=
-            isFree.nopeGetBound isBound.unwrap.property
+            isFree.nopeIsBoundTo isBound.unwrap.property
           cinsFailsOut
             ⟨rfl, _, inCins, rfl, isFree⟩
             (boutOut inBout.dne notBound)
         | blockedBackgroundIns inBins inBout =>
           let isFree :=
             byContradiction fun notFree =>
-              let ⟨_, inBoundVars⟩ :=
-                IsVarFree.Not.exBoundOfNot notFree
-              let ⟨_, isGetBound⟩ :=
-                IsGetBound.exOfInBoundVars inBoundVars
-              let binsSat := (satBoundVars rfl isGetBound).binsSat
-              let boutSat := (boundVarsSat rfl isGetBound).boutSat
+              let ⟨_, isBoundTo⟩ :=
+                IsVarFree.Not.exBoundTo notFree
+              let binsSat := (satBoundVars isBoundTo).binsSat
+              let boutSat := (boundVarsSat isBoundTo).boutSat
               boutSat _ inBout.dne rfl (binsSat _ inBins rfl)
           let notBound isBound :=
-            isFree.nopeGetBound isBound.unwrap.property
+            isFree.nopeIsBoundTo isBound.unwrap.property
           binsFails
             ⟨rfl, _, inBins, rfl, isFree⟩
             (boutOut inBout.dne notBound)
         | blockedBackgroundOut inBout inBins =>
           let isFree :=
             byContradiction fun notFree =>
-              let ⟨_, inBoundVars⟩ :=
-                IsVarFree.Not.exBoundOfNot notFree
-              let ⟨_, isGetBound⟩ :=
-                IsGetBound.exOfInBoundVars inBoundVars
-              let binsSat := (boundVarsSat rfl isGetBound).binsSat
-              let boutSat := (satBoundVars rfl isGetBound).boutSat
+              let ⟨_, isBoundTo⟩ :=
+                IsVarFree.Not.exBoundTo notFree
+              let binsSat := (boundVarsSat isBoundTo).binsSat
+              let boutSat := (satBoundVars isBoundTo).boutSat
               boutSat _ inBout rfl (binsSat _ inBins rfl)
           let notBound isBound :=
-            isFree.nopeGetBound isBound.unwrap.property
+            isFree.nopeIsBoundTo isBound.unwrap.property
           boutFails
             ⟨rfl, _, inBout, rfl, isFree⟩
             (binsIns inBins notBound)
@@ -373,7 +367,7 @@ namespace Pair
       contextIns :=
         fun ⟨dd, xx⟩ =>
           Or
-            (IsGetBound (boundVarsEncoding boundVars) xx dd)
+            (IsBoundTo boundVars xx dd)
             (¬ IsBound boundVars xx ∧
             _root_.Ins
               pairSalgebra
@@ -383,7 +377,7 @@ namespace Pair
       backgroundIns :=
         fun ⟨dd, xx⟩ =>
           Or
-            (IsGetBound (boundVarsEncoding boundVars) xx dd)
+            (IsBoundTo boundVars xx dd)
             (¬ IsBound boundVars xx ∧
             _root_.Ins
               pairSalgebra
@@ -395,7 +389,7 @@ namespace Pair
           Or
             (∃ dOther,
               dd ≠ dOther ∧
-              IsGetBound (boundVarsEncoding boundVars) xx dOther)
+              IsBoundTo boundVars xx dOther)
             (¬ IsBound boundVars xx ∧
             _root_.Out
               pairSalgebra
@@ -433,33 +427,30 @@ namespace Pair
     :
       (cause boundVars).SatisfiesBoundVars boundVars
     :=
-      (fun eqEnc isGetBound => {
+      (fun isBoundTo => {
         cinsSat :=
           fun _ inCins xEq =>
             inCins.elim
               (fun isBound =>
-                isBound.isUnique (xEq ▸ eqEnc ▸ isGetBound))
+                isBound.isUnique (xEq ▸ isBoundTo))
               (fun ⟨notBound, _⟩ =>
-                False.elim
-                  (notBound (xEq ▸ ⟨_, eqEnc ▸ isGetBound⟩)))
+                absurd (xEq ▸ ⟨_, isBoundTo⟩) notBound)
         binsSat :=
           fun _ inBins xEq =>
             inBins.elim
               (fun isBound =>
-                isBound.isUnique (xEq ▸ eqEnc ▸ isGetBound))
+                isBound.isUnique (xEq ▸ isBoundTo))
               (fun ⟨notBound, _⟩ =>
-                False.elim
-                  (notBound (xEq ▸ ⟨_, eqEnc ▸ isGetBound⟩)))
+                absurd (xEq ▸ ⟨_, isBoundTo⟩) notBound)
         boutSat :=
           fun _ inBout xEq dEq =>
             inBout.elim
               (fun ⟨_, neq, isBoundOther⟩ =>
                 neq
                   (dEq ▸
-                  isGetBound.isUnique
-                    (eqEnc ▸ xEq ▸ isBoundOther)))
+                  isBoundTo.isUnique (xEq ▸ isBoundOther)))
               (fun ⟨notBound, _⟩ =>
-                notBound ⟨_, xEq ▸ eqEnc ▸ isGetBound⟩)
+                notBound ⟨_, xEq ▸ isBoundTo⟩)
       })
     
     def isCauseOfAllInappCpl
@@ -490,7 +481,7 @@ namespace Pair
           let isInapp :=
             allInapp
               (Cause.ofValPos b b).background
-              (fun eqEnc isGetBound => {
+              (fun isBoundTo => {
                 cinsSat := fun _ nope _ => nope.elim
                 binsSat :=
                   fun _ inBins xEq =>
@@ -499,14 +490,13 @@ namespace Pair
                       notBout.toAnd.left.toAll fun _ nand =>
                         nand.toImpl
                     byContradiction fun neq =>
-                      otherNotBound
-                        _ neq (xEq ▸ eqEnc ▸ isGetBound)
+                      otherNotBound _ neq (xEq ▸ isBoundTo)
                 boutSat :=
                   fun _ inBout xEq dEq =>
                     let notBins :=
                       isSatCpl.backgroundOutHold inBout
                     let ⟨notBound, _⟩ := notBins.toAnd
-                    notBound (xEq ▸ dEq ▸ eqEnc ▸ isGetBound)
+                    notBound (xEq ▸ dEq ▸ isBoundTo)
               })
               (IsWeakCause.toEmptyCinsCpl
                 (IsWeakCause.ofValPos isPosCpl))
@@ -518,12 +508,12 @@ namespace Pair
             let dEq: _ = pair vv.x vv.d := dEq
             isSatCpl.backgroundInsHold
               inBins
-              (Or.inr ⟨isFree.toNotBound, xEq ▸ dEq ▸ isOut⟩)
+              (Or.inr ⟨isFree.nopeIsBound, xEq ▸ dEq ▸ isOut⟩)
           | boutFails ⟨xEq, ⟨vv, inBout, dEq, isFree⟩⟩ isIns =>
             let dEq: _ = pair vv.x vv.d := dEq
             isSatCpl.backgroundOutHold
               inBout
-              (Or.inr ⟨isFree.toNotBound, xEq ▸ dEq ▸ isIns⟩))
+              (Or.inr ⟨isFree.nopeIsBound, xEq ▸ dEq ▸ isIns⟩))
     
     
     def inappExtBoundVar
@@ -545,20 +535,20 @@ namespace Pair
     :=
       let out :=
         Out.isComplete _ _ fun inw =>
-        let isGetBound := Inw.toIsGetBound inw
+        let isBoundTo := (Inw.toIsGetBound inw).toIsBoundTo
         let isInapp :=
           allInapp
             (Cause.var x d)
-            (Cause.boundVarSat isGetBound)
+            (Cause.boundVarSat isBoundTo)
             (fun isSat => isSat.contextInsHold ⟨rfl, rfl⟩)
         open IsCauseInappExtended in
         match isInapp with
         | cinsFailsCycle inCins _ =>
           let ⟨_, ⟨_, ⟨dEq, xEq⟩, _, isFree⟩⟩ := inCins
-          isFree.nopeGetBound (dEq ▸ xEq ▸ isGetBound)
+          isFree.nopeIsBoundTo (dEq ▸ xEq ▸ isBoundTo)
         | cinsFailsOut inCins _ =>
           let ⟨_, ⟨_, ⟨dEq, xEq⟩, _, isFree⟩⟩ := inCins
-          isFree.nopeGetBound (dEq ▸ xEq ▸ isGetBound)
+          isFree.nopeIsBoundTo (dEq ▸ xEq ▸ isBoundTo)
         | binsFails inBins _ =>
           let ⟨_, ⟨_, nope, _, _⟩⟩ := inBins
           nope.elim
@@ -591,13 +581,12 @@ namespace Pair
         externalCause
     :=
       open IsCauseInappExtended in
-      if h:
-        ∃ d, IsGetBound (boundVarsEncoding boundVars) x d
-      then
-        let ⟨d, isGetBound⟩ := h
+      if h: IsBound boundVars x then
+        let ⟨d, isBoundTo⟩ := h
         boutFails
           (notBound.toAll (fun _ => Not.dne) d)
-          (Ins.isComplete _ _ (insGetBound isGetBound))
+          (Ins.isComplete
+            _ _ (insGetBound isBoundTo.toIsGetBound))
       else
         let isInapp :=
           allInapp
@@ -643,8 +632,8 @@ namespace Pair
             vv ∈ internalCause.backgroundOut
           then
             if hB: IsBound boundVars vv.x then
-              let ⟨_d, isGetBound⟩ := hB
-              let boundVarSat := boundVarsSat rfl isGetBound
+              let ⟨_d, isBoundTo⟩ := hB
+              let boundVarSat := boundVarsSat isBoundTo
               boundVarSat.ninBinsBout vv.d
             else
               False.elim
@@ -1097,9 +1086,7 @@ namespace Pair
               cause
               (⟨dX, x⟩ :: boundVars))
         :=
-          let isGetBound :=
-            IsGetBound.InHead (fromNat.isNatEncoding x) dX _
-          let causeSatBound := satBoundVars rfl isGetBound
+          let causeSatBound := satBoundVars IsBoundTo.InHead
           let causeLeWith := causeSatBound.leWithBound
           let whyIsTypeInferenceBroken:
             IsWeakCause pairSalgebra (cause.withBound x dX) d body
@@ -1162,9 +1149,7 @@ namespace Pair
                 (fun dX =>
                   let satBoundVars :=
                     (allApplicable dX).property.left
-                  let isGetBound :=
-                    IsGetBound.InHead (fromNat.isNatEncoding x) dX _
-                  let causeSatBound := satBoundVars rfl isGetBound
+                  let causeSatBound := satBoundVars IsBoundTo.InHead
                   let causeLeWith := causeSatBound.leWithBound
                   let whyIsTypeInferenceBroken :=
                     @IsWeakCause.toSuperCause
