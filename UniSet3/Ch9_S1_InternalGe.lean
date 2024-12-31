@@ -268,7 +268,7 @@ namespace Pair
           insPair
             (insL boundVars (args ArityTwo.zth) dL rfl)
             (insR boundVars (args ArityTwo.fst) dR rfl)
-      | Expr.un left rite =>
+      | Expr.op pairSignature.Op.un args =>
         let inCins :=
           isCauseExternal.hurrDurrElim
             externalCauseIsSat.toIsConsistent
@@ -277,12 +277,12 @@ namespace Pair
           (fun inCinsL =>
             match cinsIns inCinsL with
             | MotiveIns.interp _ insL =>
-              insUnL _ (insL boundVars left d rfl))
+              insUnL _ (insL boundVars (args ArityTwo.zth) d rfl))
           (fun inCinsR =>
             match cinsIns inCinsR with
             | MotiveIns.interp _ insR =>
-              insUnR _ (insR boundVars rite d rfl))
-      | Expr.ir left rite =>
+              insUnR _ (insR boundVars (args ArityTwo.fst) d rfl))
+      | Expr.op pairSignature.Op.ir args =>
         let ⟨inCinsL, inCinsR⟩ :=
           isCauseExternal.hurrDurrElim
             externalCauseIsSat.toIsConsistent
@@ -290,8 +290,8 @@ namespace Pair
         match cinsIns inCinsL, cinsIns inCinsR with
         | MotiveIns.interp _ insL, MotiveIns.interp _ insR =>
           insIr
-            (insL boundVars left d rfl)
-            (insR boundVars rite d rfl)
+            (insL boundVars (args ArityTwo.zth) d rfl)
+            (insR boundVars (args ArityTwo.fst) d rfl)
       | Expr.cpl expr =>
         let inBout :=
           Not.dne
@@ -301,7 +301,7 @@ namespace Pair
         match boutOut inBout with
         | MotiveOut.interp _ inw =>
           inw boundVars expr d rfl
-      | Expr.ifThen cond expr =>
+      | Expr.op pairSignature.Op.ifThen args =>
         let ⟨⟨dC, inCinsCond⟩, inCinsExpr⟩ :=
           isCauseExternal.hurrDurrElim
             externalCauseIsSat.toIsConsistent
@@ -309,8 +309,8 @@ namespace Pair
         match cinsIns inCinsCond, cinsIns inCinsExpr with
         | MotiveIns.interp _ insCond, MotiveIns.interp _ insExpr =>
           insIfThen
-            (insCond boundVars cond dC rfl)
-            (insExpr boundVars expr d rfl)
+            (insCond boundVars (args ArityTwo.zth) dC rfl)
+            (insExpr boundVars (args ArityTwo.fst) d rfl)
       | Expr.arbUn x body =>
         let ⟨dX, inCins⟩ :=
           isCauseExternal.hurrDurrElim
@@ -768,7 +768,10 @@ namespace Pair
             satisfiesBounds
             isCauseR
       |
-        Expr.un left rite =>
+        Expr.op pairSignature.Op.un args =>
+        let left := args ArityTwo.zth
+        let rite := args ArityTwo.fst
+        
         let isInappL :=
           isEmptyCycleIh
             inCycle
@@ -820,7 +823,10 @@ namespace Pair
         
         isInappOfInappUnOrIfThen isInapp
       |
-        Expr.ir left rite =>
+        Expr.op pairSignature.Op.ir args =>
+        let left := args ArityTwo.zth
+        let rite := args ArityTwo.fst
+        
         let ⟨isCauseL, isCauseR⟩ := isCause.elimIr
         
         let isInapp :=
@@ -878,15 +884,18 @@ namespace Pair
         
         isInappOfInappCpl satisfiesBounds causeInapp
       |
-        Expr.ifThen cond expr =>
+        Expr.op pairSignature.Op.ifThen args =>
+        let cond := args ArityTwo.zth
+        let body := args ArityTwo.fst
+        
         let ⟨⟨dC, isCauseCond⟩, isCauseBody⟩ :=
           isCause.elimIfThen updatedInternalWfm
         
         let isInappIh :=
           isEmptyCycleIh
             inCycle
-            (InwExternal.causeIfThen boundVars dC cond expr d)
-            (InwExternal.isCauseIfThen boundVars dC cond expr d)
+            (InwExternal.causeIfThen boundVars dC cond body d)
+            (InwExternal.isCauseIfThen boundVars dC cond body d)
         
         let inCycleCondOrBody :=
           match isInappIh with

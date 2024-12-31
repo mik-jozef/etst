@@ -88,27 +88,6 @@ def Expr.interpretation
         posArgs
         fun arg => (interpretation salg b c (exprs arg)).defLePos
     ⟩
-| un e0 e1 =>
-    let iE0 := interpretation salg b c e0
-    let iE1 := interpretation salg b c e1
-    ⟨
-      iE0.defMem ∪ iE1.defMem,
-      iE0.posMem ∪ iE1.posMem,
-      
-      fun _d dDef =>
-        dDef.elim
-          (fun dIE0 => Or.inl dIE0.toPos)
-          (fun dIE1 => Or.inr dIE1.toPos)
-    ⟩
-| ir e0 e1 =>
-    let iE0 := interpretation salg b c e0
-    let iE1 := interpretation salg b c e1
-    ⟨
-      iE0.defMem ∩ iE1.defMem,
-      iE0.posMem ∩ iE1.posMem,
-      
-      fun _d dDef => And.intro dDef.left.toPos dDef.right.toPos
-    ⟩
 | cpl e =>
     let ie := (interpretation salg b b e)
     ⟨
@@ -116,18 +95,6 @@ def Expr.interpretation
       ie.defMemᶜ,
       
       fun _d dInNPos => fun dInDef => dInNPos dInDef.toPos
-    ⟩
-| ifThen cond expr =>
-    let cond.I: Set3 salg.D := interpretation salg b c cond
-    let expr.I: Set3 salg.D := interpretation salg b c expr
-    
-    ⟨
-      fun d => (∃ dC, dC ∈ cond.I.defMem) ∧ d ∈ expr.I.defMem,
-      fun d => (∃ dC, dC ∈ cond.I.posMem) ∧ d ∈ expr.I.posMem,
-      
-      fun _d dIn =>
-        let dC := dIn.left.unwrap
-        And.intro ⟨dC, dC.property.toPos⟩ dIn.right.toPos
     ⟩
 | arbUn x body =>
     let body.I (dX: salg.D): Set3 salg.D :=

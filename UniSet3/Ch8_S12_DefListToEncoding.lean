@@ -2,6 +2,17 @@
 
 import UniSet3.Ch8_S11_GetBound
 
+def ArityTwo.eq
+  {argsA argsB: ArityTwo → T}
+  (eqZth: argsA ArityTwo.zth = argsB ArityTwo.zth)
+  (eqFst: argsA ArityTwo.fst = argsB ArityTwo.fst)
+:
+  argsA = argsB
+:=
+  funext fun arg =>
+    match arg with
+    | ArityTwo.zth => eqZth
+    | ArityTwo.fst => eqFst
 
 /-
   See `exprEncoding.exprList`.
@@ -32,17 +43,17 @@ def Pair.exprToEncoding
       IsBin (Is2 rfl) isEncL isEncR
     ⟩
 
-  | Expr.un left rite =>
-    let ⟨l, isEncL⟩ := exprToEncoding left
-    let ⟨r, isEncR⟩ := exprToEncoding rite
+  | Expr.op pairSignature.Op.un args =>
+    let ⟨l, isEncL⟩ := exprToEncoding (args ArityTwo.zth)
+    let ⟨r, isEncR⟩ := exprToEncoding (args ArityTwo.fst)
     ⟨
       pair (fromNat 3) (pair l r),
       IsBin (Is3 rfl) isEncL isEncR,
     ⟩
 
-  | Expr.ir left rite =>
-    let ⟨l, isEncL⟩ := exprToEncoding left
-    let ⟨r, isEncR⟩ := exprToEncoding rite
+  | Expr.op pairSignature.Op.ir args =>
+    let ⟨l, isEncL⟩ := exprToEncoding (args ArityTwo.zth)
+    let ⟨r, isEncR⟩ := exprToEncoding (args ArityTwo.fst)
     ⟨
       pair (fromNat 4) (pair l r),
       IsBin (Is4 rfl) isEncL isEncR,
@@ -52,9 +63,9 @@ def Pair.exprToEncoding
     let ⟨e, isEncE⟩ := exprToEncoding expr
     ⟨pair (fromNat 5) e, IsCpl isEncE⟩
 
-  | Expr.ifThen cond body =>
-    let ⟨c, isEncC⟩ := exprToEncoding cond
-    let ⟨b, isEncB⟩ := exprToEncoding body
+  | Expr.op pairSignature.Op.ifThen args =>
+    let ⟨c, isEncC⟩ := exprToEncoding (args ArityTwo.zth)
+    let ⟨b, isEncB⟩ := exprToEncoding (args ArityTwo.fst)
     ⟨
       pair (fromNat 6) (pair c b),
       IsBin (Is6 rfl) isEncC isEncB,
@@ -110,7 +121,9 @@ def Pair.exprToEncoding.injEq
                 | ArityTwo.zth => zthEq
                 | ArityTwo.fst => fstEq)
   
-  | Expr.un _leftA _riteA, Expr.un _leftB _riteB =>
+  | Expr.op pairSignature.Op.un _,
+    Expr.op pairSignature.Op.un _
+  =>
     Pair.noConfusion
       (Subtype.val_eq_val eq)
       fun _ eqP =>
@@ -119,9 +132,11 @@ def Pair.exprToEncoding.injEq
           fun leftEq riteEq =>
             let leftEq := exprToEncoding.injEq (Subtype.eq leftEq)
             let riteEq := exprToEncoding.injEq (Subtype.eq riteEq)
-            congrBin rfl leftEq riteEq
+            congr rfl (ArityTwo.eq leftEq riteEq)
   
-  | Expr.ir _leftA _riteA, Expr.ir _leftB _riteB =>
+  | Expr.op pairSignature.Op.ir _,
+    Expr.op pairSignature.Op.ir _
+  =>
     Pair.noConfusion
       (Subtype.val_eq_val eq)
       fun _ eqP =>
@@ -130,15 +145,11 @@ def Pair.exprToEncoding.injEq
           fun leftEq riteEq =>
             let leftEq := exprToEncoding.injEq (Subtype.eq leftEq)
             let riteEq := exprToEncoding.injEq (Subtype.eq riteEq)
-            congrBin rfl leftEq riteEq
+            congr rfl (ArityTwo.eq leftEq riteEq)
   
-  | Expr.cpl _exprA, Expr.cpl _exprB =>
-    Pair.noConfusion
-      (Subtype.val_eq_val eq)
-      fun _ eqP =>
-        congr rfl (exprToEncoding.injEq (Subtype.eq eqP))
-  
-  | Expr.ifThen _condA _bodyA, Expr.ifThen _condB _bodyB =>
+  | Expr.op pairSignature.Op.ifThen _,
+    Expr.op pairSignature.Op.ifThen _
+  =>
     Pair.noConfusion
       (Subtype.val_eq_val eq)
       fun _ eqP =>
@@ -147,7 +158,13 @@ def Pair.exprToEncoding.injEq
           fun condEq bodyEq =>
             let condEq := exprToEncoding.injEq (Subtype.eq condEq)
             let bodyEq := exprToEncoding.injEq (Subtype.eq bodyEq)
-            congrBin rfl condEq bodyEq
+            congr rfl (ArityTwo.eq condEq bodyEq)
+  
+  | Expr.cpl _exprA, Expr.cpl _exprB =>
+    Pair.noConfusion
+      (Subtype.val_eq_val eq)
+      fun _ eqP =>
+        congr rfl (exprToEncoding.injEq (Subtype.eq eqP))
   
   | Expr.arbUn _xA _bodyA, Expr.arbUn _xB _bodyB =>
     Pair.noConfusion
@@ -350,15 +367,15 @@ namespace Pair
         eq2 ▸ eqA ▸ eqB ▸ rfl,
       ⟩
       | Is3 eq3 => ⟨
-        Expr.un exprA exprB,
+        unExpr exprA exprB,
         eq3 ▸ eqA ▸ eqB ▸ rfl,
       ⟩
       | Is4 eq4 => ⟨
-        Expr.ir exprA exprB,
+        irExpr exprA exprB,
         eq4 ▸ eqA ▸ eqB ▸ rfl,
       ⟩
       | Is6 eq6 => ⟨
-        Expr.ifThen exprA exprB,
+        ifThenExpr exprA exprB,
         eq6 ▸ eqA ▸ eqB ▸ rfl,
       ⟩
     | IsCpl isExpr =>
@@ -497,11 +514,12 @@ namespace Pair
   :
     (pair (fromNat 3) (pair exprA exprB)).encodingToExpr
       =
-    Expr.un (encodingToExpr exprA) (encodingToExpr exprB)
+    PairExpr.unExpr (encodingToExpr exprA) (encodingToExpr exprB)
   :=
+    open PairExpr in
     Eq.symm
       (exprToEncoding.toEqEncodingToExpr
-        (Expr.un (encodingToExpr exprA) (encodingToExpr exprB))
+        (unExpr (encodingToExpr exprA) (encodingToExpr exprB))
         (pair (fromNat 3) (pair exprA exprB))
         (show pair (fromNat 3) _ = _ from by
           rw [exprToEncoding.isInverseSubtype isExprA]
@@ -513,11 +531,12 @@ namespace Pair
   :
     (pair (fromNat 4) (pair exprA exprB)).encodingToExpr
       =
-    Expr.ir (encodingToExpr exprA) (encodingToExpr exprB)
+    PairExpr.irExpr (encodingToExpr exprA) (encodingToExpr exprB)
   :=
+    open PairExpr in
     Eq.symm
       (exprToEncoding.toEqEncodingToExpr
-        (Expr.ir (encodingToExpr exprA) (encodingToExpr exprB))
+        (irExpr (encodingToExpr exprA) (encodingToExpr exprB))
         (pair (fromNat 4) (pair exprA exprB))
         (show pair (fromNat 4) _ = _ from by
           rw [exprToEncoding.isInverseSubtype isExprA]
@@ -544,11 +563,14 @@ namespace Pair
   :
     (pair (fromNat 6) (pair exprA exprB)).encodingToExpr
       =
-    Expr.ifThen (encodingToExpr exprA) (encodingToExpr exprB)
+    PairExpr.ifThenExpr
+      (encodingToExpr exprA)
+      (encodingToExpr exprB)
   :=
+    open PairExpr in
     Eq.symm
       (exprToEncoding.toEqEncodingToExpr
-        (Expr.ifThen (encodingToExpr exprA) (encodingToExpr exprB))
+        (ifThenExpr (encodingToExpr exprA) (encodingToExpr exprB))
         (pair (fromNat 6) (pair exprA exprB))
         (show pair (fromNat 6) _ = _ from by
           rw [exprToEncoding.isInverseSubtype isExprA]

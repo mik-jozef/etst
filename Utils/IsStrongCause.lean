@@ -6,6 +6,8 @@
 import WFC.Ch6_S1_AProofSystem
 import Utils.PairExpr
 
+open PairExpr
+
 
 def Cause.IsStronglySatisfiedBy.withBound
   {cause: Cause D}
@@ -459,27 +461,28 @@ def IsStrongCause.elimPairExpr
 
 
 def IsStrongCause.unL
-  (isCause: IsStrongCause salg cause d left)
+  (isCause: IsStrongCause pairSalgebra cause d left)
   (rite: Expr _)
 :
-  IsStrongCause salg cause d (Expr.un left rite)
+  IsStrongCause pairSalgebra cause d (unExpr left rite)
 :=
   Or.inl ∘ isCause
 
 def IsStrongCause.unR
-  (isCause: IsStrongCause salg cause d rite)
+  (isCause: IsStrongCause pairSalgebra cause d rite)
   (left: Expr _)
 :
-  IsStrongCause salg cause d (Expr.un left rite)
+  IsStrongCause pairSalgebra cause d (unExpr left rite)
 :=
   Or.inr ∘ isCause
 
 def IsStrongCause.elimUn
-  (isCause: IsStrongCause salg cause d (Expr.un left rite))
+  (isCause:
+    IsStrongCause pairSalgebra cause d (unExpr left rite))
 :
   Or
-    (IsStrongCause salg cause d left)
-    (IsStrongCause salg cause d rite)
+    (IsStrongCause pairSalgebra cause d left)
+    (IsStrongCause pairSalgebra cause d rite)
 :=
   if h: cause.IsConsistent then
     (isCause h.leastValsApxAreSat).elim
@@ -501,43 +504,45 @@ def IsStrongCause.elimUn
     Or.inl (Cause.IsConsistent.Not.isStrong h d left)
 
 def IsStrongCause.notUn
-  (notCauseLeft: ¬ IsStrongCause salg cause d left)
-  (notCauseRite: ¬ IsStrongCause salg cause d rite)
+  (notCauseLeft: ¬ IsStrongCause pairSalgebra cause d left)
+  (notCauseRite: ¬ IsStrongCause pairSalgebra cause d rite)
 :
-  ¬ IsStrongCause salg cause d (Expr.un left rite)
+  ¬ IsStrongCause pairSalgebra cause d (unExpr left rite)
 :=
   elimUn.contra (Or.elim · notCauseLeft notCauseRite)
 
 def IsStrongCause.Not.elimUnL
-  (isNotCause: ¬ IsStrongCause salg cause d (Expr.un left rite))
+  (isNotCause:
+    ¬ IsStrongCause pairSalgebra cause d (unExpr left rite))
 :
-  ¬ IsStrongCause salg cause d left
+  ¬ IsStrongCause pairSalgebra cause d left
 :=
   fun isCause => isNotCause (isCause.unL rite)
 
 def IsStrongCause.Not.elimUnR
-  (isNotCause: ¬ IsStrongCause salg cause d (Expr.un left rite))
+  (isNotCause:
+    ¬ IsStrongCause pairSalgebra cause d (unExpr left rite))
 :
-  ¬ IsStrongCause salg cause d rite
+  ¬ IsStrongCause pairSalgebra cause d rite
 :=
   fun isCause => isNotCause (isCause.unR left)
 
 
 def IsStrongCause.ir
-  (isCauseLeft: IsStrongCause salg cause d left)
-  (isCauseRite: IsStrongCause salg cause d rite)
+  (isCauseLeft: IsStrongCause pairSalgebra cause d left)
+  (isCauseRite: IsStrongCause pairSalgebra cause d rite)
 :
-  IsStrongCause salg cause d (Expr.ir left rite)
+  IsStrongCause pairSalgebra cause d (irExpr left rite)
 :=
   fun isSat =>
     And.intro (isCauseLeft isSat) (isCauseRite isSat)
 
 def IsStrongCause.elimIr
-  (isCause: IsStrongCause salg cause d (Expr.ir left rite))
+  (isCause: IsStrongCause pairSalgebra cause d (irExpr left rite))
 :
   And
-    (IsStrongCause salg cause d left)
-    (IsStrongCause salg cause d rite)
+    (IsStrongCause pairSalgebra cause d left)
+    (IsStrongCause pairSalgebra cause d rite)
 :=
   if h: cause.IsConsistent then
     let ⟨isDefLeft, isDefRite⟩ := isCause h.leastValsApxAreSat
@@ -558,25 +563,26 @@ def IsStrongCause.elimIr
       (Cause.IsConsistent.Not.isStrong h d rite)
 
 def IsStrongCause.notIrLeft
-  (notCauseLeft: ¬ IsStrongCause salg cause d left)
+  (notCauseLeft: ¬ IsStrongCause pairSalgebra cause d left)
 :
-  ¬ IsStrongCause salg cause d (Expr.ir left rite)
+  ¬ IsStrongCause pairSalgebra cause d (irExpr left rite)
 :=
   elimIr.contra (fun ⟨left, _⟩ => notCauseLeft left)
 
 def IsStrongCause.notIrRite
-  (notCauseRite: ¬ IsStrongCause salg cause d rite)
+  (notCauseRite: ¬ IsStrongCause pairSalgebra cause d rite)
 :
-  ¬ IsStrongCause salg cause d (Expr.ir left rite)
+  ¬ IsStrongCause pairSalgebra cause d (irExpr left rite)
 :=
   elimIr.contra (fun ⟨_, rite⟩ => notCauseRite rite)
 
 def IsStrongCause.Not.elimIr
-  (isNotCause: ¬ IsStrongCause salg cause d (Expr.ir left rite))
+  (isNotCause:
+    ¬ IsStrongCause pairSalgebra cause d (irExpr left rite))
 :
   Or
-    (¬ IsStrongCause salg cause d left)
-    (¬ IsStrongCause salg cause d rite)
+    (¬ IsStrongCause pairSalgebra cause d left)
+    (¬ IsStrongCause pairSalgebra cause d rite)
 :=
   byContradiction fun nor =>
     let ⟨isCauseLeft, isCauseRite⟩ := nor.toAnd
@@ -648,10 +654,10 @@ def IsStrongCause.Not.elimCpl
 
 def IsStrongCause.ifThen
   {cond}
-  (isCauseCond: IsStrongCause salg cause dC cond)
-  (isCauseBody: IsStrongCause salg cause d body)
+  (isCauseCond: IsStrongCause pairSalgebra cause dC cond)
+  (isCauseBody: IsStrongCause pairSalgebra cause d body)
 :
-  IsStrongCause salg cause d (Expr.ifThen cond body)
+  IsStrongCause pairSalgebra cause d (ifThenExpr cond body)
 :=
   fun isSat =>
     And.intro
@@ -660,11 +666,12 @@ def IsStrongCause.ifThen
 
 def IsStrongCause.elimIfThen
   {cond}
-  (isCause: IsStrongCause salg cause d (Expr.ifThen cond body))
+  (isCause:
+    IsStrongCause pairSalgebra cause d (ifThenExpr cond body))
 :
   And
-    (∃ dC, IsStrongCause salg cause dC cond)
-    (IsStrongCause salg cause d body)
+    (∃ dC, IsStrongCause pairSalgebra cause dC cond)
+    (IsStrongCause pairSalgebra cause d body)
 :=
   if h: cause.IsConsistent then
     let ⟨⟨dC, isDefCond⟩, isDefBody⟩ := isCause h.leastValsApxAreSat
@@ -689,31 +696,32 @@ def IsStrongCause.elimIfThen
 
 def IsStrongCause.notIfThenCond
   {cond}
-  (notCauseCond: ∀ dC, ¬ IsStrongCause salg cause dC cond)
-  (d: salg.D)
+  (notCauseCond: ∀ dC, ¬ IsStrongCause pairSalgebra cause dC cond)
+  (d: Pair)
   (body: Expr _)
 :
-  ¬ IsStrongCause salg cause d (Expr.ifThen cond body)
+  ¬ IsStrongCause pairSalgebra cause d (ifThenExpr cond body)
 :=
   fun isCause =>
     notCauseCond _ isCause.elimIfThen.left.unwrap.property
 
 def IsStrongCause.notIfThenBody
-  (notCauseBody: ¬ IsStrongCause salg cause d body)
+  (notCauseBody: ¬ IsStrongCause pairSalgebra cause d body)
   (cond: Expr _)
 :
-  ¬ IsStrongCause salg cause d (Expr.ifThen cond body)
+  ¬ IsStrongCause pairSalgebra cause d (ifThenExpr cond body)
 :=
   fun isCause =>
     notCauseBody isCause.elimIfThen.right
 
 def IsStrongCause.Not.elimIfThen
   {cond}
-  (isNotCause: ¬ IsStrongCause salg cause d (Expr.ifThen cond body))
+  (isNotCause:
+    ¬ IsStrongCause pairSalgebra cause d (ifThenExpr cond body))
 :
   Or
-    (∀ dC, ¬ IsStrongCause salg cause dC cond)
-    (¬ IsStrongCause salg cause d body)
+    (∀ dC, ¬ IsStrongCause pairSalgebra cause dC cond)
+    (¬ IsStrongCause pairSalgebra cause d body)
 :=
   byContradiction fun nor =>
     let ⟨notAllNotCauseCond, isCauseBody⟩ := nor.toAnd

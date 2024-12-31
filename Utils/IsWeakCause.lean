@@ -6,6 +6,8 @@
 import WFC.Ch6_S1_AProofSystem
 import Utils.PairExpr
 
+open PairExpr
+
 
 def Cause.IsWeaklySatisfiedBy.toSubcause
   {cause: Cause D}
@@ -396,22 +398,39 @@ namespace IsWeakCause
           isCauseArgs param ⟨d, inArgVals⟩ isSat)
         argsCauseD
   
-  -- def elimOp
-  --   {salg: Salgebra sig}
-  --   {cause: Cause salg.D}
-  --   {d: salg.D}
+  def elimOp
+    {salg: Salgebra sig}
+    {cause: Cause salg.D}
+    {d: salg.D}
     
-  --   (isCause: IsWeakCause salg cause d (Expr.op opr argExprs))
-  -- :
-  --   ∃ (argVals: sig.Args opr salg.D),
-  --     d ∈ salg.I opr argVals ∧
-  --     ∀ param (dArg: argVals param),
-  --       IsWeakCause salg cause dArg (argExprs param)
-  -- :=
-  --   sorry
-  -- 
-  -- elimOp would be nice, but more complex & we don't need it.
-  -- I suppose the same trick that works for elimUn could work here.
+    (isCause: IsWeakCause salg cause d (Expr.op opr argExprs))
+    (v: Valuation salg.D)
+  :
+    ∃ (argVals: sig.Args opr salg.D),
+      salg.I opr argVals d ∧
+      ∀ param (dArg: argVals param),
+        IsWeakCause
+          salg
+          (cause.union (Cause.ofValPos v Valuation.empty))
+          dArg
+          (argExprs param)
+  :=
+    let isPos := isCause (cause.closestWeakSatValIsSat v)
+    
+    ⟨
+      fun param =>
+        Set3.posMem
+          ((argExprs param).interpretation
+            salg
+            (cause.closestWeakSatVal v)
+            cause.leastContextStd),
+      isPos,
+      fun _ ⟨_, dInArg⟩ _ _ isSat =>
+        Expr.interpretation.isMonotonic.apxPosMem
+          (Cause.leClosestOfSatUnionB isSat)
+          (fun _ _ => isSat.contextInsHold ∘ Or.inl)
+          dInArg
+    ⟩
   
   def elimZeroExpr
     (isCause: IsWeakCause pairSalgebra cause d PairExpr.zeroExpr)
@@ -469,6 +488,120 @@ namespace IsWeakCause
     let ⟨eqL, eqR⟩ := Pair.noConfusion eq And.intro
     ⟨eqL ▸ isCauseLeft, eqR ▸ isCauseRite⟩
   
+  def unLeft
+    (isCause: IsWeakCause pairSalgebra cause d left)
+    (rite: Expr _)
+  :
+    IsWeakCause pairSalgebra cause d (unExpr left rite)
+  :=
+    Or.inl ∘ isCause
+  
+  def unRite
+    (isCause: IsWeakCause pairSalgebra cause d rite)
+    (left: Expr _)
+  :
+    IsWeakCause pairSalgebra cause d (unExpr left rite)
+  :=
+    Or.inr ∘ isCause
+  
+  def elimUn
+    (isCause: IsWeakCause pairSalgebra cause d (unExpr left rite))
+    (v: Valuation Pair)
+  :
+    Or
+      (IsWeakCause
+        pairSalgebra
+        (cause.union (Cause.ofValPos v Valuation.empty))
+        d
+        left)
+      (IsWeakCause
+        pairSalgebra
+        (cause.union (Cause.ofValPos v Valuation.empty))
+        d
+        rite)
+  :=
+    (isCause (cause.closestWeakSatValIsSat v)).elim
+      (fun isPosL =>
+        Or.inl fun isSat =>
+          Expr.interpretation.isMonotonic.apxPosMem
+            (cause.leClosestOfSatUnionB isSat)
+            (fun _ _ => isSat.contextInsHold ∘ Or.inl)
+            isPosL)
+      (fun isPosR =>
+        Or.inr fun isSat =>
+          Expr.interpretation.isMonotonic.apxPosMem
+            (cause.leClosestOfSatUnionB isSat)
+            (fun _ _ => isSat.contextInsHold ∘ Or.inl)
+            isPosR)
+  
+  def elimIrLeft
+    (isCause:
+      IsWeakCause pairSalgebra cause d (irExpr left rite))
+  :
+    IsWeakCause pairSalgebra cause d left
+  :=
+    fun isSat => (isCause isSat).left
+  
+  def elimIrRite
+    (isCause:
+      IsWeakCause pairSalgebra cause d (irExpr left rite))
+  :
+    IsWeakCause pairSalgebra cause d rite
+  :=
+    fun isSat => (isCause isSat).right
+  
+  def elimIr
+    (isCause: IsWeakCause pairSalgebra cause d (irExpr left rite))
+  :
+    And
+      (IsWeakCause pairSalgebra cause d left)
+      (IsWeakCause pairSalgebra cause d rite)
+  :=
+    ⟨elimIrLeft isCause, elimIrRite isCause⟩
+  
+  def elimIfThenCond
+    {cond}
+    (isCause:
+      IsWeakCause pairSalgebra cause d (ifThenExpr cond body))
+    (v: Valuation Pair)
+  :
+    let extCause := cause.union (Cause.ofValPos v Valuation.empty)
+    ∃ dC, IsWeakCause pairSalgebra extCause dC cond
+  :=
+    let ⟨⟨dC, isPosCond⟩, _⟩ :=
+      isCause (cause.closestWeakSatValIsSat v)
+    ⟨
+      dC,
+      fun isSat =>
+        Expr.interpretation.isMonotonic.apxPosMem
+          (cause.leClosestOfSatUnionB isSat)
+          (fun _ _ => isSat.contextInsHold ∘ Or.inl)
+          isPosCond
+    ⟩
+  
+  def elimIfThenBody
+    {cond}
+    (isCause:
+      IsWeakCause pairSalgebra cause d (ifThenExpr cond body))
+  :
+    IsWeakCause pairSalgebra cause d body
+  :=
+    fun isSat => (isCause isSat).right
+  
+  def elimIfThen
+    {cond}
+    (isCause: IsWeakCause pairSalgebra cause d (ifThenExpr cond body))
+    (v: Valuation Pair)
+  :
+    let extCause := cause.union (Cause.ofValPos v Valuation.empty)
+    And
+      (∃ dC, IsWeakCause pairSalgebra extCause dC cond)
+      (IsWeakCause pairSalgebra cause d body)
+  :=
+    And.intro
+      (elimIfThenCond isCause v)
+      (elimIfThenBody isCause)
+   
   def Not.elimOp
   {salg: Salgebra sig}
   {cause: Cause salg.D}
@@ -489,145 +622,6 @@ namespace IsWeakCause
       nex.toAll fun _ tmp => tmp.toAll fun _ isCause => isCause.dne
     
     isNotCause (op argVals argsCauseD allHaveCause)
-  
-  -- Requires elimOp
-  -- def notOp
-  --   {salg: Salgebra sig}
-  --   {cause: Cause salg.D}
-  --   {d: salg.D}
-    
-  --   (allCausesNot:
-  --     ∀ argVals: sig.Args opr salg.D,
-  --       d ∈ salg.I opr argVals →
-  --     ∃ param, ∃ (dArg: argVals param),
-  --       ¬ IsWeakCause salg cause dArg (argExprs param))
-  -- :
-  --   ¬ IsWeakCause salg cause d (Expr.op opr argExprs)
-  -- :=
-  --   fun isCause =>
-  --     let ⟨argVals, dIn, argsStrong⟩ := isCause.elimOp
-  --     let ⟨param, dArg, notStrong⟩ := allCausesNot argVals dIn
-  --     notStrong (argsStrong param dArg)
-  
-  
-  def unLeft
-    (isCause: IsWeakCause salg cause d left)
-    (rite: Expr _)
-  :
-    IsWeakCause salg cause d (Expr.un left rite)
-  :=
-    Or.inl ∘ isCause
-  
-  def unRite
-    (isCause: IsWeakCause salg cause d rite)
-    (left: Expr _)
-  :
-    IsWeakCause salg cause d (Expr.un left rite)
-  :=
-    Or.inr ∘ isCause
-  
-  def elimUn
-    (isCause: IsWeakCause salg cause d (Expr.un left rite))
-    (v: Valuation salg.D)
-  :
-    Or
-      (IsWeakCause
-        salg
-        (cause.union (Cause.ofValPos v Valuation.empty))
-        d
-        left)
-      (IsWeakCause
-        salg
-        (cause.union (Cause.ofValPos v Valuation.empty))
-        d
-        rite)
-  :=
-    (isCause (cause.closestWeakSatValIsSat v)).elim
-      (fun isPosL =>
-        Or.inl fun isSat =>
-          Expr.interpretation.isMonotonic.apxPosMem
-            (cause.leClosestOfSatUnionB isSat)
-            (fun _ _ => isSat.contextInsHold ∘ Or.inl)
-            isPosL)
-      (fun isPosR =>
-        Or.inr fun isSat =>
-          Expr.interpretation.isMonotonic.apxPosMem
-            (cause.leClosestOfSatUnionB isSat)
-            (fun _ _ => isSat.contextInsHold ∘ Or.inl)
-            isPosR)
-  
-  
-  def Not.elimUnLeft
-    (isNotCause: ¬ IsWeakCause salg cause d (Expr.un left rite))
-  :
-    ¬ IsWeakCause salg cause d left
-  :=
-    fun isCause => isNotCause (isCause.unLeft rite)
-  
-  def Not.elimUnRite
-    (isNotCause: ¬ IsWeakCause salg cause d (Expr.un left rite))
-  :
-    ¬ IsWeakCause salg cause d rite
-  :=
-    fun isCause => isNotCause (isCause.unRite left)
-  
-  
-  def ir
-    (isCauseLeft: IsWeakCause salg cause d left)
-    (isCauseRite: IsWeakCause salg cause d rite)
-  :
-    IsWeakCause salg cause d (Expr.ir left rite)
-  :=
-    fun isSat =>
-      And.intro (isCauseLeft isSat) (isCauseRite isSat)
-  
-  def elimIrLeft
-    (isCause: IsWeakCause salg cause d (Expr.ir left rite))
-  :
-    IsWeakCause salg cause d left
-  :=
-    fun isSat => (isCause isSat).left
-  
-  def elimIrRite
-    (isCause: IsWeakCause salg cause d (Expr.ir left rite))
-  :
-    IsWeakCause salg cause d rite
-  :=
-    fun isSat => (isCause isSat).right
-  
-  def elimIr
-    (isCause: IsWeakCause salg cause d (Expr.ir left rite))
-  :
-    And
-      (IsWeakCause salg cause d left)
-      (IsWeakCause salg cause d rite)
-  :=
-    ⟨elimIrLeft isCause, elimIrRite isCause⟩
-  
-  def Not.elimIr
-    (isNotCause: ¬ IsWeakCause salg cause d (Expr.ir left rite))
-  :
-    Or
-      (¬ IsWeakCause salg cause d left)
-      (¬ IsWeakCause salg cause d rite)
-  :=
-    byContradiction fun nor =>
-      let ⟨isCauseLeft, isCauseRite⟩ := nor.toAnd
-      isNotCause (ir isCauseLeft.dne isCauseRite.dne)
-  
-  def notIrLeft
-    (notCauseLeft: ¬ IsWeakCause salg cause d left)
-  :
-    ¬ IsWeakCause salg cause d (Expr.ir left rite)
-  :=
-    fun isCause => notCauseLeft (elimIrLeft isCause)
-  
-  def notIrRite
-    (notCauseRite: ¬ IsWeakCause salg cause d rite)
-  :
-    ¬ IsWeakCause salg cause d (Expr.ir left rite)
-  :=
-    fun isCause => notCauseRite (elimIrRite isCause)
   
   
   def cpl
@@ -656,77 +650,6 @@ namespace IsWeakCause
       let allSatPos := nex.toAll fun _ nand => nand.toImpl
       isNotCause (cpl cause (allSatPos _))
 
-  
-  def ifThen
-    {cond}
-    (isCauseCond: IsWeakCause salg cause dC cond)
-    (isCauseBody: IsWeakCause salg cause d body)
-  :
-    IsWeakCause salg cause d (Expr.ifThen cond body)
-  :=
-    fun isSat =>
-      And.intro
-        ⟨dC, (isCauseCond isSat)⟩
-        (isCauseBody isSat)
-  
-  def elimIfThenCond
-    {cond}
-    (isCause: IsWeakCause salg cause d (Expr.ifThen cond body))
-    (v: Valuation salg.D)
-  :
-    let extCause := cause.union (Cause.ofValPos v Valuation.empty)
-    ∃ dC, IsWeakCause salg extCause dC cond
-  :=
-    let ⟨⟨dC, isPosCond⟩, _⟩ :=
-      isCause (cause.closestWeakSatValIsSat v)
-    ⟨
-      dC,
-      fun isSat =>
-        Expr.interpretation.isMonotonic.apxPosMem
-          (cause.leClosestOfSatUnionB isSat)
-          (fun _ _ => isSat.contextInsHold ∘ Or.inl)
-          isPosCond
-    ⟩
-  
-  def elimIfThenBody
-    {cond}
-    (isCause: IsWeakCause salg cause d (Expr.ifThen cond body))
-  :
-    IsWeakCause salg cause d body
-  :=
-    fun isSat => (isCause isSat).right
-  
-  def elimIfThen
-    {cond}
-    (isCause: IsWeakCause salg cause d (Expr.ifThen cond body))
-    (v: Valuation salg.D)
-  :
-    let extCause := cause.union (Cause.ofValPos v Valuation.empty)
-    And
-      (∃ dC, IsWeakCause salg extCause dC cond)
-      (IsWeakCause salg cause d body)
-  :=
-    And.intro
-      (elimIfThenCond isCause v)
-      (elimIfThenBody isCause)
-      
-  
-  def Not.elimIfThen
-    {cond}
-    (isNotCause:
-      ¬ IsWeakCause salg cause d (Expr.ifThen cond body))
-  :
-    Or
-      (∀ dC, ¬ IsWeakCause salg cause dC cond)
-      (¬ IsWeakCause salg cause d body)
-  :=
-    byContradiction fun nor =>
-      let ⟨notAllNotCauseCond, isCauseBody⟩ := nor.toAnd
-      let ⟨_, isCauseCond⟩ :=
-        notAllNotCauseCond.toEx fun _ => Not.dne
-      
-      isNotCause (isCauseCond.ifThen isCauseBody.dne)
-  
   
   def arbUn
     {cause: Cause salg.D}

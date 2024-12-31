@@ -214,14 +214,13 @@ namespace Pair
       match p with
       | Pair.zero => trivial
       | Pair.pair _ _ =>
-        (inwWfmToInwDef w).elim
-          (fun inwL => inwZeroElim.nope inwL)
-          (fun inwR =>
-            let ⟨l, r⟩ := inwPairElim inwR
-            
-            And.intro
-              (Inw.toIsExprEncoding l)
-              (Inw.toIsDefEncoding r))
+        match inwWfmToInwDef w with
+        | Or.inr inwR =>
+          let ⟨l, r⟩ := inwPairElim inwR
+          
+          And.intro
+            (Inw.toIsExprEncoding l)
+            (Inw.toIsDefEncoding r)
     
   end uniSet3
 end Pair

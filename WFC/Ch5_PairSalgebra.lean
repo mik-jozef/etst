@@ -111,10 +111,16 @@ end Pair
 inductive pairSignature.Op where
 | zero
 | pair
+| un
+| ir
+| ifThen
 
 def pairSignature.Params: Op → Type
 | Op.zero => ArityZero
 | Op.pair => ArityTwo
+| Op.un => ArityTwo
+| Op.ir => ArityTwo
+| Op.ifThen => ArityTwo
 
 def pairSignature: Signature := {
   Op := pairSignature.Op,
@@ -140,6 +146,12 @@ namespace pairSalgebra
           (b: ↑(args ArityTwo.fst))
         ,
           p = Pair.pair a b
+    | Op.un => fun args p =>
+        args ArityTwo.zth p ∨ args ArityTwo.fst p
+    | Op.ir => fun args p =>
+        args ArityTwo.zth p ∧ args ArityTwo.fst p
+    | Op.ifThen => fun args p =>
+        (args ArityTwo.zth).Nonempty ∧ args ArityTwo.fst p
   
   theorem I.isMonotonic
     (op: Op)
@@ -157,6 +169,21 @@ namespace pairSalgebra
                 ⟨a.val, le ArityTwo.zth a.property⟩,
                 ⟨⟨b.val, le ArityTwo.fst b.property⟩, nab⟩
               ⟩
+      | Op.un =>
+        fun _ pInArgs0 =>
+          pInArgs0.elim
+            (fun pInArgs0 => Or.inl (le ArityTwo.zth pInArgs0))
+            (fun pInArgs0 => Or.inr (le ArityTwo.fst pInArgs0))
+      | Op.ir =>
+        fun _ ⟨inL, inR⟩ => ⟨
+          le ArityTwo.zth inL,
+          le ArityTwo.fst inR,
+        ⟩
+      | Op.ifThen =>
+        fun _ ⟨⟨p, inL⟩, inR⟩ => ⟨
+          ⟨p, le ArityTwo.zth inL⟩,
+          le ArityTwo.fst inR,
+        ⟩
 end pairSalgebra
 
 -- The salgebra of pairs.

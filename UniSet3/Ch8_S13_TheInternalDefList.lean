@@ -69,15 +69,15 @@ namespace Pair
         show (pair _ _) = _ from
           congr rfl
             (congrBin rfl incrVarsEqMapVars incrVarsEqMapVars)
-      | Expr.un _ _ =>
+      | Expr.op Op.un _args =>
         show (pair _ _) = _ from
           congr rfl (congrBin rfl incrVarsEqMapVars incrVarsEqMapVars)
-      | Expr.ir _ _ =>
+      | Expr.op Op.ir _args =>
         incrVars.eqBin (Is4 rfl) _ _ ▸
         congr rfl (congrBin rfl incrVarsEqMapVars incrVarsEqMapVars)
       | Expr.cpl _ =>
         incrVars.eqCpl _ ▸ congr rfl incrVarsEqMapVars
-      | Expr.ifThen _ _ =>
+      | Expr.op Op.ifThen _args =>
         incrVars.eqBin (Is6 rfl) _ _ ▸
         congr rfl (congrBin rfl incrVarsEqMapVars incrVarsEqMapVars)
       | Expr.arbUn _ _ =>

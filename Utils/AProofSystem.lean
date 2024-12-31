@@ -543,21 +543,6 @@ def Cause.IsWeaklySatisfiedBy.elimUnR
 }
 
 
-def IsWeakCause.union
-  (isCauseLeft: IsWeakCause salg causeLeft d exprLeft)
-  (isCauseRite: IsWeakCause salg causeRite d exprRite)
-:
-  IsWeakCause
-    salg
-    (causeLeft ∪ causeRite)
-    d
-    (Expr.ir exprLeft exprRite)
-:=
-  fun isSat =>
-    And.intro
-      (isCauseLeft isSat.elimUnL)
-      (isCauseRite isSat.elimUnR)
-
 noncomputable def IsWeakCause.ofValPos
   (isPos: (expr.interpretation salg b c).posMem d)
 :

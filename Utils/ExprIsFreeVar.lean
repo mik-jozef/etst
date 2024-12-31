@@ -22,20 +22,8 @@ def Expr.IsFreeVar.boundNotFree
     | op _ _ =>
       let arg := isFreeVar.unwrap
       (boundNotFree _ isBound) arg.property
-    | un _ _ =>
-      isFreeVar.elim
-        (boundNotFree _ isBound)
-        (boundNotFree _ isBound)
-    | ir _ _ =>
-      isFreeVar.elim
-        (boundNotFree _ isBound)
-        (boundNotFree _ isBound)
     | cpl expr =>
       boundNotFree expr isBound isFreeVar
-    | ifThen _ _ =>
-      isFreeVar.elim
-        (boundNotFree _ isBound)
-        (boundNotFree _ isBound)
     | arbUn xUn body =>
       let xIn: x ∈ boundVarsUpdated xUn := Or.inl isBound
       
@@ -85,33 +73,9 @@ def Expr.IsFreeVar.toOtherBounds
       let fv := isFreeVar.unwrap
       Or.inl ⟨fv, elimInB (toOtherBounds fv.property boundVarsOther)⟩
     
-    | un _ _ =>
-      Or.inl
-        (isFreeVar.elim
-          (fun inL =>
-            Or.inl (elimInB (toOtherBounds inL boundVarsOther)))
-          (fun inR =>
-            Or.inr (elimInB (toOtherBounds inR boundVarsOther))))
-    
-    | ir _ _ =>
-      Or.inl
-        (isFreeVar.elim
-          (fun ifvL =>
-            Or.inl (elimInB (toOtherBounds ifvL boundVarsOther)))
-          (fun ifvR =>
-            Or.inr (elimInB (toOtherBounds ifvR boundVarsOther))))
-    
     | cpl expr =>
       Or.inl
         (elimInB (@toOtherBounds _ _ _ expr isFreeVar boundVarsOther))
-    
-    | ifThen _ _ =>
-      Or.inl
-        (isFreeVar.elim
-          (fun ifvL =>
-            Or.inl (elimInB (toOtherBounds ifvL boundVarsOther)))
-          (fun ifvR =>
-            Or.inr (elimInB (toOtherBounds ifvR boundVarsOther))))
     
     | arbUn xUn body =>
       let ifvBody:
@@ -201,55 +165,6 @@ def Expr.IsFreeVar.op
   param,
   isFreeVar
 ⟩
-
-def Expr.IsFreeVar.unLeft
-  (isFreeVar: x ∈ left.IsFreeVar boundVars)
-  (rite: Expr sig)
-:
-  x ∈ (Expr.un left rite).IsFreeVar boundVars
-:=
-  Or.inl isFreeVar
-
-def Expr.IsFreeVar.unRite
-  (left: Expr sig)
-  (isFreeVar: x ∈ rite.IsFreeVar boundVars)
-:
-  x ∈ (Expr.un left rite).IsFreeVar boundVars
-:=
-  Or.inr isFreeVar
-
-def Expr.IsFreeVar.irRite
-  (left: Expr sig)
-  (isFreeVar: x ∈ rite.IsFreeVar boundVars)
-:
-  x ∈ (Expr.ir left rite).IsFreeVar boundVars
-:=
-  Or.inr isFreeVar
-
-def Expr.IsFreeVar.irLeft
-  (isFreeVar: x ∈ left.IsFreeVar boundVars)
-  (rite: Expr sig)
-:
-  x ∈ (Expr.ir left rite).IsFreeVar boundVars
-:=
-  Or.inl isFreeVar
-
-def Expr.IsFreeVar.ifThenCond
-  {cond: Expr sig}
-  (isFreeVar: x ∈ cond.IsFreeVar boundVars)
-  (body: Expr sig)
-:
-  x ∈ (Expr.ifThen cond body).IsFreeVar boundVars
-:=
-  Or.inl isFreeVar
-
-def Expr.IsFreeVar.ifThenBody
-  (cond: Expr sig)
-  (isFreeVar: x ∈ body.IsFreeVar boundVars)
-:
-  x ∈ (Expr.ifThen cond body).IsFreeVar boundVars
-:=
-  Or.inr isFreeVar
 
 def Expr.IsFreeVar.arbUn
   (x: Nat)

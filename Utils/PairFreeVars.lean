@@ -79,58 +79,82 @@ namespace Pair
                 
                 List.concatUnique.inRiteToIn freeVarsZth freeVarInVars
         ⟩
-    | Expr.un left rite =>
-        let freeVarsLeft := givenBounds left boundVars
-        let freeVarsRite := givenBounds rite boundVars
+    | Expr.op pairSignature.Op.un args =>
+        let freeVarsZth := givenBounds (args ArityTwo.zth) boundVars
+        let freeVarsFst := givenBounds (args ArityTwo.fst) boundVars
         
         ⟨
-          List.concatUnique freeVarsLeft freeVarsRite,
+          List.concatUnique freeVarsZth freeVarsFst,
+          
           fun freeVar =>
-            freeVar.property.elim
-              (fun isFreeInLeft =>
-                let isInFreeVarsLeft :=
-                  freeVarsLeft.property ⟨freeVar, isFreeInLeft⟩
-                List.concatUnique.inLeftToIn isInFreeVarsLeft freeVarsRite)
-              (fun isFreeInRite =>
-                let isInFreeVarsRite :=
-                  freeVarsRite.property ⟨freeVar, isFreeInRite⟩
-                List.concatUnique.inRiteToIn freeVarsLeft isInFreeVarsRite),
+            let freeVarParam := freeVar.property.unwrap
+            match freeVarParam with
+            | ⟨ArityTwo.zth, prop⟩ =>
+                let freeVarInVars: freeVar.val ∈ freeVarsZth.val :=
+                  freeVarsZth.property ⟨freeVar, prop⟩
+                
+                let freeVarIn:
+                  ↑freeVar ∈ List.concatUnique freeVarsZth.val ↑freeVarsFst
+                :=
+                  List.concatUnique.inLeftToIn freeVarInVars freeVarsFst
+                freeVarIn
+            | ⟨ArityTwo.fst, prop⟩ =>
+                let freeVarInVars: freeVar.val ∈ freeVarsFst.val :=
+                  freeVarsFst.property ⟨freeVar, prop⟩
+                
+                List.concatUnique.inRiteToIn freeVarsZth freeVarInVars
         ⟩
-    | Expr.ir left rite =>
-        let freeVarsLeft := givenBounds left boundVars
-        let freeVarsRite := givenBounds rite boundVars
+    | Expr.op pairSignature.Op.ir args =>
+        let freeVarsZth := givenBounds (args ArityTwo.zth) boundVars
+        let freeVarsFst := givenBounds (args ArityTwo.fst) boundVars
         
         ⟨
-          List.concatUnique freeVarsLeft freeVarsRite,
+          List.concatUnique freeVarsZth freeVarsFst,
+          
           fun freeVar =>
-            freeVar.property.elim
-              (fun isFreeInLeft =>
-                let isInFreeVarsLeft :=
-                  freeVarsLeft.property ⟨freeVar, isFreeInLeft⟩
-                List.concatUnique.inLeftToIn isInFreeVarsLeft freeVarsRite)
-              (fun isFreeInRite =>
-                let isInFreeVarsRite :=
-                  freeVarsRite.property ⟨freeVar, isFreeInRite⟩
-                List.concatUnique.inRiteToIn freeVarsLeft isInFreeVarsRite),
+            let freeVarParam := freeVar.property.unwrap
+            match freeVarParam with
+            | ⟨ArityTwo.zth, prop⟩ =>
+                let freeVarInVars: freeVar.val ∈ freeVarsZth.val :=
+                  freeVarsZth.property ⟨freeVar, prop⟩
+                
+                let freeVarIn:
+                  ↑freeVar ∈ List.concatUnique freeVarsZth.val ↑freeVarsFst
+                :=
+                  List.concatUnique.inLeftToIn freeVarInVars freeVarsFst
+                freeVarIn
+            | ⟨ArityTwo.fst, prop⟩ =>
+                let freeVarInVars: freeVar.val ∈ freeVarsFst.val :=
+                  freeVarsFst.property ⟨freeVar, prop⟩
+                
+                List.concatUnique.inRiteToIn freeVarsZth freeVarInVars
+        ⟩
+    | Expr.op pairSignature.Op.ifThen args =>
+        let freeVarsZth := givenBounds (args ArityTwo.zth) boundVars
+        let freeVarsFst := givenBounds (args ArityTwo.fst) boundVars
+        
+        ⟨
+          List.concatUnique freeVarsZth freeVarsFst,
+          
+          fun freeVar =>
+            let freeVarParam := freeVar.property.unwrap
+            match freeVarParam with
+            | ⟨ArityTwo.zth, prop⟩ =>
+                let freeVarInVars: freeVar.val ∈ freeVarsZth.val :=
+                  freeVarsZth.property ⟨freeVar, prop⟩
+                
+                let freeVarIn:
+                  ↑freeVar ∈ List.concatUnique freeVarsZth.val ↑freeVarsFst
+                :=
+                  List.concatUnique.inLeftToIn freeVarInVars freeVarsFst
+                freeVarIn
+            | ⟨ArityTwo.fst, prop⟩ =>
+                let freeVarInVars: freeVar.val ∈ freeVarsFst.val :=
+                  freeVarsFst.property ⟨freeVar, prop⟩
+                
+                List.concatUnique.inRiteToIn freeVarsZth freeVarInVars
         ⟩
     | Expr.cpl expr => givenBounds expr boundVars
-    | Expr.ifThen cond expr =>
-        let freeVarsCond := givenBounds cond boundVars
-        let freeVarsExpr := givenBounds expr boundVars
-        
-        ⟨
-          List.concatUnique freeVarsCond freeVarsExpr,
-          fun freeVar =>
-            freeVar.property.elim
-              (fun isFreeInCond =>
-                let isInFreeVarsCond :=
-                  freeVarsCond.property ⟨freeVar, isFreeInCond⟩
-                List.concatUnique.inLeftToIn isInFreeVarsCond freeVarsExpr)
-              (fun isFreeInExpr =>
-                let isInFreeVarsExpr :=
-                  freeVarsExpr.property ⟨freeVar, isFreeInExpr⟩
-                List.concatUnique.inRiteToIn freeVarsCond isInFreeVarsExpr),
-        ⟩
     | Expr.arbUn x expr =>
         let freeVarsExpr := givenBounds expr (boundVars.appendUnique x)
         ⟨

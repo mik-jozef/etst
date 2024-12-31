@@ -29,58 +29,6 @@ def Expr.interpretation.opEqPos
 :=
   rfl
 
-def Expr.interpretation.unEqDef
-  (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (left rite: Expr sig)
-:
-  (interpretation salg b c (un left rite)).defMem
-    =
-  Union.union
-    (interpretation salg b c left).defMem
-    (interpretation salg b c rite).defMem
-:=
-  rfl
-
-def Expr.interpretation.unEqPos
-  (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (left rite: Expr sig)
-:
-  (interpretation salg b c (un left rite)).posMem
-    =
-  Union.union
-    (interpretation salg b c left).posMem
-    (interpretation salg b c rite).posMem
-:=
-  rfl
-
-def Expr.interpretation.irEqDef
-  (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (left rite: Expr sig)
-:
-  (interpretation salg b c (ir left rite)).defMem
-    =
-  Inter.inter
-    (interpretation salg b c left).defMem
-    (interpretation salg b c rite).defMem
-:=
-  rfl
-
-def Expr.interpretation.irEqPos
-  (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (left rite: Expr sig)
-:
-  (interpretation salg b c (ir left rite)).posMem
-    =
-  Inter.inter
-    (interpretation salg b c left).posMem
-    (interpretation salg b c rite).posMem
-:=
-  rfl
-
 def Expr.interpretation.cplEqDef
   (salg: Salgebra sig)
   (b c: Valuation salg.D)
@@ -100,34 +48,6 @@ def Expr.interpretation.cplEqPos
   (interpretation salg b c (cpl expr)).posMem
     =
   (interpretation salg b b expr).defMemᶜ
-:=
-  rfl
-
-def Expr.interpretation.ifThenEqDef
-  (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (cond expr: Expr sig)
-:
-  (interpretation salg b c (ifThen cond expr)).defMem
-    =
-  (fun d =>
-    And
-      (∃ dC, dC ∈ (interpretation salg b c cond).defMem)
-      (d ∈ (interpretation salg b c expr).defMem))
-:=
-  rfl
-
-def Expr.interpretation.ifThenEqPos
-  (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (cond expr: Expr sig)
-:
-  (interpretation salg b c (ifThen cond expr)).posMem
-    =
-  (fun d =>
-    And
-      (∃ dC, dC ∈ (interpretation salg b c cond).posMem)
-      (d ∈ (interpretation salg b c expr).posMem))
 :=
   rfl
 
@@ -216,22 +136,7 @@ def Expr.interpretation.isMonotonic.defMem
       let isLe _ := isMonotonic.defMem cLeDef
       
       salg.isMonotonic opr defMem defMemFloor isLe dIn
-    | Expr.un _ _ =>
-      dIn.elim
-        (fun inL =>
-          Or.inl (isMonotonic.defMem cLeDef inL))
-        (fun inR =>
-          Or.inr (isMonotonic.defMem cLeDef inR))
-    | Expr.ir _ _ =>
-      And.intro
-        (isMonotonic.defMem cLeDef dIn.left)
-        (isMonotonic.defMem cLeDef dIn.right)
     | Expr.cpl _ => dIn -- Note: cpl is not affected by context.
-    | Expr.ifThen _ _ =>
-      let ⟨dC, dCIn⟩ := dIn.left.unwrap
-      And.intro
-        ⟨dC, isMonotonic.defMem cLeDef dCIn⟩
-        (isMonotonic.defMem cLeDef dIn.right)
     | Expr.arbUn x _ =>
       let ⟨dX, dXIn⟩ := dIn.unwrap
       let isDef :=
@@ -265,22 +170,7 @@ def Expr.interpretation.isMonotonic.posMem
       let isLe _ := isMonotonic.posMem cLePos
       
       salg.isMonotonic opr posMem posMemFloor isLe dIn
-    | Expr.un _ _ =>
-      dIn.elim
-        (fun inL =>
-          Or.inl (isMonotonic.posMem cLePos inL))
-        (fun inR =>
-          Or.inr (isMonotonic.posMem cLePos inR))
-    | Expr.ir _ _ =>
-      And.intro
-        (isMonotonic.posMem cLePos dIn.left)
-        (isMonotonic.posMem cLePos dIn.right)
     | Expr.cpl _ => dIn -- Note: cpl is not affected by context.
-    | Expr.ifThen _ _ =>
-      let ⟨dC, dCIn⟩ := dIn.left.unwrap
-      And.intro
-        ⟨dC, isMonotonic.posMem cLePos dCIn⟩
-        (isMonotonic.posMem cLePos dIn.right)
     | Expr.arbUn x _ =>
       let ⟨dX, dXIn⟩ := dIn.unwrap
       let isDef :=
@@ -353,30 +243,6 @@ def Expr.interpretation.isMonotonic.approximation
             opr posArgs1 posArgs0 (fun a => (ih a).posLe)
           
           posArgsLe dIn)
-  | Expr.un left rite =>
-      let ihL :=
-        interpretation.isMonotonic.approximation salg left bLe cLe
-      let ihR :=
-        interpretation.isMonotonic.approximation salg rite bLe cLe
-      
-      Set3.LeApx.intro
-        (fun _d dIn => dIn.elim
-          (fun inL => Or.inl (ihL.defLe inL))
-          (fun inR => Or.inr (ihR.defLe inR)))
-        (fun _d dIn => dIn.elim
-          (fun inL => Or.inl (ihL.posLe inL))
-          (fun inR => Or.inr (ihR.posLe inR)))
-  | Expr.ir left rite =>
-      let ihL :=
-        interpretation.isMonotonic.approximation salg left bLe cLe
-      let ihR :=
-        interpretation.isMonotonic.approximation salg rite bLe cLe
-      
-      Set3.LeApx.intro
-        (fun _d dIn =>
-          And.intro (ihL.defLe dIn.left) (ihR.defLe dIn.right))
-        (fun _d dIn =>
-          And.intro (ihL.posLe dIn.left) (ihR.posLe dIn.right))
   | Expr.cpl expr =>
       let ih :=
         interpretation.isMonotonic.approximation salg expr bLe bLe
@@ -387,29 +253,6 @@ def Expr.interpretation.isMonotonic.approximation
         (fun d dIn =>
           let tmp: (d: salg.D) → _ → _ := ih.defLe
           Function.contra (tmp d) dIn)
-  | Expr.ifThen cond expr => Set3.LeApx.intro
-      (fun _d dIn =>
-        let dC := dIn.left.unwrap
-        
-        let hC :=
-          interpretation.isMonotonic.approximation salg cond bLe cLe
-        let hE :=
-          interpretation.isMonotonic.approximation salg expr bLe cLe
-        
-        And.intro
-          ⟨dC, hC.defLe dC.property⟩
-          (hE.defLe dIn.right))
-      (fun _d dIn =>
-        let dC := dIn.left.unwrap
-        
-        let hC :=
-          interpretation.isMonotonic.approximation salg cond bLe cLe
-        let hE :=
-          interpretation.isMonotonic.approximation salg expr bLe cLe
-        
-        And.intro
-          ⟨dC, hC.posLe dC.property⟩
-          (hE.posLe dIn.right))
   | Expr.arbUn x body =>
       let ihBody d :=
         interpretation.isMonotonic.approximation salg body

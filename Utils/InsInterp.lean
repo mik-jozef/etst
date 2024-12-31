@@ -241,7 +241,7 @@ def InsInterp.exprPair
 def InsInterp.exprUnLeft
   (insLeft: InsInterp boundVars d left)
 :
-  InsInterp boundVars d (un left rite)
+  InsInterp boundVars d (unExpr left rite)
 :=
   Ins.isComplete _ _
     (insWfmDefToIns
@@ -300,7 +300,7 @@ def InsInterp.exprUnLeft
 def InsInterp.exprUnRite
   (insRite: InsInterp boundVars d rite)
 :
-  InsInterp boundVars d (un left rite)
+  InsInterp boundVars d (unExpr left rite)
 :=
   Ins.isComplete _ _
     (insWfmDefToIns
@@ -358,7 +358,7 @@ def InsInterp.exprIr
   (insLeft: InsInterp boundVars d left)
   (insRite: InsInterp boundVars d rite)
 :
-  InsInterp boundVars d (ir left rite)
+  InsInterp boundVars d (irExpr left rite)
 :=
   Ins.isComplete _ _
     (insWfmDefToIns
@@ -455,7 +455,7 @@ def InsInterp.exprIfThen
   (insCond: InsInterp boundVars dC cond)
   (insBody: InsInterp boundVars d body)
 :
-  InsInterp boundVars d (ifThen cond body)
+  InsInterp boundVars d (ifThenExpr cond body)
 :=
   Ins.isComplete _ _
     (insWfmDefToIns

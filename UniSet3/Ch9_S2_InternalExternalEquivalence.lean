@@ -53,8 +53,7 @@ namespace Pair
     def containsItself: uniSet3 ∈ uniSet3 := isUniversal isDefinable
     
     -- TODO:
-    -- 0. make monotonic Exprs part of Salgebra
-    --   0.0. Generalize WFC for any monotonic exprs
+    -- 0. Generalize WFC for any monotonic exprs
     -- 1. Make variables `T: Type*` instead of Nat
     -- 2. clean up the `HM` folder
     -- 3. Trisets

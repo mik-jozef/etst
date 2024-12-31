@@ -14,7 +14,6 @@ inductive ArityZero
 inductive ArityOne | zth
 inductive ArityTwo | zth | fst
 
-def ArityZero.noInst: ArityZero → False := ArityZero.rec
 def ArityZero.elim (az: ArityZero): T := nomatch az
 
 /-
@@ -55,10 +54,7 @@ structure Signature where
 inductive Expr (sig: Signature) where
 | var (x: Nat)
 | op (op: sig.Op) (args: sig.Params op → Expr sig)
-| un (left rite: Expr sig)
-| ir (left rite: Expr sig)
 | cpl (expr: Expr sig)
-| ifThen (cond expr: Expr sig)
 | arbUn (x: Nat) (body: Expr sig)
 | arbIr (x: Nat) (body: Expr sig)
 
@@ -68,8 +64,6 @@ namespace Expr
   
   instance exprOfNat (n: Nat): OfNat (Expr s) n where
     ofNat := Expr.var n
-  
-  def any: Expr s := Expr.un 0 (Expr.cpl 0)
   
   /-
     The set of free variables of `expr`, given a set of bound
@@ -85,19 +79,7 @@ namespace Expr
       match expr with
         | var v => x = v ∧ v ∉ boundVars
         | op _ args => ∃ param, (args param).IsFreeVar boundVars x
-        | un left rite =>
-            Or
-              (left.IsFreeVar boundVars x)
-              (rite.IsFreeVar boundVars x)
-        | ir left rite =>
-            Or
-              (left.IsFreeVar boundVars x)
-              (rite.IsFreeVar boundVars x)
         | cpl expr => expr.IsFreeVar boundVars x
-        | ifThen cond expr =>
-            Or
-              (cond.IsFreeVar boundVars x)
-              (expr.IsFreeVar boundVars x)
         | arbUn bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
         | arbIr bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
   
@@ -113,11 +95,8 @@ namespace Expr
   def IsPositive: Expr sig → (boundVars: Set Nat) → Prop
   | Expr.var _, _ => True
   | Expr.op _ args, bv => ∀ param, (args param).IsPositive bv
-  | Expr.un left rite, bv => left.IsPositive bv ∧ rite.IsPositive bv
-  | Expr.ir left rite, bv => left.IsPositive bv ∧ rite.IsPositive bv
   | Expr.cpl (Expr.var v), bv => v ∈ bv
   | Expr.cpl _, _ => False
-  | Expr.ifThen cond expr, bv => cond.IsPositive bv ∧ expr.IsPositive bv
   | Expr.arbUn xUn body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xUn)
   | Expr.arbIr xIr body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xIr)
   
@@ -132,10 +111,7 @@ namespace Expr
   | Expr.var _ => 0
   | Expr.op _ args =>
     iSup (fun arg => (args arg).sizeOf) + 1
-  | Expr.un left rite => max left.sizeOf rite.sizeOf + 1
-  | Expr.ir left rite => max left.sizeOf rite.sizeOf + 1
   | Expr.cpl expr => expr.sizeOf + 1
-  | Expr.ifThen cond expr => max cond.sizeOf expr.sizeOf + 1
   | Expr.arbUn _ body => body.sizeOf + 1
   | Expr.arbIr _ body => body.sizeOf + 1
 end Expr

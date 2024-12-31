@@ -37,6 +37,70 @@ namespace PairExpr
         | ArityTwo.zth => left
         | ArityTwo.fst => rite
   
+  def unExpr (left rite: Expr): Expr :=
+    Expr.op
+      Op.un
+      fun arg =>
+        match arg with
+        | ArityTwo.zth => left
+        | ArityTwo.fst => rite
+  
+  def irExpr (left rite: Expr): Expr :=
+    Expr.op
+      Op.ir
+      fun arg =>
+        match arg with
+        | ArityTwo.zth => left
+        | ArityTwo.fst => rite
+  
+  def ifThenExpr (cond body: Expr): Expr :=
+    Expr.op
+      Op.ifThen
+      fun arg =>
+        match arg with
+        | ArityTwo.zth => cond
+        | ArityTwo.fst => body
+  
+  
+  /-
+    `unionExpr x domain body` is "syntactic sugar" that represents
+    an arbitrary union with a domain. The natural number `x`
+    becomes a bound variable in `body`, and takes on the values
+    of elements of `domain`.
+    
+    Due to the implementation of `unionExpr` (and necessarily so),
+    `x` also becomes a bound variable in `domain`. To avoid
+    unintended semantics, make sure `x` is not used (as a free
+    variable) in `domain`.
+  -/
+  def unionExpr (x: Nat) (domain body: Expr): Expr :=
+    Expr.arbUn x (ifThenExpr (irExpr x domain) body)
+  
+  /-
+    `irsecExpr x domain body` is "syntactic sugar" that represents
+    an arbitrary intersection with a domain. The natural number `x`
+    becomes a bound variable in `body`, and takes on the values
+    of elements of `domain`.
+    
+    Due to the implementation of `irsecExpr` (and necessarily so),
+    `x` also becomes a bound variable in `domain`. To avoid
+    unintended semantics, make sure `x` is not used (as a free
+    variable) in `domain`.
+  -/
+  def irsecExpr (x: Nat) (domain body: Expr): Expr :=
+    Expr.arbIr
+      x
+      (unExpr
+        body
+        -- "if x is outside the domain, then anyExpr"
+        (ifThenExpr (Expr.cpl (irExpr x domain)) (anyExpr)))
+  
+  -- A union of finitely many expressions.
+  def finUnExpr: List Expr → Expr
+  | List.nil => noneExpr
+  | List.cons expr tail =>
+    unExpr expr (finUnExpr (tail))
+  
   /-
     Let `expr` be an expression that represets a set of
     pairs `s3` (under some valuation). The expression
@@ -46,7 +110,7 @@ namespace PairExpr
     `n` must not be a free variable in `expr`.
   -/
   def zthMember (n: Nat) (expr: Expr): Expr :=
-    Expr.arbUn n (Expr.ifThen (Expr.ir (pairExpr n anyExpr) expr) n)
+    Expr.arbUn n (ifThenExpr (irExpr (pairExpr n anyExpr) expr) n)
   
   /-
     Let `expr` be an expression that represets a set of
@@ -57,7 +121,7 @@ namespace PairExpr
     `n` must not be a free variable in `expr`.
   -/
   def fstMember (n: Nat) (expr: Expr): Expr :=
-    Expr.arbUn n (Expr.ifThen (Expr.ir (pairExpr anyExpr n) expr) n)
+    Expr.arbUn n (ifThenExpr (irExpr (pairExpr anyExpr n) expr) n)
   
   /-
     Let `fn` and `arg` be expressions that represent
@@ -72,7 +136,7 @@ namespace PairExpr
     `n` must not be a free variable in `fn` or `arg`.
   -/
   def callExpr (n: Nat) (fn arg: Expr): Expr :=
-    fstMember n (Expr.ir fn (pairExpr arg anyExpr))
+    fstMember n (irExpr fn (pairExpr arg anyExpr))
   
   /-
     For an encoding `nEnc` of a natural number `n`,
@@ -97,6 +161,356 @@ namespace PairExpr
   
   def InsP := Ins pairSalgebra
   def InwP := Inw pairSalgebra
+  
+  
+  def insUnL
+    (exprR: Expr)
+    {exprL: Expr}
+    (s: InsP b c exprL d)
+  :
+    InsP b c (unExpr exprL exprR) d
+  :=
+    Or.inl s
+  
+  def inwUnL
+    (exprR: Expr)
+    {exprL: Expr}
+    (w: InwP b c exprL d)
+  :
+    InwP b c (unExpr exprL exprR) d
+  :=
+    Or.inl w
+  
+  
+  def insUnR
+    {exprR: Expr}
+    (exprL: Expr)
+    (s: InsP b c exprR d)
+  :
+    InsP b c (unExpr exprL exprR) d
+  :=
+    Or.inr s
+  
+  def inwUnR
+    {exprR: Expr}
+    (exprL: Expr)
+    (w: InwP b c exprR d)
+  :
+    InwP b c (unExpr exprL exprR) d
+  :=
+    Or.inr w
+  
+  
+  def insUnElim
+    (s: InsP b c (unExpr exprL exprR) d)
+  :
+    Or
+      (InsP b c exprL d)
+      (InsP b c exprR d)
+  :=
+    s
+  
+  def inwUnElim
+    (s: InwP b c (unExpr exprL exprR) d)
+  :
+    Or
+      (InwP b c exprL d)
+      (InwP b c exprR d)
+  :=
+    s
+  
+  
+  def insIr
+    (l: InsP b c exprL d)
+    (r: InsP b c exprR d)
+  :
+    InsP b c (irExpr exprL exprR) d
+  :=
+    ⟨l, r⟩
+  
+  def inwIr
+    (l: InwP b c exprL d)
+    (r: InwP b c exprR d)
+  :
+    InwP b c (irExpr exprL exprR) d
+  :=
+    ⟨l, r⟩
+  
+  def insIrElim
+    (s: InsP b c (irExpr exprL exprR) d)
+  :
+    And
+      (InsP b c exprL d)
+      (InsP b c exprR d)
+  :=
+    s
+  
+  def inwIrElim
+    (s: InwP b c (irExpr exprL exprR) d)
+  :
+    And
+      (InwP b c exprL d)
+      (InwP b c exprR d)
+  :=
+    s
+  
+  
+  def insIfThen
+    {cond: Expr}
+    (insCond: InsP b c cond dC)
+    (insBody: InsP b c body d)
+  :
+    InsP b c (ifThenExpr cond body) d
+  :=
+    ⟨⟨dC, insCond⟩, insBody⟩
+  
+  def inwIfThen
+    {cond: Expr}
+    (insCond: InwP b c cond dC)
+    (insBody: InwP b c body d)
+  :
+    InwP b c (ifThenExpr cond body) d
+  :=
+    ⟨⟨dC, insCond⟩, insBody⟩
+  
+  
+  def insIfThenElim
+    {cond: Expr}
+    (s: InsP b c (ifThenExpr cond body) d)
+  :
+    And
+      (∃ dC, InsP b c cond dC)
+      (InsP b c body d)
+  :=
+    let ⟨exCond, insBody⟩ := s
+    
+    And.intro exCond insBody
+  
+  def inwIfThenElim
+    {cond: Expr}
+    (s: InwP b c (ifThenExpr cond body) d)
+  :
+    And
+      (∃ dC, InwP b c cond dC)
+      (InwP b c body d)
+  :=
+    s
+  
+  
+  
+  
+  
+  /-
+    This is not a mistake -- the valuation of the
+    domain is updated too. It's unfortunate, but
+    inevitable -- have a look at the implemetation
+    of `unionExpr` to see for yourself.
+  -/
+  def insUnDom
+    (insDomain:
+      InsP (b.update x dBound) (c.update x dBound) domain dBound)
+    (insBody:
+      InsP (b.update x dBound) (c.update x dBound) body d)
+  :
+    InsP b c (unionExpr x domain body) d
+  :=
+    let inUpdated: ((c.update x dBound) x).defMem dBound :=
+      Valuation.update.inEq.defMem c x dBound
+    
+    insArbUn _ ⟨⟨dBound, ⟨inUpdated, insDomain⟩⟩, insBody⟩
+  
+  def inwUnDom
+    (inwDomain:
+      InwP (b.update x dBound) (c.update x dBound) domain dBound)
+    (inwBody:
+      InwP (b.update x dBound) (c.update x dBound) body d)
+  :
+    InwP b c (unionExpr x domain body) d
+  :=
+    let inUpdated: ((c.update x dBound) x).posMem dBound :=
+      Valuation.update.inEq.posMem c x dBound
+    
+    inwArbUn _ ⟨⟨dBound, ⟨inUpdated, inwDomain⟩⟩, inwBody⟩
+  
+  
+  -- I wish Lean supported anonymous structures.
+  -- And also non-Prop-typed members of prop structures
+  -- (Under the condition that any two instances are only
+  -- allowed to contain the same instance, if need be).
+  -- We have global choice anyway!
+  structure InsUnDomElim
+    (b c: Valuation Pair)
+    (x: Nat)
+    (dBound: Pair)
+    (domain body: Expr)
+    (d: Pair): Prop
+  where
+    insDomain:
+      InsP (b.update x dBound) (c.update x dBound) domain dBound
+    insBody: InsP (b.update x dBound) (c.update x dBound) body d
+  
+  def insUnDomElim
+    (insUnDom: InsP b c (unionExpr x domain body) d)
+  :
+    ∃ dBound, InsUnDomElim b c x dBound domain body d
+  :=
+    let dBound := insUnDom.unwrap
+    let dInIr := dBound.property.left.unwrap
+    
+    -- Inlining these vars causes a "failed to compute motive"
+    -- error, and that's why I distrust tactics and hiding
+    -- imperative code in them.
+    let bUpdated := b.update x dBound
+    let cUpdated := c.update x dBound
+    
+    let dEq: dInIr.val = dBound.val :=
+      insBoundElim dInIr.property.left
+    
+    let insDomain:
+      InsP bUpdated cUpdated domain dBound.val
+    :=
+      dEq ▸ dInIr.property.right
+    
+    ⟨
+      dBound,
+      {
+        insDomain := insDomain
+        insBody := dBound.property.right
+      },
+    ⟩
+  
+  structure InwUnDomElim
+    (b c: Valuation Pair)
+    (x: Nat)
+    (dBound: Pair)
+    (domain body: Expr)
+    (d: Pair): Prop
+  where
+    inwDomain:
+      InwP (b.update x dBound) (c.update x dBound) domain dBound
+    inwBody: InwP (b.update x dBound) (c.update x dBound) body d
+  
+  def inwUnDomElim
+    (insUnDom: InwP b c (unionExpr x domain body) d)
+  :
+    ∃ dBound, InwUnDomElim b c x dBound domain body d
+  :=
+    let dBound := insUnDom.unwrap
+    let dInIr := dBound.property.left.unwrap
+    
+    let bUpdated := b.update x dBound
+    let cUpdated := c.update x dBound
+    
+    let dEq: dInIr.val = dBound.val :=
+      inwBoundElim dInIr.property.left
+    
+    let insDomain:
+      InwP bUpdated cUpdated domain dBound.val
+    :=
+      dEq ▸ dInIr.property.right
+    
+    ⟨
+      dBound,
+      {
+        inwDomain := insDomain
+        inwBody := dBound.property.right
+      },
+    ⟩
+  
+  
+  def insFinUn
+    {list: List (Expr)}
+    (exprIn: expr ∈ list)
+    (s: InsP b c expr p)
+  :
+    InsP b c (finUnExpr list) p
+  :=
+    match list with
+    | List.cons _e0 _rest =>
+      exprIn.elim
+        (fun eq => eq ▸ insUnL _ s)
+        (fun inRest => insUnR _ (insFinUn inRest s))
+  
+  def inwFinUn
+    {list: List (Expr)}
+    (exprIn: expr ∈ list)
+    (w: InwP b c expr p)
+  :
+    InwP b c (finUnExpr list) p
+  :=
+    match list with
+    | List.cons _e0 _rest =>
+      exprIn.elim
+        (fun eq => eq ▸ inwUnL _ w)
+        (fun inRest => inwUnR _ (inwFinUn inRest w))
+  
+  
+  def InsFinUnElim
+    (b c: Valuation Pair)
+    (d: Pair)
+    (P: Prop)
+  :
+    List (Expr) → Prop
+  | List.nil => P
+  | List.cons head tail =>
+    (InsP b c head d → P) → InsFinUnElim b c d P tail
+  
+  def InsFinUnElim.ofP
+    (list: List (Expr))
+    (p: P)
+  :
+    InsFinUnElim b c d P list
+  :=
+    match list with
+    | List.nil => p
+    | List.cons _head tail => fun _ => ofP tail p
+  
+  def insFinUnElim
+    (s: InsP b c (finUnExpr list) d)
+  :
+    InsFinUnElim b c d P list
+  :=
+    match list with
+    | List.nil => False.elim (ninsNone s)
+    | List.cons _head tail =>
+      (insUnElim s).elim
+        (fun insHead insHeadToP =>
+          InsFinUnElim.ofP tail (insHeadToP insHead))
+        (fun insTail _ => insFinUnElim insTail)
+  
+  
+  def InwFinUnElim
+    (b c: Valuation Pair)
+    (d: Pair)
+    (P: Prop)
+  :
+    List (Expr) → Prop
+  | List.nil => P
+  | List.cons head tail =>
+    (InwP b c head d → P) → InwFinUnElim b c d P tail
+  
+  def inwFinUnElim.ofP
+    (list: List (Expr))
+    (p: P)
+  :
+    InwFinUnElim b c d P list
+  :=
+    match list with
+    | List.nil => p
+    | List.cons _head tail => fun _ => ofP tail p
+  
+  def inwFinUnElim
+    (s: InwP b c (finUnExpr list) d)
+  :
+    InwFinUnElim b c d P list
+  :=
+    match list with
+    | List.nil => False.elim (ninwNone s)
+    | List.cons _head tail =>
+      (inwUnElim s).elim
+        (fun inwHead insHeadToP =>
+          inwFinUnElim.ofP tail (insHeadToP inwHead))
+        (fun insTail _ => inwFinUnElim insTail)
   
   
   def insZero:

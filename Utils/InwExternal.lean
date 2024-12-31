@@ -460,7 +460,7 @@ namespace InwExternal
       (pair
         (boundVarsEncoding boundVars)
         (pair
-          (exprToEncoding (Expr.un left rite))
+          (exprToEncoding (unExpr left rite))
           d))
       (theExternalDefList.getDef uniDefList.interpretation)
   :=
@@ -535,7 +535,7 @@ namespace InwExternal
       (pair
         (boundVarsEncoding boundVars)
         (pair
-          (exprToEncoding (Expr.un left rite))
+          (exprToEncoding (unExpr left rite))
           d))
       (theExternalDefList.getDef uniDefList.interpretation)
   :=
@@ -608,7 +608,7 @@ namespace InwExternal
       (pair
         (boundVarsEncoding boundVars)
         (pair
-          (exprToEncoding (Expr.ir left rite))
+          (exprToEncoding (irExpr left rite))
           d))
       (theExternalDefList.getDef uniDefList.interpretation)
   :=
@@ -736,7 +736,7 @@ namespace InwExternal
       (pair
         (boundVarsEncoding boundVars)
         (pair
-          (exprToEncoding (Expr.ifThen cond body))
+          (exprToEncoding (ifThenExpr cond body))
           d))
       (theExternalDefList.getDef uniDefList.interpretation)
   :=

@@ -25,27 +25,18 @@ def Expr.mapVars
   Expr sig
 →
   Expr sig
-
-| var x => Expr.var (varMapping x)
-
-| op opr args =>
+|
+  var x => Expr.var (varMapping x)
+|
+  op opr args =>
   op opr (fun arg => (args arg).mapVars varMapping)
-
-| un left rite =>
-  un (left.mapVars varMapping) (rite.mapVars varMapping)
-
-| ir left rite =>
-  ir (left.mapVars varMapping) (rite.mapVars varMapping)
-
-| cpl expr => cpl (expr.mapVars varMapping)
-
-| ifThen cond body =>
-  ifThen (cond.mapVars varMapping) (body.mapVars varMapping)
-
-| arbUn x body =>
+|
+  cpl expr => cpl (expr.mapVars varMapping)
+|
+  arbUn x body =>
   arbUn (varMapping x) (body.mapVars varMapping)
-
-| arbIr x body =>
+|
+  arbIr x body =>
   arbIr (varMapping x) (body.mapVars varMapping)
 
 def Expr.mapVars.eqOfId
@@ -57,14 +48,8 @@ def Expr.mapVars.eqOfId
   | Expr.var _ => rfl
   | Expr.op _ args =>
     congr rfl (funext fun arg => eqOfId (args arg))
-  | Expr.un left rite =>
-    congrBin rfl (eqOfId left) (eqOfId rite)
-  | Expr.ir left rite =>
-    congrBin rfl (eqOfId left) (eqOfId rite)
   | Expr.cpl expr =>
     @congr _ _ cpl cpl _ _ rfl (eqOfId expr)
-  | Expr.ifThen cond body =>
-    congrBin rfl (eqOfId cond) (eqOfId body)
   | Expr.arbUn _ body =>
     congrBin rfl rfl (eqOfId body)
   | Expr.arbIr _ body =>
@@ -109,36 +94,12 @@ def Expr.mapVars.eqOfIsComposition
             mapping1
             mapping0
             eqMapping)
-  | Expr.un left rite =>
-    show
-      un (left.mapVars varMapping) (rite.mapVars varMapping) = _
-    from
-      congrBin
-        rfl
-        (eqOfIsComposition left varMapping mapping1 mapping0 eqMapping)
-        (eqOfIsComposition rite varMapping mapping1 mapping0 eqMapping)
-  | Expr.ir left rite =>
-    show
-      ir (left.mapVars varMapping) (rite.mapVars varMapping) = _
-    from
-      congrBin
-        rfl
-        (eqOfIsComposition left varMapping mapping1 mapping0 eqMapping)
-        (eqOfIsComposition rite varMapping mapping1 mapping0 eqMapping)
   | Expr.cpl expr =>
     show
       cpl (expr.mapVars varMapping) = _
     from
       @congr _ _ cpl cpl _ _ rfl
         (eqOfIsComposition expr varMapping mapping1 mapping0 eqMapping)
-  | Expr.ifThen cond body =>
-    show
-      ifThen (cond.mapVars varMapping) (body.mapVars varMapping) = _
-    from
-      congrBin
-        rfl
-        (eqOfIsComposition cond varMapping mapping1 mapping0 eqMapping)
-        (eqOfIsComposition body varMapping mapping1 mapping0 eqMapping)
   | Expr.arbUn x body =>
     show
       arbUn (varMapping x) (body.mapVars varMapping) = _
@@ -255,80 +216,6 @@ def Expr.mapVars.preservesInterpretation
       ((interpretation.opEqPos salg bSrc cSrc opr args).trans
         (congr rfl (funext fun arg => eqArg arg ▸ rfl)))
   
-  | Expr.un left rite =>
-    let eqL :=
-      preservesInterpretation
-        salg
-        left
-        (left.mapVars varMapping)
-        bSrc
-        bDst
-        cSrc
-        cDst
-        varMapping
-        mappingIsInjective
-        rfl
-        (fun ⟨xf, isFree⟩ => eqB ⟨xf, Or.inl isFree⟩)
-        (fun ⟨xf, isFree⟩ => eqC ⟨xf, Or.inl isFree⟩)
-    
-    let eqR :=
-      preservesInterpretation
-        salg
-        rite
-        (rite.mapVars varMapping)
-        bSrc
-        bDst
-        cSrc
-        cDst
-        varMapping
-        mappingIsInjective
-        rfl
-        (fun ⟨xf, isFree⟩ => eqB ⟨xf, Or.inr isFree⟩)
-        (fun ⟨xf, isFree⟩ => eqC ⟨xf, Or.inr isFree⟩)
-    
-    Set3.eq
-      ((interpretation.unEqDef salg bSrc cSrc left rite).trans
-        (eqL ▸ eqR ▸ rfl))
-      ((interpretation.unEqPos salg bSrc cSrc left rite).trans
-        (eqL ▸ eqR ▸ rfl))
-  
-  | Expr.ir left rite =>
-    let eqL :=
-      preservesInterpretation
-        salg
-        left
-        (left.mapVars varMapping)
-        bSrc
-        bDst
-        cSrc
-        cDst
-        varMapping
-        mappingIsInjective
-        rfl
-        (fun ⟨xf, isFree⟩ => eqB ⟨xf, Or.inl isFree⟩)
-        (fun ⟨xf, isFree⟩ => eqC ⟨xf, Or.inl isFree⟩)
-    
-    let eqR :=
-      preservesInterpretation
-        salg
-        rite
-        (rite.mapVars varMapping)
-        bSrc
-        bDst
-        cSrc
-        cDst
-        varMapping
-        mappingIsInjective
-        rfl
-        (fun ⟨xf, isFree⟩ => eqB ⟨xf, Or.inr isFree⟩)
-        (fun ⟨xf, isFree⟩ => eqC ⟨xf, Or.inr isFree⟩)
-    
-    Set3.eq
-      ((interpretation.irEqDef salg bSrc cSrc left rite).trans
-        (eqL ▸ eqR ▸ rfl))
-      ((interpretation.irEqPos salg bSrc cSrc left rite).trans
-        (eqL ▸ eqR ▸ rfl))
-  
   | Expr.cpl expr =>
     let eqExpr :=
       preservesInterpretation
@@ -350,47 +237,6 @@ def Expr.mapVars.preservesInterpretation
         (eqExpr ▸ rfl))
       ((interpretation.cplEqPos salg bSrc cSrc expr).trans
         (eqExpr ▸ rfl))
-  
-  | Expr.ifThen cond body =>
-    let eqCond :=
-      preservesInterpretation
-        salg
-        cond
-        (cond.mapVars varMapping)
-        bSrc
-        bDst
-        cSrc
-        cDst
-        varMapping
-        mappingIsInjective
-        rfl
-        (fun ⟨xf, isFree⟩ =>
-          eqB ⟨xf, IsFreeVar.ifThenCond isFree body⟩)
-        (fun ⟨xf, isFree⟩ =>
-          eqC ⟨xf, IsFreeVar.ifThenCond isFree body⟩)
-    
-    let eqBody :=
-      preservesInterpretation
-        salg
-        body
-        (body.mapVars varMapping)
-        bSrc
-        bDst
-        cSrc
-        cDst
-        varMapping
-        mappingIsInjective
-        rfl
-        (fun ⟨xf, isFree⟩ =>
-          eqB ⟨xf, IsFreeVar.ifThenBody cond isFree⟩)
-        (fun ⟨xf, isFree⟩ =>
-          eqC ⟨xf, IsFreeVar.ifThenBody cond isFree⟩)
-    
-    Set3.eq
-      ((interpretation.ifThenEqDef salg bSrc cSrc cond body).trans
-        (eqCond ▸ eqBody ▸ rfl))
-      ((interpretation.ifThenEqPos salg bSrc cSrc cond body).trans
-        (eqCond ▸ eqBody ▸ rfl))
   
   | Expr.arbUn x body =>
     let eqBody d :=

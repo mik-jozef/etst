@@ -32,14 +32,8 @@ def elimPosExternalVar
           (pair (boundVarsEncoding boundVars) (pair x d))))
 :=
   let eqZ: zero = fromNat 0 := rfl
-  @inwFinUnElim
-    pairSignature
-    pairSalgebra
-    b
-    c
-    uniDefList.interpretation.exprList
-    (InterpEnc boundVars (Expr.var x) d)
-    _
+  inwFinUnElim
+    (list := uniDefList.interpretation.exprList)
     inw
     (fun inw =>
       let ⟨xEnc, _, inw⟩ := inwUnDomElim inw
@@ -205,14 +199,8 @@ def elimPosExternalZero
 :
   d = zero
 :=
-  @inwFinUnElim
-    pairSignature
-    pairSalgebra
-    b
-    c
-    uniDefList.interpretation.exprList
-    (InterpEnc boundVars zeroExpr d)
-    _
+  inwFinUnElim
+    (list := uniDefList.interpretation.exprList)
     inw
     (nopePosInterpVar fun inw =>
       let ⟨inw, _⟩ := inwPairElim inw
@@ -311,14 +299,8 @@ def elimPosExternalPair
 := by
   unfold InterpEnc
   exact
-    @inwFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (pairExpr left rite) d)
-      _
+    inwFinUnElim
+      (list := uniDefList.interpretation.exprList)
       inw
       (nopePosInterpVar fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
@@ -448,7 +430,7 @@ def elimPosExternalUn
     Set3.posMem
       (interpretation
         pairSalgebra b c (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.un left rite) d))
+      (InterpEnc boundVars (unExpr left rite) d))
 :
   Or
     (Set3.posMem
@@ -460,14 +442,8 @@ def elimPosExternalUn
 := by
   unfold InterpEnc
   exact
-    @inwFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.un left rite) d)
-      _
+    inwFinUnElim
+      (list := uniDefList.interpretation.exprList)
       inw
       (nopePosInterpVar fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
@@ -529,7 +505,7 @@ def elimDefExternalUn
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.un left rite) d))
+      (InterpEnc boundVars (unExpr left rite) d))
 :
   Or
     (Set3.defMem
@@ -605,7 +581,7 @@ def elimPosExternalIr
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.ir left rite) d))
+      (InterpEnc boundVars (irExpr left rite) d))
 :
   And
     (Set3.posMem
@@ -617,14 +593,8 @@ def elimPosExternalIr
 := by
   unfold InterpEnc
   exact
-    @inwFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.ir left rite) d)
-      _
+    inwFinUnElim
+      (list := uniDefList.interpretation.exprList)
       inw
       (nopePosInterpVar fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
@@ -683,7 +653,7 @@ def elimDefExternalIr
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.ir left rite) d))
+      (InterpEnc boundVars (irExpr left rite) d))
 :
   And
     (Set3.defMem
@@ -765,14 +735,8 @@ def elimPosExternalCpl
 := by
   unfold InterpEnc
   exact
-    @inwFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.cpl expr) d)
-      _
+    inwFinUnElim
+      (list := uniDefList.interpretation.exprList)
       inw
       (nopePosInterpVar fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
@@ -914,7 +878,7 @@ def elimPosExternalIfThen
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.ifThen cond body) d))
+      (InterpEnc boundVars (ifThenExpr cond body) d))
 :
   And
     (∃ dCond,
@@ -927,14 +891,8 @@ def elimPosExternalIfThen
 := by
   unfold InterpEnc
   exact
-    @inwFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.ifThen cond body) d)
-      _
+    inwFinUnElim
+      (list := uniDefList.interpretation.exprList)
       inw
       (nopePosInterpVar fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
@@ -997,7 +955,7 @@ def elimDefExternalIfThen
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (Expr.ifThen cond body) d))
+      (InterpEnc boundVars (ifThenExpr cond body) d))
 :
   And
     (∃ dCond,
@@ -1083,14 +1041,8 @@ def elimPosExternalArbUn
 := by
   unfold InterpEnc
   exact
-    @inwFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.arbUn x body) d)
-      _
+    inwFinUnElim
+      (list := uniDefList.interpretation.exprList)
       inw
       (nopePosInterpVar fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
@@ -1325,14 +1277,8 @@ def elimPosExternalArbIr
   unfold InterpEnc
   intro dX
   exact
-    @inwFinUnElim
-      pairSignature
-      pairSalgebra
-      b
-      c
-      uniDefList.interpretation.exprList
-      (InterpEnc boundVars (Expr.arbIr x body) d)
-      _
+    inwFinUnElim
+      (list := uniDefList.interpretation.exprList)
       inw
       (nopePosInterpVar fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw

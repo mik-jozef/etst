@@ -57,7 +57,7 @@ namespace Pair
           nat = () | (nat, ())
     -/
     def nat: Nat := 0
-    def nat.expr := Expr.un zeroExpr (pairExpr nat zeroExpr)
+    def nat.expr := unExpr zeroExpr (pairExpr nat zeroExpr)
     
     /-
       Contains (n, n) iff n is a natural number.
@@ -74,7 +74,7 @@ namespace Pair
     -/
     def natLe: Nat := 2
     def natLe.expr :=
-      Expr.un
+      unExpr
         natPairAA
         (unionExpr 500 natLe
           (pairExpr
@@ -94,16 +94,16 @@ namespace Pair
     -- Contains the triset { 2, 3, 4, 6 }.
     def exprEncoding.binary: Nat := 5
     def exprEncoding.binary.expr: Expr :=
-      Expr.un
+      unExpr
         (natExpr 2)
-        (Expr.un
+        (unExpr
           (natExpr 3)
-          ((Expr.un (natExpr 4) (natExpr 6))))
+          ((unExpr (natExpr 4) (natExpr 6))))
     
     -- Contains the triset { 7, 8 }.
     def exprEncoding.quantifier: Nat := 6
     def exprEncoding.quantifier.expr: Expr :=
-      Expr.un (natExpr 7) (natExpr 8)
+      unExpr (natExpr 7) (natExpr 8)
     
     -- Helpers for `exprEncoding.expr` below.
     def exprEncoding: Nat := 7
@@ -151,7 +151,7 @@ namespace Pair
     -/
     def defEncoding: Nat := 8
     def defEncoding.expr: Expr :=
-      Expr.un zeroExpr (pairExpr exprEncoding defEncoding)
+      unExpr zeroExpr (pairExpr exprEncoding defEncoding)
     
     /-
       Contains (a, b) with a and b being pairs such that a < b
@@ -195,13 +195,13 @@ namespace Pair
     -/
     def pairOfDepth: Nat := 11
     def pairOfDepth.expr: Expr :=
-      Expr.un
+      unExpr
         (pairExpr zeroExpr zeroExpr)
         (unionExpr 500 nat
           (unionExpr 501 (callExpr 502 pairOfDepth 500)
             (unionExpr 502
               (callExpr 503 pairOfDepth (callExpr 504 natLeFn 500))
-              (Expr.un
+              (unExpr
                 (pairExpr (succExpr 500) (pairExpr 501 502))
                 (pairExpr (succExpr 500) (pairExpr 502 501))))))
     
@@ -210,7 +210,7 @@ namespace Pair
     -/
     def natLt: Nat := 12
     def natLt.expr: Expr :=
-      Expr.ir natLe (Expr.cpl (Expr.arbUn 500 (pairExpr 500 500)))
+      irExpr natLe (Expr.cpl (Expr.arbUn 500 (pairExpr 500 500)))
     
     /-
       Contains (a, b) if the pairs `a` and `b` have the same depth.
@@ -232,8 +232,8 @@ namespace Pair
     -/
     def pairLt: Nat := 14
     def pairLt.expr: Expr :=
-      Expr.un
-        (Expr.ir sameDepth pairDictLt)
+      unExpr
+        (irExpr sameDepth pairDictLt)
         (unionExpr 500 natLt
           (pairExpr
             (callExpr 501 pairOfDepth (zthMember 502 500))
@@ -244,7 +244,7 @@ namespace Pair
     -/
     def defEncodingLt: Nat := 15
     def defEncodingLt.expr: Expr :=
-      Expr.ir pairLt (pairExpr defEncoding defEncoding)
+      irExpr pairLt (pairExpr defEncoding defEncoding)
     
     /-
       Contains (a, b) iff `a < x < b` for some deflist encodings
@@ -255,10 +255,10 @@ namespace Pair
       Expr.arbUn 500
         (Expr.arbUn 501
           (Expr.arbUn 502
-            (Expr.ifThen
+            (ifThenExpr
               (pairExpr
-                (Expr.ir defEncodingLt (pairExpr 500 501))
-                (Expr.ir defEncodingLt (pairExpr 501 502)))
+                (irExpr defEncodingLt (pairExpr 500 501))
+                (irExpr defEncodingLt (pairExpr 501 502)))
               (pairExpr 500 502))))
     
     /-
@@ -267,7 +267,7 @@ namespace Pair
     -/
     def nextDef: Nat := 17
     def nextDef.expr: Expr :=
-      Expr.ir
+      irExpr
         defEncodingLt
         (Expr.cpl defEncodingMinDist2)
     
@@ -277,7 +277,7 @@ namespace Pair
     -/
     def nthDefList: Nat := 18
     def nthDefList.expr: Expr :=
-      Expr.un
+      unExpr
         (pairExpr zeroExpr zeroExpr)
         (unionExpr 500 nthDefList
           (pairExpr
@@ -353,7 +353,7 @@ namespace Pair
     -/
     def incrVarsDefEncoding: Nat := 21
     def incrVarsDefEncoding.expr: Expr :=
-      Expr.un
+      unExpr
         (pairExpr zeroExpr zeroExpr)
         (unionExpr 500 exprEncoding
           (unionExpr 501 defEncoding
@@ -369,7 +369,7 @@ namespace Pair
     -/
     def shiftDefEncoding: Nat := 22
     def shiftDefEncoding.expr: Expr :=
-      Expr.un
+      unExpr
         (unionExpr 500 defEncoding
           (pairExpr zeroExpr (pairExpr 500 500)))
         (unionExpr 500 nat
@@ -402,7 +402,7 @@ namespace Pair
     -/
     def lastExpr: Nat := 24
     def lastExpr.expr: Expr :=
-      Expr.un
+      unExpr
         lastExpr.base
         (unionExpr 500 lastExpr
           (pairExpr
@@ -419,7 +419,7 @@ namespace Pair
     -/
     def upToLast: Nat := 25
     def upToLast.expr: Expr :=
-      Expr.un
+      unExpr
         (pairExpr (pairExpr exprEncoding zeroExpr) zeroExpr)
         (unionExpr 500 upToLast
           (unionExpr 501 exprEncoding
@@ -436,7 +436,7 @@ namespace Pair
     -/
     def arrayAppend: Nat := 26
     def arrayAppend.expr: Expr :=
-      (Expr.un
+      (unExpr
         (pairExpr
           zeroExpr
           (unionExpr 500 defEncoding
@@ -460,7 +460,7 @@ namespace Pair
     -/
     def arrayLength: Nat := 27
     def arrayLength.expr: Expr :=
-      Expr.un
+      unExpr
         (pairExpr zeroExpr zeroExpr)
         (Expr.arbUn 500
           (pairExpr
@@ -511,7 +511,7 @@ namespace Pair
     -/
     def enumUpTo: Nat := 29
     def enumUpTo.expr: Expr :=
-      Expr.un
+      unExpr
         (pairExpr zeroExpr zeroExpr)
         (unionExpr 500 nat
           (pairExpr
@@ -529,7 +529,7 @@ namespace Pair
     def defListToSet.expr: Expr :=
       unionExpr 500 exprEncoding
         (unionExpr 501 defEncoding
-          (Expr.un
+          (unExpr
             (pairExpr
               (pairExpr 500 501)
               (pairExpr zeroExpr 500))
@@ -589,7 +589,7 @@ namespace Pair
     -/
     def getBound: Nat := 33
     def getBound.expr: Expr :=
-      Expr.un
+      unExpr
         getBound.baseExpr
         (Expr.arbUn 500
           (Expr.arbUn 501
@@ -640,17 +640,17 @@ namespace Pair
     
     def interpretation.exprVarBoundOrFree: Expr :=
       -- Assuming 500 is a var, and 501 is bound vars.
-      Expr.un
+      unExpr
         -- The case where 500 is a bound var.
         (callExpr 502 (callExpr 503 getBound 501) 500)
         -- The case where 500 is a free var. Must be empty if 500
         -- is a bound var, thus the `ifThen`.
-        (Expr.ifThen
+        (ifThenExpr
           (Expr.cpl
             -- Turning a nonempty type into the universal
             -- type, so that it may be complemented to test
             -- for emptiness.
-            (Expr.ifThen
+            (ifThenExpr
               (callExpr 502 (callExpr 503 getBound 501) 500)
               anyExpr))
           (callExpr 502 theSet 500))
@@ -692,7 +692,7 @@ namespace Pair
               502
               (pairExpr
                 (pairExpr (natExpr 3) (pairExpr 500 501))
-                (Expr.un
+                (unExpr
                   (callExpr 503 (callExpr 504 interpretation 502) 500)
                   (callExpr 503 (callExpr 504 interpretation 502) 501))))))
     
@@ -704,7 +704,7 @@ namespace Pair
               502
               (pairExpr
                 (pairExpr (natExpr 4) (pairExpr 500 501))
-                (Expr.ir
+                (irExpr
                   (callExpr 503 (callExpr 504 interpretation 502) 500)
                   (callExpr 503 (callExpr 504 interpretation 502) 501))))))
     
@@ -726,7 +726,7 @@ namespace Pair
               502
               (pairExpr
                 (pairExpr (natExpr 6) (pairExpr 500 501))
-                (Expr.ifThen
+                (ifThenExpr
                   (callExpr 503 (callExpr 504 interpretation 502) 500)
                   (callExpr 503 (callExpr 504 interpretation 502) 501))))))
     

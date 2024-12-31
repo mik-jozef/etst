@@ -41,6 +41,33 @@ noncomputable def optOrdPo :=
 noncomputable def optOrdPreOrd := optOrdPo.toPreorder
 
 
+def argLe
+  (op: pairSignature.Op)
+  (args: pairSignature.Params op → Expr pairSignature)
+  (arg: pairSignature.Params op)
+:
+  (args arg).sizeOf
+    <
+  (@Expr.op pairSignature op args).sizeOf
+:=
+  Order.lt_succ_of_le (Ordinal.le_iSup _ arg)
+
+def IsWeakCause.unionIrExpr
+  (isCauseLeft: IsWeakCause pairSalgebra causeLeft d exprLeft)
+  (isCauseRite: IsWeakCause pairSalgebra causeRite d exprRite)
+:
+  IsWeakCause
+    pairSalgebra
+    (causeLeft ∪ causeRite)
+    d
+    (PairExpr.irExpr exprLeft exprRite)
+:=
+  fun isSat =>
+    And.intro
+      (isCauseLeft isSat.elimUnL)
+      (isCauseRite isSat.elimUnR)
+
+
 namespace Pair
   noncomputable def uniSet3 :=
     uniDefList.theExternalWfm uniDefList.theSet
@@ -655,34 +682,23 @@ namespace Pair
         let ⟨_dLeft, _dRite, eq, isStrongLeft, isStrongRite⟩ :=
           isInternalCause.elimPairExpr isConsistent
       
-        have:
-          (args ArityTwo.zth).sizeOf
-            <
-          (@op pairSignature pairSignature.Op.pair args).sizeOf
-        :=
-          Order.lt_succ_of_le (Ordinal.le_iSup _ ArityTwo.zth)
+        have := argLe pairSignature.Op.pair args ArityTwo.zth
         
         let ihL := isCauseToInsInterp
           isStrongLeft boundVars boundVarsSat
           cinsIns binsIns boutOut
         
-        have:
-          (args ArityTwo.fst).sizeOf
-            <
-          (@op pairSignature pairSignature.Op.pair args).sizeOf
-        :=
-          Order.lt_succ_of_le (Ordinal.le_iSup _ ArityTwo.fst)
+        have := argLe pairSignature.Op.pair args ArityTwo.fst
         
         let ihR := isCauseToInsInterp
           isStrongRite boundVars boundVarsSat
           cinsIns binsIns boutOut
         
         eq ▸ InsInterp.exprPair ihL ihR
-      | un left rite =>
+      | op pairSignature.Op.un args =>
         isInternalCause.elimUn.elim
           (fun isCauseLeft =>
-            have: left.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
-              Order.lt_succ_of_le (le_max_left _ _)
+            have := argLe pairSignature.Op.un args ArityTwo.zth
             
             let ih := isCauseToInsInterp
               isCauseLeft boundVars boundVarsSat
@@ -690,19 +706,16 @@ namespace Pair
             
             InsInterp.exprUnLeft ih)
           (fun isCauseRite =>
-            have: rite.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
-              Order.lt_succ_of_le (le_max_right _ _)
+            have := argLe pairSignature.Op.un args ArityTwo.fst
             
             let ih := isCauseToInsInterp
               isCauseRite boundVars boundVarsSat
               cinsIns binsIns boutOut
             
             InsInterp.exprUnRite ih)
-      | ir left rite =>
-        have: left.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
-          Order.lt_succ_of_le (le_max_left _ _)
-        have: rite.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
-          Order.lt_succ_of_le (le_max_right _ _)
+      | op pairSignature.Op.ir args =>
+        have := argLe pairSignature.Op.ir args ArityTwo.zth
+        have := argLe pairSignature.Op.ir args ArityTwo.fst
         
         let ⟨isCauseLeft, isCauseRite⟩ := isInternalCause.elimIr
         
@@ -737,11 +750,9 @@ namespace Pair
             (extOfIntCycleFull.interp
               boundVars expr (Ordinal.lt_succ _) d allInapp)
         InsInterp.exprCpl (Out.isSound out)
-      | ifThen cond body =>
-        have: cond.sizeOf < max cond.sizeOf body.sizeOf + 1 :=
-          Order.lt_succ_of_le (le_max_left _ _)
-        have: body.sizeOf < max cond.sizeOf body.sizeOf + 1 :=
-          Order.lt_succ_of_le (le_max_right _ _)
+      | op pairSignature.Op.ifThen args =>
+        have := argLe pairSignature.Op.ifThen args ArityTwo.zth
+        have := argLe pairSignature.Op.ifThen args ArityTwo.fst
         
         let ⟨⟨_dC, isCauseCond⟩, isCauseBody⟩ :=
           isInternalCause.elimIfThen
@@ -923,14 +934,13 @@ namespace Pair
             (IsCauseInappExtended.Not.union
               isAppL isAppR isInappUnion)
       |
-        un left rite =>
+        op pairSignature.Op.un args =>
         let inCinsLeftOrRite :=
           isCause.hurrDurrElim elimPosExternalUn
         
         inCinsLeftOrRite.elim
           (fun inCinsLeft =>
-            let isLe: left.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
-              Order.lt_succ_of_le (le_max_left _ _)
+            let isLe := argLe pairSignature.Op.un args ArityTwo.zth
             
             let allInappLeft cause satBoundVars isCause :=
               allInapp cause satBoundVars (isCause.unLeft _)
@@ -938,10 +948,9 @@ namespace Pair
             IsCauseInappExtended.cinsFailsCycle
               inCinsLeft
               (extOfIntCycleFull.interp
-                boundVars left isLe d allInappLeft))
+                boundVars (args ArityTwo.zth) isLe d allInappLeft))
           (fun inCinsRite =>
-            let isLe: rite.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
-              Order.lt_succ_of_le (le_max_right _ _)
+            let isLe := argLe pairSignature.Op.un args ArityTwo.fst
             
             let allInappRite cause satBoundVars isCause :=
               allInapp cause satBoundVars (isCause.unRite _)
@@ -949,13 +958,14 @@ namespace Pair
             IsCauseInappExtended.cinsFailsCycle
               inCinsRite
               (extOfIntCycleFull.interp
-                boundVars rite isLe d allInappRite))
+                boundVars (args ArityTwo.fst) isLe d allInappRite))
       |
-        ir left rite =>
-        let isLeL: left.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
-          Order.lt_succ_of_le (le_max_left _ _)
-        let isLeR: rite.sizeOf < max left.sizeOf rite.sizeOf + 1 :=
-          Order.lt_succ_of_le (le_max_right _ _)
+        op pairSignature.Op.ir args =>
+        let left := args ArityTwo.zth
+        let rite := args ArityTwo.fst
+        
+        let isLeL := argLe pairSignature.Op.ir args ArityTwo.zth
+        let isLeR := argLe pairSignature.Op.ir args ArityTwo.fst
         
         let ⟨inCinsLeft, inCinsRite⟩ :=
           isCause.hurrDurrElim elimPosExternalIr
@@ -983,7 +993,7 @@ namespace Pair
             allInapp
               (causeL.union causeR)
               (satBoundsL.union satBoundsR)
-              (isCauseL.union isCauseR)
+              (isCauseL.unionIrExpr isCauseR)
           False.elim
             (IsCauseInappExtended.Not.union
               isAppL isAppR isInappUnion)
@@ -1017,11 +1027,12 @@ namespace Pair
                   False.elim (notBound ⟨_, isBound⟩))
                 (fun ⟨_, isOut⟩ => isOut)))
       |
-        ifThen cond body =>
-        let isLeC: cond.sizeOf < max cond.sizeOf body.sizeOf + 1 :=
-          Order.lt_succ_of_le (le_max_left _ _)
-        let isLeB: body.sizeOf < max cond.sizeOf body.sizeOf + 1 :=
-          Order.lt_succ_of_le (le_max_right _ _)
+        op pairSignature.Op.ifThen args =>
+        let cond := args ArityTwo.zth
+        let body := args ArityTwo.fst
+        
+        let isLeC := argLe pairSignature.Op.ifThen args ArityTwo.zth
+        let isLeB := argLe pairSignature.Op.ifThen args ArityTwo.fst
         
         let ⟨⟨dC, inCinsCond⟩, inCinsBody⟩ :=
           isCause.hurrDurrElim elimPosExternalIfThen
