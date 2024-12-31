@@ -38,18 +38,11 @@ structure Signature where
 /-
   An expression is an inductive tree-like structure defined over
   a signature `sig`. It can be a variable, the application of an
-  operator to its parameters, a binary union or intersection, the
-  complement of an expression, a conditional expression, or an
-  arbitrary union or intersection.
+  operator to its parameters, the complement of an expression, or
+  an arbitrary union or intersection.
   
   Variables are natural numbers. The arguments of an operator `op`
   are indexed by the type `sig.Params op`.
-  
-  Note: Defining expressions like this has likely been a mistake.
-  Instead of having unions, intersections, and conditionals as
-  separate constructors, they should have been defined as operators
-  in the signature. This would have allowed for a more uniform
-  treatment of expressions -- ie. fewer cases to consider in proofs.
 -/
 inductive Expr (sig: Signature) where
 | var (x: Nat)
