@@ -10,9 +10,9 @@ open PairExpr
 
 
 def Cause.IsStronglySatisfiedBy.withBound
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isSat: cause.IsStronglySatisfiedBy b c)
-  (x: Nat)
+  (x: Var)
   (d: D)
 :
   (cause.withBound x d).IsStronglySatisfiedBy
@@ -51,9 +51,9 @@ def Cause.IsStronglySatisfiedBy.withBound
 
 def Cause.IsInapplicable.toIsCauseInapplicable
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   (isInapplicable:
     Cause.IsInapplicable
       cause
@@ -83,7 +83,7 @@ def Cause.IsInapplicable.toIsCauseInapplicable
   consistent.
 -/
 def Cause.IsConsistent
-  (cause: Cause D)
+  (cause: Cause Var D)
 :
   Prop
 :=
@@ -92,7 +92,7 @@ def Cause.IsConsistent
 def Cause.IsConsistent.Not.isStrong
   (isNotConsistent: ¬ cause.IsConsistent)
   (d: salg.D)
-  (expr: Expr sig)
+  (expr: Expr Var sig)
 :
   IsStrongCause salg cause d expr
 :=
@@ -120,10 +120,10 @@ def Cause.IsStronglySatisfiedByBackground.toIsConsistent
   satisfies the background part of a cause.
 -/
 def Cause.IsConsistent.leastBackgroundApx
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isConsistent: cause.IsConsistent)
 :
-  Valuation D
+  Valuation Var D
 :=
   fun x => {
     defMem := fun d => ⟨d, x⟩ ∈ cause.backgroundIns
@@ -141,9 +141,9 @@ def Cause.IsConsistent.leastBackgroundApx
   satisfies the context part of a cause.
 -/
 def Cause.leastContextApx
-  (cause: Cause D)
+  (cause: Cause Var D)
 :
-  Valuation D
+  Valuation Var D
 :=
   fun x => {
     defMem := fun d => ⟨d, x⟩ ∈ cause.contextIns
@@ -152,7 +152,7 @@ def Cause.leastContextApx
   }
 
 def Cause.IsConsistent.leastBackgroundApxIsSat
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isConsistent: cause.IsConsistent)
 :
   cause.IsStronglySatisfiedByBackground
@@ -167,7 +167,7 @@ def Cause.IsConsistent.leastBackgroundApxIsSat
 }
 
 def Cause.IsConsistent.leastValsApxAreSat
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isConsistent: cause.IsConsistent)
 :
   cause.IsStronglySatisfiedBy
@@ -181,8 +181,8 @@ def Cause.IsConsistent.leastValsApxAreSat
 }
 
 def Cause.IsStronglySatisfiedByBackground.leastIsLeApx
-  {cause: Cause D}
-  (b: Valuation D)
+  {cause: Cause Var D}
+  (b: Valuation Var D)
   (bSat: cause.IsStronglySatisfiedByBackground b)
 :
   let isConsistent := bSat.toIsConsistent
@@ -195,9 +195,9 @@ def Cause.IsStronglySatisfiedByBackground.leastIsLeApx
 
 
 def Cause.IsConsistent.withBound
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isConsistent: cause.IsConsistent)
-  (x: Nat)
+  (x: Var)
   (d: D)
 :
   (cause.withBound x d).IsConsistent
@@ -228,9 +228,9 @@ def Cause.IsConsistent.withBound
               (fun ⟨dNeq, xEq⟩ => h ⟨xEq, dNeq⟩)))
 
 def Cause.IsStronglySatisfiedBy.leastBackgroundApxUpdateLe
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isConsistent: cause.IsConsistent)
-  (x: Nat)
+  (x: Var)
   (d: D)
   (isSat: (cause.withBound x d).IsStronglySatisfiedBy b c)
 :
@@ -256,9 +256,9 @@ def Cause.IsStronglySatisfiedBy.leastBackgroundApxUpdateLe
       }
 
 def Cause.IsStronglySatisfiedBy.leastContextApxUpdateLeDefMem
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isSat: (cause.withBound x d).IsStronglySatisfiedBy b c)
-  (xx: Nat)
+  (xx: Var)
 :
   (cause.leastContextApx.update x d xx).defMem ⊆ (c xx).defMem
 :=
@@ -278,7 +278,7 @@ fun _ inUpdatedLeast =>
 
 
 def Cause.IsStronglySatisfiedBy.backgroundOnly
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isSat: cause.IsStronglySatisfiedBy b c)
 :
   cause.IsStronglySatisfiedByBackground b
@@ -289,6 +289,7 @@ def Cause.IsStronglySatisfiedBy.backgroundOnly
 
 
 def IsStrongCause.Not.exSatNotDef
+  {cause: Cause Var salg.D}
   (notCause: ¬ IsStrongCause salg cause d expr)
 :
   ∃ b c,
@@ -347,7 +348,7 @@ def IsStrongCause.Not.elimVar
 
 def IsStrongCause.op
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (argVals: sig.Args opr salg.D)
@@ -370,7 +371,7 @@ def IsStrongCause.op
 
 def IsStrongCause.elimOp
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (isCause: IsStrongCause salg cause d (Expr.op opr argExprs))
@@ -397,7 +398,7 @@ def IsStrongCause.elimOp
 
 def IsStrongCause.Not.elimOp
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.op opr argExprs))
@@ -418,7 +419,7 @@ def IsStrongCause.Not.elimOp
 
 def IsStrongCause.notOp
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (isConsistent: cause.IsConsistent)
@@ -591,10 +592,10 @@ def IsStrongCause.Not.elimIr
 
 
 def IsStrongCause.cpl
-  {expr: Expr sig}
-  (cause: Cause salg.D)
+  {expr: Expr Var sig}
+  (cause: Cause Var salg.D)
   (isCauseOut:
-    {b: Valuation salg.D} →
+    {b: Valuation Var salg.D} →
     cause.IsStronglySatisfiedByBackground b →
     ¬ (expr.interpretation salg b b).posMem d)
 :
@@ -606,10 +607,10 @@ def IsStrongCause.elimCpl
   {salg: Salgebra sig}
   {d: salg.D}
   
-  {causeCpl: Cause salg.D}
+  {causeCpl: Cause Var salg.D}
   (isCauseCpl: IsStrongCause salg causeCpl d (Expr.cpl expr))
   (isConsistent: causeCpl.IsConsistent)
-  {causeExpr: Cause salg.D}
+  {causeExpr: Cause Var salg.D}
   (isCauseExpr: IsWeakCause salg causeExpr d expr)
 :
   causeExpr.IsInapplicable
@@ -621,6 +622,7 @@ def IsStrongCause.elimCpl
   Cause.IsWeaklySatisfiedBy.Not.toIsInapplicable notSat
 
 def IsStrongCause.Not.elimCplEx
+  {cause: Cause Var salg.D}
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.cpl expr))
 :
   ∃ b,
@@ -632,6 +634,7 @@ def IsStrongCause.Not.elimCplEx
     isNotCause (IsStrongCause.cpl cause (allSatPos _))
 
 def IsStrongCause.Not.elimCpl
+  {cause: Cause Var salg.D}
   (isNotCause: ¬ IsStrongCause salg cause d (Expr.cpl expr))
 :
   let isConsistent := IsStrongCause.Not.isConsistent isNotCause
@@ -732,7 +735,7 @@ def IsStrongCause.Not.elimIfThen
 
 
 def IsStrongCause.arbUn
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   (isCause: IsStrongCause salg (cause.withBound x dX) d body)
 :
   IsStrongCause salg cause d (Expr.arbUn x body)
@@ -757,7 +760,7 @@ def IsStrongCause.elimArbUn
 
 def IsStrongCause.notArbUn
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (notCause: ∀ dX, ¬ IsStrongCause salg (cause.withBound x dX) d body)
@@ -779,7 +782,7 @@ def IsStrongCause.Not.elimArbUn
 
 def IsStrongCause.arbIr
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (isCause:
@@ -804,7 +807,7 @@ def IsStrongCause.elimArbIr
 
 def IsStrongCause.notArbIr
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (notCause: ∃ dX, ¬ IsStrongCause salg (cause.withBound x dX) d body)
@@ -831,7 +834,7 @@ def IsStrongCause.Not.elimArbIr
 
 
 def IsStrongCause.ofLeastApx
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   (isConsistent: cause.IsConsistent)
   (isDef:
     let b := isConsistent.leastBackgroundApx
@@ -849,12 +852,12 @@ def IsStrongCause.ofLeastApx
 
 def IsStrongCause.ofBackground
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (eqVal: cause.contextIns = cause.backgroundIns)
   (isCause:
-    {b: Valuation salg.D} →
+    {b: Valuation Var salg.D} →
     cause.IsStronglySatisfiedByBackground b →
     (expr.interpretation salg b b).defMem d)
 :
@@ -872,7 +875,7 @@ def IsStrongCause.ofBackground
 
 def IsStrongCause.ofLeastBackground
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (eqVal: cause.contextIns = cause.backgroundIns)
@@ -892,6 +895,7 @@ def IsStrongCause.ofLeastBackground
       isDef
 
 def IsStrongCause.hurrDurrElim
+  {cause: Cause Var salg.D}
   (isCause: IsStrongCause salg cause d expr)
   (isConsistent: cause.IsConsistent)
   {P: Prop}

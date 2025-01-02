@@ -10,7 +10,7 @@ open PairExpr
 
 
 def Cause.IsWeaklySatisfiedBy.toSubcause
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isSat: cause.IsWeaklySatisfiedBy b c)
   (isSub: subcause ⊆ cause)
 :
@@ -28,8 +28,8 @@ def Cause.IsWeaklySatisfiedBy.toSubcause
 }
 
 def Cause.IsWeaklySatisfiedBy.exceptToWithBound
-  {cause: Cause D}
-  {x: Nat}
+  {cause: Cause Var D}
+  {x: Var}
   (isSat: (cause.exceptVar x).IsWeaklySatisfiedBy b c)
   (d: D)
 :
@@ -67,7 +67,7 @@ def Cause.IsWeaklySatisfiedBy.exceptToWithBound
 }
 
 def Cause.IsWeaklySatisfiedBy.toWithBound
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isSat: cause.IsWeaklySatisfiedBy b c)
   (d: D)
 :
@@ -78,7 +78,7 @@ def Cause.IsWeaklySatisfiedBy.toWithBound
   (isSat.ofSuper (cause.exceptVarIsSub x)).exceptToWithBound d
 
 def Cause.IsWeaklySatisfiedBy.updateSet3SatOfSatWithBound
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isSat: (cause.withBound x dX).IsWeaklySatisfiedBy b c)
 :
   cause.IsWeaklySatisfiedBy
@@ -109,7 +109,7 @@ def Cause.IsWeaklySatisfiedBy.updateSet3SatOfSatWithBound
 }
 
 def Cause.isWeaklySatByUndetermined
-  (cause: Cause D)
+  (cause: Cause Var D)
 :
   cause.IsWeaklySatisfiedBy
     Valuation.undetermined
@@ -126,9 +126,9 @@ def Cause.isWeaklySatByUndetermined
   the background part of a cause.
 -/
 def Cause.leastBackgroundStd
-  (cause: Cause D)
+  (cause: Cause Var D)
 :
-  Valuation D
+  Valuation Var D
 :=
   fun x => {
     defMem := Set.empty
@@ -141,9 +141,9 @@ def Cause.leastBackgroundStd
   the context part of a cause.
 -/
 def Cause.leastContextStd
-  (cause: Cause D)
+  (cause: Cause Var D)
 :
-  Valuation D
+  Valuation Var D
 :=
   fun x => {
     defMem := Set.empty
@@ -156,9 +156,9 @@ def Cause.leastContextStd
   the background part of a cause.
 -/
 def Cause.greatestBackgroundStd
-  (cause: Cause D)
+  (cause: Cause Var D)
 :
-  Valuation D
+  Valuation Var D
 :=
   fun x => {
     defMem := fun d => ⟨d, x⟩ ∉ cause.backgroundOut
@@ -173,10 +173,10 @@ def Cause.greatestBackgroundStd
   closer to "definite non/member" than these are to each other.
 -/
 def Cause.closestWeakSatVal
-  (cause: Cause D)
-  (v: Valuation D)
+  (cause: Cause Var D)
+  (v: Valuation Var D)
 :
-  Valuation D
+  Valuation Var D
 :=
   fun x => {
     defMem :=
@@ -189,7 +189,7 @@ def Cause.closestWeakSatVal
 
 
 def Cause.leastValsStdAreSat
-  (cause: Cause D)
+  (cause: Cause Var D)
 :
   cause.IsWeaklySatisfiedBy
     cause.leastBackgroundStd
@@ -201,8 +201,8 @@ def Cause.leastValsStdAreSat
 }
 
 def Cause.closestWeakSatValIsSat
-  (cause: Cause D)
-  (v: Valuation D)
+  (cause: Cause Var D)
+  (v: Valuation Var D)
 :
   cause.IsWeaklySatisfiedBy
     (cause.closestWeakSatVal v)
@@ -237,7 +237,7 @@ def Cause.leClosestOfSatUnionB
   }
 
 def Cause.leClosestOfSatUnionBUpdated
-  {cause: Cause D}
+  {cause: Cause Var D}
   (isSat:
     Cause.IsWeaklySatisfiedBy
       (Cause.union
@@ -290,6 +290,7 @@ def Cause.leClosestOfSatUnionBUpdated
 
 namespace IsWeakCause
   def hurrDurrElim
+    {cause: Cause Var salg.D}
     (isCause: IsWeakCause salg cause d expr)
     {R: Sort*}
     (goalInC:
@@ -306,6 +307,7 @@ namespace IsWeakCause
     goalInC (isCause cause.leastValsStdAreSat)
   
   def hurrDurrElimGreat
+    {cause: Cause Var salg.D}
     (isCause: IsWeakCause salg cause d expr)
     {P: Prop}
     (goalInC:
@@ -339,7 +341,7 @@ namespace IsWeakCause
     ⟨d, x⟩ ∈ cause.contextIns
   :=
     let b := Valuation.undetermined
-    let c: Valuation salg.D := fun xx => {
+    let c: Valuation _ salg.D := fun xx => {
       defMem := Set.empty
       posMem := fun dd => xx ≠ x ∨ dd ≠ d
       defLePos := nofun
@@ -377,7 +379,7 @@ namespace IsWeakCause
   
   def op
     {salg: Salgebra sig}
-    {cause: Cause salg.D}
+    {cause: Cause Var salg.D}
     {d: salg.D}
     
     (argVals: sig.Args opr salg.D)
@@ -400,11 +402,11 @@ namespace IsWeakCause
   
   def elimOp
     {salg: Salgebra sig}
-    {cause: Cause salg.D}
+    {cause: Cause Var salg.D}
     {d: salg.D}
     
     (isCause: IsWeakCause salg cause d (Expr.op opr argExprs))
-    (v: Valuation salg.D)
+    (v: Valuation Var salg.D)
   :
     ∃ (argVals: sig.Args opr salg.D),
       salg.I opr argVals d ∧
@@ -505,8 +507,9 @@ namespace IsWeakCause
     Or.inr ∘ isCause
   
   def elimUn
+    {cause: Cause Var Pair}
     (isCause: IsWeakCause pairSalgebra cause d (unExpr left rite))
-    (v: Valuation Pair)
+    (v: Valuation Var Pair)
   :
     Or
       (IsWeakCause
@@ -561,9 +564,10 @@ namespace IsWeakCause
   
   def elimIfThenCond
     {cond}
+    {cause: Cause Var Pair}
     (isCause:
       IsWeakCause pairSalgebra cause d (ifThenExpr cond body))
-    (v: Valuation Pair)
+    (v: Valuation Var Pair)
   :
     let extCause := cause.union (Cause.ofValPos v Valuation.empty)
     ∃ dC, IsWeakCause pairSalgebra extCause dC cond
@@ -590,8 +594,9 @@ namespace IsWeakCause
   
   def elimIfThen
     {cond}
+    {cause: Cause Var Pair}
     (isCause: IsWeakCause pairSalgebra cause d (ifThenExpr cond body))
-    (v: Valuation Pair)
+    (v: Valuation Var Pair)
   :
     let extCause := cause.union (Cause.ofValPos v Valuation.empty)
     And
@@ -604,7 +609,7 @@ namespace IsWeakCause
    
   def Not.elimOp
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   
   (isNotCause: ¬ IsWeakCause salg cause d (Expr.op opr argExprs))
@@ -625,10 +630,10 @@ namespace IsWeakCause
   
   
   def cpl
-    {expr: Expr sig}
-    (cause: Cause salg.D)
+    {expr: Expr Var sig}
+    (cause: Cause Var salg.D)
     (isCauseOut:
-      {b: Valuation salg.D} →
+      {b: Valuation Var salg.D} →
       cause.IsWeaklySatisfiedByBackground b →
       ¬ (expr.interpretation salg b b).defMem d)
   :
@@ -640,6 +645,7 @@ namespace IsWeakCause
     }
   
   def Not.elimCplEx
+    {cause: Cause Var salg.D}
     (isNotCause: ¬ IsWeakCause salg cause d (Expr.cpl expr))
   :
     ∃ b,
@@ -652,7 +658,7 @@ namespace IsWeakCause
 
   
   def arbUn
-    {cause: Cause salg.D}
+    {cause: Cause Var salg.D}
     (isCause: IsWeakCause salg (cause.withBound x dX) d body)
   :
     IsWeakCause salg (cause.exceptVar x) d (Expr.arbUn x body)
@@ -660,7 +666,7 @@ namespace IsWeakCause
     fun isSat => ⟨dX, isCause (isSat.exceptToWithBound dX)⟩
   
   def arbUnOf
-    {causes: salg.D → Cause _}
+    {causes: salg.D → Cause Var _}
     (isCause:
       ∀ dX, IsWeakCause salg ((causes dX).withBound x dX) d body)
   :
@@ -697,8 +703,9 @@ namespace IsWeakCause
       }
   
   def elimArbUn
+    {cause: Cause Var _}
     (isCause: IsWeakCause salg cause d (Expr.arbUn x body))
-    (v: Valuation salg.D)
+    (v: Valuation Var salg.D)
   :
     ∃ dX,
       IsWeakCause
@@ -733,7 +740,7 @@ namespace IsWeakCause
   
   def arbIr
     {salg: Salgebra sig}
-    {cause: Cause salg.D}
+    {cause: Cause Var salg.D}
     {d: salg.D}
     
     (isCause: ∀ dX, IsWeakCause salg (cause.withBound x dX) d body)

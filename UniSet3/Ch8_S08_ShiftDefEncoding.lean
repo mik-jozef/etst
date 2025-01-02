@@ -26,21 +26,40 @@ namespace Pair
             (fun isShiftExpr isIncRest insIncRest =>
               insUnR _
                 (insUnDom
-                  (insExprEncoding isShiftExpr.isExprA)
+                  (insFree
+                    (insExprEncoding isShiftExpr.isExprA)
+                    nat500NeqExprEncoding)
                   (insUnDom
-                    (insDefEncoding isIncRest.isDefA)
+                    (insFree
+                      (insFree
+                        (insDefEncoding isIncRest.isDefA)
+                        nat500NeqDefEncoding)
+                      nat501NeqDefEncoding)
                     (insPair
                       (insPair
                         (insFree insBound nat501Neq500)
                         insBound)
                       (insPair
                         (insCallExpr
-                          (insIncrVarsExpr isShiftExpr)
+                          (insFree
+                            (insFree
+                              (insFree
+                                (insIncrVarsExpr
+                                  isShiftExpr)
+                                nat500NeqIncrVarsExpr)
+                              nat501NeqIncrVarsExpr)
+                            nat502NeqIncrVarsExpr)
                           (insFree
                             (insFree insBound nat501Neq500)
                             nat502Neq500))
                         (insCallExpr
-                          (insWfmDefToIns insIncRest)
+                          (insFree
+                            (insFree
+                              (insFree
+                                (insWfmDefToIns insIncRest)
+                                nat500NeqIncrVarsDefEncoding)
+                              nat501NeqIncrVarsDefEncoding)
+                            nat502NeqIncrVarsDefEncoding)
                           (insFree insBound nat502Neq501))))))))
     
     def Inw.toIsIncrVarsDefEncoding (w: InwEdl incrVarsDefEncoding p):
@@ -94,8 +113,22 @@ namespace Pair
             (eqAA.trans eqExpr.symm) ▸
             (eqAB.trans eqDl.symm) ▸
             NonemptyDefList
-              (Inw.toIsIncrVarsExpr inwFnExpr)
-              (Inw.toIsIncrVarsDefEncoding (inwFnDl)))
+              (Inw.toIsIncrVarsExpr
+                (inwFreeElim
+                  (inwFreeElim
+                    (inwFreeElim
+                      inwFnExpr
+                      nat502NeqIncrVarsExpr)
+                    nat501NeqIncrVarsExpr)
+                  nat500NeqIncrVarsExpr))
+              (Inw.toIsIncrVarsDefEncoding
+                (inwFreeElim
+                  (inwFreeElim
+                    (inwFreeElim
+                      inwFnDl
+                      nat502NeqIncrVarsDefEncoding)
+                    nat501NeqIncrVarsDefEncoding)
+                  nat500NeqIncrVarsDefEncoding)))
     termination_by p.arrayLength
     
     
@@ -142,10 +175,28 @@ namespace Pair
                     (insPair
                       insBound
                       (insCallExpr
-                        (insIncrVarsDefEncoding isInc)
+                        (insFree
+                          (insFree
+                            (insFree
+                              (insIncrVarsDefEncoding
+                                isInc)
+                              nat500NeqIncrVarsDefEncoding)
+                            nat501NeqIncrVarsDefEncoding)
+                          nat502NeqIncrVarsDefEncoding)
                         (insCallExpr
                           (insCallExpr
-                            (insShiftDefEncoding isShiftPrev)
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insFree
+                                    (insFree
+                                      (insShiftDefEncoding
+                                        isShiftPrev)
+                                      nat500NeqShiftDefEncoding)
+                                    nat501NeqShiftDefEncoding)
+                                  nat502NeqShiftDefEncoding)
+                                nat503NeqShiftDefEncoding)
+                              nat504NeqShiftDefEncoding)
                             (insFree
                               (insFree
                                 (insFree
@@ -169,7 +220,11 @@ namespace Pair
       (inwUnElim (inwWfmToInwDef inw)).elim
         (fun inw =>
           let ⟨dl, ⟨inwDomain, inw⟩⟩ := inwUnDomElim inw
-          let isDefDl := Inw.toIsDefEncoding inwDomain
+          let isDefDl :=
+            Inw.toIsDefEncoding
+              (inwFreeElim
+                inwDomain
+                nat500NeqDefEncoding)
           
           match p with
           | zero => inwPairElim.nope inw
@@ -183,8 +238,8 @@ namespace Pair
             (inwBoundElim inwC).symm ▸
             IsShiftDefEncodingABC.ZeroShift isDefDl)
         (fun inw =>
-          let ⟨n, ⟨inwDomainN, inw⟩⟩ := inwUnDomElim inw
-          let ⟨dl, ⟨inwDomainDl, inw⟩⟩ := inwUnDomElim inw
+          let ⟨n, ⟨_inwDomainN, inw⟩⟩ := inwUnDomElim inw
+          let ⟨dl, ⟨_inwDomainDl, inw⟩⟩ := inwUnDomElim inw
           
           match p with
           | zero => inwPairElim.nope inw
@@ -202,20 +257,49 @@ namespace Pair
             let ⟨argOuter, ⟨inwFnOuter, inwArgOuter⟩⟩ :=
               inwCallExprElim inwCallOuter
             
+            let eqB1 :=
+              Valuation.update.eqOrig _ nat502Neq501 _ ▸
+              Valuation.update.eqBound _ _ _
+            
+            let eqB2 :=
+              Valuation.update.eqOrig _ nat503Neq500 _ ▸
+              Valuation.update.eqOrig _ nat502Neq500 _ ▸
+              Valuation.update.eqOrig _ nat501Neq500 _ ▸
+              Valuation.update.eqBound _ _ _
+            
             let inwCallMiddle :=
-              inwCallElimBound inwArgOuter rfl nat503Neq501
+              inwCallElimBound inwArgOuter eqB1 nat503Neq501
             
             let inw :=
-              inwCallElimBound inwCallMiddle rfl nat504Neq500
+              inwCallElimBound inwCallMiddle eqB2 nat504Neq500
             
-            have := eqAA ▸ depthLtL aA aB
+            have: n.depth < (aA.pair aB).depth :=
+              eqAA ▸ depthLtL aA aB
             
             eqAA ▸
             eqAB ▸
             eqDl.symm ▸
             IsShiftDefEncodingABC.SuccShift
-              (toIsShiftDefEncoding inw)
-              (Inw.toIsIncrVarsDefEncoding inwFnOuter))
+              (toIsShiftDefEncoding
+                (inwFreeElim
+                  (inwFreeElim
+                    (inwFreeElim
+                      (inwFreeElim
+                        (inwFreeElim
+                          inw
+                          nat504NeqShiftDefEncoding)
+                        nat503NeqShiftDefEncoding)
+                      nat502NeqShiftDefEncoding)
+                    nat501NeqShiftDefEncoding)
+                  nat500NeqShiftDefEncoding))
+              (Inw.toIsIncrVarsDefEncoding
+                (inwFreeElim
+                  (inwFreeElim
+                    (inwFreeElim
+                      inwFnOuter
+                      nat502NeqIncrVarsDefEncoding)
+                    nat501NeqIncrVarsDefEncoding)
+                  nat500NeqIncrVarsDefEncoding)))
     termination_by p.depthA
   end uniSet3
 end Pair

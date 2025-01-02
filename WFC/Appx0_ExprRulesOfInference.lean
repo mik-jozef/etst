@@ -18,16 +18,18 @@ import WFC.Ch5_PairSalgebra
 
 namespace Expr
   -- `anyExpr` contains all elements, under any valuation.
-  def anyExpr: Expr sig := Expr.arbUn 0 0
+  def anyExpr [x: Inhabited Var]: Expr Var sig :=
+    Expr.arbUn x.default x.default
+  
   -- `noneExpr` contains no elements, under any valuation.
-  def noneExpr: Expr sig := Expr.cpl anyExpr
+  def noneExpr [Inhabited Var]: Expr Var sig := Expr.cpl anyExpr
   
   
-  def Ins
+  @[reducible] def Ins
     (salg: Salgebra sig)
-    (b: Valuation salg.D)
-    (c: Valuation salg.D)
-    (expr: Expr sig)
+    (b: Valuation Var salg.D)
+    (c: Valuation Var salg.D)
+    (expr: Expr Var sig)
     (d: salg.D)
   :
     Prop
@@ -36,9 +38,9 @@ namespace Expr
   
   def Inw
     (salg: Salgebra sig)
-    (b: Valuation salg.D)
-    (c: Valuation salg.D)
-    (expr: Expr sig)
+    (b: Valuation Var salg.D)
+    (c: Valuation Var salg.D)
+    (expr: Expr Var sig)
     (d: salg.D)
   :
     Prop
@@ -53,16 +55,16 @@ namespace Expr
   
   def Ins2
     (salg: Salgebra sig)
-    (v: Valuation salg.D)
-    (expr: Expr sig)
+    (v: Valuation Var salg.D)
+    (expr: Expr Var sig)
     (d: salg.D)
   :=
     Ins salg v v expr d
   
   def Inw2
     (salg: Salgebra sig)
-    (v: Valuation salg.D)
-    (expr: Expr sig)
+    (v: Valuation Var salg.D)
+    (expr: Expr Var sig)
     (d: salg.D)
   :=
     Inw salg v v expr d
@@ -70,6 +72,7 @@ namespace Expr
   
   def insArbUn
     dBound
+    {x: Var}
     (s: Ins salg (b.update x dBound) (c.update x dBound) body d)
   :
     Ins salg b c (Expr.arbUn x body) d
@@ -78,6 +81,7 @@ namespace Expr
   
   def inwArbUn
     dBound
+    {x: Var}
     (s: Inw salg (b.update x dBound) (c.update x dBound) body d)
   :
     Inw salg b c (Expr.arbUn x body) d
@@ -86,6 +90,7 @@ namespace Expr
   
   
   def insArbUnElim
+    {x: Var}
     (s: Ins salg b c (Expr.arbUn x body) d)
   :
     ∃ dBound,
@@ -94,6 +99,7 @@ namespace Expr
     s
   
   def inwArbUnElim
+    {x: Var}
     (s: Inw salg b c (Expr.arbUn x body) d)
   :
     ∃ dBound,
@@ -104,7 +110,7 @@ namespace Expr
   
   def insArbIr
     {salg: Salgebra sig}
-    {b c: Valuation salg.D}
+    {b c: Valuation Var salg.D}
     {d: salg.D}
     (s:
       ∀ dBound,
@@ -116,7 +122,7 @@ namespace Expr
   
   def inwArbIr
     {salg: Salgebra sig}
-    {b c: Valuation salg.D}
+    {b c: Valuation Var salg.D}
     {d: salg.D}
     (s:
       ∀ dBound,
@@ -128,6 +134,7 @@ namespace Expr
   
   
   def insArbIrElim
+    {x: Var}
     (s: Ins salg b c (Expr.arbIr x body) d)
     (dBound: salg.D)
   :
@@ -136,6 +143,7 @@ namespace Expr
     s dBound
   
   def inwArbIrElim
+    {x: Var}
     (s: Inw salg b c (Expr.arbIr x body) d)
     (dBound: salg.D)
   :
@@ -145,7 +153,7 @@ namespace Expr
   
   
   def insCpl
-    (c: Valuation salg.D)
+    (c: Valuation Var salg.D)
     (w: ¬Inw salg b b expr d)
   :
     Ins salg b c (Expr.cpl expr) d
@@ -153,7 +161,7 @@ namespace Expr
     w
   
   def inwCpl
-    (c: Valuation salg.D)
+    (c: Valuation Var salg.D)
     (s: ¬Ins salg b b expr d)
   :
     Inw salg b c (Expr.cpl expr) d
@@ -176,7 +184,7 @@ namespace Expr
   
   
   def ninsCpl
-    (c: Valuation salg.D)
+    (c: Valuation Var salg.D)
     (w: Inw salg b b expr d)
   :
     ¬Ins salg b c (Expr.cpl expr) d
@@ -184,7 +192,7 @@ namespace Expr
     fun ins => ins w
   
   def ninwCpl
-    (c: Valuation salg.D)
+    (c: Valuation Var salg.D)
     (s: Ins salg b b expr d)
   :
     ¬Inw salg b c (Expr.cpl expr) d
@@ -193,17 +201,18 @@ namespace Expr
   
   
   
-  def insBound:
+  def insBound {x: Var}:
     Ins salg b (Valuation.update c x dBound) (var x) dBound
   :=
     Valuation.update.inEq.defMem c x dBound
   
-  def inwBound:
+  def inwBound {x: Var}:
     Inw salg b (Valuation.update c x dBound) (var x) dBound
   :=
     Valuation.update.inEq.posMem c x dBound
   
   def insBoundElim
+    {x: Var}
     (s: Ins salg b (Valuation.update c x dBound) (var x) d)
   :
     d = dBound
@@ -211,6 +220,7 @@ namespace Expr
     Valuation.update.inDef.eq s
   
   def inwBoundElim
+    {x: Var}
     (w: Inw salg b (Valuation.update c x dBound) (var x) d)
   :
     d = dBound
@@ -218,6 +228,7 @@ namespace Expr
     Valuation.update.inPos.eq w
   
   def insFree
+    {xB: Var}
     {d: salg.D}
     (ins: Ins salg b c (var x) d)
     (neq: xB ≠ x)
@@ -227,6 +238,7 @@ namespace Expr
     Valuation.update.inNeq.defMem c neq ins
   
   def inwFree
+    {xB: Var}
     {d: salg.D}
     (isPos: Inw salg b c (var x) d)
     (neq: xB ≠ x)
@@ -236,33 +248,63 @@ namespace Expr
     Valuation.update.inNeq.posMem c neq isPos
   
   def insFreeElim
+    {salg: Salgebra sig}
+    {b c: Valuation Var salg.D}
+    {d dBound: salg.D}
     (s: Ins salg b (Valuation.update c xB dBound) (var x) d)
     (neq: xB ≠ x)
   :
     Ins salg b c (var x) d
-  :=
+  := show
+    (c x).defMem d
+  from
     Valuation.update.inNeqElim.defMem s neq
   
   def inwFreeElim
+    {xB: Var}
     (w: Inw salg b (Valuation.update c xB dBound) (var x) d)
     (neq: xB ≠ x)
   :
     Inw salg b c (var x) d
-  :=
+  := show
+    (c x).posMem d
+  from
     Valuation.update.inNeqElim.posMem w neq
   
   
-  def insAny: Ins salg b c anyExpr d := insArbUn _ insBound
-  def inwAny: Inw salg b c anyExpr d := inwArbUn _ inwBound
+  def insAny
+    [Inhabited Var]
+  :
+    Ins salg b c (anyExpr (Var := Var)) d
+  :=
+    insArbUn _ insBound
   
-  def ninsNone: ¬Ins salg b c noneExpr d := ninsCpl c inwAny
-  def ninwNone: ¬Inw salg b c noneExpr d := ninwCpl c insAny
+  def inwAny
+    [Inhabited Var]
+  :
+    Inw salg b c (anyExpr (Var := Var)) d
+  :=
+    inwArbUn _ inwBound
+  
+  def ninsNone
+    [Inhabited Var]
+  :
+    ¬Ins salg b c (noneExpr (Var := Var)) d
+  :=
+    ninsCpl c inwAny
+  
+  def ninwNone
+    [Inhabited Var]
+  :
+    ¬Inw salg b c (noneExpr (Var := Var)) d
+  :=
+    ninwCpl c insAny
   
   
   def InsWfm
     (salg: Salgebra sig)
-    (dl: DefList sig)
-    (expr: Expr sig)
+    (dl: DefList Var sig)
+    (expr: Expr Var sig)
     (d: salg.D)
   :
     Prop
@@ -271,8 +313,8 @@ namespace Expr
   
   def InwWfm
     (salg: Salgebra sig)
-    (dl: DefList sig)
-    (expr: Expr sig)
+    (dl: DefList Var sig)
+    (expr: Expr Var sig)
     (d: salg.D)
   :
     Prop
@@ -281,58 +323,60 @@ namespace Expr
   
   
   def insWfmDefToIns
-    (s: InsWfm salg dl (dl.getDef n) d)
+    {x: Var}
+    (s: InsWfm salg dl (dl.getDef x) d)
   :
-    InsWfm salg dl n d
+    InsWfm salg dl x d
   := by
     unfold InsWfm;
     exact (DefList.wellFoundedModel.isModel salg dl) ▸ s
   
   def inwWfmDefToInw
-    (w: InwWfm salg dl (dl.getDef n) d)
+    {x: Var}
+    (w: InwWfm salg dl (dl.getDef x) d)
   :
-    InwWfm salg dl n d
+    InwWfm salg dl x d
   := by
     unfold InwWfm;
     exact (DefList.wellFoundedModel.isModel salg dl) ▸ w
   
   
   def insWfmToInsDef
-    {n: Nat}
-    (s: InsWfm salg dl n d)
+    {x: Var}
+    (s: InsWfm salg dl x d)
   :
-    InsWfm salg dl (dl.getDef n) d
+    InsWfm salg dl (dl.getDef x) d
   :=
     let v := dl.wellFoundedModel salg
     
     let eqAtN:
-      v n = dl.interpretation salg v v n
+      v x = dl.interpretation salg v v x
     :=
       congr (DefList.wellFoundedModel.isModel salg dl) rfl
     
-    show (dl.interpretation salg v v n).defMem d from eqAtN ▸ s
+    show (dl.interpretation salg v v x).defMem d from eqAtN ▸ s
   
   def inwWfmToInwDef
-    {n: Nat}
-    (w: InwWfm salg dl n d)
+    {x: Var}
+    (w: InwWfm salg dl x d)
   :
-    InwWfm salg dl (dl.getDef n) d
+    InwWfm salg dl (dl.getDef x) d
   :=
     let v := dl.wellFoundedModel salg
     
     let eqAtN:
-      v n = dl.interpretation salg v v n
+      v x = dl.interpretation salg v v x
     :=
       congr (DefList.wellFoundedModel.isModel salg dl) rfl
     
-    show (dl.interpretation salg v v n).posMem d from eqAtN ▸ w
+    show (dl.interpretation salg v v x).posMem d from eqAtN ▸ w
 end Expr
 
 
 def wfmAtEq
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   (salg: Salgebra sig)
-  (x: Nat)
+  (x: Var)
 :
   dl.wellFoundedModel salg x
     =

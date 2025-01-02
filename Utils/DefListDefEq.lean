@@ -8,6 +8,28 @@ import Utils.Operators
 import WFC.Ch4_Operators
 
 
+def eqStageCPredSucc
+  (nIsSucc: ¬ n.IsSuccPrelimit)
+:
+  operatorC.stage salg dl b n
+    =
+  operatorC.stage salg dl b n.pred.succ
+:=
+  let succPredEq :=
+    Ordinal.succ_pred_of_not_prelimit nIsSucc
+  succPredEq.symm ▸ rfl
+
+def eqStageBPredSucc
+  (nIsSucc: ¬ n.IsSuccPrelimit)
+:
+  operatorB.stage salg dl n
+    =
+  operatorB.stage salg dl n.pred.succ
+:=
+  let succPredEq :=
+    Ordinal.succ_pred_of_not_prelimit nIsSucc
+  succPredEq.symm ▸ rfl
+
 /-
   In an expression, replaces every
   - variable `var x` with `var (varMapping x)`, and
@@ -20,11 +42,11 @@ import WFC.Ch4_Operators
   `Expr.mapFreeVars` and use it instead.
 -/
 def Expr.mapVars
-  (varMapping: Nat → Nat)
+  (varMapping: VarSrc → VarDst)
 :
-  Expr sig
+  Expr VarSrc sig
 →
-  Expr sig
+  Expr VarDst sig
 |
   var x => Expr.var (varMapping x)
 |
@@ -40,7 +62,7 @@ def Expr.mapVars
   arbIr (varMapping x) (body.mapVars varMapping)
 
 def Expr.mapVars.eqOfId
-  (expr: Expr sig)
+  (expr: Expr Var sig)
 :
   expr.mapVars id = expr
 :=
@@ -56,8 +78,8 @@ def Expr.mapVars.eqOfId
     congrBin rfl rfl (eqOfId body)
 
 def Expr.mapVars.eqOfIsId
-  (expr: Expr sig)
-  (varMapping: Nat → Nat)
+  (expr: Expr Var sig)
+  (varMapping: Var → Var)
   (isId: ∀ x, varMapping x = x)
 :
   expr.mapVars varMapping = expr
@@ -66,8 +88,10 @@ def Expr.mapVars.eqOfIsId
   eqId ▸ eqOfId expr
 
 def Expr.mapVars.eqOfIsComposition
-  (expr: Expr sig)
-  (varMapping mapping1 mapping0: Nat → Nat)
+  (expr: Expr VarA sig)
+  (varMapping: VarA → VarC)
+  (mapping1: VarB → VarC)
+  (mapping0: VarA → VarB)
   (eqMapping:
     ∀ x, varMapping x = mapping1 (mapping0 x))
 :
@@ -133,9 +157,13 @@ def Expr.mapVars.eqOfIsComposition
 -/
 def Expr.mapVars.preservesInterpretation
   (salg: Salgebra sig)
-  (exprSrc exprDst: Expr sig)
-  (bSrc bDst cSrc cDst: Valuation salg.D)
-  (varMapping: Nat → Nat)
+  (exprSrc: Expr VarSrc sig)
+  (exprDst: Expr VarDst sig)
+  (bSrc: Valuation VarSrc salg.D)
+  (bDst: Valuation VarDst salg.D)
+  (cSrc: Valuation VarSrc salg.D)
+  (cDst: Valuation VarDst salg.D)
+  (varMapping: VarSrc → VarDst)
   (mappingIsInjective:
     ∀ {x y}, varMapping x = varMapping y → x = y)
   (eqExprDst:
@@ -152,9 +180,10 @@ def Expr.mapVars.preservesInterpretation
   exprDst.interpretation salg bDst cDst
 :=
   let eqVUpdated
-    (vSrc vDst: Valuation salg.D)
-    (x: Nat)
-    (body: Expr sig)
+    (vSrc: Valuation VarSrc salg.D)
+    (vDst: Valuation VarDst salg.D)
+    (x: VarSrc)
+    (body: Expr VarSrc sig)
     (eqV:
       ∀ (x: body.IsFreeVar (fun xE => Set.empty xE ∨ xE = x)),
         vSrc x = vDst (varMapping x))
@@ -351,8 +380,8 @@ def Expr.mapVars.preservesInterpretation
 -/
 def Expr.interpretation.ignoresUnusedVars
   (salg: Salgebra sig)
-  (expr: Expr sig)
-  (b0 b1 c0 c1: Valuation salg.D)
+  (expr: Expr Var sig)
+  (b0 b1 c0 c1: Valuation Var salg.D)
   (eqB:
     ∀ (x: expr.IsFreeVar Set.empty),
       b0 x = b1 x)
@@ -381,9 +410,10 @@ def Expr.interpretation.ignoresUnusedVars
 
 def DefList.eqDefsToEqSets.Invariant
   (salg: Salgebra sig)
-  (varMapping: Nat → Nat)
-  (s: Set Nat)
-  (stageSrc stageDst: Valuation salg.D)
+  (varMapping: VarSrc → VarDst)
+  (s: Set VarSrc)
+  (stageSrc: Valuation VarSrc salg.D)
+  (stageDst: Valuation VarDst salg.D)
 :
   Prop
 :=
@@ -391,9 +421,10 @@ def DefList.eqDefsToEqSets.Invariant
 
 def DefList.eqDefsToEqSets.InvariantB
   (salg: Salgebra sig)
-  (dlSrc dlDst: DefList sig)
-  (varMapping: Nat → Nat)
-  (s: Set Nat)
+  (dlSrc: DefList VarSrc sig)
+  (dlDst: DefList VarDst sig)
+  (varMapping: VarSrc → VarDst)
+  (s: Set VarSrc)
   (n: Ordinal)
 :
   Prop
@@ -406,7 +437,7 @@ def DefList.eqDefsToEqSets.InvariantB
     (operatorB.stage salg dlDst n)
 
 def DefList.eqDefsToEqSets.limitCaseB
-  {varMapping: Nat → Nat}
+  {varMapping: VarSrc → VarDst}
   {n: Ordinal}
   (nIsLim: n.IsSuccPrelimit)
   (ih:
@@ -476,10 +507,12 @@ def DefList.eqDefsToEqSets.limitCaseB
 
 def DefList.eqDefsToEqSets.InvariantC
   (salg: Salgebra sig)
-  (dlSrc dlDst: DefList sig)
-  (varMapping: Nat → Nat)
-  (s: Set Nat)
-  (bSrc bDst: Valuation salg.D)
+  (dlSrc: DefList VarSrc sig)
+  (dlDst: DefList VarDst sig)
+  (varMapping: VarSrc → VarDst)
+  (s: Set VarSrc)
+  (bSrc: Valuation VarSrc salg.D)
+  (bDst: Valuation VarDst salg.D)
   (n: Ordinal)
 :
   Prop
@@ -490,7 +523,7 @@ def DefList.eqDefsToEqSets.InvariantC
     operatorC.stage salg dlDst bDst n (varMapping x)
 
 def DefList.eqDefsToEqSets.limitCaseC
-  {varMapping: Nat → Nat}
+  {varMapping: VarSrc → VarDst}
   {n: Ordinal}
   (nIsLim: n.IsSuccPrelimit)
   (ih:
@@ -554,6 +587,7 @@ def DefList.eqDefsToEqSets.limitCaseC
     atEq
 
 def DefList.eqDefsToEqSets.succCaseC
+  {varMapping: VarSrc → VarDst}
   (nIsSucc: ¬ n.IsSuccPrelimit)
   (ih:
     ∀ nn < n,
@@ -575,24 +609,12 @@ def DefList.eqDefsToEqSets.succCaseC
     =
   operatorC.stage salg dlDst bDst n (varMapping xSrc)
 :=
-  let xDst := varMapping xSrc
-  
-  let succPredEq :=
-    Ordinal.succ_pred_of_not_prelimit nIsSucc
-  
-  let eqStage dl b:
-    operatorC.stage salg dl b n
-      =
-    operatorC.stage salg dl b n.pred.succ
-  :=
-    succPredEq.symm ▸ rfl
-  
   let eqL :=
-    (eqStage dlSrc bSrc).trans
+    (eqStageCPredSucc nIsSucc).trans
       (operatorC.stage.succEq salg dlSrc bSrc n.pred)
   
   let eqR :=
-    (eqStage dlDst bDst).trans
+    (eqStageCPredSucc nIsSucc).trans
       (operatorC.stage.succEq salg dlDst bDst n.pred)
   
   eqL ▸
@@ -600,7 +622,7 @@ def DefList.eqDefsToEqSets.succCaseC
   Expr.mapVars.preservesInterpretation
     salg
     (dlSrc.getDef xSrc)
-    (dlDst.getDef xDst)
+    (dlDst.getDef (varMapping xSrc))
     bSrc
     bDst
     (operatorC.stage salg dlSrc bSrc n.pred)
@@ -615,9 +637,14 @@ def DefList.eqDefsToEqSets.succCaseC
       ih _ predLt ⟨_, areUsedDefsMapped isFree⟩)
 
 def DefList.eqDefsToEqSets.opC
-  {dlSrc dlDst: DefList sig}
-  {bSrc bDst: Valuation salg.D}
-  (IsDefMapped: Set Nat)
+  {VarSrc VarDst: Type u}
+  {varMapping: VarSrc → VarDst}
+  {dlSrc: DefList VarSrc sig}
+  {dlDst: DefList VarDst sig}
+  {bSrc: Valuation VarSrc salg.D}
+  {bDst: Valuation VarDst salg.D}
+  {xSrc: VarSrc}
+  (IsDefMapped: Set VarSrc)
   (isSrcMapped: IsDefMapped xSrc)
   (mappingIsInjective:
     ∀ {x y}, varMapping x = varMapping y → x = y)
@@ -668,7 +695,12 @@ def DefList.eqDefsToEqSets.opC
     eqSrc ▸ eqDst ▸ stagesEqualC ⟨xSrc, isSrcMapped⟩
 
 def DefList.eqDefsToEqSets.succCaseB
-  {varMapping: Nat → Nat}
+  {VarSrc VarDst: Type u}
+  {varMapping: VarSrc → VarDst}
+  {dlSrc: DefList VarSrc sig}
+  {dlDst: DefList VarDst sig}
+  {xSrc: VarSrc}
+  {IsDefMapped: Set VarSrc}
   {n: Ordinal}
   (nIsSucc: ¬ n.IsSuccPrelimit)
   (ih:
@@ -693,21 +725,13 @@ def DefList.eqDefsToEqSets.succCaseB
     =
   operatorB.stage salg dlDst n (varMapping xSrc)
 :=
-  let succPredEq :=
-    Ordinal.succ_pred_of_not_prelimit nIsSucc
-  
-  let eqStage dl:
-    operatorB.stage salg dl n
-      =
-    operatorB.stage salg dl n.pred.succ
-  :=
-    succPredEq.symm ▸ rfl
-  
   let eqL :=
-    (eqStage dlSrc).trans (operatorB.stage.succEq salg dlSrc n.pred)
+    (eqStageBPredSucc nIsSucc).trans
+      (operatorB.stage.succEq salg dlSrc n.pred)
   
   let eqR :=
-    (eqStage dlDst).trans (operatorB.stage.succEq salg dlDst n.pred)
+    (eqStageBPredSucc nIsSucc).trans
+      (operatorB.stage.succEq salg dlDst n.pred)
   
   eqL ▸
   eqR.symm ▸
@@ -724,10 +748,12 @@ def DefList.eqDefsToEqSets.succCaseB
         xMapped)
 
 def DefList.eqDefsToEqSets
-  (dlSrc dlDst: DefList sig)
+  {VarSrc VarDst: Type u}
+  (dlSrc: DefList VarSrc sig)
+  (dlDst: DefList VarDst sig)
   (salg: Salgebra sig)
-  (varMapping: Nat → Nat)
-  (IsDefMapped: Set Nat)
+  (varMapping: VarSrc → VarDst)
+  (IsDefMapped: Set VarSrc)
   (mappingIsInjective:
     ∀ {x y}, varMapping x = varMapping y → x = y)
   (areMappedDefsEqual:
@@ -740,7 +766,7 @@ def DefList.eqDefsToEqSets
       (xUsed: (dlSrc.getDef xMapped).IsFreeVar Set.empty)
     ,
       IsDefMapped xUsed)
-  (xSrc: Nat)
+  (xSrc: VarSrc)
   (isSrcMapped: IsDefMapped xSrc)
 :
   dlSrc.wellFoundedModel salg xSrc

@@ -17,19 +17,14 @@ namespace PairExpr
   open Pair
   open pairSignature
   
-  def Expr := _root_.Expr pairSignature
-  
-  instance exprOfNat: (n: Nat) → OfNat Expr n :=
-    Expr.exprOfNat
-  
-  instance coe: Coe Nat (Expr) where
-    coe := fun n => Expr.var n
+  @[reducible]
+  def Expr Var := _root_.Expr Var pairSignature
   
   
-  def zeroExpr: Expr :=
+  def zeroExpr: Expr Var :=
     Expr.op Op.zero ArityZero.elim
   
-  def pairExpr (left rite: Expr): Expr :=
+  def pairExpr (left rite: Expr Var): Expr Var :=
     Expr.op
       Op.pair
       fun arg =>
@@ -37,7 +32,7 @@ namespace PairExpr
         | ArityTwo.zth => left
         | ArityTwo.fst => rite
   
-  def unExpr (left rite: Expr): Expr :=
+  def unExpr (left rite: Expr Var): Expr Var :=
     Expr.op
       Op.un
       fun arg =>
@@ -45,7 +40,7 @@ namespace PairExpr
         | ArityTwo.zth => left
         | ArityTwo.fst => rite
   
-  def irExpr (left rite: Expr): Expr :=
+  def irExpr (left rite: Expr Var): Expr Var :=
     Expr.op
       Op.ir
       fun arg =>
@@ -53,7 +48,7 @@ namespace PairExpr
         | ArityTwo.zth => left
         | ArityTwo.fst => rite
   
-  def ifThenExpr (cond body: Expr): Expr :=
+  def ifThenExpr (cond body: Expr Var): Expr Var :=
     Expr.op
       Op.ifThen
       fun arg =>
@@ -73,7 +68,7 @@ namespace PairExpr
     unintended semantics, make sure `x` is not used (as a free
     variable) in `domain`.
   -/
-  def unionExpr (x: Nat) (domain body: Expr): Expr :=
+  def unionExpr (x: Var) (domain body: Expr Var): Expr Var :=
     Expr.arbUn x (ifThenExpr (irExpr x domain) body)
   
   /-
@@ -87,7 +82,13 @@ namespace PairExpr
     unintended semantics, make sure `x` is not used (as a free
     variable) in `domain`.
   -/
-  def irsecExpr (x: Nat) (domain body: Expr): Expr :=
+  def irsecExpr
+    [Inhabited Var]
+    (x: Var)
+    (domain body: Expr Var)
+  :
+    Expr Var
+  :=
     Expr.arbIr
       x
       (unExpr
@@ -96,7 +97,7 @@ namespace PairExpr
         (ifThenExpr (Expr.cpl (irExpr x domain)) (anyExpr)))
   
   -- A union of finitely many expressions.
-  def finUnExpr: List Expr → Expr
+  def finUnExpr [Inhabited Var]: List (Expr Var) → (Expr Var)
   | List.nil => noneExpr
   | List.cons expr tail =>
     unExpr expr (finUnExpr (tail))
@@ -109,8 +110,14 @@ namespace PairExpr
     
     `n` must not be a free variable in `expr`.
   -/
-  def zthMember (n: Nat) (expr: Expr): Expr :=
-    Expr.arbUn n (ifThenExpr (irExpr (pairExpr n anyExpr) expr) n)
+  def zthMember
+    [Inhabited Var]
+    (x: Var)
+    (expr: Expr Var)
+  :
+    Expr Var
+  :=
+    Expr.arbUn x (ifThenExpr (irExpr (pairExpr x anyExpr) expr) x)
   
   /-
     Let `expr` be an expression that represets a set of
@@ -120,8 +127,14 @@ namespace PairExpr
     
     `n` must not be a free variable in `expr`.
   -/
-  def fstMember (n: Nat) (expr: Expr): Expr :=
-    Expr.arbUn n (ifThenExpr (irExpr (pairExpr anyExpr n) expr) n)
+  def fstMember
+    [Inhabited Var]
+    (x: Var)
+    (expr: Expr Var)
+  :
+    Expr Var
+  :=
+    Expr.arbUn x (ifThenExpr (irExpr (pairExpr anyExpr x) expr) x)
   
   /-
     Let `fn` and `arg` be expressions that represent
@@ -135,15 +148,21 @@ namespace PairExpr
     
     `n` must not be a free variable in `fn` or `arg`.
   -/
-  def callExpr (n: Nat) (fn arg: Expr): Expr :=
-    fstMember n (irExpr fn (pairExpr arg anyExpr))
+  def callExpr
+    [Inhabited Var]
+    (x: Var)
+    (fn arg: Expr Var)
+  :
+    Expr Var
+  :=
+    fstMember x (irExpr fn (pairExpr arg anyExpr))
   
   /-
     For an encoding `nEnc` of a natural number `n`,
     `succExpr nEnc` represents the encoding of `n + 1`.
     (Note 0 is reprezented by `Pair.zero`.)
   -/
-  def succExpr (expr: Expr): Expr := pairExpr expr zeroExpr
+  def succExpr (expr: Expr Var): Expr Var := pairExpr expr zeroExpr
   
   def succ (pair: Pair): Pair := Pair.pair pair Pair.zero
   
@@ -154,145 +173,145 @@ namespace PairExpr
     Given a natural number `n`, `natExpr n` represents
     the encoding of `n` as a pair.
   -/
-  def natExpr: Nat → Expr
+  def natExpr: Nat → Expr Var
   | Nat.zero => zeroExpr
   | Nat.succ pred => succExpr (natExpr pred)
   
   
-  def InsP := Ins pairSalgebra
-  def InwP := Inw pairSalgebra
+  def InsP Var := Ins (Var := Var) pairSalgebra
+  def InwP Var := Inw (Var := Var) pairSalgebra
   
   
   def insUnL
-    (exprR: Expr)
-    {exprL: Expr}
-    (s: InsP b c exprL d)
+    (exprR: Expr Var)
+    {exprL: Expr Var}
+    (s: InsP Var b c exprL d)
   :
-    InsP b c (unExpr exprL exprR) d
+    InsP Var b c (unExpr exprL exprR) d
   :=
     Or.inl s
   
   def inwUnL
-    (exprR: Expr)
-    {exprL: Expr}
-    (w: InwP b c exprL d)
+    (exprR: Expr Var)
+    {exprL: Expr Var}
+    (w: InwP Var b c exprL d)
   :
-    InwP b c (unExpr exprL exprR) d
+    InwP Var b c (unExpr exprL exprR) d
   :=
     Or.inl w
   
   
   def insUnR
-    {exprR: Expr}
-    (exprL: Expr)
-    (s: InsP b c exprR d)
+    {exprR: Expr Var}
+    (exprL: Expr Var)
+    (s: InsP Var b c exprR d)
   :
-    InsP b c (unExpr exprL exprR) d
+    InsP Var b c (unExpr exprL exprR) d
   :=
     Or.inr s
   
   def inwUnR
-    {exprR: Expr}
-    (exprL: Expr)
-    (w: InwP b c exprR d)
+    {exprR: Expr Var}
+    (exprL: Expr Var)
+    (w: InwP Var b c exprR d)
   :
-    InwP b c (unExpr exprL exprR) d
+    InwP Var b c (unExpr exprL exprR) d
   :=
     Or.inr w
   
   
   def insUnElim
-    (s: InsP b c (unExpr exprL exprR) d)
+    (s: InsP Var b c (unExpr exprL exprR) d)
   :
     Or
-      (InsP b c exprL d)
-      (InsP b c exprR d)
+      (InsP Var b c exprL d)
+      (InsP Var b c exprR d)
   :=
     s
   
   def inwUnElim
-    (s: InwP b c (unExpr exprL exprR) d)
+    (s: InwP Var b c (unExpr exprL exprR) d)
   :
     Or
-      (InwP b c exprL d)
-      (InwP b c exprR d)
+      (InwP Var b c exprL d)
+      (InwP Var b c exprR d)
   :=
     s
   
   
   def insIr
-    (l: InsP b c exprL d)
-    (r: InsP b c exprR d)
+    (l: InsP Var b c exprL d)
+    (r: InsP Var b c exprR d)
   :
-    InsP b c (irExpr exprL exprR) d
+    InsP Var b c (irExpr exprL exprR) d
   :=
     ⟨l, r⟩
   
   def inwIr
-    (l: InwP b c exprL d)
-    (r: InwP b c exprR d)
+    (l: InwP Var b c exprL d)
+    (r: InwP Var b c exprR d)
   :
-    InwP b c (irExpr exprL exprR) d
+    InwP Var b c (irExpr exprL exprR) d
   :=
     ⟨l, r⟩
   
   def insIrElim
-    (s: InsP b c (irExpr exprL exprR) d)
+    (s: InsP Var b c (irExpr exprL exprR) d)
   :
     And
-      (InsP b c exprL d)
-      (InsP b c exprR d)
+      (InsP Var b c exprL d)
+      (InsP Var b c exprR d)
   :=
     s
   
   def inwIrElim
-    (s: InwP b c (irExpr exprL exprR) d)
+    (s: InwP Var b c (irExpr exprL exprR) d)
   :
     And
-      (InwP b c exprL d)
-      (InwP b c exprR d)
+      (InwP Var b c exprL d)
+      (InwP Var b c exprR d)
   :=
     s
   
   
   def insIfThen
-    {cond: Expr}
-    (insCond: InsP b c cond dC)
-    (insBody: InsP b c body d)
+    {cond: Expr Var}
+    (insCond: InsP Var b c cond dC)
+    (insBody: InsP Var b c body d)
   :
-    InsP b c (ifThenExpr cond body) d
+    InsP Var b c (ifThenExpr cond body) d
   :=
     ⟨⟨dC, insCond⟩, insBody⟩
   
   def inwIfThen
-    {cond: Expr}
-    (insCond: InwP b c cond dC)
-    (insBody: InwP b c body d)
+    {cond: Expr Var}
+    (insCond: InwP Var b c cond dC)
+    (insBody: InwP Var b c body d)
   :
-    InwP b c (ifThenExpr cond body) d
+    InwP Var b c (ifThenExpr cond body) d
   :=
     ⟨⟨dC, insCond⟩, insBody⟩
   
   
   def insIfThenElim
-    {cond: Expr}
-    (s: InsP b c (ifThenExpr cond body) d)
+    {cond: Expr Var}
+    (s: InsP Var b c (ifThenExpr cond body) d)
   :
     And
-      (∃ dC, InsP b c cond dC)
-      (InsP b c body d)
+      (∃ dC, InsP Var b c cond dC)
+      (InsP Var b c body d)
   :=
     let ⟨exCond, insBody⟩ := s
     
     And.intro exCond insBody
   
   def inwIfThenElim
-    {cond: Expr}
-    (s: InwP b c (ifThenExpr cond body) d)
+    {cond: Expr Var}
+    (s: InwP Var b c (ifThenExpr cond body) d)
   :
     And
-      (∃ dC, InwP b c cond dC)
-      (InwP b c body d)
+      (∃ dC, InwP Var b c cond dC)
+      (InwP Var b c body d)
   :=
     s
   
@@ -308,11 +327,11 @@ namespace PairExpr
   -/
   def insUnDom
     (insDomain:
-      InsP (b.update x dBound) (c.update x dBound) domain dBound)
+      InsP Var (b.update x dBound) (c.update x dBound) domain dBound)
     (insBody:
-      InsP (b.update x dBound) (c.update x dBound) body d)
+      InsP Var (b.update x dBound) (c.update x dBound) body d)
   :
-    InsP b c (unionExpr x domain body) d
+    InsP Var b c (unionExpr x domain body) d
   :=
     let inUpdated: ((c.update x dBound) x).defMem dBound :=
       Valuation.update.inEq.defMem c x dBound
@@ -321,11 +340,11 @@ namespace PairExpr
   
   def inwUnDom
     (inwDomain:
-      InwP (b.update x dBound) (c.update x dBound) domain dBound)
+      InwP Var (b.update x dBound) (c.update x dBound) domain dBound)
     (inwBody:
-      InwP (b.update x dBound) (c.update x dBound) body d)
+      InwP Var (b.update x dBound) (c.update x dBound) body d)
   :
-    InwP b c (unionExpr x domain body) d
+    InwP Var b c (unionExpr x domain body) d
   :=
     let inUpdated: ((c.update x dBound) x).posMem dBound :=
       Valuation.update.inEq.posMem c x dBound
@@ -339,18 +358,18 @@ namespace PairExpr
   -- allowed to contain the same instance, if need be).
   -- We have global choice anyway!
   structure InsUnDomElim
-    (b c: Valuation Pair)
-    (x: Nat)
+    (b c: Valuation Var Pair)
+    (x: Var)
     (dBound: Pair)
-    (domain body: Expr)
+    (domain body: Expr Var)
     (d: Pair): Prop
   where
     insDomain:
-      InsP (b.update x dBound) (c.update x dBound) domain dBound
-    insBody: InsP (b.update x dBound) (c.update x dBound) body d
+      InsP Var (b.update x dBound) (c.update x dBound) domain dBound
+    insBody: InsP Var (b.update x dBound) (c.update x dBound) body d
   
   def insUnDomElim
-    (insUnDom: InsP b c (unionExpr x domain body) d)
+    (insUnDom: InsP Var b c (unionExpr x domain body) d)
   :
     ∃ dBound, InsUnDomElim b c x dBound domain body d
   :=
@@ -367,7 +386,7 @@ namespace PairExpr
       insBoundElim dInIr.property.left
     
     let insDomain:
-      InsP bUpdated cUpdated domain dBound.val
+      InsP Var bUpdated cUpdated domain dBound.val
     :=
       dEq ▸ dInIr.property.right
     
@@ -380,18 +399,18 @@ namespace PairExpr
     ⟩
   
   structure InwUnDomElim
-    (b c: Valuation Pair)
-    (x: Nat)
+    (b c: Valuation Var Pair)
+    (x: Var)
     (dBound: Pair)
-    (domain body: Expr)
+    (domain body: Expr Var)
     (d: Pair): Prop
   where
     inwDomain:
-      InwP (b.update x dBound) (c.update x dBound) domain dBound
-    inwBody: InwP (b.update x dBound) (c.update x dBound) body d
+      InwP Var (b.update x dBound) (c.update x dBound) domain dBound
+    inwBody: InwP Var (b.update x dBound) (c.update x dBound) body d
   
   def inwUnDomElim
-    (insUnDom: InwP b c (unionExpr x domain body) d)
+    (insUnDom: InwP Var b c (unionExpr x domain body) d)
   :
     ∃ dBound, InwUnDomElim b c x dBound domain body d
   :=
@@ -405,7 +424,7 @@ namespace PairExpr
       inwBoundElim dInIr.property.left
     
     let insDomain:
-      InwP bUpdated cUpdated domain dBound.val
+      InwP Var bUpdated cUpdated domain dBound.val
     :=
       dEq ▸ dInIr.property.right
     
@@ -419,11 +438,12 @@ namespace PairExpr
   
   
   def insFinUn
-    {list: List (Expr)}
+    [Inhabited Var]
+    {list: List (Expr Var)}
     (exprIn: expr ∈ list)
-    (s: InsP b c expr p)
+    (s: InsP Var b c expr p)
   :
-    InsP b c (finUnExpr list) p
+    InsP Var b c (finUnExpr list) p
   :=
     match list with
     | List.cons _e0 _rest =>
@@ -432,11 +452,12 @@ namespace PairExpr
         (fun inRest => insUnR _ (insFinUn inRest s))
   
   def inwFinUn
-    {list: List (Expr)}
+    [Inhabited Var]
+    {list: List (Expr Var)}
     (exprIn: expr ∈ list)
-    (w: InwP b c expr p)
+    (w: InwP Var b c expr p)
   :
-    InwP b c (finUnExpr list) p
+    InwP Var b c (finUnExpr list) p
   :=
     match list with
     | List.cons _e0 _rest =>
@@ -446,17 +467,17 @@ namespace PairExpr
   
   
   def InsFinUnElim
-    (b c: Valuation Pair)
+    (b c: Valuation Var Pair)
     (d: Pair)
     (P: Prop)
   :
-    List (Expr) → Prop
+    List (Expr Var) → Prop
   | List.nil => P
   | List.cons head tail =>
-    (InsP b c head d → P) → InsFinUnElim b c d P tail
+    (InsP Var b c head d → P) → InsFinUnElim b c d P tail
   
   def InsFinUnElim.ofP
-    (list: List (Expr))
+    (list: List (Expr Var))
     (p: P)
   :
     InsFinUnElim b c d P list
@@ -466,7 +487,8 @@ namespace PairExpr
     | List.cons _head tail => fun _ => ofP tail p
   
   def insFinUnElim
-    (s: InsP b c (finUnExpr list) d)
+    [Inhabited Var]
+    (s: InsP Var b c (finUnExpr list) d)
   :
     InsFinUnElim b c d P list
   :=
@@ -480,17 +502,17 @@ namespace PairExpr
   
   
   def InwFinUnElim
-    (b c: Valuation Pair)
+    (b c: Valuation Var Pair)
     (d: Pair)
     (P: Prop)
   :
-    List (Expr) → Prop
+    List (Expr Var) → Prop
   | List.nil => P
   | List.cons head tail =>
-    (InwP b c head d → P) → InwFinUnElim b c d P tail
+    (InwP Var b c head d → P) → InwFinUnElim b c d P tail
   
   def inwFinUnElim.ofP
-    (list: List (Expr))
+    (list: List (Expr Var))
     (p: P)
   :
     InwFinUnElim b c d P list
@@ -500,7 +522,8 @@ namespace PairExpr
     | List.cons _head tail => fun _ => ofP tail p
   
   def inwFinUnElim
-    (s: InwP b c (finUnExpr list) d)
+    [Inhabited Var]
+    (s: InwP Var b c (finUnExpr list) d)
   :
     InwFinUnElim b c d P list
   :=
@@ -514,19 +537,19 @@ namespace PairExpr
   
   
   def insZero:
-    InsP b c zeroExpr Pair.zero
+    InsP Var b c zeroExpr Pair.zero
   :=
     rfl
   
   def insZeroElim
-    (s: InsP b c zeroExpr p)
+    (s: InsP Var b c zeroExpr p)
   :
     p = Pair.zero
   :=
     s
   
   def insZeroElim.neq
-    (s: InsP b c zeroExpr p)
+    (s: InsP Var b c zeroExpr p)
     a b
   :
     p ≠ Pair.pair a b
@@ -535,7 +558,7 @@ namespace PairExpr
       Pair.noConfusion (s.symm.trans eq)
   
   def insZeroElim.nope
-    (s: InsP b c zeroExpr (Pair.pair pA pB))
+    (s: InsP Var b c zeroExpr (Pair.pair pA pB))
   :
     P
   :=
@@ -543,19 +566,19 @@ namespace PairExpr
   
   
   def inwZero:
-    InwP b c zeroExpr Pair.zero
+    InwP Var b c zeroExpr Pair.zero
   :=
     rfl
   
   def inwZeroElim
-    (s: InwP b c zeroExpr p)
+    (s: InwP Var b c zeroExpr p)
   :
     p = Pair.zero
   :=
     s
   
   def inwZeroElim.neq
-    (s: InwP b c zeroExpr p)
+    (s: InwP Var b c zeroExpr p)
     a b
   :
     p ≠ Pair.pair a b
@@ -564,7 +587,7 @@ namespace PairExpr
       Pair.noConfusion (s.symm.trans eq)
   
   def inwZeroElim.nope
-    (s: InwP b c zeroExpr (Pair.pair pA pB))
+    (s: InwP Var b c zeroExpr (Pair.pair pA pB))
   :
     P
   :=
@@ -572,32 +595,32 @@ namespace PairExpr
   
   
   def insPair
-    (insL: InsP b c exprL pairL)
-    (insR: InsP b c exprR pairR)
+    (insL: InsP Var b c exprL pairL)
+    (insR: InsP Var b c exprR pairR)
   :
-    InsP b c (pairExpr exprL exprR) (Pair.pair pairL pairR)
+    InsP Var b c (pairExpr exprL exprR) (Pair.pair pairL pairR)
   :=
     ⟨⟨pairL, insL⟩, ⟨pairR, insR⟩, rfl⟩
   
   def inwPair
-    (insL: InwP b c exprL pairL)
-    (insR: InwP b c exprR pairR)
+    (insL: InwP Var b c exprL pairL)
+    (insR: InwP Var b c exprR pairR)
   :
-    InwP b c (pairExpr exprL exprR) (Pair.pair pairL pairR)
+    InwP Var b c (pairExpr exprL exprR) (Pair.pair pairL pairR)
   :=
     ⟨⟨pairL, insL⟩, ⟨pairR, insR⟩, rfl⟩
   
   
   structure InsPairElim
-    (b c: Valuation Pair)
-    (exprL exprR: Expr)
+    (b c: Valuation Var Pair)
+    (exprL exprR: Expr Var)
     (pairL pairR: Pair): Prop
   where
-    insL: InsP b c exprL pairL
-    insR: InsP b c exprR pairR
+    insL: InsP Var b c exprL pairL
+    insR: InsP Var b c exprR pairR
   
   def insPairElim
-    (s: InsP b c (pairExpr exprL exprR) (Pair.pair pairL pairR))
+    (s: InsP Var b c (pairExpr exprL exprR) (Pair.pair pairL pairR))
   :
     InsPairElim b c exprL exprR pairL pairR
   :=
@@ -615,16 +638,16 @@ namespace PairExpr
     }
   
   structure InsPairElim.Ex
-    (b c: Valuation Pair)
-    (exprL exprR: Expr)
+    (b c: Valuation Var Pair)
+    (exprL exprR: Expr Var)
     (p pairL pairR: Pair): Prop
   where
     eq: p = Pair.pair pairL pairR
-    insL: InsP b c exprL pairL
-    insR: InsP b c exprR pairR
+    insL: InsP Var b c exprL pairL
+    insR: InsP Var b c exprR pairR
   
   def insPairElim.ex
-    (s: InsP b c (pairExpr exprL exprR) p)
+    (s: InsP Var b c (pairExpr exprL exprR) p)
   :
     ∃ pairL pairR: Pair,
       InsPairElim.Ex b c exprL exprR p pairL pairR
@@ -639,7 +662,7 @@ namespace PairExpr
       }⟩
   
   def insPairElim.notZero
-    (s: InsP b c (pairExpr exprL exprR) p)
+    (s: InsP Var b c (pairExpr exprL exprR) p)
   :
     p ≠ Pair.zero
   :=
@@ -649,7 +672,7 @@ namespace PairExpr
     prop.eq ▸ Pair.noConfusion
   
   def insPairElim.nope
-    (s: InsP b c (pairExpr exprL exprR) Pair.zero)
+    (s: InsP Var b c (pairExpr exprL exprR) Pair.zero)
   :
     P
   :=
@@ -657,15 +680,15 @@ namespace PairExpr
   
   
   structure InwPairElim
-    (b c: Valuation Pair)
-    (exprL exprR: Expr)
+    (b c: Valuation Var Pair)
+    (exprL exprR: Expr Var)
     (pairL pairR: Pair): Prop
   where
-    inwL: InwP b c exprL pairL
-    inwR: InwP b c exprR pairR
+    inwL: InwP Var b c exprL pairL
+    inwR: InwP Var b c exprR pairR
   
   def inwPairElim
-    (w: InwP b c (pairExpr exprL exprR) (Pair.pair pairL pairR))
+    (w: InwP Var b c (pairExpr exprL exprR) (Pair.pair pairL pairR))
   :
     InwPairElim b c exprL exprR pairL pairR
   :=
@@ -683,16 +706,16 @@ namespace PairExpr
     }
   
   structure InwPairElim.Ex
-    (b c: Valuation Pair)
-    (exprL exprR: Expr)
+    (b c: Valuation Var Pair)
+    (exprL exprR: Expr Var)
     (pair pairL pairR: Pair): Prop
   where
     eq: pair = Pair.pair pairL pairR
-    insL: InwP b c exprL pairL
-    insR: InwP b c exprR pairR
+    insL: InwP Var b c exprL pairL
+    insR: InwP Var b c exprR pairR
   
   def inwPairElim.ex
-    (w: InwP b c (pairExpr exprL exprR) p)
+    (w: InwP Var b c (pairExpr exprL exprR) p)
   :
     ∃ pairL pairR: Pair,
       InwPairElim.Ex b c exprL exprR p pairL pairR
@@ -707,7 +730,7 @@ namespace PairExpr
       }⟩
   
   def inwPairElim.notZero
-    (w: InwP b c (pairExpr exprL exprR) p)
+    (w: InwP Var b c (pairExpr exprL exprR) p)
   :
     p ≠ Pair.zero
   :=
@@ -717,7 +740,7 @@ namespace PairExpr
     prop.eq ▸ Pair.noConfusion
   
   def inwPairElim.nope
-    (w: InwP b c (pairExpr exprL exprR) Pair.zero)
+    (w: InwP Var b c (pairExpr exprL exprR) Pair.zero)
   :
     P
   :=
@@ -725,10 +748,11 @@ namespace PairExpr
   
   
   def insZthMember
+    [Inhabited Var]
     (s:
-      InsP (b.update x pA) (c.update x pA) expr (Pair.pair pA pB))
+      InsP Var (b.update x pA) (c.update x pA) expr (Pair.pair pA pB))
   :
-    InsP b c (zthMember x expr) pA
+    InsP Var b c (zthMember x expr) pA
   :=
     insArbUn _ ⟨
       ⟨Pair.pair pA pB,
@@ -737,10 +761,11 @@ namespace PairExpr
     ⟩
   
   def inwZthMember
+    [Inhabited Var]
     (s:
-      InwP (b.update x pA) (c.update x pA) expr (Pair.pair pA pB))
+      InwP Var (b.update x pA) (c.update x pA) expr (Pair.pair pA pB))
   :
-    InwP b c (zthMember x expr) pA
+    InwP Var b c (zthMember x expr) pA
   :=
     inwArbUn _ ⟨
       ⟨Pair.pair pA pB,
@@ -750,10 +775,11 @@ namespace PairExpr
   
   
   def insFstMember
+    [Inhabited Var]
     (s:
-      InsP (b.update x pB) (c.update x pB) expr (Pair.pair pA pB))
+      InsP Var (b.update x pB) (c.update x pB) expr (Pair.pair pA pB))
   :
-    InsP b c (fstMember x expr) pB
+    InsP Var b c (fstMember x expr) pB
   :=
     insArbUn _ ⟨
       ⟨Pair.pair pA pB,
@@ -762,10 +788,11 @@ namespace PairExpr
     ⟩
   
   def inwFstMember
+    [Inhabited Var]
     (s:
-      InwP (b.update x pB) (c.update x pB) expr (Pair.pair pA pB))
+      InwP Var (b.update x pB) (c.update x pB) expr (Pair.pair pA pB))
   :
-    InwP b c (fstMember x expr) pB
+    InwP Var b c (fstMember x expr) pB
   :=
     inwArbUn _ ⟨
       ⟨Pair.pair pA pB,
@@ -775,10 +802,12 @@ namespace PairExpr
   
   
   def insZthMemberElim
-    (s: InsP b c (zthMember x expr) zth)
+    [Inhabited Var]
+    (s: InsP Var b c (zthMember x expr) zth)
   :
     ∃ fst,
       InsP
+        Var
         (b.update x zth)
         (c.update x zth)
         expr
@@ -797,10 +826,12 @@ namespace PairExpr
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInsExpr⟩
   
   def inwZthMemberElim
-    (s: InwP b c (zthMember x expr) zth)
+    [Inhabited Var]
+    (s: InwP Var b c (zthMember x expr) zth)
   :
     ∃ fst,
       InwP
+        Var
         (b.update x zth)
         (c.update x zth)
         expr
@@ -819,10 +850,12 @@ namespace PairExpr
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInwExpr⟩
   
   def insFstMemberElim
-    (s: InsP b c (fstMember x expr) fst)
+    [Inhabited Var]
+    (s: InsP Var b c (fstMember x expr) fst)
   :
     ∃ zth,
       InsP
+        Var
         (b.update x fst)
         (c.update x fst)
         expr
@@ -841,10 +874,12 @@ namespace PairExpr
       ⟨pCondZth, eqPZth ▸ eqPCondZth ▸ pCondInsExpr⟩
   
   def inwFstMemberElim
-    (s: InwP b c (fstMember x expr) fst)
+    [Inhabited Var]
+    (s: InwP Var b c (fstMember x expr) fst)
   :
     ∃ zth,
       InwP
+        Var
         (b.update x fst)
         (c.update x fst)
         expr
@@ -864,12 +899,13 @@ namespace PairExpr
   
   
   def insZthFstElim
-    (insZth: InsP b c (zthMember xA (var xB)) zth)
-    (insFst: InsP b c (fstMember xA (var xB)) fst)
+    [Inhabited Var]
+    (insZth: InsP Var b c (zthMember xA (var xB)) zth)
+    (insFst: InsP Var b c (fstMember xA (var xB)) fst)
     (neq: xA ≠ xB)
     (isUnit: c xB = Set3.just d)
   :
-    InsP b c xB (Pair.pair zth fst)
+    InsP Var b c xB (Pair.pair zth fst)
   :=
     let ⟨chosenFst, insChosenFst⟩ := insZthMemberElim insZth
     let ⟨chosenZth, insChosenZth⟩ := insFstMemberElim insFst
@@ -877,7 +913,8 @@ namespace PairExpr
     let eq:
       Pair.pair zth chosenFst = Pair.pair chosenZth fst
     :=
-      Set3.just.inDefToEqBin d
+      Set3.just.inDefToEqBin
+        (d := d)
         (isUnit ▸ (insFreeElim insChosenFst neq))
         (isUnit ▸ (insFreeElim insChosenZth neq))
     
@@ -886,12 +923,13 @@ namespace PairExpr
     eqR ▸ (insFreeElim insChosenZth neq)
   
   def inwZthFstElim
-    (inwZth: InwP b c (zthMember xA (var xB)) zth)
-    (inwFst: InwP b c (fstMember xA (var xB)) fst)
+    [Inhabited Var]
+    (inwZth: InwP Var b c (zthMember xA (var xB)) zth)
+    (inwFst: InwP Var b c (fstMember xA (var xB)) fst)
     (neq: xA ≠ xB)
     (isUnit: c xB = Set3.just d)
   :
-    InwP b c xB (Pair.pair zth fst)
+    InwP Var b c xB (Pair.pair zth fst)
   :=
     let ⟨chosenFst, inwChosenFst⟩ := inwZthMemberElim inwZth
     let ⟨chosenZth, inwChosenZth⟩ := inwFstMemberElim inwFst
@@ -899,7 +937,8 @@ namespace PairExpr
     let eq:
       Pair.pair zth chosenFst = Pair.pair chosenZth fst
     :=
-      Set3.just.inPosToEqBin d
+      Set3.just.inPosToEqBin
+        (d := d)
         (isUnit ▸ (inwFreeElim inwChosenFst neq))
         (isUnit ▸ (inwFreeElim inwChosenZth neq))
     
@@ -909,33 +948,36 @@ namespace PairExpr
   
   
   def insCallExpr
+    [Inhabited Var]
     (insFn:
-      InsP (b.update x pB) (c.update x pB) fn (Pair.pair pA pB))
+      InsP Var (b.update x pB) (c.update x pB) fn (Pair.pair pA pB))
     (insArg:
-      InsP (b.update x pB) (c.update x pB) arg pA)
+      InsP Var (b.update x pB) (c.update x pB) arg pA)
   :
-    InsP b c (callExpr x fn arg) pB
+    InsP Var b c (callExpr x fn arg) pB
   :=
     insFstMember (insIr insFn (insPair insArg insAny))
   
   def inwCallExpr
+    [Inhabited Var]
     (inwFn:
-      InwP (b.update x pB) (c.update x pB) fn (Pair.pair pA pB))
+      InwP Var (b.update x pB) (c.update x pB) fn (Pair.pair pA pB))
     (inwArg:
-      InwP (b.update x pB) (c.update x pB) arg pA)
+      InwP Var (b.update x pB) (c.update x pB) arg pA)
   :
-    InwP b c (callExpr x fn arg) pB
+    InwP Var b c (callExpr x fn arg) pB
   :=
     inwFstMember (inwIr inwFn (inwPair inwArg inwAny))
   
   
   def insCallExprElim
-    (s: InsP b c (callExpr x fn arg) pB)
+    [Inhabited Var]
+    (s: InsP Var b c (callExpr x fn arg) pB)
   :
     ∃ pA,
       And
-        (InsP (b.update x pB) (c.update x pB) fn (Pair.pair pA pB))
-        (InsP (b.update x pB) (c.update x pB) arg pA)
+        (InsP Var (b.update x pB) (c.update x pB) fn (Pair.pair pA pB))
+        (InsP Var (b.update x pB) (c.update x pB) arg pA)
   :=
     let ⟨zth, insIr⟩ := insFstMemberElim s
     let ⟨insFn, insP⟩ := insIrElim insIr
@@ -943,12 +985,13 @@ namespace PairExpr
     ⟨zth, And.intro insFn (insPairElim insP).insL⟩
   
   def inwCallExprElim
-    (w: InwP b c (callExpr x fn arg) bA)
+    [Inhabited Var]
+    (w: InwP Var b c (callExpr x fn arg) bA)
   :
     ∃ pA,
       And
-        (InwP (b.update x bA) (c.update x bA) fn (Pair.pair pA bA))
-        (InwP (b.update x bA) (c.update x bA) arg pA)
+        (InwP Var (b.update x bA) (c.update x bA) fn (Pair.pair pA bA))
+        (InwP Var (b.update x bA) (c.update x bA) arg pA)
   :=
     let ⟨zth, inwIr⟩ := inwFstMemberElim w
     let ⟨inwFn, inwP⟩ := inwIrElim inwIr
@@ -956,11 +999,12 @@ namespace PairExpr
     ⟨zth, And.intro inwFn (inwPairElim inwP).inwL⟩
   
   def insCallElimBound
-    (s: InsP b c (callExpr x fn (var arg)) pB)
+    [Inhabited Var]
+    (s: InsP Var b c (callExpr x fn (var arg)) pB)
     (isUnit: c arg = Set3.just pA)
     (neq: x ≠ arg)
   :
-    InsP (b.update x pB) (c.update x pB) fn (Pair.pair pA pB)
+    InsP Var (b.update x pB) (c.update x pB) fn (Pair.pair pA pB)
   :=
     let ⟨aAlias, ⟨insFn, insArg⟩⟩ := insCallExprElim s
     
@@ -970,11 +1014,12 @@ namespace PairExpr
     eq ▸ insFn
   
   def inwCallElimBound
-    (w: InwP b c (callExpr x fn (var arg)) pB)
+    [Inhabited Var]
+    (w: InwP Var b c (callExpr x fn (var arg)) pB)
     (isUnit: c arg = Set3.just pA)
     (neq: x ≠ arg)
   :
-    InwP (b.update x pB) (c.update x pB) fn (Pair.pair pA pB)
+    InwP Var (b.update x pB) (c.update x pB) fn (Pair.pair pA pB)
   :=
     let ⟨aAlias, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim w
     
@@ -986,7 +1031,7 @@ namespace PairExpr
   
   def insNatExpr b c n
   :
-    InsP b c (natExpr n) (fromNat n)
+    InsP Var b c (natExpr n) (fromNat n)
   :=
     match n with
     | Nat.zero => insZero
@@ -994,14 +1039,14 @@ namespace PairExpr
   
   def inwNatExpr b c n
   :
-    InwP b c (natExpr n) (fromNat n)
+    InwP Var b c (natExpr n) (fromNat n)
   :=
     match n with
     | Nat.zero => inwZero
     | Nat.succ pred => inwPair (inwNatExpr b c pred) inwZero
   
   def inwNatExprElim
-    (w: InwP b c (natExpr n) p)
+    (w: InwP Var b c (natExpr n) p)
   :
     p = fromNat n
   :=
@@ -1013,14 +1058,14 @@ namespace PairExpr
       (inwNatExprElim l) ▸ (inwZeroElim r) ▸ rfl
   
   def insNatExprElim
-    (s: InsP b c (natExpr n) p)
+    (s: InsP Var b c (natExpr n) p)
   :
     p = fromNat n
   :=
     inwNatExprElim s.toInw
   
   def inwNatExprElimNope
-    (w: InwP b c (natExpr n) (fromNat m))
+    (w: InwP Var b c (natExpr n) (fromNat m))
     (neq: n ≠ m)
   :
     P
@@ -1028,7 +1073,7 @@ namespace PairExpr
     (neq (fromNat.injEq (Eq.symm (inwNatExprElim w)))).elim
   
   def insNatExprElimNope
-    (s: InsP b c (natExpr n) (fromNat m))
+    (s: InsP Var b c (natExpr n) (fromNat m))
     (neq: n ≠ m)
   :
     P
@@ -1036,14 +1081,14 @@ namespace PairExpr
     inwNatExprElimNope s.toInw neq
   
   def inwNatExprElimDepth
-    (w: InwP b c (natExpr n) p)
+    (w: InwP Var b c (natExpr n) p)
   :
     depth p = n
   :=
     (inwNatExprElim w) ▸ (fromNat.depthEq _)
   
   def insNatExprElimDecode
-    (s: InsP b c (natExpr n) p)
+    (s: InsP Var b c (natExpr n) p)
   :
     depth p = n
   :=

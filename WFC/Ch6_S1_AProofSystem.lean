@@ -66,9 +66,9 @@ def Out.isSound
 
 def Ins.isComplete
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   {d: salg.D}
-  {x: Nat}
+  {x: Var}
   (ins: (dl.wellFoundedModel salg x).defMem d)
 :
   Ins salg dl d x
@@ -77,9 +77,9 @@ def Ins.isComplete
 
 def Out.isComplete
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   {d: salg.D}
-  {x: Nat}
+  {x: Var}
   (out: ¬(dl.wellFoundedModel salg x).posMem d)
 :
   Out salg dl d x

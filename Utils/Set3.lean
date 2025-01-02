@@ -15,8 +15,7 @@ namespace Set3
     aIn
   
   def just.inDefToEqBin
-    {a b: D}
-    (d: D)
+    {a b d: D}
     (aIn: a ∈ (just d).defMem)
     (bIn: b ∈ (just d).defMem)
   :
@@ -33,8 +32,7 @@ namespace Set3
     aIn
   
   def just.inPosToEqBin
-    {a b: D}
-    (d: D)
+    {a b d: D}
     (aIn: a ∈ (just d).posMem)
     (bIn: b ∈ (just d).posMem)
   :

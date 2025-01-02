@@ -21,7 +21,7 @@ def Cause.SatisfiesBoundVars.union
 
 def Cause.SatisfiesBoundVars.arbUn
   (causes: Pair → Cause Pair)
-  (x: Nat)
+  (x: Var)
   (sat: ∀ dH, (causes dH).SatisfiesBoundVars (⟨dH, x⟩ :: boundVars))
 :
   Cause.SatisfiesBoundVars

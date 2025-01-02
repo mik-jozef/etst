@@ -36,7 +36,7 @@ namespace Pair
     
     inductive MotiveIns
       (d: Pair)
-      (x: Nat)
+      (x: Var)
     :
       Prop
     |
@@ -72,7 +72,7 @@ namespace Pair
     
     inductive MotiveOut
       (d: Pair)
-      (x: Nat)
+      (x: Var)
     :
       Prop
     |
@@ -209,15 +209,15 @@ namespace Pair
           uniDefList.theExternalWfm
           uniDefList.theExternalWfm)
       (cinsIns:
-        ∀ {d} {x: Nat},
+        ∀ {d} {x: Var},
           ⟨d, x⟩ ∈ externalCause.contextIns →
           MotiveIns d x)
       (_binsIns:
-        ∀ {d} {x: Nat},
+        ∀ {d} {x: Var},
           ⟨d, x⟩ ∈ externalCause.backgroundIns →
           MotiveIns d x)
       (boutOut:
-        ∀ {d} {x: Nat},
+        ∀ {d} {x: Var},
           ⟨d, x⟩ ∈ externalCause.backgroundOut →
           MotiveOut d x)
     :
@@ -341,15 +341,15 @@ namespace Pair
           uniDefList.theExternalWfm
           uniDefList.theExternalWfm)
       (cinsIns:
-        ∀ {d} {x: Nat},
+        ∀ {d} {x: Var},
           ⟨d, x⟩ ∈ externalCause.contextIns →
           MotiveIns d x)
       (binsIns:
-        ∀ {d} {x: Nat},
+        ∀ {d} {x: Var},
           ⟨d, x⟩ ∈ externalCause.backgroundIns →
           MotiveIns d x)
       (boutOut:
-        ∀ {d} {x: Nat},
+        ∀ {d} {x: Var},
           ⟨d, x⟩ ∈ externalCause.backgroundOut →
           MotiveOut d x)
     :
@@ -416,7 +416,7 @@ namespace Pair
       Prop
     :=
       {d: Pair} →
-      {x: Nat} →
+      {x: Var} →
       ⟨d, x⟩ ∈ externalCycle →
       (externalCause: Cause Pair) →
       IsWeakCause
@@ -432,7 +432,7 @@ namespace Pair
     
     def IsEmptyCycleIh (externalCycle: Set (ValVar Pair)): Prop :=
       {d: Pair} →
-      {x: Nat} →
+      {x: Var} →
       ⟨d, x⟩ ∈ externalCycle →
       (externalCause: Cause Pair) →
       IsWeakCause

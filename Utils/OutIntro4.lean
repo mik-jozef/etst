@@ -6,9 +6,9 @@ import WFC.Ch6_S1_AProofSystem
 -/
 inductive IsCauseInappExtended
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (cycle: Set (ValVar salg.D))
-  (cause: Cause salg.D)
+  (dl: DefList Var sig)
+  (cycle: Set (ValVar Var salg.D))
+  (cause: Cause Var salg.D)
 :
   Prop
 |
@@ -59,12 +59,12 @@ inductive IsCauseInappExtended
 -/
 def Out.intro4
   {salg: Salgebra sig}
-  {dl: DefList sig}
-  (cycle: Set (ValVar salg.D))
+  {dl: DefList Var sig}
+  (cycle: Set (ValVar Var salg.D))
   (isEmptyCycle:
     ∀ {d x},
     ⟨d, x⟩ ∈ cycle →
-    (cause: Cause salg.D) →
+    (cause: Cause Var salg.D) →
     IsWeakCause salg cause d (dl.getDef x) →
     IsCauseInappExtended salg dl cycle cause)
   {d x}
@@ -203,7 +203,7 @@ def IsCauseInappExtended.Not.union
         isAppRite (boutFails inBoutRite isIns))
 
 def IsCauseInappExtended.Not.arbUn
-  {causes: salg.D → Cause salg.D}
+  {causes: salg.D → Cause Var salg.D}
   (isApp: ∀ dX, ¬ IsCauseInappExtended salg dl cycle (causes dX))
 :
   ¬ IsCauseInappExtended salg dl cycle (Cause.arbUn causes)

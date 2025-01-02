@@ -64,28 +64,46 @@ namespace Pair
                         (depthLtR (pair nA nB) (pair pA pB)))
                   
                   insUnDom
-                    (insNatEncoding isPoD.isNat.left)
+                    (insFree
+                      (insNatEncoding isPoD.isNat.left)
+                      nat500NeqNat)
                     (insUnDom
                       (insCallExpr
-                        (insPairOfDepth.p _ isPoDA)
+                        (insFree
+                          (insFree
+                            (insFree
+                              (insPairOfDepth.p _ isPoDA)
+                              nat500NeqPairOfDepth)
+                            nat501NeqPairOfDepth)
+                          nat502NeqPairOfDepth)
                         (insFree
                           (insFree insBound nat501Neq500)
                           nat502Neq500))
                       (insUnDom
                         (insCallExpr
-                          (insPairOfDepth.p _ isPoDB)
+                          (insFree
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insPairOfDepth.p _ isPoDB)
+                                nat500NeqPairOfDepth)
+                              nat501NeqPairOfDepth)
+                            nat502NeqPairOfDepth)
+                          nat503NeqPairOfDepth)
                           (insCallExpr
                             (insFree
                               (insFree
                                 (insFree
                                   (insFree
-                                    (insNatLeFn {
-                                      isNatA := isPoD.isNat.left
-                                      isNatB := fromNat.isNatEncoding pB.depth
-                                      isLe :=
-                                        (fromNat.depthEq _) ▸
-                                        isPoDA.eqDepth ▸ depthLe
-                                    })
+                                    (insFree
+                                      (insNatLeFn {
+                                        isNatA := isPoD.isNat.left
+                                        isNatB := fromNat.isNatEncoding pB.depth
+                                        isLe :=
+                                          (fromNat.depthEq _) ▸
+                                          isPoDA.eqDepth ▸ depthLe
+                                      })
+                                      nat500NeqNatLeFn)
                                     nat501NeqNatLeFn)
                                   nat502NeqNatLeFn)
                                 nat503NeqNatLeFn)
@@ -145,29 +163,47 @@ namespace Pair
                       ((depthLtR pA pB).trans (depthLtR _ _))
                   
                   insUnDom
-                    (insNatEncoding isPoD.isNat.left)
+                    (insFree
+                      (insNatEncoding isPoD.isNat.left)
+                      nat500NeqNat)
                     (insUnDom
                       (insCallExpr
-                        (insPairOfDepth.p _ isPoDB)
+                        (insFree
+                          (insFree
+                            (insFree
+                              (insPairOfDepth.p _ isPoDB)
+                              nat500NeqPairOfDepth)
+                            nat501NeqPairOfDepth)
+                          nat502NeqPairOfDepth)
                         (insFree
                           (insFree insBound nat501Neq500)
                           nat502Neq500))
                       (insUnDom
                         (insCallExpr
-                          (insPairOfDepth.p _ isPoDA)
+                          (insFree
+                            (insFree
+                              (insFree
+                                (insFree
+                                  (insPairOfDepth.p _ isPoDA)
+                                  nat500NeqPairOfDepth)
+                                nat501NeqPairOfDepth)
+                              nat502NeqPairOfDepth)
+                            nat503NeqPairOfDepth)
                           (insCallExpr
                             (insFree
                               (insFree
                                 (insFree
                                   (insFree
-                                    (insNatLeFn {
-                                      isNatA := isPoD.isNat.left
-                                      isNatB := fromNat.isNatEncoding pA.depth
-                                      isLe :=
-                                        (fromNat.depthEq _) ▸
-                                        isPoDB.eqDepth ▸
-                                        Nat.le_of_lt depthLt
-                                    })
+                                    (insFree
+                                      (insNatLeFn {
+                                        isNatA := isPoD.isNat.left
+                                        isNatB := fromNat.isNatEncoding pA.depth
+                                        isLe :=
+                                          (fromNat.depthEq _) ▸
+                                          isPoDB.eqDepth ▸
+                                          Nat.le_of_lt depthLt
+                                      })
+                                      nat500NeqNatLeFn)
                                     nat501NeqNatLeFn)
                                   nat502NeqNatLeFn)
                                 nat503NeqNatLeFn)
@@ -191,7 +227,9 @@ namespace Pair
                               (isPoD.isNat.right ▸ insZero))
                             (insPair
                               insBound
-                              (insFree insBound nat502Neq501)))))))))
+                              (insFree
+                                (insBound)
+                                nat502Neq501)))))))))
     termination_by p.depth
     
     def insPairOfDepth (isPoD: IsPairOfDepth p):
@@ -290,7 +328,15 @@ namespace Pair
                   h ▸ nPredEq500 ▸ (depthLtL nPred z)
                 
                 let isPodArgOuter502 := Inw.toIsPairOfDepth.ab _ _
-                  (inwFreeElim inwFnOuter nat503NeqPairOfDepth)
+                  (inwFreeElim
+                    (inwFreeElim
+                      (inwFreeElim
+                        (inwFreeElim
+                          inwFnOuter
+                          nat503NeqPairOfDepth)
+                        nat502NeqPairOfDepth)
+                      nat501NeqPairOfDepth)
+                    nat500NeqPairOfDepth)
                 
                 let isPod500501 := Inw.toIsPairOfDepth.ab _ _ inwPoD500501
                 
@@ -344,7 +390,15 @@ namespace Pair
                   h ▸ nPredEq500 ▸ (depthLtL nPred z)
                 
                 let isPodArgOuter502 := Inw.toIsPairOfDepth.ab _ _
-                  (inwFreeElim inwFnOuter nat503NeqPairOfDepth)
+                  (inwFreeElim
+                    (inwFreeElim
+                      (inwFreeElim
+                        (inwFreeElim
+                          inwFnOuter
+                          nat503NeqPairOfDepth)
+                        nat502NeqPairOfDepth)
+                      nat501NeqPairOfDepth)
+                    nat500NeqPairOfDepth)
                 
                 let isPod500501 := Inw.toIsPairOfDepth.ab _ _ inwPoD500501
                 
@@ -369,6 +423,7 @@ namespace Pair
                     
                     (eqL.trans eqMid).trans eqR.symm
                 }))
+    termination_by n.depth
     
     def Inw.toIsPairOfDepth (inw: InwEdl pairOfDepth p):
       IsPairOfDepth p

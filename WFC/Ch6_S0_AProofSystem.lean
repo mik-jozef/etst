@@ -17,13 +17,13 @@ import WFC.Appx0_ExprRulesOfInference
 
 
 -- See `Cause` below.
-structure ContextCause (D: Type*) where
-  contextIns: Set (ValVar D)
+structure ContextCause (Var D: Type*) where
+  contextIns: Set (ValVar Var D)
 
 -- See `Cause` below.
-structure BackgroundCause (D: Type*) where
-  backgroundIns: Set (ValVar D)
-  backgroundOut: Set (ValVar D)
+structure BackgroundCause (Var D: Type*) where
+  backgroundIns: Set (ValVar Var D)
+  backgroundOut: Set (ValVar Var D)
 
 /-
   If (under some valuation) expressions `a` and `c` contain an
@@ -40,13 +40,13 @@ structure BackgroundCause (D: Type*) where
   Note that it never happens that a value would need to be absent
   from context in order to cause something.
 -/
-structure Cause (D: Type*) extends
-  ContextCause D, BackgroundCause D
+structure Cause (Var D: Type*) extends
+  ContextCause Var D, BackgroundCause Var D
 
 def ContextCause.toCause
-  (cause: ContextCause D)
+  (cause: ContextCause Var D)
 :
-  Cause D
+  Cause Var D
 := {
   contextIns := cause.contextIns
   backgroundIns := Set.empty
@@ -54,22 +54,22 @@ def ContextCause.toCause
 }
 
 def BackgroundCause.toCause
-  (cause: BackgroundCause D)
+  (cause: BackgroundCause Var D)
 :
-  Cause D
+  Cause Var D
 := {
   contextIns := Set.empty
   backgroundIns := cause.backgroundIns
   backgroundOut := cause.backgroundOut
 }
 
-instance: Coe (ContextCause D) (Cause D) := ⟨ContextCause.toCause⟩
-instance: Coe (BackgroundCause D) (Cause D) := ⟨BackgroundCause.toCause⟩
+instance: Coe (ContextCause Var D) (Cause Var D) := ⟨ContextCause.toCause⟩
+instance: Coe (BackgroundCause Var D) (Cause Var D) := ⟨BackgroundCause.toCause⟩
 
 
 structure Cause.IsStronglySatisfiedByContext
-  (cause: Cause D)
-  (c: Valuation D)
+  (cause: Cause Var D)
+  (c: Valuation Var D)
 :
   Prop
 where
@@ -77,8 +77,8 @@ where
     ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).defMem d
 
 structure Cause.IsStronglySatisfiedByBackground
-  (cause: Cause D)
-  (b: Valuation D)
+  (cause: Cause Var D)
+  (b: Valuation Var D)
 :
   Prop
 where
@@ -93,8 +93,8 @@ where
   above two structures.
 -/
 structure Cause.IsStronglySatisfiedBy
-  (cause: Cause D)
-  (b c: Valuation D)
+  (cause: Cause Var D)
+  (b c: Valuation Var D)
 extends
   Cause.IsStronglySatisfiedByContext cause c,
   Cause.IsStronglySatisfiedByBackground cause b
@@ -103,8 +103,8 @@ extends
 
 
 structure Cause.IsWeaklySatisfiedByContext
-  (cause: Cause D)
-  (c: Valuation D)
+  (cause: Cause Var D)
+  (c: Valuation Var D)
 :
   Prop
 where
@@ -112,8 +112,8 @@ where
     ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).posMem d
 
 structure Cause.IsWeaklySatisfiedByBackground
-  (cause: Cause D)
-  (b: Valuation D)
+  (cause: Cause Var D)
+  (b: Valuation Var D)
 :
   Prop
 where
@@ -128,8 +128,8 @@ where
   above two structures.
 -/
 structure Cause.IsWeaklySatisfiedBy
-  (cause: Cause D)
-  (b c: Valuation D)
+  (cause: Cause Var D)
+  (b c: Valuation Var D)
 extends
   Cause.IsWeaklySatisfiedByContext cause c,
   Cause.IsWeaklySatisfiedByBackground cause b
@@ -137,32 +137,32 @@ extends
   Prop
 
 /-
-  `Is[X]Cause salg cause d expr` means that for every pair of
+  `Is[X]Cause salg Cause Var D expr` means that for every pair of
   valuations `(b, c)` that satisfies `cause`, `d ∈ expr` holds
   (with `b` and `c` serving as background and context valuations,
   respectively).
 -/
 def IsStrongCause
   (salg: Salgebra sig)
-  (cause: Cause salg.D)
+  (cause: Cause Var salg.D)
   (d: salg.D)
-  (expr: Expr sig)
+  (expr: Expr Var sig)
 :
   Prop
 :=
-  {b c: Valuation salg.D} →
+  {b c: Valuation Var salg.D} →
   cause.IsStronglySatisfiedBy b c →
   (expr.interpretation salg b c).defMem d
 
 def IsWeakCause
   (salg: Salgebra sig)
-  (cause: Cause salg.D)
+  (cause: Cause Var salg.D)
   (d: salg.D)
-  (expr: Expr sig)
+  (expr: Expr Var sig)
 :
   Prop
 :=
-  {b c: Valuation salg.D} →
+  {b c: Valuation Var salg.D} →
   cause.IsWeaklySatisfiedBy b c →
   (expr.interpretation salg b c).posMem d
 
@@ -186,14 +186,14 @@ mutual
 -/
 inductive Ins
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
-  salg.D → Nat → Prop
+  salg.D → Var → Prop
 
 | intro:
   (d: salg.D) →
-  (x: Nat) →
-  (cause: Cause salg.D) →
+  (x: Var) →
+  (cause: Cause Var salg.D) →
   IsStrongCause salg cause d (dl.getDef x) →
   (∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → Ins salg dl d x) →
   (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → Ins salg dl d x) →
@@ -220,14 +220,14 @@ inductive Ins
 -/
 inductive IsCauseInapplicable
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
-  Set (ValVar salg.D) →
-  Cause salg.D →
+  Set (ValVar Var salg.D) →
+  Cause Var salg.D →
   Prop
 
 | blockedContextIns
-  (cause: Cause salg.D)
+  (cause: Cause Var salg.D)
   {d x}
   (inContextIns: ⟨d, x⟩ ∈ cause.contextIns)
   (inCycle: ⟨d, x⟩ ∈ cycle)
@@ -235,7 +235,7 @@ inductive IsCauseInapplicable
   IsCauseInapplicable salg dl cycle cause
 
 | blockedBackgroundIns
-  (cause: Cause salg.D)
+  (cause: Cause Var salg.D)
   {d x}
   (inBins: ⟨d, x⟩ ∈ cause.backgroundIns)
   (isOut: Out salg dl d x)
@@ -243,7 +243,7 @@ inductive IsCauseInapplicable
   IsCauseInapplicable salg dl cycle cause
 
 | blockedBackgroundOut
-  (cause: Cause salg.D)
+  (cause: Cause Var salg.D)
   {d x}
   (inBout: ⟨d, x⟩ ∈ cause.backgroundOut)
   (isIns: Ins salg dl d x)
@@ -259,16 +259,16 @@ inductive IsCauseInapplicable
 -/
 inductive Out
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
-  salg.D → Nat → Prop
+  salg.D → Var → Prop
 
 | intro:
-  (cycle: Set (ValVar salg.D)) →
+  (cycle: Set (ValVar Var salg.D)) →
   (isEmptyCycle:
     ∀ {d x},
     ⟨d, x⟩ ∈ cycle →
-    (cause: Cause salg.D) →
+    (cause: Cause Var salg.D) →
     IsWeakCause salg cause d (dl.getDef x) →
     IsCauseInapplicable salg dl cycle cause) →
   ⟨d, x⟩ ∈ cycle →

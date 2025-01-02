@@ -40,8 +40,11 @@ namespace Pair
   open Expr
   open PairExpr
   
+  @[reducible]
+  def Expr := _root_.Expr Nat pairSignature
+  
   instance exprOfNat: (n: Nat) → OfNat Expr n :=
-    PairExpr.exprOfNat
+    Expr.exprOfNat
   
   /-
     Here, we define the definitions of our definition list.
@@ -57,7 +60,7 @@ namespace Pair
           nat = () | (nat, ())
     -/
     def nat: Nat := 0
-    def nat.expr := unExpr zeroExpr (pairExpr nat zeroExpr)
+    def nat.expr: Expr := unExpr zeroExpr (pairExpr nat zeroExpr)
     
     /-
       Contains (n, n) iff n is a natural number.
@@ -107,13 +110,13 @@ namespace Pair
     
     -- Helpers for `exprEncoding.expr` below.
     def exprEncoding: Nat := 7
-    def exprEncoding.binExpr :=
+    def exprEncoding.binExpr: Expr :=
       pairExpr
         exprEncoding.binary
         (pairExpr exprEncoding exprEncoding)
-    def exprEncoding.cplExpr :=
+    def exprEncoding.cplExpr: Expr :=
       pairExpr (natExpr 5) exprEncoding
-    def exprEncoding.quantifierExpr :=
+    def exprEncoding.quantifierExpr: Expr :=
       pairExpr
         exprEncoding.quantifier
         (pairExpr nat exprEncoding)
@@ -125,12 +128,12 @@ namespace Pair
       | var (v: Nat)                 => (0, v)
       | op (Op.zero) (args)          => (1, ())
       | op (Op.pair) (args)          => (2, (args 0, args 1))
-      | un (left rite: Expr sig)     => (3, (left, rite))
-      | ir (left rite: Expr sig)     => (4, (left, rite))
-      | cpl (expr: Expr sig)         => (5, expr)
-      | ifThen (cond expr: Expr sig) => (6, (cond, expr))
-      | Un (x: Nat) (body: Expr sig) => (7, (x, body))
-      | Ir (x: Nat) (body: Expr sig) => (8, (x, body))
+      | un (left rite: Expr Var sig)     => (3, (left, rite))
+      | ir (left rite: Expr Var sig)     => (4, (left, rite))
+      | cpl (expr: Expr Var sig)         => (5, expr)
+      | ifThen (cond expr: Expr Var sig) => (6, (cond, expr))
+      | Un (x: Var) (body: Expr Var sig) => (7, (x, body))
+      | Ir (x: Var) (body: Expr Var sig) => (8, (x, body))
     -/
     def exprEncoding.exprList: List Expr :=
       [
@@ -911,15 +914,16 @@ namespace Pair
       by the definition `theDefList`.
     -/
     def theExternalDefList:
-      FinBoundedDL pairSignature
+      FinBoundedDL Nat pairSignature
     := {
       getDef := defList.getDef
       
       isFinBounded :=
-        fun x => ⟨
-          max x.succ 38,
-          defList.hasFiniteBounds,
-        ⟩
+        DefList.isFinBoundedOfNat
+          fun x => ⟨
+            max x.succ 38,
+            defList.hasFiniteBounds,
+          ⟩
     }
     
     -- The well-founded model of the external definition list.
@@ -929,14 +933,14 @@ namespace Pair
     def decodeValuation
       (s3: Set3 Pair)
     :
-      Valuation Pair
+      Valuation Nat Pair
     :=
       fun n => Set3.pairCallJust s3 (fromNat n)
     
     def internalOfExternal
-      (v: Valuation Pair)
+      (v: Valuation Nat Pair)
     :
-      Valuation Pair
+      Valuation Nat Pair
     :=
       decodeValuation (v theSet)
     
@@ -948,7 +952,7 @@ namespace Pair
       That this encoding actually encodes the well-founded
       model is proven in Chapter 9.
     -/
-    def theInternalWfmEncoding: Valuation Pair :=
+    def theInternalWfmEncoding: Valuation Nat Pair :=
       internalOfExternal theExternalWfm
     
   end uniDefList  

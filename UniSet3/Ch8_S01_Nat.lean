@@ -139,9 +139,11 @@ namespace Pair
           | zero => inwPairElim.nope bInwSucc
           | pair bA _bB =>
             let ⟨bAFst500, bBInwZeroExpr⟩ := inwPairElim inwB
+            let eqB := Valuation.update.eqBound _ _ _
             let inw500ABA :=
-              inwZthFstElim aZth500 bAFst500 nat501Neq500 rfl
+              inwZthFstElim aZth500 bAFst500 nat501Neq500 eqB
             let pInnerEq: pair a bA = pInner := inwBoundElim inw500ABA
+            let inwDomain := inwFreeElim inwDomain nat500NeqNatLe
             let isNatLeABA: IsNatLe (pair a bA) :=
               ab (pInnerEq ▸ inwDomain)
             {
@@ -175,7 +177,9 @@ namespace Pair
         
         insWfmDefToIns
           (insUnDom
-            (insNatLe isNatLeReverse)
+            (insFree
+              (insNatLe isNatLeReverse)
+              nat500NeqNatLe)
             (insPair
               (insFstMember (insFree insBound nat501Neq500))
               (insZthMember (insFree insBound nat501Neq500))))
@@ -191,10 +195,13 @@ namespace Pair
       | pair a b =>
         let ⟨l, r⟩ := inwPairElim inwBody
         
-        let eq := inwBoundElim (inwZthFstElim r l nat501Neq500 rfl)
+        let eqB := Valuation.update.eqBound _ _ _
+        let eq := inwBoundElim (inwZthFstElim r l nat501Neq500 eqB)
         
         let ⟨isNatB, isNatA, isLe⟩: IsNatLe (pair b a) :=
-          eq ▸ Inw.toIsNatLe inwDomain
+          eq ▸
+          Inw.toIsNatLe
+            (inwFreeElim inwDomain nat500NeqNatLe)
         
         { isNatA, isNatB, isLe }
     
@@ -236,7 +243,7 @@ namespace Pair
           fun eq =>
             inwCplElim
               inwNotRefl
-              (insArbUn a (insPair insBound (eq ▸ insBound)))
+              (insArbUn a (eq ▸ insPair insBound insBound))
         
         let neqDepth := depth.nat.injNeq isNatA isNatB neq
         let isLt := Nat.lt_of_le_of_ne isLe neqDepth

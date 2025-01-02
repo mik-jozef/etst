@@ -6,13 +6,13 @@ import WFC.Ch1_Expr
 
 
 def Expr.IsFreeVar.boundNotFree
-  (expr: Expr sig)
-  {boundVars: Set Nat}
+  (expr: Expr Var sig)
+  {boundVars: Set Var}
   (isBound: x ∈ boundVars)
 :
   ¬expr.IsFreeVar boundVars x
 :=
-  let boundVarsUpdated xUn: Set Nat :=
+  let boundVarsUpdated xUn: Set Var :=
     fun x => x ∈ boundVars ∨ x = xUn
   
   fun isFreeVar =>
@@ -34,10 +34,10 @@ def Expr.IsFreeVar.boundNotFree
       boundNotFree body xIn isFreeVar
 
 def Expr.IsFreeVar.getBoundVars
-  {expr: Expr sig}
+  {expr: Expr Var sig}
   (_: expr.IsFreeVar boundVars x)
 :
-  Set Nat
+  Set Var
 :=
   boundVars
 
@@ -52,9 +52,9 @@ def Expr.IsFreeVar.nopeFreeInUn
   (boundNotFree body inB isFreeVar).elim
 
 def Expr.IsFreeVar.toOtherBounds
-  {expr: Expr sig}
+  {expr: Expr Var sig}
   (isFreeVar: expr.IsFreeVar boundVars x)
-  (boundVarsOther: Set Nat)
+  (boundVarsOther: Set Var)
 :
   expr.IsFreeVar boundVarsOther x ∨ x ∈ boundVarsOther
 :=
@@ -75,7 +75,11 @@ def Expr.IsFreeVar.toOtherBounds
     
     | cpl expr =>
       Or.inl
-        (elimInB (@toOtherBounds _ _ _ expr isFreeVar boundVarsOther))
+        (elimInB
+          (toOtherBounds
+            (expr := expr)
+            isFreeVar
+            boundVarsOther))
     
     | arbUn xUn body =>
       let ifvBody:
@@ -114,7 +118,7 @@ def Expr.IsFreeVar.toOtherBounds
             (fun eq => nopeFreeInUn (eq ▸ isFreeVar)))
 
 def Expr.IsFreeVar.toBoundsNin
-  {expr: Expr sig}
+  {expr: Expr Var sig}
   (isFreeVar: expr.IsFreeVar boundVars x)
   (ninOther: x ∉ boundVarsOther)
 :
@@ -125,9 +129,9 @@ def Expr.IsFreeVar.toBoundsNin
     (fun inOther => False.elim (ninOther inOther))
 
 def Expr.IsFreeVar.incrementBounds
-  {expr: Expr sig}
+  {expr: Expr Var sig}
   (isFreeVar: expr.IsFreeVar boundVars x)
-  (addedBoundVar: Nat)
+  (addedBoundVar: Var)
 :
   expr.IsFreeVar (boundVars ∪ {addedBoundVar}) x ∨ x = addedBoundVar
 :=
@@ -140,23 +144,24 @@ def Expr.IsFreeVar.incrementBounds
 
 
 def Expr.IsFreeVar.var
+  {v: Var}
   (ninBound: v ∉ boundVars)
 :
-  v ∈ (@Expr.var sig v).IsFreeVar boundVars
+  v ∈ (@Expr.var Var sig v).IsFreeVar boundVars
 :=
   And.intro rfl ninBound
 
 def Expr.IsFreeVar.varEmptyBound
-  (v: Nat)
+  (v: Var)
 :
-  v ∈ (@Expr.var sig v).IsFreeVar Set.empty
+  v ∈ (@Expr.var Var sig v).IsFreeVar Set.empty
 :=
   var False.elim
 
 def Expr.IsFreeVar.op
   {sig: Signature}
   (op: sig.Op)
-  (args: sig.Params op → Expr sig)
+  (args: sig.Params op → Expr Var sig)
   {param: sig.Params op}
   (isFreeVar: x ∈ (args param).IsFreeVar boundVars)
 :
@@ -167,8 +172,8 @@ def Expr.IsFreeVar.op
 ⟩
 
 def Expr.IsFreeVar.arbUn
-  (x: Nat)
-  {body: Expr sig}
+  (x: Var)
+  {body: Expr Var sig}
   (isFreeVar: xf ∈ body.IsFreeVar boundVars)
 :
   xf ∈ IsFreeVar (arbUn x body) boundVars ∨ xf = x

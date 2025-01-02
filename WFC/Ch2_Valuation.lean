@@ -7,68 +7,67 @@ import Utils.Pointwise
 /-
   A valuation is a function from variables to trisets of values.
 -/
-def Valuation D := Nat → Set3 D
+def Valuation Var D := Var → Set3 D
 
 namespace Valuation
   /-
     In the empty valuation, every variable represents the empty
     triset.
   -/
-  def empty: Valuation D := fun _ => Set3.empty
+  def empty: Valuation Var D := fun _ => Set3.empty
   
   /-
     In the undetermined valuation, every variable represents
     the undetermined triset.
   -/
-  def undetermined: Valuation D := fun _ => Set3.undetermined
+  def undetermined: Valuation Var D := fun _ => Set3.undetermined
   
   /-
     In the full valuation, every variable represents the full
     triset.
   -/
-  def full: Valuation D := fun _ => Set3.full
+  def full: Valuation Var D := fun _ => Set3.full
   
   -- The approximation order on valuations is defined pointwise.
-  def ord.approximation (D: Type u):
-    PartialOrder (Valuation D)
+  def ord.approximation (Var D: Type*):
+    PartialOrder (Valuation Var D)
   :=
-    PartialOrder.pointwise Nat (Set3.ord.approximation D)
+    PartialOrder.pointwise Var (Set3.ord.approximation D)
   
   -- The standard order on valuations is defined pointwise.
-  def ord.standard (D: Type u)
+  def ord.standard (Var D: Type*)
   :
-    PartialOrder (Valuation D)
+    PartialOrder (Valuation Var D)
   :=
-    PartialOrder.pointwise Nat (Set3.ord.standard D)
+    PartialOrder.pointwise Var (Set3.ord.standard D)
   
   
   -- The lte relation of the approximation order is denoted using ⊑.
-  instance instSqle (D: Type u): SqLE (Valuation D) where
-    le := (ord.approximation D).le
+  instance instSqle (Var D: Type*): SqLE (Valuation Var D) where
+    le := (ord.approximation Var D).le
   
   -- The lt relation of the approximation order is denoted using ⊏.
-  instance instSqlt (D: Type u): SqLT (Valuation D) where
-    lt := (ord.approximation D).lt
+  instance instSqlt (Var D: Type*): SqLT (Valuation Var D) where
+    lt := (ord.approximation Var D).lt
   
   -- The lte relation of the standard order is denoted using ≤.
-  instance instLe (D: Type u): LE (Valuation D) where
-    le := (ord.standard D).le
+  instance instLe (Var D: Type*): LE (Valuation Var D) where
+    le := (ord.standard Var D).le
   
   -- The lt relation of the standard order is denoted using <.
-  instance instLt (D: Type u): LT (Valuation D) where
-    lt := (ord.standard D).lt
+  instance instLt (Var D: Type*): LT (Valuation Var D) where
+    lt := (ord.standard Var D).lt
   
   
   /-
     The empty valuation is the least element of the standard
     order.
   -/
-  def empty.isLeast: iIsLeast (ord.standard D).le Set.full empty := {
+  def empty.isLeast:
+    iIsLeast (ord.standard Var D).le Set.full empty
+  := {
     isMember := trivial
-    isLeMember :=
-      (fun _val _valInFull _x => Set3.LeStd.intro
-        (fun _t tInEmpty => False.elim tInEmpty)
-        (fun _t tInEmpty => False.elim tInEmpty))
+    isLeMember := fun _ _ _ => Set3.LeStd.intro nofun nofun
   }
   
   /-
@@ -76,7 +75,7 @@ namespace Valuation
     approximation order.
   -/
   def undetermined.isLeast:
-    iIsLeast (ord.approximation D).le Set.full undetermined
+    iIsLeast (ord.approximation Var D).le Set.full undetermined
   := {
     isMember := trivial
     isLeMember :=
@@ -90,10 +89,10 @@ namespace Valuation
     approximation order.
   -/
   noncomputable def ord.standard.sup
-    {D: Type u}
-    (ch: Chain (standard D))
+    {D: Type*}
+    (ch: Chain (standard Var D))
   :
-    Supremum (standard D) ch
+    Supremum (standard Var D) ch
   :=
     ch.pointwiseSup (Set3.ord.standard.isChainComplete D)
   
@@ -102,25 +101,25 @@ namespace Valuation
     standard order.
   -/
   noncomputable def ord.approximation.sup
-    (ch: Chain (approximation D))
+    (ch: Chain (approximation Var D))
   :
-    Supremum (approximation D) ch
+    Supremum (approximation Var D) ch
   :=
     ch.pointwiseSup (Set3.ord.approximation.isChainComplete D)
   
   
   -- The standard order is chain complete.
-  def ord.standard.isChainComplete (D: Type u)
+  def ord.standard.isChainComplete (D: Type*)
   :
-    IsChainComplete (Valuation.ord.standard D)
+    IsChainComplete (Valuation.ord.standard Var D)
   := {
     supExists := fun ch => ⟨(sup ch).val, (sup ch).property⟩
   }
   
   -- The approximation order is chain complete.
-  def ord.approximation.isChainComplete (D: Type u)
+  def ord.approximation.isChainComplete (D: Type*)
   :
-    IsChainComplete (Valuation.ord.approximation D)
+    IsChainComplete (Valuation.ord.approximation Var D)
   := {
     supExists := fun ch => ⟨(sup ch).val, (sup ch).property⟩
   }
@@ -132,14 +131,14 @@ namespace Valuation
     valuation.
   -/
   def ord.standard.sup.emptyChain
-    (ch: Chain (standard D))
+    (ch: Chain (standard Var D))
     (chEmpty: ch.IsEmpty)
-    (chSup: Supremum (standard D) ch)
+    (chSup: Supremum (standard Var D) ch)
   :
     chSup.val = Valuation.empty
   :=
     iIsLeast.isUnique
-      (standard D)
+      (standard Var D)
       (Chain.sup.empty.isLeast ch chEmpty chSup)
       empty.isLeast
   
@@ -149,14 +148,14 @@ namespace Valuation
     undetermined valuation.
   -/
   def ord.approximation.sup.emptyChain
-    (ch: Chain (approximation D))
+    (ch: Chain (approximation Var D))
     (chEmpty: ch.IsEmpty)
-    (chSup: Supremum (approximation D) ch)
+    (chSup: Supremum (approximation Var D) ch)
   :
     chSup.val = Valuation.undetermined
   :=
     iIsLeast.isUnique
-      (approximation D)
+      (approximation Var D)
       (Chain.sup.empty.isLeast ch chEmpty chSup)
       undetermined.isLeast
   
@@ -165,11 +164,12 @@ namespace Valuation
     all variables except `x`, whose value is `d`.
   -/
   def update
-    (val: Valuation D)
-    (x: Nat)
+    [DecidableEq Var]
+    (val: Valuation Var D)
+    (x: Var)
     (d: D)
   :
-    Valuation D
+    Valuation Var D
   :=
     fun v =>
       if v = x then
@@ -178,11 +178,12 @@ namespace Valuation
         val v
   
   def remove
-    (val: Valuation D)
-    (x: Nat)
+    [DecidableEq Var]
+    (val: Valuation Var D)
+    (x: Var)
     (d: D)
   :
-    Valuation D
+    Valuation Var D
   :=
     fun v =>
       if v = x then
@@ -195,20 +196,18 @@ namespace Valuation
     `ValVar` encodes some (usage-specific) relation between a variable
     and an element. For example, it may be used to represent the
     assertion that a certain variable contains a certain element in
-    some valuation.
-    
-    That the variable `x` contains the element `d` may be denoted
-    as `d ∈ x`.
+    some valuation. (which may be denoted as `d ∈ x`).
   -/
-  structure _root_.ValVar (D: Type*) where
+  structure _root_.ValVar (Var D: Type*) where
     d: D
-    x: Nat
+    x: Var
 
   def withBoundVars
-    (val: Valuation D)
+    [DecidableEq Var]
+    (val: Valuation Var D)
   :
-    (boundVars: List (ValVar D)) →
-    Valuation D
+    (boundVars: List (ValVar Var D)) →
+    Valuation Var D
   |
     [] => val
   | ⟨d, x⟩ :: tail => (val.withBoundVars tail).update x d

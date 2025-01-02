@@ -20,11 +20,12 @@ namespace Pair
     that it should be in a standard library.
   -/
   def freeVars.givenBounds
-    (expr: Expr pairSignature)
-    (boundVars: List Nat)
+    [DecidableEq Var]
+    (expr: Expr Var pairSignature)
+    (boundVars: List Var)
   :
     {
-      list: List Nat
+      list: List Var
     //
       ∀ x: expr.IsFreeVar (fun x => x ∈ boundVars), x.val ∈ list
     }
@@ -43,7 +44,8 @@ namespace Pair
         ⟩
     | Expr.op pairSignature.Op.zero args => ⟨
         [],
-        let expr: Expr pairSignature := Expr.op pairSignature.Op.zero args
+        let expr: Expr Var pairSignature :=
+          Expr.op pairSignature.Op.zero args
         let eq:
           Expr.IsFreeVar expr (fun x => x ∈ boundVars) =
             fun x =>
@@ -204,14 +206,18 @@ namespace Pair
             freeVarsExpr.property ⟨freeVar, eq ▸ freeVar.property⟩,
         ⟩
   
-  def freeVars (expr: Expr pairSignature):
+  
+  def freeVars
+    [DecidableEq Var]
+    (expr: Expr Var pairSignature)
+  :
     {
-      list: List Nat
+      list: List Var
     //
       ∀ x: expr.IsFreeVar Set.empty, x.val ∈ list
     }
   :=
-    let eq: Set.empty = fun x: Nat => x ∈ [] :=
+    let eq: Set.empty = fun x: Var => x ∈ [] :=
       funext fun _ =>
         (propext (Iff.intro nofun nofun))
     
@@ -219,7 +225,7 @@ namespace Pair
     -- Using `eq ▸ fv` directly breaks `freeVars.eq` :(
     ⟨fv.val, eq.symm ▸ fv.property⟩
   
-  def freeVars.eq (expr: Expr pairSignature):
+  def freeVars.eq (expr: Expr Var pairSignature):
     (freeVars expr).val = freeVars.givenBounds expr []
   :=
     rfl

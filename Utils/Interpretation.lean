@@ -7,9 +7,9 @@ import WFC.Ch3_Interpretation
 
 def Expr.interpretation.opEqDef
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
+  (b c: Valuation Var salg.D)
   (opr: sig.Op)
-  (args: sig.Params opr → Expr sig)
+  (args: sig.Params opr → Expr Var sig)
 :
   (interpretation salg b c (op opr args)).defMem
     =
@@ -19,9 +19,9 @@ def Expr.interpretation.opEqDef
 
 def Expr.interpretation.opEqPos
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
+  (b c: Valuation Var salg.D)
   (opr: sig.Op)
-  (args: sig.Params opr → Expr sig)
+  (args: sig.Params opr → Expr Var sig)
 :
   (interpretation salg b c (op opr args)).posMem
     =
@@ -31,8 +31,8 @@ def Expr.interpretation.opEqPos
 
 def Expr.interpretation.cplEqDef
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (expr: Expr sig)
+  (b c: Valuation Var salg.D)
+  (expr: Expr Var sig)
 :
   (interpretation salg b c (cpl expr)).defMem
     =
@@ -42,8 +42,8 @@ def Expr.interpretation.cplEqDef
 
 def Expr.interpretation.cplEqPos
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (expr: Expr sig)
+  (b c: Valuation Var salg.D)
+  (expr: Expr Var sig)
 :
   (interpretation salg b c (cpl expr)).posMem
     =
@@ -53,9 +53,9 @@ def Expr.interpretation.cplEqPos
 
 def Expr.interpretation.arbUnEqDef
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (x: Nat)
-  (body: Expr sig)
+  (b c: Valuation Var salg.D)
+  (x: Var)
+  (body: Expr Var sig)
 :
   let interpretationBody dX :=
     interpretation salg (b.update x dX) (c.update x dX) body
@@ -68,9 +68,9 @@ def Expr.interpretation.arbUnEqDef
 
 def Expr.interpretation.arbUnEqPos
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (x: Nat)
-  (body: Expr sig)
+  (b c: Valuation Var salg.D)
+  (x: Var)
+  (body: Expr Var sig)
 :
   let interpretationBody dX :=
     interpretation salg (b.update x dX) (c.update x dX) body
@@ -83,9 +83,9 @@ def Expr.interpretation.arbUnEqPos
 
 def Expr.interpretation.arbIrEqDef
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (x: Nat)
-  (body: Expr sig)
+  (b c: Valuation Var salg.D)
+  (x: Var)
+  (body: Expr Var sig)
 :
   let interpretationBody dX :=
     interpretation salg (b.update x dX) (c.update x dX) body
@@ -98,9 +98,9 @@ def Expr.interpretation.arbIrEqDef
 
 def Expr.interpretation.arbIrEqPos
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (x: Nat)
-  (body: Expr sig)
+  (b c: Valuation Var salg.D)
+  (x: Var)
+  (body: Expr Var sig)
 :
   let interpretationBody dX :=
     interpretation salg (b.update x dX) (c.update x dX) body
@@ -113,9 +113,9 @@ def Expr.interpretation.arbIrEqPos
 
 
 def Expr.interpretation.isMonotonic.defMem
-  {b c0 c1: Valuation salg.D}
-  (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
-  {expr: Expr sig}
+  {b c0 c1: Valuation Var salg.D}
+  (cLeDef: (x: Var) → (c0 x).defMem ⊆ (c1 x).defMem)
+  {expr: Expr Var sig}
 :
   (expr.interpretation salg b c0).defMem
     ⊆
@@ -147,9 +147,9 @@ def Expr.interpretation.isMonotonic.defMem
         isMonotonic.defMem (cLeDefUpdated x dX) (dIn dX)
 
 def Expr.interpretation.isMonotonic.posMem
-  {b c0 c1: Valuation salg.D}
-  (cLePos: (x: Nat) → (c0 x).posMem ⊆ (c1 x).posMem)
-  {expr: Expr sig}
+  {b c0 c1: Valuation Var salg.D}
+  (cLePos: (x: Var) → (c0 x).posMem ⊆ (c1 x).posMem)
+  {expr: Expr Var sig}
 :
   (expr.interpretation salg b c0).posMem
     ⊆
@@ -181,9 +181,9 @@ def Expr.interpretation.isMonotonic.posMem
         isMonotonic.posMem (cLePosUpdated x dX) (dIn dX)
 
 def Expr.interpretation.isMonotonic.notPosMem
-  {b c0 c1: Valuation salg.D}
-  (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
-  {expr: Expr sig}
+  {b c0 c1: Valuation Var salg.D}
+  (cLePos: (x: Var) → (c1 x).posMem ⊆ (c0 x).posMem)
+  {expr: Expr Var sig}
 :
   ¬ (expr.interpretation salg b c0).posMem d
     →
@@ -194,9 +194,9 @@ def Expr.interpretation.isMonotonic.notPosMem
 
 def Expr.interpretation.isMonotonic.standard
   (salg: Salgebra sig)
-  (e: Expr sig)
-  (b: Valuation salg.D)
-  {c0 c1: Valuation salg.D}
+  (e: Expr Var sig)
+  (b: Valuation Var salg.D)
+  {c0 c1: Valuation Var salg.D}
   (cLe: c0 ≤ c1)
 :
   interpretation salg b c0 e ≤ interpretation salg b c1 e
@@ -207,8 +207,8 @@ def Expr.interpretation.isMonotonic.standard
 
 def Expr.interpretation.isMonotonic.approximation
   (salg: Salgebra sig)
-  (e: Expr sig)
-  {b0 b1 c0 c1: Valuation salg.D}
+  (e: Expr Var sig)
+  {b0 b1 c0 c1: Valuation Var salg.D}
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
@@ -285,40 +285,40 @@ def Expr.interpretation.isMonotonic.approximation
 
 def Expr.interpretation.isMonotonic.apxDefMem
   {salg: Salgebra sig}
-  {e: Expr sig}
-  {b0 b1 c0 c1: Valuation salg.D}
+  {e: Expr Var sig}
+  {b0 b1 c0 c1: Valuation Var salg.D}
   (bLe: b0 ⊑ b1)
-  (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
+  (cLeDef: (x: Var) → (c0 x).defMem ⊆ (c1 x).defMem)
 :
   (interpretation salg b0 c0 e).defMem
     ⊆
   (interpretation salg b1 c1 e).defMem
 :=
-  let c0LeSelf := (Valuation.ord.approximation salg.D).le_refl c0
+  let c0LeSelf := (Valuation.ord.approximation Var salg.D).le_refl c0
   let isMonoB := isMonotonic.approximation salg e bLe c0LeSelf
   let isMonoC := isMonotonic.defMem cLeDef
   isMonoB.defLe.trans isMonoC
 
 def Expr.interpretation.isMonotonic.apxPosMem
-  {e: Expr sig}
-  {b0 b1 c0 c1: Valuation salg.D}
+  {e: Expr Var sig}
+  {b0 b1 c0 c1: Valuation Var salg.D}
   (bLe: b0 ⊑ b1)
-  (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
+  (cLePos: (x: Var) → (c1 x).posMem ⊆ (c0 x).posMem)
 :
   (interpretation salg b1 c1 e).posMem
     ⊆
   (interpretation salg b0 c0 e).posMem
 :=
-  let c0LeSelf := (Valuation.ord.approximation salg.D).le_refl c1
+  let c0LeSelf := (Valuation.ord.approximation Var salg.D).le_refl c1
   let isMonoB := isMonotonic.approximation salg e bLe c0LeSelf
   let isMonoC := isMonotonic.posMem cLePos
   isMonoB.posLe.trans isMonoC
 
 def Expr.interpretation.isMonotonic.apxNotPosMem
-  {e: Expr sig}
-  {b0 b1 c0 c1: Valuation salg.D}
+  {e: Expr Var sig}
+  {b0 b1 c0 c1: Valuation Var salg.D}
   (bLe: b0 ⊑ b1)
-  (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
+  (cLePos: (x: Var) → (c1 x).posMem ⊆ (c0 x).posMem)
 :
   ¬ (interpretation salg b0 c0 e).posMem d
     →

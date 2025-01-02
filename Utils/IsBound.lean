@@ -6,11 +6,11 @@ import WFC.Ch2_Valuation
 
 
 inductive IsBoundTo:
-  (boundVars: List (ValVar D)) → Nat → D → Prop
+  (boundVars: List (ValVar Var D)) → Var → D → Prop
 |
   InHead
-    {rest: List (ValVar D)}
-    {x: Nat}
+    {rest: List (ValVar Var D)}
+    {x: Var}
     {d: D}
   :
     IsBoundTo (⟨d, x⟩ :: rest) x d
@@ -80,8 +80,8 @@ def IsBoundTo.isUnique
       isBoundTail0.isUnique isBoundTail1
 
 def IsBound
-  (boundVars: List (ValVar Pair))
-  (x: Nat)
+  (boundVars: List (ValVar Var Pair))
+  (x: Var)
 :
   Prop
 :=
@@ -109,15 +109,15 @@ def IsBound.Not.notBoundTail
 
 
 def IsVarFree
-  (boundVars: List (ValVar D))
-  (x: Nat)
+  (boundVars: List (ValVar Var D))
+  (x: Var)
 :
   Prop
 :=
   ∀ d, ⟨d, x⟩ ∉ boundVars
 
 def IsVarFree.Not.exBoundOfNot
-  {boundVars: List (ValVar D)}
+  {boundVars: List (ValVar Var D)}
   (notFree: ¬ IsVarFree boundVars x)
 :
   ∃ d, ⟨d, x⟩ ∈ boundVars
@@ -125,7 +125,7 @@ def IsVarFree.Not.exBoundOfNot
   notFree.toEx fun _ => Not.dne
 
 def IsVarFree.Not.exBoundTo
-  {boundVars: List (ValVar D)}
+  {boundVars: List (ValVar Var D)}
   (notFree: ¬ IsVarFree boundVars x)
 :
   ∃ d, IsBoundTo boundVars x d

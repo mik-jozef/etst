@@ -60,6 +60,9 @@ namespace Pair
           isLt := xb
         }
         
+        let iRefuseToBeInferredQuackQuack: InsP _ _ _ _ _ :=
+          insBound
+        
         insWfmDefToIns
           (insArbUn a
             (insArbUn x
@@ -67,22 +70,42 @@ namespace Pair
                 (insIfThen
                   (insPair
                     (insIr
-                      (insDefEncodingLt isDefAX)
+                      (insFree
+                        (insFree
+                          (insFree
+                            (insDefEncodingLt isDefAX)
+                            nat500NeqDefEncodingLt)
+                          nat501NeqDefEncodingLt)
+                        nat502NeqDefEncodingLt)
                       (insPair
                         (insFree
-                          (insFree insBound nat501Neq500)
+                          (insFree
+                            insBound
+                            nat501Neq500)
                           nat502Neq500)
-                        (insFree insBound nat502Neq501)))
+                        (insFree
+                          insBound
+                          nat502Neq501)))
                     (insIr
-                      (insDefEncodingLt isDefXB)
+                      (insFree
+                        (insFree
+                          (insFree
+                            (insDefEncodingLt isDefXB)
+                            nat500NeqDefEncodingLt)
+                          nat501NeqDefEncodingLt)
+                        nat502NeqDefEncodingLt)
                       (insPair
-                        (insFree insBound nat502Neq501)
-                        insBound)))
+                        (insFree
+                          insBound
+                          nat502Neq501)
+                        iRefuseToBeInferredQuackQuack)))
                   (insPair
                     (insFree
-                      (insFree insBound nat501Neq500)
+                      (insFree
+                        insBound
+                        nat501Neq500)
                       nat502Neq500)
-                    insBound)))))
+                    iRefuseToBeInferredQuackQuack)))))
     
     def Inw.toIsDefEncodingMinDist2 (inw: InwEdl defEncodingMinDist2 p):
       IsDefEncodingMinDist2 p
@@ -116,8 +139,25 @@ namespace Pair
           let ⟨inwDefCA, inw500501A⟩ := inwIrElim inwIrCA
           let ⟨inwDefCB, inw500501B⟩ := inwIrElim inwIrCB
           
-          let isDefLtCA := Inw.toIsDefEncodingLt inwDefCA
-          let isDefLtCB := Inw.toIsDefEncodingLt inwDefCB
+          let isDefLtCA :=
+            Inw.toIsDefEncodingLt
+              (inwFreeElim
+                (inwFreeElim
+                  (inwFreeElim
+                    inwDefCA
+                    nat502NeqDefEncodingLt)
+                  nat501NeqDefEncodingLt)
+                nat500NeqDefEncodingLt)
+          
+          let isDefLtCB :=
+            Inw.toIsDefEncodingLt
+              (inwFreeElim
+                (inwFreeElim
+                  (inwFreeElim
+                    inwDefCB
+                    nat502NeqDefEncodingLt)
+                  nat501NeqDefEncodingLt)
+                nat500NeqDefEncodingLt)
           
           let ⟨inw500cAA, inw501cAB⟩ := inwPairElim inw500501A
           let ⟨inw501cBA, inw502cBB⟩ := inwPairElim inw500501B
@@ -222,18 +262,32 @@ namespace Pair
           -- Using a match expression would require manually proving
           -- termination. Curious that using `rec` is easier :D
           (isNthDef.rec
-            (insUnL _ (insPair insZero insZero))
-            (fun _isNthPredPair isNextPair insNthPredPair =>
+            (insUnL _
+              (insPair
+                insZero
+                insZero))
+            (fun
+              _isNthPredPair
+              isNextPair
+              insNthPredPair
+            =>
               insUnR _
                 (insUnDom
-                  (insWfmDefToIns insNthPredPair)
+                  (insFree
+                    (insWfmDefToIns insNthPredPair)
+                    nat500NeqNthDefList)
                   (insPair
                     (insPair
                       (insZthMember
                         (insFree insBound nat501Neq500))
                       insZero)
                     (insCallExpr
-                      (insNextDef isNextPair)
+                      (insFree
+                        (insFree
+                          (insNextDef
+                            isNextPair)
+                          nat500NeqNextDef)
+                        nat501NeqNextDef)
                       (insFstMember
                         (insFree
                           (insFree insBound nat501Neq500)
@@ -258,16 +312,46 @@ namespace Pair
           | pair aPred z =>
             let ⟨inwAPred, inwZ⟩ := inwPairElim inwA
             let ⟨bPred, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwB
-            
-            let boundEq := inwBoundElim
-              (inwZthFstElim inwAPred inwArg nat501Neq500 rfl)
             let zEq := inwZeroElim inwZ
+            
+            let ⟨_bPredAlias, inwAPred⟩ := inwZthMemberElim inwAPred
+            let ⟨_aPredAlias, inwArg⟩ := inwFstMemberElim inwArg
+            
+            let boundEqA :=
+              inwBoundElim
+                (inwFreeElim
+                  inwAPred
+                  nat501Neq500)
+            
+            let boundEqB :=
+              inwBoundElim
+                (inwFreeElim
+                  (inwFreeElim
+                    inwArg
+                    nat502Neq500)
+                  nat501Neq500)
+            
+            let boundEq :=
+              Pair.noConfusion
+                (boundEqA.trans boundEqB.symm)
+                fun _ eqR => eqR ▸ boundEqA
             
             have: aPred.depth < (pair aPred z).depth := depthLtL _ _
             
-            let isNthPred := ab aPred (boundEq.symm ▸ inwDomain)
+            let isNthPred :=
+              ab
+                aPred
+                (inwFreeElim
+                  (boundEq ▸ inwDomain)
+                  nat500NeqNthDefList)
             
-            let isNextDef := Inw.toIsNextDef inwFn
+            let isNextDef :=
+              Inw.toIsNextDef
+                (inwFreeElim
+                  (inwFreeElim
+                    inwFn
+                    nat501NeqNextDef)
+                  nat500NeqNextDef)
             
             zEq ▸ IsNthDefListPair.Succ isNthPred isNextDef)
     termination_by a.depth

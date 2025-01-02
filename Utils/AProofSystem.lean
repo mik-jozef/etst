@@ -11,60 +11,60 @@ set_option linter.unusedVariables false
 def ValVar.eq: d0 = d1 → x0 = x1 → ValVar.mk d0 x0 = ⟨d1, x1⟩
 | rfl, rfl => rfl
 
-def ValVar.eqX: @Eq (ValVar D) ⟨d0, x0⟩ ⟨d1, x1⟩ → x0 = x1
+def ValVar.eqX: @Eq (ValVar Var D) ⟨d0, x0⟩ ⟨d1, x1⟩ → x0 = x1
 | rfl => rfl
 
 -- The (definite) nonmembers of a valuation.
 def Valuation.nonmembers
-  (v: Valuation D)
+  (v: Valuation Var D)
 :
-  Set (ValVar D)
+  Set (ValVar Var D)
 :=
   fun ⟨d, x⟩ => ¬ (v x).posMem d
 
 -- The possible nonmembers of a valuation.
 def Valuation.posNonmembers
-  (v: Valuation D)
+  (v: Valuation Var D)
 :
-  Set (ValVar D)
+  Set (ValVar Var D)
 :=
   fun ⟨d, x⟩ => ¬ (v x).defMem d
 
 -- The (definite) members of a valuation.
 def Valuation.members
-  (v: Valuation D)
+  (v: Valuation Var D)
 :
-  Set (ValVar D)
+  Set (ValVar Var D)
 :=
   fun ⟨d, x⟩ => (v x).defMem d
 
 -- The possible members of a valuation.
 def Valuation.posMembers
-  (v: Valuation D)
+  (v: Valuation Var D)
 :
-  Set (ValVar D)
+  Set (ValVar Var D)
 :=
   fun ⟨d, x⟩ => (v x).posMem d
 
 
 def Cause.ofValPos
-  (b c: Valuation D)
+  (b c: Valuation Var D)
 :
-  Cause D
+  Cause Var D
 := {
   contextIns := c.posMembers
   backgroundIns := b.posMembers
   backgroundOut := b.posNonmembers
 }
 
-def Cause.empty: Cause D := {
+def Cause.empty: Cause Var D := {
   contextIns := ∅
   backgroundIns := ∅
   backgroundOut := ∅
 }
 
 def Cause.eq:
-  {a b: Cause D} →
+  {a b: Cause Var D} →
   a.contextIns = b.contextIns →
   a.backgroundIns = b.backgroundIns →
   a.backgroundOut = b.backgroundOut →
@@ -73,7 +73,7 @@ def Cause.eq:
 | ⟨⟨_⟩, _, _⟩, ⟨_, _, _⟩, rfl, rfl, rfl => rfl
 
 structure Cause.IsSubset
-  (a b: Cause D)
+  (a b: Cause Var D)
 :
   Prop
 where
@@ -81,22 +81,22 @@ where
   binsLe: a.backgroundIns ⊆ b.backgroundIns
   boutLe: a.backgroundOut ⊆ b.backgroundOut
 
-def Cause.var (x: Nat) (d: D): Cause D := {
+def Cause.var (x: Var) (d: D): Cause Var D := {
   contextIns := fun ⟨dd, xx⟩ => dd = d ∧ xx = x
   backgroundIns := ∅
   backgroundOut := ∅
 }
 
-def Cause.union (c1 c2: Cause D): Cause D := {
+def Cause.union (c1 c2: Cause Var D): Cause Var D := {
   contextIns := c1.contextIns ∪ c2.contextIns,
   backgroundIns := c1.backgroundIns ∪ c2.backgroundIns,
   backgroundOut := c1.backgroundOut ∪ c2.backgroundOut,
 }
 
-instance (D: Type*): Union (Cause D) := ⟨Cause.union⟩
-instance (D: Type*): HasSubset (Cause D) := ⟨Cause.IsSubset⟩
+instance (D: Type*): Union (Cause Var D) := ⟨Cause.union⟩
+instance (D: Type*): HasSubset (Cause Var D) := ⟨Cause.IsSubset⟩
 
-def Cause.arbUn (f: I → Cause D): Cause D := {
+def Cause.arbUn (f: I → Cause Var D): Cause Var D := {
   -- Originally defining these as follows was a mistake!
   -- 
   -- ```
@@ -120,14 +120,14 @@ def Cause.arbUn (f: I → Cause D): Cause D := {
   backgroundOut := fun vv => ∃ i, vv ∈ (f i).backgroundOut,
 }
 
-def Cause.unionSymm (c0 c1: Cause D): c0 ∪ c1 = c1 ∪ c0 :=
+def Cause.unionSymm (c0 c1: Cause Var D): c0 ∪ c1 = c1 ∪ c0 :=
   Cause.eq
     (Set.union_comm c0.contextIns c1.contextIns)
     (Set.union_comm c0.backgroundIns c1.backgroundIns)
     (Set.union_comm c0.backgroundOut c1.backgroundOut)
 
 def Cause.unionEqRightSub
-  {c0 c1: Cause D}
+  {c0 c1: Cause Var D}
   (isSub: c1 ⊆ c0)
 :
   c0 ∪ c1 = c0
@@ -138,9 +138,9 @@ def Cause.unionEqRightSub
     (Set.union_eq_self_of_subset_right isSub.boutLe)
 
 def Cause.except
-  (a b: Cause D)
+  (a b: Cause Var D)
 :
-  Cause D
+  Cause Var D
 := {
   contextIns := a.contextIns \ b.contextIns
   backgroundIns := a.backgroundIns \ b.backgroundIns
@@ -148,10 +148,10 @@ def Cause.except
 }
 
 def Cause.exceptVar
-  (cause: Cause D)
-  (x: Nat)
+  (cause: Cause Var D)
+  (x: Var)
 :
-  Cause D
+  Cause Var D
 :=
   cause.except {
     contextIns := fun vv => vv.x = x
@@ -160,8 +160,8 @@ def Cause.exceptVar
   }
 
 def Cause.exceptVarIsSub
-  (cause: Cause D)
-  (x: Nat)
+  (cause: Cause Var D)
+  (x: Var)
 :
   cause.exceptVar x ⊆ cause
 := {
@@ -171,11 +171,11 @@ def Cause.exceptVarIsSub
 }
 
 def Cause.exceptBound
-  (cause: Cause D)
-  (x: Nat)
+  (cause: Cause Var D)
+  (x: Var)
   (d: D)
 :
-  Cause D
+  Cause Var D
 :=
   cause.except {
     contextIns := {⟨d, x⟩}
@@ -184,11 +184,11 @@ def Cause.exceptBound
   }
 
 def Cause.withBound
-  (cause: Cause D)
-  (x: Nat)
+  (cause: Cause Var D)
+  (x: Var)
   (d: D)
 :
-  Cause D
+  Cause Var D
 := {
   contextIns :=
     fun ⟨dd, xx⟩ =>
@@ -208,8 +208,8 @@ def Cause.withBound
 }
 
 def Cause.withBoundCancelsPrevious
-  (cause: Cause D)
-  (x: Nat)
+  (cause: Cause Var D)
+  (x: Var)
   (dA dB: D)
 :
   (cause.withBound x dA).withBound x dB = cause.withBound x dB
@@ -262,7 +262,7 @@ def Cause.withBoundCancelsPrevious
               Or.inr)))
 
 def Cause.inCinsOfInWithAndNotBound
-  {cause: Cause D}
+  {cause: Cause Var D}
   (inCinsWith: ⟨d, x⟩ ∈ (cause.withBound xB dB).contextIns)
   (xNeq: x ≠ xB)
 :
@@ -273,7 +273,7 @@ def Cause.inCinsOfInWithAndNotBound
     (fun ⟨_, xEq⟩ => absurd xEq xNeq)
 
 def Cause.inBinsOfInWithAndNotBound
-  {cause: Cause D}
+  {cause: Cause Var D}
   (inBinsWith: ⟨d, x⟩ ∈ (cause.withBound xB dB).backgroundIns)
   (xNeq: x ≠ xB)
 :
@@ -284,7 +284,7 @@ def Cause.inBinsOfInWithAndNotBound
     (fun ⟨_, xEq⟩ => absurd xEq xNeq)
 
 def Cause.inBoutOfInWithAndNotBound
-  {cause: Cause D}
+  {cause: Cause Var D}
   (inBoutWith: ⟨d, x⟩ ∈ (cause.withBound xB dB).backgroundOut)
   (xNeq: x ≠ xB)
 :
@@ -295,9 +295,9 @@ def Cause.inBoutOfInWithAndNotBound
     (fun ⟨_, xEq⟩ => absurd xEq xNeq)
 
 def Cause.background
-  (cause: Cause D)
+  (cause: Cause Var D)
 :
-  Cause D
+  Cause Var D
 := {
   contextIns := Set.empty
   backgroundIns := cause.backgroundIns
@@ -306,8 +306,8 @@ def Cause.background
 
 
 structure Cause.SatisfiesBoundVar
-  (cause: Cause D)
-  (x: Nat)
+  (cause: Cause Var D)
+  (x: Var)
   (d: D)
 :
   Prop
@@ -320,7 +320,7 @@ where
     ∀ vv ∈ cause.backgroundOut, vv.x = x → vv.d ≠ d
 
 def Cause.SatisfiesBoundVar.ninBinsBout
-  {cause: Cause D}
+  {cause: Cause Var D}
   (sat: cause.SatisfiesBoundVar x dBound)
   (d: D)
 :
@@ -333,7 +333,7 @@ def Cause.SatisfiesBoundVar.ninBinsBout
     Or.inl h
 
 def Cause.SatisfiesBoundVar.union
-  {causeL causeR: Cause D}
+  {causeL causeR: Cause Var D}
   (satL: causeL.SatisfiesBoundVar x dBound)
   (satR: causeR.SatisfiesBoundVar x dBound)
 :
@@ -351,7 +351,7 @@ def Cause.SatisfiesBoundVar.union
 }
 
 def Cause.SatisfiesBoundVar.leWithBound
-  {cause: Cause D}
+  {cause: Cause Var D}
   (sat: cause.SatisfiesBoundVar x d)
 :
   cause ⊆ cause.withBound x d
@@ -377,7 +377,7 @@ def Cause.SatisfiesBoundVar.leWithBound
 }
 
 def Cause.SatisfiesBoundVar.toSubCause
-  {cause: Cause D}
+  {cause: Cause Var D}
   (sat: cause.SatisfiesBoundVar x d)
   (isLe: subcause ⊆ cause)
 :
@@ -400,9 +400,9 @@ def Cause.SatisfiesBoundVar.toSubCause
   is semantic instead of proof-theoretic.
 -/
 inductive Cause.IsInapplicable
-  (cause: Cause D)
-  (outSet: Set (ValVar D))
-  (b: Valuation D)
+  (cause: Cause Var D)
+  (outSet: Set (ValVar Var D))
+  (b: Valuation Var D)
 :
   Prop
 
@@ -425,8 +425,8 @@ inductive Cause.IsInapplicable
   IsInapplicable cause outSet b
 
 def Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
-  {cause: Cause D}
-  {b c: Valuation D}
+  {cause: Cause Var D}
+  {b c: Valuation Var D}
   (isApplicable: ¬ Cause.IsInapplicable cause c.nonmembers b)
 :
   Cause.IsWeaklySatisfiedBy cause b c
@@ -448,8 +448,8 @@ def Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
   }
 
 def Cause.IsWeaklySatisfiedBy.Not.toIsInapplicable
-  {cause: Cause D}
-  {b c: Valuation D}
+  {cause: Cause Var D}
+  {b c: Valuation Var D}
   (notSat: ¬ Cause.IsWeaklySatisfiedBy cause b c)
 :
   Cause.IsInapplicable cause c.nonmembers b
@@ -459,9 +459,9 @@ def Cause.IsWeaklySatisfiedBy.Not.toIsInapplicable
     notSat
 
 def Cause.IsWeaklySatisfiedBy.toIsApplicable
-  {b c: Valuation D}
+  {b c: Valuation Var D}
   (isSat: Cause.IsWeaklySatisfiedBy cause b c)
-  (outSet: Set (ValVar D))
+  (outSet: Set (ValVar Var D))
   (outSetIsEmpty: ∀ {d x}, ⟨d, x⟩ ∈ outSet → ¬ (c x).posMem d)
 :
   ¬ Cause.IsInapplicable cause outSet b
@@ -476,7 +476,7 @@ def Cause.IsWeaklySatisfiedBy.toIsApplicable
   isSat.backgroundOutHold inBout isDef
 
 def Cause.IsWeaklySatisfiedBy.ofValPos
-  (b c: Valuation D)
+  (b c: Valuation Var D)
 :
   (Cause.ofValPos b c).IsWeaklySatisfiedBy b c
 := {
@@ -544,6 +544,7 @@ def Cause.IsWeaklySatisfiedBy.elimUnR
 
 
 noncomputable def IsWeakCause.ofValPos
+  {b c: Valuation Var salg.D}
   (isPos: (expr.interpretation salg b c).posMem d)
 :
   IsWeakCause salg (Cause.ofValPos b c) d expr
@@ -561,10 +562,10 @@ noncomputable def IsWeakCause.ofValPos
 
 def IsWeakCause.isPosOfIsApplicable
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   (isCause: IsWeakCause salg cause d expr)
-  {b c: Valuation salg.D}
+  {b c: Valuation Var salg.D}
   (isApp: ¬ cause.IsInapplicable c.nonmembers b)
 :
   (expr.interpretation salg b c).posMem d
@@ -573,10 +574,10 @@ def IsWeakCause.isPosOfIsApplicable
 
 def IsWeakCause.isInapplicableOfIsNonmember
   {salg: Salgebra sig}
-  {cause: Cause salg.D}
+  {cause: Cause Var salg.D}
   {d: salg.D}
   (isCause: IsWeakCause salg cause d expr)
-  {b c: Valuation salg.D}
+  {b c: Valuation Var salg.D}
   (notPos: ¬(expr.interpretation salg b c).posMem d)
 :
   cause.IsInapplicable c.nonmembers b
@@ -586,12 +587,12 @@ def IsWeakCause.isInapplicableOfIsNonmember
 
 def everyCauseInapplicableImpliesDefinitiveNonmember
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
+  (b c: Valuation Var salg.D)
   (d: salg.D)
-  (expr: Expr sig)
-  (outSet: Set (ValVar salg.D))
+  (expr: Expr Var sig)
+  (outSet: Set (ValVar Var salg.D))
   (isEveryCauseInapplicable:
-    {cause: Cause salg.D} →
+    {cause: Cause Var salg.D} →
     IsWeakCause salg cause d expr →
     cause.IsInapplicable outSet b)
   (outSetIsEmpty:
@@ -606,12 +607,12 @@ def everyCauseInapplicableImpliesDefinitiveNonmember
 
 def emptyCycleIsOut
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (cycle: Set (ValVar salg.D))
+  (dl: DefList Var sig)
+  (cycle: Set (ValVar Var salg.D))
   (isEmptyCycle:
     ∀ {d x},
     ⟨d, x⟩ ∈ cycle →
-    (cause: Cause salg.D) →
+    (cause: Cause Var salg.D) →
     IsWeakCause salg cause d (dl.getDef x) →  
     cause.IsInapplicable cycle (dl.wellFoundedModel salg))
   {d x}
@@ -657,8 +658,8 @@ def emptyCycleIsOut
 
 structure InsOutComplete
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (v: Valuation salg.D)
+  (dl: DefList Var sig)
+  (v: Valuation Var salg.D)
 :
   Prop
 where
@@ -668,13 +669,14 @@ where
     ∀ {d x}, ¬(v x).posMem d → Out salg dl d x
 
 def completenessProofC
+  {dl: DefList Var sig}
   (isComplete: InsOutComplete salg dl b)
 :
   InsOutComplete salg dl (operatorC.lfp salg dl b).val
 :=
   let isCc := Valuation.ord.standard.isChainComplete salg.D
   let opC := operatorC salg dl b
-  let isMono {v0 v1: Valuation salg.D} (isLe: v0 ≤ v1) :=
+  let isMono {v0 v1: Valuation Var salg.D} (isLe: v0 ≤ v1) :=
     operatorC.isMonotonic salg dl b isLe
   
   {
@@ -707,7 +709,7 @@ def completenessProofC
               eqPred ▸ isDefN
             
             
-            let cause: Cause salg.D := {
+            let cause: Cause Var salg.D := {
               contextIns :=
                 fun ⟨dd, xx⟩ => (predStage xx).defMem dd
               backgroundIns :=
@@ -729,7 +731,7 @@ def completenessProofC
                 let isMono :=
                   Expr.interpretation.isMonotonic.approximation
                     salg (dl.getDef x) isLe
-                    ((Valuation.ord.approximation _).le_refl _)
+                    ((Valuation.ord.approximation _ _).le_refl _)
                 
                 Expr.interpretation.isMonotonic.defMem
                   (fun _ _ => isSat.contextInsHold)
@@ -767,13 +769,13 @@ def completenessProofC
 
 def completenessProofB
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
   InsOutComplete salg dl (dl.wellFoundedModel salg)
 :=
   let isCc := Valuation.ord.approximation.isChainComplete salg.D
   let opB := operatorB salg dl
-  let isMono {v0 v1: Valuation salg.D} (isLe: v0 ⊑ v1) :=
+  let isMono {v0 v1: Valuation Var salg.D} (isLe: v0 ⊑ v1) :=
     operatorB.isMonotonic salg dl isLe
   
   lfp.induction

@@ -66,11 +66,11 @@ structure Salgebra (sig: Signature) where
   definite member of the complement of `expr` iff `d` is not
   a *possible* member of `expr`, and vice versa.
 -/
-def Expr.interpretation
+noncomputable def Expr.interpretation
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
+  (b c: Valuation Var salg.D)
 :
-  (Expr sig) → Set3 salg.D
+  (Expr Var sig) → Set3 salg.D
 
 | var a => c a
 | op opr exprs =>
@@ -118,24 +118,31 @@ def Expr.interpretation
     ⟩
 
 
-def DefList.GetDef (sig: Signature) := Nat → Expr sig
+def DefList.GetDef
+  (Var: Type*)
+  (sig: Signature)
+:=
+  Var → Expr Var sig
 
 /-
   A definition list is a map from natural numbers to expressions.
   It is used to allow recursive definitions -- the free variables
   in a definition refer to other definitions of the definition list.
 -/
-structure DefList (sig: Signature) where
-  getDef: DefList.GetDef sig
+structure DefList
+  (Var: Type*)
+  (sig: Signature)
+where
+  getDef: DefList.GetDef Var sig
 
 /-
   The definition x depends on y if x = y or x contains y, possibly
   transitively.
 -/
 inductive DefList.DependsOn
-  (getDef: GetDef sig)
+  (getDef: GetDef Var sig)
 :
-  Nat → Nat → Prop
+  Var → Var → Prop
 where
 | Refl x: DependsOn getDef x x
 | Uses
@@ -149,7 +156,7 @@ where
   also depends on `c`.
 -/
 def DefList.DependsOn.push
-  {getDef: GetDef sig}
+  {getDef: GetDef Var sig}
   (dependsOn: DependsOn getDef a b)
   (isFree: (getDef b).IsFreeVar Set.empty c)
 :
@@ -183,7 +190,15 @@ def DefList.DependsOn.push
     ...
   ```
 -/
-def DefList.IsFinBounded (getDef: GetDef sig): Prop :=
+def DefList.IsFinBounded (getDef: GetDef Var sig): Prop :=
+  ∀ (name: Var)
+    (vars: Set Var)
+    (_: ∀ var ∈ vars, DependsOn getDef name var)
+  ,
+    vars.Finite
+
+-- A version of `IsFinBounded` for natural number variables.
+def DefList.IsFinBoundedNat (getDef: GetDef Nat sig): Prop :=
   ∀ name,
   ∃ upperBound,
   ∀ {dep}
@@ -191,16 +206,37 @@ def DefList.IsFinBounded (getDef: GetDef sig): Prop :=
   ,
     dep < upperBound
 
--- A finitely bounded definition list. See IsFinBounded above.
-structure FinBoundedDL (sig: Signature) extends DefList sig where
-  isFinBounded: DefList.IsFinBounded getDef
+-- A proof that `IsFinBoundedNat` implies `IsFinBounded`.
+def DefList.isFinBoundedOfNat
+  {getDef: GetDef Nat sig}
+  (isFinBoundedNat: DefList.IsFinBoundedNat getDef)
+:
+  DefList.IsFinBounded getDef
+:=
+  fun x _usedVars usedVarsAreUsed =>
+    let ⟨bound, leBoundOfDepends⟩ := isFinBoundedNat x
+    (Set.finite_lt_nat bound).subset
+      fun usedVar usedVarIsUsed =>
+        let xDependsOnUsedVar :=
+          usedVarsAreUsed usedVar usedVarIsUsed
+        leBoundOfDepends xDependsOnUsedVar
 
 -- Interpretation on definition lists is defined pointwise.
-def DefList.interpretation
+noncomputable def DefList.interpretation
   (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (dl: DefList sig)
+  (b c: Valuation Var salg.D)
+  (dl: DefList Var sig)
 :
-  Valuation salg.D
+  Valuation Var salg.D
 :=
   fun x => Expr.interpretation salg b c (dl.getDef x)
+
+
+-- A finitely bounded definition list. See IsFinBounded above.
+structure FinBoundedDL
+  (Var: Type*)
+  (sig: Signature)
+extends
+  DefList Var sig
+where
+  isFinBounded: DefList.IsFinBounded getDef

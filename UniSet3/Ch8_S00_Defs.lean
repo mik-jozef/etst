@@ -75,7 +75,7 @@ import Utils.PairDepthDictOrder
 
 
 namespace Pair
-  def boundVarsEncoding: List (ValVar Pair) → Pair
+  def boundVarsEncoding: List (ValVar Nat Pair) → Pair
   | [] => zero
   | ⟨d, x⟩ :: rest =>
     pair (pair x d) (boundVarsEncoding rest)
@@ -115,8 +115,14 @@ namespace Pair
     def nat505Neq503: 505 ≠ 503 := by decide
     
     def nat500NeqNat: 500 ≠ 0 := by decide
+    def nat501NeqNat: 501 ≠ 0 := by decide
+    def nat502NeqNat: 502 ≠ 0 := by decide
     def nat500NeqNatLe: 500 ≠ 2 := by decide
+    def nat500NeqBinary: 500 ≠ 5 := by decide
+    def nat500NeqQuantifier: 500 ≠ 6 := by decide
     def nat500NeqExprEncoding: 500 ≠ 7 := by decide
+    def nat501NeqExprEncoding: 501 ≠ 7 := by decide
+    def nat502NeqExprEncoding: 502 ≠ 7 := by decide
     def nat500NeqDefEncoding: 500 ≠ 8 := by decide
     def nat501NeqDefEncoding: 501 ≠ 8 := by decide
     def nat500NeqPairDictLt: 500 ≠ 9 := by decide
@@ -130,9 +136,19 @@ namespace Pair
     def nat502NeqPairOfDepth: 502 ≠ 11 := by decide
     def nat503NeqPairOfDepth: 503 ≠ 11 := by decide
     def nat500NeqNatLt: 500 ≠ 12 := by decide
-    def nat500NeqIncrementExprs: 500 ≠ 21 := by decide
-    def nat501NeqIncrementExprs: 501 ≠ 21 := by decide
-    def nat502NeqIncrementExprs: 502 ≠ 21 := by decide
+    def nat500NeqDefEncodingLt: 500 ≠ 15 := by decide
+    def nat501NeqDefEncodingLt: 501 ≠ 15 := by decide
+    def nat502NeqDefEncodingLt: 502 ≠ 15 := by decide
+    def nat500NeqNextDef: 500 ≠ 17 := by decide
+    def nat501NeqNextDef: 501 ≠ 17 := by decide
+    def nat500NeqNthDefList: 500 ≠ 18 := by decide
+    def nat500NeqIncrVarsExpr: 500 ≠ 20 := by decide
+    def nat501NeqIncrVarsExpr: 501 ≠ 20 := by decide
+    def nat502NeqIncrVarsExpr: 502 ≠ 20 := by decide
+    def nat503NeqIncrVarsExpr: 503 ≠ 20 := by decide
+    def nat500NeqIncrVarsDefEncoding: 500 ≠ 21 := by decide
+    def nat501NeqIncrVarsDefEncoding: 501 ≠ 21 := by decide
+    def nat502NeqIncrVarsDefEncoding: 502 ≠ 21 := by decide
     def nat500NeqShiftDefEncoding: 500 ≠ 22 := by decide
     def nat501NeqShiftDefEncoding: 501 ≠ 22 := by decide
     def nat502NeqShiftDefEncoding: 502 ≠ 22 := by decide

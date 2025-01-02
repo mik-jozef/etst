@@ -23,13 +23,23 @@ namespace Pair
         
         insWfmDefToIns
           (insUnDom
-            (insNatEncoding (fromNat.isNatEncoding a.depth))
+            (insFree
+              (insNatEncoding (fromNat.isNatEncoding a.depth))
+              nat500NeqNat)
             (insPair
               (insCallExpr
-                (insPairOfDepth (IsPairOfDepth.ofDepth a))
+                (insFree
+                  (insFree
+                    (insPairOfDepth (IsPairOfDepth.ofDepth a))
+                    nat500NeqPairOfDepth)
+                  nat501NeqPairOfDepth)
                 (insFree insBound nat501Neq500))
               (insCallExpr
-                (insPairOfDepth isPodB)
+                (insFree
+                  (insFree
+                    (insPairOfDepth isPodB)
+                    nat500NeqPairOfDepth)
+                  nat501NeqPairOfDepth)
                 (insFree insBound nat501Neq500))))
     
     def Inw.toIsSameDepth (inw: InwEdl sameDepth p):
@@ -51,11 +61,19 @@ namespace Pair
         
         let isPodA: IsPairOfDepth (pair depthEncoding a) :=
           Inw.toIsPairOfDepth
-            (inwFreeElim (argEqL ▸ inwFnL) nat501NeqPairOfDepth)
+            (inwFreeElim
+              (inwFreeElim
+                (argEqL ▸ inwFnL)
+                nat501NeqPairOfDepth)
+              nat500NeqPairOfDepth)
         
         let isPodB: IsPairOfDepth (pair depthEncoding b) :=
           Inw.toIsPairOfDepth
-            (inwFreeElim (argEqR ▸ inwFnR) nat501NeqPairOfDepth)
+            (inwFreeElim
+              (inwFreeElim
+                (argEqR ▸ inwFnR)
+                nat501NeqPairOfDepth)
+              nat500NeqPairOfDepth)
         
         isPodA.eqDepth.symm.trans isPodB.eqDepth
     
@@ -87,22 +105,32 @@ namespace Pair
             
             insUnR _
               (insUnDom
-                (insNatLt isLt)
+                (insFree
+                  (insNatLt isLt)
+                  nat500NeqNatLt)
                 (insPair
                   (insCallExpr
-                    (insPairOfDepth {
-                      isNat := fromNat.isNatEncoding a.depth
-                      eqDepth := fromNat.depthEq a.depth
-                    })
+                    (insFree
+                      (insFree
+                        (insPairOfDepth {
+                          isNat := fromNat.isNatEncoding a.depth
+                          eqDepth := fromNat.depthEq a.depth
+                        })
+                        nat500NeqPairOfDepth)
+                      nat501NeqPairOfDepth)
                     (insZthMember
                       (insFree
                         (insFree insBound nat501Neq500)
                       nat502Neq500)))
                   (insCallExpr
-                    (insPairOfDepth {
-                      isNat := fromNat.isNatEncoding b.depth
-                      eqDepth := fromNat.depthEq b.depth
-                    })
+                    (insFree
+                      (insFree
+                        (insPairOfDepth {
+                          isNat := fromNat.isNatEncoding b.depth
+                          eqDepth := fromNat.depthEq b.depth
+                        })
+                        nat500NeqPairOfDepth)
+                      nat501NeqPairOfDepth)
                     (insFstMember
                       (insFree
                         (insFree insBound nat501Neq500)
@@ -142,13 +170,27 @@ namespace Pair
               let ⟨_argL, ⟨inwFnL, inwArgL⟩⟩ := inwCallExprElim l
               let ⟨_argR, ⟨inwFnR, inwArgR⟩⟩ := inwCallExprElim r
               
-              let ⟨eqL, eqR⟩ :=
-                Pair.noConfusion
-                  (inwBoundElim
+              let ⟨_argRAlias, inwL⟩ := inwZthMemberElim inwArgL
+              let ⟨_argLAlias, inwR⟩ := inwFstMemberElim inwArgR
+              
+              let inwL :=
+                inwBoundElim
+                  (inwFreeElim
                     (inwFreeElim
-                      (inwZthFstElim inwArgL inwArgR nat502Neq500 rfl)
-                      nat501Neq500))
-                (fun a b => And.intro a b)
+                      inwL
+                      nat502Neq500)
+                    nat501Neq500)
+              
+              let inwR :=
+                inwBoundElim
+                  (inwFreeElim
+                    (inwFreeElim
+                      inwR
+                      nat502Neq500)
+                    nat501Neq500)
+              
+              let ⟨eqL, _⟩ := Pair.noConfusion inwL And.intro
+              let ⟨_, eqR⟩ := Pair.noConfusion inwR And.intro
               
               let isPodA: IsPairOfDepth (pair boundA pA) :=
                 eqL ▸

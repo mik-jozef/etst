@@ -18,7 +18,7 @@ namespace InwExternal
   }
   
   def causeTheSet
-    (x: Nat)
+    (x: Var)
     (d: Pair)
   :
     Cause Pair
@@ -37,7 +37,7 @@ namespace InwExternal
     }
   
   def causeTheSetIsCause
-    (x: Nat)
+    (x: Var)
     (d: Pair)
   :
     IsWeakCause
@@ -127,7 +127,7 @@ namespace InwExternal
   
   def causeFreeVar
     (boundVars: List (ValVar Pair))
-    (x: Nat)
+    (x: Var)
     (d: Pair)
   :
     Cause Pair
@@ -146,7 +146,7 @@ namespace InwExternal
   
   def causeFreeVarIsCause
     (boundVars: List (ValVar Pair))
-    (x: Nat)
+    (x: Var)
     (d: Pair)
   :
     IsWeakCause
@@ -311,7 +311,7 @@ namespace InwExternal
   
   def causeArbUn
     (boundVars: List (ValVar Pair))
-    (x: Nat)
+    (x: Var)
     (dX: Pair)
     (body: Expr)
     (d: Pair)
@@ -325,7 +325,7 @@ namespace InwExternal
   
   def causeArbIr
     (boundVars: List (ValVar Pair))
-    (x: Nat)
+    (x: Var)
     (body: Expr)
     (d: Pair)
   :
@@ -810,7 +810,7 @@ namespace InwExternal
   
   def isCauseArbUn
     (boundVars: List (ValVar Pair))
-    (x: Nat)
+    (x: Var)
     (dX: Pair)
     (body: Expr)
     (d: Pair)
@@ -912,7 +912,7 @@ namespace InwExternal
   
   def isCauseArbIr
     (boundVars: List (ValVar Pair))
-    (x: Nat)
+    (x: Var)
     (body: Expr)
     (d: Pair)
   :

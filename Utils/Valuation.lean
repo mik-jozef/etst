@@ -5,10 +5,11 @@
 import WFC.Ch2_Valuation
 import Utils.IsBound
 
+
 namespace Valuation
   def update.eqBound
-    (val: Valuation D)
-    (x: Nat)
+    (val: Valuation Var D)
+    (x: Var)
     (d: D)
   :
     val.update x d x = Set3.just d
@@ -16,8 +17,8 @@ namespace Valuation
     if_pos rfl
   
   def update.eqBoundOfEq
-    (val: Valuation D)
-    {xBound xReq: Nat}
+    (val: Valuation Var D)
+    {xBound xReq: Var}
     (xEq: xBound = xReq)
     (d: D)
   :
@@ -26,8 +27,8 @@ namespace Valuation
     xEq ▸ update.eqBound val xReq d
   
   def update.eqOrig
-    (val: Valuation D)
-    {xBound xReq: Nat}
+    (val: Valuation Var D)
+    {xBound xReq: Var}
     (xNeq: xBound ≠ xReq)
     (d: D)
   :
@@ -36,8 +37,8 @@ namespace Valuation
     if_neg xNeq.symm
   
   def update.inEq.defMem
-    (val: Valuation D)
-    (x: Nat)
+    (val: Valuation Var D)
+    (x: Var)
     (d: D)
   :
     (val.update x d x).defMem d
@@ -45,8 +46,8 @@ namespace Valuation
     eqBound val x d ▸ rfl
   
   def update.inEq.posMem
-    (val: Valuation D)
-    (x: Nat)
+    (val: Valuation Var D)
+    (x: Var)
     (d: D)
   :
     (val.update x d x).posMem d
@@ -54,6 +55,7 @@ namespace Valuation
     eqBound val x d ▸ rfl
   
   def update.inDef.eq
+    {val: Valuation Var D}
     (inUpdated: (update val x dBound x).defMem d)
   :
     d = dBound
@@ -68,6 +70,7 @@ namespace Valuation
     show Set.just dBound d from eq ▸ inUpdated
   
   def update.inPos.eq
+    {val: Valuation Var D}
     (inUpdated: (update val x dBound x).posMem d)
   :
     d = dBound
@@ -82,8 +85,8 @@ namespace Valuation
     show Set.just dBound d from eq ▸ inUpdated
   
   def update.inNeq.defMem
-    (val: Valuation D)
-    {xBound xReq: Nat}
+    (val: Valuation Var D)
+    {xBound xReq: Var}
     (xNeq: xBound ≠ xReq)
     {d: D}
     (dIn: d ∈ (val xReq).defMem)
@@ -93,8 +96,8 @@ namespace Valuation
     by unfold Valuation.update; rw [if_neg xNeq.symm]; exact dIn
 
   def update.inNeq.posMem
-    (val: Valuation D)
-    {xBound xReq: Nat}
+    (val: Valuation Var D)
+    {xBound xReq: Var}
     (xNeq: xBound ≠ xReq)
     {d: D}
     (dIn: d ∈ (val xReq).posMem)
@@ -104,7 +107,7 @@ namespace Valuation
     by unfold Valuation.update; rw [if_neg xNeq.symm]; exact dIn
   
   def update.inNeqElim.defMem
-    {val: Valuation D}
+    {val: Valuation Var D}
     (inBound: (val.update xBound dBound xReq).defMem d)
     (neq: xBound ≠ xReq)
   :
@@ -120,7 +123,7 @@ namespace Valuation
     eq ▸ inBound
   
   def update.inNeqElim.posMem
-    {val: Valuation D}
+    {val: Valuation Var D}
     (inBound: (val.update xBound dBound xReq).posMem d)
     (neq: xBound ≠ xReq)
   :
@@ -136,8 +139,8 @@ namespace Valuation
     eq ▸ inBound
   
   def update.cancelsPrevious
-    (val: Valuation D)
-    (x: Nat)
+    (val: Valuation Var D)
+    (x: Var)
     (dA dB: D)
   :
     (val.update x dA).update x dB = val.update x dB
@@ -153,18 +156,18 @@ namespace Valuation
         ]
   
   
-  def updateSet3
-    (val: Valuation D)
-    (x: Nat)
+  noncomputable def updateSet3
+    (val: Valuation Var D)
+    (x: Var)
     (s: Set3 D)
   :
-    Valuation D
+    Valuation Var D
   :=
     fun xx => if xx = x then s else val xx
   
   def updateSet3.eqBound
-    (val: Valuation D)
-    (x: Nat)
+    (val: Valuation Var D)
+    (x: Var)
     (s: Set3 D)
   :
     val.updateSet3 x s x = s
@@ -172,7 +175,7 @@ namespace Valuation
     if_pos rfl
   
   def updateSet3.eqBoundOfEq
-    (val: Valuation D)
+    (val: Valuation Var D)
     (xEq: xBound = xReq)
     (s: Set3 D)
   :
@@ -181,8 +184,8 @@ namespace Valuation
     xEq ▸ updateSet3.eqBound val xReq s
   
   def updateSet3.eqOrig
-    (val: Valuation D)
-    {xBound xReq: Nat}
+    (val: Valuation Var D)
+    {xBound xReq: Var}
     (xNeq: xBound ≠ xReq)
     (s: Set3 D)
   :
@@ -191,8 +194,8 @@ namespace Valuation
     if_neg xNeq.symm
   
   def update.cancelsPreviousSet3
-    (val: Valuation D)
-    (x: Nat)
+    (val: Valuation Var D)
+    (x: Var)
     (sA: Set3 D)
     (dB: D)
   :
@@ -210,11 +213,11 @@ namespace Valuation
   
   
   def update.isMonotonic.standard.defMem
-    {val0 val1: Valuation D}
-    (le: (x: Nat) → (val0 x).defMem ≤ (val1 x).defMem)
-    (xU: Nat)
+    {val0 val1: Valuation Var D}
+    (le: (x: Var) → (val0 x).defMem ≤ (val1 x).defMem)
+    (xU: Var)
     (d: D)
-    (x: Nat)
+    (x: Var)
   :
     (val0.update xU d x).defMem ≤ (val1.update xU d x).defMem
   :=
@@ -234,11 +237,11 @@ namespace Valuation
       fun _dd ddIn => val1Eq ▸ le x (val0Eq ▸ ddIn)
   
   def update.isMonotonic.standard.posMem
-    {val0 val1: Valuation D}
-    (le: (x: Nat) → (val0 x).posMem ≤ (val1 x).posMem)
-    (xU: Nat)
+    {val0 val1: Valuation Var D}
+    (le: (x: Var) → (val0 x).posMem ≤ (val1 x).posMem)
+    (xU: Var)
     (d: D)
-    (x: Nat)
+    (x: Var)
   :
     (val0.update xU d x).posMem ≤ (val1.update xU d x).posMem
   :=
@@ -258,9 +261,9 @@ namespace Valuation
       fun _dd ddIn => val1Eq ▸ le x (val0Eq ▸ ddIn)
   
   def update.isMonotonic.standard
-    {val0 val1: Valuation D}
+    {val0 val1: Valuation Var D}
     (le: val0 ≤ val1)
-    (xU: Nat)
+    (xU: Var)
     (d: D)
   :
     val0.update xU d ≤ val1.update xU d
@@ -271,9 +274,9 @@ namespace Valuation
         (standard.posMem (fun x => (le x).posLe) xU d x))
   
   def update.isMonotonic.approximation
-    (val0 val1: Valuation D)
+    (val0 val1: Valuation Var D)
     (le: val0 ⊑ val1)
-    (x: Nat)
+    (x: Var)
     (d: D)
   :
     val0.update x d ⊑ val1.update x d
@@ -309,10 +312,10 @@ namespace Valuation
   
   
   def ord.standard.inSet.inSup.defMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (standard D) set)
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (standard Var D) set)
     {valuation: set}
-    {x: Nat}
+    {x: Var}
     (dInS: d ∈ (valuation.val x).defMem)
   :
     d ∈ (sup.val x).defMem
@@ -320,10 +323,10 @@ namespace Valuation
     (sup.property.isMember _ x).defLe dInS
   
   def ord.standard.inSet.inSup.posMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (standard D) set)
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (standard Var D) set)
     {valuation: set}
-    {x: Nat}
+    {x: Var}
     (dInS: d ∈ (valuation.val x).posMem)
   :
     d ∈ (sup.val x).posMem
@@ -332,9 +335,9 @@ namespace Valuation
   
   
   def ord.standard.allNinSet.ninSup.defMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (standard D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (standard Var D) set)
+    {x: Var}
     {d: D}
     (allNin: ∀ (s: set), d ∉ (s.val x).defMem)
   :
@@ -375,9 +378,9 @@ namespace Valuation
     (Set.pointwiseSup.eqAt sup supAt) ▸ ninSupAt
   
   def ord.standard.allNinSet.ninSup.posMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (standard D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (standard Var D) set)
+    {x: Var}
     {d: D}
     (allNin: ∀ (s: set), d ∉ (s.val x).posMem)
   :
@@ -430,9 +433,9 @@ namespace Valuation
   
   
   def ord.standard.inSup.inSomeSet.defMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (standard D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (standard Var D) set)
+    {x: Var}
     (dInSup: d ∈ (sup.val x).defMem)
   :
     ∃ valuation: set, d ∈ (valuation.val x).defMem
@@ -446,9 +449,9 @@ namespace Valuation
       dNinSup dInSup
   
   def ord.standard.inSup.inSomeSet.posMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (standard D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (standard Var D) set)
+    {x: Var}
     (dInSup: d ∈ (sup.val x).posMem)
   :
     ∃ valuation: set, d ∈ (valuation.val x).posMem
@@ -462,9 +465,9 @@ namespace Valuation
       dNinSup dInSup
   
   def ord.standard.ninSup.allNinSet.defMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (standard D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (standard Var D) set)
+    {x: Var}
     (dInSup: d ∉ (sup.val x).defMem)
   :
     ∀ valuation: set, d ∉ (valuation.val x).defMem
@@ -475,9 +478,9 @@ namespace Valuation
       dInSup (ord.standard.inSet.inSup.defMem sup dIn)
   
   def ord.standard.ninSup.allNinSet.posMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (standard D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (standard Var D) set)
+    {x: Var}
     (dInSup: d ∉ (sup.val x).posMem)
   :
     ∀ valuation: set, d ∉ (valuation.val x).posMem
@@ -489,10 +492,10 @@ namespace Valuation
   
   
   def ord.approximation.inSet.inSup.defMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (approximation D) set)
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (approximation Var D) set)
     {valuation: set}
-    {x: Nat}
+    {x: Var}
     (dInS: d ∈ (valuation.val x).defMem)
   :
     d ∈ (sup.val x).defMem
@@ -500,9 +503,9 @@ namespace Valuation
     (sup.property.isMember _ x).defLe dInS
   
   def ord.approximation.allInSet.inSup.posMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (approximation D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (approximation Var D) set)
+    {x: Var}
     (allIn: ∀ (v: set), d ∈ (v.val x).posMem)
   :
     d ∈ (sup.val x).posMem
@@ -515,9 +518,9 @@ namespace Valuation
   
   
   def ord.approximation.allNinSet.ninSup.defMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (approximation D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (approximation Var D) set)
+    {x: Var}
     {d: D}
     (allNin: ∀ (s: set), d ∉ (s.val x).defMem)
   :
@@ -530,10 +533,10 @@ namespace Valuation
         sAtEq.symm ▸ allNin s)
   
   def ord.approximation.ninSet.ninSup.posMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (approximation D) set)
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (approximation Var D) set)
     {valuation: set}
-    {x: Nat}
+    {x: Var}
     (dNinS: d ∉ (valuation.val x).posMem)
   :
     d ∉ (sup.val x).posMem
@@ -543,9 +546,9 @@ namespace Valuation
     fun dIn => dNinS (supLePos dIn)
   
   def ord.approximation.inSup.inSomeSet.defMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (approximation D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (approximation Var D) set)
+    {x: Var}
     {d: D}
     (dInSup: d ∈ (sup.val x).defMem)
   :
@@ -560,9 +563,9 @@ namespace Valuation
       dNinSup dInSup
   
   def ord.approximation.inSup.allInSet.posMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (approximation D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (approximation Var D) set)
+    {x: Var}
     {d: D}
     (dInSup: d ∈ (sup.val x).posMem)
   :
@@ -577,9 +580,9 @@ namespace Valuation
       dNinSup dInSup
   
   def ord.approximation.ninSup.allNinSet.defMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (approximation D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (approximation Var D) set)
+    {x: Var}
     (dNinSup: d ∉ (sup.val x).defMem)
   :
     ∀ valuation: set, d ∉ (valuation.val x).defMem
@@ -590,9 +593,9 @@ namespace Valuation
       dNinSup (ord.approximation.inSet.inSup.defMem sup dIn)
   
   def ord.approximation.ninSup.ninSomeSet.posMem
-    {set: Set (Valuation D)}
-    (sup: Supremum (approximation D) set)
-    {x: Nat}
+    {set: Set (Valuation Var D)}
+    (sup: Supremum (approximation Var D) set)
+    {x: Var}
     (dNinSup: d ∉ (sup.val x).posMem)
   :
     ∃ v: set, d ∉ (v.val x).posMem
@@ -606,8 +609,8 @@ namespace Valuation
   
   def ord.standard.supPreservesLeApx:
     Supremum.SupPreservesOtherOrder
-      (Valuation.ord.standard T)
-      (Valuation.ord.approximation T)
+      (standard Var T)
+      (approximation Var T)
   :=
     fun isSupA isSupB ab ba x => {
       defLe :=
@@ -631,7 +634,7 @@ namespace Valuation
     }
   
   def withBoundVars.eqOfIsBoundTo
-    (b: Valuation Pair)
+    (b: Valuation Var D)
     (isBoundTo: IsBoundTo boundVars x d)
   :
     (b.withBoundVars boundVars x) = Set3.just d
@@ -648,7 +651,7 @@ namespace Valuation
           eqOfIsBoundTo b (isBoundTo.listHeadNeq h)
   
   def withBoundVars.eqOrigOfIsFree
-    (b: Valuation Pair)
+    (b: Valuation Var D)
     (isFree: ¬ IsBound boundVars x)
   :
     (b.withBoundVars boundVars x) = b x

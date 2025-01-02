@@ -21,7 +21,7 @@ namespace Pair
     }
     
     def theInternalDefList.eqEnc
-      (x: Nat)
+      (x: Var)
     :
       exprToEncoding (theInternalDefList.getDef x)
         =
@@ -32,7 +32,7 @@ namespace Pair
       exact (IsTheDefListExprPair.getNthExpr x).isNth.isExpr
     
     def theInternalDefList.eqExpr
-      (x: Nat)
+      (x: Var)
     :
       (theInternalDefList.getDef x)
         =

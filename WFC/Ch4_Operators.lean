@@ -122,24 +122,24 @@ import Utils.Interpretation
 
 
 -- The family of operators C_b (often called "the" operator C).
-def operatorC
+noncomputable def operatorC
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
 :
-  Valuation salg.D → Valuation salg.D
+  Valuation Var salg.D → Valuation Var salg.D
 :=
   fun c => dl.interpretation salg b c
 
 -- The operator C is monotonic wrt. the standard order.
 def operatorC.isMonotonic
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
 :
   IsMonotonic
-    (Valuation.ord.standard salg.D)
-    (Valuation.ord.standard salg.D)
+    (Valuation.ord.standard Var salg.D)
+    (Valuation.ord.standard Var salg.D)
     (operatorC salg dl b)
 :=
   fun cLe x =>
@@ -149,15 +149,15 @@ def operatorC.isMonotonic
 -- The operator C is monotonic wrt. the approximation order.
 def operatorC.isMonotonic.approximation
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
 :
   IsMonotonic
-    (Valuation.ord.approximation salg.D)
-    (Valuation.ord.approximation salg.D)
+    (Valuation.ord.approximation Var salg.D)
+    (Valuation.ord.approximation Var salg.D)
     (operatorC salg dl b)
 :=
-  let bLe: b ⊑ b := (Valuation.ord.approximation salg.D).le_refl b
+  let bLe: b ⊑ b := (Valuation.ord.approximation Var salg.D).le_refl b
   
   fun c0LeC1 x =>
     Expr.interpretation.isMonotonic.approximation
@@ -166,10 +166,10 @@ def operatorC.isMonotonic.approximation
 -- The least fixed point of the operator C.
 noncomputable def operatorC.lfp
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
 :
-  Lfp (Valuation.ord.standard salg.D) (operatorC salg dl b)
+  Lfp (Valuation.ord.standard Var salg.D) (operatorC salg dl b)
 :=
   _root_.lfp
     (Valuation.ord.standard.isChainComplete salg.D)
@@ -190,11 +190,11 @@ noncomputable def operatorC.lfp
 -/
 noncomputable def operatorC.stage
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
   (n: Ordinal)
 :
-  Valuation salg.D
+  Valuation Var salg.D
 :=
   lfp.stage
     (Valuation.ord.standard.isChainComplete salg.D)
@@ -204,12 +204,12 @@ noncomputable def operatorC.stage
 
 noncomputable def operatorC.fixedIndex
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
 :
   { n: Ordinal //
     IsLfp
-      (Valuation.ord.standard salg.D)
+      (Valuation.ord.standard Var salg.D)
       (operatorC salg dl b)
       (stage salg dl b n)
   }
@@ -221,8 +221,8 @@ noncomputable def operatorC.fixedIndex
 
 noncomputable def operatorC.lfpIndex
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
 :
   { n: Ordinal //
     operatorC.stage salg dl b n = (operatorC.lfp salg dl b).val }
@@ -233,11 +233,11 @@ noncomputable def operatorC.lfpIndex
 
 noncomputable def operatorC.stage.previous
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
   (n: Ordinal)
 :
-  Tuple (Valuation salg.D)
+  Tuple (Valuation Var salg.D)
 :=
   lfp.stage.previous
     (Valuation.ord.standard.isChainComplete salg.D)
@@ -247,13 +247,13 @@ noncomputable def operatorC.stage.previous
 
 def operatorC.stage.limit
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
   {n: Ordinal}
   (nIsLimit: n.IsSuccPrelimit)
 :
   IsSupremum
-    (Valuation.ord.standard salg.D)
+    (Valuation.ord.standard Var salg.D)
     (previous salg dl b n)
     (operatorC.stage salg dl b n)
 :=
@@ -265,11 +265,11 @@ def operatorC.stage.limit
 
 def operatorC.stage.limitAt
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
   {n: Ordinal}
   (nIsLimit: n.IsSuccPrelimit)
-  (x: Nat)
+  (x: Var)
 :
   IsSupremum
     (Set3.ord.standard salg.D)
@@ -283,8 +283,8 @@ def operatorC.stage.limitAt
 
 def operatorC.stage.succEq
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
   (n: Ordinal)
 :
   operatorC.stage salg dl b n.succ =
@@ -298,8 +298,8 @@ def operatorC.stage.succEq
 
 def operatorC.stage.predEq
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
   {n: Ordinal}
   (nNotLim: ¬ n.IsSuccPrelimit)
 :
@@ -319,8 +319,8 @@ def operatorC.stage.predEq
 
 noncomputable def operatorC.stage.eqPrevN
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
   {n: Ordinal}
   (nn: ↑n)
 :
@@ -332,8 +332,8 @@ noncomputable def operatorC.stage.eqPrevN
 
 def operatorC.stage.isMonotonic.approximation
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  {b0 b1: Valuation salg.D}
+  (dl: DefList Var sig)
+  {b0 b1: Valuation Var salg.D}
   (bLe: b0 ⊑ b1)
   (n: Ordinal)
 :
@@ -345,7 +345,7 @@ def operatorC.stage.isMonotonic.approximation
     (operatorC salg dl b1)
     (operatorC.isMonotonic salg dl b0)
     (operatorC.isMonotonic salg dl b1)
-    (Valuation.ord.approximation salg.D)
+    (Valuation.ord.approximation Var salg.D)
     (fun isLe x =>
       Expr.interpretation.isMonotonic.approximation
         salg (dl.getDef x) bLe isLe)
@@ -354,30 +354,30 @@ def operatorC.stage.isMonotonic.approximation
 
 
 -- The operator B.
-noncomputable def operatorB (salg: Salgebra sig) (dl: DefList sig):
-  Valuation salg.D → Valuation salg.D
+noncomputable def operatorB (salg: Salgebra sig) (dl: DefList Var sig):
+  Valuation Var salg.D → Valuation Var salg.D
 :=
   fun b => (operatorC.lfp salg dl b).val
 
 def operatorB.eqLfpC
   (lfp:
     Lfp
-      (Valuation.ord.standard salg.D)
+      (Valuation.ord.standard Var salg.D)
       (operatorC salg dl b))
 :
   lfp.val = operatorB salg dl b
 :=
   congr rfl
     (Least.eq
-      (Valuation.ord.standard salg.D)
+      (Valuation.ord.standard Var salg.D)
       lfp
       (operatorC.lfp salg dl b))
 
 
 noncomputable def operatorB.isMonotonic.commonFixedIndex
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b0 b1: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b0 b1: Valuation Var salg.D)
 :
   {
     n: Ordinal
@@ -392,7 +392,7 @@ noncomputable def operatorB.isMonotonic.commonFixedIndex
   if h: lfpI0.val ≤ lfpI1 then
     let isLfp:
       IsLfp
-        (Valuation.ord.standard salg.D)
+        (Valuation.ord.standard Var salg.D)
         (operatorC salg dl b0)
         (operatorC.stage salg dl b0 lfpI1)
     :=
@@ -417,7 +417,7 @@ noncomputable def operatorB.isMonotonic.commonFixedIndex
   else
     let isLfp:
       IsLfp
-        (Valuation.ord.standard salg.D)
+        (Valuation.ord.standard Var salg.D)
         (operatorC salg dl b1)
         (operatorC.stage salg dl b1 lfpI0)
     :=
@@ -441,10 +441,10 @@ noncomputable def operatorB.isMonotonic.commonFixedIndex
     ⟩
 
 -- The operator B is monotonic wrt. the approximation order.
-def operatorB.isMonotonic (salg: Salgebra sig) (dl: DefList sig):
+def operatorB.isMonotonic (salg: Salgebra sig) (dl: DefList Var sig):
   IsMonotonic
-    (Valuation.ord.approximation salg.D)
-    (Valuation.ord.approximation salg.D)
+    (Valuation.ord.approximation Var salg.D)
+    (Valuation.ord.approximation Var salg.D)
     (operatorB salg dl)
 :=
   fun {b0 b1} b0LeB1 =>
@@ -461,9 +461,9 @@ def operatorB.isMonotonic (salg: Salgebra sig) (dl: DefList sig):
 -/
 noncomputable def operatorB.lfp
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
-  Lfp (Valuation.ord.approximation salg.D) (operatorB salg dl)
+  Lfp (Valuation.ord.approximation Var salg.D) (operatorB salg dl)
 :=
   _root_.lfp
     (Valuation.ord.approximation.isChainComplete salg.D)
@@ -484,10 +484,10 @@ noncomputable def operatorB.lfp
 -/
 noncomputable def operatorB.stage
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   (n: Ordinal)
 :
-  Valuation salg.D
+  Valuation Var salg.D
 :=
   lfp.stage
     (Valuation.ord.approximation.isChainComplete salg.D)
@@ -497,7 +497,7 @@ noncomputable def operatorB.stage
 
 noncomputable def operatorB.fixedIndex
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
   { n: Ordinal // operatorB.stage salg dl n = (operatorB.lfp salg dl).val }
 := ⟨
@@ -510,10 +510,10 @@ noncomputable def operatorB.fixedIndex
 
 noncomputable def operatorB.stage.previous
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   (n: Ordinal)
 :
-  Tuple (Valuation salg.D)
+  Tuple (Valuation Var salg.D)
 :=
   lfp.stage.previous
     (Valuation.ord.approximation.isChainComplete salg.D)
@@ -523,12 +523,12 @@ noncomputable def operatorB.stage.previous
 
 def operatorB.stage.limit
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   {n: Ordinal}
   (nIsLimit: n.IsSuccPrelimit)
 :
   IsSupremum
-    (Valuation.ord.approximation salg.D)
+    (Valuation.ord.approximation Var salg.D)
     (operatorB.stage.previous salg dl n)
     (operatorB.stage salg dl n)
 :=
@@ -540,10 +540,10 @@ def operatorB.stage.limit
 
 def operatorB.stage.limitAt
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   {n: Ordinal}
   (nIsLimit: n.IsSuccPrelimit)
-  (x: Nat)
+  (x: Var)
 :
   IsSupremum
     (Set3.ord.approximation salg.D)
@@ -557,7 +557,7 @@ def operatorB.stage.limitAt
 
 def operatorB.stage.succEq
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   (n: Ordinal)
 :
   operatorB.stage salg dl n.succ =
@@ -571,8 +571,8 @@ def operatorB.stage.succEq
 
 noncomputable def operatorB.stage.eqPrevN
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList Var sig)
+  (b: Valuation Var salg.D)
   (n: Ordinal)
   (nn: ↑n)
 :
@@ -583,7 +583,7 @@ noncomputable def operatorB.stage.eqPrevN
 
 def operatorB.stage.isMonotonic
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
   {n nn: Ordinal}
   (nnLt: nn ≤ n)
 :
@@ -602,9 +602,9 @@ def operatorB.stage.isMonotonic
 -/
 def Valuation.IsModel
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
-  Set (Valuation salg.D)
+  Set (Valuation Var salg.D)
 :=
   fun v => v = dl.interpretation salg v v
 
@@ -615,15 +615,15 @@ def Valuation.IsModel
 -/
 noncomputable def DefList.wellFoundedModel
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
-  Valuation salg.D
+  Valuation Var salg.D
 :=
   (operatorB.lfp salg dl).val
 
 def DefList.wellFoundedModel.eqLfpC
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
   dl.wellFoundedModel salg
     =
@@ -637,8 +637,8 @@ def DefList.wellFoundedModel.eqLfpC
 -/
 def operatorB.lfp.isModel
   (salg: Salgebra sig)
-  (dl: DefList sig)
-  {fp: Valuation salg.D}
+  (dl: DefList Var sig)
+  {fp: Valuation Var salg.D}
   (isFp: IsFixedPoint (operatorB salg dl) fp)
 :
   fp.IsModel salg dl
@@ -650,10 +650,10 @@ from by
 
 def DefList.wellFoundedModel.isLfpC
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
   IsLfp
-    (Valuation.ord.standard salg.D)
+    (Valuation.ord.standard Var salg.D)
     (operatorC salg dl (dl.wellFoundedModel salg))
     (dl.wellFoundedModel salg)
 :=
@@ -665,10 +665,10 @@ def DefList.wellFoundedModel.isLfpC
 -- The well-founded model is the least fixed point of the operator B.
 def DefList.wellFoundedModel.isLfpB
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
   IsLfp
-    (Valuation.ord.approximation salg.D)
+    (Valuation.ord.approximation Var salg.D)
     (operatorB salg dl)
     (dl.wellFoundedModel salg)
 :=
@@ -677,7 +677,7 @@ def DefList.wellFoundedModel.isLfpB
 -- The well-founded model is a model of the definition list.
 def DefList.wellFoundedModel.isModel
   (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList Var sig)
 :
   (dl.wellFoundedModel salg).IsModel salg dl
 :=
@@ -700,8 +700,9 @@ def Salgebra.IsDefinable
 :
   Prop
 :=
-  ∃ (dl: FinBoundedDL sig)
-    (x: Nat)
+  ∃ (Var: Type*)
+    (dl: FinBoundedDL Var sig)
+    (x: Var)
   ,
     set = dl.wellFoundedModel salg x
 

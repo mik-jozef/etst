@@ -41,21 +41,24 @@ structure Signature where
   operator to its parameters, the complement of an expression, or
   an arbitrary union or intersection.
   
-  Variables are natural numbers. The arguments of an operator `op`
+  Variables are of type `Var`. The arguments of an operator `op`
   are indexed by the type `sig.Params op`.
 -/
-inductive Expr (sig: Signature) where
-| var (x: Nat)
-| op (op: sig.Op) (args: sig.Params op → Expr sig)
-| cpl (expr: Expr sig)
-| arbUn (x: Nat) (body: Expr sig)
-| arbIr (x: Nat) (body: Expr sig)
+inductive Expr
+  (Var: Type*)
+  (sig: Signature)
+where
+| var (x: Var)
+| op (op: sig.Op) (args: sig.Params op → Expr Var sig)
+| cpl (expr: Expr Var sig)
+| arbUn (x: Var) (body: Expr Var sig)
+| arbIr (x: Var) (body: Expr Var sig)
 
 namespace Expr
-  instance coeNat: Coe Nat (Expr s) where
+  instance coeVar: Coe Var (Expr Var s) where
     coe := fun n => Expr.var n
   
-  instance exprOfNat (n: Nat): OfNat (Expr s) n where
+  instance exprOfNat (n: Nat): OfNat (Expr Nat s) n where
     ofNat := Expr.var n
   
   /-
@@ -63,10 +66,10 @@ namespace Expr
     variables.
   -/
   def IsFreeVar
-    (expr: Expr sig)
-    (boundVars: Set Nat)
+    (expr: Expr Var sig)
+    (boundVars: Set Var)
   :
-    Set Nat
+    Set Var
   :=
     fun x =>
       match expr with
@@ -85,7 +88,7 @@ namespace Expr
     Complementing a bound variable is allowed because it cannot
     result in a contradictory definition, even with self-reference.
   -/
-  def IsPositive: Expr sig → (boundVars: Set Nat) → Prop
+  def IsPositive: Expr Var sig → (boundVars: Set Var) → Prop
   | Expr.var _, _ => True
   | Expr.op _ args, bv => ∀ param, (args param).IsPositive bv
   | Expr.cpl (Expr.var v), bv => v ∈ bv
@@ -100,7 +103,7 @@ namespace Expr
     This is a proper version of the sizeOf function defined natively
     by Lean.
   -/
-  noncomputable def sizeOf: Expr sig → Ordinal.{0}
+  noncomputable def sizeOf: Expr Var sig → Ordinal.{0}
   | Expr.var _ => 0
   | Expr.op _ args =>
     iSup (fun arg => (args arg).sizeOf) + 1

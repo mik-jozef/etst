@@ -43,18 +43,26 @@ namespace Pair
         match Pair.dictOrder.ltTotal aA bA with
         | IsLt ab =>
           let ipd: IsPairDictLt (pair aA bA) := ab
-          let aInsAB := insPairDictLt ipd
-          
           insWfmDefToIns
             (insFinUn
               inListLtLeft
-              (insUnDom aInsAB
+              (insUnDom
+                (insFree
+                  (insPairDictLt
+                    ipd)
+                  nat500NeqPairDictLt)
                 (insPair
                   (insPair
-                    (insZthMember (insFree insBound nat502Neq500))
+                    (insZthMember
+                      (insFree
+                        insBound
+                        nat502Neq500))
                     insAny)
                   (insPair
-                    (insFstMember (insFree insBound nat502Neq500))
+                    (insFstMember
+                      (insFree
+                        insBound
+                        nat502Neq500))
                     insAny))))
         | IsGt ba =>
           isPD.elim
@@ -65,14 +73,16 @@ namespace Pair
             isPD.elim
               (fun ab => (eq ▸ ab).irefl)
               (fun ⟨_, lt⟩ => lt)
-          let bInsAB := insPairDictLt ipd
-          
           insWfmDefToIns
             (insFinUn
               inListEqLeft
-              (insUnDom bInsAB
+              (insUnDom
+                (insFree
+                  (insPairDictLt
+                    ipd)
+                  nat500NeqPairDictLt)
                 (insArbUn aA
-                  (insPair
+                  (eq ▸ insPair
                     (insPair
                       insBound
                       (insZthMember
@@ -80,7 +90,7 @@ namespace Pair
                           (insFree insBound nat501Neq500)
                           nat502Neq500)))
                     (insPair
-                      (eq ▸ insBound)
+                      insBound
                       (insFstMember
                         (insFree
                           (insFree insBound nat501Neq500)
@@ -112,8 +122,9 @@ namespace Pair
               let ⟨inwZth, _⟩ := inwPairElim l
               let ⟨inwFst, _⟩ := inwPairElim r
               
+              let eqB := Valuation.update.eqBound _ _ _
               let eq: pair aA bA = pBound := inwBoundElim
-                (inwZthFstElim inwZth inwFst nat502Neq500 rfl)
+                (inwZthFstElim inwZth inwFst nat502Neq500 eqB)
               
               let inwA: InwEdl pairDictLt (pair aA bA) :=
                 eq ▸ inwFreeElim inwDomain nat500NeqPairDictLt
@@ -135,9 +146,13 @@ namespace Pair
               let ⟨inw501A, inwZth⟩ := inwPairElim l
               let ⟨inw501B, inwFst⟩ := inwPairElim r
               
+              let eqB :=
+                Eq.trans
+                  (Valuation.update.eqOrig _ nat501Neq500 _)
+                  (Valuation.update.eqBound _ _ _)
               let eq := inwBoundElim
                 (inwFreeElim
-                  (inwZthFstElim inwZth inwFst nat502Neq500 rfl)
+                  (inwZthFstElim inwZth inwFst nat502Neq500 eqB)
                   nat501Neq500)
               
               let inwB: InwEdl pairDictLt (pair aB bB) :=

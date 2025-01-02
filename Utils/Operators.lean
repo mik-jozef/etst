@@ -7,21 +7,22 @@ import WFC.Ch4_Operators
 
 structure operatorC.LfpIndex2
   (salg: Salgebra sig)
-  (dlA: DefList sig)
-  (dlB: DefList sig)
-  (bA: Valuation salg.D)
-  (bB: Valuation salg.D)
+  (dlA: DefList VarA sig)
+  (dlB: DefList VarB sig)
+  (bA: Valuation VarA salg.D)
+  (bB: Valuation VarB salg.D)
   (n: Ordinal): Prop
 where
   eqLfpA: operatorC.stage salg dlA bA n = (operatorC.lfp salg dlA bA).val
   eqLfpB: operatorC.stage salg dlB bB n = (operatorC.lfp salg dlB bB).val
 
 noncomputable def operatorC.lfpIndex2
+  {VarA VarB: Type u}
   (salg: Salgebra sig)
-  (dlA: DefList sig)
-  (dlB: DefList sig)
-  (bA: Valuation salg.D)
-  (bB: Valuation salg.D)
+  (dlA: DefList VarA sig)
+  (dlB: DefList VarB sig)
+  (bA: Valuation VarA salg.D)
+  (bB: Valuation VarB salg.D)
 :
   { n // operatorC.LfpIndex2 salg dlA dlB bA bB n }
 :=
@@ -40,7 +41,7 @@ noncomputable def operatorC.lfpIndex2
           ((operatorC.lfp salg dlA bA).property)
         
         iIsLeast.isUnique
-          (Valuation.ord.standard salg.D)
+          (Valuation.ord.standard VarA salg.D)
           isLfpAtB
           (lfp salg dlA bA).property,
         fixedB.property,
@@ -59,7 +60,7 @@ noncomputable def operatorC.lfpIndex2
           ((operatorC.lfp salg dlB bB).property)
         
         iIsLeast.isUnique
-          (Valuation.ord.standard salg.D)
+          (Valuation.ord.standard VarB salg.D)
           isLfpAtA
           (lfp salg dlB bB).property,
       ⟩
@@ -68,17 +69,18 @@ noncomputable def operatorC.lfpIndex2
 
 structure operatorB.FixedIndex2
   (salg: Salgebra sig)
-  (dlA: DefList sig)
-  (dlB: DefList sig)
+  (dlA: DefList VarA sig)
+  (dlB: DefList VarB sig)
   (n: Ordinal): Prop
 where
   eqLfpA: operatorB.stage salg dlA n = (operatorB.lfp salg dlA).val
   eqLfpB: operatorB.stage salg dlB n = (operatorB.lfp salg dlB).val
 
 noncomputable def operatorB.fixedIndex2
+  {VarA VarB: Type u}
   (salg: Salgebra sig)
-  (dlA: DefList sig)
-  (dlB: DefList sig)
+  (dlA: DefList VarA sig)
+  (dlB: DefList VarB sig)
 :
   { n // operatorB.FixedIndex2 salg dlA dlB n }
 :=
@@ -97,7 +99,7 @@ noncomputable def operatorB.fixedIndex2
           ((operatorB.lfp salg dlA).property)
         
         iIsLeast.isUnique
-          (Valuation.ord.approximation salg.D)
+          (Valuation.ord.approximation VarA salg.D)
           isLfpAtB
           (lfp salg dlA).property,
         fixedB.property,
@@ -116,7 +118,7 @@ noncomputable def operatorB.fixedIndex2
           ((operatorB.lfp salg dlB).property)
         
         iIsLeast.isUnique
-          (Valuation.ord.approximation salg.D)
+          (Valuation.ord.approximation VarB salg.D)
           isLfpAtA
           (lfp salg dlB).property,
       ⟩

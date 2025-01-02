@@ -163,7 +163,7 @@ namespace Pair
     def extOfIntCauseArbUn
       (causes: Pair → Cause Pair)
       (boundVars: List (ValVar Pair))
-      (x: Nat)
+      (x: Var)
     :
       Cause.IsSubset
         (extOfIntCause
@@ -195,7 +195,7 @@ namespace Pair
     def extOfIntExceptLeBoundHead
       (cause: Cause Pair)
       (d: Pair)
-      (x: Nat)
+      (x: Var)
     :
       extOfIntCause (cause.exceptVar x) boundVars
         ⊆
@@ -1319,7 +1319,7 @@ namespace Pair
           d
           (theInternalDefList.getDef x))
       (cinsIns:
-        ∀ {d} {x: Nat},
+        ∀ {d} {x: Var},
           ⟨d, x⟩ ∈ internalCause.contextIns →
           Ins
             pairSalgebra
@@ -1327,7 +1327,7 @@ namespace Pair
             (Pair.pair x d)
             uniDefList.theSet)
       (binsIns:
-        ∀ {d} {x: Nat},
+        ∀ {d} {x: Var},
           ⟨d, x⟩ ∈ internalCause.backgroundIns →
           Ins
             pairSalgebra
@@ -1335,7 +1335,7 @@ namespace Pair
             (Pair.pair x d)
             uniDefList.theSet)
       (boutOut:
-        ∀ {d} {x: Nat},
+        ∀ {d} {x: Var},
           ⟨d, x⟩ ∈ internalCause.backgroundOut →
           Out
             pairSalgebra
@@ -1359,7 +1359,7 @@ namespace Pair
           (fun inBout _ => boutOut inBout))
     
     def inEmptyCycleInternalToOutExternal
-      {x: Nat}
+      {x: Var}
       (inCycle: ⟨d, x⟩ ∈ internalCycle)
       (isEmptyCycle:
         ∀ {d x},
