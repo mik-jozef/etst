@@ -54,9 +54,8 @@ namespace Pair
     
     -- TODO:
     -- 0. Generalize WFC for any monotonic exprs
-    -- 1. Make variables `T: Type*` instead of Nat
-    -- 2. clean up the `HM` folder
-    -- 3. Trisets
+    -- 1. clean up the `HM` folder
+    -- 2. Trisets
     
   end uniSet3
 end Pair
