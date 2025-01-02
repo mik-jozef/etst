@@ -53,9 +53,8 @@ namespace Pair
     def containsItself: uniSet3 ∈ uniSet3 := isUniversal isDefinable
     
     -- TODO:
-    -- 0. Generalize WFC for any monotonic exprs
-    -- 1. clean up the `HM` folder
-    -- 2. Trisets
+    -- 0. clean up the `HM` folder
+    -- 1. Trisets
     
   end uniSet3
 end Pair
