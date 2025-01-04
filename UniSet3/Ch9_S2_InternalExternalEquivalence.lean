@@ -52,9 +52,5 @@ namespace Pair
     
     def containsItself: uniSet3 ∈ uniSet3 := isUniversal isDefinable
     
-    -- TODO:
-    -- 0. clean up the `HM` folder
-    -- 1. Trisets
-    
   end uniSet3
 end Pair

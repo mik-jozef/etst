@@ -24,6 +24,7 @@ namespace Ordinal
       let eqZero := Ordinal.le_zero.mp leZero
       notZero eqZero
   
+  @[reducible]
   def IsSuccPrelimit (n: Ordinal): Prop := Order.IsSuccPrelimit n
   
   def IsSuccPrelimit.toIsLimit
@@ -214,9 +215,14 @@ namespace Ordinal
       
       eqA.symm ▸ (le_of_not_le h)
   
-  def zero.isLimit: IsSuccPrelimit 0 :=
-    fun n nLtZero => (Ordinal.not_lt_zero n nLtZero.left)
-  
   def lt_succ (n: Ordinal): n < n.succ := Order.lt_succ n
+  
+  def ne_zero_of_lt
+    {n m: Ordinal}
+    (lt: n < m)
+  :
+    m ≠ 0
+  :=
+    fun eq => Ordinal.not_lt_zero n (eq ▸ lt)
   
 end Ordinal

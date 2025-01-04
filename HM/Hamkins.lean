@@ -1,29 +1,54 @@
 import Utils.Lfp
-import Set3
+import WFC.Ch0_Set3
 
 open Classical
 
 
+def Null.isFinite: Finite Null := ⟨
+  fun _ => Fin.mk 0 (Nat.lt_succ_self 0),
+  fun _ => null,
+  fun _ => rfl,
+  fun ⟨_, isLtOne⟩ =>
+    Fin.eq_of_val_eq (Nat.lt_one_iff.mp isLtOne).symm,
+⟩
+
 inductive Two
-  | zero
-  | one
+| zero
+| one
 
-instance: Coe Two Nat where
-  coe :=
-    fun two =>
-      match two with
-        | Two.zero => 0
-        | Two.one => 1
+def Two.flip: Two → Two
+| Two.zero => Two.one
+| Two.one => Two.zero
 
-def Nat2 := Nat → Two
-def Nat2.zeros: Nat2 := fun _ => Two.zero
+def Two.toNat: Two → Nat
+| Two.zero => 0
+| Two.one => 1
 
--- Converts a number to little endian.
-def Nat2.fromNat (n: Nat): Nat2 :=
-  fun i =>
-    let d := Nat.pow 2 i
-    
-    if n % (d * 2) >= d then Two.one else Two.zero
+def Two.ofNat: Nat → Two
+| 0 => Two.zero
+| n+1 => Two.flip (Two.ofNat n)
+
+instance: Coe Two Nat where coe := Two.toNat
+instance: Coe Nat Two where coe := Two.ofNat
+
+
+def shiftNatFn
+  (head: T)
+  (fn: Nat → T)
+:
+  Nat → T
+|
+  0 => head
+| Nat.succ n => fn n
+  
+
+@[reducible] def Nat2 := Nat → Two
+def Nat2.zero: Nat2 := fun _ => Two.zero
+
+-- Converts a number to its binary representation in little endian.
+def Nat2.fromNat: Nat → Nat2
+| 0 => Nat2.zero
+| n+1 => shiftNatFn (Two.ofNat n) (fromNat (n.succ / 2))
 
 
 def Tuple.Nat2.IsEventuallyZeroAtIndex
@@ -33,8 +58,9 @@ def Tuple.Nat2.IsEventuallyZeroAtIndex
   Prop
 :=
   ∃ lowerBound: ↑tuple.length,
-    ∀ i: ↑tuple.length,
-      lowerBound.val ≤ i.val → tuple.elements i index = Two.zero
+  ∀ i: ↑tuple.length,
+    lowerBound.val ≤ i.val →
+    tuple.elements i index = Two.zero
 
 noncomputable def Tuple.Nat2.limSup
   (tuple: Tuple Nat2)
@@ -51,7 +77,7 @@ noncomputable def Tuple.Nat2.limSup
       else
         Two.one
 
-def Tuple.Nat2.limSup.zero
+def Tuple.Nat2.limSup.eqZeroLength
   (tuple: Tuple Nat2)
   (ifUndefined: Nat2)
   (tEmpty: tuple.length = 0)
@@ -70,22 +96,26 @@ def Tuple.Nat2.limSup.eq
     IsEventuallyZeroAtIndex tuple n ↔ result n = Two.zero)
 :
   limSup tuple ifUndefined = result
-:=
-  by unfold limSup; rw [if_neg isDefined]; exact funext fun n =>
-    if h: IsEventuallyZeroAtIndex tuple n then
-      (if_pos h).trans ((isResSound n).mp h).symm
-    else
-      match hh: result n with
-      | Two.zero => False.elim (((Iff.not (isResSound n)).mp h) hh)
-      | Two.one => (if_neg h).trans rfl
+:= by
+  unfold limSup;
+  rw [if_neg isDefined];
+  exact
+    funext fun n =>
+      if h: IsEventuallyZeroAtIndex tuple n then
+        (if_pos h).trans ((isResSound n).mp h).symm
+      else
+        match hh: result n with
+        | Two.zero => absurd hh ((Iff.not (isResSound n)).mp h)
+        | Two.one => (if_neg h).trans rfl
 
-
-def Tuple.Nat2.limSup.isEventuallyConstant
+def Tuple.Nat2.limSup.eqOfEventuallyConstant
   (t: Tuple Nat2)
   (ifU: Nat2)
   (lowerBound: ↑t.length)
   (res: Nat2)
-  (constantAbove: ∀ i: ↑t.length, lowerBound.val ≤ i → t.elements i = res)
+  (constantAbove:
+    ∀ i: ↑t.length,
+    lowerBound.val ≤ i → t.elements i = res)
 :
   limSup t ifU = res
 :=
@@ -100,8 +130,9 @@ def Tuple.Nat2.limSup.isEventuallyConstant
         let lbN := evntZero.unwrap
         
         let lbMax: ↑t.length := max lowerBound lbN.val
-        let geLowerBound: lowerBound ≤ lbMax := Ordinal.le_max_left _ _
         let geLbN: lbN.val ≤ lbMax := Ordinal.le_max_rite _ _
+        let geLowerBound: lowerBound ≤ lbMax :=
+          Ordinal.le_max_left _ _
         
         let cAboveMax := constantAbove lbMax geLowerBound
         let eqZero := lbN.property lbMax geLbN
@@ -110,7 +141,8 @@ def Tuple.Nat2.limSup.isEventuallyConstant
       (fun eqZero =>
         ⟨
           lowerBound,
-          fun i geLb => (congr (constantAbove i geLb) rfl).trans eqZero
+          fun i geLb =>
+            (congr (constantAbove i geLb) rfl).trans eqZero
         ⟩)
 
 
@@ -127,14 +159,14 @@ def Dir.shift (dir: Dir) (n: Nat): Option Nat :=
     | Dir.none, x => x
 
 structure HamkinsMachine.Move (State: Type) where
-  state: State
-  symbol: Two
+  nextState: State
+  nextSymbol: Two
   dir: Dir
 
 def HamkinsMachine.Move.eq {State: Type}:
   {m0 m1: HamkinsMachine.Move State} →
-  m0.state = m1.state →
-  m0.symbol = m1.symbol →
+  m0.nextState = m1.nextState →
+  m0.nextSymbol = m1.nextSymbol →
   m0.dir = m1.dir →
   m0 = m1
   
@@ -144,8 +176,7 @@ def HamkinsMachine.Move.eq {State: Type}:
   State → Two → HamkinsMachine.Move State
 
 /-
-  Infinite time Turing machine is too long. I hereby name you Hamkins
-  machine.
+  Also known as Infinite time Turing machine.
   
   Note: Unlike the original definition [0], here we only have one tape for
   simplicity. In "Infinite time Turing machines with only one tape" [1],
@@ -160,7 +191,7 @@ def HamkinsMachine.Move.eq {State: Type}:
 structure HamkinsMachine where
   State: Type
   
-  isFinite: Type.IsFinite State
+  isFinite: Finite State
   
   initialState: State
   haltState: State
@@ -169,8 +200,8 @@ structure HamkinsMachine where
   getMove: HamkinsMachine.GetMove State
   
   haltHalts (two: Two): getMove haltState two = {
-    state := haltState
-    symbol := two
+    nextState := haltState
+    nextSymbol := two
     dir := Dir.none
   }
 
@@ -189,55 +220,70 @@ namespace HamkinsMachine
   
     | ⟨_,_,_⟩, ⟨_,_,_⟩, rfl, rfl, rfl => rfl
   
+  def nextMove
+    (hm: HamkinsMachine)
+    (config: Configuration hm)
+  :
+    HamkinsMachine.Move hm.State
+  :=
+    hm.getMove config.state (config.tape config.head)
+  
   def step
     (hm: HamkinsMachine)
     (config: Configuration hm)
   :
     Configuration hm
   :=
-    let move := hm.getMove (config.state) (config.tape config.head)
-    -- With this, the `step.eq.X` proofs do not work. How to fix?
-    --let newHead := move.dir.shift config.head
-    let newHead :=
-      (hm.getMove (config.state) (config.tape config.head)).dir.shift config.head
+    let move := nextMove hm config
+    let newHead := move.dir.shift config.head
     
     match newHead with
-      | none => config
-      | some nh =>
-          {
-            state := move.state
-            tape := fun n => if n = config.head then move.symbol else config.tape n
-            head := nh
-          }
+    | none => config
+    | some nh => {
+        state := move.nextState
+        tape :=
+          Function.update
+            config.tape
+            config.head
+            move.nextSymbol
+        head := nh
+      }
   
-  def step.eq.none
+  def step.eqHalted
     (hm: HamkinsMachine)
     (config: hm.Configuration)
-    (moveV: Move hm.State)
-    (moveEq: moveV = hm.getMove (config.state) (config.tape config.head))
-    (newHeadEq: none = moveV.dir.shift config.head)
+    (move: Move hm.State)
+    (moveEq: move = nextMove hm config)
+    (newHeadEq: none = move.dir.shift config.head)
   :
     hm.step config = config
-  :=
-    by unfold step; rw [moveEq.symm]; rw [newHeadEq.symm]
+  := by
+    unfold step
+    simp only []
+    rw [moveEq.symm, newHeadEq.symm]
   
-  def step.eq.some
+  def step.eqRunning
     (hm: HamkinsMachine)
     (config: hm.Configuration)
-    (moveV: Move hm.State)
-    (moveEq: moveV = hm.getMove (config.state) (config.tape config.head))
-    (newHead: Nat)
-    (newHeadEq: some newHead = moveV.dir.shift config.head)
+    {move: Move hm.State}
+    (moveEq: move = nextMove hm config)
+    (newHeadEq: some newHead = move.dir.shift config.head)
   :
     hm.step config = {
-      state := moveV.state
-      tape := fun n => if n = config.head then moveV.symbol else config.tape n
+      state := move.nextState
+      tape :=
+        Function.update
+          config.tape
+          config.head
+          move.nextSymbol
       head := newHead
     }
-  :=
-    by unfold step; rw [moveEq.symm]; rw [newHeadEq.symm]
+  := by
+    unfold step
+    simp only []
+    rw [moveEq.symm, newHeadEq.symm]
   
-  def step.halt
+  def haltStepIsId
     (hm: HamkinsMachine)
     (config: hm.Configuration)
     (isHalt: config.state = hm.haltState)
@@ -246,54 +292,58 @@ namespace HamkinsMachine
   :=
     let symbol := config.tape config.head
     
-    let moveObj: HamkinsMachine.Move hm.State := {
-      state := hm.haltState
-      symbol := symbol
+    let move: HamkinsMachine.Move hm.State := {
+      nextState := hm.haltState
+      nextSymbol := symbol
       dir := Dir.none
     }
     
-    let stepObj: HamkinsMachine.Configuration hm := {
-      state := moveObj.state
-      tape := fun n =>
-        if n = config.head
-          then moveObj.symbol
-          else config.tape n
+    let nextConfig: HamkinsMachine.Configuration hm := {
+      state := move.nextState
+      tape :=
+        Function.update
+          config.tape
+          config.head
+          move.nextSymbol
       head := config.head
     }
-    let stepObj.tapeEq:
-      stepObj.tape = config.tape
-    :=
-      funext fun n =>
-        if h: n = config.head then
-          (if_pos h).trans (h ▸ rfl)
-        else
-          if_neg h
     
-    let move.eq: hm.getMove hm.haltState symbol = moveObj :=
+    let nextSteTapeEq: nextConfig.tape = config.tape :=
+      Function.update_eq_iff.mpr ⟨rfl, fun _ _ => rfl⟩
+    
+    let moveEq: hm.getMove hm.haltState symbol = move :=
       hm.haltHalts symbol
     
-    let stageNPred.eq:
+    let configEq:
       config = ⟨hm.haltState, config.tape, config.head⟩
     :=
       HamkinsMachine.Configuration.eq isHalt rfl rfl
     
-    let stepEq: hm.step config = stepObj :=
-      stageNPred.eq ▸ HamkinsMachine.step.eq.some
+    let stepEq: hm.step config = nextConfig :=
+      HamkinsMachine.step.eqRunning
         hm
-        ⟨hm.haltState, config.tape, config.head⟩
-        moveObj
-        move.eq.symm
-        config.head
-        (rfl)
+        config
+        (move := move)
+        (configEq ▸ moveEq.symm)
+        (newHead := config.head)
+        rfl
     
     stepEq.trans
-      (HamkinsMachine.Configuration.eq isHalt.symm stepObj.tapeEq rfl)
+      (HamkinsMachine.Configuration.eq
+        isHalt.symm
+        nextSteTapeEq
+        rfl)
   
-  noncomputable def stage (hm: HamkinsMachine) (input: Nat2) (n: Ordinal):
+  noncomputable def stage
+    (hm: HamkinsMachine)
+    (input: Nat2)
+    -- TODO: generalize to any universe level?
+    (n: Ordinal.{0})
+  :
     Configuration hm
   :=
-    if h: n.IsActualLimit then
-      let prevStages: Tuple Nat2 := {
+    if h: n.IsSuccPrelimit then
+      let prevTapes: Tuple Nat2 := {
         length := n,
         elements :=
           fun nn =>
@@ -312,16 +362,16 @@ namespace HamkinsMachine
             hm.initialState
           else
             hm.limitState
-        -- If the machine halted, limSup is safe.
-        tape := Tuple.Nat2.limSup prevStages input
+        -- Note: Even if the machine halted, limSup is safe.
+        tape := Tuple.Nat2.limSup prevTapes input
         head := 0
       }
     else
-      have: n.pred < n := Ordinal.predLtOfNotLimit h
+      have: n.pred < n := Ordinal.predLtOfNotPrelimit h
       hm.step (hm.stage input n.pred)
-    termination_by stage hm n => n
+    termination_by n
   
-  noncomputable def stage.prevStages
+  noncomputable def stagesUpTo
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
@@ -337,87 +387,45 @@ namespace HamkinsMachine
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
-    (nl: ¬n.IsActualLimit)
+    (nl: ¬n.IsSuccPrelimit)
   :
     hm.stage input n = hm.step (hm.stage input n.pred)
   :=
-    by conv =>
-      lhs
-      unfold stage
-      rw [dif_neg nl]
+    by conv => lhs; unfold stage; rw [dif_neg nl]
   
-  @[reducible] def stage.haltsAt
+  @[reducible]
+  def stage.IsHaltedAt
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
   : Prop :=
     (stage hm input n).state = hm.haltState
   
-  structure stage.eq.Zero
-    (hm: HamkinsMachine)
-    (input: Nat2)
-  where
-    (tapeEq: (hm.stage input 0).tape = input)
-    (stateEq: (hm.stage input 0).state = hm.initialState)
-    (headEq: (hm.stage input 0).head = 0)
-  
-  def stage.eq.zero
-    (hm: HamkinsMachine)
-    (input: Nat2)
-  :
-    Zero hm input
-  :=
-    {
-      tapeEq :=
-        let prevStages := stage.prevStages hm input 0
-        
-        let eqLim:
-          (hm.stage input 0).tape = Tuple.Nat2.limSup prevStages input
-        := by
-          unfold HamkinsMachine.stage
-          exact dif_pos Ordinal.zero.isLimit ▸ rfl
-        
-        eqLim.trans (Tuple.Nat2.limSup.zero prevStages input rfl)
-      stateEq :=
-        let nex := all.notEx
-          (fun _ => trivial)
-          (fun (nLe0: { nn // nn < 0 }) _ =>
-            False.elim (Ordinal.not_lt_zero nLe0.val nLe0.property))
-        
-        by
-          unfold HamkinsMachine.stage
-          exact dif_pos Ordinal.zero.isLimit ▸ if_neg nex ▸ if_pos rfl ▸ rfl
-      headEq := 
-        by
-          unfold HamkinsMachine.stage;
-          exact dif_pos Ordinal.zero.isLimit ▸ rfl
-    }
-  
-  structure stage.eq.Limit
+  structure stage.EqAtLimit
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
   where
     (tapeEq:
       (hm.stage input n).tape =
-        Tuple.Nat2.limSup (stage.prevStages hm input n) input)
+        Tuple.Nat2.limSup (stagesUpTo hm input n) input)
     
-    (stateHalt: (∃ nn: ↑n, stage.haltsAt hm input nn)
+    (stateHalt: (∃ nn: ↑n, stage.IsHaltedAt hm input nn)
       → (hm.stage input n).state = hm.haltState)
     
     (stateLimit: n = 0 ∨
-      (¬(∃ nn: ↑n, stage.haltsAt hm input nn)
+      (¬(∃ nn: ↑n, stage.IsHaltedAt hm input nn)
         → (hm.stage input n).state = hm.limitState))
     
     (headEq: (hm.stage input n).head = 0)
   
-  def stage.eq.infLimit
+  def stage.eqAtLimit
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
-    (nl: n.IsActualLimit)
+    (nl: n.IsSuccPrelimit)
   :
-    Limit hm input n
+    EqAtLimit hm input n
   :=
     {
       tapeEq :=
@@ -425,271 +433,330 @@ namespace HamkinsMachine
       stateHalt := fun ex =>
         by
           unfold HamkinsMachine.stage
-          exact dif_pos nl ▸ if_pos ex ▸ rfl
+          rw [dif_pos nl, if_pos ex]
       stateLimit :=
         if h: n = 0 then
           Or.inl h
         else
-          Or.inr fun nex =>
-          by
+          Or.inr fun nex => by
             unfold HamkinsMachine.stage
-            exact dif_pos nl ▸ if_neg nex ▸ if_neg h ▸ rfl
+            rw [dif_pos nl, if_neg nex, if_neg h]
       headEq :=
         by unfold HamkinsMachine.stage; exact dif_pos nl ▸ rfl
     }
   
-  def stage.eq.step.succ
+  structure stage.EqAtZero
+    (hm: HamkinsMachine)
+    (input: Nat2)
+  where
+    (tapeEq: (hm.stage input 0).tape = input)
+    (stateEq: (hm.stage input 0).state = hm.initialState)
+    (headEq: (hm.stage input 0).head = 0)
+  
+  def stage.eqAtZero
+    (hm: HamkinsMachine)
+    (input: Nat2)
+  :
+    EqAtZero hm input
+  := {
+    tapeEq :=
+      let isLimZ := Ordinal.isSuccPrelimit_zero
+      let prevStages := stagesUpTo hm input 0
+      
+      let eqLim:
+        (hm.stage input 0).tape
+          =
+        Tuple.Nat2.limSup prevStages input
+      :=
+        (eqAtLimit hm input 0 isLimZ).tapeEq
+      
+      eqLim.trans
+        (Tuple.Nat2.limSup.eqZeroLength prevStages input rfl)
+    stateEq :=
+      let nexHaltState := all.notEx
+        (fun _ => trivial)
+        (fun (nLe0: { nn // nn < 0 }) _ =>
+          False.elim (Ordinal.not_lt_zero nLe0.val nLe0.property))
+      
+      by
+        unfold HamkinsMachine.stage
+        rw [
+          dif_pos Ordinal.isSuccPrelimit_zero,
+          if_neg nexHaltState,
+          if_pos rfl,
+        ]
+    headEq := 
+      by
+        unfold HamkinsMachine.stage;
+        rw [dif_pos Ordinal.isSuccPrelimit_zero]
+  }
+  
+  def stage.eq_step_succ
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
   :
     hm.stage input n.succ = hm.step (hm.stage input n)
   :=
+    let nSuccNotLimit := Ordinal.succ_not_prelimit n
     let nSuccPredEq: n.succ.pred = n := Ordinal.pred_succ n
     
     let eqSucc:
       hm.stage input n.succ = hm.step (hm.stage input n.succ.pred)
     :=
-      stage.eq.step hm input n.succ (Ordinal.succ_not_limit n)
+      stage.eq.step hm input n.succ nSuccNotLimit
     
     let eq: hm.stage input n.succ.pred = hm.stage input n :=
       congr rfl nSuccPredEq
     
     eq ▸ eqSucc
   
-  def stage.haltsAt.ge
-    (hAt: stage.haltsAt hm input n)
-    (ng: Ordinal)
+  def stage.isHaltedAtGe
+    (hAt: stage.IsHaltedAt hm input n)
+    {ng: Ordinal}
     (ngGe: n ≤ ng)
   :
-    stage.haltsAt hm input ng
+    stage.IsHaltedAt hm input ng
   :=
     if hEq: n = ng then
       hEq ▸ hAt
     else
       let ngGt: n < ng := lt_of_le_of_ne ngGe hEq
-      let ngNotZero: ¬ng.IsZero := Ordinal.lt.notZero ngGt
+      let ngNotZero: ng ≠ 0 := Ordinal.ne_zero_of_lt ngGt
       
-      if hLim: ng.IsActualLimit then
-        let lim := stage.eq.infLimit hm input ng ⟨hLim, ngNotZero⟩
+      if hLim: ng.IsSuccPrelimit then
+        let lim := stage.eqAtLimit hm input ng hLim
         lim.stateHalt ⟨⟨n, ngGt⟩, hAt⟩
       else
-        let ngPred := Ordinal.nLimit.pred ng hLim
-        have: ngPred < ng := Ordinal.nLimit.pred.lt ng hLim
+        have: ng.pred < ng := Ordinal.predLtOfNotPrelimit hLim
         
-        let ngGePred: n ≤ ngPred :=
-          Ordinal.ltSucc.le (ngPred.property.symm ▸ ngGt)
+        let ngGtN: n < ng := lt_of_le_of_ne ngGe hEq
+        let ngGePred: n ≤ ng.pred := Ordinal.le_pred_of_lt ngGtN
         
-        let haltsAtPred := stage.haltsAt.ge hAt ngPred ngGePred
+        let haltsAtPred := stage.isHaltedAtGe hAt ngGePred
         
-        let stepConstant := step.halt hm (stage hm input ngPred) haltsAtPred
+        let stepConstant :=
+          haltStepIsId hm (stage hm input ng.pred) haltsAtPred
         
         let stageNgEqStep := stage.eq.step hm input ng hLim
         
         let stageEq := stepConstant.symm.trans stageNgEqStep.symm
         
-        by unfold haltsAt exact stageEq ▸ haltsAtPred
+        by unfold IsHaltedAt; exact stageEq ▸ haltsAtPred
   
-  termination_by stage.haltsAt.ge hAt ng ngGe => ng
+  termination_by ng
   
-  def stage.haltsAt.gt
-    (hAt: stage.haltsAt hm input n)
+  def stage.isHaltedAtGt
+    (hAt: stage.IsHaltedAt hm input n)
     {ng: Ordinal}
     (ngGt: n < ng)
   :
-    stage.haltsAt hm input ng
+    stage.IsHaltedAt hm input ng
   :=
-    stage.haltsAt.ge hAt ng (Or.inl ngGt)
+    stage.isHaltedAtGe hAt (le_of_lt ngGt)
   
-  def stage.haltsWith
+  structure stage.IsHaltedAtWith
     (hm: HamkinsMachine)
     (input output: Nat2)
     (n: Ordinal)
   :
     Prop
-  :=
-    stage.haltsAt hm input n ∧ (stage hm input n).tape = output
+  where
+    isHaltedAt: stage.IsHaltedAt hm input n
+    tapeEq: (stage hm input n).tape = output
   
   def stage.haltsConsistent.step
-    (hw0: stage.haltsWith hm input output0 n)
-    (hw1: stage.haltsWith hm input output1 n.succ)
+    (hw0: stage.IsHaltedAtWith hm input output0 n)
+    (hw1: stage.IsHaltedAtWith hm input output1 n.succ)
   :
     output0 = output1
   :=
     let stage0 := hm.stage input n
     let stage1 := hm.stage input n.succ
     
-    let stage0.stateEq: stage0.state = hm.haltState := hw0.left
+    let stage0IsHalted: stage0.state = hm.haltState := hw0.isHaltedAt
     
-    let stage.eqL: stage1 = hm.step stage0 := stage.eq.step.succ hm input n
-    let stage.eqR: hm.step stage0 = stage0 := step.halt hm stage0 stage0.stateEq
-    let stage.eq: hm.stage input n = hm.stage input n.succ :=
-      (stage.eqL.trans stage.eqR).symm
+    let stageEqL: stage1 = hm.step stage0 :=
+      stage.eq_step_succ hm input n
     
-    hw0.right.symm.trans (stage.eq ▸ hw1.right)
+    let stageEqR: hm.step stage0 = stage0 :=
+      haltStepIsId hm stage0 stage0IsHalted
+    
+    let stageEq: hm.stage input n = hm.stage input n.succ :=
+      (stageEqL.trans stageEqR).symm
+    
+    hw0.tapeEq.symm.trans (stageEq ▸ hw1.tapeEq)
   
   def stage.haltsConsistent.le
-    {n0 n1: Ordinal}
-    (hw0: stage.haltsWith hm input output0 n0)
-    (hw1: stage.haltsWith hm input output1 n1)
+    (hw0: stage.IsHaltedAtWith hm input output0 n0)
+    (hw1: stage.IsHaltedAtWith hm input output1 n1)
     (nLe: n0 ≤ n1)
   :
     output0 = output1
   :=
     if hEq: n0 = n1 then
-      hw0.right.symm.trans (hEq ▸ hw1.right)
+      hw0.tapeEq.symm.trans (hEq ▸ hw1.tapeEq)
     else
-      let n1.lt: n0 < n1 := nLe.toLt hEq
-      let n1.notZero: ¬n1.isZero := Ordinal.lt.notZero n1.lt
+      let n1Lt: n0 < n1 := lt_of_le_of_ne nLe hEq
       
-      if h: n1.isLimit then
-        let prev := prevStages hm input n1
+      if h: n1.IsSuccPrelimit then
+        let prev := stagesUpTo hm input n1
         
-        let lim := stage.eq.infLimit hm input n1 ⟨h, n1.notZero⟩
+        let lim := stage.eqAtLimit hm input n1 h
         let limTape := lim.tapeEq
         
-        let limEq0 := limSup.eventuallyConstant prev input ⟨n0, n1.lt⟩ output0
+        let limEq0 :=
+          Tuple.Nat2.limSup.eqOfEventuallyConstant
+            prev input ⟨n0, n1Lt⟩ output0
           fun nn1 n0LB =>
             have: nn1 < n1 := nn1.property
             
             let outputMid := (hm.stage input nn1).tape
-            let hwMid: stage.haltsWith hm input outputMid nn1 :=
-              And.intro (stage.haltsAt.ge hw0.left nn1 n0LB) rfl
+            
+            let hwMid:
+              stage.IsHaltedAtWith hm input outputMid nn1
+            := {
+              isHaltedAt := stage.isHaltedAtGe hw0.isHaltedAt n0LB
+              tapeEq := rfl
+            }
             
             (stage.haltsConsistent.le hw0 hwMid n0LB).symm
         
-        limEq0.symm.trans (limTape.symm.trans hw1.right)
+        limEq0.symm.trans (limTape.symm.trans hw1.tapeEq)
       else
-        let n1Pred := Ordinal.nLimit.pred n1 h
-        have: n1Pred < n1 := Ordinal.nLimit.pred.lt n1 h
+        have := Ordinal.predLtOfNotPrelimit h
         
-        let nLePred: n0 ≤ n1Pred :=
-          Ordinal.ltSucc.le (n1Pred.property.symm ▸ n1.lt)
+        let predSuccEq: n1.pred.succ = n1 :=
+          Ordinal.succ_pred_of_not_prelimit h
         
-        let tapeAtPred := (hm.stage input n1Pred).tape
-        let hwPred: stage.haltsWith hm input tapeAtPred n1Pred :=
-          And.intro (stage.haltsAt.ge hw0.left n1Pred nLePred) rfl
+        let lt: n0 < n1 := lt_of_le_of_ne nLe hEq
+        let lePred: n0 ≤ n1.pred := Ordinal.le_pred_of_lt lt
         
-        nLePred.elim
+        let tapeAtPred := (hm.stage input n1.pred).tape
+        
+        let hwPred:
+          stage.IsHaltedAtWith hm input tapeAtPred n1.pred
+        := {
+          isHaltedAt := stage.isHaltedAtGe hw0.isHaltedAt lePred
+          tapeEq := rfl
+        }
+        
+        lePred.lt_or_eq.elim
           (fun nLtPred =>
-            let eqR := stage.haltsConsistent.le hw0 hwPred (Or.inl nLtPred)
+            let eqR :=
+              stage.haltsConsistent.le hw0 hwPred nLtPred.le
+            
             eqR.trans (stage.haltsConsistent.step
-              hwPred (n1Pred.property.symm ▸ hw1)))
+              hwPred (predSuccEq.symm ▸ hw1)))
           (fun nEqPred =>
             stage.haltsConsistent.step
-              (nEqPred ▸ hw0) (n1Pred.property.symm ▸ hw1))
-  termination_by stage.haltsConsistent.le n0 n1 hw0 hw1 nLt => n1
+              (nEqPred ▸ hw0)
+              (predSuccEq.symm ▸ hw1))
+  termination_by n1
 
   def stage.haltsConsistent
-    {n0 n1: Ordinal}
-    (hw0: stage.haltsWith hm input output0 n0)
-    (hw1: stage.haltsWith hm input output1 n1)
+    (hw0: stage.IsHaltedAtWith hm input output0 n0)
+    (hw1: stage.IsHaltedAtWith hm input output1 n1)
   :
     output0 = output1
   :=
-    -- Without loss of generality, let's assume n0 is lesser.
-    -- Could this be made simpler in a theorem prover?
-    (n0.total n1).elim
-      (fun lt => stage.haltsConsistent.le hw0 hw1 (Or.inl lt))
-      (fun gtOrEq => gtOrEq.elim
-        (fun gt => (stage.haltsConsistent.le hw1 hw0 (Or.inl gt)).symm)
-        (fun eq => hw0.right.symm.trans (eq ▸ hw1.right)))
+    (lt_or_ge n0 n1).elim
+      (fun lt => stage.haltsConsistent.le hw0 hw1 lt.le)
+      (fun ge => (stage.haltsConsistent.le hw1 hw0 ge).symm)
   
-  def computes (hm: HamkinsMachine) (input output: Nat2): Prop :=
-    ∃ n: Ordinal,
-      stage.haltsWith hm input output n
+  def computes
+    (hm: HamkinsMachine)
+    (input output: Nat2)
+  :
+    Prop
+  :=
+    ∃ n: Ordinal, stage.IsHaltedAtWith hm input output n
   
-  noncomputable def fn (hm: HamkinsMachine) (input: Nat2): Option Nat2 :=
-    if h: ∃ output: Nat2, hm.computes input output then
-      some (choiceEx h)
-    else
-      none
+  noncomputable def fn
+    (hm: HamkinsMachine)
+    (input: Nat2)
+  :
+    Option Nat2
+  :=
+    if h: ∃ output, hm.computes input output
+    then some h.unwrap
+    else none
   
   def haltsConsistent
     (hm: HamkinsMachine)
     (input output: Nat2)
     (n: Ordinal)
-    (hw: stage.haltsWith hm input output n)
+    (hw: stage.IsHaltedAtWith hm input output n)
   :
     fn hm input = output
   :=
     let computes: hm.computes input output := ⟨n, hw⟩
-    let exOut: ∃ output: Nat2, hm.computes input output := ⟨output, computes⟩
-    let out := choiceEx exOut
-    let outN := choiceEx out.property
     
-    let eqR: out.val = output := stage.haltsConsistent outN.property hw
-    let eqL: fn hm input = some out.val := dif_pos exOut
+    -- This ought to work. :/
+    -- (The above is a normative, not descriptive, statement.)
+    -- let ⟨out, ⟨n1, hw1⟩⟩: ∃ out, hm.computes input out :=
+    --   ⟨output, computes⟩
+    let exOut: ∃ out, hm.computes input out := ⟨output, computes⟩
+    let out := exOut.unwrap
+    let hw1 := out.property.unwrap.property
+    
+    let eqR: out = output := stage.haltsConsistent hw1 hw
+    let eqL: fn hm input = some out.val := by
+      unfold fn
+      rw [dif_pos exOut]
     
     eqL.trans (congr rfl eqR)
   
   def halts (hm: HamkinsMachine) (input: Nat2): Prop :=
     ∃ n: Ordinal, (hm.stage input n).state = hm.haltState
-  def loops (hm: HamkinsMachine) (input: Nat2): Prop := hm.fn input = none
+  
+  def loops (hm: HamkinsMachine) (input: Nat2): Prop :=
+    hm.fn input = none
   
   def computable (fn: Nat2 → Option Nat2): Prop :=
     ∃ hm: HamkinsMachine, ∀ arg: Nat2, fn arg = hm.fn arg
   
   def trivialMachine: HamkinsMachine := {
     State := Null
-    isFinite := ⟨[Null.null], fun n => ⟨⟨0, by simp⟩, by simp⟩⟩
+    isFinite := Null.isFinite
     initialState := Null.null
     haltState := Null.null
     limitState := Null.null
     getMove := fun state symbol => {
-      state := state
-      symbol := symbol
+      nextState := state
+      nextSymbol := symbol
       dir := Dir.none
     }
-    haltHalts := by simp
+    haltHalts := fun _ => rfl
   }
   
   
-  def label: HamkinsMachine → Nat2 :=
-    sorry
-  
-  noncomputable def enumeration (nat2: Nat2): HamkinsMachine :=
-    if h: ∃ hm: HamkinsMachine, hm.label = nat2 then
-      h.unwrap
-    else trivialMachine
+  -- def encoding: HamkinsMachine → Nat :=
+  --   sorry
+  -- 
+  -- noncomputable def enumeration (n: Nat): HamkinsMachine :=
+  --   if h: ∃ hm: HamkinsMachine, hm.label = nat2 then
+  --     h.unwrap
+  --   else trivialMachine
 end HamkinsMachine
 
 
-namespace Program
-    structure TapeSeq
-      (cond: Nat)
-      {domain: Set Nat2}
-      {codomain: Set Nat2}
-      (seqZero: Nat2)
-      (loopCompatible: ∀ m: ↑codomain, m.val cond = Two.one → m.val ∈ domain)
-      (stepFn: ↑domain → Set Nat2)
-    where
-      
-      seq: Nat → ↑codomain
-      
-      seqZeroEq: seq 0 = seqZero
-      
-      condT: ∀ (n: Nat) (ct: (seq n).val cond = Two.one),
-        (seq (n + 1)).val ∈ stepFn ⟨seq n, loopCompatible (seq n) ct⟩
-      
-      condF: ∀ n, (seq n).val cond = Two.zero → seq (n + 1) = (seq n)
-    
-    -- Why not just extend Tuple in TapeSeq? And use the already defined limsup?
-    -- Well, you deal with all the typecasts between Ordinal.omega and .length!
-    -- Also, who wants to convert between Nat and Ordinal? Not me.
-    noncomputable def TapeSeq.limSup (m: TapeSeq c s lC sF): Nat2 :=
-      fun loc =>
-        if h: ∃ lowerBound: Nat, ∀ n: Nat,
-          lowerBound ≤ n → (m.seq lowerBound).val loc = (m.seq n).val loc
-        then
-          (m.seq (h.unwrap)).val loc
-        else
-          Two.one
-    end Program
-
-inductive Program:
+-- A (hopefully, to be proven) sound and complete, conservative
+-- extension of Hamkins machines, that ought to be more user-friendly
+-- for writing useful programs, and more convenient to reason about.
+-- TODO work in progress.
+inductive HmProgram:
+  -- A set of input values that are guaranteed to terminate. Might
+  -- be left empty if one is not interested in analyzing termination.
   (terminatesIf: Set Nat2) →
+  -- A set of input values for which there is a postcondition.
+  -- Values not in the precondition are still allowed as arguments,
+  -- but nothing is guaranteed about the output.
   (precond: Set Nat2) →
+  -- For each input value satisfying the precondition, a set of
+  -- output values that is guaranteed to contain the result of
+  -- the computation. Can be thought of as a dependent return type
+  -- of the program.
   (postcond: ↑precond → Set Nat2) →
   Type 1
 where
@@ -704,11 +771,11 @@ where
       
       (isSoundTerminates: ∀ input: ↑precond, hm.fn input ≠ none)
     :
-      Program terminatesIf precond postcond
+      HmProgram terminatesIf precond postcond
   | ite
-      (cond: Nat)
-      (a: Program aTerminates aPrecond aPostcond)
-      (b: Program bTerminates bPrecond bPostcond)
+      (index: Nat)
+      (a: HmProgram aTerminates aPrecond aPostcond)
+      (b: HmProgram bTerminates bPrecond bPostcond)
       
       (precond: Set Nat2)
       (postcond: ↑precond → Set Nat2)
@@ -717,31 +784,31 @@ where
       
       (isSoundPrecond:
         ∀ input: ↑precond,
-          (input.val cond = Two.one → aPrecond input) ∧
-          (input.val cond = Two.zero → bPrecond input))
+          (input.val index = Two.one → aPrecond input) ∧
+          (input.val index = Two.zero → bPrecond input))
       
       (isSoundPostcondA:
         ∀ input: ↑precond,
-          (condTrue: input.val cond = Two.one) →
+          (condTrue: input.val index = Two.one) →
             let apr: aPrecond input := (isSoundPrecond input).left condTrue
             aPostcond ⟨input, apr⟩ ⊆ postcond input)
       
       (isSoundPostcondB:
         ∀ input: ↑precond,
-          (condFalse: input.val cond = Two.zero) →
+          (condFalse: input.val index = Two.zero) →
             let bpr: bPrecond input := (isSoundPrecond input).right condFalse
             bPostcond ⟨input, bpr⟩ ⊆ postcond input)
       
       (isSoundTerminatesA: ∀ input: ↑precond,
-        terminatesIf input → input.val cond = Two.one → aTerminates input)
+        terminatesIf input → input.val index = Two.one → aTerminates input)
       
       (isSoundTerminatesB: ∀ input: ↑precond,
-        terminatesIf input → input.val cond = Two.zero → bTerminates input)
+        terminatesIf input → input.val index = Two.zero → bTerminates input)
     :
-      Program terminatesIf precond postcond
+      HmProgram terminatesIf precond postcond
   | while
       (cond: Nat)
-      (body: Program bTerminates bPrecond bPostcond)
+      (body: HmProgram bTerminates bPrecond bPostcond)
       
       (precond: Set Nat2)
       (postcond: ↑precond → Set Nat2)
@@ -763,14 +830,12 @@ where
           let bpr := isSoundPrecond input condTrue
           bPostcond ⟨input, bpr⟩ ⊆ precond)
       
-      -- TODO I think this is wrong. It's not just
-      -- omega-sequences that must have sound limits,
-      -- any sequence must.
-      (isSoundPostcondLim:
-        ∀ (input: ↑precond)
-          (seq: Program.TapeSeq cond input isSoundPrecond bPostcond)
-        ,
-          (seq.limSup ∈ precond))
+      -- TODO
+      -- (isSoundPostcondLim:
+      --   ∀ (input: ↑precond)
+      --     (seq: HmProgram.TapeSeq cond input isSoundPrecond bPostcond)
+      --   ,
+      --     (seq.limSup ∈ precond))
       
       (isSoundTerminates:
         ∀ (input: ↑precond)
@@ -779,53 +844,41 @@ where
           ,
            variant input output)
     :
-      Program terminatesIf precond postcond
+      HmProgram terminatesIf precond postcond
 
 
 namespace HM
-  -- Aint nobody got time to track bound variables.
-  -- If it's free, it contains the empty type.
-  inductive PosExpr (Var: Type) where
-      -- A variable with which a definition can be associated.
-    | varVar (v: Var)
-      -- A variable that can be introduced by a quantifier.
-    | varNat (n: Nat)
-      -- Represents all subsets of expr.
-    | subs (expr: PosExpr Var)
-      -- Represents all meetsets (sets sharing a common element) of expr.
-    | meet (expr: PosExpr Var)
+  inductive PosExpr where
+      -- Represents a variable.
+    | var (n: Nat)
+      -- Represents all subsets.
+    | subs (expr: PosExpr)
+      -- Represents all meetsets (sets sharing a common element).
+    | meet (expr: PosExpr)
       -- Binary union of a and b.
-    | un (a b: PosExpr Var)
+    | un (a b: PosExpr)
       -- Binary intersection of a and b.
-    | ir (a b: PosExpr Var)
+    | ir (a b: PosExpr)
       -- If cond is inhabited, then expr, else empty.
-    | cond (cond expr: PosExpr Var)
-      -- Arbitrary union / existential quantifier.
-      -- Nc is a complement of n.
-    | Un (n nc: Nat) (expr: PosExpr Var)
-      -- Arbitrary intersection / universal quantifier.
-      -- Nc is a complement of n.
-    | Ir (n nc: Nat) (expr: PosExpr Var)
+    | cond (cond expr: PosExpr)
+      -- Arbitrary union. `x` is a variable bound to a set of a
+      -- single element, `xc` to that set's complement.
+    | arbUn (x xc: Nat) (expr: PosExpr)
+      -- Arbitrary intersection. `x` and `xc` are as in arbUn.
+    | arbIr (x xc: Nat) (expr: PosExpr)
   
-  structure DefList
-    (Var: Type)
-    (fin: Type.IsFinite Var)
-  where
-    rules: ↑Var → PosExpr Var
-    isFinite: ∃ list: List Var, ∀ v: ↑Var, v ∈ list
+  structure DefList where
+    getDef: Nat → PosExpr
   
-  structure Valuation (Var: Type) :=
-    var: ↑Var → Set3 HamkinsMachine
-    nat: Nat → Set3 HamkinsMachine
+  def Valuation := Nat → Set3 HamkinsMachine
   
-  def I (vlt: Valuation Var): PosExpr Var → Set3 HamkinsMachine
-    | PosExpr.varVar v => vlt.var v
-    | PosExpr.varNat v => vlt.nat v
-    | PosExpr.subs a => sorry
-    | PosExpr.meet a => sorry
-    | PosExpr.cond cond expr => sorry
-    | PosExpr.un a b => sorry
-    | PosExpr.ir a b => sorry
-    | PosExpr.Un var cVar body => sorry
-    | PosExpr.Ir var cVar body => sorry
+  def interpretation (v: Valuation): PosExpr → Set3 HamkinsMachine
+  | PosExpr.var x => v x
+  | PosExpr.subs a => sorry
+  | PosExpr.meet a => sorry
+  | PosExpr.cond cond expr => sorry
+  | PosExpr.un a b => sorry
+  | PosExpr.ir a b => sorry
+  | PosExpr.arbUn var cVar body => sorry
+  | PosExpr.arbIr var cVar body => sorry
 end HM
