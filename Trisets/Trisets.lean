@@ -1,4 +1,14 @@
+-- TODO make this a chapter and add description
+-- TODO document everything well. Don't be lazy.
+-- Explain the important we have done in the previous
+-- chapters, even to those who haven't read them.
+-- Explain how and why we do the quotient construction,
+-- and why set membership is respected by it.
+
+import UniSet3.Ch9_S2_InternalExternalEquivalence
+
 import Utils.BasicUtils
+import Utils.Bisimilarity
 
 
 structure PairOf (A: Type u) where
@@ -30,43 +40,72 @@ def Truth3.and: Truth3 → Truth3 → Truth3
 | a, true => a
 
 
-@[reducible] def Trisets.IsMem (Triset: Type u) :=
-  Triset → Triset → Truth3
-
-structure IsTrisetBisimulation.Related
-  (isMem: Trisets.IsMem Triset)
-  (Rel: Set (PairOf Triset))
-  (r0: Rel)
-  (t0 t1: Triset)
-:
-  Prop
-:=
-  isMemEq: isMem r0.val.fst t1 = tv
-  tRelated: ⟨t0, t1⟩ ∈ Rel
-
-def IsTrisetBisimulation
-  (isMem: Trisets.IsMem Triset)
-  (Rel: Set (PairOf Triset))
-:
-  Prop
-:=
-  ∀ (tv: Truth3)
-    (r0: Rel)
-    (t0: Triset),
-  isMem r0.val.zth t0 = tv →
-    ∃ t1: Triset,
-      IsTrisetBisimulation.Related isMem Rel r0 t0 t1
-
-def TrisetBisimilation
-  (isMem: Trisets.IsMem Triset)
-:=
-  { Rel: Set (PairOf Triset) // IsTrisetBisimulation isMem Rel }
-
-def IsBisimilar
-  (isMem: Trisets.IsMem Triset)
-  (a b: Triset)
-:=
-  ∃ tb: TrisetBisimilation isMem, ⟨a, b⟩ ∈ tb.val
+namespace Set3Pair
+  def PreTriset := Nat
+  
+  -- Strong (a la "definite") membership, `a ∈ b`.
+  def PreTriset.Ins (elem pts: PreTriset): Prop :=
+    Set3.defMem (Pair.nthSet3 elem) (Pair.fromNat pts)
+  
+  -- Weak (a la "possible") membership, `a ∈? b`.
+  def PreTriset.Inw (elem pts: PreTriset): Prop :=
+    Set3.posMem (Pair.nthSet3 elem) (Pair.fromNat pts)
+  
+  open PreTriset
+  
+  inductive TransitionLabels where
+  | ins
+  | inw
+  
+  def transitionSystem:
+    LabeledTransitionSystem PreTriset
+  := {
+    Labels := TransitionLabels
+    isTransition := fun
+      | a, .ins, b => a.Ins b
+      | a, .inw, b => a.Inw b
+  }
+  
+  def trisetSetoid: Setoid PreTriset where
+    iseqv := isEquivalence transitionSystem
+  
+  def Triset := Quotient trisetSetoid
+  
+  
+  def PreTriset.insOfInsRel
+    (bisim: Bisimulation transitionSystem)
+    (relA: bisim.Rel a0 a1)
+    (relB: bisim.Rel b0 b1)
+    (ins0: Ins a0 b0)
+  :
+    Ins a1 b1
+  :=
+    let ⟨bM, relBM, insBM⟩ :=
+      bisim.isSimulation relA (label := .ins) ins0
+    
+    sorry
+  
+  def Triset.insRespects
+    (a0 b0 a1 b1: PreTriset)
+    (relA: IsBisimilar transitionSystem a0 a1)
+    (relB: IsBisimilar transitionSystem b0 b1)
+  :
+    Ins a0 b0 = Ins a1 b1
+  :=
+    let ⟨bisimA, relA⟩ := relA
+    let ⟨bisimB, relB⟩ := relB
+    
+    let bisim := bisimA.union bisimB
+    
+    Eq.propIntro
+      (insOfInsRel bisim (Or.inl relA) (Or.inr relB))
+      (insOfInsRel bisim.converse (Or.inl relA) (Or.inr relB))
+  
+  def Triset.ins:
+    Triset → Triset → Prop
+  :=
+    Quotient.lift₂ Ins insRespects
+end Set3Pair
 
 
 /-
@@ -77,15 +116,18 @@ def IsBisimilar
   TODO
 -/
 structure Trisets where
-  Triset: Type u
-  isMem: Trisets.IsMem Triset
+  Triset: Type*
   
-  isExtensional: ∀ a b: Triset, IsBisimilar isMem a b → a = b
+  Mem: Triset → Triset → Truth3
+  
+  isExtensional:
+    (∀ a b e: Triset, Mem e a = Mem e b) →
+    a = b
 
-  exEmpty: ∃ empty, ∀ s, isMem s empty = f3
+  exEmpty: ∃ empty, ∀ s, Mem s empty = f3
   exUnion:
     ∀ s0 s1 elem, ∃ s,
-      isMem elem s = (isMem elem s0).or (isMem elem s1)
+      Mem elem s = (Mem elem s0).or (Mem elem s1)
   
   /-
     TODO should be redundant if we have comprehension. Also:
@@ -97,19 +139,8 @@ structure Trisets where
   -/
   exIntersection:
     ∀ s0 s1 elem, ∃ s,
-      isMem elem s = (isMem elem s0).and (isMem elem s1)
+      Mem elem s = (Mem elem s0).and (Mem elem s1)
 
-
-def Trisets.fromPairs: Trisets := {
-  Triset := sorry
-  isMem := sorry
-  
-  isExtensional := sorry
-  
-  exEmpty := sorry
-  exUnion := sorry
-  exIntersection := sorry
-}
 
 -- Is the intersection of two Triset models a triset model?
 -- What about arbitrary intersection?

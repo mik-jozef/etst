@@ -147,16 +147,15 @@ def Tuple.Nat2.limSup.eqOfEventuallyConstant
 
 
 inductive Dir
-  | left
-  | right
-  | none
+| left
+| right
+| none
 
-def Dir.shift (dir: Dir) (n: Nat): Option Nat :=
-  match dir, n with
-    | Dir.left, 0 => Option.none
-    | Dir.left, x+1 => x
-    | Dir.right, x => some (x + 1)
-    | Dir.none, x => x
+def Dir.shift: Dir → Nat → Option Nat
+| Dir.left, 0 => Option.none
+| Dir.left, x+1 => x
+| Dir.right, x => x.succ
+| Dir.none, x => x
 
 structure HamkinsMachine.Move (State: Type) where
   nextState: State

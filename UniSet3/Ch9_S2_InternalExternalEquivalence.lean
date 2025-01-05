@@ -12,6 +12,9 @@ namespace Pair
   open Expr
   open PairExpr
   
+  def nthSet3 (n: Nat): Set3 Pair :=
+    uniSet3.pairCallJust (fromNat n)
+  
   namespace uniSet3
     def theInternalWfmEncoding.eqWfm:
       uniDefList.theInternalWfmEncoding = theInternalWfm
@@ -23,7 +26,7 @@ namespace Pair
       {s3: Set3 Pair}
       (isDef: pairSalgebra.IsDefinable s3)
     :
-      ∃ x: Nat, uniSet3.pairCallJust (fromNat x) = s3
+      ∃ n: Nat, nthSet3 n = s3
     :=
       let ⟨x, s3EqWfm⟩ := theInternalDefList.hasAllDefinable s3 isDef
       
