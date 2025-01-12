@@ -179,10 +179,11 @@ def HamkinsMachine.Move.eq {State: Type}:
   
   Note: Unlike the original definition [0], here we only have one tape for
   simplicity. In "Infinite time Turing machines with only one tape" [1],
-  the authors claim one-tape machines are [TL;DR: bad]. Well, it is their
-  definitions that are bad. A proper reaction to a move-left instruction
-  while head at zero is for the machine to crash and burn. Nevertheless,
-  thank you JDH for this awesome concept!
+  the authors claim one-tape machines are [TL;DR: bad]. I believe this to
+  be a consequence of a non-ideal definition of the move-left instruction
+  while the head is at the zeroth cell (the proper reaction is not to
+  stay at the cell and keep computing, but to crash and burn). TODO to be
+  proven.
   
   0. https://arxiv.org/abs/math/9808093
   1. https://arxiv.org/abs/math/9907044
@@ -706,13 +707,13 @@ namespace HamkinsMachine
     
     eqL.trans (congr rfl eqR)
   
-  def halts (hm: HamkinsMachine) (input: Nat2): Prop :=
+  def Halts (hm: HamkinsMachine) (input: Nat2): Prop :=
     ∃ n: Ordinal, (hm.stage input n).state = hm.haltState
   
-  def loops (hm: HamkinsMachine) (input: Nat2): Prop :=
+  def Loops (hm: HamkinsMachine) (input: Nat2): Prop :=
     hm.fn input = none
   
-  def computable (fn: Nat2 → Option Nat2): Prop :=
+  def IsComputable (fn: Nat2 → Option Nat2): Prop :=
     ∃ hm: HamkinsMachine, ∀ arg: Nat2, fn arg = hm.fn arg
   
   def trivialMachine: HamkinsMachine := {
