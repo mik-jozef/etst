@@ -1,4 +1,4 @@
-import HM.Hamkins
+import HM.HamkinsMachine
 
 
 -- A (hopefully, to be proven) sound and complete, conservative
