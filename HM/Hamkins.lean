@@ -1,8 +1,6 @@
 import Utils.Lfp
 import WFC.Ch0_Set3
 
-open Classical
-
 
 def Null.isFinite: Finite Null := ⟨
   fun _ => Fin.mk 0 (Nat.lt_succ_self 0),
@@ -337,8 +335,7 @@ namespace HamkinsMachine
   noncomputable def stage
     (hm: HamkinsMachine)
     (input: Nat2)
-    -- TODO: generalize to any universe level?
-    (n: Ordinal.{0})
+    (n: Ordinal)
   :
     Configuration hm
   :=
@@ -655,6 +652,7 @@ namespace HamkinsMachine
   termination_by n1
 
   def stage.haltsConsistent
+    {n0 n1: Ordinal.{u}}
     (hw0: stage.IsHaltedAtWith hm input output0 n0)
     (hw1: stage.IsHaltedAtWith hm input output1 n1)
   :
@@ -664,39 +662,41 @@ namespace HamkinsMachine
       (fun lt => stage.haltsConsistent.le hw0 hw1 lt.le)
       (fun ge => (stage.haltsConsistent.le hw1 hw0 ge).symm)
   
-  def computes
+  def Computes.{u}
     (hm: HamkinsMachine)
     (input output: Nat2)
   :
     Prop
   :=
-    ∃ n: Ordinal, stage.IsHaltedAtWith hm input output n
+    ∃ (n: Ordinal.{u})
+    ,
+      stage.IsHaltedAtWith hm input output n
   
-  noncomputable def fn
+  noncomputable def fn.{u}
     (hm: HamkinsMachine)
     (input: Nat2)
   :
     Option Nat2
   :=
-    if h: ∃ output, hm.computes input output
+    if h: ∃ output, Computes.{u} hm input output
     then some h.unwrap
     else none
   
   def haltsConsistent
     (hm: HamkinsMachine)
     (input output: Nat2)
-    (n: Ordinal)
+    (n: Ordinal.{u})
     (hw: stage.IsHaltedAtWith hm input output n)
   :
-    fn hm input = output
+    fn.{u} hm input = output
   :=
-    let computes: hm.computes input output := ⟨n, hw⟩
+    let computes: hm.Computes input output := ⟨n, hw⟩
     
     -- This ought to work. :/
     -- (The above is a normative, not descriptive, statement.)
     -- let ⟨out, ⟨n1, hw1⟩⟩: ∃ out, hm.computes input out :=
     --   ⟨output, computes⟩
-    let exOut: ∃ out, hm.computes input out := ⟨output, computes⟩
+    let exOut: ∃ out, hm.Computes input out := ⟨output, computes⟩
     let out := exOut.unwrap
     let hw1 := out.property.unwrap.property
     
@@ -707,14 +707,16 @@ namespace HamkinsMachine
     
     eqL.trans (congr rfl eqR)
   
-  def Halts (hm: HamkinsMachine) (input: Nat2): Prop :=
-    ∃ n: Ordinal, (hm.stage input n).state = hm.haltState
+  def Halts.{u} (hm: HamkinsMachine) (input: Nat2): Prop :=
+    ∃ n: Ordinal.{u}, (hm.stage input n).state = hm.haltState
   
-  def Loops (hm: HamkinsMachine) (input: Nat2): Prop :=
-    hm.fn input = none
+  def Loops.{u} (hm: HamkinsMachine) (input: Nat2): Prop :=
+    fn.{u} hm input = none
   
-  def IsComputable (fn: Nat2 → Option Nat2): Prop :=
-    ∃ hm: HamkinsMachine, ∀ arg: Nat2, fn arg = hm.fn arg
+  def IsComputable.{u} (fn: Nat2 → Option Nat2): Prop :=
+    ∃ hm: HamkinsMachine,
+    ∀ arg: Nat2,
+    fn arg = HamkinsMachine.fn.{u} hm arg
   
   def trivialMachine: HamkinsMachine := {
     State := Null
@@ -739,146 +741,3 @@ namespace HamkinsMachine
   --     h.unwrap
   --   else trivialMachine
 end HamkinsMachine
-
-
--- A (hopefully, to be proven) sound and complete, conservative
--- extension of Hamkins machines, that ought to be more user-friendly
--- for writing useful programs, and more convenient to reason about.
--- TODO work in progress.
-inductive HmProgram:
-  -- A set of input values that are guaranteed to terminate. Might
-  -- be left empty if one is not interested in analyzing termination.
-  (terminatesIf: Set Nat2) →
-  -- A set of input values for which there is a postcondition.
-  -- Values not in the precondition are still allowed as arguments,
-  -- but nothing is guaranteed about the output.
-  (precond: Set Nat2) →
-  -- For each input value satisfying the precondition, a set of
-  -- output values that is guaranteed to contain the result of
-  -- the computation. Can be thought of as a dependent return type
-  -- of the program.
-  (postcond: ↑precond → Set Nat2) →
-  Type 1
-where
-  | hm
-      (hm: HamkinsMachine)
-      
-      (precond: Set Nat2)
-      (postcond: ↑precond → Set Nat2)
-      
-      (isSound: ∀ (input: ↑precond) (output: Nat2),
-        hm.fn input = output → output ∈ postcond input)
-      
-      (isSoundTerminates: ∀ input: ↑precond, hm.fn input ≠ none)
-    :
-      HmProgram terminatesIf precond postcond
-  | ite
-      (index: Nat)
-      (a: HmProgram aTerminates aPrecond aPostcond)
-      (b: HmProgram bTerminates bPrecond bPostcond)
-      
-      (precond: Set Nat2)
-      (postcond: ↑precond → Set Nat2)
-      
-      (terminatesIf: Set Nat2)
-      
-      (isSoundPrecond:
-        ∀ input: ↑precond,
-          (input.val index = Two.one → aPrecond input) ∧
-          (input.val index = Two.zero → bPrecond input))
-      
-      (isSoundPostcondA:
-        ∀ input: ↑precond,
-          (condTrue: input.val index = Two.one) →
-            let apr: aPrecond input := (isSoundPrecond input).left condTrue
-            aPostcond ⟨input, apr⟩ ⊆ postcond input)
-      
-      (isSoundPostcondB:
-        ∀ input: ↑precond,
-          (condFalse: input.val index = Two.zero) →
-            let bpr: bPrecond input := (isSoundPrecond input).right condFalse
-            bPostcond ⟨input, bpr⟩ ⊆ postcond input)
-      
-      (isSoundTerminatesA: ∀ input: ↑precond,
-        terminatesIf input → input.val index = Two.one → aTerminates input)
-      
-      (isSoundTerminatesB: ∀ input: ↑precond,
-        terminatesIf input → input.val index = Two.zero → bTerminates input)
-    :
-      HmProgram terminatesIf precond postcond
-  | while
-      (cond: Nat)
-      (body: HmProgram bTerminates bPrecond bPostcond)
-      
-      (precond: Set Nat2)
-      (postcond: ↑precond → Set Nat2)
-      
-      (terminatesIf: Set Nat2)
-      
-      (variant: (a b: Nat2) → Prop)
-      (variantTransitive:
-        (ab: variant a b) →
-        (bc: variant b c) →
-        variant a c)
-      
-      (isSoundPrecond: ∀ input: ↑precond,
-        input.val cond = Two.one → bPrecond input)
-      
-      (isSoundPostcondStep:
-        ∀ input: ↑precond,
-          (condTrue: input.val cond = Two.one) →
-          let bpr := isSoundPrecond input condTrue
-          bPostcond ⟨input, bpr⟩ ⊆ precond)
-      
-      -- TODO
-      -- (isSoundPostcondLim:
-      --   ∀ (input: ↑precond)
-      --     (seq: HmProgram.TapeSeq cond input isSoundPrecond bPostcond)
-      --   ,
-      --     (seq.limSup ∈ precond))
-      
-      (isSoundTerminates:
-        ∀ (input: ↑precond)
-           (condT: input.val cond = Two.one)
-           (output: ↑(bPostcond ⟨input, isSoundPrecond input condT⟩))
-          ,
-           variant input output)
-    :
-      HmProgram terminatesIf precond postcond
-
-
-namespace HM
-  inductive PosExpr where
-      -- Represents a variable.
-    | var (n: Nat)
-      -- Represents all subsets.
-    | subs (expr: PosExpr)
-      -- Represents all meetsets (sets sharing a common element).
-    | meet (expr: PosExpr)
-      -- Binary union of a and b.
-    | un (a b: PosExpr)
-      -- Binary intersection of a and b.
-    | ir (a b: PosExpr)
-      -- If cond is inhabited, then expr, else empty.
-    | cond (cond expr: PosExpr)
-      -- Arbitrary union. `x` is a variable bound to a set of a
-      -- single element, `xc` to that set's complement.
-    | arbUn (x xc: Nat) (expr: PosExpr)
-      -- Arbitrary intersection. `x` and `xc` are as in arbUn.
-    | arbIr (x xc: Nat) (expr: PosExpr)
-  
-  structure DefList where
-    getDef: Nat → PosExpr
-  
-  def Valuation := Nat → Set3 HamkinsMachine
-  
-  def interpretation (v: Valuation): PosExpr → Set3 HamkinsMachine
-  | PosExpr.var x => v x
-  | PosExpr.subs a => sorry
-  | PosExpr.meet a => sorry
-  | PosExpr.cond cond expr => sorry
-  | PosExpr.un a b => sorry
-  | PosExpr.ir a b => sorry
-  | PosExpr.arbUn var cVar body => sorry
-  | PosExpr.arbIr var cVar body => sorry
-end HM

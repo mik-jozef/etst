@@ -7,6 +7,7 @@ package Etst {}
 lean_lib HM.Assign {}
 lean_lib HM.Compile {}
 lean_lib HM.Hamkins {}
+lean_lib HM.HmProgram {}
 lean_lib HM.Uhm {}
 
 lean_lib Trisets.Trisets {}
