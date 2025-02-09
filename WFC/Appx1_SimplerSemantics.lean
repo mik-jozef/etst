@@ -20,7 +20,7 @@
       let x = x | ~x \,.
   
   In the original semantics, x is undetermined, while in the
-  propsed semantics, x is the universal set. The hope is that
+  proposed semantics, x is the universal set. The hope is that
   these differences are inessential, and in particular that the
   definable sets are the same.
 -/
