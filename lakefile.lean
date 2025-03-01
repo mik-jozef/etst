@@ -34,6 +34,7 @@ lean_lib UniSet3.Ch9_S2_InternalExternalEquivalence {}
 lean_lib Utils.AProofSystem {}
 lean_lib Utils.BasicUtils {}
 lean_lib Utils.Bisimilarity {}
+lean_lib Utils.CantorPairing {}
 lean_lib Utils.CauseSatisfiesBoundVars {}
 lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
