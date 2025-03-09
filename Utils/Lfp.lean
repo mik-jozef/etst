@@ -191,7 +191,7 @@ def lfp.stage.option.isMono.ifChain.limit
     (stage.option cc op n)
     (stage.option cc op n.succ)
 :=
-  let _ := ord.optionTop
+  let Le := ord.optionTop.le
   
   let nIsSup := limit.ifChain cc op n nIsLimit isChain
   let nSuccIsUB:
@@ -202,10 +202,10 @@ def lfp.stage.option.isMono.ifChain.limit
   :=
     fun tt =>
       let ttIndex := tt.property.unwrap
-      let ttLeN: tt ≤ option cc op n := nIsSup.isMember tt
+      let ttLeN := nIsSup.isMember tt
       match hTt: tt.val with
       | none =>
-        let noneLeN: none ≤ option cc op n := hTt ▸ ttLeN
+        let noneLeN := hTt ▸ ttLeN
         let nEqNone := PartialOrder.optionTop.noneLeToEqNone noneLeN
         let nSuccEqNone := succ.ifNone cc op n nEqNone
         nSuccEqNone ▸ ord.optionTop.le_refl _
@@ -215,7 +215,7 @@ def lfp.stage.option.isMono.ifChain.limit
           let nSuccEqNone := succ.ifNone cc op n hN
           nSuccEqNone ▸ trivial
         | some nRaw =>
-          let ttLeNSome: some ttRaw ≤ some nRaw := hTt ▸ hN ▸ ttLeN
+          let ttLeNSome: Le (some ttRaw) (some nRaw) := hTt ▸ hN ▸ ttLeN
           let ttLeNRaw: ttRaw ≤ nRaw := ttLeNSome
           
           let opTtLeOpN: op ttRaw ≤ op nRaw := opMono ttLeNRaw
@@ -226,18 +226,28 @@ def lfp.stage.option.isMono.ifChain.limit
             option.succ.ifSome cc op ttIndex.val (ttIndex.property.trans hTt)
           
           let ttIndexLeSucc:
-            option cc op ttIndex ≤
-            option cc op ttIndex.val.val.succ
+            Le
+              (option cc op ttIndex)
+              (option cc op ttIndex.val.val.succ)
           :=
             isMono
               ttIndex.val
               ⟨ttIndex.val.val.succ, nIsLimit.succ_lt ttIndex.val⟩
               (ttIndex.val.val.le_succ_self)
           
-          let ttLeOpTt: ttRaw ≤ op ttRaw :=
-            show some ttRaw ≤ op ttRaw from
-            opTtRawEq.symm ▸ hTt ▸ ttIndex.property.symm.trans_le ttIndexLeSucc
-          let ttLeOpN: ttRaw ≤ op nRaw := ttLeOpTt.trans opTtLeOpN
+          -- Why the Flying Duck is this necessary :looks-of-disapproval:
+          -- (`trans_le` worked in a previous Lean version.)
+          let wtf {a b c} (ab: a = b) (bc: Le b c): Le a c :=
+            ab ▸ bc
+          
+          let ttLeOpTt: Le ttRaw (some (op ttRaw)) :=
+            opTtRawEq.symm ▸
+            hTt ▸
+            wtf ttIndex.property.symm ttIndexLeSucc
+          
+          let ttLeOpN: Le ttRaw (op nRaw) :=
+            ord.optionTop.le_trans _ _ _ ttLeOpTt opTtLeOpN
+          
           opNRawEq ▸ ttLeOpN
   nIsSup.isLeMember nSuccIsUB
 
@@ -254,7 +264,7 @@ def lfp.stage.option.isMono.ifChain.{u}
     (lfp.stage.option cc op a)
     (lfp.stage.option cc op b)
 :=
-  let _ := ord.optionTop
+  let Le := ord.optionTop.le
   
   if hEq: a = b then
     hEq ▸ ord.optionTop.le_refl (option cc op a)
@@ -275,10 +285,10 @@ def lfp.stage.option.isMono.ifChain.{u}
     let isChainPred :=
       option.previous.isChainToIsChain isChain b.pred b.pred_le_self
     
-    let abp: option cc op a ≤ option cc op b.pred :=
+    let abp: Le (option cc op a) (option cc op b.pred) :=
       option.isMono.ifChain cc op opMono aLeBPred isChainPred
     
-    let bpb: option cc op b.pred ≤ option cc op b :=
+    let bpb: Le (option cc op b.pred) (option cc op b) :=
       if hPredLim: b.pred.IsSuccPrelimit then
         let isMono (aa bb: ↑b.pred) aabb :=
           let bbLtB: bb < b := bb.property.trans_le (b.pred_le_self)
@@ -306,17 +316,17 @@ def lfp.stage.option.isMono.ifChain.{u}
               lfp.stage.option.pred.ifSome cc op b hLim bPredSome
             
             let optionPredPredLe:
-              option cc op b.pred.pred ≤ option cc op b.pred
+              Le (option cc op b.pred.pred) (option cc op b.pred)
             :=
               isMono.ifChain cc op opMono b.pred.pred_le_self
                 (previous.isChainToIsChain isChain b.pred b.pred_le_self)
             
-            let tLeOpT: t ≤ op t := show some t ≤ op t from
+            let tLeOpT: Le t (op t) :=
               bPredSome ▸ hPredPred ▸ optionPredPredLe
             
             bPredSome ▸ bSome ▸ opMono tLeOpT
     
-    abp.trans bpb
+    ord.optionTop.le_trans _ _ _ abp bpb
 termination_by b
 
 def lfp.stage.option.previous.isChain
@@ -427,7 +437,7 @@ def lfp.stage.isMono
     (lfp.stage cc op opMono a)
     (lfp.stage cc op opMono b)
 :=
-  let _ := ord.optionTop
+  let Le := ord.optionTop.le
   
   let stageA := lfp.stage.withEq cc op opMono a
   let stageB := lfp.stage.withEq cc op opMono b
@@ -438,7 +448,8 @@ def lfp.stage.isMono
   let isChain := option.previous.isChain cc op opMono b
   let opAB := option.isMono.ifChain cc op opMono ab isChain
   
-  show some stageA.val ≤ some stageB.val from aEq ▸ bEq ▸ opAB
+  show Le (some stageA.val) (some stageB.val) from
+    aEq ▸ bEq ▸ opAB
 
 -- The tuple of all previous stages.
 noncomputable def lfp.stage.previous
@@ -528,7 +539,7 @@ def lfp.stage.limit
 :
   IsSupremum ord (previous cc op opMono n) (stage cc op opMono n)
 :=
-  let _ := ord.optionTop
+  let Le := ord.optionTop.le
   
   let isChain := option.previous.isChain cc op opMono n
   let isSupOpt := option.limit.ifChain cc op n nLim isChain
@@ -536,16 +547,17 @@ def lfp.stage.limit
   
   {
     isMember := fun t =>
-      let prevSet: Set (Option T) := option.previous cc op n
-      
       let tIndex := t.property.unwrap
       
+      let prevSet: Set (Option T) := option.previous cc op n
       let prevEq := previous.eqOption cc op opMono n tIndex.val
       
-      let tOpt: prevSet := ⟨t, ⟨tIndex.val, prevEq ▸ (congr rfl tIndex.property)⟩⟩
+      let tOpt: prevSet :=
+        ⟨t, ⟨tIndex.val, prevEq ▸ (congr rfl tIndex.property)⟩⟩
+      
       let tOptLeOptionN := isSupOpt.isMember tOpt
       
-      show tOpt.val ≤ (stage cc op opMono n) from
+      show Le tOpt.val (some (stage cc op opMono n)) from
         stageEq ▸ tOptLeOptionN
     isLeMember := fun t tUB =>
       let optNLeT := isSupOpt.isLeMember
@@ -560,7 +572,7 @@ def lfp.stage.limit
           
           ttRawEq ▸ ttRawLeT
       
-      show some (stage cc op opMono n) ≤ t from
+      show Le (some (stage cc op opMono n)) t from
         stageEq ▸ optNLeT
   }
 

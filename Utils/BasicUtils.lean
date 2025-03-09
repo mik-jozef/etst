@@ -10,7 +10,7 @@
 
 import Mathlib.Data.Set.Defs
 import Mathlib.Data.Set.Basic
-import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Fintype.EquivFin
 
 import Utils.PartialOrder
 
@@ -580,10 +580,8 @@ def List.appendUnique.inToOrInEq
     Or.inl (eqIfNotUnique hIn ▸ isTIn)
   else
     let tInConcat: tIn ∈ list ++ [ t ] := eqIfUnique hIn ▸ isTIn
-    let tInEq := mem_append_eq tIn list [ t ]
-    let tInEither := tInEq ▸ tInConcat
     
-    tInEither.elim
+    (mem_append.mp tInConcat).elim
       (fun inList => Or.inl inList)
       (fun inArrOfT => Or.inr (eq_of_mem_singleton inArrOfT))
   
