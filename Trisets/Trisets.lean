@@ -11,11 +11,6 @@ import Utils.BasicUtils
 import Utils.Bisimilarity
 
 
-structure PairOf (A: Type u) where
-  zth: A
-  fst: A
-
-
 inductive Truth3 where
 | false
 | true
@@ -40,72 +35,11 @@ def Truth3.and: Truth3 → Truth3 → Truth3
 | a, true => a
 
 
-namespace Set3Pair
-  def PreTriset := Nat
-  
-  -- Strong (a la "definite") membership, `a ∈ b`.
-  def PreTriset.Ins (elem pts: PreTriset): Prop :=
-    Set3.defMem (Pair.nthSet3 elem) (Pair.fromNat pts)
-  
-  -- Weak (a la "possible") membership, `a ∈? b`.
-  def PreTriset.Inw (elem pts: PreTriset): Prop :=
-    Set3.posMem (Pair.nthSet3 elem) (Pair.fromNat pts)
-  
-  open PreTriset
-  
-  inductive TransitionLabels where
-  | ins
-  | inw
-  
-  def transitionSystem:
-    LabeledTransitionSystem PreTriset
-  := {
-    Labels := TransitionLabels
-    isTransition := fun
-      | a, .ins, b => a.Ins b
-      | a, .inw, b => a.Inw b
-  }
-  
-  def trisetSetoid: Setoid PreTriset where
-    iseqv := isEquivalence transitionSystem
-  
-  def Triset := Quotient trisetSetoid
-  
-  
-  def PreTriset.insOfInsRel
-    (bisim: Bisimulation transitionSystem)
-    (relA: bisim.Rel a0 a1)
-    (relB: bisim.Rel b0 b1)
-    (ins0: Ins a0 b0)
-  :
-    Ins a1 b1
-  :=
-    let ⟨bM, relBM, insBM⟩ :=
-      bisim.isSimulation relA (label := .ins) ins0
-    
-    sorry
-  
-  def Triset.insRespects
-    (a0 b0 a1 b1: PreTriset)
-    (relA: IsBisimilar transitionSystem a0 a1)
-    (relB: IsBisimilar transitionSystem b0 b1)
-  :
-    Ins a0 b0 = Ins a1 b1
-  :=
-    let ⟨bisimA, relA⟩ := relA
-    let ⟨bisimB, relB⟩ := relB
-    
-    let bisim := bisimA.union bisimB
-    
-    Eq.propIntro
-      (insOfInsRel bisim (Or.inl relA) (Or.inr relB))
-      (insOfInsRel bisim.converse (Or.inl relA) (Or.inr relB))
-  
-  def Triset.ins:
-    Triset → Triset → Prop
-  :=
-    Quotient.lift₂ Ins insRespects
-end Set3Pair
+structure TriRelation (T: Type*) where
+  Rel: T → T → Truth3
+
+inductive TriRelation.Expr (T: Type*) where
+
 
 
 /-
@@ -114,6 +48,9 @@ end Set3Pair
   that satisfies the following properties:
   
   TODO
+  
+  TODO sth like: In this volume, our goal is to construct an instance
+  of `Trisets`.
 -/
 structure Trisets where
   Triset: Type*
@@ -145,3 +82,70 @@ structure Trisets where
 -- Is the intersection of two Triset models a triset model?
 -- What about arbitrary intersection?
 -- Is there a "least" model of trisets?
+
+
+namespace Set3Pair
+  def PreTriset := Nat
+  
+  -- Strong (a la "definite") membership, `a ∈ b`.
+  def PreTriset.Ins (preElem preTs: PreTriset): Prop :=
+    Set3.defMem (Pair.nthSet3 preElem) (Pair.fromNat preTs)
+  
+  -- Weak (a la "possible") membership, `a ∈? b`.
+  def PreTriset.Inw (preElem preTs: PreTriset): Prop :=
+    Set3.posMem (Pair.nthSet3 preElem) (Pair.fromNat preTs)
+  
+  open PreTriset
+  
+  inductive TransitionLabels where
+  | ins
+  | inw
+  
+  def transitionSystem:
+    LabeledTransitionSystem PreTriset
+  := {
+    Labels := TransitionLabels
+    isTransition := fun
+      | a, .ins, b => a.Ins b
+      | a, .inw, b => a.Inw b
+  }
+  
+  def trisetSetoid: Setoid PreTriset where
+    iseqv := isEquivalence transitionSystem
+  
+  def Triset := Quotient trisetSetoid
+  
+  structure TrisetIns
+    (elem ts: Triset)
+    (preElem preTs: PreTriset)
+  :
+    Prop
+  where
+    elemEq: elem = ⟦preElem⟧
+    tsEq: ts = ⟦preTs⟧
+    ins: preElem.Ins preTs
+  
+  structure TrisetInw
+    (elem ts: Triset)
+    (preElem preTs: PreTriset)
+  :
+    Prop
+  where
+    elemEq: elem = ⟦preElem⟧
+    tsEq: ts = ⟦preTs⟧
+    inw: preElem.Inw preTs
+  
+  def Triset.Ins (elem ts: Triset): Prop :=
+    ∃ preElem preTs, TrisetIns elem ts preElem preTs
+  
+  def Triset.Inw (elem ts: Triset): Prop :=
+    ∃ preElem preTs, TrisetInw elem ts preElem preTs
+  
+  noncomputable def Triset.Mem3 (elem ts: Triset): Truth3 :=
+    if Triset.Ins elem ts
+    then t3
+    else if Triset.Inw elem ts
+    then u3
+    else f3
+  
+end Set3Pair
