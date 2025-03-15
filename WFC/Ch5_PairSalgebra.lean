@@ -7,6 +7,11 @@
   `zero` and the binary function `pair`. This simple salgebra
   allows expressing/defining a wide range mathematical objects
   and concepts.
+  
+  Note that in the appendix 1 (WIP), it is shown (TBD) that this
+  salgebra is equivalent to the salgebra of natural numbers (with
+  zero, successor, addition, and multiplication) under a standard
+  correspondence between pairs and naturals.
 -/
 
 import Mathlib.Order.MinMax
