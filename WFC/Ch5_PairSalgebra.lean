@@ -140,17 +140,17 @@ namespace pairSalgebra
     I(Op.pair, arg0, arg1) = { Pair.pair a b | a ∈ arg0, b ∈ arg1 }
   -/
   def I: (op: Op) → (args: pairSignature.Args op Pair) → Set Pair
-    | Op.zero => fun _ p => p = Pair.zero
-    | Op.pair => fun args p =>
+    | Op.zero, _, p => p = Pair.zero
+    | Op.pair, args, p =>
         ∃ (a: ↑(args ArityTwo.zth))
           (b: ↑(args ArityTwo.fst))
         ,
           p = Pair.pair a b
-    | Op.un => fun args p =>
+    | Op.un, args, p =>
         args ArityTwo.zth p ∨ args ArityTwo.fst p
-    | Op.ir => fun args p =>
+    | Op.ir, args, p =>
         args ArityTwo.zth p ∧ args ArityTwo.fst p
-    | Op.ifThen => fun args p =>
+    | Op.ifThen, args, p =>
         (args ArityTwo.zth).Nonempty ∧ args ArityTwo.fst p
   
   theorem I.isMonotonic
