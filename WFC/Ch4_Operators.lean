@@ -631,6 +631,19 @@ def DefList.wellFoundedModel.eqLfpC
 :=
   (operatorB.lfp salg dl).property.isMember
 
+noncomputable def DefList.exprInterp
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  (expr: Expr sig)
+:
+  Set3 salg.D
+:=
+  expr.interpretation
+    salg
+    (dl.wellFoundedModel salg)
+    (dl.wellFoundedModel salg)
+
+
 /-
   A fixed point of the operator B is a model of the definition
   list.

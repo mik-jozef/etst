@@ -225,3 +225,16 @@ instance Set3.pairInstMem:
   Membership (Set3 Pair) (Set3 Pair)
 :=
   ⟨Set3.PairMem⟩
+
+
+noncomputable abbrev DefList.pairWfm
+  (dl: DefList pairSignature)
+:
+  Valuation Pair
+:=
+  dl.wellFoundedModel pairSalgebra
+
+noncomputable abbrev DefList.pairExprInterp
+  (dl: DefList pairSignature)
+:=
+  dl.exprInterp pairSalgebra
