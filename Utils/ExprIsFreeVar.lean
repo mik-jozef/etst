@@ -5,6 +5,20 @@
 import WFC.Ch1_Expr
 
 
+def Expr.IsFreeVar.arbUnUnfold
+  (isFreeVar: x ∈ (arbUn xB body).IsFreeVar boundVars)
+:
+  x ∈ body.IsFreeVar (fun v => v ∈ boundVars ∨ v = xB)
+:=
+  isFreeVar
+
+def Expr.IsFreeVar.arbIrUnfold
+  (isFreeVar: x ∈ (arbIr xB body).IsFreeVar boundVars)
+:
+  x ∈ body.IsFreeVar (fun v => v ∈ boundVars ∨ v = xB)
+:=
+  isFreeVar
+
 def Expr.IsFreeVar.boundNotFree
   (expr: Expr sig)
   {boundVars: Set Nat}

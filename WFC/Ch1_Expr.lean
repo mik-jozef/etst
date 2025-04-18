@@ -64,7 +64,7 @@ namespace Expr
   -/
   def IsFreeVar
     (expr: Expr sig)
-    (boundVars: Set Nat)
+    (boundVars: Set Nat := Set.empty)
   :
     Set Nat
   :=

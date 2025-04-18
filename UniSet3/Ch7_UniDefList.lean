@@ -821,86 +821,83 @@ namespace Pair
     | 35 => theSet.expr
     | _rest + 36 => zeroExpr
     
+    def list_mem_empty_eq_set_empty
+      {T: Type*}
+    :
+      (fun x => x ∈ []) = @Set.empty T
+    :=
+      funext (fun _ => propext (Iff.intro nofun nofun))
+    
     /-
       All free variables of the definition list are less than 38.
       From this, it follows that the definition list is finitely
       bounded.
     -/
     def defList.usedVarsLt38
-      (usedVar: IsFreeVar (getDef a) Set.empty)
+      (usedVar: IsFreeVar (getDef a) (fun x => x ∈ []))
     :
       usedVar.val < 38
     :=
       let prf
-        (x: Nat)
-        (fv: List Nat)
-        (fvEq: (freeVars (getDef x)).val = fv)
-        (allLe: ∀ {x} (_: x ∈ fv), x ≤ 37)
-        (usedByX: IsFreeVar (getDef x) Set.empty)
+        (i: Nat)
+        (eq: (freeVarsLt (getDef i) [] 38).toBool = true)
+        (usedVar: IsFreeVar (getDef i) (fun x => x ∈ []))
       :
-        usedByX.val < 38
+        usedVar.val < 38
       :=
-        let freeVars := freeVars (getDef x)
-        let xIn: ↑usedByX ∈ fv := fvEq ▸ freeVars.property usedByX
-        Nat.lt_succ_of_le (allLe xIn)
+        match h: freeVarsLt (getDef i) [] 38 with
+        | .isTrue isLe => isLe usedVar
+        | .none => Bool.noConfusion (h ▸ eq)
       
       match a with
-      | 0 => prf 0 [ 0 ] rfl (by simp) usedVar
-      | 1 => prf 1 [ 0 ] rfl (by simp) usedVar
-      | 2 => prf 2 [ 1, 2 ] rfl (by simp[leN37]) usedVar
-      | 3 => prf 3 [ 0 ] rfl (by simp) usedVar
-      | 4 => prf 4 [] rfl (by simp) usedVar
-      | 5 => prf 5 [] rfl (by simp) usedVar
-      | 6 => prf 6 [] rfl (by simp) usedVar
-      | 7 => prf 7 [ 3, 4, 5, 7, 6, 0 ] rfl (by simp[leN37]) usedVar
-      | 8 => prf 8 [ 7, 8 ] rfl (by simp[leN37]) usedVar
-      | 9 => prf 9 [ 9 ] rfl (by simp[leN37]) usedVar
-      | 10 => prf 10 [ 2 ] rfl (by simp[leN37]) usedVar
-      | 11 => prf 11 [ 0, 11, 10 ] rfl (by simp[leN37]) usedVar
-      | 12 => prf 12 [ 2 ] rfl (by simp[leN37]) usedVar
-      | 13 => prf 13 [ 0, 11 ] rfl (by simp[leN37]) usedVar
-      | 14 => prf 14 [ 13, 9, 12, 11 ] rfl (by simp[leN37]) usedVar
-      | 15 => prf 15 [ 14, 8 ] rfl (by simp[leN37]) usedVar
-      | 16 => prf 16 [ 15 ] rfl (by simp[leN37]) usedVar
-      | 17 => prf 17 [ 15, 16 ] rfl (by simp[leN37]) usedVar
-      | 18 => prf 18 [ 18, 17 ] rfl (by simp[leN37]) usedVar
-      | 19 => prf 19 [ 0 ] rfl (by simp[leN37]) usedVar
-      | 20 => prf 20 [ 19, 4, 5, 7, 20, 6, 0 ] rfl (by simp[leN37]) usedVar
-      | 21 => prf 21 [ 7, 8, 20, 21 ] rfl (by simp[leN37]) usedVar
-      | 22 => prf 22 [ 8, 0, 21, 22 ] rfl (by simp[leN37]) usedVar
-      | 23 => prf 23 [ 7 ] rfl (by simp[leN37]) usedVar
-      | 24 => prf 24 [ 23, 24, 7 ] rfl (by simp[leN37]) usedVar
-      | 25 => prf 25 [ 7, 25 ] rfl (by simp[leN37]) usedVar
-      | 26 => prf 26 [ 8, 26, 25, 24 ] rfl (by simp[leN37]) usedVar
-      | 27 => prf 27 [ 27 ] rfl (by simp[leN37]) usedVar
-      | 28 => prf 28 [ 8, 26, 22, 27 ] rfl (by simp[leN37]) usedVar
-      | 29 => prf 29 [ 0, 28, 29, 18 ] rfl (by simp[leN37]) usedVar
-      | 30 => prf 30 [ 7, 8, 0, 30 ] rfl (by simp[leN37]) usedVar
-      | 31 => prf 31 [ 0, 29 ] rfl (by simp[leN37]) usedVar
-      | 32 => prf 32 [ 31, 30 ] rfl (by simp[leN37]) usedVar
-      | 33 => prf 33 [ 0, 33 ] rfl (by simp[leN37]) usedVar
-      | 34 => prf 34 [ 0, 33, 35, 7, 34 ] rfl (by simp[leN37]) usedVar
-      | 35 => prf 35 [ 0, 34, 32 ] rfl (by simp[leN37]) usedVar
+      | 00 => prf 00 rfl usedVar
+      | 01 => prf 01 rfl usedVar
+      | 02 => prf 02 rfl usedVar
+      | 03 => prf 03 rfl usedVar
+      | 04 => prf 04 rfl usedVar
+      | 05 => prf 05 rfl usedVar
+      | 06 => prf 06 rfl usedVar
+      | 07 => prf 07 rfl usedVar
+      | 08 => prf 08 rfl usedVar
+      | 09 => prf 09 rfl usedVar
+      | 10 => prf 10 rfl usedVar
+      | 11 => prf 11 rfl usedVar
+      | 12 => prf 12 rfl usedVar
+      | 13 => prf 13 rfl usedVar
+      | 14 => prf 14 rfl usedVar
+      | 15 => prf 15 rfl usedVar
+      | 16 => prf 16 rfl usedVar
+      | 17 => prf 17 rfl usedVar
+      | 18 => prf 18 rfl usedVar
+      | 19 => prf 19 rfl usedVar
+      | 20 => prf 20 rfl usedVar
+      | 21 => prf 21 rfl usedVar
+      | 22 => prf 22 rfl usedVar
+      | 23 => prf 23 rfl usedVar
+      | 24 => prf 24 rfl usedVar
+      | 25 => prf 25 rfl usedVar
+      | 26 => prf 26 rfl usedVar
+      | 27 => prf 27 rfl usedVar
+      | 28 => prf 28 rfl usedVar
+      | 29 => prf 29 rfl usedVar
+      | 30 => prf 30 rfl usedVar
+      | 31 => prf 31 rfl usedVar
+      | 32 => prf 32 rfl usedVar
+      | 33 => prf 33 rfl usedVar
+      | 34 => prf 34 rfl usedVar
+      | 35 => prf 35 rfl usedVar
     
     def defList.hasFiniteBounds
       (dependsOn: DefList.DependsOn getDef a b)
     :
-      b < max a.succ 38
+      b < 38
     :=
-      -- Lean could get better at termination showing.
-      -- match dependsOn with
-      -- | DefList.DependsOn.Refl x =>
-      --   lt_max_of_lt_left (Nat.lt_succ_self x)
-      -- | DefList.DependsOn.Uses aUsesB bUsesC =>
-      --   let ih := hasFiniteBounds bUsesC
-      --   ...
-      
+      let eq := list_mem_empty_eq_set_empty
+      -- Structural recursion was unsupported as of writing, see
+      -- commit history.
       dependsOn.rec
-        (fun x => lt_max_of_lt_left (Nat.lt_succ_self x))
-        (fun aUsesB _ ih =>
-          let bLt37 := usedVarsLt38 ⟨_, aUsesB⟩
-          let maxEq := max_eq_right (Nat.succ_le_of_lt bLt37)
-          lt_max_of_lt_right (maxEq ▸ ih))
+        (fun aUsesB => usedVarsLt38 ⟨_, eq ▸ aUsesB⟩)
+        (fun _ _ => id)
     
     /-
       The definition list that defines the universal triset (under
@@ -916,10 +913,7 @@ namespace Pair
       getDef := defList.getDef
       
       isFinBounded :=
-        fun x => ⟨
-          max x.succ 38,
-          defList.hasFiniteBounds,
-        ⟩
+        fun _ => ⟨38, defList.hasFiniteBounds⟩
     }
     
     -- The well-founded model of the external definition list.

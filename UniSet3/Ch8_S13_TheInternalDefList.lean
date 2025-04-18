@@ -136,7 +136,8 @@ namespace Pair
     :=
       let ⟨dl, x, sEq⟩ := isDef
       
-      let ⟨dlSliceEnd, gtBounds⟩ := dl.isFinBounded x
+      let ⟨dlDepsUB, gtBounds⟩ := dl.isFinBounded x
+      let dlSliceEnd := max dlDepsUB x.succ
       
       -- Potential for Lean improvement detected.
       -- let ⟨dlSliceEncoding, isDefSlice, eqAtSlice⟩ :=
@@ -159,11 +160,14 @@ namespace Pair
           theInternalDefList
           pairSalgebra
           (fun i => iStart + i)
-          (fun i => DefList.DependsOn dl.getDef x i)
+          (fun i => DefList.DependsOn dl.getDef x i ∨ i = x)
           Nat.add_left_cancel
           (fun ⟨i, isUsed⟩ =>
             let withinBounds: i < dlSliceEncoding.arrayLength :=
-              dlSliceLengthEq ▸ gtBounds isUsed
+              dlSliceLengthEq ▸ 
+              match isUsed with
+              | Or.inl isUsed => lt_max_of_lt_left (gtBounds isUsed)
+              | Or.inr eq => lt_max_of_lt_right (eq ▸ Nat.lt_succ_self i)
             
             let eqInSlice:
               dlSliceEncoding.arrayAt i
@@ -178,9 +182,14 @@ namespace Pair
             inListOfIsDefList
               isDefList
               IsIncrVarsExprPair.shiftVarsEqMapVars)
-          (fun ⟨xM, isMapped⟩ ⟨xF, isFree⟩ => isMapped.push isFree)
+          (fun ⟨xM, isMapped⟩ ⟨xF, isFree⟩ =>
+            match isMapped with
+            | Or.inl isMapped =>
+              Or.inl (isMapped.push isFree)
+            | Or.inr eq =>
+              Or.inl (DefList.DependsOn.Base (eq ▸ isFree)))
           x
-          (DefList.DependsOn.Refl x)
+          (Or.inr rfl)
       
       ⟨iStart + x, by unfold theInternalWfm; exact eq ▸ sEq⟩
     

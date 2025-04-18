@@ -95,11 +95,11 @@ where
 structure Cause.IsStronglySatisfiedBy
   (cause: Cause D)
   (b c: Valuation D)
+:
+  Prop
 extends
   Cause.IsStronglySatisfiedByContext cause c,
   Cause.IsStronglySatisfiedByBackground cause b
-:
-  Prop
 
 
 structure Cause.IsWeaklySatisfiedByContext
@@ -130,11 +130,11 @@ where
 structure Cause.IsWeaklySatisfiedBy
   (cause: Cause D)
   (b c: Valuation D)
+:
+  Prop
 extends
   Cause.IsWeaklySatisfiedByContext cause c,
   Cause.IsWeaklySatisfiedByBackground cause b
-:
-  Prop
 
 /-
   `Is[X]Cause salg cause d expr` means that for every pair of

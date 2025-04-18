@@ -137,8 +137,11 @@ inductive DefList.DependsOn
 :
   Nat → Nat → Prop
 where
-| Refl x: DependsOn getDef x x
-| Uses
+| Base
+  (aUsesB: (getDef a).IsFreeVar Set.empty b)
+  :
+    DependsOn getDef a b
+| Rec
   (aUsesB: (getDef a).IsFreeVar Set.empty b)
   (bUsesC: DependsOn getDef b c)
   :
@@ -165,9 +168,9 @@ def DefList.DependsOn.push
     (getDef b).IsFreeVar Set.empty c → DependsOn getDef a c
   :=
     dependsOn.rec
-      (fun _ isFree => Uses isFree (Refl c))
+      (fun isFreeAB isFreeBC => Rec isFreeAB (Base isFreeBC))
       (fun isFree _ ih ihh =>
-        Uses isFree (ih ihh))
+        Rec isFree (ih ihh))
   
   thePrincipleTM isFree
 
