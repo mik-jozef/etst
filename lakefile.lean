@@ -38,6 +38,7 @@ lean_lib Utils.CantorPairing {}
 lean_lib Utils.CauseSatisfiesBoundVars {}
 lean_lib Utils.Chain {}
 lean_lib Utils.DefListDefEq {}
+lean_lib Utils.DependsOnRefl {}
 lean_lib Utils.ElimExternal {}
 lean_lib Utils.ExprIsFreeVar {}
 lean_lib Utils.InsInterp {}

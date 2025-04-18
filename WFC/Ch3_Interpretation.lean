@@ -128,10 +128,7 @@ def DefList.GetDef (sig: Signature) := Nat → Expr sig
 structure DefList (sig: Signature) where
   getDef: DefList.GetDef sig
 
-/-
-  The definition x depends on y if x = y or x contains y, possibly
-  transitively.
--/
+-- The definition x depends on y x contains y, possibly transitively.
 inductive DefList.DependsOn
   (getDef: GetDef sig)
 :

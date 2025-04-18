@@ -1,6 +1,7 @@
 -- The thirteenth section of chapter 8. See the zeroth section.
 
 import Utils.DefListDefEq
+import Utils.DependsOnRefl
 import UniSet3.Ch8_S12_DefListToEncoding
 
 
@@ -136,8 +137,7 @@ namespace Pair
     :=
       let ⟨dl, x, sEq⟩ := isDef
       
-      let ⟨dlDepsUB, gtBounds⟩ := dl.isFinBounded x
-      let dlSliceEnd := max dlDepsUB x.succ
+      let ⟨dlSliceEnd, gtBounds⟩ := dl.isFinBoundedRefl x
       
       -- Potential for Lean improvement detected.
       -- let ⟨dlSliceEncoding, isDefSlice, eqAtSlice⟩ :=
@@ -160,14 +160,11 @@ namespace Pair
           theInternalDefList
           pairSalgebra
           (fun i => iStart + i)
-          (fun i => DefList.DependsOn dl.getDef x i ∨ i = x)
+          (fun i => DefList.DependsOnRefl dl.getDef x i)
           Nat.add_left_cancel
           (fun ⟨i, isUsed⟩ =>
             let withinBounds: i < dlSliceEncoding.arrayLength :=
-              dlSliceLengthEq ▸ 
-              match isUsed with
-              | Or.inl isUsed => lt_max_of_lt_left (gtBounds isUsed)
-              | Or.inr eq => lt_max_of_lt_right (eq ▸ Nat.lt_succ_self i)
+              dlSliceLengthEq ▸ gtBounds isUsed
             
             let eqInSlice:
               dlSliceEncoding.arrayAt i
@@ -182,14 +179,9 @@ namespace Pair
             inListOfIsDefList
               isDefList
               IsIncrVarsExprPair.shiftVarsEqMapVars)
-          (fun ⟨xM, isMapped⟩ ⟨xF, isFree⟩ =>
-            match isMapped with
-            | Or.inl isMapped =>
-              Or.inl (isMapped.push isFree)
-            | Or.inr eq =>
-              Or.inl (DefList.DependsOn.Base (eq ▸ isFree)))
+          (fun ⟨xM, isMapped⟩ ⟨xF, isFree⟩ => isMapped.push isFree)
           x
-          (Or.inr rfl)
+          (DefList.DependsOnRefl.Refl x)
       
       ⟨iStart + x, by unfold theInternalWfm; exact eq ▸ sEq⟩
     
