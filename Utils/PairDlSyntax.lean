@@ -71,15 +71,15 @@ def Expr.IsFreeVar.nope_of_eq_zero
 
 namespace pair_def_list
   
-  def termStxErr
+  def cmdStxErr
+    (stx: Syntax)
     (item: String)
   :
-    TermElabM T
+    CommandElabM T
   :=
-    throwError s!"Implementation error: unexpected syntax for {item}."
-  
-  def cmdStxErr {T} item :=
-    liftTermElabM <| termStxErr (T := T) item
+    throwErrorAt
+      stx
+      s!"Implementation error: unexpected syntax for {item}."
   
   
   partial def makeExpr
@@ -143,7 +143,7 @@ namespace pair_def_list
     match ← liftMacroM (Macro.expandMacro? stx) with
     | some stxNew => do
       makeExpr vars bvi stxNew
-    | none => cmdStxErr "s3_pair_expr"
+    | none => cmdStxErr stx "s3_pair_expr"
   
   
   def getVars
@@ -167,7 +167,7 @@ namespace pair_def_list
             defs
             (Function.update varsSoFar (name.getId) size)
             (size + 1)
-        | _ => cmdStxErr "s3 in pairDefList"
+        | stx => cmdStxErr stx "s3 in pairDefList"
   
   
   def makeGetDef
@@ -193,8 +193,8 @@ namespace pair_def_list
             $(← makeExpr vars 0 expr)
             $(← makeGetDef vars defs false)
             n)
-      | _ =>
-        cmdStxErr "s3 in pairDefList"
+      | stx =>
+        cmdStxErr stx "s3 in pairDefList"
   
   
   def makeIsFinBounded.makeMatchClause
@@ -269,6 +269,5 @@ namespace pair_def_list
             getDef,
             isFinBounded := $(← makeIsFinBounded defs.size),
           })
-      | _ =>
-        cmdStxErr "pairDefList"
+      | stx => cmdStxErr stx "pairDefList"
 end pair_def_list

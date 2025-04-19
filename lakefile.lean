@@ -56,6 +56,7 @@ lean_lib Utils.OutIntro4 {}
 lean_lib Utils.Pair {}
 lean_lib Utils.PairDepthDictOrder {}
 lean_lib Utils.PairDictOrder {}
+lean_lib Utils.PairDlSyntax {}
 lean_lib Utils.PairExpr {}
 lean_lib Utils.PairFreeVars {}
 lean_lib Utils.PartialOrder {}
