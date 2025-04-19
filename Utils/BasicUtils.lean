@@ -634,6 +634,13 @@ def List.flattenUnique: List (List T) → List T
 | nil => []
 | cons head tail => head ++ (flattenUnique tail)
 
+def list_mem_empty_eq_set_empty
+  {T: Type*}
+:
+  (fun x => x ∈ []) = @Set.empty T
+:=
+  funext (fun _ => propext (Iff.intro nofun nofun))
+
 namespace Set
   namespace HasListOfAll
     

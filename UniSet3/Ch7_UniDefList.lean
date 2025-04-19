@@ -821,13 +821,6 @@ namespace Pair
     | 35 => theSet.expr
     | _rest + 36 => zeroExpr
     
-    def list_mem_empty_eq_set_empty
-      {T: Type*}
-    :
-      (fun x => x ∈ []) = @Set.empty T
-    :=
-      funext (fun _ => propext (Iff.intro nofun nofun))
-    
     /-
       All free variables of the definition list are less than 38.
       From this, it follows that the definition list is finitely
