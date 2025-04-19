@@ -9,55 +9,55 @@ import WFC.Ch5_PairSalgebra
 open Lean Elab Command Term Meta Syntax
 
 
-declare_syntax_cat pair_def_list.def
-declare_syntax_cat pair_def_list.expr
+declare_syntax_cat s3_pair_def
+declare_syntax_cat s3_pair_expr
 
 -- Expressions
-syntax:70 ident : pair_def_list.expr
-syntax:70 "(" pair_def_list.expr ")" : pair_def_list.expr
-syntax:70 "null" : pair_def_list.expr
-syntax:70 "(" pair_def_list.expr ", " pair_def_list.expr ")" : pair_def_list.expr
-syntax:60 pair_def_list.expr:60 pair_def_list.expr:61 : pair_def_list.expr
-syntax:50 "!" pair_def_list.expr:50 : pair_def_list.expr
-syntax:40 pair_def_list.expr:40 "|" pair_def_list.expr:41 : pair_def_list.expr
-syntax:40 "|" pair_def_list.expr:41 "|" pair_def_list.expr:41 : pair_def_list.expr
-syntax:30 pair_def_list.expr:30 "&" pair_def_list.expr:31 : pair_def_list.expr
-syntax:30 "&" pair_def_list.expr:31 "&" pair_def_list.expr:31 : pair_def_list.expr
-syntax:20 pair_def_list.expr:20 "then" pair_def_list.expr:21 : pair_def_list.expr
-syntax:10 pair_def_list.expr:11 "->" pair_def_list.expr:10 : pair_def_list.expr
-syntax:9 pair_def_list.expr:10 "<->" pair_def_list.expr:10 : pair_def_list.expr
-syntax:00 "Ex " ident ", " pair_def_list.expr : pair_def_list.expr
-syntax:00 "Ex " ident ": " pair_def_list.expr ", " pair_def_list.expr : pair_def_list.expr
-syntax:00 "All " ident ", " pair_def_list.expr : pair_def_list.expr
-syntax:00 "All " ident ": " pair_def_list.expr ", " pair_def_list.expr : pair_def_list.expr
+syntax:70 ident : s3_pair_expr
+syntax:70 "(" s3_pair_expr ")" : s3_pair_expr
+syntax:70 "null" : s3_pair_expr
+syntax:70 "(" s3_pair_expr ", " s3_pair_expr ")" : s3_pair_expr
+syntax:60 s3_pair_expr:60 s3_pair_expr:61 : s3_pair_expr
+syntax:50 "!" s3_pair_expr:50 : s3_pair_expr
+syntax:40 s3_pair_expr:40 "|" s3_pair_expr:41 : s3_pair_expr
+syntax:40 "|" s3_pair_expr:41 "|" s3_pair_expr:41 : s3_pair_expr
+syntax:30 s3_pair_expr:30 "&" s3_pair_expr:31 : s3_pair_expr
+syntax:30 "&" s3_pair_expr:31 "&" s3_pair_expr:31 : s3_pair_expr
+syntax:20 s3_pair_expr:20 "then" s3_pair_expr:21 : s3_pair_expr
+syntax:10 s3_pair_expr:11 "->" s3_pair_expr:10 : s3_pair_expr
+syntax:9 s3_pair_expr:10 "<->" s3_pair_expr:10 : s3_pair_expr
+syntax:00 "Ex " ident ", " s3_pair_expr : s3_pair_expr
+syntax:00 "Ex " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
+syntax:00 "All " ident ", " s3_pair_expr : s3_pair_expr
+syntax:00 "All " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
 
 macro_rules
 -- Function application
-| `(pair_def_list.expr| $fn $arg) =>
-  `(pair_def_list.expr| Ex res, $fn & ($arg, res) then res)
+| `(s3_pair_expr| $fn $arg) =>
+  `(s3_pair_expr| Ex res, $fn & ($arg, res) then res)
 -- Remove leading "|"
-| `(pair_def_list.expr| | $a | $b) => `(pair_def_list.expr| $a | $b)
+| `(s3_pair_expr| | $a | $b) => `(s3_pair_expr| $a | $b)
 -- Remove leading "&"
-| `(pair_def_list.expr| & $a & $b) => `(pair_def_list.expr| $a & $b)
+| `(s3_pair_expr| & $a & $b) => `(s3_pair_expr| $a & $b)
 -- Implication (->) to disjunction
-| `(pair_def_list.expr| $a -> $b) => `(pair_def_list.expr| !$a | $b)
+| `(s3_pair_expr| $a -> $b) => `(s3_pair_expr| !$a | $b)
 -- Equivalence (<->) to conjunction of implications
-| `(pair_def_list.expr| $a <-> $b) =>
-  `(pair_def_list.expr| ($a -> $b) & ($b -> $a))
+| `(s3_pair_expr| $a <-> $b) =>
+  `(s3_pair_expr| ($a -> $b) & ($b -> $a))
 -- Bounded existential quantifier
-| `(pair_def_list.expr| Ex $x:ident: $domain, $body) =>
-  `(pair_def_list.expr| Ex $x, $(⟨x.raw⟩) & $domain then $body)
+| `(s3_pair_expr| Ex $x:ident: $domain, $body) =>
+  `(s3_pair_expr| Ex $x, $(⟨x.raw⟩) & $domain then $body)
 -- Bounded universal quantifier
-| `(pair_def_list.expr| All $x:ident: $domain, $body) =>
-  `(pair_def_list.expr| All $x, (!($(⟨x.raw⟩) & $domain) then Any) | $body)
+| `(s3_pair_expr| All $x:ident: $domain, $body) =>
+  `(s3_pair_expr| All $x, (!($(⟨x.raw⟩) & $domain) then Any) | $body)
 
 
 -- Definitions
-syntax "s3 " ident " := " pair_def_list.expr : pair_def_list.def
+syntax "s3 " ident " := " s3_pair_expr : s3_pair_def
 
 -- The namespace
-syntax (name := pair_def_list.dl)
-  "pairDefList" ident pair_def_list.def* "pairDefList." : command
+syntax (name := pair_def_list)
+  "pairDefList" ident s3_pair_def* "pairDefList." : command
 
 
 def Expr.IsFreeVar.nope_of_eq_zero
@@ -89,51 +89,51 @@ namespace pair_def_list
     Syntax →
     CommandElabM (TSyntax `term)
   |
-    `(pair_def_list.expr| $name:ident) => do
+    `(s3_pair_expr| $name:ident) => do
       match vars name.getId with
       | none =>
         throwErrorAt name (s!"Unknown variable '{name.getId}'")
       | some i => `(Expr.var $(mkNumLit i.repr))
   |
-    `(pair_def_list.expr| null) => `(PairExpr.zeroExpr)
+    `(s3_pair_expr| null) => `(PairExpr.zeroExpr)
   |
-    `(pair_def_list.expr|
-      ($a:pair_def_list.expr, $b:pair_def_list.expr))
+    `(s3_pair_expr|
+      ($a:s3_pair_expr, $b:s3_pair_expr))
     => do
       `(PairExpr.pairExpr
         $(← makeExpr vars bvi a)
         $(← makeExpr vars bvi b))
   |
-    `(pair_def_list.expr| ! $a:pair_def_list.expr)
+    `(s3_pair_expr| ! $a:s3_pair_expr)
     => do `(Expr.cpl $(← makeExpr vars bvi a))
   |
-    `(pair_def_list.expr|
-      $a:pair_def_list.expr | $b:pair_def_list.expr)
+    `(s3_pair_expr|
+      $a:s3_pair_expr | $b:s3_pair_expr)
     => do
       `(PairExpr.unExpr
         $(← makeExpr vars bvi a)
         $(← makeExpr vars bvi b))
   |
-    `(pair_def_list.expr|
-      $a:pair_def_list.expr & $b:pair_def_list.expr)
+    `(s3_pair_expr|
+      $a:s3_pair_expr & $b:s3_pair_expr)
     => do
       `(PairExpr.irExpr
         $(← makeExpr vars bvi a)
         $(← makeExpr vars bvi b))
   |
-    `(pair_def_list.expr| $a:pair_def_list.expr then $b:pair_def_list.expr)
+    `(s3_pair_expr| $a:s3_pair_expr then $b:s3_pair_expr)
     => do
       `(PairExpr.ifThenExpr
         $(← makeExpr vars bvi a)
         $(← makeExpr vars bvi b))
   |
-    `(pair_def_list.expr| Ex $x:ident, $body:pair_def_list.expr)
+    `(s3_pair_expr| Ex $x:ident, $body:s3_pair_expr)
     =>
       let vars := Function.update vars (x.getId) bvi
       let bviLit := mkNumLit bvi.repr
       do `(Expr.arbUn $bviLit $(← makeExpr vars bvi.succ body))
   |
-    `(pair_def_list.expr| All $x:ident, $body:pair_def_list.expr)
+    `(s3_pair_expr| All $x:ident, $body:s3_pair_expr)
     =>
       let vars := Function.update vars (x.getId) bvi
       let bviLit := mkNumLit bvi.repr
@@ -143,11 +143,11 @@ namespace pair_def_list
     match ← liftMacroM (Macro.expandMacro? stx) with
     | some stxNew => do
       makeExpr vars bvi stxNew
-    | none => cmdStxErr "pair_def_list.expr"
+    | none => cmdStxErr "s3_pair_expr"
   
   
   def getVars
-    -- (defs: List (TSyntax `pair_def_list.def))
+    -- (defs: List (TSyntax `s3_pair_def))
     (defs: List Syntax)
     -- Used to throw error on a subsequent duplicate variable.
     (varsSoFar: Name → Option Nat := fun _ => none)
@@ -159,7 +159,7 @@ namespace pair_def_list
     | [] => return varsSoFar
     | df :: defs =>
       match df with
-      | `(pair_def_list.def| s3 $name:ident := $_) => do
+      | `(s3_pair_def| s3 $name:ident := $_) => do
         if varsSoFar name.getId != none then
           throwErrorAt name (s!"Duplicate variable '{name.getId}'")
         else
@@ -172,7 +172,7 @@ namespace pair_def_list
   
   def makeGetDef
     (vars: Name → Option Nat)
-    -- (defs: List (TSyntax `pair_def_list.def))
+    -- (defs: List (TSyntax `s3_pair_def))
     (defs: List Syntax)
     (isZeroth: Bool := true)
   :
@@ -187,7 +187,7 @@ namespace pair_def_list
     | df :: defs =>
       -- Why can't I merge these match expressions into one?
       match df with
-      | `(pair_def_list.def| s3 $_ := $expr) =>
+      | `(s3_pair_def| s3 $_ := $expr) =>
         `(fun $[$args]* =>
           Nat.rec
             $(← makeExpr vars 0 expr)
@@ -255,7 +255,7 @@ namespace pair_def_list
       
       ⟨$sizeLit, hasFinBounds⟩)
   
-  @[command_elab pair_def_list.dl]
+  @[command_elab pair_def_list]
   def pairDefListImpl : CommandElab :=
     Command.adaptExpander fun stx => do
       match stx with
@@ -266,8 +266,8 @@ namespace pair_def_list
         `(def $name : FinBoundedDL pairSignature :=
           let getDef := $getDef
           {
-              getDef,
-              isFinBounded := $(← makeIsFinBounded defs.size),
+            getDef,
+            isFinBounded := $(← makeIsFinBounded defs.size),
           })
       | _ =>
         cmdStxErr "pairDefList"
