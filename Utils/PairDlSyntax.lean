@@ -31,7 +31,21 @@ syntax:00 "Ex " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
 syntax:00 "All " ident ", " s3_pair_expr : s3_pair_expr
 syntax:00 "All " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
 
+def s3IdentOfIdent
+  (ident: TSyntax `ident)
+:
+  TSyntax `s3_pair_expr
+:= {
+  raw :=
+    match ident.raw.getInfo? with
+    | some srcInfo =>
+      Syntax.node srcInfo `s3_pair_expr_ #[ident]
+    | none => missing
+}
+
 macro_rules
+-- Parentheses removal
+| `(s3_pair_expr| ($expr)) => `(s3_pair_expr| $expr)
 -- Function application
 | `(s3_pair_expr| $fn $arg) =>
   `(s3_pair_expr| Ex res, $fn & ($arg, res) then res)
@@ -46,10 +60,13 @@ macro_rules
   `(s3_pair_expr| ($a -> $b) & ($b -> $a))
 -- Bounded existential quantifier
 | `(s3_pair_expr| Ex $x:ident: $domain, $body) =>
-  `(s3_pair_expr| Ex $x, $(⟨x.raw⟩) & $domain then $body)
+  `(s3_pair_expr| Ex $x, $(s3IdentOfIdent x) & $domain then $body)
 -- Bounded universal quantifier
 | `(s3_pair_expr| All $x:ident: $domain, $body) =>
-  `(s3_pair_expr| All $x, (!($(⟨x.raw⟩) & $domain) then Any) | $body)
+  `(s3_pair_expr|
+    All $x,
+    (!($(s3IdentOfIdent x) & $domain) then
+    $(s3IdentOfIdent <| mkIdent `Any)) | $body)
 
 
 -- Definitions
@@ -155,13 +172,21 @@ namespace pair_def_list
   :
     CommandElabM (Name → Option Nat)
   :=
+    let resName name val :=
+      s!"'{name}' is a reserved variable name denoting the {val} type."
     match defs with
     | [] => return varsSoFar
     | df :: defs =>
       match df with
       | `(s3_pair_def| s3 $name:ident := $_) => do
         if varsSoFar name.getId != none then
-          throwErrorAt name (s!"Duplicate variable '{name.getId}'")
+          match name.getId with
+          | `Any =>
+            throwErrorAt name (resName "Any" "universal")
+          | `None =>
+            throwErrorAt name (resName "None" "empty")
+          | _ =>
+            throwErrorAt name (s!"Duplicate variable '{name.getId}'.")
         else
           getVars
             defs
@@ -259,15 +284,19 @@ namespace pair_def_list
   def pairDefListImpl : CommandElab :=
     Command.adaptExpander fun stx => do
       match stx with
-      | `(pairDefList $name $defs* pairDefList.) =>
-        let vars ← getVars defs.toList
-        let getDef ← makeGetDef vars defs.toList
+      | `(pairDefList $name $defsArr* pairDefList.) =>
+        let anyDef ← `(s3_pair_def| s3 $(mkIdent `Any) := Ex x, x)
+        let noneDef ← `(s3_pair_def| s3 $(mkIdent `None) := All x, x)
+        
+        let defs := anyDef :: noneDef :: defsArr.toList
+        let vars ← getVars defs
+        let getDef ← makeGetDef vars defs
         
         `(def $name : FinBoundedDL pairSignature :=
           let getDef := $getDef
           {
             getDef,
-            isFinBounded := $(← makeIsFinBounded defs.size),
+            isFinBounded := $(← makeIsFinBounded defs.length),
           })
       | stx => cmdStxErr stx "pairDefList"
 end pair_def_list
