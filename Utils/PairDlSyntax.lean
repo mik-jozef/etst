@@ -2,11 +2,144 @@ import Lean
 import Lean.Elab
 import Lean.Parser.Term
 
+import Utils.DependsOnRefl
 import Utils.PairExpr
 import Utils.PairFreeVars
 import WFC.Ch5_PairSalgebra
 
 open Lean Elab Command Term Meta Syntax
+
+
+def Expr.VarLtSize
+  (expr: Expr sig)
+  (size: Nat)
+:=
+  ∀ y ∈ expr.IsFreeVar, y < size
+
+def Expr.IsFreeVar.nopeNone
+  {P: Prop}
+  (isFree: noneExpr.IsFreeVar (sig := sig) bv x)
+:
+  P
+:=
+  let ⟨_, ninBvNorEqZero⟩ := isFree
+  absurd (.inr rfl) ninBvNorEqZero
+
+def Expr.noneLtSize
+  {sig: Signature}
+  (size: Nat)
+:
+  (noneExpr (sig := sig)).VarLtSize size
+:=
+  fun _ isFree => isFree.nopeNone (sig := sig)
+
+
+def FiniteDefList.VarLtSize
+  (getDef: DefList.GetDef sig)
+  (size: Nat)
+:=
+  ∀ x, (getDef x).VarLtSize size
+
+def FiniteDefList.isFinBounded_of_varLtSize
+  (varLtSize: VarLtSize getDef size)
+:
+  DefList.IsFinBounded getDef
+:=
+  fun _ => ⟨
+    size,
+    fun depOn =>
+      let ⟨x, isFree⟩ := depOn.toIsFree
+      varLtSize x _ isFree,
+  ⟩
+
+structure FiniteDefList
+  (sig: Signature)
+extends
+  FinBoundedDL sig
+where
+  varList: List String
+  varLtSize: FiniteDefList.VarLtSize getDef varList.length
+  isFinBounded := FiniteDefList.isFinBounded_of_varLtSize varLtSize
+
+def FiniteDefList.size
+  (dl: FiniteDefList sig)
+:=
+  dl.varList.length
+
+def FiniteDefList.empty: FiniteDefList sig := {
+  getDef := fun _ => Expr.noneExpr
+  varList := []
+  varLtSize := fun _ => Expr.noneLtSize _
+}
+
+def FiniteDefList.emptySizeZero:
+  (empty (sig := sig)).size = 0
+:=
+  rfl
+
+structure FiniteDefList.Def (sig: Signature) (size: Nat) where
+  name: String
+  expr: Expr sig
+  varLt: expr.VarLtSize size
+
+def FiniteDefList.defsGetNth
+  (defs: List (Def sig ub))
+  (n: Nat)
+:
+  Def sig ub
+:=
+  defs[n]?.getD {
+    name := "«empty»"
+    expr := Expr.noneExpr
+    varLt := Expr.noneLtSize ub
+  }
+
+def FiniteDefList.defsToGetDef
+  (defs: List (Def sig ub))
+:
+  DefList.GetDef sig
+:=
+  fun x => (defsGetNth defs x).expr
+
+def FiniteDefList.extend
+  (dl: FiniteDefList sig)
+  (defs: List (Def sig ub))
+  (ubEq: ub = dl.size + defs.length)
+:
+  FiniteDefList sig
+:=
+  let getDef :=
+    fun x =>
+      if x < dl.size
+      then dl.getDef x
+      else defsToGetDef defs (x - dl.size)
+  {
+    getDef
+    varList := dl.varList ++ defs.map Def.name
+    varLtSize :=
+      fun x y (isFree: (getDef x).IsFreeVar _ y) => by
+        unfold getDef at isFree
+        rw [List.length_append]
+        if h: x < dl.size then
+          rw [if_pos h] at isFree
+          apply Nat.lt_add_right
+          exact dl.varLtSize x y isFree
+        else
+          rw [if_neg h] at isFree
+          unfold size at ubEq
+          rw [List.length_map, ←ubEq]
+          exact (defsGetNth defs (x - dl.size)).varLt _ isFree
+  }
+
+def FiniteDefList.ofDefs
+  (defs: List (Def sig ub))
+  (ubEq: ub = defs.length)
+:
+  FiniteDefList sig
+:=
+  empty.extend defs (by
+    rw [emptySizeZero, Nat.zero_add];
+    exact ubEq)
 
 
 declare_syntax_cat s3_pair_def
@@ -74,7 +207,9 @@ syntax "s3 " ident " := " s3_pair_expr : s3_pair_def
 
 -- The namespace
 syntax (name := pair_def_list)
-  "pairDefList" ident s3_pair_def* "pairDefList." : command
+  "pairDefList " ident (" extends "  ident)?
+    s3_pair_def*
+  "pairDefList." : command
 
 
 def Expr.IsFreeVar.nope_of_eq_zero
@@ -98,16 +233,34 @@ namespace pair_def_list
       stx
       s!"Implementation error: unexpected syntax for {item}."
   
+  structure ReservedName where
+    stx: TSyntax `s3_pair_def
+    name: String
+    descr: String
+  
+  def getReservedNames (opt: Option T):
+    CommandElabM (List ReservedName)
+  := do
+    match opt with
+    | some _ => return []
+    | none =>
+      let anyDef ← `(s3_pair_def| s3 $(mkIdent `Any) := Ex x, x)
+      let noneDef ← `(s3_pair_def| s3 $(mkIdent `None) := All x, x)
+      return [
+        ⟨anyDef, "Any", "universal"⟩,
+        ⟨noneDef, "None", "empty"⟩,
+      ]
+  
   
   partial def makeExpr
-    (vars: Name → Option Nat)
+    (vars: String → Option Nat)
     (bvi: Nat := 0) -- bound variable index
   :
     Syntax →
     CommandElabM (TSyntax `term)
   |
     `(s3_pair_expr| $name:ident) => do
-      match vars name.getId with
+      match vars name.getId.toString with
       | none =>
         throwErrorAt name (s!"Unknown variable '{name.getId}'")
       | some i => `(Expr.var $(mkNumLit i.repr))
@@ -146,13 +299,13 @@ namespace pair_def_list
   |
     `(s3_pair_expr| Ex $x:ident, $body:s3_pair_expr)
     =>
-      let vars := Function.update vars (x.getId) bvi
+      let vars := Function.update vars x.getId.toString bvi
       let bviLit := mkNumLit bvi.repr
       do `(Expr.arbUn $bviLit $(← makeExpr vars bvi.succ body))
   |
     `(s3_pair_expr| All $x:ident, $body:s3_pair_expr)
     =>
-      let vars := Function.update vars (x.getId) bvi
+      let vars := Function.update vars x.getId.toString bvi
       let bviLit := mkNumLit bvi.repr
       do `(Expr.arbIr $bviLit $(← makeExpr vars bvi.succ body))
   |
@@ -163,140 +316,175 @@ namespace pair_def_list
     | none => cmdStxErr stx "s3_pair_expr"
   
   
-  def getVars
-    -- (defs: List (TSyntax `s3_pair_def))
-    (defs: List Syntax)
-    -- Used to throw error on a subsequent duplicate variable.
-    (varsSoFar: Name → Option Nat := fun _ => none)
-    (size: Nat := 0)
+  abbrev Vars := List String
+  
+  def Vars.empty: Vars := []
+  def Vars.enc (vars: Vars) (x: String): Option Nat := vars.idxOf? x
+  
+  def Vars.push
+    (vars: Vars)
+    (reservedNames: List ReservedName)
+    (nameStx: TSyntax `ident)
   :
-    CommandElabM (Name → Option Nat)
+    CommandElabM Vars
   :=
     let resName name val :=
       s!"'{name}' is a reserved variable name denoting the {val} type."
+    
+    let name := nameStx.getId.toString
+    
+    if vars.enc name != none then
+      let filter := (ReservedName.name · == name)
+      match reservedNames.find? filter with
+      | some ⟨_, _, descr⟩ =>
+        throwErrorAt nameStx (resName name descr)
+      | _ =>
+        throwErrorAt nameStx (s!"Duplicate variable '{name}'.")
+    else
+      return vars.concat name
+  
+  def Vars.getVarDefs
+    (vars: Vars)
+    (dlName: Name)
+    (list: List String := vars)
+  :
+    CommandElabM (TSyntaxArray `command)
+  := do
+    match list with
+    | [] => return #[]
+    | name :: list =>
+      let num :=
+        ← match vars.enc name with
+        | some num => return mkNumLit num.repr
+        | none => throwError "Implementation error; Vars.getVarDefs"
+      
+      let var ← `(
+        def $(mkIdent ((dlName.append `vars).append name.toName)) :=
+          $num
+      )
+      let val ← `(
+        def $(mkIdent ((dlName.append `vals).append name.toName)) :=
+          ($(mkIdent dlName)).getDef $num
+      )
+      return #[ var, val ].append (← vars.getVarDefs dlName list)
+      
+  
+  def getVars
+    (reservedNames: List ReservedName)
+    (defs: List Syntax)
+    (varsSoFar: Vars)
+  :
+    CommandElabM Vars
+  :=
     match defs with
     | [] => return varsSoFar
     | df :: defs =>
       match df with
       | `(s3_pair_def| s3 $name:ident := $_) => do
-        if varsSoFar name.getId != none then
-          match name.getId with
-          | `Any =>
-            throwErrorAt name (resName "Any" "universal")
-          | `None =>
-            throwErrorAt name (resName "None" "empty")
-          | _ =>
-            throwErrorAt name (s!"Duplicate variable '{name.getId}'.")
-        else
-          getVars
-            defs
-            (Function.update varsSoFar (name.getId) size)
-            (size + 1)
-        | stx => cmdStxErr stx "s3 in pairDefList"
+        let varsSoFar ← varsSoFar.push reservedNames name
+        getVars reservedNames defs varsSoFar
+      | stx => cmdStxErr stx "s3 in pairDefList"
+  
+  def getParentVars
+    (reservedNames: List ReservedName)
+    (parentName: Option (TSyntax `ident))
+  :
+    CommandElabM Vars
+  :=
+    match parentName with
+    | none => return Vars.empty
+    | some parentName => do
+      let env ← getEnv
+      match env.find? parentName.getId with
+      | none =>
+        let name := parentName.getId
+        throwErrorAt parentName s!"Unknown identifier {name}."
+      | some parentInfo =>
+        let expr ← liftCoreM $ instantiateValueLevelParams parentInfo []
+        let varList ← liftTermElabM $ liftMetaM $ unsafe evalExpr
+          (List String)
+          (mkApp (.const ``List [0]) (.const ``String []))
+          (mkApp2
+            (.const ``FiniteDefList.varList [0, 0])
+            (.const ``pairSignature [])
+            expr)
+        
+        varList.foldlM
+          (fun vars name =>
+            vars.push reservedNames (mkIdent name.toName))
+          Vars.empty
   
   
-  def makeGetDef
-    (vars: Name → Option Nat)
-    -- (defs: List (TSyntax `s3_pair_def))
+  def getDefs
+    (vars: Vars)
     (defs: List Syntax)
-    (isZeroth: Bool := true)
   :
     CommandElabM (TSyntax `term)
   := do
-    let arg0 ← `((n: Nat))
-    let arg1 ← `((_: PairExpr.Expr))
-    let args := if isZeroth then #[arg0] else #[arg0, arg1]
-    
     match defs with
-    | [] => `(fun $[$args]* => PairExpr.zeroExpr)
+    | [] => `([])
     | df :: defs =>
       -- Why can't I merge these match expressions into one?
       match df with
-      | `(s3_pair_def| s3 $_ := $expr) =>
-        `(fun $[$args]* =>
-          Nat.rec
-            $(← makeExpr vars 0 expr)
-            $(← makeGetDef vars defs false)
-            n)
+      | `(s3_pair_def| s3 $name := $expr) =>
+        let expr ← makeExpr vars.enc 0 expr
+        let size ← `($(mkNumLit vars.length.repr))
+        let df ← `({
+          expr := $expr
+          name := $(mkStrLit name.getId.toString)
+          varLt :=
+            fun x isFree =>
+              match h: Pair.freeVarsLt $expr [] $size with
+              | .isTrue isLe => isLe ⟨_, isFree.toIsFreeEmptyList⟩
+              | .none => PosWitness.noConfusion h
+        })
+        `($df :: $(← getDefs vars defs))
       | stx =>
         cmdStxErr stx "s3 in pairDefList"
   
-  
-  def makeIsFinBounded.makeMatchClause
-    (i: Nat)
-    (size: Nat)
-  :
-    CommandElabM (List (TSyntax ``Parser.Term.matchAlt))
-  :=
-    let sizeLit := mkNumLit size.repr
-    let iLit := mkNumLit i.repr
-    if i < size then do
-      let clause ←
-        `(Parser.Term.matchAltExpr|
-          | $iLit =>
-            match h: Pair.freeVarsLt (getDef $iLit) [] $sizeLit with
-            | .isTrue isLe => isLe usedVar
-            | .none => PosWitness.noConfusion h)
-      
-      let rest ← makeMatchClause i.succ size
-      return clause :: rest
-    else return [
-      ← `(Parser.Term.matchAltExpr|
-        | n+$sizeLit =>
-          Expr.IsFreeVar.nope_of_eq_zero usedVar.property rfl)
-    ]
-  
-  def makeIsFinBounded
-    (size: Nat)
+  def getParent
+    (parentName: Option (TSyntax `ident))
   :
     CommandElabM (TSyntax `term)
-  := do
-    let sizeLit := mkNumLit size.repr
-    
-    let matchClauses ← makeIsFinBounded.makeMatchClause 0 size
-    let matchExpr ← `(match a with $(matchClauses.toArray):matchAlt*)
-    
-    `(fun _ =>
-      let usedVarsLtSize
-        {a}
-        (usedVar: Expr.IsFreeVar (getDef a) (fun x => x ∈ []))
-      :
-        usedVar.val < $sizeLit
-      :=
-        $matchExpr
-      
-      let hasFinBounds
-        {a b}
-        (dependsOn: DefList.DependsOn getDef a b)
-      :
-        b < $sizeLit
-      :=
-        dependsOn.rec
-          (fun aUsesB => usedVarsLtSize ⟨
-            _,
-            list_mem_empty_eq_set_empty ▸ aUsesB
-          ⟩)
-          (fun _ _ => id)
-      
-      ⟨$sizeLit, hasFinBounds⟩)
+  :=
+    match parentName with
+    | none => `(FiniteDefList.empty)
+    | some parentName => `($parentName)
   
   @[command_elab pair_def_list]
   def pairDefListImpl : CommandElab :=
     Command.adaptExpander fun stx => do
       match stx with
-      | `(pairDefList $name $defsArr* pairDefList.) =>
-        let anyDef ← `(s3_pair_def| s3 $(mkIdent `Any) := Ex x, x)
-        let noneDef ← `(s3_pair_def| s3 $(mkIdent `None) := All x, x)
+      | `(pairDefList $name $[extends $parentName]?
+          $defsArr*
+        pairDefList.)
+      =>
+        -- Note: these are empty lists if we're extending.
+        let reservedNames ← getReservedNames parentName
+        let reservedDefs := reservedNames.map ReservedName.stx
         
-        let defs := anyDef :: noneDef :: defsArr.toList
-        let vars ← getVars defs
-        let getDef ← makeGetDef vars defs
+        let defs := reservedDefs ++ defsArr.toList
+        let parentVars ← getParentVars reservedNames parentName
+        let vars ← getVars reservedNames defs parentVars
         
-        `(def $name : FinBoundedDL pairSignature :=
-          let getDef := $getDef
-          {
-            getDef,
-            isFinBounded := $(← makeIsFinBounded defs.length),
-          })
+        logInfo (repr vars)
+        
+        let output ← `(
+          def $name : FiniteDefList pairSignature :=
+            let parent := $(← getParent parentName)
+            let defs := $(← getDefs vars defs)
+            
+            FiniteDefList.extend parent defs (by decide)
+          
+          def a := 4 -- TODO if you delete this, .vars stop working
+        )
+        
+        -- TODO try creating a new root node instead of this
+        match output.raw with
+        | Syntax.node _ kind args =>
+          let varDefs ← vars.getVarDefs name.getId
+          return Syntax.node .none kind (args.append varDefs)
+        | _ =>
+          throwError "Implementation error, output not node; pairDefListImpl"
       | stx => cmdStxErr stx "pairDefList"
 end pair_def_list

@@ -197,3 +197,10 @@ def Expr.IsFreeVar.arbUn
           (fun inB =>
             False.elim (boundNotFree body inB isFreeVar))
           Or.inr)
+
+def Expr.IsFreeVar.toIsFreeEmptyList
+  (isFree: IsFreeVar expr Set.empty x)
+:
+  IsFreeVar expr (fun x => x ∈ []) x
+:=
+  list_mem_empty_eq_set_empty ▸ isFree

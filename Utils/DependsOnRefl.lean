@@ -73,3 +73,16 @@ def FinBoundedDL.isFinBoundedRefl
         | Or.inl eq => eq ▸ lt_max_of_lt_right (Nat.lt_succ_self x)
         | Or.inr depOn => lt_max_of_lt_left (depLeUb depOn)
     ⟩
+
+
+def DefList.DependsOn.toIsFree
+  {getDef: GetDef sig}
+  (depOn: DependsOn getDef a b)
+:
+  ∃ x, (getDef x).IsFreeVar Set.empty b
+:=
+  -- Why this no work. TODO investigate finally, not zeroth time
+  -- match depOn with
+  -- | Base isFree => ⟨_, isFree⟩
+  -- | Rec isFree depOn => depOn.toIsFree
+  depOn.rec (fun isFree => ⟨_, isFree⟩) (fun _ _ => id)
