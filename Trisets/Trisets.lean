@@ -12,27 +12,58 @@ import Utils.Bisimilarity
 
 
 inductive Truth3 where
-| false
-| true
-| undetermined
-
-def f3 := Truth3.false
-def t3 := Truth3.true
-def u3 := Truth3.undetermined
+| f3 -- false
+| t3 -- true
+| u3 -- undetermined
 
 def Truth3.or: Truth3 → Truth3 → Truth3
-| false, b => b
-| a, false => a
-| undetermined, undetermined => undetermined
-| true, _ => true
-| _, true => true
+| f3, b => b
+| a, f3 => a
+| u3, u3 => u3
+| t3, _ => t3
+| _, t3 => t3
 
 def Truth3.and: Truth3 → Truth3 → Truth3
-| false, _ => false
-| _, false => false
-| undetermined, undetermined => undetermined
-| true, b => b
-| a, true => a
+| f3, _ => f3
+| _, f3 => f3
+| u3, u3 => u3
+| t3, b => b
+| a, t3 => a
+
+
+def Truth3.and_eq_t3
+  (eq: Truth3.and a b = t3)
+:
+  a = t3 ∧ b = t3
+:=
+  match a, b with
+  | t3, t3 => ⟨rfl, rfl⟩
+
+def Truth3.and_eq_f3
+  (eq: Truth3.and a b = f3)
+:
+  a = f3 ∨ b = f3
+:=
+  match a, b with
+  | _, f3 => Or.inr rfl
+  | f3, _ => Or.inl rfl
+
+def Truth3.or_eq_t3
+  (eq: Truth3.or a b = t3)
+:
+  a = t3 ∨ b = t3
+:=
+  match a, b with
+  | _, t3 => Or.inr rfl
+  | t3, _ => Or.inl rfl
+
+def Truth3.or_eq_f3
+  (eq: Truth3.or a b = f3)
+:
+  a = f3 ∧ b = f3
+:=
+  match a, b with
+  | f3, f3 => ⟨rfl, rfl⟩
 
 
 structure TriRelation (T: Type*) where
@@ -143,9 +174,9 @@ namespace Set3Pair
   
   noncomputable def Triset.Mem3 (elem ts: Triset): Truth3 :=
     if Triset.Ins elem ts
-    then t3
+    then .t3
     else if Triset.Inw elem ts
-    then u3
-    else f3
+    then .u3
+    else .f3
   
 end Set3Pair
