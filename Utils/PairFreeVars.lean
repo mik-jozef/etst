@@ -71,6 +71,14 @@ namespace Pair
           | ⟨x, ArityTwo.zth, isFree⟩ => freeVarsZth ⟨x, isFree⟩
           | ⟨x, ArityTwo.fst, isFree⟩ => freeVarsFst ⟨x, isFree⟩
     |
+      .op pairSignature.Op.cond args =>
+      let freeVarsArg := freeVarsLt (args ArityOne.zth) boundVars bound
+      match freeVarsArg with
+      | .none => .none
+      | .isTrue freeVarsArg =>
+        .isTrue fun
+          | ⟨x, ArityOne.zth, isFree⟩ => freeVarsArg ⟨x, isFree⟩
+    |
       .op pairSignature.Op.un args =>
       let freeVarsZth := freeVarsLt (args ArityTwo.zth) boundVars bound
       let freeVarsFst := freeVarsLt (args ArityTwo.fst) boundVars bound
@@ -83,17 +91,6 @@ namespace Pair
           | ⟨x, ArityTwo.fst, isFree⟩ => freeVarsFst ⟨x, isFree⟩
     |
       .op pairSignature.Op.ir args =>
-      let freeVarsZth := freeVarsLt (args ArityTwo.zth) boundVars bound
-      let freeVarsFst := freeVarsLt (args ArityTwo.fst) boundVars bound
-      match freeVarsZth, freeVarsFst with
-      | .none, _ => .none
-      | _, .none => .none
-      | .isTrue freeVarsZth, .isTrue freeVarsFst =>
-        .isTrue fun
-          | ⟨x, ArityTwo.zth, isFree⟩ => freeVarsZth ⟨x, isFree⟩
-          | ⟨x, ArityTwo.fst, isFree⟩ => freeVarsFst ⟨x, isFree⟩
-    |
-      .op pairSignature.Op.ifThen args =>
       let freeVarsZth := freeVarsLt (args ArityTwo.zth) boundVars bound
       let freeVarsFst := freeVarsLt (args ArityTwo.fst) boundVars bound
       match freeVarsZth, freeVarsFst with

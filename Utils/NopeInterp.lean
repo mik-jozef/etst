@@ -53,8 +53,8 @@ def interpretationInExprList.exprCpl:
 :=
   by unfold uniDefList.interpretation.exprList; simp
 
-def interpretationInExprList.exprIfThen:
-  uniDefList.interpretation.exprIfThen
+def interpretationInExprList.exprCond:
+  uniDefList.interpretation.exprCond
     ∈
   uniDefList.interpretation.exprList
 :=
@@ -366,49 +366,47 @@ def nopeDefInterpCpl
   (nins ins).elim
 
 
-def nopePosInterpIfThen
+def nopePosInterpCond
   {P: Prop}
   (ninw:
-    {d500 d501 d502: Pair} →
+    {d500 d502: Pair} →
     Not
       (InwP
-        (((b.update 500 d500).update 501 d501).update 502 d502)
-        (((c.update 500 d500).update 501 d501).update 502 d502)
-        (pairExpr (natExpr 6) (pairExpr 500 501))
+        ((b.update 500 d500).update 502 d502)
+        ((c.update 500 d500).update 502 d502)
+        (pairExpr (natExpr 6) 500)
         (exprToEncoding expr).val))
   (nope:
     Inw pairSalgebra b c
-      uniDefList.interpretation.exprIfThen
+      uniDefList.interpretation.exprCond
       (InterpEnc boundVars expr d))
 :
   P
 :=
   let ⟨_, ⟨_, inw⟩⟩ := inwUnDomElim nope
-  let ⟨_, ⟨_, inw⟩⟩ := inwUnDomElim inw
   let ⟨_, inw⟩ := inwArbUnElim inw
   let ⟨_, inw⟩ := inwPairElim inw
   let ⟨inw, _⟩ := inwPairElim inw
   (ninw inw).elim
 
-def nopeDefInterpIfThen
+def nopeDefInterpCond
   {P: Prop}
   (nins:
-    {d500 d501 d502: Pair} →
+    {d500 d502: Pair} →
     Not
       (InsP
-        (((b.update 500 d500).update 501 d501).update 502 d502)
-        (((c.update 500 d500).update 501 d501).update 502 d502)
-        (pairExpr (natExpr 6) (pairExpr 500 501))
+        ((b.update 500 d500).update 502 d502)
+        ((c.update 500 d500).update 502 d502)
+        (pairExpr (natExpr 6) 500)
         (exprToEncoding expr).val))
   (nope:
     Ins pairSalgebra b c
-      uniDefList.interpretation.exprIfThen
+      uniDefList.interpretation.exprCond
       (InterpEnc boundVars expr d))
 :
   P
 :=
   let ⟨_, ⟨_, ins⟩⟩ := insUnDomElim nope
-  let ⟨_, ⟨_, ins⟩⟩ := insUnDomElim ins
   let ⟨_, ins⟩ := insArbUnElim ins
   let ⟨_, ins⟩ := insPairElim ins
   let ⟨ins, _⟩ := insPairElim ins

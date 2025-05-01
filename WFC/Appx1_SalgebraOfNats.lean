@@ -88,7 +88,7 @@ inductive natSignature.Op
 | mul
 | un
 | ir
-| ifThen
+| cond
 
 def natSignature.Params: natSignature.Op → Type
 | Op.zero => ArityZero
@@ -97,7 +97,7 @@ def natSignature.Params: natSignature.Op → Type
 | Op.mul => ArityTwo
 | Op.un => ArityTwo
 | Op.ir => ArityTwo
-| Op.ifThen => ArityTwo
+| Op.cond => ArityOne
 
 def natSignature: Signature := {
   Op := natSignature.Op,
@@ -116,8 +116,7 @@ namespace natSalgebra
     ∃ (a: ↑(args ArityTwo.zth)) (b: ↑(args ArityTwo.fst)), p = a * b
   | Op.un, args, p => args ArityTwo.zth p ∨ args ArityTwo.fst p
   | Op.ir, args, p => args ArityTwo.zth p ∧ args ArityTwo.fst p
-  | Op.ifThen, args, p =>
-      (args ArityTwo.zth).Nonempty ∧ args ArityTwo.fst p
+  | Op.cond, args, _ => (args ArityOne.zth).Nonempty
   
   def evalOp.isMonotonic
     (op: natSignature.Op)
@@ -152,11 +151,7 @@ namespace natSalgebra
         le ArityTwo.zth inL,
         le ArityTwo.fst inR,
       ⟩
-    | Op.ifThen =>
-      fun _ ⟨⟨p, inL⟩, inR⟩ => ⟨
-        ⟨p, le ArityTwo.zth inL⟩,
-        le ArityTwo.fst inR,
-      ⟩
+    | Op.cond => fun _ ⟨p, inL⟩ => ⟨p, le ArityOne.zth inL⟩
 end natSalgebra
 
 def natSalgebra: Salgebra natSignature :=

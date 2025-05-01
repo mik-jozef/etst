@@ -111,16 +111,14 @@ def InsInterp.var
     else
       let ins := cinsIns inCins h
       let ninw inw :=
-        let ⟨⟨boundVal, inw⟩, inwAny⟩ :=
-            inwIfThenElim inw
-          have: Expr.Inw2 pairSalgebra _ anyExpr zero := inwAny
+        let ⟨boundVal, inw⟩ := inwCondElim inw
           let inw := inwCallElimBound inw rfl nat502Neq500
           let inw := inwCallElimBound inw rfl nat503Neq501
         let insGetBound := Inw.toInsGetBound inw
         h ⟨boundVal, Inw.toIsBoundTo insGetBound.toInw⟩
       
       insUnR _
-        (insIfThen
+        (insIr
           (insCpl _ ninw)
           (insCallExpr
             ins.isSound
@@ -450,69 +448,43 @@ def InsInterp.exprCpl
                     let inw := inwCallElimBound inw rfl nat504Neq502
                     notPos inw)))))))
 
-def InsInterp.exprIfThen
-  {cond}
-  (insCond: InsInterp boundVars dC cond)
-  (insBody: InsInterp boundVars d body)
+def InsInterp.exprCond
+  (insExpr: InsInterp boundVars dE expr)
 :
-  InsInterp boundVars d (ifThenExpr cond body)
+  InsInterp boundVars d (condExpr expr)
 :=
   Ins.isComplete _ _
     (insWfmDefToIns
       (insFinUn
-        interpretationInExprList.exprIfThen
+        interpretationInExprList.exprCond
         (insUnDom
           (insExprEncoding
-            (exprToEncoding cond).property)
-          (insUnDom
-            (insExprEncoding
-              (exprToEncoding body).property)
-            (insArbUn
-              (boundVarsEncoding
-                boundVars)
+            (exprToEncoding expr).property)
+          (insArbUn
+            (boundVarsEncoding
+              boundVars)
+            (insPair
+              insBound
               (insPair
-                insBound
                 (insPair
-                  (insPair
-                    (insNatExpr _ _ _)
-                    (insPair
+                  (insNatExpr _ _ _)
+                  (insFree
+                    insBound
+                    nat502Neq500))
+                (insCond
+                  (insCallExpr
+                    (insCallExpr
+                      insExpr.isSound
                       (insFree
                         (insFree
                           insBound
-                          nat501Neq500)
-                        nat502Neq500)
+                          nat503Neq502)
+                        nat504Neq502))
+                    (insFree
                       (insFree
                         insBound
-                        nat502Neq501)))
-                  (insIfThen
-                    (insCallExpr
-                      (insCallExpr
-                        insCond.isSound
-                        (insFree
-                          (insFree
-                            insBound
-                            nat503Neq502)
-                          nat504Neq502))
-                      (insFree
-                        (insFree
-                          (insFree
-                            insBound
-                            nat501Neq500)
-                          nat502Neq500)
-                        nat503Neq500))
-                    (insCallExpr
-                      (insCallExpr
-                        insBody.isSound
-                        (insFree
-                          (insFree
-                            insBound
-                            nat503Neq502)
-                          nat504Neq502))
-                      (insFree
-                        (insFree
-                          insBound
-                          nat502Neq501)
-                        nat503Neq501))))))))))
+                        nat502Neq500)
+                      nat503Neq500)))))))))
 
 def InsInterp.arbUn
   (dX: Pair)

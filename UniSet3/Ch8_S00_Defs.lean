@@ -116,44 +116,44 @@ namespace Pair
     
     def nat500NeqNat: 500 ≠ 0 := by decide
     def nat500NeqNatLe: 500 ≠ 2 := by decide
-    def nat500NeqExprEncoding: 500 ≠ 7 := by decide
-    def nat500NeqDefEncoding: 500 ≠ 8 := by decide
-    def nat501NeqDefEncoding: 501 ≠ 8 := by decide
-    def nat500NeqPairDictLt: 500 ≠ 9 := by decide
-    def nat500NeqNatLeFn: 500 ≠ 10 := by decide
-    def nat501NeqNatLeFn: 501 ≠ 10 := by decide
-    def nat502NeqNatLeFn: 502 ≠ 10 := by decide
-    def nat503NeqNatLeFn: 503 ≠ 10 := by decide
-    def nat504NeqNatLeFn: 504 ≠ 10 := by decide
-    def nat500NeqPairOfDepth: 500 ≠ 11 := by decide
-    def nat501NeqPairOfDepth: 501 ≠ 11 := by decide
-    def nat502NeqPairOfDepth: 502 ≠ 11 := by decide
-    def nat503NeqPairOfDepth: 503 ≠ 11 := by decide
-    def nat500NeqNatLt: 500 ≠ 12 := by decide
-    def nat500NeqIncrementExprs: 500 ≠ 21 := by decide
-    def nat501NeqIncrementExprs: 501 ≠ 21 := by decide
-    def nat502NeqIncrementExprs: 502 ≠ 21 := by decide
-    def nat500NeqShiftDefEncoding: 500 ≠ 22 := by decide
-    def nat501NeqShiftDefEncoding: 501 ≠ 22 := by decide
-    def nat502NeqShiftDefEncoding: 502 ≠ 22 := by decide
-    def nat503NeqShiftDefEncoding: 503 ≠ 22 := by decide
-    def nat504NeqShiftDefEncoding: 504 ≠ 22 := by decide
-    def nat500NeqTheDefList: 500 ≠ 32 := by decide
-    def nat501NeqTheDefList: 501 ≠ 32 := by decide
-    def nat502NeqTheDefList: 502 ≠ 32 := by decide
-    def nat500NeqGetBound: 500 ≠ 33 := by decide
-    def nat501NeqGetBound: 501 ≠ 33 := by decide
-    def nat502NeqGetBound: 502 ≠ 33 := by decide
-    def nat503NeqGetBound: 503 ≠ 33 := by decide
-    def nat500NeqInterpretation: 500 ≠ 34 := by decide
-    def nat501NeqInterpretation: 501 ≠ 34 := by decide
-    def nat502NeqInterpretation: 502 ≠ 34 := by decide
-    def nat503NeqInterpretation: 503 ≠ 34 := by decide
-    def nat504NeqInterpretation: 504 ≠ 34 := by decide
-    def nat505NeqInterpretation: 505 ≠ 34 := by decide
-    def nat500NeqTheSet: 500 ≠ 35 := by decide
-    def nat501NeqTheSet: 501 ≠ 35 := by decide
-    def nat502NeqTheSet: 502 ≠ 35 := by decide
+    def nat500NeqExprEncoding: 500 ≠ 8 := by decide
+    def nat500NeqDefEncoding: 500 ≠ 9 := by decide
+    def nat501NeqDefEncoding: 501 ≠ 9 := by decide
+    def nat500NeqPairDictLt: 500 ≠ 10 := by decide
+    def nat500NeqNatLeFn: 500 ≠ 11 := by decide
+    def nat501NeqNatLeFn: 501 ≠ 11 := by decide
+    def nat502NeqNatLeFn: 502 ≠ 11 := by decide
+    def nat503NeqNatLeFn: 503 ≠ 11 := by decide
+    def nat504NeqNatLeFn: 504 ≠ 11 := by decide
+    def nat500NeqPairOfDepth: 500 ≠ 12 := by decide
+    def nat501NeqPairOfDepth: 501 ≠ 12 := by decide
+    def nat502NeqPairOfDepth: 502 ≠ 12 := by decide
+    def nat503NeqPairOfDepth: 503 ≠ 12 := by decide
+    def nat500NeqNatLt: 500 ≠ 13 := by decide
+    def nat500NeqIncrementExprs: 500 ≠ 22 := by decide
+    def nat501NeqIncrementExprs: 501 ≠ 22 := by decide
+    def nat502NeqIncrementExprs: 502 ≠ 22 := by decide
+    def nat500NeqShiftDefEncoding: 500 ≠ 23 := by decide
+    def nat501NeqShiftDefEncoding: 501 ≠ 23 := by decide
+    def nat502NeqShiftDefEncoding: 502 ≠ 23 := by decide
+    def nat503NeqShiftDefEncoding: 503 ≠ 23 := by decide
+    def nat504NeqShiftDefEncoding: 504 ≠ 23 := by decide
+    def nat500NeqTheDefList: 500 ≠ 33 := by decide
+    def nat501NeqTheDefList: 501 ≠ 33 := by decide
+    def nat502NeqTheDefList: 502 ≠ 33 := by decide
+    def nat500NeqGetBound: 500 ≠ 34 := by decide
+    def nat501NeqGetBound: 501 ≠ 34 := by decide
+    def nat502NeqGetBound: 502 ≠ 34 := by decide
+    def nat503NeqGetBound: 503 ≠ 34 := by decide
+    def nat500NeqInterpretation: 500 ≠ 35 := by decide
+    def nat501NeqInterpretation: 501 ≠ 35 := by decide
+    def nat502NeqInterpretation: 502 ≠ 35 := by decide
+    def nat503NeqInterpretation: 503 ≠ 35 := by decide
+    def nat504NeqInterpretation: 504 ≠ 35 := by decide
+    def nat505NeqInterpretation: 505 ≠ 35 := by decide
+    def nat500NeqTheSet: 500 ≠ 36 := by decide
+    def nat501NeqTheSet: 501 ≠ 36 := by decide
+    def nat502NeqTheSet: 502 ≠ 36 := by decide
     
     
     structure IsNatPairAAPair (a b: Pair): Prop where
@@ -187,32 +187,51 @@ namespace Pair
         }
     
     
+    inductive IsExprEncoding.Unary (p: Pair): Prop where
+    | Cpl (eq: p = fromNat 5)
+    | Cond (eq: p = fromNat 6)
+    
     inductive IsExprEncoding.Bin (p: Pair): Prop where
-    | Is2 (eq: p = fromNat 2)
-    | Is3 (eq: p = fromNat 3)
-    | Is4 (eq: p = fromNat 4)
-    | Is6 (eq: p = fromNat 6)
+    | Pair (eq: p = fromNat 2)
+    | Un (eq: p = fromNat 3)
+    | Ir (eq: p = fromNat 4)
     
     inductive IsExprEncoding.Quantifier (p: Pair): Prop where
-    | Is7 (eq: p = fromNat 7)
-    | Is8 (eq: p = fromNat 8)
+    | ArbUn (eq: p = fromNat 7)
+    | ArbIr (eq: p = fromNat 8)
     
     -- Defines the set of pairs that encode an expression.
     inductive IsExprEncoding: Pair → Prop where
     | IsVar: IsNatEncoding x → IsExprEncoding (pair zero x)
     | IsZero: IsExprEncoding (pair (fromNat 1) zero)
+    | IsUnary:
+      IsExprEncoding.Unary n →
+      IsExprEncoding e →
+      IsExprEncoding (pair n e)
     | IsBin:
       IsExprEncoding.Bin n →
       IsExprEncoding a →
       IsExprEncoding b →
       IsExprEncoding (pair n (pair a b))
-    | IsCpl: IsExprEncoding p → IsExprEncoding (pair (fromNat 5) p)
     | IsQuantifier:
       IsExprEncoding.Quantifier n →
       IsNatEncoding x →
       IsExprEncoding body →
       IsExprEncoding (pair n (pair x body))
     
+    
+    instance IsExprEncoding.decidableUnary
+      (n: Pair)
+    :
+      Decidable (Unary n)
+    :=
+      open Unary in
+      if h5: n = fromNat 5 then
+        isTrue (Cpl h5)
+      else if h6: n = fromNat 6 then
+        isTrue (Cond h6)
+      else
+        isFalse (fun h => nomatch h, h5, h6)
     
     instance IsExprEncoding.decidableBin
       (n: Pair)
@@ -221,20 +240,13 @@ namespace Pair
     :=
       open Bin in
       if h2: n = fromNat 2 then
-        isTrue (Is2 h2)
+        isTrue (Pair h2)
       else if h3: n = fromNat 3 then
-        isTrue (Is3 h3)
+        isTrue (Un h3)
       else if h4: n = fromNat 4 then
-        isTrue (Is4 h4)
-      else if h6: n = fromNat 6 then
-        isTrue (Is6 h6)
+        isTrue (Ir h4)
       else
-        isFalse (fun h =>
-          match h with
-          | Is2 is2 => h2 is2
-          | Is3 is3 => h3 is3
-          | Is4 is4 => h4 is4
-          | Is6 is6 => h6 is6)
+        isFalse (fun h => nomatch h, h2, h3, h4)
     
     def IsExprEncoding.decidableQuantifier
       (n: Pair)
@@ -243,14 +255,11 @@ namespace Pair
     :=
       open Quantifier in
       if h7: n = fromNat 7 then
-        isTrue (Is7 h7)
+        isTrue (ArbUn h7)
       else if h8: n = fromNat 8 then
-        isTrue (Is8 h8)
+        isTrue (ArbIr h8)
       else
-        isFalse (fun h =>
-          match h with
-          | Is7 is7 => h7 is7
-          | Is8 is8 => h8 is8)
+        isFalse (fun h => nomatch h, h7, h8)
     
     
     def IsExprEncoding.nopeZero
@@ -261,55 +270,57 @@ namespace Pair
       nomatch isExpr
     
     def IsExprEncoding.nopeBinQuant
-      (isBin: IsExprEncoding.Bin p)
-      (isQuant: IsExprEncoding.Quantifier p)
+      (isBin: Bin p)
+      (isQuant: Quantifier p)
     :
       P
     :=
       False.elim (nomatch isBin, isQuant)
     
     def IsExprEncoding.Bin.nopeVar
-      (isBin: IsExprEncoding.Bin zero)
+      (isBin: Bin zero)
     :
       P
     :=
       nomatch isBin
     
     def IsExprEncoding.Bin.nopeOpZero
-      (isBin: IsExprEncoding.Bin (fromNat 1))
+      (isBin: Bin (fromNat 1))
     :
       P
     :=
       nomatch isBin
     
-    def IsExprEncoding.Bin.nopeCpl
-      (isBin: IsExprEncoding.Bin (fromNat 5))
+    def IsExprEncoding.Bin.nopeUnary
+      (isBin: Bin n)
+      (isUnary: Unary n)
     :
-      P
+      (P: Prop)
     :=
-      nomatch isBin
+      nomatch isBin, isUnary
     
     
     def IsExprEncoding.Quantifier.nopeVar
-      (isQuant: IsExprEncoding.Quantifier zero)
+      (isQuant: Quantifier zero)
     :
       P
     :=
       False.elim (nomatch isQuant)
     
     def IsExprEncoding.Quantifier.nopeOpZero
-      (isQuant: IsExprEncoding.Quantifier (fromNat 1))
+      (isQuant: Quantifier (fromNat 1))
     :
       P
     :=
       False.elim (nomatch isQuant)
     
-    def IsExprEncoding.Quantifier.nopeCpl
-      (isQuant: IsExprEncoding.Quantifier (fromNat 5))
+    def IsExprEncoding.Quantifier.nopeUnary
+      (isQuant: Quantifier n)
+      (isUnary: Unary n)
     :
-      P
+      (P: Prop)
     :=
-      False.elim (nomatch isQuant)
+      nomatch isQuant, isUnary
     
     
     def IsExprEncoding.withIsVar
@@ -318,7 +329,7 @@ namespace Pair
       IsNatEncoding x
     :=
       match isExpr with
-      | IsExprEncoding.IsVar isNat => isNat
+      | .IsVar isNat => isNat
     
     def IsExprEncoding.withIsZero
       (isExpr: IsExprEncoding (pair (fromNat 1) payload))
@@ -334,26 +345,24 @@ namespace Pair
     
     def IsExprEncoding.withIsBin
       (isExpr: IsExprEncoding (pair n (pair a b)))
-      (isBin: IsExprEncoding.Bin n)
+      (isBin: Bin n)
     :
       IsExprAB a b
     :=
-      match isExpr with
-      | IsExprEncoding.IsBin _ isExprA isExprB => {
+      match isExpr, isBin with
+      | .IsBin _ isExprA isExprB, _ => {
         isExprA := isExprA
         isExprB := isExprB
       }
-      | IsExprEncoding.IsQuantifier isQ _ _ =>
-        nopeBinQuant isBin isQ
-      | IsExprEncoding.IsVar _ => isBin.nopeVar
     
-    def IsExprEncoding.withIsCpl
-      (isExpr: IsExprEncoding (pair (fromNat 5) p))
+    def IsExprEncoding.withIsUnary
+      (isExpr: IsExprEncoding (pair n p))
+      (isUnary: Unary n)
     :
       IsExprEncoding p
     :=
-      match isExpr with
-      | IsExprEncoding.IsCpl isExpr => isExpr
+      match isExpr, isUnary with
+      | .IsUnary _ isExpr, _ => isExpr
     
     structure IsExprEncoding.IsQuantifierAB (x body: Pair): Prop where
       isNat: IsNatEncoding x
@@ -361,7 +370,7 @@ namespace Pair
     
     def IsExprEncoding.withIsQuantifier
       (isExpr: IsExprEncoding (pair n (pair x body)))
-      (isQuant: IsExprEncoding.Quantifier n)
+      (isQuant: Quantifier n)
     :
       IsQuantifierAB x body
     :=
@@ -373,11 +382,10 @@ namespace Pair
       | IsExprEncoding.IsVar _ => isQuant.nopeVar
     
     def IsExprEncoding.withIsQuantifierZero
-      {P: Prop}
       (isExpr: IsExprEncoding (pair n zero))
       (isBin: IsExprEncoding.Quantifier n)
     :
-      P
+      (P: Prop)
     :=
       nomatch isExpr, isBin
     
@@ -404,7 +412,7 @@ namespace Pair
     def IsExprEncoding.nopeNumOutOfBounds
       (neq0: n ≠ (fromNat 0))
       (neq1: n ≠ (fromNat 1))
-      (neq5: n ≠ (fromNat 5))
+      (notUnary: ¬ Unary n)
       (notBin: ¬ Bin n)
       (notQuant: ¬ Quantifier n)
       (isExpr: IsExprEncoding (pair n payload))
@@ -413,11 +421,11 @@ namespace Pair
     :=
       False.elim
         (match isExpr with
-        | IsExprEncoding.IsVar _ => neq0 rfl
-        | IsExprEncoding.IsZero => neq1 rfl
-        | IsExprEncoding.IsBin isBin _ _ => notBin isBin
-        | IsExprEncoding.IsCpl _ => neq5 rfl
-        | IsExprEncoding.IsQuantifier isQuant _ _ => notQuant isQuant)
+        | .IsVar _ => neq0 rfl
+        | .IsZero => neq1 rfl
+        | .IsUnary isUnary _ => notUnary isUnary
+        | .IsBin isBin _ _ => notBin isBin
+        | .IsQuantifier isQuant _ _ => notQuant isQuant)
     
     
     def IsDefEncoding: Pair → Prop
@@ -827,14 +835,15 @@ namespace Pair
         IsIncrVarsExprPair (pair zero x) (pair zero (succ x))
     | IsZero:
         IsIncrVarsExprPair (pair (fromNat 1) zero) (pair (fromNat 1) zero)
+    | IsUnary:
+        IsExprEncoding.Unary n →
+        IsIncrVarsExprPair p ps →
+        IsIncrVarsExprPair (pair n p) (pair n ps)
     | IsBin:
         IsExprEncoding.Bin n →
         IsIncrVarsExprPair a as →
         IsIncrVarsExprPair b bs →
         IsIncrVarsExprPair (pair n (pair a b)) (pair n (pair as bs))
-    | IsCpl:
-        IsIncrVarsExprPair p ps →
-        IsIncrVarsExprPair (pair (fromNat 5) p) (pair (fromNat 5) ps)
     | IsQuantifier:
         IsExprEncoding.Quantifier n →
         IsNatEncoding x →
@@ -850,12 +859,12 @@ namespace Pair
     def IsIncrVarsExprPair.isExprA:
       IsIncrVarsExprPair a b → IsExprEncoding a
     
-    | IsVar isNat => IsExprEncoding.IsVar isNat
+    | IsVar isNat => .IsVar isNat
     | IsZero => IsExprEncoding.IsZero
     | IsBin isBin isIncrA isIncrB =>
       IsExprEncoding.IsBin isBin isIncrA.isExprA isIncrB.isExprA
     
-    | IsCpl isIncr => IsExprEncoding.IsCpl isIncr.isExprA
+    | IsUnary isUnary isIncr => .IsUnary isUnary isIncr.isExprA
     | IsQuantifier isQuantifier isNat isIncr =>
       IsExprEncoding.IsQuantifier isQuantifier isNat isIncr.isExprA
     
@@ -867,7 +876,8 @@ namespace Pair
     | IsBin isBin isIncrA isIncrB =>
       IsExprEncoding.IsBin isBin isIncrA.isExprB isIncrB.isExprB
     
-    | IsCpl isIncr => IsExprEncoding.IsCpl isIncr.isExprB
+    | IsUnary isUnary isIncr =>
+      IsExprEncoding.IsUnary isUnary isIncr.isExprB
       
     | IsQuantifier isQuantifier isNat isIncr =>
       IsExprEncoding.IsQuantifier
@@ -891,7 +901,7 @@ namespace Pair
         let eqRite := isUnique isIncrRiteA isIncrRiteB
         eqRite ▸ eqLeft ▸ rfl
       
-      | IsCpl isIncrA, IsCpl isIncrB =>
+      | IsUnary _ isIncrA, IsUnary _ isIncrB =>
         let eqExpr := isUnique isIncrA isIncrB
         eqExpr ▸ rfl
       
@@ -907,14 +917,14 @@ namespace Pair
         IsExprEncoding.nopeBinQuant isBinB isQuantifierA
       
       | IsQuantifier isQuantifierA _ _,
-        IsCpl isIncrB
+        IsUnary isUnary _
       =>
-        isQuantifierA.nopeCpl
+        isQuantifierA.nopeUnary isUnary
       
-      | IsCpl _,
+      | IsUnary isUnary _,
         IsQuantifier isQuantifierB _ _
       =>
-        isQuantifierB.nopeCpl
+        isQuantifierB.nopeUnary isUnary
       
       | IsBin isB _ _, IsQuantifier isQ _ _ => nomatch isB, isQ
       | IsQuantifier isQ _ _, IsVar _ => nomatch isQ
@@ -946,10 +956,10 @@ namespace Pair
               (depthLtR a b).trans (depthLtR n (pair a b))
             
             pair n (pair (incrVars a) (incrVars b))
-        else if n = fromNat 5 then
+        else if IsExprEncoding.Unary n then
           have := depthLtR n payload
           
-          pair (fromNat 5) (incrVars payload)
+          pair n (incrVars payload)
         else if IsExprEncoding.Quantifier n then
           match payload with
           | zero => zero
@@ -1000,16 +1010,21 @@ namespace Pair
       
       (if_neg neq0).trans ((if_neg neq1).trans (if_pos isBin))
     
-    def IsIncrVarsExprPair.incrVars.eqCpl
+    def IsIncrVarsExprPair.incrVars.eqUnary
+      (isUnary: IsExprEncoding.Unary n)
       (payload: Pair)
     :
-      incrVars (pair (fromNat 5) payload)
+      incrVars (pair n payload)
         =
-      pair (fromNat 5) (incrVars payload)
-    :=
-      by
-        conv => lhs; unfold incrVars;
-        exact rfl
+      pair n (incrVars payload)
+    := by
+      conv =>
+        lhs;
+        unfold incrVars;
+        rw [if_neg fun eq => nomatch eq, isUnary]
+        rw [if_neg fun eq => nomatch eq, isUnary]
+        rw [if_neg fun eq => nomatch eq, isUnary]
+        rw [if_pos isUnary]
     
     def IsIncrVarsExprPair.incrVars.eqQuant
       (isQuant: IsExprEncoding.Quantifier n)
@@ -1018,26 +1033,15 @@ namespace Pair
       incrVars (pair n (pair x body))
         =
       pair n (pair (pair x zero) (incrVars body))
-    :=
-      let neq0: n ≠ fromNat 0 :=
-        fun eq =>
-          let eq: n = zero := eq
-          IsExprEncoding.Quantifier.nopeVar (eq.symm ▸ isQuant)
-      let neq1: n ≠ fromNat 1 :=
-        fun eq =>
-          IsExprEncoding.Quantifier.nopeOpZero (eq ▸ isQuant)
-      let notBin: ¬ IsExprEncoding.Bin n :=
-        fun isBin => IsExprEncoding.nopeBinQuant isBin isQuant
-      let neq5: n ≠ fromNat 5 :=
-        fun eq =>
-          let eq: n = fromNat 5 := eq
-          IsExprEncoding.Quantifier.nopeCpl (eq.symm ▸ isQuant)
-      
-      (if_neg neq0).trans
-        ((if_neg neq1).trans
-          ((if_neg notBin).trans
-            ((if_neg neq5).trans
-              (if_pos isQuant))))
+    := by
+      conv =>
+        lhs;
+        unfold incrVars;
+        rw [if_neg fun eq => nomatch eq, isQuant]
+        rw [if_neg fun eq => nomatch eq, isQuant]
+        rw [if_neg fun eq => nomatch eq, isQuant]
+        rw [if_neg fun eq => nomatch eq, isQuant]
+        rw [if_pos isQuant]
     
     def IsIncrVarsExprPair.incrVars.eqQuantZero
       (isQuant: IsExprEncoding.Quantifier n)
@@ -1053,21 +1057,18 @@ namespace Pair
           IsExprEncoding.Quantifier.nopeOpZero (eq ▸ isQuant)
       let notBin: ¬ IsExprEncoding.Bin n :=
         fun isBin => IsExprEncoding.nopeBinQuant isBin isQuant
-      let neq5: n ≠ fromNat 5 :=
-        fun eq =>
-          let eq: n = fromNat 5 := eq
-          IsExprEncoding.Quantifier.nopeCpl (eq.symm ▸ isQuant)
+      let notUnary: ¬ IsExprEncoding.Unary n := isQuant.nopeUnary
       
       (if_neg neq0).trans
         ((if_neg neq1).trans
           ((if_neg notBin).trans
-            ((if_neg neq5).trans
+            ((if_neg notUnary).trans
               (if_pos isQuant))))
     
     def IsIncrVarsExprPair.incrVars.eqZeroOutOfBounds
       (neq0: n ≠ fromNat 0)
       (neq1: n ≠ fromNat 1)
-      (neq5: n ≠ fromNat 5)
+      (notUnary: ¬ IsExprEncoding.Unary n)
       (notBin: ¬ IsExprEncoding.Bin n)
       (notQuant: ¬ IsExprEncoding.Quantifier n)
       (payload: Pair)
@@ -1080,7 +1081,7 @@ namespace Pair
           (if_neg neq0).trans
             ((if_neg neq1).trans
               ((if_neg notBin).trans
-                ((if_neg neq5).trans
+                ((if_neg notUnary).trans
                   (if_neg notQuant))))
     
     def IsIncrVarsExprPair.fn
@@ -1108,10 +1109,9 @@ namespace Pair
             
             incrVars.eqBin hBin a b ▸
             IsBin hBin (fn isExprA) (fn isExprB)
-        else if h5: n = fromNat 5 then
-          h5 ▸
-          incrVars.eqCpl payload ▸
-          IsCpl (fn (IsExprEncoding.withIsCpl (h5 ▸ isExpr)))
+        else if hUnary: IsExprEncoding.Unary n then
+          incrVars.eqUnary hUnary payload ▸
+          IsUnary hUnary (fn (IsExprEncoding.withIsUnary isExpr hUnary))
         else if hQuant: IsExprEncoding.Quantifier n then
           match payload with
           | zero => hQuant.nopeZeroPayload isExpr
@@ -1121,7 +1121,8 @@ namespace Pair
             incrVars.eqQuant hQuant x body ▸
             IsQuantifier hQuant isNat (fn isBody)
         else
-          IsExprEncoding.nopeNumOutOfBounds h0 h1 h5 hBin hQuant isExpr
+          IsExprEncoding.nopeNumOutOfBounds
+            h0 h1 hUnary hBin hQuant isExpr
     
     def IsIncrVarsExprPair.incrVars.isExprArg
       (isExpr: IsExprEncoding (incrVars expr))
@@ -1136,24 +1137,33 @@ namespace Pair
           
           h0 ▸
           IsExprEncoding.IsVar (isExpr.withIsVar).left
-        else if h1: n = fromNat 1 then
+        else if
+          h1: n = fromNat 1
+        then
           let eq: payload = zero :=
             (incrVars.eq1 payload ▸ h1 ▸ isExpr).withIsZero
           
           h1 ▸ eq ▸ IsExprEncoding.IsZero
-        else if hBin: IsExprEncoding.Bin n then
+        else if
+          hBin: IsExprEncoding.Bin n
+        then
           match payload, hBin with
           | pair a b, hBin =>
             let isExpr := (incrVars.eqBin hBin a b) ▸ isExpr
             let ⟨l, r⟩ := isExpr.withIsBin hBin
             
             IsExprEncoding.IsBin hBin (isExprArg l) (isExprArg r)
-        else if h5: n = fromNat 5 then
-          let isExpr := incrVars.eqCpl payload ▸ h5 ▸ isExpr
+        else if
+          hUnary: IsExprEncoding.Unary n
+        then
+          let isExpr := incrVars.eqUnary hUnary payload ▸ isExpr
           
-          h5 ▸
-          IsExprEncoding.IsCpl (isExprArg isExpr.withIsCpl)
-        else if hQuant: IsExprEncoding.Quantifier n then
+          IsExprEncoding.IsUnary
+            hUnary
+            (isExprArg (isExpr.withIsUnary hUnary))
+        else if
+          hQuant: IsExprEncoding.Quantifier n
+        then
           match payload, hQuant with
           | zero, hQuant =>
             let isExpr := incrVars.eqQuantZero hQuant ▸ isExpr
@@ -1166,7 +1176,7 @@ namespace Pair
             IsExprEncoding.IsQuantifier
               hQuant isNat.left (isExprArg isBody)
         else
-          let eq := eqZeroOutOfBounds h0 h1 h5 hBin hQuant payload
+          let eq := eqZeroOutOfBounds h0 h1 hUnary hBin hQuant payload
           nomatch eq ▸ isExpr
     
     noncomputable def IsIncrVarsExprPair.shiftVars

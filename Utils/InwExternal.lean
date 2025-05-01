@@ -185,11 +185,9 @@ namespace InwExternal
                     inwBound
                     nat501Neq500))
                 (inwUnR _
-            (inwIfThen
+            (inwIr
               (inwCpl _ fun ins =>
-                let ⟨⟨dBound, ins⟩, insAny⟩ := insIfThenElim ins
-                -- W/o this, Lean errors bc cannot synthetize the type
-                have: Expr.Ins pairSalgebra _ _ _ zero := insAny
+                let ⟨dBound, ins⟩ := insCondElim ins
                 let ins := insCallElimBound ins rfl nat502Neq500
                 let ins := insCallElimBound ins rfl nat503Neq501
                 ninwGetBound dBound ins)
@@ -296,18 +294,14 @@ namespace InwExternal
   :=
     causeExpr.union (causeInterpBout boundVars expr d)
   
-  def causeIfThen
+  def causeCond
     (boundVars: List (ValVar Pair))
-    (dC: Pair)
-    (cond body: Expr)
     (d: Pair)
+    (expr: Expr)
   :
     Cause Pair
   :=
-    causeExpr.union
-      (Cause.union
-        (causeInterp boundVars cond dC)
-        (causeInterp boundVars body d))
+    causeExpr.union (causeInterp boundVars expr d)
   
   def causeArbUn
     (boundVars: List (ValVar Pair))
@@ -724,89 +718,58 @@ namespace InwExternal
                     let ins := insCallElimBound ins rfl nat504Neq502
                     ninsExpr ins)))))
   
-  def isCauseIfThen
+  def isCauseCond
     (boundVars: List (ValVar Pair))
-    (dC: Pair)
-    (cond body: Expr)
     (d: Pair)
+    (expr: Expr)
   :
     IsWeakCause
       pairSalgebra
-      (causeIfThen boundVars dC cond body d)
+      (causeCond boundVars dE expr)
       (pair
         (boundVarsEncoding boundVars)
         (pair
-          (exprToEncoding (ifThenExpr cond body))
+          (exprToEncoding (condExpr expr))
           d))
       (theExternalDefList.getDef uniDefList.interpretation)
   :=
     fun isSat =>
-      let isExprEncCond := (exprToEncoding cond).property
-      let inCinsExprCond := Or.inl ⟨rfl, isExprEncCond⟩
-      let inwExprCond := isSat.contextInsHold inCinsExprCond
+      let isExprEnc := (exprToEncoding expr).property
+      let inCinsExpr := Or.inl ⟨rfl, isExprEnc⟩
+      let inwExpr := isSat.contextInsHold inCinsExpr
       
-      let isExprEncBody := (exprToEncoding body).property
-      let inCinsExprBody := Or.inl ⟨rfl, isExprEncBody⟩
-      let inwExprBody := isSat.contextInsHold inCinsExprBody
-      
-      let inCinsCond := Or.inr (Or.inl ⟨rfl, rfl⟩)
-      let inwCond := isSat.contextInsHold inCinsCond
-      
-      let inCinsBody := Or.inr (Or.inr ⟨rfl, rfl⟩)
-      let inwBody := isSat.contextInsHold inCinsBody
+      let inCins := Or.inr ⟨rfl, rfl⟩
+      let inw := isSat.contextInsHold inCins
       
       inwFinUn
-        interpretationInExprList.exprIfThen
+        interpretationInExprList.exprCond
         (inwUnDom
-          inwExprCond
-          (inwUnDom
-            inwExprBody
-            (inwArbUn
-              (boundVarsEncoding
-                boundVars)
+          inwExpr
+          (inwArbUn
+            (boundVarsEncoding
+              boundVars)
+            (inwPair
+              inwBound
               (inwPair
-                inwBound
                 (inwPair
-                  (inwPair
-                    (inwNatExpr _ _ _)
-                    (inwPair
+                  (inwNatExpr _ _ _)
+                    (inwFree
+                      inwBound
+                      nat502Neq500))
+                (inwCond
+                  (inwCallExpr
+                    (inwCallExpr
+                      inw
                       (inwFree
                         (inwFree
                           inwBound
-                          nat501Neq500)
-                        nat502Neq500)
+                          nat503Neq502)
+                        nat504Neq502))
+                    (inwFree
                       (inwFree
                         inwBound
-                        nat502Neq501)))
-                  (inwIfThen
-                    (inwCallExpr
-                      (inwCallExpr
-                        inwCond
-                        (inwFree
-                          (inwFree
-                            inwBound
-                            nat503Neq502)
-                          nat504Neq502))
-                      (inwFree
-                        (inwFree
-                          (inwFree
-                            inwBound
-                            nat501Neq500)
-                          nat502Neq500)
-                        nat503Neq500))
-                    (inwCallExpr
-                      (inwCallExpr
-                        inwBody
-                        (inwFree
-                          (inwFree
-                            inwBound
-                            nat503Neq502)
-                          nat504Neq502))
-                      (inwFree
-                        (inwFree
-                          inwBound
-                          nat502Neq501)
-                        nat503Neq501))))))))
+                        nat502Neq500)
+                      nat503Neq500)))))))
   
   def isCauseArbUn
     (boundVars: List (ValVar Pair))

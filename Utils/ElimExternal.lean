@@ -50,14 +50,14 @@ def elimPosExternalVar
           let inw := inwCallElimBound inw rfl nat503Neq501
           bvEq ▸ xEncEq ▸ Or.inl inw)
         (fun inw =>
-          let ⟨⟨dC, inwC⟩, inw⟩ := inwIfThenElim inw
-          let nins := inwCplElim inwC
-          let inw := inwCallElimBound inw rfl nat502Neq500
+          let ⟨inwL, inwR⟩ := inwIrElim inw
+          let nins := inwCplElim inwL
+          let inw := inwCallElimBound inwR rfl nat502Neq500
           bvEq ▸ xEncEq ▸ Or.inr ⟨
             inw,
             fun ⟨dBound, ins⟩ =>
               nins
-                (insIfThen
+                (insCond
                   (insCallExpr
                     (insCallExpr
                       ins
@@ -70,8 +70,7 @@ def elimPosExternalVar
                       (insFree
                         insBound
                         nat501Neq500)
-                      nat502Neq500))
-                  insAny)
+                      nat502Neq500)))
           ⟩))
     (nopePosInterpZero fun inw =>
       let ⟨inw, _⟩ := inwPairElim inw
@@ -88,7 +87,7 @@ def elimPosExternalVar
     (nopePosInterpCpl fun inw =>
       let ⟨inw, _⟩ := inwPairElim inw
       inwNatExprElimNope (eqZ ▸ inw) (by decide))
-    (nopePosInterpIfThen fun inw =>
+    (nopePosInterpCond fun inw =>
       let ⟨inw, _⟩ := inwPairElim inw
       inwNatExprElimNope (eqZ ▸ inw) (by decide))
     (nopePosInterpArbUn fun inw =>
@@ -138,14 +137,14 @@ def elimDefExternalVar
           let ins := insCallElimBound ins rfl nat503Neq501
           bvEq ▸ xEncEq ▸ Or.inl ins)
         (fun ins =>
-          let ⟨⟨dC, insC⟩, ins⟩ := insIfThenElim ins
-          let ninw := insCplElim insC
-          let ins := insCallElimBound ins rfl nat502Neq500
+          let ⟨insL, insR⟩ := insIrElim ins
+          let ninw := insCplElim insL
+          let ins := insCallElimBound insR rfl nat502Neq500
           bvEq ▸ xEncEq ▸ Or.inr ⟨
             ins,
             fun ⟨dBound, inw⟩ =>
               ninw
-                (inwIfThen
+                (inwCond
                   (inwCallExpr
                     (inwCallExpr
                       inw
@@ -158,8 +157,7 @@ def elimDefExternalVar
                       (inwFree
                         inwBound
                         nat501Neq500)
-                      nat502Neq500))
-                  inwAny)
+                      nat502Neq500)))
           ⟩))
     (nopeDefInterpZero fun ins =>
       let ⟨ins, _⟩ := insPairElim ins
@@ -176,7 +174,7 @@ def elimDefExternalVar
     (nopeDefInterpCpl fun ins =>
       let ⟨ins, _⟩ := insPairElim ins
       insNatExprElimNope (eqZ ▸ ins) (by decide))
-    (nopeDefInterpIfThen fun ins =>
+    (nopeDefInterpCond fun ins =>
       let ⟨ins, _⟩ := insPairElim ins
       insNatExprElimNope (eqZ ▸ ins) (by decide))
     (nopeDefInterpArbUn fun ins =>
@@ -222,7 +220,7 @@ def elimPosExternalZero
     (nopePosInterpCpl fun inw =>
       let ⟨inw, _⟩ := inwPairElim inw
       inwNatExprElimNope inw (by decide))
-    (nopePosInterpIfThen fun inw =>
+    (nopePosInterpCond fun inw =>
       let ⟨inw, _⟩ := inwPairElim inw
       inwNatExprElimNope inw (by decide))
     (nopePosInterpArbUn fun inw =>
@@ -267,7 +265,7 @@ def elimDefExternalZero
     (nopeDefInterpCpl fun ins =>
       let ⟨ins, _⟩ := insPairElim ins
       insNatExprElimNope ins (by decide))
-    (nopeDefInterpIfThen fun ins =>
+    (nopeDefInterpCond fun ins =>
       let ⟨ins, _⟩ := insPairElim ins
       insNatExprElimNope ins (by decide))
     (nopeDefInterpArbUn fun ins =>
@@ -341,7 +339,7 @@ def elimPosExternalPair
       (nopePosInterpCpl fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
-      (nopePosInterpIfThen fun inw =>
+      (nopePosInterpCond fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
       (nopePosInterpArbUn fun inw =>
@@ -414,7 +412,7 @@ def elimDefExternalPair
       (nopeDefInterpCpl fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
-      (nopeDefInterpIfThen fun ins =>
+      (nopeDefInterpCond fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
       (nopeDefInterpArbUn fun ins =>
@@ -487,7 +485,7 @@ def elimPosExternalUn
       (nopePosInterpCpl fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
-      (nopePosInterpIfThen fun inw =>
+      (nopePosInterpCond fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
       (nopePosInterpArbUn fun inw =>
@@ -562,7 +560,7 @@ def elimDefExternalUn
       (nopeDefInterpCpl fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
-      (nopeDefInterpIfThen fun ins =>
+      (nopeDefInterpCond fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
       (nopeDefInterpArbUn fun ins =>
@@ -635,7 +633,7 @@ def elimPosExternalIr
       (nopePosInterpCpl fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
-      (nopePosInterpIfThen fun inw =>
+      (nopePosInterpCond fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
       (nopePosInterpArbUn fun inw =>
@@ -707,7 +705,7 @@ def elimDefExternalIr
       (nopeDefInterpCpl fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
-      (nopeDefInterpIfThen fun ins =>
+      (nopeDefInterpCond fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
       (nopeDefInterpArbUn fun ins =>
@@ -783,7 +781,7 @@ def elimPosExternalCpl
                   insBound
                   nat502Neq500)
                 nat503Neq500)))
-      (nopePosInterpIfThen fun inw =>
+      (nopePosInterpCond fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
       (nopePosInterpArbUn fun inw =>
@@ -858,7 +856,7 @@ def elimDefExternalCpl
                   inwBound
                   nat502Neq500)
                 nat503Neq500)))
-      (nopeDefInterpIfThen fun ins =>
+      (nopeDefInterpCond fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
       (nopeDefInterpArbUn fun ins =>
@@ -869,8 +867,7 @@ def elimDefExternalCpl
         insNatExprElimNope ins (by decide))
 
 
-def elimPosExternalIfThen
-  {cond}
+def elimPosExternalCond
   (inw:
     Set3.posMem
       (interpretation
@@ -878,16 +875,12 @@ def elimPosExternalIfThen
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (ifThenExpr cond body) d))
+      (InterpEnc boundVars (condExpr expr) d))
 :
-  And
-    (∃ dCond,
-      Set3.posMem
-        (c uniDefList.interpretation)
-        (InterpEnc boundVars cond dCond))
-    (Set3.posMem
+  ∃ dCond,
+    Set3.posMem
       (c uniDefList.interpretation)
-      (InterpEnc boundVars body d))
+      (InterpEnc boundVars expr dCond)
 := by
   unfold InterpEnc
   exact
@@ -913,32 +906,21 @@ def elimPosExternalIfThen
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
       (fun inw =>
-        let ⟨condEnc, ⟨_, inw⟩⟩ := inwUnDomElim inw
-        let ⟨bodyEnc, ⟨_, inw⟩⟩ := inwUnDomElim inw
+        let ⟨exprEnc, ⟨_, inw⟩⟩ := inwUnDomElim inw
         let ⟨boundVarsEnc, inw⟩ := inwArbUnElim inw
         let ⟨inwBv, inw⟩ := inwPairElim inw
         let bvEq := inwBoundElim inwBv
         let ⟨inwExprEnc, inw⟩ := inwPairElim inw
         let ⟨_, inwExprEnc⟩ := inwPairElim inwExprEnc
-        let ⟨inwCond, inwBody⟩ := inwPairElim inwExprEnc
-        let condEq :=
+        let exprEq :=
           inwBoundElim
             (inwFreeElim
-              (inwFreeElim
-                inwCond
-                nat502Neq500)
-              nat501Neq500)
-        let bodyEq :=
-          inwBoundElim
-            (inwFreeElim
-              inwBody
-              nat502Neq501)
-        let ⟨⟨dC, inwCond⟩, inwBody⟩ := inwIfThenElim inw
-        let inwCond := inwCallElimBound inwCond rfl nat503Neq500
-        let inwCond := inwCallElimBound inwCond rfl nat504Neq502
-        let inwBody := inwCallElimBound inwBody rfl nat503Neq501
-        let inwBody := inwCallElimBound inwBody rfl nat504Neq502
-        bvEq ▸ condEq ▸ bodyEq ▸ ⟨⟨dC, inwCond⟩, inwBody⟩)
+              inwExprEnc
+              nat502Neq500)
+        let ⟨dE, inwExpr⟩ := inwCondElim inw
+        let inwExpr := inwCallElimBound inwExpr rfl nat503Neq500
+        let inwExpr := inwCallElimBound inwExpr rfl nat504Neq502
+        bvEq ▸ exprEq ▸ ⟨dE, inwExpr⟩)
       (nopePosInterpArbUn fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
@@ -946,8 +928,7 @@ def elimPosExternalIfThen
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
 
-def elimDefExternalIfThen
-  {cond}
+def elimDefExternalCond
   (ins:
     Set3.defMem
       (interpretation
@@ -955,16 +936,12 @@ def elimDefExternalIfThen
           b
           c
           (uniDefList.interpretation.expr))
-      (InterpEnc boundVars (ifThenExpr cond body) d))
+      (InterpEnc boundVars (condExpr expr) d))
 :
-  And
-    (∃ dCond,
-      Set3.defMem
-        (c uniDefList.interpretation)
-        (InterpEnc boundVars cond dCond))
-    (Set3.defMem
+  ∃ dCond,
+    Set3.defMem
       (c uniDefList.interpretation)
-      (InterpEnc boundVars body d))
+      (InterpEnc boundVars expr dCond)
 := by
   unfold InterpEnc
   exact
@@ -991,31 +968,20 @@ def elimDefExternalIfThen
         insNatExprElimNope ins (by decide))
       (fun ins =>
         let ⟨condEnc, ⟨_, ins⟩⟩ := insUnDomElim ins
-        let ⟨bodyEnc, ⟨_, ins⟩⟩ := insUnDomElim ins
         let ⟨boundVarsEnc, ins⟩ := insArbUnElim ins
         let ⟨inwBv, ins⟩ := insPairElim ins
         let bvEq := insBoundElim inwBv
         let ⟨insExprEnc, ins⟩ := insPairElim ins
         let ⟨_, insExprEnc⟩ := insPairElim insExprEnc
-        let ⟨insCond, insBody⟩ := insPairElim insExprEnc
-        let condEq :=
+        let exprEq :=
           insBoundElim
             (insFreeElim
-              (insFreeElim
-                insCond
-                nat502Neq500)
-              nat501Neq500)
-        let bodyEq :=
-          insBoundElim
-            (insFreeElim
-              insBody
-              nat502Neq501)
-        let ⟨⟨dC, insCond⟩, insBody⟩ := insIfThenElim ins
-        let insCond := insCallElimBound insCond rfl nat503Neq500
-        let insCond := insCallElimBound insCond rfl nat504Neq502
-        let insBody := insCallElimBound insBody rfl nat503Neq501
-        let insBody := insCallElimBound insBody rfl nat504Neq502
-        bvEq ▸ condEq ▸ bodyEq ▸ ⟨⟨dC, insCond⟩, insBody⟩)
+              insExprEnc
+              nat502Neq500)
+        let ⟨dE, insExpr⟩ := insCondElim ins
+        let insExpr := insCallElimBound insExpr rfl nat503Neq500
+        let insExpr := insCallElimBound insExpr rfl nat504Neq502
+        bvEq ▸ exprEq ▸ ⟨dE, insExpr⟩)
       (nopeDefInterpArbUn fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
@@ -1062,7 +1028,7 @@ def elimPosExternalArbUn
       (nopePosInterpCpl fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
-      (nopePosInterpIfThen fun inw =>
+      (nopePosInterpCond fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
       (fun inw =>
@@ -1179,7 +1145,7 @@ def elimDefExternalArbUn
       (nopeDefInterpCpl fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
-      (nopeDefInterpIfThen fun ins =>
+      (nopeDefInterpCond fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
       (fun ins =>
@@ -1298,7 +1264,7 @@ def elimPosExternalArbIr
       (nopePosInterpCpl fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
-      (nopePosInterpIfThen fun inw =>
+      (nopePosInterpCond fun inw =>
         let ⟨inw, _⟩ := inwPairElim inw
         inwNatExprElimNope inw (by decide))
       (nopePosInterpArbUn fun inw =>
@@ -1413,7 +1379,7 @@ def elimDefExternalArbIr
       (nopeDefInterpCpl fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
-      (nopeDefInterpIfThen fun ins =>
+      (nopeDefInterpCond fun ins =>
         let ⟨ins, _⟩ := insPairElim ins
         insNatExprElimNope ins (by decide))
       (nopeDefInterpArbUn fun ins =>

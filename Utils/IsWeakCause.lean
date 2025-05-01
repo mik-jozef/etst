@@ -559,48 +559,24 @@ namespace IsWeakCause
   :=
     ⟨elimIrLeft isCause, elimIrRite isCause⟩
   
-  def elimIfThenCond
-    {cond}
+  def elimCond
     (isCause:
-      IsWeakCause pairSalgebra cause d (ifThenExpr cond body))
+      IsWeakCause pairSalgebra cause d (condExpr expr))
     (v: Valuation Pair)
   :
     let extCause := cause.union (Cause.ofValPos v Valuation.empty)
-    ∃ dC, IsWeakCause pairSalgebra extCause dC cond
+    ∃ dE, IsWeakCause pairSalgebra extCause dE expr
   :=
-    let ⟨⟨dC, isPosCond⟩, _⟩ :=
+    let ⟨dE, isPosCond⟩ :=
       isCause (cause.closestWeakSatValIsSat v)
     ⟨
-      dC,
+      dE,
       fun isSat =>
         Expr.interpretation.isMonotonic.apxPosMem
           (cause.leClosestOfSatUnionB isSat)
           (fun _ _ => isSat.contextInsHold ∘ Or.inl)
           isPosCond
     ⟩
-  
-  def elimIfThenBody
-    {cond}
-    (isCause:
-      IsWeakCause pairSalgebra cause d (ifThenExpr cond body))
-  :
-    IsWeakCause pairSalgebra cause d body
-  :=
-    fun isSat => (isCause isSat).right
-  
-  def elimIfThen
-    {cond}
-    (isCause: IsWeakCause pairSalgebra cause d (ifThenExpr cond body))
-    (v: Valuation Pair)
-  :
-    let extCause := cause.union (Cause.ofValPos v Valuation.empty)
-    And
-      (∃ dC, IsWeakCause pairSalgebra extCause dC cond)
-      (IsWeakCause pairSalgebra cause d body)
-  :=
-    And.intro
-      (elimIfThenCond isCause v)
-      (elimIfThenBody isCause)
    
   def Not.elimOp
   {salg: Salgebra sig}

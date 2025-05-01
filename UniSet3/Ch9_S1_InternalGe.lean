@@ -301,16 +301,16 @@ namespace Pair
         match boutOut inBout with
         | MotiveOut.interp _ inw =>
           inw boundVars expr d rfl
-      | Expr.op pairSignature.Op.ifThen args =>
-        let ⟨⟨dC, inCinsCond⟩, inCinsExpr⟩ :=
+      | Expr.op pairSignature.Op.cond args =>
+        let ⟨dC, inCins⟩ :=
           isCauseExternal.hurrDurrElim
             externalCauseIsSat.toIsConsistent
-            elimDefExternalIfThen
-        match cinsIns inCinsCond, cinsIns inCinsExpr with
-        | MotiveIns.interp _ insCond, MotiveIns.interp _ insExpr =>
-          insIfThen
-            (insCond boundVars (args ArityTwo.zth) dC rfl)
-            (insExpr boundVars (args ArityTwo.fst) d rfl)
+            elimDefExternalCond
+        match cinsIns inCins with
+        | MotiveIns.interp _ insExpr =>
+          insCond
+            (d := zero) -- Ok ???
+            (insExpr boundVars (args ArityOne.zth) dC rfl)
       | Expr.arbUn x body =>
         let ⟨dX, inCins⟩ :=
           isCauseExternal.hurrDurrElim
@@ -884,48 +884,37 @@ namespace Pair
         
         isInappOfInappCpl satisfiesBounds causeInapp
       |
-        Expr.op pairSignature.Op.ifThen args =>
-        let cond := args ArityTwo.zth
-        let body := args ArityTwo.fst
+        Expr.op pairSignature.Op.cond args =>
+        let expr := args ArityOne.zth
         
-        let ⟨⟨dC, isCauseCond⟩, isCauseBody⟩ :=
-          isCause.elimIfThen updatedInternalWfm
+        let ⟨dC, isCauseCond⟩ :=
+          isCause.elimCond updatedInternalWfm
         
         let isInappIh :=
           isEmptyCycleIh
             inCycle
-            (InwExternal.causeIfThen boundVars dC cond body d)
-            (InwExternal.isCauseIfThen boundVars dC cond body d)
+            (InwExternal.causeCond boundVars dC expr)
+            (InwExternal.isCauseCond boundVars d expr)
         
-        let inCycleCondOrBody :=
+        let inCycle :=
           match isInappIh with
           | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
             let out := Out.intro externalCycle isEmptyCycle inCycle
             out.nopeDef (xEq ▸ (insExprEncoding isExpr))
-          | blockedCins (Or.inr (Or.inl ⟨xEq, dEq⟩)) inCycle =>
-            Or.inl (xEq ▸ dEq ▸ inCycle)
-          | blockedCins (Or.inr (Or.inr ⟨xEq, dEq⟩)) inCycle =>
-            Or.inr (xEq ▸ dEq ▸ inCycle)
+          | blockedCins (Or.inr ⟨xEq, dEq⟩) inCycle =>
+            (xEq ▸ dEq ▸ inCycle)
         
-        inCycleCondOrBody.elim
-          (fun inCycleCond =>
-            let isInapp :=
-              allInternalInapplicableInterp
-                isEmptyCycle
-                isEmptyCycleIh
-                inCycleCond
-                (satisfiesBounds.union
-                  (Cause.SatisfiesBoundVars.bWithBoundsSatBoundVars
-                    _ boundVars))
-                isCauseCond
-            isInappOfInappUnOrIfThen isInapp)
-          (fun inCycleBody =>
-            allInternalInapplicableInterp
-              isEmptyCycle
-              isEmptyCycleIh
-              inCycleBody
-              satisfiesBounds
-              isCauseBody)
+        let isInapp :=
+          allInternalInapplicableInterp
+            isEmptyCycle
+            isEmptyCycleIh
+            inCycle
+            (satisfiesBounds.union
+              (Cause.SatisfiesBoundVars.bWithBoundsSatBoundVars
+                _ boundVars))
+            isCauseCond
+        
+        isInappOfInappUnOrIfThen isInapp
       |
         Expr.arbUn x body =>
         let ⟨dX, isCauseBody⟩ :=

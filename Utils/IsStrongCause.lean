@@ -652,83 +652,48 @@ def IsStrongCause.Not.elimCpl
     (isLeExpr.posLe isPos)
 
 
-def IsStrongCause.ifThen
-  {cond}
-  (isCauseCond: IsStrongCause pairSalgebra cause dC cond)
-  (isCauseBody: IsStrongCause pairSalgebra cause d body)
+def IsStrongCause.cond
+  (isCauseCond: IsStrongCause pairSalgebra cause dE expr)
 :
-  IsStrongCause pairSalgebra cause d (ifThenExpr cond body)
+  IsStrongCause pairSalgebra cause d (condExpr expr)
 :=
-  fun isSat =>
-    And.intro
-      ⟨dC, (isCauseCond isSat)⟩
-      (isCauseBody isSat)
+  fun isSat => ⟨dE, (isCauseCond isSat)⟩
 
-def IsStrongCause.elimIfThen
-  {cond}
+def IsStrongCause.elimCond
   (isCause:
-    IsStrongCause pairSalgebra cause d (ifThenExpr cond body))
+    IsStrongCause pairSalgebra cause d (condExpr expr))
 :
-  And
-    (∃ dC, IsStrongCause pairSalgebra cause dC cond)
-    (IsStrongCause pairSalgebra cause d body)
+  ∃ dE, IsStrongCause pairSalgebra cause dE expr
 :=
   if h: cause.IsConsistent then
-    let ⟨⟨dC, isDefCond⟩, isDefBody⟩ := isCause h.leastValsApxAreSat
-    And.intro
-      ⟨
-        dC,
-        fun isSat =>
-          let bLe := isSat.leastIsLeApx
-          let cLe := fun _ _ => isSat.contextInsHold
-          Expr.interpretation.isMonotonic.apxDefMem
-            bLe cLe isDefCond
-      ⟩
-      (fun isSat =>
+    let ⟨dE, isDefCond⟩ := isCause h.leastValsApxAreSat
+    ⟨
+      dE,
+      fun isSat =>
         let bLe := isSat.leastIsLeApx
         let cLe := fun _ _ => isSat.contextInsHold
         Expr.interpretation.isMonotonic.apxDefMem
-          bLe cLe isDefBody)
+          bLe cLe isDefCond
+    ⟩
   else
-    And.intro
-      ⟨d, Cause.IsConsistent.Not.isStrong h d cond⟩
-      (Cause.IsConsistent.Not.isStrong h d body)
+    ⟨d, Cause.IsConsistent.Not.isStrong h d expr⟩
 
-def IsStrongCause.notIfThenCond
-  {cond}
-  (notCauseCond: ∀ dC, ¬ IsStrongCause pairSalgebra cause dC cond)
+def IsStrongCause.notCond
+  (notCauseCond: ∀ dE, ¬ IsStrongCause pairSalgebra cause dE expr)
   (d: Pair)
-  (body: Expr _)
 :
-  ¬ IsStrongCause pairSalgebra cause d (ifThenExpr cond body)
+  ¬ IsStrongCause pairSalgebra cause d (condExpr expr)
 :=
   fun isCause =>
-    notCauseCond _ isCause.elimIfThen.left.unwrap.property
+    notCauseCond _ isCause.elimCond.unwrap.property
 
-def IsStrongCause.notIfThenBody
-  (notCauseBody: ¬ IsStrongCause pairSalgebra cause d body)
-  (cond: Expr _)
-:
-  ¬ IsStrongCause pairSalgebra cause d (ifThenExpr cond body)
-:=
-  fun isCause =>
-    notCauseBody isCause.elimIfThen.right
-
-def IsStrongCause.Not.elimIfThen
-  {cond}
+def IsStrongCause.Not.elimCond
   (isNotCause:
-    ¬ IsStrongCause pairSalgebra cause d (ifThenExpr cond body))
+    ¬ IsStrongCause pairSalgebra cause d (condExpr expr))
 :
-  Or
-    (∀ dC, ¬ IsStrongCause pairSalgebra cause dC cond)
-    (¬ IsStrongCause pairSalgebra cause d body)
+  ∀ dE, ¬ IsStrongCause pairSalgebra cause dE expr
 :=
-  byContradiction fun nor =>
-    let ⟨notAllNotCauseCond, isCauseBody⟩ := nor.toAnd
-    let ⟨_, isCauseCond⟩ :=
-      notAllNotCauseCond.toEx fun _ => Not.dne
-    
-    isNotCause (isCauseCond.ifThen isCauseBody.dne)
+  fun _ isCauseCond => isNotCause isCauseCond.cond
 
 
 def IsStrongCause.arbUn

@@ -750,22 +750,17 @@ namespace Pair
             (extOfIntCycleFull.interp
               boundVars expr (Ordinal.lt_succ _) d allInapp)
         InsInterp.exprCpl (Out.isSound out)
-      | op pairSignature.Op.ifThen args =>
-        have := argLe pairSignature.Op.ifThen args ArityTwo.zth
-        have := argLe pairSignature.Op.ifThen args ArityTwo.fst
+      | op pairSignature.Op.cond args =>
+        have := argLe pairSignature.Op.cond args ArityOne.zth
         
-        let ⟨⟨_dC, isCauseCond⟩, isCauseBody⟩ :=
-          isInternalCause.elimIfThen
+        let ⟨_dC, isCauseCond⟩ :=
+          isInternalCause.elimCond
         
-        let ihCond := isCauseToInsInterp
+        let ihExpr := isCauseToInsInterp
           isCauseCond boundVars boundVarsSat
           cinsIns binsIns boutOut
         
-        let ihBody := isCauseToInsInterp
-          isCauseBody boundVars boundVarsSat
-          cinsIns binsIns boutOut
-        
-        InsInterp.exprIfThen ihCond ihBody
+        InsInterp.exprCond ihExpr
       | arbUn x body =>
         have: body.sizeOf < body.sizeOf + 1 :=
           Order.lt_succ_of_le (le_refl _)
@@ -1027,60 +1022,31 @@ namespace Pair
                   False.elim (notBound ⟨_, isBound⟩))
                 (fun ⟨_, isOut⟩ => isOut)))
       |
-        op pairSignature.Op.ifThen args =>
-        let cond := args ArityTwo.zth
-        let body := args ArityTwo.fst
+        op pairSignature.Op.cond args =>
+        let expr := args ArityOne.zth
         
-        let isLeC := argLe pairSignature.Op.ifThen args ArityTwo.zth
-        let isLeB := argLe pairSignature.Op.ifThen args ArityTwo.fst
+        let isLe := argLe pairSignature.Op.cond args ArityOne.zth
         
-        let ⟨⟨dC, inCinsCond⟩, inCinsBody⟩ :=
-          isCause.hurrDurrElim elimPosExternalIfThen
+        let ⟨dE, inCins⟩ :=
+          isCause.hurrDurrElim elimPosExternalCond
         
-        if hC:
-          AllCausesInapp internalCycle boundVars cond dC
+        if h:
+          AllCausesInapp internalCycle boundVars expr dE
         then
           IsCauseInappExtended.cinsFailsCycle
-            inCinsCond
-            (extOfIntCycleFull.interp boundVars cond isLeC dC hC)
-        else if hB:
-          AllCausesInapp internalCycle boundVars body d
-        then
-          IsCauseInappExtended.cinsFailsCycle
-            inCinsBody
-            (extOfIntCycleFull.interp boundVars body isLeB d hB)
+            inCins
+            (extOfIntCycleFull.interp boundVars expr isLe dE h)
         else
-          let ⟨causeCond, satBoundsCond, isCauseCond, isAppCond⟩ :=
-            hC.toEx fun _ p => p.implToAnd2 fun p => p.implToAnd
-          let ⟨causeBody, satBoundsBody, isCauseBody, isAppBody⟩ :=
-            hB.toEx fun _ p => p.implToAnd2 fun p => p.implToAnd
+          let ⟨cause, satBounds, isCause, isApp⟩ :=
+            h.toEx fun _ p => p.implToAnd2 fun p => p.implToAnd
           
-          let isInappUnion :=
-            extOfIntCauseDistributesUnion causeCond causeBody boundVars ▸
+          let isInapp :=
             allInapp
-              (causeCond.union causeBody)
-              (satBoundsCond.union satBoundsBody)
-              (fun isSat =>
-                let dcPos := isCauseCond {
-                  contextInsHold :=
-                    isSat.contextInsHold ∘ Or.inl
-                  backgroundInsHold :=
-                    isSat.backgroundInsHold ∘ Or.inl
-                  backgroundOutHold :=
-                    isSat.backgroundOutHold ∘ Or.inl
-                }
-                let dbPos := isCauseBody {
-                  contextInsHold :=
-                    isSat.contextInsHold ∘ Or.inr
-                  backgroundInsHold :=
-                    isSat.backgroundInsHold ∘ Or.inr
-                  backgroundOutHold :=
-                    isSat.backgroundOutHold ∘ Or.inr
-                }
-                ⟨⟨dC, dcPos⟩, dbPos⟩)
-          False.elim
-            (IsCauseInappExtended.Not.union
-              isAppCond isAppBody isInappUnion)
+              cause
+              satBounds
+              (fun isSat => ⟨dE, isCause isSat⟩)
+          
+          nomatch isApp isInapp
       |
         arbUn x body =>
         let isLe: body.sizeOf < body.sizeOf + 1 :=

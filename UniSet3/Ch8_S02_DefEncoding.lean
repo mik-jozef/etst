@@ -34,47 +34,57 @@ namespace Pair
     def insExprEncoding.binary (isEEB: IsExprEncoding.Bin p):
       InsEdl exprEncoding.binary p
     :=
-      open IsExprEncoding.Bin in
       insWfmDefToIns
         (match isEEB with
-        | Is2 eq => eq ▸ insUnL _ (insNatExpr _ _ _)
-        | Is3 eq => eq ▸ insUnR _ (insUnL _ (insNatExpr _ _ _))
-        | Is4 eq => eq ▸ insUnR _ (insUnR _ (insUnL _ (insNatExpr _ _ _)))
-        | Is6 eq => eq ▸ insUnR _ (insUnR _ (insUnR _ (insNatExpr _ _ _))))
+        | .Pair eq => eq ▸ insUnL _ (insNatExpr _ _ _)
+        | .Un eq => eq ▸ insUnR _ (insUnL _ (insNatExpr _ _ _))
+        | .Ir eq => eq ▸ insUnR _ (insUnR _ (insNatExpr _ _ _)))
+    
+    def insExprEncoding.unary (isEEU: IsExprEncoding.Unary p):
+      InsEdl exprEncoding.unary p
+    :=
+      insWfmDefToIns
+        (match isEEU with
+        | .Cpl eq => eq ▸ insUnL _ (insNatExpr _ _ _)
+        | .Cond eq => eq ▸ insUnR _ (insNatExpr _ _ _))
     
     def Inw.toIsExprEncoding.binary
       (w: InwEdl exprEncoding.binary p)
     :
       IsExprEncoding.Bin p
     :=
-      open IsExprEncoding.Bin in
       (inwWfmToInwDef w).elim
-        (fun inwNatExpr2 => Is2 (inwNatExprElim inwNatExpr2))
+        (fun inwNatExpr2 => .Pair (inwNatExprElim inwNatExpr2))
         (fun un => un.elim
-          (fun inwNatExpr3 => Is3 (inwNatExprElim inwNatExpr3))
-          (fun un => un.elim
-            (fun inwNatExpr4 => Is4 (inwNatExprElim inwNatExpr4))
-            (fun inwNatExpr6 => Is6 (inwNatExprElim inwNatExpr6))))
+          (fun inwNatExpr3 => .Un (inwNatExprElim inwNatExpr3))
+          (fun inwNatExpr4 => .Ir (inwNatExprElim inwNatExpr4)))
+    
+    def Inw.toIsExprEncoding.unary
+      (w: InwEdl exprEncoding.unary p)
+    :
+      IsExprEncoding.Unary p
+    :=
+      (inwWfmToInwDef w).elim
+        (fun inwNatExpr5 => .Cpl (inwNatExprElim inwNatExpr5))
+        (fun inwNatExpr6 => .Cond (inwNatExprElim inwNatExpr6))
     
     
     def insExprEncoding.quantifier (isEEB: IsExprEncoding.Quantifier p):
       InsEdl exprEncoding.quantifier p
     :=
-      open IsExprEncoding.Quantifier in
       insWfmDefToIns
         (match isEEB with
-        | Is7 eq => eq ▸ insUnL _ (insNatExpr _ _ _)
-        | Is8 eq => eq ▸ insUnR _ (insNatExpr _ _ _))
+        | .ArbUn eq => eq ▸ insUnL _ (insNatExpr _ _ _)
+        | .ArbIr eq => eq ▸ insUnR _ (insNatExpr _ _ _))
     
     def Inw.toIsExprEncoding.quantifier
       (w: InwEdl exprEncoding.quantifier p)
     :
       IsExprEncoding.Quantifier p
     :=
-      open IsExprEncoding.Quantifier in
       (inwWfmToInwDef w).elim
-        (fun inwNatExpr7 => Is7 (inwNatExprElim inwNatExpr7))
-        (fun inwNatExpr8 => Is8 (inwNatExprElim inwNatExpr8))
+        (fun inwNatExpr7 => .ArbUn (inwNatExprElim inwNatExpr7))
+        (fun inwNatExpr8 => .ArbIr (inwNatExprElim inwNatExpr8))
     
     
     def insExprEncoding (isEE: IsExprEncoding p):
@@ -112,15 +122,17 @@ namespace Pair
               (insPair
                 (insExprEncoding aExpr)
                 (insExprEncoding bExpr)))
-        | IsExprEncoding.IsCpl isExpr =>
+        | IsExprEncoding.IsUnary isUnary isExpr =>
           let inList:
-            exprEncoding.cplExpr ∈ exprEncoding.exprList
+            exprEncoding.unaryExpr ∈ exprEncoding.exprList
           :=
             by unfold exprEncoding.exprList; simp
           
           insFinUn
             inList
-            (insPair (insNatExpr _ _ _) (insExprEncoding isExpr))
+            (insPair
+              (insExprEncoding.unary isUnary)
+              (insExprEncoding isExpr))
         | IsExprEncoding.IsQuantifier isQ isNat isExpr =>
           let inList:
             exprEncoding.quantifierExpr ∈ exprEncoding.exprList
@@ -172,12 +184,15 @@ namespace Pair
                 (Inw.toIsExprEncoding.binary inwL)
                 (Inw.toIsExprEncoding rInwL)
                 (Inw.toIsExprEncoding rInwR))
-        (fun inwCpl =>
+        (fun inwUnary =>
           match p with
-          | Pair.zero => inwPairElim.nope inwCpl
+          | Pair.zero => inwPairElim.nope inwUnary
           | Pair.pair _ _ =>
-            let ⟨l, r⟩ := inwPairElim inwCpl
-            (inwNatExprElim l) ▸ IsCpl (toIsExprEncoding r))
+            let ⟨inwL, inwR⟩ := inwPairElim inwUnary
+            
+            IsUnary
+              (Inw.toIsExprEncoding.unary inwL)
+              (toIsExprEncoding inwR))
         (fun inwQuant =>
           match p with
           | Pair.zero => inwPairElim.nope inwQuant

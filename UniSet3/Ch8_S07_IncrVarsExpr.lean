@@ -84,23 +84,27 @@ namespace Pair
                             (insIncrVarsExpr isShiftExprB)
                             (insFree insBound nat503Neq502))))))))
           
-          | IsIncrVarsExprPair.IsCpl isShift =>
+          | IsIncrVarsExprPair.IsUnary isUnary isShift =>
             let inList:
-              incrVarsExpr.cplExpr ∈ incrVarsExpr.exprList
+              incrVarsExpr.unaryExpr ∈ incrVarsExpr.exprList
             :=
               by unfold incrVarsExpr.exprList; simp
             
             insFinUn
               inList
               (insUnDom
-                (insExprEncoding isShift.isExprA)
-                (insPair
-                  (insPair (insNatExpr _ _ _) insBound)
+                (insExprEncoding.unary isUnary)
+                (insUnDom
+                  (insExprEncoding isShift.isExprA)
                   (insPair
-                    (insNatExpr _ _ _)
-                    (insCallExpr
-                      (insIncrVarsExpr isShift)
-                      (insFree insBound nat503Neq501)))))
+                    (insPair
+                      (insFree insBound nat501Neq500)
+                      insBound)
+                    (insPair
+                      (insFree insBound nat501Neq500)
+                      (insCallExpr
+                        (insIncrVarsExpr isShift)
+                        (insFree insBound nat503Neq501))))))
           
           | IsIncrVarsExprPair.IsQuantifier isQ isNat isShift =>
             let inList:
@@ -268,19 +272,22 @@ namespace Pair
               eqBBBPred ▸
               IsIncrVarsExprPair.IsBin isBinBound isShiftBA isShiftBB)
         (fun inw =>
-          let ⟨expr, ⟨_inwExpr, inwBody⟩⟩ := inwUnDomElim inw
+          let ⟨expr, ⟨inwUnary, inw⟩⟩ := inwUnDomElim inw
+          let ⟨expr, ⟨_inwExpr, inw⟩⟩ := inwUnDomElim inw
           
           match p with
-          | zero => inwPairElim.nope inwBody
-          | pair zero _ => inwPairElim.nope (inwPairElim inwBody).inwL
-          | pair _ zero => inwPairElim.nope (inwPairElim inwBody).inwR
+          | zero => inwPairElim.nope inw
+          | pair zero _ => inwPairElim.nope (inwPairElim inw).inwL
+          | pair _ zero => inwPairElim.nope (inwPairElim inw).inwR
           | pair (pair aA aB) (pair bA bB) =>
-            let ⟨inwA, inwB⟩ := inwPairElim inwBody
-            let ⟨inwNat5A, inwAB⟩ := inwPairElim inwA
-            let ⟨inwNat5B, inwBB⟩ := inwPairElim inwB
+            let isUnary := Inw.toIsExprEncoding.unary inwUnary
             
-            let eqAA := inwNatExprElim inwNat5A
-            let eqBA := inwNatExprElim inwNat5B
+            let ⟨inwA, inwB⟩ := inwPairElim inw
+            let ⟨inw500A, inwAB⟩ := inwPairElim inwA
+            let ⟨inw500B, inwBB⟩ := inwPairElim inwB
+            
+            let eqAA := inwBoundElim (inwFreeElim inw500A nat501Neq500)
+            let eqBA := inwBoundElim (inwFreeElim inw500B nat501Neq500)            
             let eqAB := inwBoundElim inwAB
             
             let ⟨exprAlias, ⟨inwFn, inwArg⟩⟩ := inwCallExprElim inwBB
@@ -292,7 +299,9 @@ namespace Pair
             eqAA ▸
             (eqAB.trans eqExpr.symm) ▸
             eqBA ▸
-            IsIncrVarsExprPair.IsCpl (toIsIncrVarsExpr inwFn))
+            IsIncrVarsExprPair.IsUnary
+              (eqBA ▸ isUnary)
+              (toIsIncrVarsExpr inwFn))
         (fun inw =>
           let ⟨q, ⟨inwQ, inwBody⟩⟩ := inwUnDomElim inw
           let ⟨expr, ⟨_inwExpr, inwBody⟩⟩ := inwUnDomElim inwBody

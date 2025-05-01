@@ -37,6 +37,9 @@ namespace PairExpr
         | ArityTwo.zth => left
         | ArityTwo.fst => rite
   
+  def condExpr (cond: Expr): Expr :=
+    Expr.op Op.cond fun _ => cond
+  
   def unExpr (left rite: Expr): Expr :=
     Expr.op
       Op.un
@@ -54,12 +57,11 @@ namespace PairExpr
         | ArityTwo.fst => rite
   
   def ifThenExpr (cond body: Expr): Expr :=
-    Expr.op
-      Op.ifThen
-      fun arg =>
-        match arg with
-        | ArityTwo.zth => cond
-        | ArityTwo.fst => body
+    irExpr (condExpr cond) body
+  
+  -- Is empty if `expr` is inhabited, else is full.
+  def negCondExpr (expr: Expr): Expr :=
+    Expr.cpl (condExpr expr)
   
   
   /-
@@ -255,6 +257,37 @@ namespace PairExpr
     s
   
   
+  def insCond
+    (insExpr: InsP b c expr dE)
+  :
+    InsP b c (condExpr expr) d
+  :=
+    ⟨dE, insExpr⟩
+  
+  def inwCond
+    (insExpr: InwP b c expr dE)
+  :
+    InwP b c (condExpr expr) d
+  :=
+    ⟨dE, insExpr⟩
+  
+  
+  def insCondElim
+    (s: InsP b c (condExpr expr) d)
+  :
+    ∃ dE, InsP b c expr dE
+  :=
+    let ⟨dE, insExpr⟩ := s
+    ⟨dE, insExpr⟩
+  
+  def inwCondElim
+    (s: InwP b c (condExpr expr) d)
+  :
+    ∃ dE, InwP b c expr dE
+  :=
+    s
+  
+  
   def insIfThen
     {cond: Expr}
     (insCond: InsP b c cond dC)
@@ -295,9 +328,6 @@ namespace PairExpr
       (InwP b c body d)
   :=
     s
-  
-  
-  
   
   
   /-
@@ -1062,10 +1092,9 @@ def Expr.toString: Expr pairSignature → String
   let left := (args ArityTwo.zth).toString
   let rite := (args ArityTwo.fst).toString
   s!"({left}) & ({rite})"
-| .op pairSignature.Op.ifThen args =>
-  let cond := (args ArityTwo.zth).toString
-  let body := (args ArityTwo.fst).toString
-  s!"({cond}) then ({body})"
+| .op pairSignature.Op.cond args =>
+  let cond := (args ArityOne.zth).toString
+  s!"(? {cond})"
 | .op pairSignature.Op.zero _ =>
   "null"
 | .op pairSignature.Op.pair args =>

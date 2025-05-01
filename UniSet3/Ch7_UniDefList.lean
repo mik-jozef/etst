@@ -91,28 +91,29 @@ namespace Pair
     def exprEncoding.zero.expr: Expr :=
       (pairExpr (natExpr 1) zeroExpr)
     
-    -- Contains the triset { 2, 3, 4, 6 }.
+    -- Contains the triset { 2, 3, 4 }.
     def exprEncoding.binary: Nat := 5
     def exprEncoding.binary.expr: Expr :=
-      unExpr
-        (natExpr 2)
-        (unExpr
-          (natExpr 3)
-          ((unExpr (natExpr 4) (natExpr 6))))
+      unExpr (natExpr 2) (unExpr (natExpr 3) (natExpr 4))
+    
+    -- Contains the triset { 5, 6 }.
+    def exprEncoding.unary: Nat := 6
+    def exprEncoding.unary.expr: Expr :=
+      unExpr (natExpr 5) (natExpr 6)
     
     -- Contains the triset { 7, 8 }.
-    def exprEncoding.quantifier: Nat := 6
+    def exprEncoding.quantifier: Nat := 7
     def exprEncoding.quantifier.expr: Expr :=
       unExpr (natExpr 7) (natExpr 8)
     
     -- Helpers for `exprEncoding.expr` below.
-    def exprEncoding: Nat := 7
+    def exprEncoding: Nat := 8
+    def exprEncoding.unaryExpr :=
+      pairExpr exprEncoding.unary exprEncoding
     def exprEncoding.binExpr :=
       pairExpr
         exprEncoding.binary
         (pairExpr exprEncoding exprEncoding)
-    def exprEncoding.cplExpr :=
-      pairExpr (natExpr 5) exprEncoding
     def exprEncoding.quantifierExpr :=
       pairExpr
         exprEncoding.quantifier
@@ -122,13 +123,13 @@ namespace Pair
       Contains all pairs that encode an expression.
       
       Expressions are encoded like this:
-      | var (v: Nat)                 => (0, v)
-      | op (Op.zero) (args)          => (1, ())
-      | op (Op.pair) (args)          => (2, (args 0, args 1))
+      | var (x: Nat)                 => (0, x)
+      | zero                         => (1, ())
+      | pair (left rite: Expr sig)   => (2, (left, rite))
       | un (left rite: Expr sig)     => (3, (left, rite))
       | ir (left rite: Expr sig)     => (4, (left, rite))
       | cpl (expr: Expr sig)         => (5, expr)
-      | ifThen (cond expr: Expr sig) => (6, (cond, expr))
+      | cond (cond: Expr sig)        => (6, cond)
       | Un (x: Nat) (body: Expr sig) => (7, (x, body))
       | Ir (x: Nat) (body: Expr sig) => (8, (x, body))
     -/
@@ -137,7 +138,7 @@ namespace Pair
         Expr.var exprEncoding.var,
         Expr.var exprEncoding.zero,
         binExpr,
-        cplExpr,
+        unaryExpr,
         quantifierExpr,
       ]
     def exprEncoding.expr := finUnExpr exprList
@@ -149,7 +150,7 @@ namespace Pair
       The empty list is encoded as (), and `head :: tail` as
       `pair head tailEncoding`.
     -/
-    def defEncoding: Nat := 8
+    def defEncoding: Nat := 9
     def defEncoding.expr: Expr :=
       unExpr zeroExpr (pairExpr exprEncoding defEncoding)
     
@@ -157,7 +158,7 @@ namespace Pair
       Contains (a, b) with a and b being pairs such that a < b
       in the dictionary order. (Base case: () < (a, b).)
     -/
-    def pairDictLt: Nat := 9
+    def pairDictLt: Nat := 10
     def pairDictLt.zeroPair: Expr :=
       pairExpr zeroExpr (pairExpr anyExpr anyExpr)
     def pairDictLt.ltLeft: Expr :=
@@ -184,7 +185,7 @@ namespace Pair
       Contains (n, m) such that m ≤ n, n and m being natural
       numbers.
     -/
-    def natLeFn: Nat := 10
+    def natLeFn: Nat := 11
     def natLeFn.expr: Expr :=
       unionExpr 500 natLe
         (pairExpr (fstMember 501 500) (zthMember 501 500))
@@ -193,7 +194,7 @@ namespace Pair
       Contains (n, p) such that p is a pair and n an encoding of
       its depth.
     -/
-    def pairOfDepth: Nat := 11
+    def pairOfDepth: Nat := 12
     def pairOfDepth.expr: Expr :=
       unExpr
         (pairExpr zeroExpr zeroExpr)
@@ -208,14 +209,14 @@ namespace Pair
     /-
       The "less than" relation on natural numbers.
     -/
-    def natLt: Nat := 12
+    def natLt: Nat := 13
     def natLt.expr: Expr :=
       irExpr natLe (Expr.cpl (Expr.arbUn 500 (pairExpr 500 500)))
     
     /-
       Contains (a, b) if the pairs `a` and `b` have the same depth.
     -/
-    def sameDepth: Nat := 13
+    def sameDepth: Nat := 14
     def sameDepth.expr: Expr :=
       unionExpr 500 nat
         (pairExpr
@@ -230,7 +231,7 @@ namespace Pair
       pair p, there is only finitely many pairs less
       than p.
     -/
-    def pairLt: Nat := 14
+    def pairLt: Nat := 15
     def pairLt.expr: Expr :=
       unExpr
         (irExpr sameDepth pairDictLt)
@@ -242,7 +243,7 @@ namespace Pair
     /-
       The ordering `pairLt` restricted to deflist encodings.
     -/
-    def defEncodingLt: Nat := 15
+    def defEncodingLt: Nat := 16
     def defEncodingLt.expr: Expr :=
       irExpr pairLt (pairExpr defEncoding defEncoding)
     
@@ -250,7 +251,7 @@ namespace Pair
       Contains (a, b) iff `a < x < b` for some deflist encodings
       `a`, `b` and `x`.
     -/
-    def defEncodingMinDist2: Nat := 16
+    def defEncodingMinDist2: Nat := 17
     def defEncodingMinDist2.expr: Expr :=
       Expr.arbUn 500
         (Expr.arbUn 501
@@ -265,7 +266,7 @@ namespace Pair
       Contains (a, b) where `b` is the least defEncoding greater
       than `a`.
     -/
-    def nextDef: Nat := 17
+    def nextDef: Nat := 18
     def nextDef.expr: Expr :=
       irExpr
         defEncodingLt
@@ -275,7 +276,7 @@ namespace Pair
       Contains (n, dl), where `dl` is the `n`th least deflist
       encoding in the `defEncodingLt` order.
     -/
-    def nthDefList: Nat := 18
+    def nthDefList: Nat := 19
     def nthDefList.expr: Expr :=
       unExpr
         (pairExpr zeroExpr zeroExpr)
@@ -285,7 +286,7 @@ namespace Pair
             (callExpr 501 nextDef (fstMember 502 500))))
     
     -- See incrVarsExpr.
-    def incrVarsExpr.var: Nat := 19
+    def incrVarsExpr.var: Nat := 20
     def incrVarsExpr.var.expr: Expr :=
       unionExpr 500 nat
         (pairExpr
@@ -297,7 +298,7 @@ namespace Pair
       of an expression and `eOut` is `eIn` with variables
       incremented by 1.
     -/
-    def incrVarsExpr: Nat := 20
+    def incrVarsExpr: Nat := 21
     
     def incrVarsExpr.opZero: Expr :=
       pairExpr exprEncoding.zero exprEncoding.zero
@@ -316,12 +317,13 @@ namespace Pair
                   (callExpr 503 incrVarsExpr 501)
                   (callExpr 503 incrVarsExpr 502))))))
     
-    def incrVarsExpr.cplExpr: Expr :=
-      unionExpr 501 exprEncoding
-        (pairExpr
-          (pairExpr (natExpr 5) 501)
-          (pairExpr (natExpr 5)
-            (callExpr 503 incrVarsExpr 501)))
+    def incrVarsExpr.unaryExpr: Expr :=
+      unionExpr 500 exprEncoding.unary
+        (unionExpr 501 exprEncoding
+          (pairExpr
+            (pairExpr 500 501)
+            (pairExpr 500
+              (callExpr 503 incrVarsExpr 501))))
     
     def incrVarsExpr.quantifierExpr: Expr :=
       unionExpr 500 exprEncoding.quantifier
@@ -341,7 +343,7 @@ namespace Pair
       incrVarsExpr.var,
       opZero,
       binExpr,
-      cplExpr,
+      unaryExpr,
       quantifierExpr,
     ]
     
@@ -351,7 +353,7 @@ namespace Pair
       (dlIn, dlOut) where `dlIn` equals `dlOut` except that the
       variables of `dlOut` are incremented by 1.
     -/
-    def incrVarsDefEncoding: Nat := 21
+    def incrVarsDefEncoding: Nat := 22
     def incrVarsDefEncoding.expr: Expr :=
       unExpr
         (pairExpr zeroExpr zeroExpr)
@@ -367,7 +369,7 @@ namespace Pair
       (n, (dlIn, dlOut)) where `dlOut` is `dlIn` with variables
       incremented by n.
     -/
-    def shiftDefEncoding: Nat := 22
+    def shiftDefEncoding: Nat := 23
     def shiftDefEncoding.expr: Expr :=
       unExpr
         (unionExpr 500 defEncoding
@@ -389,7 +391,7 @@ namespace Pair
       a definition list of length one, and `expr` is the only its
       expression.
     -/
-    def lastExpr.base: Nat := 23
+    def lastExpr.base: Nat := 24
     def lastExpr.base.expr: Expr :=
       unionExpr 500 exprEncoding
         (pairExpr
@@ -400,7 +402,7 @@ namespace Pair
       (dl, expr), where `expr` is the last expression of (the
       encoding of) a prefix of a definition list `dl`.
     -/
-    def lastExpr: Nat := 24
+    def lastExpr: Nat := 25
     def lastExpr.expr: Expr :=
       unExpr
         lastExpr.base
@@ -417,7 +419,7 @@ namespace Pair
       
           dl = [ ...upToLast(dl), lastExpr(dl) ] \,.
     -/
-    def upToLast: Nat := 25
+    def upToLast: Nat := 26
     def upToLast.expr: Expr :=
       unExpr
         (pairExpr (pairExpr exprEncoding zeroExpr) zeroExpr)
@@ -434,7 +436,7 @@ namespace Pair
       breaking the semantics of the latter one. This gets fixed
       below.
     -/
-    def arrayAppend: Nat := 26
+    def arrayAppend: Nat := 27
     def arrayAppend.expr: Expr :=
       (unExpr
         (pairExpr
@@ -458,7 +460,7 @@ namespace Pair
       
       Note that every pair encodes some array.
     -/
-    def arrayLength: Nat := 27
+    def arrayLength: Nat := 28
     def arrayLength.expr: Expr :=
       unExpr
         (pairExpr zeroExpr zeroExpr)
@@ -479,7 +481,7 @@ namespace Pair
       
           dlRes = [ ...dlA, ...shift(dlA.length, dlB) ] \,.
     -/
-    def append: Nat := 28
+    def append: Nat := 29
     def append.expr: Expr :=
       unionExpr 500 defEncoding
         (unionExpr 501 defEncoding
@@ -509,7 +511,7 @@ namespace Pair
       of the other. Every prefix of every definition list is
       contained in some deflist prefix returned by `enumUpTo`.
     -/
-    def enumUpTo: Nat := 29
+    def enumUpTo: Nat := 30
     def enumUpTo.expr: Expr :=
       unExpr
         (pairExpr zeroExpr zeroExpr)
@@ -525,7 +527,7 @@ namespace Pair
       Contains (dl, (n, e)) such that `e` is the nth expression
       of the definition list encoding `dl`.
     -/
-    def defListToSet: Nat := 30
+    def defListToSet: Nat := 31
     def defListToSet.expr: Expr :=
       unionExpr 500 exprEncoding
         (unionExpr 501 defEncoding
@@ -554,7 +556,7 @@ namespace Pair
       defined in this definition list. We'll call it the internal
       definition list.
     -/
-    def theDlPrefixes: Nat := 31
+    def theDlPrefixes: Nat := 32
     def theDlPrefixes.expr: Expr :=
       unionExpr 500 nat
         (callExpr 501 enumUpTo 500)
@@ -568,7 +570,7 @@ namespace Pair
       its prefixes, `theDefList` contains its index-expression
       pairs.
     -/
-    def theDefList: Nat := 32
+    def theDefList: Nat := 33
     def theDefList.expr: Expr :=
       unionExpr 500 theDlPrefixes
         (callExpr 501 defListToSet 500)
@@ -587,7 +589,7 @@ namespace Pair
       Contains (arr, (n, p)) such that `arr` is a list containing
       (n, p).
     -/
-    def getBound: Nat := 33
+    def getBound: Nat := 34
     def getBound.expr: Expr :=
       unExpr
         getBound.baseExpr
@@ -613,7 +615,7 @@ namespace Pair
       member of the interpretation, else it is contained
       weakly.
     -/
-    def interpretation: Nat := 34
+    def interpretation: Nat := 35
     
     /-
       A set of pairs (n, p) where `n` is a natural number, and
@@ -636,23 +638,18 @@ namespace Pair
       encoding of the well-founded model of the definition list
       represented by `theDefList`.
     -/
-    def theSet: Nat := 35
+    def theSet: Nat := 36
     
     def interpretation.exprVarBoundOrFree: Expr :=
       -- Assuming 500 is a var, and 501 is bound vars.
       unExpr
         -- The case where 500 is a bound var.
         (callExpr 502 (callExpr 503 getBound 501) 500)
-        -- The case where 500 is a free var. Must be empty if 500
-        -- is a bound var, thus the `ifThen`.
-        (ifThenExpr
-          (Expr.cpl
-            -- Turning a nonempty type into the universal
-            -- type, so that it may be complemented to test
-            -- for emptiness.
-            (ifThenExpr
-              (callExpr 502 (callExpr 503 getBound 501) 500)
-              anyExpr))
+        -- The case where 500 is a free var.
+        (irExpr
+          -- Ensure that 500 is not a bound var.
+          (negCondExpr
+            (callExpr 502 (callExpr 503 getBound 501) 500))
           (callExpr 502 theSet 500))
     
     def interpretation.exprVar: Expr :=
@@ -718,17 +715,15 @@ namespace Pair
               (Expr.cpl
                 (callExpr 503 (callExpr 504 interpretation 502) 500)))))
     
-    def interpretation.exprIfThen: Expr :=
+    def interpretation.exprCond: Expr :=
       unionExpr 500 exprEncoding
-        (unionExpr 501 exprEncoding
-          (Expr.arbUn 502
+        (Expr.arbUn 502
+          (pairExpr
+            502
             (pairExpr
-              502
-              (pairExpr
-                (pairExpr (natExpr 6) (pairExpr 500 501))
-                (ifThenExpr
-                  (callExpr 503 (callExpr 504 interpretation 502) 500)
-                  (callExpr 503 (callExpr 504 interpretation 502) 501))))))
+              (pairExpr (natExpr 6) 500)
+              (condExpr
+                (callExpr 503 (callExpr 504 interpretation 502) 500)))))
     
     def interpretation.exprArbUnion: Expr :=
       unionExpr 500 nat
@@ -767,7 +762,7 @@ namespace Pair
       exprUnion,
       exprIntersection,
       exprCpl,
-      exprIfThen,
+      exprCond,
       exprArbUnion,
       exprArbIntersection,
     ]
@@ -789,37 +784,38 @@ namespace Pair
     | 3 => exprEncoding.var.expr
     | 4 => exprEncoding.zero.expr
     | 5 => exprEncoding.binary.expr
-    | 6 => exprEncoding.quantifier.expr
-    | 7 => exprEncoding.expr
-    | 8 => defEncoding.expr
-    | 9 => pairDictLt.expr
-    | 10 => natLeFn.expr
-    | 11 => pairOfDepth.expr
-    | 12 => natLt.expr
-    | 13 => sameDepth.expr
-    | 14 => pairLt.expr
-    | 15 => defEncodingLt.expr
-    | 16 => defEncodingMinDist2.expr
-    | 17 => nextDef.expr
-    | 18 => nthDefList.expr
-    | 19 => incrVarsExpr.var.expr
-    | 20 => incrVarsExpr.expr
-    | 21 => incrVarsDefEncoding.expr
-    | 22 => shiftDefEncoding.expr
-    | 23 => lastExpr.base.expr
-    | 24 => lastExpr.expr
-    | 25 => upToLast.expr
-    | 26 => arrayAppend.expr
-    | 27 => arrayLength.expr
-    | 28 => append.expr
-    | 29 => enumUpTo.expr
-    | 30 => defListToSet.expr
-    | 31 => theDlPrefixes.expr
-    | 32 => theDefList.expr
-    | 33 => getBound.expr
-    | 34 => interpretation.expr
-    | 35 => theSet.expr
-    | _rest + 36 => zeroExpr
+    | 6 => exprEncoding.unary.expr
+    | 7 => exprEncoding.quantifier.expr
+    | 8 => exprEncoding.expr
+    | 9 => defEncoding.expr
+    | 10 => pairDictLt.expr
+    | 11 => natLeFn.expr
+    | 12 => pairOfDepth.expr
+    | 13 => natLt.expr
+    | 14 => sameDepth.expr
+    | 15 => pairLt.expr
+    | 16 => defEncodingLt.expr
+    | 17 => defEncodingMinDist2.expr
+    | 18 => nextDef.expr
+    | 19 => nthDefList.expr
+    | 20 => incrVarsExpr.var.expr
+    | 21 => incrVarsExpr.expr
+    | 22 => incrVarsDefEncoding.expr
+    | 23 => shiftDefEncoding.expr
+    | 24 => lastExpr.base.expr
+    | 25 => lastExpr.expr
+    | 26 => upToLast.expr
+    | 27 => arrayAppend.expr
+    | 28 => arrayLength.expr
+    | 29 => append.expr
+    | 30 => enumUpTo.expr
+    | 31 => defListToSet.expr
+    | 32 => theDlPrefixes.expr
+    | 33 => theDefList.expr
+    | 34 => getBound.expr
+    | 35 => interpretation.expr
+    | 36 => theSet.expr
+    | _rest => zeroExpr
     
     /-
       All free variables of the definition list are less than 38.
@@ -879,6 +875,7 @@ namespace Pair
       | 33 => prf 33 rfl usedVar
       | 34 => prf 34 rfl usedVar
       | 35 => prf 35 rfl usedVar
+      | 36 => prf 36 rfl usedVar
     
     def defList.hasFiniteBounds
       (dependsOn: DefList.DependsOn getDef a b)

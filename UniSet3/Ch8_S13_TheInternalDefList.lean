@@ -61,8 +61,6 @@ namespace Pair
       exprToEncoding (Expr.mapVars Nat.succ expr)
     :=
       open pairSignature in
-      open IsExprEncoding.Bin in
-      open IsExprEncoding.Quantifier in
       match expr with
       | Expr.var _ => incrVars.eq0 _ ▸ rfl
       | Expr.op Op.zero _args => incrVars.eq1 _ ▸ rfl
@@ -74,18 +72,17 @@ namespace Pair
         show (pair _ _) = _ from
           congr rfl (congrBin rfl incrVarsEqMapVars incrVarsEqMapVars)
       | Expr.op Op.ir _args =>
-        incrVars.eqBin (Is4 rfl) _ _ ▸
+        incrVars.eqBin (.Ir rfl) _ _ ▸
         congr rfl (congrBin rfl incrVarsEqMapVars incrVarsEqMapVars)
       | Expr.cpl _ =>
-        incrVars.eqCpl _ ▸ congr rfl incrVarsEqMapVars
-      | Expr.op Op.ifThen _args =>
-        incrVars.eqBin (Is6 rfl) _ _ ▸
-        congr rfl (congrBin rfl incrVarsEqMapVars incrVarsEqMapVars)
+        incrVars.eqUnary (.Cpl rfl) _ ▸ congr rfl incrVarsEqMapVars
+      | Expr.op Op.cond _args =>
+        incrVars.eqUnary (.Cond rfl) _ ▸ congr rfl incrVarsEqMapVars
       | Expr.arbUn _ _ =>
-        incrVars.eqQuant (Is7 rfl) _ _ ▸
+        incrVars.eqQuant (.ArbUn rfl) _ _ ▸
         congrBin rfl rfl (congr rfl incrVarsEqMapVars)
       | Expr.arbIr _ _ =>
-        incrVars.eqQuant (Is8 rfl) _ _ ▸
+        incrVars.eqQuant (.ArbIr rfl) _ _ ▸
         congrBin rfl rfl (congr rfl incrVarsEqMapVars)
     
     def IsIncrVarsExprPair.shiftVarsEqMapVars.incr
