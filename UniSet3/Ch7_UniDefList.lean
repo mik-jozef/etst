@@ -96,15 +96,15 @@ namespace Pair
     def exprEncoding.binary.expr: Expr :=
       unExpr (natExpr 2) (unExpr (natExpr 3) (natExpr 4))
     
-    -- Contains the triset { 5, 6 }.
+    -- Contains the triset { 5, 6, 7 }.
     def exprEncoding.unary: Nat := 6
     def exprEncoding.unary.expr: Expr :=
-      unExpr (natExpr 5) (natExpr 6)
+      unExpr (natExpr 5) (unExpr (natExpr 6) (natExpr 7))
     
-    -- Contains the triset { 7, 8 }.
+    -- Contains the triset { 8, 9 }.
     def exprEncoding.quantifier: Nat := 7
     def exprEncoding.quantifier.expr: Expr :=
-      unExpr (natExpr 7) (natExpr 8)
+      unExpr (natExpr 8) (natExpr 9)
     
     -- Helpers for `exprEncoding.expr` below.
     def exprEncoding: Nat := 8
@@ -129,9 +129,10 @@ namespace Pair
       | un (left rite: Expr sig)     => (3, (left, rite))
       | ir (left rite: Expr sig)     => (4, (left, rite))
       | cpl (expr: Expr sig)         => (5, expr)
-      | cond (cond: Expr sig)        => (6, cond)
-      | Un (x: Nat) (body: Expr sig) => (7, (x, body))
-      | Ir (x: Nat) (body: Expr sig) => (8, (x, body))
+      | condSome (cond: Expr sig)    => (6, cond)
+      | condFull (cond: Expr sig)    => (7, cond)
+      | Un (x: Nat) (body: Expr sig) => (8, (x, body))
+      | Ir (x: Nat) (body: Expr sig) => (9, (x, body))
     -/
     def exprEncoding.exprList: List Expr :=
       [
@@ -715,14 +716,24 @@ namespace Pair
               (Expr.cpl
                 (callExpr 503 (callExpr 504 interpretation 502) 500)))))
     
-    def interpretation.exprCond: Expr :=
+    def interpretation.exprCondSome: Expr :=
       unionExpr 500 exprEncoding
         (Expr.arbUn 502
           (pairExpr
             502
             (pairExpr
               (pairExpr (natExpr 6) 500)
-              (condExpr
+              (condSomeExpr
+                (callExpr 503 (callExpr 504 interpretation 502) 500)))))
+    
+    def interpretation.exprCondFull: Expr :=
+      unionExpr 500 exprEncoding
+        (Expr.arbUn 502
+          (pairExpr
+            502
+            (pairExpr
+              (pairExpr (natExpr 7) 500)
+              (condFullExpr
                 (callExpr 503 (callExpr 504 interpretation 502) 500)))))
     
     def interpretation.exprArbUnion: Expr :=
@@ -732,7 +743,7 @@ namespace Pair
             (pairExpr
               502
               (pairExpr
-                (pairExpr (natExpr 7) (pairExpr 500 501))
+                (pairExpr (natExpr 8) (pairExpr 500 501))
                 (Expr.arbUn 503
                   (callExpr 504
                     (callExpr 505
@@ -747,7 +758,7 @@ namespace Pair
             (pairExpr
               502
               (pairExpr
-                (pairExpr (natExpr 8) (pairExpr 500 501))
+                (pairExpr (natExpr 9) (pairExpr 500 501))
                 (Expr.arbIr 503
                   (callExpr 504
                     (callExpr 505
@@ -762,7 +773,8 @@ namespace Pair
       exprUnion,
       exprIntersection,
       exprCpl,
-      exprCond,
+      exprCondSome,
+      exprCondFull,
       exprArbUnion,
       exprArbIntersection,
     ]

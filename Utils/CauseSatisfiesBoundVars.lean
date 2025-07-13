@@ -21,6 +21,23 @@ def Cause.SatisfiesBoundVars.union
 
 def Cause.SatisfiesBoundVars.arbUn
   (causes: Pair → Cause Pair)
+  (sat: ∀ dH, (causes dH).SatisfiesBoundVars boundVars)
+:
+  Cause.SatisfiesBoundVars
+    (Cause.arbUn fun dH => causes dH)
+    boundVars
+:=
+  fun isBoundTo => {
+    cinsSat := fun vv ⟨dH, inCins⟩ xEq =>
+      sat dH isBoundTo |>.cinsSat vv inCins xEq
+    binsSat := fun vv ⟨dH, inBins⟩ xEq =>
+      sat dH isBoundTo |>.binsSat vv inBins xEq
+    boutSat := fun vv ⟨dH, inBout⟩ xEq =>
+      sat dH isBoundTo |>.boutSat vv inBout xEq
+  }
+
+def Cause.SatisfiesBoundVars.arbUnVar
+  (causes: Pair → Cause Pair)
   (x: Nat)
   (sat: ∀ dH, (causes dH).SatisfiesBoundVars (⟨dH, x⟩ :: boundVars))
 :
@@ -28,21 +45,20 @@ def Cause.SatisfiesBoundVars.arbUn
     (Cause.arbUn fun dH => (causes dH).exceptVar x)
     boundVars
 :=
-  fun isBoundTo =>
-    {
-      cinsSat := fun vv ⟨dH, ⟨inCins, xNeq⟩⟩ xEq =>
-        let isBound := IsBoundTo.InTail isBoundTo (xEq ▸ xNeq) dH
-        let satBoundVar := sat dH isBound
-        satBoundVar.cinsSat vv inCins xEq
-      binsSat := fun vv ⟨dH, ⟨inBins, xNeq⟩⟩ xEq =>
-        let isBound := IsBoundTo.InTail isBoundTo (xEq ▸ xNeq) dH
-        let satBoundVar := sat dH isBound
-        satBoundVar.binsSat vv inBins xEq
-      boutSat := fun vv ⟨dH, ⟨inBout, xNeq⟩⟩ xEq =>
-        let isBound := IsBoundTo.InTail isBoundTo (xEq ▸ xNeq) dH
-        let satBoundVar := sat dH isBound
-        satBoundVar.boutSat vv inBout xEq
-    }
+  fun isBoundTo => {
+    cinsSat := fun vv ⟨dH, ⟨inCins, xNeq⟩⟩ xEq =>
+      let isBound := IsBoundTo.InTail isBoundTo (xEq ▸ xNeq) dH
+      let satBoundVar := sat dH isBound
+      satBoundVar.cinsSat vv inCins xEq
+    binsSat := fun vv ⟨dH, ⟨inBins, xNeq⟩⟩ xEq =>
+      let isBound := IsBoundTo.InTail isBoundTo (xEq ▸ xNeq) dH
+      let satBoundVar := sat dH isBound
+      satBoundVar.binsSat vv inBins xEq
+    boutSat := fun vv ⟨dH, ⟨inBout, xNeq⟩⟩ xEq =>
+      let isBound := IsBoundTo.InTail isBoundTo (xEq ▸ xNeq) dH
+      let satBoundVar := sat dH isBound
+      satBoundVar.boutSat vv inBout xEq
+  }
 
 def Cause.SatisfiesBoundVars.satWithBound
   {cause: Cause Pair}

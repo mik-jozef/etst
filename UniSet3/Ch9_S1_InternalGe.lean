@@ -301,16 +301,25 @@ namespace Pair
         match boutOut inBout with
         | MotiveOut.interp _ inw =>
           inw boundVars expr d rfl
-      | Expr.op pairSignature.Op.cond args =>
+      | Expr.op pairSignature.Op.condSome args =>
         let ⟨dC, inCins⟩ :=
           isCauseExternal.hurrDurrElim
             externalCauseIsSat.toIsConsistent
-            elimDefExternalCond
+            elimDefExternalCondSome
         match cinsIns inCins with
         | MotiveIns.interp _ insExpr =>
-          insCond
-            (d := zero) -- Ok ???
+          insCondSome
+            (d := zero)
             (insExpr boundVars (args ArityOne.zth) dC rfl)
+      | Expr.op pairSignature.Op.condFull args =>
+        let inCins :=
+          isCauseExternal.hurrDurrElim
+            externalCauseIsSat.toIsConsistent
+            elimDefExternalCondFull
+        insCondFull (d := zero) fun dE =>
+          match cinsIns (inCins dE) with
+          | MotiveIns.interp _ insExpr =>
+            (insExpr boundVars (args ArityOne.zth) dE rfl)
       | Expr.arbUn x body =>
         let ⟨dX, inCins⟩ :=
           isCauseExternal.hurrDurrElim
@@ -884,17 +893,17 @@ namespace Pair
         
         isInappOfInappCpl satisfiesBounds causeInapp
       |
-        Expr.op pairSignature.Op.cond args =>
+        Expr.op pairSignature.Op.condSome args =>
         let expr := args ArityOne.zth
         
-        let ⟨dC, isCauseCond⟩ :=
-          isCause.elimCond updatedInternalWfm
+        let ⟨dC, isCauseCondSome⟩ :=
+          isCause.elimCondSome updatedInternalWfm
         
         let isInappIh :=
           isEmptyCycleIh
             inCycle
-            (InwExternal.causeCond boundVars dC expr)
-            (InwExternal.isCauseCond boundVars d expr)
+            (InwExternal.causeCondSome boundVars dC expr)
+            (InwExternal.isCauseCondSome boundVars d expr)
         
         let inCycle :=
           match isInappIh with
@@ -902,7 +911,7 @@ namespace Pair
             let out := Out.intro externalCycle isEmptyCycle inCycle
             out.nopeDef (xEq ▸ (insExprEncoding isExpr))
           | blockedCins (Or.inr ⟨xEq, dEq⟩) inCycle =>
-            (xEq ▸ dEq ▸ inCycle)
+            xEq ▸ dEq ▸ inCycle
         
         let isInapp :=
           allInternalInapplicableInterp
@@ -912,9 +921,30 @@ namespace Pair
             (satisfiesBounds.union
               (Cause.SatisfiesBoundVars.bWithBoundsSatBoundVars
                 _ boundVars))
-            isCauseCond
+            isCauseCondSome
         
         isInappOfInappUnOrIfThen isInapp
+      |
+        Expr.op pairSignature.Op.condFull args =>
+        let expr := args ArityOne.zth
+        
+        let isInappIh :=
+          isEmptyCycleIh
+            inCycle
+            (InwExternal.causeCondFull boundVars expr)
+            (InwExternal.isCauseCondFull boundVars d expr)
+        
+        match isInappIh with
+        | blockedCins (Or.inl ⟨xEq, isExpr⟩) inCycle =>
+          let out := Out.intro externalCycle isEmptyCycle inCycle
+          out.nopeDef (xEq ▸ (insExprEncoding isExpr))
+        | blockedCins (Or.inr ⟨dE, xEq, dEq⟩) inCycle =>
+          allInternalInapplicableInterp
+            isEmptyCycle
+            isEmptyCycleIh
+            (xEq ▸ dEq ▸ inCycle)
+            satisfiesBounds
+            (isCause.elimCondFull dE)
       |
         Expr.arbUn x body =>
         let ⟨dX, isCauseBody⟩ :=

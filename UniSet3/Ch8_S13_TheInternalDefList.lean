@@ -76,8 +76,10 @@ namespace Pair
         congr rfl (congrBin rfl incrVarsEqMapVars incrVarsEqMapVars)
       | Expr.cpl _ =>
         incrVars.eqUnary (.Cpl rfl) _ ▸ congr rfl incrVarsEqMapVars
-      | Expr.op Op.cond _args =>
-        incrVars.eqUnary (.Cond rfl) _ ▸ congr rfl incrVarsEqMapVars
+      | Expr.op Op.condSome _args =>
+        incrVars.eqUnary (.CondSome rfl) _ ▸ congr rfl incrVarsEqMapVars
+      | Expr.op Op.condFull _args =>
+        incrVars.eqUnary (.CondFull rfl) _ ▸ congr rfl incrVarsEqMapVars
       | Expr.arbUn _ _ =>
         incrVars.eqQuant (.ArbUn rfl) _ _ ▸
         congrBin rfl rfl (congr rfl incrVarsEqMapVars)

@@ -37,8 +37,11 @@ namespace PairExpr
         | ArityTwo.zth => left
         | ArityTwo.fst => rite
   
-  def condExpr (cond: Expr): Expr :=
-    Expr.op Op.cond fun _ => cond
+  def condSomeExpr (cond: Expr): Expr :=
+    Expr.op Op.condSome fun _ => cond
+  
+  def condFullExpr (cond: Expr): Expr :=
+    Expr.op Op.condFull fun _ => cond
   
   def unExpr (left rite: Expr): Expr :=
     Expr.op
@@ -57,11 +60,12 @@ namespace PairExpr
         | ArityTwo.fst => rite
   
   def ifThenExpr (cond body: Expr): Expr :=
-    irExpr (condExpr cond) body
+    irExpr (condSomeExpr cond) body
   
   -- Is empty if `expr` is inhabited, else is full.
   def negCondExpr (expr: Expr): Expr :=
-    Expr.cpl (condExpr expr)
+    -- Expr.cpl (condSomeExpr expr)
+    condFullExpr (expr.cpl)
   
   
   /-
@@ -257,33 +261,63 @@ namespace PairExpr
     s
   
   
-  def insCond
+  def insCondSome
     (insExpr: InsP b c expr dE)
   :
-    InsP b c (condExpr expr) d
+    InsP b c (condSomeExpr expr) d
   :=
     ⟨dE, insExpr⟩
   
-  def inwCond
+  def inwCondSome
     (insExpr: InwP b c expr dE)
   :
-    InwP b c (condExpr expr) d
+    InwP b c (condSomeExpr expr) d
   :=
     ⟨dE, insExpr⟩
   
   
-  def insCondElim
-    (s: InsP b c (condExpr expr) d)
+  def insCondSomeElim
+    (s: InsP b c (condSomeExpr expr) d)
   :
     ∃ dE, InsP b c expr dE
   :=
     let ⟨dE, insExpr⟩ := s
     ⟨dE, insExpr⟩
   
-  def inwCondElim
-    (s: InwP b c (condExpr expr) d)
+  def inwCondSomeElim
+    (s: InwP b c (condSomeExpr expr) d)
   :
     ∃ dE, InwP b c expr dE
+  :=
+    s
+  
+  
+  def insCondFull
+    (allInsExpr: (dE: pairSalgebra.D) → InsP b c expr dE)
+  :
+    InsP b c (condFullExpr expr) d
+  :=
+    allInsExpr
+  
+  def inwCondFull
+    (allInwExpr: (dE: pairSalgebra.D) → InwP b c expr dE)
+  :
+    InwP b c (condFullExpr expr) d
+  :=
+    allInwExpr
+  
+  
+  def insCondFullElim
+    (s: InsP b c (condFullExpr expr) d)
+  :
+    ∀ dE, InsP b c expr dE
+  :=
+    s
+  
+  def inwCondFullElim
+    (s: InwP b c (condFullExpr expr) d)
+  :
+    ∀ dE, InwP b c expr dE
   :=
     s
   
@@ -1092,9 +1126,12 @@ def Expr.toString: Expr pairSignature → String
   let left := (args ArityTwo.zth).toString
   let rite := (args ArityTwo.fst).toString
   s!"({left}) & ({rite})"
-| .op pairSignature.Op.cond args =>
+| .op pairSignature.Op.condSome args =>
   let cond := (args ArityOne.zth).toString
-  s!"(? {cond})"
+  s!"(?i {cond})"
+| .op pairSignature.Op.condFull args =>
+  let cond := (args ArityOne.zth).toString
+  s!"(?f {cond})"
 | .op pairSignature.Op.zero _ =>
   "null"
 | .op pairSignature.Op.pair args =>

@@ -186,9 +186,9 @@ namespace InwExternal
                     nat501Neq500))
                 (inwUnR _
             (inwIr
-              (inwCpl _ fun ins =>
-                let ⟨dBound, ins⟩ := insCondElim ins
-                let ins := insCallElimBound ins rfl nat502Neq500
+              (inwCondFull fun dBound =>
+                inwCpl _ fun ins =>
+                  let ins := insCallElimBound ins rfl nat502Neq500
                 let ins := insCallElimBound ins rfl nat503Neq501
                 ninwGetBound dBound ins)
               (inwCallExpr
@@ -294,14 +294,23 @@ namespace InwExternal
   :=
     causeExpr.union (causeInterpBout boundVars expr d)
   
-  def causeCond
+  def causeCondSome
     (boundVars: List (ValVar Pair))
-    (d: Pair)
+    (dAny: Pair)
     (expr: Expr)
   :
     Cause Pair
   :=
-    causeExpr.union (causeInterp boundVars expr d)
+    causeExpr.union (causeInterp boundVars expr dAny)
+  
+  def causeCondFull
+    (boundVars: List (ValVar Pair))
+    (expr: Expr)
+  :
+    Cause Pair
+  :=
+    causeExpr.union
+      (Cause.arbUn fun d => causeInterp boundVars expr d)
   
   def causeArbUn
     (boundVars: List (ValVar Pair))
@@ -718,18 +727,18 @@ namespace InwExternal
                     let ins := insCallElimBound ins rfl nat504Neq502
                     ninsExpr ins)))))
   
-  def isCauseCond
+  def isCauseCondSome
     (boundVars: List (ValVar Pair))
     (d: Pair)
     (expr: Expr)
   :
     IsWeakCause
       pairSalgebra
-      (causeCond boundVars dE expr)
+      (causeCondSome boundVars dE expr)
       (pair
         (boundVarsEncoding boundVars)
         (pair
-          (exprToEncoding (condExpr expr))
+          (exprToEncoding (condSomeExpr expr))
           d))
       (theExternalDefList.getDef uniDefList.interpretation)
   :=
@@ -742,7 +751,7 @@ namespace InwExternal
       let inw := isSat.contextInsHold inCins
       
       inwFinUn
-        interpretationInExprList.exprCond
+        interpretationInExprList.exprCondSome
         (inwUnDom
           inwExpr
           (inwArbUn
@@ -756,10 +765,63 @@ namespace InwExternal
                     (inwFree
                       inwBound
                       nat502Neq500))
-                (inwCond
+                (inwCondSome
                   (inwCallExpr
                     (inwCallExpr
                       inw
+                      (inwFree
+                        (inwFree
+                          inwBound
+                          nat503Neq502)
+                        nat504Neq502))
+                    (inwFree
+                      (inwFree
+                        inwBound
+                        nat502Neq500)
+                      nat503Neq500)))))))
+  
+  def isCauseCondFull
+    (boundVars: List (ValVar Pair))
+    (d: Pair)
+    (expr: Expr)
+  :
+    IsWeakCause
+      pairSalgebra
+      (causeCondFull boundVars expr)
+      (pair
+        (boundVarsEncoding boundVars)
+        (pair
+          (exprToEncoding (condFullExpr expr))
+          d))
+      (theExternalDefList.getDef uniDefList.interpretation)
+  :=
+    fun isSat =>
+      let isExprEnc := (exprToEncoding expr).property
+      let inCinsExpr := Or.inl ⟨rfl, isExprEnc⟩
+      let inwExpr := isSat.contextInsHold inCinsExpr
+      
+      let inCins d := Or.inr ⟨d, ⟨rfl, rfl⟩⟩
+      let inw d := isSat.contextInsHold (inCins d)
+      
+      inwFinUn
+        interpretationInExprList.exprCondFull
+        (inwUnDom
+          inwExpr
+          (inwArbUn
+            (boundVarsEncoding
+              boundVars)
+            (inwPair
+              inwBound
+              (inwPair
+                (inwPair
+                  (inwNatExpr _ _ _)
+                    (inwFree
+                      inwBound
+                      nat502Neq500))
+                (inwCondFull fun dE =>
+                  (inwCallExpr
+                    (inwCallExpr
+                      (inw dE)
                       (inwFree
                         (inwFree
                           inwBound

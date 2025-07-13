@@ -189,7 +189,8 @@ namespace Pair
     
     inductive IsExprEncoding.Unary (p: Pair): Prop where
     | Cpl (eq: p = fromNat 5)
-    | Cond (eq: p = fromNat 6)
+    | CondSome (eq: p = fromNat 6)
+    | CondFull (eq: p = fromNat 7)
     
     inductive IsExprEncoding.Bin (p: Pair): Prop where
     | Pair (eq: p = fromNat 2)
@@ -197,8 +198,8 @@ namespace Pair
     | Ir (eq: p = fromNat 4)
     
     inductive IsExprEncoding.Quantifier (p: Pair): Prop where
-    | ArbUn (eq: p = fromNat 7)
-    | ArbIr (eq: p = fromNat 8)
+    | ArbUn (eq: p = fromNat 8)
+    | ArbIr (eq: p = fromNat 9)
     
     -- Defines the set of pairs that encode an expression.
     inductive IsExprEncoding: Pair → Prop where
@@ -229,9 +230,11 @@ namespace Pair
       if h5: n = fromNat 5 then
         isTrue (Cpl h5)
       else if h6: n = fromNat 6 then
-        isTrue (Cond h6)
+        isTrue (CondSome h6)
+      else if h7: n = fromNat 7 then
+        isTrue (CondFull h7)
       else
-        isFalse (fun h => nomatch h, h5, h6)
+        isFalse (fun h => nomatch h, h5, h6, h7)
     
     instance IsExprEncoding.decidableBin
       (n: Pair)
@@ -254,12 +257,12 @@ namespace Pair
       Decidable (Quantifier n)
     :=
       open Quantifier in
-      if h7: n = fromNat 7 then
-        isTrue (ArbUn h7)
-      else if h8: n = fromNat 8 then
-        isTrue (ArbIr h8)
+      if h8: n = fromNat 8 then
+        isTrue (ArbUn h8)
+      else if h9: n = fromNat 9 then
+        isTrue (ArbIr h9)
       else
-        isFalse (fun h => nomatch h, h7, h8)
+        isFalse (fun h => nomatch h, h8, h9)
     
     
     def IsExprEncoding.nopeZero

@@ -110,16 +110,14 @@ def InsInterp.var
             nat502Neq500))
     else
       let ins := cinsIns inCins h
-      let ninw inw :=
-        let ⟨boundVal, inw⟩ := inwCondElim inw
-          let inw := inwCallElimBound inw rfl nat502Neq500
-          let inw := inwCallElimBound inw rfl nat503Neq501
-        let insGetBound := Inw.toInsGetBound inw
-        h ⟨boundVal, Inw.toIsBoundTo insGetBound.toInw⟩
-      
       insUnR _
         (insIr
-          (insCpl _ ninw)
+          (insCondFull fun dE =>
+            insCpl _ fun inw =>
+              let inw := inwCallElimBound inw rfl nat502Neq500
+              let inw := inwCallElimBound inw rfl nat503Neq501
+              let insGetBound := Inw.toInsGetBound inw
+              h ⟨dE, Inw.toIsBoundTo insGetBound.toInw⟩)
           (insCallExpr
             ins.isSound
             (insFree
@@ -448,15 +446,15 @@ def InsInterp.exprCpl
                     let inw := inwCallElimBound inw rfl nat504Neq502
                     notPos inw)))))))
 
-def InsInterp.exprCond
+def InsInterp.exprCondSome
   (insExpr: InsInterp boundVars dE expr)
 :
-  InsInterp boundVars d (condExpr expr)
+  InsInterp boundVars d (condSomeExpr expr)
 :=
   Ins.isComplete _ _
     (insWfmDefToIns
       (insFinUn
-        interpretationInExprList.exprCond
+        interpretationInExprList.exprCondSome
         (insUnDom
           (insExprEncoding
             (exprToEncoding expr).property)
@@ -471,10 +469,48 @@ def InsInterp.exprCond
                   (insFree
                     insBound
                     nat502Neq500))
-                (insCond
+                (insCondSome
                   (insCallExpr
                     (insCallExpr
                       insExpr.isSound
+                      (insFree
+                        (insFree
+                          insBound
+                          nat503Neq502)
+                        nat504Neq502))
+                    (insFree
+                      (insFree
+                        insBound
+                        nat502Neq500)
+                      nat503Neq500)))))))))
+
+def InsInterp.exprCondFull
+  (insExpr: (dE: pairSalgebra.D) → InsInterp boundVars dE expr)
+:
+  InsInterp boundVars d (condFullExpr expr)
+:=
+  Ins.isComplete _ _
+    (insWfmDefToIns
+      (insFinUn
+        interpretationInExprList.exprCondFull
+        (insUnDom
+          (insExprEncoding
+            (exprToEncoding expr).property)
+          (insArbUn
+            (boundVarsEncoding
+              boundVars)
+            (insPair
+              insBound
+              (insPair
+                (insPair
+                  (insNatExpr _ _ _)
+                  (insFree
+                    insBound
+                    nat502Neq500))
+                (insCondFull fun dE =>
+                  (insCallExpr
+                    (insCallExpr
+                      (insExpr dE).isSound
                       (insFree
                         (insFree
                           insBound

@@ -160,7 +160,26 @@ namespace Pair
                   (fun ⟨xEq, vvI, inBinsRite, dEq⟩ =>
                     ⟨xEq, vvI, Or.inr inBinsRite, dEq⟩))))
     
-    def extOfIntCauseArbUn
+    def extOfIntCauseDistributesArbUn
+      (causes: Pair → Cause Pair)
+      (boundVars: List (ValVar Pair))
+    :
+      Cause.IsSubset
+        (extOfIntCause (Cause.arbUn fun dX => causes dX) boundVars)
+        (Cause.arbUn fun dX => extOfIntCause (causes dX) boundVars)
+    := {
+      cinsLe :=
+        fun _ ⟨xEq, vvI, ⟨dX, inCins⟩, r⟩ =>
+          ⟨dX, xEq, vvI, inCins, r⟩
+      binsLe :=
+        fun _ ⟨xEq, vvI, ⟨dX, inBins⟩, r⟩ =>
+          ⟨dX, xEq, vvI, inBins, r⟩
+      boutLe :=
+        fun _ ⟨xEq, vvI, ⟨dX, inBout⟩, r⟩ =>
+          ⟨dX, xEq, vvI, inBout, r⟩
+    }
+    
+    def extOfIntCauseArbUnVar
       (causes: Pair → Cause Pair)
       (boundVars: List (ValVar Pair))
       (x: Nat)
@@ -750,17 +769,24 @@ namespace Pair
             (extOfIntCycleFull.interp
               boundVars expr (Ordinal.lt_succ _) d allInapp)
         InsInterp.exprCpl (Out.isSound out)
-      | op pairSignature.Op.cond args =>
-        have := argLe pairSignature.Op.cond args ArityOne.zth
+      | op pairSignature.Op.condSome args =>
+        have := argLe pairSignature.Op.condSome args ArityOne.zth
         
         let ⟨_dC, isCauseCond⟩ :=
-          isInternalCause.elimCond
+          isInternalCause.elimCondSome
         
         let ihExpr := isCauseToInsInterp
           isCauseCond boundVars boundVarsSat
           cinsIns binsIns boutOut
         
-        InsInterp.exprCond ihExpr
+        InsInterp.exprCondSome ihExpr
+      | op pairSignature.Op.condFull args =>
+        have := argLe pairSignature.Op.condFull args ArityOne.zth
+        
+        InsInterp.exprCondFull fun dC =>
+          isCauseToInsInterp
+            (isInternalCause.elimCondFull dC) boundVars boundVarsSat
+            cinsIns binsIns boutOut
       | arbUn x body =>
         have: body.sizeOf < body.sizeOf + 1 :=
           Order.lt_succ_of_le (le_refl _)
@@ -1022,13 +1048,13 @@ namespace Pair
                   False.elim (notBound ⟨_, isBound⟩))
                 (fun ⟨_, isOut⟩ => isOut)))
       |
-        op pairSignature.Op.cond args =>
+        op pairSignature.Op.condSome args =>
         let expr := args ArityOne.zth
         
-        let isLe := argLe pairSignature.Op.cond args ArityOne.zth
+        let isLe := argLe pairSignature.Op.condSome args ArityOne.zth
         
         let ⟨dE, inCins⟩ :=
-          isCause.hurrDurrElim elimPosExternalCond
+          isCause.hurrDurrElim elimPosExternalCondSome
         
         if h:
           AllCausesInapp internalCycle boundVars expr dE
@@ -1047,6 +1073,49 @@ namespace Pair
               (fun isSat => ⟨dE, isCause isSat⟩)
           
           nomatch isApp isInapp
+      |
+        op pairSignature.Op.condFull args =>
+        let expr := args ArityOne.zth
+        
+        let isLe := argLe pairSignature.Op.condFull args ArityOne.zth
+        
+        let inCins := isCause.hurrDurrElim elimPosExternalCondFull
+        
+        if h:
+          ∃ dE, AllCausesInapp internalCycle boundVars expr dE
+        then
+          let ⟨dE, allInapp⟩ := h
+          IsCauseInappExtended.cinsFailsCycle
+            (inCins dE)
+            (extOfIntCycleFull.interp boundVars expr isLe dE allInapp)
+        else
+          let allApplicable :=
+            h.toAll fun _ p =>
+              (p.toEx fun _ p =>
+                p.implToAnd2 fun p =>
+                  p.implToAnd).unwrap
+          
+          let isLe :=
+            extOfIntCauseDistributesArbUn
+              (fun dX => allApplicable dX)
+              boundVars
+          
+          let isInapp :=
+            allInapp
+              (Cause.arbUn fun dE => (allApplicable dE).val)
+              (Cause.SatisfiesBoundVars.arbUn
+                (fun dX => allApplicable dX)
+                (fun dX => (allApplicable dX).property.left))
+              (IsWeakCause.condFull
+                (fun dE _ _ isSat =>
+                  (allApplicable dE).property.right.left (isSat.elimArbUn dE))
+                d)
+          
+          False.elim
+            (IsCauseInappExtended.Not.arbUn
+              (fun (dX: pairSalgebra.D) =>
+                (allApplicable dX).property.right.right)
+              (isInapp.toSuperCause isLe))
       |
         arbUn x body =>
         let isLe: body.sizeOf < body.sizeOf + 1 :=
@@ -1107,7 +1176,7 @@ namespace Pair
                 p.implToAnd2 fun p =>
                   p.implToAnd).unwrap
           let isLe :=
-            extOfIntCauseArbUn
+            extOfIntCauseArbUnVar
               (fun dX => allApplicable dX)
               boundVars
               x
@@ -1115,11 +1184,11 @@ namespace Pair
             allInapp
               (Cause.arbUn fun dX =>
                 (allApplicable dX).val.exceptVar x)
-              (Cause.SatisfiesBoundVars.arbUn
+              (Cause.SatisfiesBoundVars.arbUnVar
                 (fun dX => allApplicable dX)
                 x
                 (fun dX => (allApplicable dX).property.left))
-              (IsWeakCause.arbUnOf
+              (IsWeakCause.arbIr
                 (salg := pairSalgebra)
                 (causes := fun dX => (allApplicable dX).val)
                 (fun dX =>

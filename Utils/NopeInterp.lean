@@ -53,8 +53,15 @@ def interpretationInExprList.exprCpl:
 :=
   by unfold uniDefList.interpretation.exprList; simp
 
-def interpretationInExprList.exprCond:
-  uniDefList.interpretation.exprCond
+def interpretationInExprList.exprCondSome:
+  uniDefList.interpretation.exprCondSome
+    ∈
+  uniDefList.interpretation.exprList
+:=
+  by unfold uniDefList.interpretation.exprList; simp
+
+def interpretationInExprList.exprCondFull:
+  uniDefList.interpretation.exprCondFull
     ∈
   uniDefList.interpretation.exprList
 :=
@@ -366,7 +373,7 @@ def nopeDefInterpCpl
   (nins ins).elim
 
 
-def nopePosInterpCond
+def nopePosInterpCondSome
   {P: Prop}
   (ninw:
     {d500 d502: Pair} →
@@ -378,7 +385,7 @@ def nopePosInterpCond
         (exprToEncoding expr).val))
   (nope:
     Inw pairSalgebra b c
-      uniDefList.interpretation.exprCond
+      uniDefList.interpretation.exprCondSome
       (InterpEnc boundVars expr d))
 :
   P
@@ -389,7 +396,7 @@ def nopePosInterpCond
   let ⟨inw, _⟩ := inwPairElim inw
   (ninw inw).elim
 
-def nopeDefInterpCond
+def nopeDefInterpCondSome
   {P: Prop}
   (nins:
     {d500 d502: Pair} →
@@ -401,7 +408,54 @@ def nopeDefInterpCond
         (exprToEncoding expr).val))
   (nope:
     Ins pairSalgebra b c
-      uniDefList.interpretation.exprCond
+      uniDefList.interpretation.exprCondSome
+      (InterpEnc boundVars expr d))
+:
+  P
+:=
+  let ⟨_, ⟨_, ins⟩⟩ := insUnDomElim nope
+  let ⟨_, ins⟩ := insArbUnElim ins
+  let ⟨_, ins⟩ := insPairElim ins
+  let ⟨ins, _⟩ := insPairElim ins
+  (nins ins).elim
+
+
+def nopePosInterpCondFull
+  {P: Prop}
+  (ninw:
+    {d500 d502: Pair} →
+    Not
+      (InwP
+        ((b.update 500 d500).update 502 d502)
+        ((c.update 500 d500).update 502 d502)
+        (pairExpr (natExpr 7) 500)
+        (exprToEncoding expr).val))
+  (nope:
+    Inw pairSalgebra b c
+      uniDefList.interpretation.exprCondFull
+      (InterpEnc boundVars expr d))
+:
+  P
+:=
+  let ⟨_, ⟨_, inw⟩⟩ := inwUnDomElim nope
+  let ⟨_, inw⟩ := inwArbUnElim inw
+  let ⟨_, inw⟩ := inwPairElim inw
+  let ⟨inw, _⟩ := inwPairElim inw
+  (ninw inw).elim
+
+def nopeDefInterpCondFull
+  {P: Prop}
+  (nins:
+    {d500 d502: Pair} →
+    Not
+      (InsP
+        ((b.update 500 d500).update 502 d502)
+        ((c.update 500 d500).update 502 d502)
+        (pairExpr (natExpr 7) 500)
+        (exprToEncoding expr).val))
+  (nope:
+    Ins pairSalgebra b c
+      uniDefList.interpretation.exprCondFull
       (InterpEnc boundVars expr d))
 :
   P
@@ -421,7 +475,7 @@ def nopePosInterpArbUn
       (InwP
         (((b.update 500 d500).update 501 d501).update 502 d502)
         (((c.update 500 d500).update 501 d501).update 502 d502)
-        (pairExpr (natExpr 7) (pairExpr 500 501))
+        (pairExpr (natExpr 8) (pairExpr 500 501))
         (exprToEncoding expr).val))
   (nope:
     Inw pairSalgebra b c
@@ -445,7 +499,7 @@ def nopeDefInterpArbUn
       (InsP
         (((b.update 500 d500).update 501 d501).update 502 d502)
         (((c.update 500 d500).update 501 d501).update 502 d502)
-        (pairExpr (natExpr 7) (pairExpr 500 501))
+        (pairExpr (natExpr 8) (pairExpr 500 501))
         (exprToEncoding expr).val))
   (nope:
     Ins pairSalgebra b c
@@ -470,7 +524,7 @@ def nopePosInterpArbIr
       (InwP
         (((b.update 500 d500).update 501 d501).update 502 d502)
         (((c.update 500 d500).update 501 d501).update 502 d502)
-        (pairExpr (natExpr 8) (pairExpr 500 501))
+        (pairExpr (natExpr 9) (pairExpr 500 501))
         (exprToEncoding expr).val))
   (nope:
     Inw pairSalgebra b c
@@ -494,7 +548,7 @@ def nopeDefInterpArbIr
       (InsP
         (((b.update 500 d500).update 501 d501).update 502 d502)
         (((c.update 500 d500).update 501 d501).update 502 d502)
-        (pairExpr (natExpr 8) (pairExpr 500 501))
+        (pairExpr (natExpr 9) (pairExpr 500 501))
         (exprToEncoding expr).val))
   (nope:
     Ins pairSalgebra b c

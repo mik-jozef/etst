@@ -542,6 +542,18 @@ def Cause.IsWeaklySatisfiedBy.elimUnR
   backgroundOutHold := isSat.backgroundOutHold ∘ Or.inr
 }
 
+def Cause.IsWeaklySatisfiedBy.elimArbUn
+  {f: I → Cause D}
+  (isSat: Cause.IsWeaklySatisfiedBy (Cause.arbUn f) b c)
+  (i: I)
+:
+  Cause.IsWeaklySatisfiedBy (f i) b c
+:= {
+  contextInsHold := isSat.contextInsHold ∘ fun vv => ⟨_, vv⟩
+  backgroundInsHold := isSat.backgroundInsHold ∘ fun vv => ⟨_, vv⟩
+  backgroundOutHold := isSat.backgroundOutHold ∘ fun vv => ⟨_, vv⟩
+}
+
 
 noncomputable def IsWeakCause.ofValPos
   (isPos: (expr.interpretation salg b c).posMem d)

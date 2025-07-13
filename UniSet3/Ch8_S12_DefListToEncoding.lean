@@ -42,7 +42,7 @@ def Pair.exprToEncoding
       pair (fromNat 1) zero,
       .IsZero
     ⟩
-
+  
   | Expr.op pairSignature.Op.pair args =>
     let ⟨l, isEncL⟩ := exprToEncoding (args ArityTwo.zth)
     let ⟨r, isEncR⟩ := exprToEncoding (args ArityTwo.fst)
@@ -50,7 +50,7 @@ def Pair.exprToEncoding
       pair (fromNat 2) (pair l r),
       .IsBin (.Pair rfl) isEncL isEncR
     ⟩
-
+  
   | Expr.op pairSignature.Op.un args =>
     let ⟨l, isEncL⟩ := exprToEncoding (args ArityTwo.zth)
     let ⟨r, isEncR⟩ := exprToEncoding (args ArityTwo.fst)
@@ -58,7 +58,7 @@ def Pair.exprToEncoding
       pair (fromNat 3) (pair l r),
       .IsBin (.Un rfl) isEncL isEncR,
     ⟩
-
+  
   | Expr.op pairSignature.Op.ir args =>
     let ⟨l, isEncL⟩ := exprToEncoding (args ArityTwo.zth)
     let ⟨r, isEncR⟩ := exprToEncoding (args ArityTwo.fst)
@@ -66,29 +66,36 @@ def Pair.exprToEncoding
       pair (fromNat 4) (pair l r),
       .IsBin (.Ir rfl) isEncL isEncR,
     ⟩
-
+  
   | Expr.cpl expr =>
     let ⟨e, isEncE⟩ := exprToEncoding expr
     ⟨pair (fromNat 5) e, .IsUnary (.Cpl rfl) isEncE⟩
-
-  | Expr.op pairSignature.Op.cond args =>
+  
+  | Expr.op pairSignature.Op.condSome args =>
     let ⟨c, isEncC⟩ := exprToEncoding (args ArityOne.zth)
     ⟨
       pair (fromNat 6) c,
-      .IsUnary (.Cond rfl) isEncC,
+      .IsUnary (.CondSome rfl) isEncC,
     ⟩
-
+  
+  | Expr.op pairSignature.Op.condFull args =>
+    let ⟨c, isEncC⟩ := exprToEncoding (args ArityOne.zth)
+    ⟨
+      pair (fromNat 7) c,
+      .IsUnary (.CondFull rfl) isEncC,
+    ⟩
+  
   | Expr.arbUn x body =>
     let ⟨b, isEncB⟩ := exprToEncoding body
     ⟨
-      pair (fromNat 7) (pair (fromNat x) b),
+      pair (fromNat 8) (pair (fromNat x) b),
       .IsQuantifier (.ArbUn rfl) (fromNat.isNatEncoding _) isEncB
     ⟩
-
+  
   | Expr.arbIr x body =>
     let ⟨b, isEncB⟩ := exprToEncoding body
     ⟨
-      pair (fromNat 8) (pair (fromNat x) b),
+      pair (fromNat 9) (pair (fromNat x) b),
       .IsQuantifier (.ArbIr rfl) (fromNat.isNatEncoding _) isEncB
     ⟩
 
@@ -154,8 +161,17 @@ def Pair.exprToEncoding.injEq
             let riteEq := exprToEncoding.injEq (Subtype.eq riteEq)
             congr rfl (ArityTwo.eq leftEq riteEq)
   
-  | Expr.op pairSignature.Op.cond _,
-    Expr.op pairSignature.Op.cond _
+  | Expr.op pairSignature.Op.condSome _,
+    Expr.op pairSignature.Op.condSome _
+  =>
+    Pair.noConfusion
+      (Subtype.val_eq_val eq)
+      fun _ eqP =>
+        let argZthEq := exprToEncoding.injEq (Subtype.eq eqP)
+        congr rfl (ArityOne.eq argZthEq)
+  
+  | Expr.op pairSignature.Op.condFull _,
+    Expr.op pairSignature.Op.condFull _
   =>
     Pair.noConfusion
       (Subtype.val_eq_val eq)
@@ -385,9 +401,13 @@ namespace Pair
           Expr.cpl expr,
           eq5 ▸ eq ▸ rfl,
         ⟩
-      | .Cond eq6 => ⟨
-          condExpr expr,
+      | .CondSome eq6 => ⟨
+          condSomeExpr expr,
           eq6 ▸ eq ▸ rfl,
+        ⟩
+      | .CondFull eq7 => ⟨
+          condFullExpr expr,
+          eq7 ▸ eq ▸ rfl,
         ⟩
     | IsQuantifier isQuant isNat isExpr =>
       let ⟨expr, eq⟩ := existsOfIsEncoding isExpr
@@ -565,34 +585,49 @@ namespace Pair
           unfold exprToEncoding
           rw [exprToEncoding.isInverseSubtype isExpr]))
   
-  def encodingToExpr.condEncEq
+  def encodingToExpr.condSomeEncEq
     (isExpr: uniSet3.IsExprEncoding expr)
   :
     (pair (fromNat 6) expr).encodingToExpr
       =
-    PairExpr.condExpr (encodingToExpr expr)
+    PairExpr.condSomeExpr (encodingToExpr expr)
   :=
     open PairExpr in
     Eq.symm
       (exprToEncoding.toEqEncodingToExpr
-        (condExpr (encodingToExpr expr))
+        (condSomeExpr (encodingToExpr expr))
         (pair (fromNat 6) expr)
         (show pair (fromNat 6) _ = _ from by
+          rw [exprToEncoding.isInverseSubtype isExpr]))
+  
+  def encodingToExpr.condFullEncEq
+    (isExpr: uniSet3.IsExprEncoding expr)
+  :
+    (pair (fromNat 7) expr).encodingToExpr
+      =
+    PairExpr.condFullExpr (encodingToExpr expr)
+  :=
+    open PairExpr in
+    Eq.symm
+      (exprToEncoding.toEqEncodingToExpr
+        (condFullExpr (encodingToExpr expr))
+        (pair (fromNat 7) expr)
+        (show pair (fromNat 7) _ = _ from by
           rw [exprToEncoding.isInverseSubtype isExpr]))
   
   def encodingToExpr.arbUnEncEq
     (isNat: IsNatEncoding xEnc)
     (isExpr: uniSet3.IsExprEncoding exprEnc)
   :
-    (pair (fromNat 7) (pair xEnc exprEnc)).encodingToExpr
+    (pair (fromNat 8) (pair xEnc exprEnc)).encodingToExpr
       =
     Expr.arbUn xEnc.depth (encodingToExpr exprEnc)
   :=
     Eq.symm
       (exprToEncoding.toEqEncodingToExpr
         (Expr.arbUn xEnc.depth (encodingToExpr exprEnc))
-        (pair (fromNat 7) (pair xEnc exprEnc))
-        (show pair (fromNat 7) _ = _ from by
+        (pair (fromNat 8) (pair xEnc exprEnc))
+        (show pair (fromNat 8) _ = _ from by
           rw [exprToEncoding.isInverseSubtype isExpr]
           rw [fromNat.eqOfDepth isNat]))
   
@@ -600,15 +635,15 @@ namespace Pair
     (isNat: IsNatEncoding xEnc)
     (isExpr: uniSet3.IsExprEncoding exprEnc)
   :
-    (pair (fromNat 8) (pair xEnc exprEnc)).encodingToExpr
+    (pair (fromNat 9) (pair xEnc exprEnc)).encodingToExpr
       =
     Expr.arbIr xEnc.depth (encodingToExpr exprEnc)
   :=
     Eq.symm
       (exprToEncoding.toEqEncodingToExpr
         (Expr.arbIr xEnc.depth (encodingToExpr exprEnc))
-        (pair (fromNat 8) (pair xEnc exprEnc))
-        (show pair (fromNat 8) _ = _ from by
+        (pair (fromNat 9) (pair xEnc exprEnc))
+        (show pair (fromNat 9) _ = _ from by
           rw [exprToEncoding.isInverseSubtype isExpr]
           rw [fromNat.eqOfDepth isNat]))
   

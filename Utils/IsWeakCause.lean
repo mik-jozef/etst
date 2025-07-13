@@ -559,9 +559,9 @@ namespace IsWeakCause
   :=
     ⟨elimIrLeft isCause, elimIrRite isCause⟩
   
-  def elimCond
+  def elimCondSome
     (isCause:
-      IsWeakCause pairSalgebra cause d (condExpr expr))
+      IsWeakCause pairSalgebra cause d (condSomeExpr expr))
     (v: Valuation Pair)
   :
     let extCause := cause.union (Cause.ofValPos v Valuation.empty)
@@ -577,7 +577,21 @@ namespace IsWeakCause
           (fun _ _ => isSat.contextInsHold ∘ Or.inl)
           isPosCond
     ⟩
-   
+  
+  def condFull
+    (isCause: ∀ dE, IsWeakCause pairSalgebra cause dE expr)
+  :
+    ∀ d, IsWeakCause pairSalgebra cause d (condFullExpr expr)
+  :=
+    fun _ _ _ isSat dE => isCause dE isSat
+  
+  def elimCondFull
+    (isCause: IsWeakCause pairSalgebra cause d (condFullExpr expr))
+  :
+    ∀ dE, IsWeakCause pairSalgebra cause dE expr
+  :=
+    fun dE _ _ isSat => isCause isSat dE
+  
   def Not.elimOp
   {salg: Salgebra sig}
   {cause: Cause salg.D}
@@ -635,43 +649,6 @@ namespace IsWeakCause
   :=
     fun isSat => ⟨dX, isCause (isSat.exceptToWithBound dX)⟩
   
-  def arbUnOf
-    {causes: salg.D → Cause _}
-    (isCause:
-      ∀ dX, IsWeakCause salg ((causes dX).withBound x dX) d body)
-  :
-    IsWeakCause
-      salg
-      (Cause.arbUn fun dX => (causes dX).exceptVar x)
-      d
-      (Expr.arbIr x body)
-  :=
-    fun isSat dX =>
-      let isSatArbUn := isSat.toWithBound dX
-      isCause dX {
-        contextInsHold :=
-          fun inCins =>
-            isSatArbUn.contextInsHold
-              (inCins.elim
-                (fun ⟨inCins, xNeq⟩ =>
-                  Or.inl ⟨⟨dX, inCins, xNeq⟩, xNeq⟩)
-                Or.inr)
-        backgroundInsHold :=
-          fun inBins =>
-            isSatArbUn.backgroundInsHold
-              (inBins.elim
-                (fun ⟨inBins, xNeq⟩ =>
-                  Or.inl ⟨⟨dX, inBins, xNeq⟩, xNeq⟩)
-                Or.inr)
-        backgroundOutHold :=
-          fun inBout =>
-            isSatArbUn.backgroundOutHold
-              (inBout.elim
-                (fun ⟨inBout, xNeq⟩ =>
-                  Or.inl ⟨⟨dX, inBout, xNeq⟩, xNeq⟩)
-                Or.inr)
-      }
-  
   def elimArbUn
     (isCause: IsWeakCause salg cause d (Expr.arbUn x body))
     (v: Valuation salg.D)
@@ -708,15 +685,41 @@ namespace IsWeakCause
   
   
   def arbIr
-    {salg: Salgebra sig}
-    {cause: Cause salg.D}
-    {d: salg.D}
-    
-    (isCause: ∀ dX, IsWeakCause salg (cause.withBound x dX) d body)
+    {causes: salg.D → Cause _}
+    (isCause:
+      ∀ dX, IsWeakCause salg ((causes dX).withBound x dX) d body)
   :
-    IsWeakCause salg (cause.exceptVar x) d (Expr.arbIr x body)
+    IsWeakCause
+      salg
+      (Cause.arbUn fun dX => (causes dX).exceptVar x)
+      d
+      (Expr.arbIr x body)
   :=
-    fun isSat dX => isCause dX (isSat.exceptToWithBound dX)
+    fun isSat dX =>
+      let isSatArbUn := isSat.toWithBound dX
+      isCause dX {
+        contextInsHold :=
+          fun inCins =>
+            isSatArbUn.contextInsHold
+              (inCins.elim
+                (fun ⟨inCins, xNeq⟩ =>
+                  Or.inl ⟨⟨dX, inCins, xNeq⟩, xNeq⟩)
+                Or.inr)
+        backgroundInsHold :=
+          fun inBins =>
+            isSatArbUn.backgroundInsHold
+              (inBins.elim
+                (fun ⟨inBins, xNeq⟩ =>
+                  Or.inl ⟨⟨dX, inBins, xNeq⟩, xNeq⟩)
+                Or.inr)
+        backgroundOutHold :=
+          fun inBout =>
+            isSatArbUn.backgroundOutHold
+              (inBout.elim
+                (fun ⟨inBout, xNeq⟩ =>
+                  Or.inl ⟨⟨dX, inBout, xNeq⟩, xNeq⟩)
+                Or.inr)
+      }
   
   def elimArbIr
     (isCause: IsWeakCause salg cause d (Expr.arbIr x body))

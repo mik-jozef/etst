@@ -3,15 +3,34 @@
   Its carrier type is Pair, which is inductively defined as
   either zero (called the improper pair) or a pair of pairs.
   
-  The pair signature consists of two operations, the constant
-  `zero` and the binary function `pair`. This simple salgebra
-  allows expressing/defining a wide range mathematical objects
-  and concepts.
+  The pair signature consists of two operations on pairs, the constant
+  `zero` and the binary function `pair`. Additionally, there are the
+  set theoretic union and intersection, and two conditional operators,
+  yielding the full triset iff the argument is nonempty, resp. full.
   
-  Note that in the appendix 1 (WIP), it is shown (TBD) that this
-  salgebra is equivalent to the salgebra of natural numbers (with
-  zero, successor, addition, and multiplication) under a standard
-  correspondence between pairs and naturals.
+  This simple salgebra allows expressing/defining a wide range
+  mathematical objects and concepts, and seems expressible enough
+  for general mathematics.
+  
+  Notes:
+  - In the appendix 1 (WIP), it is shown (TBD) that this salgebra is
+    equivalent to the salgebra of natural numbers (with zero,
+    successor, addition, and multiplication) under a standard
+    correspondence between pairs and naturals.
+  - The conditional operators are dual to each other. At least one
+    of them is necessary for the sake of expressivity, and `condSome`
+    seems to be the more useful one. However, both are included out
+    of suspicion that the latter might be useful for dealing with
+    negation of conditionals, since it gives us a kind of de-Morgan's
+    laws for conditionals, that is:
+    
+      ~(condSome expr) = condFull (cpl expr)
+      ~(condFull expr) = condSome (cpl expr)
+    
+    If not for much else, maybe this other conditional has use
+    for representing intermediate forms of expressions while type
+    checking. If this suspicion turns out to be false, I would not
+    mind removing `condFull` from the signature.
 -/
 
 import Mathlib.Order.MinMax
@@ -116,14 +135,18 @@ end Pair
 inductive pairSignature.Op where
 | zero
 | pair
-| cond
+  -- If inhabited, then any, else empty.
+| condSome
+  -- If full, then any, else empty.
+| condFull
 | un
 | ir
 
 def pairSignature.Params: Op → Type
 | Op.zero => ArityZero
 | Op.pair => ArityTwo
-| Op.cond => ArityOne
+| Op.condSome => ArityOne
+| Op.condFull => ArityOne
 | Op.un => ArityTwo
 | Op.ir => ArityTwo
 
@@ -132,6 +155,8 @@ def pairSignature: Signature := {
   Params := pairSignature.Params,
 }
 
+
+def Set.Full (t: Set T): Prop := ∀ x: T, x ∈ t
 
 namespace pairSalgebra
   open pairSignature
@@ -152,7 +177,8 @@ namespace pairSalgebra
           (b: ↑(args ArityTwo.fst))
         ,
           p = Pair.pair a b
-    | Op.cond, args, _ => (args ArityOne.zth).Nonempty
+    | Op.condSome, args, _ => (args ArityOne.zth).Nonempty
+    | Op.condFull, args, _ => (args ArityOne.zth).Full
     | Op.un, args, p =>
         args ArityTwo.zth p ∨ args ArityTwo.fst p
     | Op.ir, args, p =>
@@ -174,8 +200,10 @@ namespace pairSalgebra
                 ⟨a.val, le ArityTwo.zth a.property⟩,
                 ⟨⟨b.val, le ArityTwo.fst b.property⟩, nab⟩
               ⟩
-      | Op.cond =>
+      | Op.condSome =>
         fun _ ⟨p, inArg⟩ => ⟨p, le ArityOne.zth inArg⟩
+      | Op.condFull =>
+        fun _ inArg p => le ArityOne.zth (inArg p)
       | Op.un =>
         fun _ pInArgs0 =>
           pInArgs0.elim

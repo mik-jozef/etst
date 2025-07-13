@@ -46,7 +46,8 @@ namespace Pair
       insWfmDefToIns
         (match isEEU with
         | .Cpl eq => eq ▸ insUnL _ (insNatExpr _ _ _)
-        | .Cond eq => eq ▸ insUnR _ (insNatExpr _ _ _))
+        | .CondSome eq => eq ▸ insUnR _ (insUnL _ (insNatExpr _ _ _))
+        | .CondFull eq => eq ▸ insUnR _ (insUnR _ (insNatExpr _ _ _)))
     
     def Inw.toIsExprEncoding.binary
       (w: InwEdl exprEncoding.binary p)
@@ -66,7 +67,10 @@ namespace Pair
     :=
       (inwWfmToInwDef w).elim
         (fun inwNatExpr5 => .Cpl (inwNatExprElim inwNatExpr5))
-        (fun inwNatExpr6 => .Cond (inwNatExprElim inwNatExpr6))
+        (fun inwNatExpr67 =>
+          inwNatExpr67.elim
+            (fun inw6 => .CondSome (inwNatExprElim inw6))
+            (fun inw7 => .CondFull (inwNatExprElim inw7)))
     
     
     def insExprEncoding.quantifier (isEEB: IsExprEncoding.Quantifier p):
