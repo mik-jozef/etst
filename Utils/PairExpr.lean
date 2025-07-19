@@ -62,6 +62,14 @@ namespace PairExpr
   def ifThenExpr (cond body: Expr): Expr :=
     irExpr (condSomeExpr cond) body
   
+  def ifElseExpr (cond body: Expr): Expr :=
+    irExpr (condFullExpr cond.cpl) body
+  
+  def iteExpr (cond yes no: Expr): Expr :=
+    unExpr
+      (ifThenExpr cond yes)
+      (ifElseExpr cond no)
+  
   -- Is empty if `expr` is inhabited, else is full.
   def negCondExpr (expr: Expr): Expr :=
     -- Expr.cpl (condSomeExpr expr)

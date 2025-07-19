@@ -10,6 +10,9 @@ lean_lib HM.HamkinsMachine {}
 lean_lib HM.HmProgram {}
 lean_lib HM.Uhm {}
 
+lean_lib Pvq3.Subtyping.OfSubExpr {}
+lean_lib Pvq3.Syntax.PExpr {}
+
 lean_lib Trisets.Trisets {}
 
 lean_lib UniSet3.Ch7_UniDefList {}

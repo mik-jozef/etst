@@ -114,6 +114,35 @@ namespace Set3
       Set.inter_subset_right
       Set.inter_subset_right
   
+  def condSome (s: Set3 D): Set3 D := {
+    defMem := fun _ => ∃ d: D, d ∈ s.defMem
+    posMem := fun _ => ∃ d: D, d ∈ s.posMem
+    defLePos := fun _ ⟨d, dIn⟩ => ⟨d, dIn.toPos⟩
+  }
+  
+  def condFull (s: Set3 D): Set3 D := {
+    defMem := fun _ => ∀ d: D, d ∈ s.defMem
+    posMem := fun _ => ∀ d: D, d ∈ s.posMem
+    defLePos := fun _ dIn d => (dIn d).toPos
+  }
+  
+  def cpl (s: Set3 D): Set3 D := {
+    defMem := fun d => d ∉ s.posMem
+    posMem := fun d => d ∉ s.defMem
+    defLePos := fun _ => notDefOfNotPos
+  }
+  
+  def arbUn (f: D → Set3 D): Set3 D := {
+    defMem := fun d => ∃ dd: D, d ∈ (f dd).defMem
+    posMem := fun d => ∃ dd: D, d ∈ (f dd).posMem
+    defLePos := fun _d ⟨dd, ddIn⟩ => ⟨dd, ddIn.toPos⟩
+  }
+  
+  def arbIr (f: D → Set3 D): Set3 D := {
+    defMem := fun d => ∀ dd: D, d ∈ (f dd).defMem
+    posMem := fun d => ∀ dd: D, d ∈ (f dd).posMem
+    defLePos := fun _d ddIn dd => (ddIn dd).toPos
+  }
   
   instance unionInst (D: Type u): Union (Set3 D) where
     union := union

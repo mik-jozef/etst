@@ -641,6 +641,8 @@ def list_mem_empty_eq_set_empty
 :=
   funext (fun _ => propext (Iff.intro nofun nofun))
 
+abbrev List.Index (l: List T) := Fin l.length
+
 namespace Set
   namespace HasListOfAll
     

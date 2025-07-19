@@ -550,4 +550,15 @@ namespace Pair
       (setOfAllBelowIsFinite n)
       (fun p inS => isBounded p inS)
   
+  
+  def pairS3 (a b: Set3 Pair): Set3 Pair := {
+    defMem :=
+      fun p => ∃ (pa: a.defMem) (pb: b.defMem), p = pair pa pb
+    posMem :=
+      fun p => ∃ (pa: a.posMem) (pb: b.posMem), p = pair pa pb
+    defLePos :=
+      fun _ ⟨⟨pa, isDefA⟩, ⟨pb, isDefB⟩, eq⟩ =>
+        ⟨⟨pa, isDefA.toPos⟩, ⟨pb, isDefB.toPos⟩, eq⟩
+  }
+  
 end Pair

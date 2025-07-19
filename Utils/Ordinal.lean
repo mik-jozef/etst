@@ -225,4 +225,29 @@ namespace Ordinal
   :=
     fun eq => Ordinal.not_lt_zero n (eq ▸ lt)
   
+  def one_lt
+    {n: Ordinal}
+    (notZero: n ≠ 0)
+    (notOne: n ≠ 1)
+  :
+    1 < n
+  :=
+    (lt_or_ge 1 n).elim
+      id
+      (fun ge =>
+        False.elim
+          ((lt_or_eq_of_le ge).elim
+            (notZero ∘ lt_one_iff_zero.mp)
+            notOne))
+  
+  def lt_add_rite
+    (a: Ordinal.{u})
+    (neqZero: b ≠ 0)
+  :
+    a < a + b
+  := by
+    let zeroLt := Ordinal.pos_iff_ne_zero.mpr neqZero
+    nth_rw 1 [←add_zero a]
+    exact add_lt_add_left zeroLt a
+  
 end Ordinal
