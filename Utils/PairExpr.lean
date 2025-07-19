@@ -1121,6 +1121,87 @@ namespace PairExpr
   :=
     inwNatExprElimDepth s.toInw
   
+  
+  def pair_eq_of_eq_lr_pos
+    (eqL:
+      Eq
+        (Expr.interpretation pairSalgebra b c exprL0).posMem
+        (Expr.interpretation pairSalgebra b c exprL1).posMem)
+    (eqR:
+      Eq
+        (Expr.interpretation pairSalgebra b c exprR0).posMem
+        (Expr.interpretation pairSalgebra b c exprR1).posMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (pairExpr exprL0 exprR0)).posMem
+      (Expr.interpretation pairSalgebra b c (pairExpr exprL1 exprR1)).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨l, r, eq⟩ => ⟨
+          ⟨l, show (interpretation _ b c exprL1).posMem l from
+            eqL ▸ l.property⟩,
+          ⟨r, show (interpretation _ b c exprR1).posMem r from
+            eqR ▸ r.property⟩,
+          eq
+        ⟩)
+        (fun ⟨l, r, eq⟩ => ⟨
+          ⟨l, show (interpretation _ b c exprL0).posMem l from
+            eqL ▸ l.property⟩,
+          ⟨r, show (interpretation _ b c exprR0).posMem r from
+            eqR ▸ r.property⟩,
+          eq
+        ⟩)
+  
+  def pair_eq_of_eq_lr_def
+    (eqL:
+      Eq
+        (Expr.interpretation pairSalgebra b c exprL0).defMem
+        (Expr.interpretation pairSalgebra b c exprL1).defMem)
+    (eqR:
+      Eq
+        (Expr.interpretation pairSalgebra b c exprR0).defMem
+        (Expr.interpretation pairSalgebra b c exprR1).defMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (pairExpr exprL0 exprR0)).defMem
+      (Expr.interpretation pairSalgebra b c (pairExpr exprL1 exprR1)).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨l, r, eq⟩ => ⟨
+          ⟨l, show (interpretation _ b c exprL1).defMem l from
+            eqL ▸ l.property⟩,
+          ⟨r, show (interpretation _ b c exprR1).defMem r from
+            eqR ▸ r.property⟩,
+          eq
+        ⟩)
+        (fun ⟨l, r, eq⟩ => ⟨
+          ⟨l, show (interpretation _ b c exprL0).defMem l from
+            eqL ▸ l.property⟩,
+          ⟨r, show (interpretation _ b c exprR0).defMem r from
+            eqR ▸ r.property⟩,
+          eq
+        ⟩)
+  
+  def pair_eq_of_eq_lr
+    (l:
+      Eq
+        (Expr.interpretation pairSalgebra b c exprL0)
+        (Expr.interpretation pairSalgebra b c exprL1))
+    (r:
+      Eq
+        (Expr.interpretation pairSalgebra b c exprR0)
+        (Expr.interpretation pairSalgebra b c exprR1))
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (pairExpr exprL0 exprR0))
+      (Expr.interpretation pairSalgebra b c (pairExpr exprL1 exprR1))
+  :=
+    Set3.eq
+      (pair_eq_of_eq_lr_def (Set3.def_eq l) (Set3.def_eq r))
+      (pair_eq_of_eq_lr_pos (Set3.pos_eq l) (Set3.pos_eq r))
+  
 end PairExpr
 
 

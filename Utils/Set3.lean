@@ -6,6 +6,23 @@ import WFC.Ch0_Set3
 
 
 namespace Set3
+  def pos_eq
+    {s0 s1: Set3 D}
+    (eq: s0 = s1)
+  :
+    s0.posMem = s1.posMem
+  :=
+    congr rfl eq
+  
+  def def_eq
+    {s0 s1: Set3 D}
+    (eq: s0 = s1)
+  :
+    s0.defMem = s1.defMem
+  :=
+    congr rfl eq
+  
+  
   def just.inDefToEq
     {a b: D}
     (aIn: a ∈ (just b).defMem)
