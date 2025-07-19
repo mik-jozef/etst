@@ -122,16 +122,11 @@ namespace PaintedPExpr
   def clearVar (x: Nat): PaintedPExpr := var x .clear
   def solidVar (x: Nat): PaintedPExpr := var x .solid
   
+  def anyExpr: PaintedPExpr := .arbUn 0 (.solidVar 0)
+  def noneExpr: PaintedPExpr := .arbIr 0 (.solidVar 0)
+  
 end PaintedPExpr
 
-
-def Expr.intp
-  (e: Expr pairSignature)
-  (v: Valuation Pair)
-:
-  Set3 Pair
-:=
-  e.interpretation pairSalgebra v v
 
 def PExpr.intp
   (a: PExpr E)
@@ -139,17 +134,15 @@ def PExpr.intp
 :
   Set3 Pair
 :=
-  match a with
-  | .var _ x => v x
-  | .zero _ => Set3.empty
-  | .pair _ zth fst => Pair.pairS3 (zth.intp v) (fst.intp v)
-  | .un _ l r => Set3.union (l.intp v) (r.intp v)
-  | .ir _ l r => Set3.inter (l.intp v) (r.intp v)
-  | .condSome _ c => Set3.condSome (c.intp v)
-  | .condFull _ c => Set3.condFull (c.intp v)
-  | .cpl _ expr => Set3.cpl (expr.intp v)
-  | .arbUn _ x body => Set3.arbUn fun p => body.intp (v.update x p)
-  | .arbIr _ x body => Set3.arbIr fun p => body.intp (v.update x p)
+  a.toExpr.intp v
+
+  def PExpr.intp2
+    (a: PExpr E)
+    (b c: Valuation Pair)
+  :
+    Set3 Pair
+  :=
+    a.toExpr.intp2 b c
 
 
 def PExpr.mono_un_pos_left

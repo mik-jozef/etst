@@ -12,6 +12,22 @@ import Utils.Pair
 import Utils.Set3
 
 
+def Expr.intp
+  (e: Expr pairSignature)
+  (v: Valuation Pair)
+:
+  Set3 Pair
+:=
+  e.interpretation pairSalgebra v v
+
+def Expr.intp2
+  (e: Expr pairSignature)
+  (b c: Valuation Pair)
+:
+  Set3 Pair
+:=
+  e.interpretation pairSalgebra b c
+
 namespace PairExpr
   open Expr
   open Pair
@@ -74,6 +90,13 @@ namespace PairExpr
   def negCondExpr (expr: Expr): Expr :=
     -- Expr.cpl (condSomeExpr expr)
     condFullExpr (expr.cpl)
+  
+  def pairCplExpr (a b: Expr) :=
+    unExpr
+      zeroExpr
+      (unExpr
+        (pairExpr a.cpl anyExpr)
+        (pairExpr anyExpr b.cpl))
   
   
   /-
@@ -1122,46 +1145,9 @@ namespace PairExpr
     inwNatExprElimDepth s.toInw
   
   
-  def pair_eq_of_eq_lr_pos
-    (eqL:
-      Eq
-        (Expr.interpretation pairSalgebra b c exprL0).posMem
-        (Expr.interpretation pairSalgebra b c exprL1).posMem)
-    (eqR:
-      Eq
-        (Expr.interpretation pairSalgebra b c exprR0).posMem
-        (Expr.interpretation pairSalgebra b c exprR1).posMem)
-  :
-    Eq
-      (Expr.interpretation pairSalgebra b c (pairExpr exprL0 exprR0)).posMem
-      (Expr.interpretation pairSalgebra b c (pairExpr exprL1 exprR1)).posMem
-  :=
-    Set.ext fun _ =>
-      Iff.intro
-        (fun ⟨l, r, eq⟩ => ⟨
-          ⟨l, show (interpretation _ b c exprL1).posMem l from
-            eqL ▸ l.property⟩,
-          ⟨r, show (interpretation _ b c exprR1).posMem r from
-            eqR ▸ r.property⟩,
-          eq
-        ⟩)
-        (fun ⟨l, r, eq⟩ => ⟨
-          ⟨l, show (interpretation _ b c exprL0).posMem l from
-            eqL ▸ l.property⟩,
-          ⟨r, show (interpretation _ b c exprR0).posMem r from
-            eqR ▸ r.property⟩,
-          eq
-        ⟩)
-  
-  def pair_eq_of_eq_lr_def
-    (eqL:
-      Eq
-        (Expr.interpretation pairSalgebra b c exprL0).defMem
-        (Expr.interpretation pairSalgebra b c exprL1).defMem)
-    (eqR:
-      Eq
-        (Expr.interpretation pairSalgebra b c exprR0).defMem
-        (Expr.interpretation pairSalgebra b c exprR1).defMem)
+  def pair_eq_of_eq_def
+    (eqL: (exprL0.intp2 b c).defMem = (exprL1.intp2 b c).defMem)
+    (eqR: (exprR0.intp2 b c).defMem = (exprR1.intp2 b c).defMem)
   :
     Eq
       (Expr.interpretation pairSalgebra b c (pairExpr exprL0 exprR0)).defMem
@@ -1184,23 +1170,801 @@ namespace PairExpr
           eq
         ⟩)
   
-  def pair_eq_of_eq_lr
-    (l:
-      Eq
-        (Expr.interpretation pairSalgebra b c exprL0)
-        (Expr.interpretation pairSalgebra b c exprL1))
-    (r:
-      Eq
-        (Expr.interpretation pairSalgebra b c exprR0)
-        (Expr.interpretation pairSalgebra b c exprR1))
+  def pair_eq_of_eq_pos
+    (eqL: (exprL0.intp2 b c).posMem = (exprL1.intp2 b c).posMem)
+    (eqR: (exprR0.intp2 b c).posMem = (exprR1.intp2 b c).posMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (pairExpr exprL0 exprR0)).posMem
+      (Expr.interpretation pairSalgebra b c (pairExpr exprL1 exprR1)).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨l, r, eq⟩ => ⟨
+          ⟨l, show (interpretation _ b c exprL1).posMem l from
+            eqL ▸ l.property⟩,
+          ⟨r, show (interpretation _ b c exprR1).posMem r from
+            eqR ▸ r.property⟩,
+          eq
+        ⟩)
+        (fun ⟨l, r, eq⟩ => ⟨
+          ⟨l, show (interpretation _ b c exprL0).posMem l from
+            eqL ▸ l.property⟩,
+          ⟨r, show (interpretation _ b c exprR0).posMem r from
+            eqR ▸ r.property⟩,
+          eq
+        ⟩)
+  
+  def pair_eq_of_eq
+    (lEq: (exprL0.intp2 b c) = (exprL1.intp2 b c))
+    (rEq: (exprR0.intp2 b c) = (exprR1.intp2 b c))
   :
     Eq
       (Expr.interpretation pairSalgebra b c (pairExpr exprL0 exprR0))
       (Expr.interpretation pairSalgebra b c (pairExpr exprL1 exprR1))
   :=
     Set3.eq
-      (pair_eq_of_eq_lr_def (Set3.def_eq l) (Set3.def_eq r))
-      (pair_eq_of_eq_lr_pos (Set3.pos_eq l) (Set3.pos_eq r))
+      (pair_eq_of_eq_def (Set3.def_eq lEq) (Set3.def_eq rEq))
+      (pair_eq_of_eq_pos (Set3.pos_eq lEq) (Set3.pos_eq rEq))
+  
+  
+  def un_eq_of_eq_def
+    (eqL: (exprL0.intp2 b c).defMem = (exprL1.intp2 b c).defMem)
+    (eqR: (exprR0.intp2 b c).defMem = (exprR1.intp2 b c).defMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (unExpr exprL0 exprR0)).defMem
+      (Expr.interpretation pairSalgebra b c (unExpr exprL1 exprR1)).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun
+          | Or.inl isDef => Or.inl (show Set3.defMem _ _ from eqL ▸ isDef)
+          | Or.inr isDef => Or.inr (show Set3.defMem _ _ from eqR ▸ isDef))
+        (fun
+          | Or.inl isDef => Or.inl (show Set3.defMem _ _ from eqL.symm ▸ isDef)
+          | Or.inr isDef => Or.inr (show Set3.defMem _ _ from eqR.symm ▸ isDef))
+  
+  def un_eq_of_eq_pos
+    (eqL: (exprL0.intp2 b c).posMem = (exprL1.intp2 b c).posMem)
+    (eqR: (exprR0.intp2 b c).posMem = (exprR1.intp2 b c).posMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (unExpr exprL0 exprR0)).posMem
+      (Expr.interpretation pairSalgebra b c (unExpr exprL1 exprR1)).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun
+          | Or.inl isPos => Or.inl (show Set3.posMem _ _ from eqL ▸ isPos)
+          | Or.inr isPos => Or.inr (show Set3.posMem _ _ from eqR ▸ isPos))
+        (fun
+          | Or.inl isPos => Or.inl (show Set3.posMem _ _ from eqL.symm ▸ isPos)
+          | Or.inr isPos => Or.inr (show Set3.posMem _ _ from eqR.symm ▸ isPos))
+
+  def un_eq_of_eq
+    (lEq: (exprL0.intp2 b c) = (exprL1.intp2 b c))
+    (rEq: (exprR0.intp2 b c) = (exprR1.intp2 b c))
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (unExpr exprL0 exprR0))
+      (Expr.interpretation pairSalgebra b c (unExpr exprL1 exprR1))
+  :=
+    Set3.eq
+      (un_eq_of_eq_def (Set3.def_eq lEq) (Set3.def_eq rEq))
+      (un_eq_of_eq_pos (Set3.pos_eq lEq) (Set3.pos_eq rEq))
+  
+  
+  def ir_eq_of_eq_def
+    (eqL: (exprL0.intp2 b c).defMem = (exprL1.intp2 b c).defMem)
+    (eqR: (exprR0.intp2 b c).defMem = (exprR1.intp2 b c).defMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (irExpr exprL0 exprR0)).defMem
+      (Expr.interpretation pairSalgebra b c (irExpr exprL1 exprR1)).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨l, r⟩ => ⟨
+          show Set3.defMem _ _ from eqL ▸ l,
+          show Set3.defMem _ _ from eqR ▸ r,
+        ⟩)
+        (fun ⟨l, r⟩ => ⟨
+          show Set3.defMem _ _ from eqL.symm ▸ l,
+          show Set3.defMem _ _ from eqR.symm ▸ r,
+        ⟩)
+  
+  def ir_eq_of_eq_pos
+    (eqL: (exprL0.intp2 b c).posMem = (exprL1.intp2 b c).posMem)
+    (eqR: (exprR0.intp2 b c).posMem = (exprR1.intp2 b c).posMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (irExpr exprL0 exprR0)).posMem
+      (Expr.interpretation pairSalgebra b c (irExpr exprL1 exprR1)).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨l, r⟩ =>
+          ⟨show Set3.posMem _ _ from eqL ▸ l,
+            show Set3.posMem _ _ from eqR ▸ r⟩)
+        (fun ⟨l, r⟩ =>
+          ⟨show Set3.posMem _ _ from eqL.symm ▸ l,
+            show Set3.posMem _ _ from eqR.symm ▸ r⟩)
+
+  def ir_eq_of_eq
+    (l: (exprL0.intp2 b c) = (exprL1.intp2 b c))
+    (r: (exprR0.intp2 b c) = (exprR1.intp2 b c))
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (irExpr exprL0 exprR0))
+      (Expr.interpretation pairSalgebra b c (irExpr exprL1 exprR1))
+  :=
+    Set3.eq
+      (ir_eq_of_eq_def (Set3.def_eq l) (Set3.def_eq r))
+      (ir_eq_of_eq_pos (Set3.pos_eq l) (Set3.pos_eq r))
+  
+  
+  def condSome_eq_of_eq_def
+    (eq: (expr0.intp2 b c).defMem = (expr1.intp2 b c).defMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (condSomeExpr expr0)).defMem
+      (Expr.interpretation pairSalgebra b c (condSomeExpr expr1)).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨p, isDef⟩ => ⟨p, show Set3.defMem _ _ from eq ▸ isDef⟩)
+        (fun ⟨p, isDef⟩ => ⟨p, show Set3.defMem _ _ from eq ▸ isDef⟩)
+  
+  def condSome_eq_of_eq_pos
+    (eq: (expr0.intp2 b c).posMem = (expr1.intp2 b c).posMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (condSomeExpr expr0)).posMem
+      (Expr.interpretation pairSalgebra b c (condSomeExpr expr1)).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨p, isPos⟩ => ⟨p, show Set3.posMem _ _ from eq ▸ isPos⟩)
+        (fun ⟨p, isPos⟩ => ⟨p, show Set3.posMem _ _ from eq ▸ isPos⟩)
+  
+  def condSome_eq_of_eq
+    (eq: (expr0.intp2 b c) = (expr1.intp2 b c))
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (condSomeExpr expr0))
+      (Expr.interpretation pairSalgebra b c (condSomeExpr expr1))
+  :=
+    Set3.eq
+      (condSome_eq_of_eq_def (Set3.def_eq eq))
+      (condSome_eq_of_eq_pos (Set3.pos_eq eq))
+  
+  
+  def condFull_eq_of_eq_def
+    (eq: (expr0.intp2 b c).defMem = (expr1.intp2 b c).defMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (condFullExpr expr0)).defMem
+      (Expr.interpretation pairSalgebra b c (condFullExpr expr1)).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDef p => show Set3.defMem _ _ from eq ▸ isDef p)
+        (fun isDef p => show Set3.defMem _ _ from eq ▸ isDef p)
+  
+  def condFull_eq_of_eq_pos
+    (eq: (expr0.intp2 b c).posMem = (expr1.intp2 b c).posMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (condFullExpr expr0)).posMem
+      (Expr.interpretation pairSalgebra b c (condFullExpr expr1)).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isPos p => show Set3.posMem _ _ from eq ▸ isPos p)
+        (fun isPos p => show Set3.posMem _ _ from eq ▸ isPos p)
+
+  def condFull_eq_of_eq
+    (eq: (expr0.intp2 b c) = (expr1.intp2 b c))
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (condFullExpr expr0))
+      (Expr.interpretation pairSalgebra b c (condFullExpr expr1))
+  :=
+    Set3.eq
+      (condFull_eq_of_eq_def (Set3.def_eq eq))
+      (condFull_eq_of_eq_pos (Set3.pos_eq eq))
+  
+  
+  def cpl_eq_of_eq_def
+    (eq: (expr0.intp2 b b).posMem = (expr1.intp2 b b).posMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (Expr.cpl expr0)).defMem
+      (Expr.interpretation pairSalgebra b c (Expr.cpl expr1)).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDef isPos => isDef (show Set3.posMem _ _ from eq ▸ isPos))
+        (fun isDef isPos => isDef (show Set3.posMem _ _ from eq ▸ isPos))
+  
+  def cpl_eq_of_eq_pos
+    {b: Valuation Pair}
+    (c := b)
+    (eq: (expr0.intp2 b b).defMem = (expr1.intp2 b b).defMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (Expr.cpl expr0)).posMem
+      (Expr.interpretation pairSalgebra b c (Expr.cpl expr1)).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isPos isDef => isPos (show Set3.defMem _ _ from eq ▸ isDef))
+        (fun isPos isDef => isPos (show Set3.defMem _ _ from eq ▸ isDef))
+
+  def cpl_eq_of_eq
+    {b: Valuation Pair}
+    (c := b)
+    (eq: (expr0.intp2 b b) = (expr1.intp2 b b))
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (Expr.cpl expr0))
+      (Expr.interpretation pairSalgebra b c (Expr.cpl expr1))
+  :=
+    Set3.eq
+      (cpl_eq_of_eq_def (c := c) (Set3.pos_eq eq))
+      (cpl_eq_of_eq_pos (c := c) (Set3.def_eq eq))
+  
+  
+  def arbUn_eq_of_eq_def
+    (x: Nat)
+    (eq:
+      (p: Pair) →
+      Eq
+        (expr0.intp2 (b.update x p) (c.update x p)).defMem
+        (expr1.intp2 (b.update x p) (c.update x p)).defMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (Expr.arbUn x expr0)).defMem
+      (Expr.interpretation pairSalgebra b c (Expr.arbUn x expr1)).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨p, isDef⟩ => ⟨p, show Set3.defMem _ _ from eq p ▸ isDef⟩)
+        (fun ⟨p, isDef⟩ => ⟨p, show Set3.defMem _ _ from eq p ▸ isDef⟩)
+  
+  def arbUn_eq_of_eq_pos
+    (x: Nat)
+    (eq:
+      (p: Pair) →
+      Eq
+        (expr0.intp2 (b.update x p) (c.update x p)).posMem
+        (expr1.intp2 (b.update x p) (c.update x p)).posMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (Expr.arbUn x expr0)).posMem
+      (Expr.interpretation pairSalgebra b c (Expr.arbUn x expr1)).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨p, isPos⟩ => ⟨p, show Set3.posMem _ _ from eq p ▸ isPos⟩)
+        (fun ⟨p, isPos⟩ => ⟨p, show Set3.posMem _ _ from eq p ▸ isPos⟩)
+
+  def arbUn_eq_of_eq
+    (x: Nat)
+    (eq:
+      (p: Pair) →
+      (expr0.intp2 (b.update x p) (c.update x p)) =
+      (expr1.intp2 (b.update x p) (c.update x p)))
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (Expr.arbUn x expr0))
+      (Expr.interpretation pairSalgebra b c (Expr.arbUn x expr1))
+  :=
+    Set3.eq
+      (arbUn_eq_of_eq_def x (fun p => Set3.def_eq (eq p)))
+      (arbUn_eq_of_eq_pos x (fun p => Set3.pos_eq (eq p)))
+  
+  
+  def arbIr_eq_of_eq_def
+    (x: Nat)
+    (eq:
+      (p: Pair) →
+      Eq
+        (expr0.intp2 (b.update x p) (c.update x p)).defMem
+        (expr1.intp2 (b.update x p) (c.update x p)).defMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (Expr.arbIr x expr0)).defMem
+      (Expr.interpretation pairSalgebra b c (Expr.arbIr x expr1)).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDef p => show Set3.defMem _ _ from eq p ▸ isDef p)
+        (fun isDef p => show Set3.defMem _ _ from eq p ▸ isDef p)
+  
+  def arbIr_eq_of_eq_pos
+    (x: Nat)
+    (eq:
+      (p: Pair) →
+      Eq
+        (expr0.intp2 (b.update x p) (c.update x p)).posMem
+        (expr1.intp2 (b.update x p) (c.update x p)).posMem)
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (Expr.arbIr x expr0)).posMem
+      (Expr.interpretation pairSalgebra b c (Expr.arbIr x expr1)).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isPos p => show Set3.posMem _ _ from eq p ▸ isPos p)
+        (fun isPos p => show Set3.posMem _ _ from eq p ▸ isPos p)
+
+  def arbIr_eq_of_eq
+    (x: Nat)
+    (eq:
+      (p: Pair) →
+      (expr0.intp2 (b.update x p) (c.update x p)) =
+      (expr1.intp2 (b.update x p) (c.update x p)))
+  :
+    Eq
+      (Expr.interpretation pairSalgebra b c (Expr.arbIr x expr0))
+      (Expr.interpretation pairSalgebra b c (Expr.arbIr x expr1))
+  :=
+    Set3.eq
+      (arbIr_eq_of_eq_def x (fun p => Set3.def_eq (eq p)))
+      (arbIr_eq_of_eq_pos x (fun p => Set3.pos_eq (eq p)))
+  
+  
+  def cpl_zero_eq_def
+    (v: Valuation Pair)
+  :
+    Eq
+      (zeroExpr.cpl.intp v).defMem
+      ((pairExpr anyExpr anyExpr).intp v).defMem
+  :=
+    Set.ext fun p =>
+      Iff.intro
+        (fun isDefCpl =>
+          match p, isDefCpl with
+          | .pair pa pb, _ => ⟨⟨pa, insAny⟩, ⟨pb, insAny⟩, rfl⟩)
+        (fun isDefPair =>
+          match p, isDefPair with
+          | .pair _ _, _ => Pair.noConfusion)
+  
+  def cpl_zero_eq_pos
+    (v: Valuation Pair)
+  :
+    Eq
+      (zeroExpr.cpl.intp v).posMem
+      ((pairExpr anyExpr anyExpr).intp v).posMem
+  :=
+    -- Happens to typecheck since def and pos members agree :smile:
+    cpl_zero_eq_def v
+  
+  def cpl_zero_eq
+    (v: Valuation Pair)
+  :
+    zeroExpr.cpl.intp v = (pairExpr anyExpr anyExpr).intp v
+  :=
+    Set3.eq (cpl_zero_eq_def v) (cpl_zero_eq_pos v)
+  
+  
+  def cpl_pair_eq_def
+    (v: Valuation Pair)
+    (a b: Expr)
+  :
+    Eq
+      ((pairExpr a b).cpl.intp v).defMem
+      (Expr.intp (pairCplExpr a b) v).defMem
+  :=
+    Set.ext fun p =>
+      Iff.intro
+        (fun isDefCpl =>
+          match p with
+          | .zero => Or.inl rfl
+          | .pair pa pb =>
+            let neq := isDefCpl.toAll fun _ p =>
+              p.toAll fun _ => id
+            if hA: ¬ (a.intp v).posMem pa then
+              Or.inr (Or.inl (insPair hA insAny))
+            else if hB: ¬ (b.intp v).posMem pb then
+              Or.inr (Or.inr (insPair insAny hB))
+            else
+              False.elim (neq ⟨pa, hA.dne⟩ ⟨pb, hB.dne⟩ rfl))
+        nofun
+  
+  def cpl_pair_eq_pos
+    (v: Valuation Pair)
+    (a b: Expr)
+  :
+    Eq
+      ((pairExpr a b).cpl.intp v).posMem
+      (Expr.intp (pairCplExpr a b) v).posMem
+  :=
+    Set.ext fun p =>
+      Iff.intro
+        (fun isPosCpl =>
+          match p with
+          | .zero => Or.inl rfl
+          | .pair pa pb =>
+            let neq := isPosCpl.toAll fun _ p =>
+              p.toAll fun _ => id
+            if hA: ¬ (a.intp v).defMem pa then
+              Or.inr (Or.inl (inwPair hA inwAny))
+            else if hB: ¬ (b.intp v).defMem pb then
+              Or.inr (Or.inr (inwPair inwAny hB))
+            else
+              False.elim (neq ⟨pa, hA.dne⟩ ⟨pb, hB.dne⟩ rfl))
+        nofun
+  
+  def cpl_pair_eq
+    (v: Valuation Pair)
+    (a b: Expr)
+  :
+    (pairExpr a b).cpl.intp v = Expr.intp (pairCplExpr a b) v
+  :=
+    Set3.eq (cpl_pair_eq_def v a b) (cpl_pair_eq_pos v a b)
+  
+  
+  def cpl_un_eq_def
+    (v: Valuation Pair)
+    (a b: Expr)
+  :
+    Eq
+      ((unExpr a b).cpl.intp v).defMem
+      ((irExpr a.cpl b.cpl).intp v).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro Not.toAnd (fun ⟨l, r⟩ or => or.elim l r)
+  
+  def cpl_un_eq_pos
+    (v: Valuation Pair)
+    (a b: Expr)
+  :
+    Eq
+      ((unExpr a b).cpl.intp v).posMem
+      ((irExpr a.cpl b.cpl).intp v).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro Not.toAnd (fun ⟨l, r⟩ or => or.elim l r)
+  
+  def cpl_un_eq
+    (v: Valuation Pair)
+    (a b: Expr)
+  :
+    (unExpr a b).cpl.intp v = (irExpr a.cpl b.cpl).intp v
+  :=
+    Set3.eq (cpl_un_eq_def v a b) (cpl_un_eq_pos v a b)
+  
+  
+  def cpl_ir_eq_def
+    (v: Valuation Pair)
+    (a b: Expr)
+  :
+    Eq
+      ((irExpr a b).cpl.intp v).defMem
+      ((unExpr a.cpl b.cpl).intp v).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro Not.toOr (fun or ⟨l, r⟩ => or.elim (· l) (· r))
+  
+  def cpl_ir_eq_pos
+    (v: Valuation Pair)
+    (a b: Expr)
+  :
+    Eq
+      ((irExpr a b).cpl.intp v).posMem
+      ((unExpr a.cpl b.cpl).intp v).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro Not.toOr (fun or ⟨l, r⟩ => or.elim (· l) (· r))
+  
+  def cpl_ir_eq
+    (v: Valuation Pair)
+    (a b: Expr)
+  :
+    (irExpr a b).cpl.intp v = (unExpr a.cpl b.cpl).intp v
+  :=
+    Set3.eq (cpl_ir_eq_def v a b) (cpl_ir_eq_pos v a b)
+  
+  
+  def cpl_condSome_eq_def
+    (v: Valuation Pair)
+    (e: Expr)
+  :
+    Eq
+      ((condSomeExpr e).cpl.intp v).defMem
+      ((condFullExpr e.cpl).intp v).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDefCpl _ isPos => isDefCpl ⟨_, isPos⟩)
+        (fun isDefCondFull ⟨_, isPos⟩ => isDefCondFull _ isPos)
+  
+  def cpl_condSome_eq_pos
+    (v: Valuation Pair)
+    (e: Expr)
+  :
+    Eq
+      ((condSomeExpr e).cpl.intp v).posMem
+      ((condFullExpr e.cpl).intp v).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDefCpl _ isDef => isDefCpl ⟨_, isDef⟩)
+        (fun isDefCondFull ⟨_, isDef⟩ => isDefCondFull _ isDef)
+  
+  def cpl_condSome_eq
+    (v: Valuation Pair)
+    (e: Expr)
+  :
+    (condSomeExpr e).cpl.intp v = (condFullExpr e.cpl).intp v
+  :=
+    Set3.eq (cpl_condSome_eq_def v e) (cpl_condSome_eq_pos v e)
+  
+  
+  def cpl_condFull_eq_def
+    (v: Valuation Pair)
+    (e: Expr)
+  :
+    Eq
+      ((condFullExpr e).cpl.intp v).defMem
+      ((condSomeExpr e.cpl).intp v).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDefCpl => isDefCpl.toEx fun _ => id)
+        (fun ⟨_, ninPos⟩ isPosFull => ninPos (isPosFull _))
+  
+  def cpl_condFull_eq_pos
+    (v: Valuation Pair)
+    (e: Expr)
+  :
+    Eq
+      ((condFullExpr e).cpl.intp v).posMem
+      ((condSomeExpr e.cpl).intp v).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isPosCpl => isPosCpl.toEx fun _ => id)
+        (fun ⟨_, ninDef⟩ isPosFull => ninDef (isPosFull _))
+  
+  def cpl_condFull_eq
+    (v: Valuation Pair)
+    (e: Expr)
+  :
+    (condFullExpr e).cpl.intp v = (condSomeExpr e.cpl).intp v
+  :=
+    Set3.eq (cpl_condFull_eq_def v e) (cpl_condFull_eq_pos v e)
+  
+  
+  def cpl_arbUn_eq_def
+    (v: Valuation Pair)
+    (x: Nat)
+    (body: Expr)
+  :
+    Eq
+      ((arbUn x body).cpl.intp v).defMem
+      ((arbIr x body.cpl).intp v).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDefCpl => isDefCpl.toAll fun _ => id)
+        (fun isDefIr ⟨p, isPos⟩ => isDefIr p isPos)
+  
+  def cpl_arbUn_eq_pos
+    (v: Valuation Pair)
+    (x: Nat)
+    (body: Expr)
+  :
+    Eq
+      ((arbUn x body).cpl.intp v).posMem
+      ((arbIr x body.cpl).intp v).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isPosCpl => isPosCpl.toAll fun _ => id)
+        (fun isPosIr ⟨p, isDef⟩ => isPosIr p isDef)
+
+  def cpl_arbUn_eq
+    (v: Valuation Pair)
+    (x: Nat)
+    (body: Expr)
+  :
+    ((arbUn x body).cpl.intp v) = ((arbIr x body.cpl).intp v)
+  :=
+    Set3.eq
+      (cpl_arbUn_eq_def v x body)
+      (cpl_arbUn_eq_pos v x body)
+  
+  
+  def cpl_arbIr_eq_def
+    (v: Valuation Pair)
+    (x: Nat)
+    (body: Expr)
+  :
+    Eq
+      ((arbIr x body).cpl.intp v).defMem
+      ((arbUn x body.cpl).intp v).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDefCpl => isDefCpl.toEx fun _ => id)
+        (fun ⟨_, isPosUn⟩ isDef => isPosUn (isDef _))
+  
+  def cpl_arbIr_eq_pos
+    (v: Valuation Pair)
+    (x: Nat)
+    (body: Expr)
+  :
+    Eq
+      ((arbIr x body).cpl.intp v).posMem
+      ((arbUn x body.cpl).intp v).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isPosCpl => isPosCpl.toEx fun _ => id)
+        (fun ⟨_, isDefUn⟩ isPos => isDefUn (isPos _))
+
+  def cpl_arbIr_eq
+    (v: Valuation Pair)
+    (x: Nat)
+    (body: Expr)
+  :
+    ((arbIr x body).cpl.intp v) = ((arbUn x body.cpl).intp v)
+  :=
+    Set3.eq
+      (cpl_arbIr_eq_def v x body)
+      (cpl_arbIr_eq_pos v x body)
+  
+  
+  def un_symm_def
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((unExpr e0 e1).intp2 b c).defMem
+      ((unExpr e1 e0).intp2 b c).defMem
+  :=
+    Set.ext fun _ => Iff.intro Or.symm Or.symm
+  
+  def un_symm_pos
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((unExpr e0 e1).intp2 b c).posMem
+      ((unExpr e1 e0).intp2 b c).posMem
+  :=
+    Set.ext fun _ => Iff.intro Or.symm Or.symm
+  
+  def un_symm
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    (unExpr e0 e1).intp2 b c = (unExpr e1 e0).intp2 b c
+  :=
+    Set3.eq
+      (un_symm_def b c e0 e1)
+      (un_symm_pos b c e0 e1)
+  
+  
+  def un_assoc_def
+    (b c: Valuation Pair)
+    (e0 e1 e2: Expr)
+  :
+    Eq
+      ((unExpr e0 (unExpr e1 e2)).intp2 b c).defMem
+      ((unExpr (unExpr e0 e1) e2).intp2 b c).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun
+          | Or.inl isDef => Or.inl (Or.inl isDef)
+          | Or.inr (Or.inl isDef) => Or.inl (Or.inr isDef)
+          | Or.inr (Or.inr isDef) => Or.inr isDef)
+        (fun
+          | Or.inl (Or.inl isDef) => Or.inl isDef
+          | Or.inl (Or.inr isDef) => Or.inr (Or.inl isDef)
+          | Or.inr isDef => Or.inr (Or.inr isDef))
+  
+  def un_assoc_pos
+    (b c: Valuation Pair)
+    (e0 e1 e2: Expr)
+  :
+    Eq
+      ((unExpr e0 (unExpr e1 e2)).intp2 b c).posMem
+      ((unExpr (unExpr e0 e1) e2).intp2 b c).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun
+          | Or.inl isPos => Or.inl (Or.inl isPos)
+          | Or.inr (Or.inl isPos) => Or.inl (Or.inr isPos)
+          | Or.inr (Or.inr isPos) => Or.inr isPos)
+        (fun
+          | Or.inl (Or.inl isPos) => Or.inl isPos
+          | Or.inl (Or.inr isPos) => Or.inr (Or.inl isPos)
+          | Or.inr isPos => Or.inr (Or.inr isPos))
+
+  def un_assoc
+    (b c: Valuation Pair)
+    (e0 e1 e2: Expr)
+  :
+    (unExpr e0 (unExpr e1 e2)).intp2 b c = (unExpr (unExpr e0 e1) e2).intp2 b c
+  :=
+    Set3.eq
+      (un_assoc_def b c e0 e1 e2)
+      (un_assoc_pos b c e0 e1 e2)
+  
+  
+  def ir_symm_def
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((irExpr e0 e1).intp2 b c).defMem
+      ((irExpr e1 e0).intp2 b c).defMem
+  :=
+    Set.ext fun _ => Iff.intro And.symm And.symm
+
+  def ir_symm_pos
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((irExpr e0 e1).intp2 b c).posMem
+      ((irExpr e1 e0).intp2 b c).posMem
+  :=
+    Set.ext fun _ => Iff.intro And.symm And.symm
+
+  def ir_symm
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    (irExpr e0 e1).intp2 b c = (irExpr e1 e0).intp2 b c
+  :=
+    Set3.eq
+      (ir_symm_def b c e0 e1)
+      (ir_symm_pos b c e0 e1)
+  
+  
+  def ir_assoc_def
+    (b c: Valuation Pair)
+    (e0 e1 e2: Expr)
+  :
+    Eq
+      ((irExpr e0 (irExpr e1 e2)).intp2 b c).defMem
+      ((irExpr (irExpr e0 e1) e2).intp2 b c).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨isDef0, ⟨isDef1, isDef2⟩⟩ => ⟨⟨isDef0, isDef1⟩, isDef2⟩)
+        (fun ⟨⟨isDef0, isDef1⟩, isDef2⟩ => ⟨isDef0, ⟨isDef1, isDef2⟩⟩)
+
+  def ir_assoc_pos
+    (b c: Valuation Pair)
+    (e0 e1 e2: Expr)
+  :
+    Eq
+      ((irExpr e0 (irExpr e1 e2)).intp2 b c).posMem
+      ((irExpr (irExpr e0 e1) e2).intp2 b c).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨isPos0, ⟨isPos1, isPos2⟩⟩ => ⟨⟨isPos0, isPos1⟩, isPos2⟩)
+        (fun ⟨⟨isPos0, isPos1⟩, isPos2⟩ => ⟨isPos0, ⟨isPos1, isPos2⟩⟩)
+
+  def ir_assoc
+    (b c: Valuation Pair)
+    (e0 e1 e2: Expr)
+  :
+    (irExpr e0 (irExpr e1 e2)).intp2 b c = (irExpr (irExpr e0 e1) e2).intp2 b c
+  :=
+    Set3.eq
+      (ir_assoc_def b c e0 e1 e2)
+      (ir_assoc_pos b c e0 e1 e2)
   
 end PairExpr
 
