@@ -2126,6 +2126,159 @@ namespace PairExpr
       (arbUn_ir_eq_def b c e0 notFree)
       (arbUn_ir_eq_pos b c e0 notFree)
   
+  
+  def arbIr_eq_split_def
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((arbIr x (irExpr e0 e1)).intp2 b c).defMem
+      ((irExpr (arbIr x e0) (arbIr x e1)).intp2 b c).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDef => ⟨
+          fun x => (isDef x).left,
+          fun x => (isDef x).rite,
+        ⟩)
+        (fun ⟨isDefL, isDefR⟩ x => ⟨isDefL x, isDefR x⟩)
+  
+  def arbIr_eq_split_pos
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((arbIr x (irExpr e0 e1)).intp2 b c).posMem
+      ((irExpr (arbIr x e0) (arbIr x e1)).intp2 b c).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isPos => ⟨
+          fun x => (isPos x).left,
+          fun x => (isPos x).rite,
+        ⟩)
+        (fun ⟨isPosL, isPosR⟩ x => ⟨isPosL x, isPosR x⟩)
+
+  def arbIr_eq_split
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((arbIr x (irExpr e0 e1)).intp2 b c)
+      ((irExpr (arbIr x e0) (arbIr x e1)).intp2 b c)
+  :=
+    Set3.eq
+      (arbIr_eq_split_def b c e0 e1)
+      (arbIr_eq_split_pos b c e0 e1)
+  
+  
+  def arbIr_eq_unused_def
+    (b c: Valuation Pair)
+    (notFree: ¬ body.IsFreeVar Set.empty x)
+  :
+    Eq
+      ((arbIr x body).intp2 b c).defMem
+      (body.intp2 b c).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDef =>
+          intp_eq_not_free b c notFree zero ▸ isDef zero)
+        (fun isDef x =>
+          show (intp2 _ _ _).defMem _ from
+            intp_eq_not_free b c notFree x ▸ isDef)
+  
+  def arbIr_eq_unused_pos
+    (b c: Valuation Pair)
+    (notFree: ¬ body.IsFreeVar Set.empty x)
+  :
+    Eq
+      ((arbIr x body).intp2 b c).posMem
+      (body.intp2 b c).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isPos =>
+          intp_eq_not_free b c notFree zero ▸ isPos zero)
+        (fun isPos x =>
+          show (intp2 _ _ _).posMem _ from
+            intp_eq_not_free b c notFree x ▸ isPos)
+
+  def arbIr_eq_unused
+    (b c: Valuation Pair)
+    (notFree: ¬ body.IsFreeVar Set.empty x)
+  :
+    (arbIr x body).intp2 b c = body.intp2 b c
+  :=
+    Set3.eq
+      (arbIr_eq_unused_def b c notFree)
+      (arbIr_eq_unused_pos b c notFree)
+  
+  
+  def arbIr_un_eq_def
+    (b c: Valuation Pair)
+    (e0: Expr)
+    (notFree: ¬ e1.IsFreeVar Set.empty x)
+  :
+    Eq
+      ((arbIr x (unExpr e0 e1)).intp2 b c).defMem
+      ((unExpr (arbIr x e0) e1).intp2 b c).defMem
+      
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isDef =>
+          Or.inlEm fun notDefR x =>
+            (isDef x).elim id
+              (fun isDefR =>
+                False.elim
+                  (notDefR
+                    (show (intp2 _ _ _).defMem _ from
+                      intp_eq_not_free b c notFree x ▸ isDefR))))
+        (fun
+          | Or.inl isDef, x => Or.inl (isDef x)
+          | Or.inr isDef, x =>
+            Or.inr
+              (show (intp2 _ _ _).defMem _ from
+                intp_eq_not_free b c notFree x ▸ isDef))
+  
+  def arbIr_un_eq_pos
+    (b c: Valuation Pair)
+    (e0: Expr)
+    (notFree: ¬ e1.IsFreeVar Set.empty x)
+  :
+    Eq
+      ((arbIr x (unExpr e0 e1)).intp2 b c).posMem
+      ((unExpr (arbIr x e0) e1).intp2 b c).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun isPos =>
+          Or.inlEm fun notPosR x =>
+            (isPos x).elim id
+              (fun isPosR =>
+                False.elim
+                  (notPosR
+                    (show (intp2 _ _ _).posMem _ from
+                      intp_eq_not_free b c notFree x ▸ isPosR))))
+        (fun
+          | Or.inl isPos, x => Or.inl (isPos x)
+          | Or.inr isPos, x =>
+            Or.inr
+              (show (intp2 _ _ _).posMem _ from
+                intp_eq_not_free b c notFree x ▸ isPos))
+
+  def arbIr_un_eq
+    (b c: Valuation Pair)
+    (e0: Expr)
+    (notFree: ¬ e1.IsFreeVar Set.empty x)
+  :
+    (arbIr x (unExpr e0 e1)).intp2 b c = (unExpr (arbIr x e0) e1).intp2 b c
+  :=
+    Set3.eq
+      (arbIr_un_eq_def b c e0 notFree)
+      (arbIr_un_eq_pos b c e0 notFree)
+  
 end PairExpr
 
 

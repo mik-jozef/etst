@@ -800,3 +800,6 @@ def Subtype.val_eq
   (Subtype.mk t pt).val = t
 :=
   rfl
+
+
+def And.rite (p: A ∧ B) := And.right p
