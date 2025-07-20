@@ -210,7 +210,7 @@ namespace Pvq3.Desirables
       (fun _ _ _ => PairExpr.cpl_arbIr_eq _ _ _)
       (fun _ _ _ _ => PairExpr.arbUn_eq_split _ _ _ _)
       (fun _ notFree _ => PairExpr.arbUn_eq_unused _ _ notFree)
-      sorry
+      (fun _ _ notFree _ => PairExpr.arbUn_ir_eq _ _ _ notFree)
       sorry
       sorry
       sorry
