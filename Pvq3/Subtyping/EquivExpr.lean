@@ -69,18 +69,15 @@ namespace Pvq3.Desirables
       EquivExpr
         (.arbUn x (.un l r))
         (.un (.arbUn x l) (.arbUn x r))
-  | arbUnUn
+  | arbUnUnused
       (x: Nat)
-      (l r: PaintedPExpr)
-      (isFree: r.toExpr.IsFreeVar Set.empty x)
+      (notFree: ¬body.toExpr.IsFreeVar Set.empty x)
     :
-      EquivExpr
-        (.arbUn x (.un l r))
-        (.un (.arbUn x l) r)
+      EquivExpr (.arbUn x body) body
   | arbUnIr
       (x: Nat)
-      (l r: PaintedPExpr)
-      (isFree: r.toExpr.IsFreeVar Set.empty x)
+      (l: PaintedPExpr)
+      (notFree: ¬r.toExpr.IsFreeVar Set.empty x)
     :
       EquivExpr
         (.arbUn x (.ir l r))
@@ -91,24 +88,21 @@ namespace Pvq3.Desirables
       (l r: PaintedPExpr)
     :
       EquivExpr
-        (.arbIr x (.un l r))
+        (.arbIr x (.ir l r))
         (.ir (.arbIr x l) (.arbIr x r))
+  | arbIrUnused
+      (x: Nat)
+      (notFree: ¬body.toExpr.IsFreeVar Set.empty x)
+    :
+      EquivExpr (.arbIr x body) body
   | arbIrUn
       (x: Nat)
-      (l r: PaintedPExpr)
-      (isFree: r.toExpr.IsFreeVar Set.empty x)
+      (l: PaintedPExpr)
+      (notFree: ¬r.toExpr.IsFreeVar Set.empty x)
     :
       EquivExpr
         (.arbIr x (.un l r))
         (.un (.arbIr x l) r)
-  | arbIrIr
-      (x: Nat)
-      (l r: PaintedPExpr)
-      (isFree: r.toExpr.IsFreeVar Set.empty x)
-    :
-      EquivExpr
-        (.arbIr x (.ir l r))
-        (.ir (.arbIr x l) r)
   
   def EquivExpr.unionAssocRev
     (a b c: PaintedPExpr)
@@ -137,6 +131,33 @@ namespace Pvq3.Desirables
             ((interAssoc _ _ _).trans
               ((interSymm _ _).trans
                 (refl _)))))
+    
+    
+    def EquivExpr.arbUnUn
+      (x: Nat)
+      (l: PaintedPExpr)
+      (notFree: ¬r.toExpr.IsFreeVar Set.empty x)
+    :
+      EquivExpr
+        (.arbUn x (.un l r))
+        (.un (.arbUn x l) r)
+    :=
+      trans
+        (arbUnSplit x l r)
+        (subst (arbUnUnused x notFree) (.UnR _))
+    
+    def EquivExpr.arbIrIr
+      (x: Nat)
+      (l: PaintedPExpr)
+      (notFree: ¬r.toExpr.IsFreeVar Set.empty x)
+    :
+      EquivExpr
+        (.arbIr x (.ir l r))
+        (.ir (.arbIr x l) r)
+    :=
+      trans
+        (arbIrSplit x l r)
+        (subst (arbIrUnused x notFree) (.IrR _))
     
     
     def EquivExpr.equivInterp
@@ -187,8 +208,8 @@ namespace Pvq3.Desirables
       (fun _ _ => PairExpr.cpl_condFull_eq _ _)
       (fun _ _ _ => PairExpr.cpl_arbUn_eq _ _ _)
       (fun _ _ _ => PairExpr.cpl_arbIr_eq _ _ _)
-      sorry
-      sorry
+      (fun _ _ _ _ => PairExpr.arbUn_eq_split _ _ _ _)
+      (fun _ notFree _ => PairExpr.arbUn_eq_unused _ _ notFree)
       sorry
       sorry
       sorry

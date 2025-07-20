@@ -352,7 +352,7 @@ def Expr.mapVars.preservesInterpretation
 def Expr.interpretation.ignoresUnusedVars
   (salg: Salgebra sig)
   (expr: Expr sig)
-  (b0 b1 c0 c1: Valuation salg.D)
+  {b0 b1 c0 c1: Valuation salg.D}
   (eqB:
     ∀ (x: expr.IsFreeVar Set.empty),
       b0 x = b1 x)
@@ -377,6 +377,25 @@ def Expr.interpretation.ignoresUnusedVars
     (Expr.mapVars.eqOfId expr)
     eqB
     eqC
+
+def Expr.interpretation.ignoresUnusedVarUpdate
+  (salg: Salgebra sig)
+  (expr: Expr sig)
+  (b c: Valuation salg.D)
+  (notFree: ¬ expr.IsFreeVar Set.empty x)
+  (d: salg.D)
+:
+  expr.interpretation salg (b.update x d) (c.update x d)
+    =
+  expr.interpretation salg b c
+:=
+  open Valuation.update in
+  ignoresUnusedVars salg expr
+    (fun ⟨xx, isFree⟩ =>
+      eqOrig b (fun eq: x = xx => notFree (eq ▸ isFree)) d)
+    (fun ⟨xx, isFree⟩ =>
+      eqOrig c (fun eq: x = xx => notFree (eq ▸ isFree)) d)
+    
 
 
 def DefList.eqDefsToEqSets.Invariant

@@ -8,11 +8,12 @@
 -/
 
 import WFC.Appx0_ExprRulesOfInference
+import Utils.DefListDefEq
 import Utils.Pair
 import Utils.Set3
 
 
-def Expr.intp
+abbrev Expr.intp
   (e: Expr pairSignature)
   (v: Valuation Pair)
 :
@@ -20,7 +21,7 @@ def Expr.intp
 :=
   e.interpretation pairSalgebra v v
 
-def Expr.intp2
+abbrev Expr.intp2
   (e: Expr pairSignature)
   (b c: Valuation Pair)
 :
@@ -1965,6 +1966,107 @@ namespace PairExpr
     Set3.eq
       (ir_assoc_def b c e0 e1 e2)
       (ir_assoc_pos b c e0 e1 e2)
+  
+  
+  def arbUn_eq_split_def
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((arbUn x (unExpr e0 e1)).intp2 b c).defMem
+      ((unExpr (arbUn x e0) (arbUn x e1)).intp2 b c).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨p, isDef⟩ => isDef.elim (Or.inl ⟨p, ·⟩) (Or.inr ⟨p, ·⟩))
+        (fun isDef =>
+          isDef.elim
+            (fun ⟨_, isDef⟩ => ⟨_, Or.inl isDef⟩)
+            (fun ⟨_, isDef⟩ => ⟨_, Or.inr isDef⟩))
+  
+  def arbUn_eq_split_pos
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((arbUn x (unExpr e0 e1)).intp2 b c).posMem
+      ((unExpr (arbUn x e0) (arbUn x e1)).intp2 b c).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨p, isPos⟩ => isPos.elim (Or.inl ⟨p, ·⟩) (Or.inr ⟨p, ·⟩))
+        (fun isDef =>
+          isDef.elim
+            (fun ⟨_, isPos⟩ => ⟨_, Or.inl isPos⟩)
+            (fun ⟨_, isPos⟩ => ⟨_, Or.inr isPos⟩))
+  
+  def arbUn_eq_split
+    (b c: Valuation Pair)
+    (e0 e1: Expr)
+  :
+    Eq
+      ((arbUn x (unExpr e0 e1)).intp2 b c)
+      ((unExpr (arbUn x e0) (arbUn x e1)).intp2 b c)
+  :=
+    Set3.eq
+      (arbUn_eq_split_def b c e0 e1)
+      (arbUn_eq_split_pos b c e0 e1)
+  
+  
+  def arbUn_eq_unused.eq
+    {body: Expr}
+    (b c: Valuation Pair)
+    (notFree: ¬ Expr.IsFreeVar body Set.empty x)
+    (p: Pair)
+  :
+    body.intp2 (b.update x p) (c.update x p) = body.intp2 b c
+  :=
+    Expr.interpretation.ignoresUnusedVarUpdate
+      pairSalgebra body b c notFree p
+  
+  def arbUn_eq_unused_def
+    (b c: Valuation Pair)
+    (notFree: ¬ body.IsFreeVar Set.empty x)
+  :
+    Eq
+      ((arbUn x body).intp2 b c).defMem
+      (body.intp2 b c).defMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨p, isDef⟩ => arbUn_eq_unused.eq b c notFree p ▸ isDef)
+        (fun isDef => ⟨
+          zero,
+          show (intp2 _ _ _).defMem _ from
+            arbUn_eq_unused.eq b c notFree zero ▸ isDef
+        ⟩)
+  
+  def arbUn_eq_unused_pos
+    (b c: Valuation Pair)
+    (notFree: ¬ body.IsFreeVar Set.empty x)
+  :
+    Eq
+      ((arbUn x body).intp2 b c).posMem
+      (body.intp2 b c).posMem
+  :=
+    Set.ext fun _ =>
+      Iff.intro
+        (fun ⟨p, isPos⟩ => arbUn_eq_unused.eq b c notFree p ▸ isPos)
+        (fun isPos => ⟨
+          zero,
+          show (intp2 _ _ _).posMem _ from
+            arbUn_eq_unused.eq b c notFree zero ▸ isPos
+        ⟩)
+
+  def arbUn_eq_unused
+    (b c: Valuation Pair)
+    (notFree: ¬ body.IsFreeVar Set.empty x)
+  :
+    (arbUn x body).intp2 b c = body.intp2 b c
+  :=
+    Set3.eq
+      (arbUn_eq_unused_def b c notFree)
+      (arbUn_eq_unused_pos b c notFree)
   
 end PairExpr
 
