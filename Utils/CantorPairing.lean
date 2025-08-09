@@ -4,6 +4,8 @@
   I figured these proofs by playing around in Desmos, and staring
   at the Wikipedia article and this answer:
   https://math.stackexchange.com/a/225422/
+  
+  Note: this whole file can be deleted and replaced with Nat.pair/unpair.
 -/
 
 import Mathlib.Data.Nat.ModEq
@@ -12,6 +14,15 @@ import Mathlib.Tactic.Linarith
 import WFC.Ch5_PairSalgebra
 
 
+/-
+  Given `base ≤ n ≤ base + margin`, stores two numbers called
+  `tp` (the tipping point) and `extra` such that
+  
+    tp = n - base
+    margin = tp + extra
+  
+  with the latter equation giving the name to the structure.
+-/
 structure Nat.MarginDecomposition (base n margin: Nat) where
   tp: Nat -- Tipping point
   extra: Nat
@@ -52,6 +63,7 @@ def Nat.sub_mul_self'
   rw [eq0, eq1]
   omega
 
+-- Given `n` returns the `n`th triangular number.
 def Nat.triangle (n: Nat): Nat := n * (n + 1) / 2
 
 def Nat.triangle_zero: triangle 0 = 0 := rfl
