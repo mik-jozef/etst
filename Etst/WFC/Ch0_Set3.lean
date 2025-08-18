@@ -41,7 +41,7 @@
 
 import Mathlib.Data.Set.Basic
 
-import Etst.WFC.Utils.PointwiseOrder
+import Etst.WFC.Utils.General.PointwiseOrder
 import Etst.BasicUtils
 
 namespace Etst

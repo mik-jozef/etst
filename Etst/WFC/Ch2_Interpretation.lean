@@ -304,3 +304,13 @@ def Expr.interpretation
       
       fun _d dDefBody xDDef => (dDefBody xDDef).toPos
     ⟩
+
+-- Interpretation on definition lists is defined pointwise.
+def DefList.interpretation
+  (salg: Salgebra sig)
+  (b c: Valuation salg.D)
+  (dl: DefList sig)
+:
+  Valuation salg.D
+:=
+  fun x => Expr.interpretation salg b c (dl.getDef x)
