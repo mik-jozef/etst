@@ -9,7 +9,7 @@ import old.Utils.BasicUtils
 
 
 instance _.u: Coe (Ordinal.{u}) (Type (u + 1)) where
-  coe n := { nn: Ordinal // nn < n }
+  coe n := { m: Ordinal // m < n }
 
 namespace Ordinal
   def succ (n: Ordinal) := Order.succ n

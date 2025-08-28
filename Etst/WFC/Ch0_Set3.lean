@@ -34,9 +34,7 @@
   
   The least element of the standard order is the empty triset,
   while the least element of the approximation order is the wholly
-  undetermined triset.
-  
-  Both orders are proven chain-complete.
+  undetermined triset. Both orders are chain-complete.
 -/
 
 import Mathlib.Data.Set.Basic
