@@ -13,7 +13,7 @@
   for general mathematics.
   
   Notes:
-  - In the appendix 1 (WIP), it is shown (TBD) that this salgebra is
+  - In the appendix 1 (WIP), it is shown (TODO) that this salgebra is
     equivalent to the salgebra of natural numbers (with zero,
     successor, addition, and multiplication) under a standard
     correspondence between pairs and naturals.
