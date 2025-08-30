@@ -18,23 +18,92 @@ namespace Valuation
   
   def update_eq_bound_of_eq
     {val: Valuation D}
-    {xBound xReq: Nat}
-    (xEq: xBound = xReq)
+    (eq: x = y)
     {d: D}
   :
-    val.update xBound d xReq = Set3.just d
+    val.update x d y = Set3.just d
   :=
-    xEq ▸ update_eq_bound val xReq d
+    eq ▸ update_eq_bound val y d
   
   def update_eq_orig
     {val: Valuation D}
-    {xBound xReq: Nat}
-    (xNeq: xBound ≠ xReq)
+    (neq: x ≠ y)
     {d: D}
   :
-    val.update xBound d xReq = val xReq
+    val.update x d y = val y
   :=
-    if_neg xNeq.symm
+    if_neg neq.symm
+  
+  
+  def in_update_bound_defMem
+    {val: Valuation D}
+    (eq: x = y)
+    {d: D}
+  :
+    (val.update x d y).defMem d
+  :=
+    update_eq_bound_of_eq eq ▸ rfl
+  
+  def in_update_bound_posMem
+    {val: Valuation D}
+    (eq: x = y)
+    {d: D}
+  :
+    (val.update x d y).posMem d
+  :=
+    update_eq_bound_of_eq eq ▸ rfl
+  
+  def in_update_free_defMem
+    {val: Valuation D}
+    (neq: x ≠ y)
+    (eqAt: (val y).defMem d)
+  :
+    (val.update x dBound y).defMem d
+  :=
+    update_eq_orig neq ▸ eqAt
+  
+  def in_update_free_posMem
+    {val: Valuation D}
+    (neq: x ≠ y)
+    (eqAt: (val y).posMem d)
+  :
+    (val.update x dBound y).posMem d
+  :=
+    update_eq_orig neq ▸ eqAt
+  
+  
+  def eq_of_in_update_bound_defMem
+    (inUpdated: (update val x dBound x).defMem d)
+  :
+    d = dBound
+  := by
+    rw [update_eq_bound val x dBound] at inUpdated
+    exact inUpdated
+  
+  def eq_of_in_update_bound_posMem
+    (inUpdated: (update val x dBound x).posMem d)
+  :
+    d = dBound
+  := by
+    rw [update_eq_bound val x dBound] at inUpdated
+    exact inUpdated
+  
+  
+  def in_orig_of_neq_defMem
+    (inUpdated: (update val x dBound y).defMem d)
+    (neq: x ≠ y)
+  :
+    (val y).defMem d
+  :=
+    (update_eq_orig (val := val) neq) ▸ inUpdated
+  
+  def in_orig_of_neq_posMem
+    (inUpdated: (update val x dBound y).posMem d)
+    (neq: x ≠ y)
+  :
+    (val y).posMem d
+  :=
+    (update_eq_orig (val := val) neq) ▸ inUpdated
   
   
   def update_mono_std_defMem
@@ -141,28 +210,113 @@ namespace Valuation
     CompleteLattice.pointwise Nat (Set3.ordStdLattice D)
   
   
-  def ordStd.in_some_set_of_in_sup_defMem
+  def ordStd.in_set_in_sup_defMem
     {set: Set (Valuation D)}
     (isLub: IsLUB set lub)
-    (dInSup: d ∈ (lub x).defMem)
   :
-    ∃ v ∈ set, d ∈ (v x).defMem
+    (∃ v ∈ set, d ∈ (v x).defMem) ↔ d ∈ (lub x).defMem
   :=
     let isLubAt := PartialOrder.isLUB_pointwise_isLUB isLub x
-    let ⟨s3, ⟨v, vInSet, (vxEq: v x = s3)⟩, dInS3⟩ :=
-      Set3.ordStd.in_some_set_of_in_sup_defMem isLubAt dInSup
-    ⟨v, vInSet, vxEq ▸ dInS3⟩
-
-  def ordStd.in_some_set_of_in_sup_posMem
+    Iff.intro
+      (fun ⟨v, vInSet, dInV⟩ =>
+        (Set3.ordStd.in_set_in_sup_defMem isLubAt).mp ⟨
+            v x,
+          ⟨v, vInSet, rfl⟩,
+          dInV,
+        ⟩)
+      (fun dInSup =>
+        let ⟨_s3, ⟨v, vInSet, (vxEq: v x = _s3)⟩, dInS3⟩ :=
+          (Set3.ordStd.in_set_in_sup_defMem isLubAt).mpr dInSup
+        ⟨v, vInSet, vxEq ▸ dInS3⟩)
+  
+  def ordStd.in_set_in_sup_posMem
     {set: Set (Valuation D)}
     (isLub: IsLUB set lub)
-    (dInSup: d ∈ (lub x).posMem)
   :
-    ∃ v ∈ set, d ∈ (v x).posMem
+    (∃ v ∈ set, d ∈ (v x).posMem) ↔ d ∈ (lub x).posMem
   :=
     let isLubAt := PartialOrder.isLUB_pointwise_isLUB isLub x
-    let ⟨s3, ⟨v, vInSet, (vxEq: v x = s3)⟩, dInS3⟩ :=
-      Set3.ordStd.in_some_set_of_in_sup_posMem isLubAt dInSup
-    ⟨v, vInSet, vxEq ▸ dInS3⟩
+    Iff.intro
+      (fun ⟨v, vInSet, dInV⟩ =>
+        (Set3.ordStd.in_set_in_sup_posMem isLubAt).mp ⟨
+          v x,
+          ⟨v, vInSet, rfl⟩,
+          dInV,
+        ⟩)
+      (fun dInSup =>
+        let ⟨_s3, ⟨v, vInSet, (vxEq: v x = _s3)⟩, dInS3⟩ :=
+          (Set3.ordStd.in_set_in_sup_posMem isLubAt).mpr dInSup
+        ⟨v, vInSet, vxEq ▸ dInS3⟩)
+  
+  
+  def ordApx.in_set_in_sup_defMem
+    {set: Set (Valuation D)}
+    (isLub: IsLUB set lub)
+  :
+    (∃ v ∈ set, d ∈ (v x).defMem) ↔ d ∈ (lub x).defMem
+  :=
+    let isLubAt := PartialOrder.isLUB_pointwise_isLUB isLub x
+    Iff.intro
+      (fun ⟨v, vInSet, dInV⟩ =>
+        (Set3.ordApx.in_set_in_sup_defMem isLubAt).mp ⟨
+          v x,
+          ⟨v, vInSet, rfl⟩,
+          dInV,
+        ⟩)
+      (fun dInSup =>
+        let ⟨_s3, ⟨v, vInSet, (vxEq: v x = _s3)⟩, dInS3⟩ :=
+          (Set3.ordApx.in_set_in_sup_defMem isLubAt).mpr dInSup
+        ⟨v, vInSet, vxEq ▸ dInS3⟩)
 
+  def ordApx.in_set_in_sup_posMem
+    {set: Set (Valuation D)}
+    (isLub: IsLUB set lub)
+  :
+    (∀ v ∈ set, d ∈ (v x).posMem) ↔ d ∈ (lub x).posMem
+  :=
+    let isLubAt := PartialOrder.isLUB_pointwise_isLUB isLub x
+    Iff.intro
+      (fun inAllSets =>
+        let allIn _s3 s3In :=
+          let ⟨v, vIn, (vxEq: v x = _s3)⟩ := s3In
+          vxEq ▸ inAllSets v vIn
+        (Set3.ordApx.in_set_in_sup_posMem isLubAt).mp allIn)
+      (fun dInSup v vIn =>
+        let inAllSets :=
+          (Set3.ordApx.in_set_in_sup_posMem isLubAt).mpr dInSup
+        inAllSets (v x) ⟨v, vIn, rfl⟩)
+  
+  
+  -- The (definite) nonmembers of a valuation.
+  def nonmembers
+    (v: Valuation D)
+  :
+    Set (ValVar D)
+  :=
+    fun ⟨d, x⟩ => ¬ (v x).posMem d
+  
+  -- The possible nonmembers of a valuation.
+  def posNonmembers
+    (v: Valuation D)
+  :
+    Set (ValVar D)
+  :=
+    fun ⟨d, x⟩ => ¬ (v x).defMem d
+  
+  -- The (definite) members of a valuation.
+  def members
+    (v: Valuation D)
+  :
+    Set (ValVar D)
+  :=
+    fun ⟨d, x⟩ => (v x).defMem d
+  
+  -- The possible members of a valuation.
+  def posMembers
+    (v: Valuation D)
+  :
+    Set (ValVar D)
+  :=
+    fun ⟨d, x⟩ => (v x).posMem d
+  
 end Valuation

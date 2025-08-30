@@ -40,8 +40,7 @@ def Valuation.ordStd.lubPreservesLeApxLub:
     defLe :=
       fun _d dInSupA =>
         let ⟨valA, valAInA, dInAtX⟩ :=
-          Valuation.ordStd.in_some_set_of_in_sup_defMem
-            isLubA dInSupA
+          (Valuation.ordStd.in_set_in_sup_defMem isLubA).mpr dInSupA
         
         let ⟨_tB, tbInB, valALe⟩ := ab valA valAInA
         
@@ -50,8 +49,7 @@ def Valuation.ordStd.lubPreservesLeApxLub:
     posLe :=
       fun _d dInSupB =>
         let ⟨valB, valBInB, dInAtX⟩ :=
-          Valuation.ordStd.in_some_set_of_in_sup_posMem
-            isLubB dInSupB
+          (Valuation.ordStd.in_set_in_sup_posMem isLubB).mpr dInSupB
 
         let ⟨_tA, taInA, valBLe⟩ := ba valB valBInB
         
