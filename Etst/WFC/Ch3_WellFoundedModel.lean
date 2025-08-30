@@ -48,12 +48,10 @@
       ⋮
   
   This sequence does not converge to a fixed point. In fact, no
-  classical (ie. two-valued) fixed point exists.
-  
-  One way to guarantee the existence of a fixed point is to show
-  the operator is monotonic with respect to an order satisfying
-  some mild conditions, eg. chain-completeness will do.
-  
+  classical (ie. two-valued) fixed point exists. One way to guarantee
+  the existence of a fixed point is to show the operator is monotonic
+  with respect to a chain-complete order.
+
   Recall that our interpretation function from Chapter 3 takes two
   valuations (background and context, or `b` and `c`), and background
   is used to interpret complements. If background is constant, then
@@ -127,8 +125,8 @@ abbrev IsMonotonic (ordA: PartialOrder A) (ordB: PartialOrder B) :=
 abbrev OrderHomWrt (ordA: PartialOrder A) (ordB: PartialOrder B) :=
   @OrderHom A B ordA.toPreorder ordB.toPreorder
 
-private def isCcStd {T} := Valuation.ordStd.isChainComplete T
-private def isCcApx {T} := Valuation.ordApx.isChainComplete T
+def isCcStd {T} := Valuation.ordStd.isChainComplete T
+def isCcApx {T} := Valuation.ordApx.isChainComplete T
 
 
 -- The family of operators C_b (often called "the" operator C).
