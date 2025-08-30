@@ -45,3 +45,10 @@ def Not.toEx {P ImpliedByNotP: T → Prop}
 :=
   byContradiction fun nEx =>
     nAll (fun t => byContradiction fun npt => nEx ⟨t, nptImpl t npt⟩)
+
+
+def Iff.nmp {P Q: Prop} (h: P ↔ Q) : ¬P → ¬Q :=
+  fun np q => np (h.mpr q)
+
+def Iff.nmpr {P Q: Prop} (h: P ↔ Q) : ¬Q → ¬P :=
+  fun qq p => qq (h.mp p)
