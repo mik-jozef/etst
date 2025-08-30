@@ -1,6 +1,7 @@
 -- # Chapter 2: Interpretation of Expressions
 
 import Etst.WFC.Ch1_Expr_DefList
+import Etst.WFC.Utils.Set3
 
 namespace Etst
 

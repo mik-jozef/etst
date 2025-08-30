@@ -370,6 +370,210 @@ namespace Set3
         dNinS dInS)
   
   
+  -- The approximation relation is antisymmetric.
+  def ordApx.le_antisymm
+    (a b: Set3 D)
+    (ab: a ⊑ b)
+    (ba: b ⊑ a)
+  :=
+    let defEq: a.defMem = b.defMem :=
+      PartialOrder.le_antisymm a.defMem b.defMem ab.defLe ba.defLe;
+    let posEq: a.posMem = b.posMem :=
+      PartialOrder.le_antisymm a.posMem b.posMem ba.posLe ab.posLe;
+    Set3.eq defEq posEq
+  
+  -- The definition of the approximation order.
+  def ordApx (D: Type u): PartialOrder (Set3 D) where
+    le := LeApx
+    lt := LtApx
+    
+    -- The reflexivity of the approximation order.
+    le_refl _ := { defLe := le_rfl, posLe := le_rfl }
+    
+    -- The antisymmetry of the approximation order.
+    le_antisymm := ordApx.le_antisymm
+    
+    -- The transitivity of the approximation order.
+    le_trans (a b c: Set3 D) (ab: a ⊑ b) (bc: b ⊑ c) := {
+      defLe := Preorder.le_trans _ _ _ ab.defLe bc.defLe
+      posLe := Preorder.le_trans _ _ _ bc.posLe ab.posLe
+    }
+    
+    -- The compatibility of the `le` and `lt` relations. 
+    lt_iff_le_not_ge a b: a ⊏ b ↔ a ⊑ b ∧ ¬b ⊑ a :=
+      Iff.intro
+        (fun ab => And.intro
+          ab.toLe
+          fun ba =>
+            let abEq: a = b :=
+              ordApx.le_antisymm _ _ ab.toLe ba
+            ab.neq abEq)
+        fun ⟨ab, nba⟩ =>
+          if h: a = b then
+            False.elim (nba (h ▸ ab))
+          else
+            ⟨ab.defLe, ab.posLe, h⟩
+  
+  
+  -- The standard order is antisymmetric.
+  def ordStd.le_antisymm (a b: Set3 D) (ab: a ≤ b) (ba: b ≤ a) :=
+    Set3.eq
+      (PartialOrder.le_antisymm _ _ ab.defLe ba.defLe)
+      (PartialOrder.le_antisymm _ _ ab.posLe ba.posLe)
+  
+  -- The definition of the standard order.
+  def ordStd (D: Type u): PartialOrder (Set3 D) where
+    le := LeStd
+    lt := LtStd
+    
+    -- The reflexivity of the standard order.
+    le_refl _ := { defLe := le_rfl, posLe := le_rfl }
+    
+    -- The antisymmetry of the standard order.
+    le_antisymm := ordStd.le_antisymm
+    
+    -- The transitivity of the standard order.
+    le_trans (a b c: Set3 D) (ab: a ≤ b) (bc: b ≤ c) := {
+      defLe := Preorder.le_trans a.defMem b.defMem c.defMem ab.defLe bc.defLe
+      posLe := Preorder.le_trans a.posMem b.posMem c.posMem ab.posLe bc.posLe
+    }
+    
+    -- The compatibility of the `le` and `lt` relations.
+    lt_iff_le_not_ge a b :=
+      Iff.intro
+        (fun ab => ⟨ab.toLe, fun ba =>
+          let eq := ordStd.le_antisymm _ _ ab.toLe ba
+          ab.neq eq⟩)
+        fun ⟨ab, nba⟩ =>
+          if h: a = b then
+            False.elim (nba (h ▸ ab))
+          else
+            ⟨ab.defLe, ab.posLe, h⟩
+  
+  /-
+    The supremum of a set of trisets wrt. the standard order.
+    
+    Its definitive members are the union of the definitive
+    members of the trisets in the set, and its possible members
+    are the union of the possible members.
+  -/
+  def ordStd.sSup (s: Set (Set3 D)): Set3 D := {
+    defMem := fun d => ∃s3: ↑s, d ∈ s3.val.defMem
+    posMem := fun d => ∃s3: ↑s, d ∈ s3.val.posMem
+    defLePos :=
+      fun _ dDef =>
+        let ⟨s, isDef⟩ := dDef
+        ⟨s, isDef.toPos⟩
+  }
+  
+  def ordStd.IsLUB {D} := @_root_.IsLUB (Set3 D) (ordStd D).toLE
+  
+  def ordStd.sSup_isLUB (s: Set (Set3 D)): IsLUB s (sSup s) :=
+    And.intro
+      (fun s3 s3In => {
+        defLe := fun _d dMem => ⟨⟨s3, s3In⟩, dMem⟩
+        posLe := fun _d dMem => ⟨⟨s3, s3In⟩, dMem⟩
+      })
+      fun _ub ubIsUB => {
+        defLe := fun _d ⟨s3, dMem⟩ => (ubIsUB s3.property).defLe dMem
+        posLe := fun _d ⟨s3, dMem⟩ => (ubIsUB s3.property).posLe dMem
+      }
+  
+  /-
+    The supremum of a chain of trisets wrt. the approximation order.
+    
+    Its definitive members are the union of the definitive members
+    of the trisets in the chain, and its possible members are the
+    intersection of the possible members.
+  -/
+  def ordApx.sup
+    (s: Set (Set3 D))
+    (defLePos:
+      ∀ (a: ↑s) (d: a.val.defMem) (b: ↑s), b.val.posMem d)
+  :
+    Set3 D
+  := {
+    defMem := fun d => ∃ s3: s, d ∈ s3.val.defMem
+    posMem := fun d => ∀ s3: s, d ∈ s3.val.posMem
+    defLePos := fun d ⟨a, dIn⟩ => defLePos a ⟨d, dIn⟩
+  }
+  
+  def ordApx.sup_defLePos_of_chain
+    (isChain: IsChain (ordApx D).le ch)
+    (a: ↑ch)
+    (d: a.val.defMem)
+    (b: ↑ch)
+  :
+    b.val.posMem d
+  :=
+    match isChain.total a.property b.property with
+    | Or.inl ab => (ab.defLe d.property).toPos
+    | Or.inr ba => ba.posLe d.property.toPos
+  
+  def ordApx.supOfChain (isChain: IsChain (ordApx D).le ch):
+    Set3 D
+  :=
+    sup ch (sup_defLePos_of_chain isChain)
+  
+  def ordApx.IsLUB {D} := @_root_.IsLUB (Set3 D) (ordApx D).toLE
+  
+  def ordApx.sup_isLUB
+    (s: Set (Set3 D))
+    (defLePos:
+      ∀ (a: ↑s) (d: a.val.defMem) (b: ↑s), b.val.posMem d)
+  :
+    IsLUB s (sup s defLePos)
+  :=
+    And.intro
+      (fun s3 s3In => {
+        defLe := fun _ dMem => ⟨⟨s3, s3In⟩, dMem⟩
+        posLe := fun _ dMemSup => dMemSup ⟨s3, s3In⟩
+      })
+      fun _ ubIsUB => {
+        defLe :=
+          fun _ ⟨s3, dMemSup⟩ => (ubIsUB s3.property).defLe dMemSup
+        posLe :=
+          fun _ dMemUB s3 => (ubIsUB s3.property).posLe dMemUB
+      }
+  
+  def ordApx.lub_is_sup
+    (isLub: IsLUB s lub)
+  :
+    ∃ defLePos, lub = sup s defLePos
+  :=
+    let _ := ordApx
+    let defLePos := fun a ⟨_d, dDef⟩ b =>
+      (isLub.left b.property).posLe
+        ((isLub.left a.property).defLe dDef).toPos
+    ⟨
+      defLePos,
+      IsLeast.unique isLub (sup_isLUB s defLePos),
+    ⟩
+  
+  def ordApx.supOfChain_isLUB
+    (isChain: IsChain (ordApx D).le ch)
+  :
+    IsLUB ch (supOfChain isChain)
+  :=
+    sup_isLUB ch (sup_defLePos_of_chain isChain)
+  
+  
+  -- The standard order is chain-complete.
+  def ordStd.isChainComplete (D: Type u):
+    IsChainComplete (ordStd D)
+  :=
+    fun ch _ => ⟨sSup ch, sSup_isLUB ch⟩
+  
+  -- The approximation order is chain-complete.
+  def ordApx.isChainComplete (D: Type u):
+    IsChainComplete (ordApx D)
+  :=
+    fun _ isChain => ⟨
+      supOfChain isChain,
+      supOfChain_isLUB isChain
+    ⟩
+  
+  
   def ordStd.sInf (s: Set (Set3 D)): Set3 D := {
     defMem := fun d => ∀ s3: ↑s, d ∈ s3.val.defMem
     posMem := fun d => ∀ s3: ↑s, d ∈ s3.val.posMem
@@ -418,115 +622,67 @@ namespace Set3
   }
   
   
-  def ordStd.nin_sup_of_nin_any_set_defMem
+  def ordStd.in_set_in_sup_defMem
     {set: Set (Set3 D)}
     (isLub: IsLUB set lub)
-    (ninAnySet: ∀ s3 ∈ set, d ∉ s3.defMem)
   :
-    d ∉ lub.defMem
+    (∃ s3 ∈ set, d ∈ s3.defMem) ↔ d ∈ lub.defMem
   :=
-    let _ := ordStd D
-    let lubWithout := lub.withoutDef d
-    let isLubWithout: IsLUB set lubWithout :=
-      And.intro
-        (fun s3 s3In => {
-          defLe := fun s3D s3DMem =>
-            let neq (eq: s3D = d) := ninAnySet s3 s3In (eq ▸ s3DMem)
-            ⟨(isLub.left s3In).defLe s3DMem, neq⟩
-          posLe := fun _s3D s3DMem => (isLub.left s3In).posLe s3DMem
-        })
-        (fun _f fIn =>
-          (withoutDef.leStd lub d).trans (isLub.right fIn))
-    
-    isLub.unique isLubWithout ▸
-    fun ia => ia.neq rfl
+    let _ := Set3.ordStd D
+    Iff.intro
+      (fun ⟨_s3, inSet, dIn⟩ =>
+        (isLub.left inSet).defLe dIn)
+      (fun inLub =>
+        let sSup_isLub := Set3.ordStd.sSup_isLUB set
+        let ⟨⟨s3, inSet⟩, dIn⟩ :=
+          IsLUB.unique isLub sSup_isLub ▸ inLub
+        ⟨s3, inSet, dIn⟩)
   
-  def ordStd.in_sup_of_in_some_set_defMem
+  def ordStd.in_set_in_sup_posMem
     {set: Set (Set3 D)}
     (isLub: IsLUB set lub)
-    (inSomeSet: ∃ s3 ∈ set, d ∈ s3.defMem)
   :
-    d ∈ lub.defMem
+    (∃ s3 ∈ set, d ∈ s3.posMem) ↔ d ∈ lub.posMem
   :=
-    let ⟨_s3, inSet, dIn⟩ := inSomeSet
-    (isLub.left inSet).defLe dIn
-
-  def ordStd.in_no_set_of_nin_sup_defMem
+    let _ := Set3.ordStd D
+    Iff.intro
+      (fun ⟨_s3, inSet, dIn⟩ =>
+        (isLub.left inSet).posLe dIn)
+      (fun inLub =>
+        let sSup_isLub := Set3.ordStd.sSup_isLUB set
+        let ⟨⟨s3, inSet⟩, dIn⟩ :=
+          IsLUB.unique isLub sSup_isLub ▸ inLub
+        ⟨s3, inSet, dIn⟩)
+  
+  
+  def ordApx.in_set_in_sup_defMem
     {set: Set (Set3 D)}
     (isLub: IsLUB set lub)
-    (dNinSup: d ∉ lub.defMem)
   :
-    ∀ s3 ∈ set, d ∉ s3.defMem
+    (∃ s3 ∈ set, d ∈ s3.defMem) ↔ d ∈ lub.defMem
   :=
-    fun s3 s3In dNinS3 =>
-      dNinSup <| in_sup_of_in_some_set_defMem isLub ⟨s3, s3In, dNinS3⟩
-
-  def ordStd.in_some_set_of_in_sup_defMem
+    let _ := Set3.ordApx D
+    Iff.intro
+      (fun ⟨_s3, inSet, dIn⟩ =>
+        (isLub.left inSet).defLe dIn)
+      (fun inLub =>
+        let ⟨_, eq⟩ := Set3.ordApx.lub_is_sup isLub
+        let ⟨⟨s3, inSet⟩, dIn⟩ := eq ▸ inLub
+        ⟨s3, inSet, dIn⟩)
+  
+  def ordApx.in_set_in_sup_posMem
     {set: Set (Set3 D)}
     (isLub: IsLUB set lub)
-    (dInSup: d ∈ lub.defMem)
   :
-    ∃ s3 ∈ set, d ∈ s3.defMem
+    (∀ s3 ∈ set, d ∈ s3.posMem) ↔ d ∈ lub.posMem
   :=
-    by_contradiction fun nex =>
-      let ninAnySet := by push_neg at nex; exact nex
-      nin_sup_of_nin_any_set_defMem isLub ninAnySet dInSup
-
-
-  def ordStd.nin_sup_of_nin_any_set_posMem
-    {set: Set (Set3 D)}
-    (isLub: IsLUB set lub)
-    (ninAnySet: ∀ s3 ∈ set, d ∉ s3.posMem)
-  :
-    d ∉ lub.posMem
-  :=
-    let _ := ordStd D
-    let lubWithout := lub.without d
-    let isLubWithout: IsLUB set lubWithout :=
-      And.intro
-        (fun s3 s3In => {
-          defLe := fun s3D s3DMem =>
-            let neq (eq: s3D = d) := ninAnySet s3 s3In (eq ▸ s3DMem.toPos)
-            ⟨(isLub.left s3In).defLe s3DMem, neq⟩
-          posLe := fun s3D s3DMem =>
-            let neq (eq: s3D = d) := ninAnySet s3 s3In (eq ▸ s3DMem)
-            ⟨(isLub.left s3In).posLe s3DMem, neq⟩
-        })
-        (fun _f fIn =>
-          (without.leStd lub d).trans (isLub.right fIn))
-    
-    isLub.unique isLubWithout ▸
-    fun ia => ia.neq rfl
-
-  def ordStd.in_sup_of_in_some_set_posMem
-    {set: Set (Set3 D)}
-    (isLub: IsLUB set lub)
-    (inSomeSet: ∃ s3 ∈ set, d ∈ s3.posMem)
-  :
-    d ∈ lub.posMem
-  :=
-    let ⟨_s3, inSet, dIn⟩ := inSomeSet
-    (isLub.left inSet).posLe dIn
-
-  def ordStd.in_no_set_of_nin_sup_posMem
-    {set: Set (Set3 D)}
-    (isLub: IsLUB set lub)
-    (dNinSup: d ∉ lub.posMem)
-  :
-    ∀ s3 ∈ set, d ∉ s3.posMem
-  :=
-    fun s3 s3In dNinS3 =>
-      dNinSup <| in_sup_of_in_some_set_posMem isLub ⟨s3, s3In, dNinS3⟩
-
-  def ordStd.in_some_set_of_in_sup_posMem
-    {set: Set (Set3 D)}
-    (isLub: IsLUB set lub)
-    (dInSup: d ∈ lub.posMem)
-  :
-    ∃ s3 ∈ set, d ∈ s3.posMem
-  :=
-    by_contradiction fun nex =>
-      let ninAnySet := by push_neg at nex; exact nex
-      nin_sup_of_nin_any_set_posMem isLub ninAnySet dInSup
+    let _ := Set3.ordApx D
+    let ⟨_, eq⟩ := Set3.ordApx.lub_is_sup isLub
+    eq ▸ Iff.intro
+      (fun inAllSets =>
+        byContradiction fun ninPosSup =>
+          let ⟨s3, ninPos⟩ := ninPosSup.toEx fun _ => id
+          ninPos (inAllSets s3 s3.property))
+      (fun inLub s3 s3In => inLub ⟨s3, s3In⟩)
   
 end Set3
