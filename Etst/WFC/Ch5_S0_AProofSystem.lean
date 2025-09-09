@@ -16,10 +16,6 @@ namespace Etst
 
 
 -- See `Cause` below.
-structure ContextCause (D: Type*) where
-  contextIns: Set (ValVar D)
-
--- See `Cause` below.
 structure BackgroundCause (D: Type*) where
   backgroundIns: Set (ValVar D)
   backgroundOut: Set (ValVar D)
@@ -39,18 +35,8 @@ structure BackgroundCause (D: Type*) where
   Note that it never happens that a value would need to be absent
   from context in order to cause something.
 -/
-structure Cause (D: Type*) extends
-  ContextCause D, BackgroundCause D
-
-def ContextCause.toCause
-  (cause: ContextCause D)
-:
-  Cause D
-:= {
-  contextIns := cause.contextIns
-  backgroundIns := {}
-  backgroundOut := {}
-}
+structure Cause (D: Type*) extends BackgroundCause D where
+  contextIns: Set (ValVar D)
 
 def BackgroundCause.toCause
   (cause: BackgroundCause D)
@@ -62,18 +48,8 @@ def BackgroundCause.toCause
   backgroundOut := cause.backgroundOut
 }
 
-instance: Coe (ContextCause D) (Cause D) := ⟨ContextCause.toCause⟩
 instance: Coe (BackgroundCause D) (Cause D) := ⟨BackgroundCause.toCause⟩
 
-
-structure Cause.IsStronglySatisfiedByContext
-  (cause: Cause D)
-  (c: Valuation D)
-:
-  Prop
-where
-  contextInsHold:
-    ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).defMem d
 
 structure Cause.IsStronglySatisfiedByBackground
   (cause: Cause D)
@@ -88,8 +64,7 @@ where
 
 /-
   Defines when a cause is strongly satisfied by a context-background
-  pair of valuations. The properties are all inherited from the
-  above two structures.
+  pair of valuations.
 -/
 structure Cause.IsStronglySatisfiedBy
   (cause: Cause D)
@@ -97,18 +72,11 @@ structure Cause.IsStronglySatisfiedBy
 :
   Prop
 extends
-  Cause.IsStronglySatisfiedByContext cause c,
   Cause.IsStronglySatisfiedByBackground cause b
-
-
-structure Cause.IsWeaklySatisfiedByContext
-  (cause: Cause D)
-  (c: Valuation D)
-:
-  Prop
 where
   contextInsHold:
-    ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).posMem d
+    ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).defMem d
+
 
 structure Cause.IsWeaklySatisfiedByBackground
   (cause: Cause D)
@@ -132,8 +100,10 @@ structure Cause.IsWeaklySatisfiedBy
 :
   Prop
 extends
-  Cause.IsWeaklySatisfiedByContext cause c,
   Cause.IsWeaklySatisfiedByBackground cause b
+where
+  contextInsHold:
+    ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).posMem d
 
 /-
   `Is[X]Cause salg cause d expr` means that for every pair of
@@ -151,7 +121,7 @@ def IsStrongCause
 :=
   {b c: Valuation salg.D} →
   cause.IsStronglySatisfiedBy b c →
-  (expr.interpretation salg b c).defMem d
+  (expr.interpretation salg [] b c).defMem d
 
 def IsWeakCause
   (salg: Salgebra sig)
@@ -163,7 +133,7 @@ def IsWeakCause
 :=
   {b c: Valuation salg.D} →
   cause.IsWeaklySatisfiedBy b c →
-  (expr.interpretation salg b c).posMem d
+  (expr.interpretation salg [] b c).posMem d
 
 
 mutual

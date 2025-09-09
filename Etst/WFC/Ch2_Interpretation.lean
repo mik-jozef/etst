@@ -152,24 +152,6 @@ namespace Valuation
   :=
     fun _ isChain => ⟨sup isChain, sup_isLUB isChain⟩
   
-  
-  /-
-    `val.update x d` is the valuation that is equal to `val` on
-    all variables except `x`, whose value is `d`.
-  -/
-  def update
-    (val: Valuation D)
-    (x: Nat)
-    (d: D)
-  :
-    Valuation D
-  :=
-    fun v =>
-      if v = x then
-        Set3.just d
-      else
-        val v
-  
 end Valuation
 
 /-
@@ -184,15 +166,6 @@ end Valuation
 structure ValVar (D: Type*) where
   d: D
   x: Nat
-
-def Valuation.withBoundVars
-  (val: Valuation D)
-:
-  (boundVars: List (ValVar D)) →
-  Valuation D
-|
-  [] => val
-| ⟨d, x⟩ :: tail => (val.withBoundVars tail).update x d
 
 
 -- ## Section 3: The Interpretation Function
@@ -259,14 +232,19 @@ structure Salgebra (sig: Signature) where
 -/
 def Expr.interpretation
   (salg: Salgebra sig)
+  (bv: List salg.D)
   (b c: Valuation salg.D)
 :
   (Expr sig) → Set3 salg.D
 
 | var a => c a
+| bvar a =>
+    match bv[a]? with
+    | none => Set3.empty
+    | some d => Set3.just d
 | op opr exprs =>
-    let defArgs arg := (interpretation salg b c (exprs arg)).defMem
-    let posArgs arg := (interpretation salg b c (exprs arg)).posMem
+    let defArgs arg := (interpretation salg bv b c (exprs arg)).defMem
+    let posArgs arg := (interpretation salg bv b c (exprs arg)).posMem
     ⟨
       salg.I opr defArgs,
       salg.I opr posArgs,
@@ -275,19 +253,19 @@ def Expr.interpretation
         opr
         defArgs
         posArgs
-        fun arg => (interpretation salg b c (exprs arg)).defLePos
+        fun arg => (interpretation salg bv b c (exprs arg)).defLePos
     ⟩
 | cpl e =>
-    let ie := (interpretation salg b b e)
+    let ie := (interpretation salg bv b b e)
     ⟨
       ie.posMemᶜ,
       ie.defMemᶜ,
       
       fun _d dInNPos => fun dInDef => dInNPos dInDef.toPos
     ⟩
-| arbUn x body =>
+| arbUn body =>
     let body.I (dX: salg.D): Set3 salg.D :=
-      interpretation salg (b.update x dX) (c.update x dX) body
+      interpretation salg (dX :: bv) b c body
     
     ⟨
       fun d => ∃ dX, d ∈ (body.I dX).defMem,
@@ -295,9 +273,9 @@ def Expr.interpretation
       
       fun _d dDef => dDef.elim fun dX iXDef => ⟨dX, iXDef.toPos⟩
     ⟩
-| arbIr x body =>
+| arbIr body =>
     let body.I (dX: salg.D): Set3 salg.D :=
-      (interpretation salg (b.update x dX) (c.update x dX) body)
+      interpretation salg (dX :: bv) b c body
     
     ⟨
       fun d => ∀ dX, d ∈ (body.I dX).defMem,
@@ -314,4 +292,4 @@ def DefList.interpretation
 :
   Valuation salg.D
 :=
-  fun x => Expr.interpretation salg b c (dl.getDef x)
+  fun x => Expr.interpretation salg [] b c (dl.getDef x)

@@ -5,14 +5,15 @@ namespace Etst
 
 
 namespace Expr
-  -- `anyExpr` contains all elements, under any valuation.
-  def anyExpr: Expr sig := Expr.arbUn 0 0
-  -- `noneExpr` contains no elements, under any valuation.
-  def noneExpr: Expr sig := Expr.cpl anyExpr
-  
-  
-  def Ins
+  -- `any` contains all elements, under any valuation.
+  def any: Expr sig := Expr.arbUn (.bvar 0)
+  -- `none` contains no elements, under any valuation.
+  def none: Expr sig := Expr.cpl any
+
+
+  abbrev Ins
     (salg: Salgebra sig)
+    (bv: List salg.D)
     (b: Valuation salg.D)
     (c: Valuation salg.D)
     (expr: Expr sig)
@@ -20,10 +21,11 @@ namespace Expr
   :
     Prop
   :=
-    d ∈ (expr.interpretation salg b c).defMem
+    (expr.interpretation salg bv b c).defMem d
   
-  def Inw
+  abbrev Inw
     (salg: Salgebra sig)
+    (bv: List salg.D)
     (b: Valuation salg.D)
     (c: Valuation salg.D)
     (expr: Expr sig)
@@ -31,285 +33,263 @@ namespace Expr
   :
     Prop
   :=
-    d ∈ (expr.interpretation salg b c).posMem
+    (expr.interpretation salg bv b c).posMem d
   
-  def Ins.toInw (s: Ins salg b c expr d):
-    Inw salg b c expr d
+  def Ins.toInw (s: Ins salg bv b c expr d):
+    Inw salg bv b c expr d
   :=
     s.toPos
   
   
   def Ins2
     (salg: Salgebra sig)
+    (bv: List salg.D)
     (v: Valuation salg.D)
     (expr: Expr sig)
     (d: salg.D)
   :=
-    Ins salg v v expr d
+    Ins salg bv v v expr d
   
   def Inw2
     (salg: Salgebra sig)
+    (bv: List salg.D)
     (v: Valuation salg.D)
     (expr: Expr sig)
     (d: salg.D)
   :=
-    Inw salg v v expr d
+    Inw salg bv v v expr d
   
   
   def insArbUn
     dBound
-    (s: Ins salg (b.update x dBound) (c.update x dBound) body d)
+    (s: Ins salg (dBound :: bv) b c body d)
   :
-    Ins salg b c (Expr.arbUn x body) d
+    Ins salg bv b c (arbUn body) d
   :=
     ⟨dBound, s⟩
   
   def inwArbUn
     dBound
-    (s: Inw salg (b.update x dBound) (c.update x dBound) body d)
+    (s: Inw salg (dBound :: bv) b c body d)
   :
-    Inw salg b c (Expr.arbUn x body) d
+    Inw salg bv b c (arbUn body) d
   :=
     ⟨dBound, s⟩
   
   
   def insArbUnElim
-    (s: Ins salg b c (Expr.arbUn x body) d)
+    (s: Ins salg bv b c (arbUn body) d)
   :
-    ∃ dBound,
-      Ins salg (b.update x dBound) (c.update x dBound) body d
+    ∃ dBound, Ins salg (dBound :: bv) b c body d
   :=
     s
   
   def inwArbUnElim
-    (s: Inw salg b c (Expr.arbUn x body) d)
+    (s: Inw salg bv b c (arbUn body) d)
   :
-    ∃ dBound,
-      Inw salg (b.update x dBound) (c.update x dBound) body d
+    ∃ dBound, Inw salg (dBound :: bv) b c body d
   :=
     s
   
   
   def insArbIr
     {salg: Salgebra sig}
+    {bv: List salg.D}
     {b c: Valuation salg.D}
     {d: salg.D}
-    (s:
-      ∀ dBound,
-        Ins salg (b.update x dBound) (c.update x dBound) body d)
+    (s: ∀ dBound, Ins salg (dBound :: bv) b c body d)
   :
-    Ins salg b c (Expr.arbIr x body) d
+    Ins salg bv b c (arbIr body) d
   :=
     fun d => s d
   
   def inwArbIr
     {salg: Salgebra sig}
+    {bv: List salg.D}
     {b c: Valuation salg.D}
     {d: salg.D}
-    (s:
-      ∀ dBound,
-        Inw salg (b.update x dBound) (c.update x dBound) body d)
+    (s: ∀ dBound, Inw salg (dBound :: bv) b c body d)
   :
-    Inw salg b c (Expr.arbIr x body) d
+    Inw salg bv b c (arbIr body) d
   :=
     fun d => s d
   
   
   def insArbIrElim
-    (s: Ins salg b c (Expr.arbIr x body) d)
+    (s: Ins salg bv b c (arbIr body) d)
     (dBound: salg.D)
   :
-    Ins salg (b.update x dBound) (c.update x dBound) body d
+    Ins salg (dBound :: bv) b c body d
   :=
     s dBound
   
   def inwArbIrElim
-    (s: Inw salg b c (Expr.arbIr x body) d)
+    (s: Inw salg bv b c (arbIr body) d)
     (dBound: salg.D)
   :
-    Inw salg (b.update x dBound) (c.update x dBound) body d
+    Inw salg (dBound :: bv) b c body d
   :=
     s dBound
   
   
   def insCpl
     (c: Valuation salg.D)
-    (w: ¬Inw salg b b expr d)
+    (w: ¬Inw salg bv b b expr d)
   :
-    Ins salg b c (Expr.cpl expr) d
+    Ins salg bv b c (cpl expr) d
   :=
     w
   
   def inwCpl
     (c: Valuation salg.D)
-    (s: ¬Ins salg b b expr d)
+    (s: ¬Ins salg bv b b expr d)
   :
-    Inw salg b c (Expr.cpl expr) d
+    Inw salg bv b c (cpl expr) d
   :=
     s
   
   def insCplElim
-    (s: Ins salg b c (Expr.cpl expr) d)
+    (s: Ins salg bv b c (cpl expr) d)
   :
-    ¬Inw salg b b expr d
+    ¬Inw salg bv b b expr d
   :=
     s
   
   def inwCplElim
-    (w: Inw salg b c (Expr.cpl expr) d)
+    (w: Inw salg bv b c (cpl expr) d)
   :
-    ¬Ins salg b b expr d
+    ¬Ins salg bv b b expr d
   :=
     w
   
   
   def ninsCpl
     (c: Valuation salg.D)
-    (w: Inw salg b b expr d)
+    (w: Inw salg bv b b expr d)
   :
-    ¬Ins salg b c (Expr.cpl expr) d
+    ¬Ins salg bv b c (cpl expr) d
   :=
     fun ins => ins w
   
   def ninwCpl
     (c: Valuation salg.D)
-    (s: Ins salg b b expr d)
+    (s: Ins salg bv b b expr d)
   :
-    ¬Inw salg b c (Expr.cpl expr) d
+    ¬Inw salg bv b c (cpl expr) d
   :=
     fun inw => inw s
   
   
   
-  def insBound:
-    Ins salg b (Valuation.update c x dBound) (var x) dBound
-  :=
-    Valuation.in_update_bound_defMem rfl
+  def insBound
+    {bv: List salg.D}
+    {dBound: salg.D}
+    (insBv: bv[x]? = some dBound)
+  :
+    Ins salg bv b c (bvar x) dBound
+  := by
+    rw [Ins, interpretation, insBv]
+    rfl
   
-  def inwBound:
-    Inw salg b (Valuation.update c x dBound) (var x) dBound
-  :=
-    Valuation.in_update_bound_posMem rfl
+  def inwBound
+    {bv: List salg.D}
+    {dBound: salg.D}
+    (insBv: bv[x]? = some dBound)
+  :
+    Inw salg bv b c (bvar x) dBound
+  := by
+    rw [Inw, interpretation, insBv]
+    rfl
   
   def insBoundElim
-    (s: Ins salg b (Valuation.update c x dBound) (var x) d)
+    (s: Ins salg bv b c (bvar x) d)
+    (eqBound: bv[x]? = some dBound)
   :
     d = dBound
-  :=
-    Valuation.eq_of_in_update_bound_defMem s
+  := by
+    rw [Ins, interpretation, eqBound] at s
+    exact s
   
   def inwBoundElim
-    (w: Inw salg b (Valuation.update c x dBound) (var x) d)
+    (w: Inw salg bv b c (bvar x) d)
+    (eqBound: bv[x]? = some dBound)
   :
     d = dBound
-  :=
-    Valuation.eq_of_in_update_bound_posMem w
+  := by
+    rw [Inw, interpretation, eqBound] at w
+    exact w
   
-  def insFree
-    {d: salg.D}
-    (ins: Ins salg b c (var x) d)
-    (neq: xB ≠ x)
-  :
-    Ins salg b (c.update xB dBound) (var x) d
-  :=
-    Valuation.in_update_free_defMem neq ins
-  
-  def inwFree
-    {d: salg.D}
-    (inw: Inw salg b c (var x) d)
-    (neq: xB ≠ x)
-  :
-    Inw salg b (Valuation.update c xB dBound) (var x) d
-  :=
-    Valuation.in_update_free_posMem neq inw
-  
-  def insFreeElim
-    (s: Ins salg b (Valuation.update c xB dBound) (var x) d)
-    (neq: xB ≠ x)
-  :
-    Ins salg b c (var x) d
-  :=
-    Valuation.in_orig_of_neq_defMem s neq
-  
-  def inwFreeElim
-    (w: Inw salg b (Valuation.update c xB dBound) (var x) d)
-    (neq: xB ≠ x)
-  :
-    Inw salg b c (var x) d
-  :=
-    Valuation.in_orig_of_neq_posMem w neq
 
-
-  def insAny: Ins salg b c anyExpr d := insArbUn _ insBound
-  def inwAny: Inw salg b c anyExpr d := inwArbUn _ inwBound
+  def insAny: Ins salg bv b c any d := insArbUn d (insBound rfl)
+  def inwAny: Inw salg bv b c any d := inwArbUn d (inwBound rfl)
   
-  def ninsNone: ¬Ins salg b c noneExpr d := ninsCpl c inwAny
-  def ninwNone: ¬Inw salg b c noneExpr d := ninwCpl c insAny
+  def ninsNone: ¬Ins salg bv b c none d := ninsCpl c inwAny
+  def ninwNone: ¬Inw salg bv b c none d := ninwCpl c insAny
   
   
   abbrev InsWfm
     (salg: Salgebra sig)
+    (bv: List salg.D)
     (dl: DefList sig)
     (expr: Expr sig)
     (d: salg.D)
   :
     Prop
   :=
-    expr.Ins2 salg (dl.wfm salg) d
+    expr.Ins2 salg bv (dl.wfm salg) d
   
   abbrev InwWfm
     (salg: Salgebra sig)
+    (bv: List salg.D)
     (dl: DefList sig)
     (expr: Expr sig)
     (d: salg.D)
   :
     Prop
   :=
-    expr.Inw2 salg (dl.wfm salg) d
+    expr.Inw2 salg bv (dl.wfm salg) d
   
   
   def InsWfm.of_ins_def
-    (s: InsWfm salg dl (dl.getDef n) d)
+    (s: InsWfm salg [] dl (dl.getDef x) d)
   :
-    InsWfm salg dl n d
+    InsWfm salg [] dl (.var x) d
   := by
     unfold InsWfm;
     exact (DefList.wfm_isModel salg dl) ▸ s
   
   def InwWfm.of_inw_def
-    (w: InwWfm salg dl (dl.getDef n) d)
+    (w: InwWfm salg [] dl (dl.getDef x) d)
   :
-    InwWfm salg dl n d
+    InwWfm salg [] dl (.var x) d
   := by
     unfold InwWfm;
     exact (DefList.wfm_isModel salg dl) ▸ w
   
   
   def InsWfm.ins_def_of_ins
-    {n: Nat}
-    (s: InsWfm salg dl n d)
+    (s: InsWfm salg [] dl (.var x) d)
   :
-    InsWfm salg dl (dl.getDef n) d
+    InsWfm salg [] dl (dl.getDef x) d
   :=
     let v := dl.wfm salg
     
-    let eqAtN: v n = dl.interpretation salg v v n :=
+    let eqAtN: v x = dl.interpretation salg v v x :=
       congr (DefList.wfm_isModel salg dl) rfl
     
-    show (dl.interpretation salg v v n).defMem d from eqAtN ▸ s
+    show (dl.interpretation salg v v x).defMem d from eqAtN ▸ s
   
   def InsWfm.inw_def_of_inw
-    {n: Nat}
-    (w: InwWfm salg dl n d)
+    (w: InwWfm salg [] dl (.var x) d)
   :
-    InwWfm salg dl (dl.getDef n) d
+    InwWfm salg [] dl (dl.getDef x) d
   :=
     let v := dl.wfm salg
     
     let eqAtN:
-      v n = dl.interpretation salg v v n
+      v x = dl.interpretation salg v v x
     :=
       congr (DefList.wfm_isModel salg dl) rfl
 
-    show (dl.interpretation salg v v n).posMem d from eqAtN ▸ w
+    show (dl.interpretation salg v v x).posMem d from eqAtN ▸ w
 end Expr

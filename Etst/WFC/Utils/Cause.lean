@@ -28,7 +28,7 @@ def Cause.eq:
   a.backgroundOut = b.backgroundOut →
   a = b
 
-| ⟨⟨_⟩, _, _⟩, ⟨_, _, _⟩, rfl, rfl, rfl => rfl
+| ⟨⟨_, _⟩, _⟩, ⟨⟨_, _⟩, _⟩, rfl, rfl, rfl => rfl
 
 structure Cause.IsSubset
   (a b: Cause D)
@@ -78,13 +78,13 @@ def Cause.arbUn (f: I → Cause D): Cause D := {
   backgroundOut := fun vv => ∃ i, vv ∈ (f i).backgroundOut,
 }
 
-def Cause.union_ymm (c0 c1: Cause D): c0 ∪ c1 = c1 ∪ c0 :=
+def Cause.union_symm (c0 c1: Cause D): c0 ∪ c1 = c1 ∪ c0 :=
   Cause.eq
     (Set.union_comm c0.contextIns c1.contextIns)
     (Set.union_comm c0.backgroundIns c1.backgroundIns)
     (Set.union_comm c0.backgroundOut c1.backgroundOut)
 
-def Cause.union_qq_right_sub
+def Cause.union_eq_right_sub
   {c0 c1: Cause D}
   (isSub: c1 ⊆ c0)
 :
@@ -514,7 +514,7 @@ def Cause.IsWeaklySatisfiedBy.elimArbUn
 
 
 noncomputable def IsWeakCause.ofValPos
-  (isPos: (expr.interpretation salg b c).posMem d)
+  (isPos: (expr.interpretation salg [] b c).posMem d)
 :
   IsWeakCause salg (Cause.ofValPos b c) d expr
 :=
@@ -537,7 +537,7 @@ def IsWeakCause.isPosOfIsApplicable
   {b c: Valuation salg.D}
   (isApp: ¬ cause.IsInapplicable c.nonmembers b)
 :
-  (expr.interpretation salg b c).posMem d
+  (expr.interpretation salg [] b c).posMem d
 :=
   isCause (Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy isApp)
 
@@ -547,7 +547,7 @@ def IsWeakCause.isInapplicableOfIsNonmember
   {d: salg.D}
   (isCause: IsWeakCause salg cause d expr)
   {b c: Valuation salg.D}
-  (notPos: ¬(expr.interpretation salg b c).posMem d)
+  (notPos: ¬(expr.interpretation salg [] b c).posMem d)
 :
   cause.IsInapplicable c.nonmembers b
 :=

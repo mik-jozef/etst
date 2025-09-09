@@ -46,7 +46,7 @@ def Ins.isSound
     (motive_3 := fun d x _ => ¬(dl.wfm salg x).posMem d)
     (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
       DefList.wfm_isModel salg dl ▸
-      isCause ⟨⟨ihCins⟩, ihBins, ihBout⟩)
+      isCause ⟨⟨ihBins, ihBout⟩, ihCins⟩)
     (fun _ _ _ => blockedContextIns)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundIns ihBins ihBout)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundOut ihBins ihBout)
@@ -66,7 +66,7 @@ def Out.isSound
     (motive_3 := fun d x _ => ¬(dl.wfm salg x).posMem d)
     (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
       DefList.wfm_isModel salg dl ▸
-      isCause ⟨⟨ihCins⟩, ihBins, ihBout⟩)
+      isCause ⟨⟨ihBins, ihBout⟩, ihCins⟩)
     (fun _ _ _ => blockedContextIns)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundIns ihBins ihBout)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundOut ihBins ihBout)

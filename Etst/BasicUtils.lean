@@ -52,3 +52,24 @@ def Iff.nmp {P Q: Prop} (h: P ↔ Q) : ¬P → ¬Q :=
 
 def Iff.nmpr {P Q: Prop} (h: P ↔ Q) : ¬Q → ¬P :=
   fun qq p => qq (h.mp p)
+
+
+def List.Mem.toOr
+  {t head: T}
+  (mem: List.Mem t (head :: rest))
+:
+  t = head ∨ t ∈ rest
+:=
+  match mem with
+  | Mem.head a => Or.inl rfl
+  | Mem.tail a b => Or.inr b
+
+def List.Mem.elim
+  {t head: T}
+  (mem: List.Mem t (head :: rest))
+  (left: t = head → C)
+  (rite: t ∈ rest → C)
+:
+  C
+:=
+  mem.toOr.elim left rite

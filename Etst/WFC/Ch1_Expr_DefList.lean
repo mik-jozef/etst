@@ -43,43 +43,30 @@ structure Signature where
   `sig`. It can be a variable, the application of an operator to its
   parameters, the complement of an expression, or an arbitrary union
   or intersection.
-
+  
   Variables are natural numbers. The arguments of an operator `op`
   are indexed by the type `sig.Params op`.
 -/
 inductive Expr (sig: Signature) where
 | var (x: Nat)
+| bvar (x: Nat) -- Uses de Bruijn indices
 | op (op: sig.Op) (args: sig.Params op → Expr sig)
 | cpl (expr: Expr sig)
-| arbUn (x: Nat) (body: Expr sig)
-| arbIr (x: Nat) (body: Expr sig)
+| arbUn (body: Expr sig)
+| arbIr (body: Expr sig)
 
 namespace Expr
-  instance coeNat: Coe Nat (Expr s) where
-    coe := fun n => Expr.var n
-  
-  instance exprOfNat (n: Nat): OfNat (Expr s) n where
-    ofNat := Expr.var n
-  
-  /-
-    The set of free variables of `expr`, given a set of bound
-    variables.
-  -/
-  def IsFreeVar
-    (expr: Expr sig)
-    (boundVars: Set Nat := {})
-  :
-    Set Nat
-  :=
+  def UsesVar (expr: Expr sig): Set Nat :=
     fun x =>
       match expr with
-        | var v => x = v ∧ v ∉ boundVars
-        | op _ args => ∃ param, (args param).IsFreeVar boundVars x
-        | cpl expr => expr.IsFreeVar boundVars x
-        | arbUn bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
-        | arbIr bv body => body.IsFreeVar (fun v => v ∈ boundVars ∨ v = bv) x
-  
-  
+        | var v => x = v
+        | bvar _ => False
+        | op _ args => ∃ param, (args param).UsesVar x
+        | cpl expr => expr.UsesVar x
+        | arbUn body => body.UsesVar x
+        | arbIr body => body.UsesVar x
+
+
   /-
     A positive expression is an expression that does not contain
     complements of expressions, with the exception of complements
@@ -88,14 +75,15 @@ namespace Expr
     Complementing a bound variable is allowed because it is guaranteed
     to be two-valued, so it cannot result in a contradictory definition.
   -/
-  def IsPositive: Expr sig → (boundVars: Set Nat) → Prop
-  | Expr.var _, _ => True
-  | Expr.op _ args, bv => ∀ param, (args param).IsPositive bv
-  | Expr.cpl (Expr.var v), bv => v ∈ bv
-  | Expr.cpl _, _ => False
-  | Expr.arbUn xUn body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xUn)
-  | Expr.arbIr xIr body, bv => body.IsPositive (fun x => x ∈ bv ∨ x = xIr)
-  
+  def IsPositive: Expr sig → Prop
+  | var _ => True
+  | bvar _ => True
+  | op _ args => ∀ param, (args param).IsPositive
+  | cpl (.bvar _) => True
+  | cpl _ => False
+  | arbUn body => body.IsPositive
+  | arbIr body => body.IsPositive
+
   /-
     A helper function that we can use to show termination of
     functions defined recursively over expressions.
@@ -104,12 +92,13 @@ namespace Expr
     by Lean.
   -/
   noncomputable def sizeOf: Expr sig → Ordinal.{0}
-  | Expr.var _ => 0
-  | Expr.op _ args =>
-    iSup (fun arg => (args arg).sizeOf) + 1
-  | Expr.cpl expr => expr.sizeOf + 1
-  | Expr.arbUn _ body => body.sizeOf + 1
-  | Expr.arbIr _ body => body.sizeOf + 1
+  | var _ => 0
+  | bvar _ => 0
+  | op _ args =>
+      iSup (fun arg => (args arg).sizeOf) + 1
+  | cpl expr => expr.sizeOf + 1
+  | arbUn body => body.sizeOf + 1
+  | arbIr body => body.sizeOf + 1
 end Expr
 
 
@@ -130,11 +119,11 @@ inductive DefList.DependsOn
   Nat → Nat → Prop
 where
 | Base
-  (aUsesB: (getDef a).IsFreeVar {} b)
+  (aUsesB: (getDef a).UsesVar b)
   :
     DependsOn getDef a b
 | Rec
-  (aUsesB: (getDef a).IsFreeVar {} b)
+  (aUsesB: (getDef a).UsesVar b)
   (bUsesC: DependsOn getDef b c)
   :
     DependsOn getDef a c
@@ -146,7 +135,7 @@ where
 def DefList.DependsOn.push
   {getDef: GetDef sig}
   (dependsOn: DependsOn getDef a b)
-  (isFree: (getDef b).IsFreeVar {} c)
+  (isFree: (getDef b).UsesVar c)
 :
   DependsOn getDef a c
 :=
@@ -157,7 +146,7 @@ def DefList.DependsOn.push
   --   let ih := push tail isFree
   --   sorry
   let thePrincipleTM:
-    (getDef b).IsFreeVar {} c → DependsOn getDef a c
+    (getDef b).UsesVar c → DependsOn getDef a c
   :=
     dependsOn.rec
       (fun isFreeAB isFreeBC => Rec isFreeAB (Base isFreeBC))

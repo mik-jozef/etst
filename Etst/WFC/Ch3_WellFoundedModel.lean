@@ -141,8 +141,8 @@ def operatorC
   -- https://github.com/leanprover/lean4/issues/952
   let _ := Valuation.ordStd salg.D
   {
-    toFun := fun c => dl.interpretation salg b c
-    monotone' := fun _ _ vLe => dl.interpretation_mono_std salg b vLe
+    toFun := dl.interpretation salg b
+    monotone' := fun _ _ => dl.interpretation_mono_std
   }
 
 -- The least fixed point of the operator C.
@@ -182,7 +182,7 @@ def operatorC.mono_apx
 :
   operatorC salg dl b0 c0 ⊑ operatorC salg dl b1 c1
 :=
-  dl.interpretation_mono_apx salg bLe cLe
+  dl.interpretation_mono_apx bLe cLe
 
 
 def operatorB.monotone'
@@ -277,7 +277,7 @@ noncomputable def DefList.exprInterp
 :
   Set3 salg.D
 :=
-  expr.interpretation salg (dl.wfm salg) (dl.wfm salg)
+  expr.interpretation salg [] (dl.wfm salg) (dl.wfm salg)
 
 
 /-

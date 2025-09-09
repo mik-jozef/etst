@@ -26,7 +26,7 @@ def every_cause_inapplicable_preserves_definitive_nonmember
   (outSetIsEmpty:
     ∀ {d x}, ⟨d, x⟩ ∈ outSet → ¬ (c x).posMem d)
 :
-  ¬(expr.interpretation salg b c).posMem d
+  ¬(expr.interpretation salg [] b c).posMem d
 :=
   let isSat := Cause.IsWeaklySatisfiedBy.ofValPos b c
   let isApp := isSat.toIsApplicable outSet outSetIsEmpty
