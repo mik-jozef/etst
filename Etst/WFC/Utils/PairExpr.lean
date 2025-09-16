@@ -16,7 +16,7 @@ namespace PairExpr
   
   abbrev intp
     (e: PairExpr)
-    (bv: List Pair)
+    (bv: List Pair := [])
     (v: Valuation Pair)
   :
     Set3 Pair
@@ -25,12 +25,15 @@ namespace PairExpr
   
   abbrev intp2
     (e: PairExpr)
-    (bv: List Pair)
+    (bv: List Pair := [])
     (b c: Valuation Pair)
   :
     Set3 Pair
   :=
     e.interpretation pairSalgebra bv b c
+  
+  def var (x: Nat): PairExpr := Expr.var x
+  def bvar (x: Nat): PairExpr := Expr.bvar x
   
   def null: PairExpr := Expr.op pairSignature.Op.null nofun
   

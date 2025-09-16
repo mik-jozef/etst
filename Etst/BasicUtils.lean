@@ -54,6 +54,8 @@ def Iff.nmpr {P Q: Prop} (h: P ↔ Q) : ¬Q → ¬P :=
   fun qq p => qq (h.mp p)
 
 
+abbrev List.Index (l: List T) := Fin l.length
+
 def List.Mem.toOr
   {t head: T}
   (mem: List.Mem t (head :: rest))
