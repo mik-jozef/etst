@@ -34,6 +34,9 @@ namespace PairExpr
   
   def var (x: Nat): PairExpr := Expr.var x
   def bvar (x: Nat): PairExpr := Expr.bvar x
+  def cpl (e: PairExpr): PairExpr := Expr.cpl e
+  def arbUn (e: PairExpr): PairExpr := Expr.arbUn e
+  def arbIr (e: PairExpr): PairExpr := Expr.arbIr e
   
   def null: PairExpr := Expr.op pairSignature.Op.null nofun
   
@@ -236,6 +239,7 @@ namespace PairExpr
   
   def insCondSome
     (insExpr: InsP bv b c expr dE)
+    (d: Pair)
   :
     InsP bv b c (condSome expr) d
   :=
@@ -243,6 +247,7 @@ namespace PairExpr
   
   def inwCondSome
     (insExpr: InwP bv b c expr dE)
+    (d: Pair)
   :
     InwP bv b c (condSome expr) d
   :=
@@ -267,6 +272,7 @@ namespace PairExpr
   
   def insCondFull
     (allInsExpr: (dE: pairSalgebra.D) → InsP bv b c expr dE)
+    (d: Pair)
   :
     InsP bv b c (condFull expr) d
   :=
@@ -274,6 +280,7 @@ namespace PairExpr
   
   def inwCondFull
     (allInwExpr: (dE: pairSalgebra.D) → InwP bv b c expr dE)
+    (d: Pair)
   :
     InwP bv b c (condFull expr) d
   :=

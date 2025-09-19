@@ -56,6 +56,15 @@ def Iff.nmpr {P Q: Prop} (h: P ↔ Q) : ¬Q → ¬P :=
 
 abbrev List.Index (l: List T) := Fin l.length
 
+noncomputable def List.Mem.index 
+  {l: List T}
+:
+  t ∈ l → ∃ i: List.Index l, l[i] = t
+|  .head _ => ⟨⟨0, Nat.succ_pos _⟩, rfl⟩
+| .tail _ memTail =>
+  let ⟨i, eq⟩ := index memTail
+  ⟨⟨.succ i, Nat.succ_lt_succ i.isLt⟩, eq⟩
+
 def List.Mem.toOr
   {t head: T}
   (mem: List.Mem t (head :: rest))
@@ -75,3 +84,14 @@ def List.Mem.elim
   C
 :=
   mem.toOr.elim left rite
+
+def List.get?_append_left
+  (lt: i < List.length l)
+:
+  l[i]? = (l ++ r)[i]?
+:=
+  match i, l with
+  | 0, cons _ _ => rfl
+  | n+1, cons _ t =>
+    show t[n]? = (t ++ r)[n]? from
+      List.get?_append_left (Nat.lt_of_succ_lt_succ lt)

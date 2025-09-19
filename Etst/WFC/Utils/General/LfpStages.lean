@@ -173,6 +173,35 @@ def OrderHom.lfpStage_ex_fp
   
   ⟨n0, fun _m n0LeM => (eqN0 n0LeM).symm.trans eqLfp⟩
 
+def OrderHom.lfpStage_induction_stages
+  {T: Type u}
+  {ord: CompleteLattice T}
+  (f: T →o T)
+  (P: T → Prop)
+  (hLim:
+    ∀ n: Ordinal.{u},
+      n.IsSuccPrelimit →
+      (∀ m: ↑n, P (f.lfpStage m)) →
+      P (iSup (f.lfpStagePrevious n)))
+  (hSucc:
+    ∀ n: Ordinal.{u},
+      ¬ n.IsSuccPrelimit →
+      n.pred < n →
+      (∀ m: ↑n, P (f.lfpStage m)) →
+      P (f (f.lfpStage n.pred)))
+  (n: Ordinal.{u})
+:
+  P (f.lfpStage n)
+:=
+  let ih := fun ⟨m, _⟩ => lfpStage_induction_stages f P hLim hSucc m
+  if h: n.IsSuccPrelimit then
+    f.lfpStage_eq_limit h ▸
+    hLim n h ih
+  else
+    f.lfpStage_eq_succ h ▸
+    hSucc n h (Ordinal.pred_lt h) ih
+termination_by n
+
 def OrderHom.lfpStage_induction
   {T: Type u}
   {ord: CompleteLattice T}
@@ -192,18 +221,43 @@ def OrderHom.lfpStage_induction
 :
   P f.lfp
 :=
-  let rec p n :=
-    let ih := fun ⟨m, _⟩ => p m
-    if h: n.IsSuccPrelimit then
-      f.lfpStage_eq_limit h ▸
-      hLim n h ih
-    else
-      f.lfpStage_eq_succ h ▸
-      hSucc n h (Ordinal.pred_lt h) ih
-  termination_by n
-  
   let ⟨n, eqAt⟩ := f.lfpStage_ex_fp
-  eqAt n le_rfl ▸ p n
+  eqAt n le_rfl ▸ lfpStage_induction_stages f P hLim hSucc n
+
+def OrderHom.lfpStage_induction_stages2
+  {T0 T1: Type u}
+  {ord: CompleteLattice T0}
+  {ord: CompleteLattice T1}
+  (f0: T0 →o T0)
+  (f1: T1 →o T1)
+  (P: T0 → T1 → Prop)
+  (hLim:
+    ∀ n: Ordinal.{u},
+      n.IsSuccPrelimit →
+      (∀ m: ↑n, P (f0.lfpStage m) (f1.lfpStage m)) →
+      P
+        (iSup (f0.lfpStagePrevious n))
+        (iSup (f1.lfpStagePrevious n)))
+  (hSucc:
+    ∀ n: Ordinal.{u},
+      ¬ n.IsSuccPrelimit →
+      n.pred < n →
+      (∀ m: ↑n, P (f0.lfpStage m) (f1.lfpStage m)) →
+      P (f0 (f0.lfpStage n.pred)) (f1 (f1.lfpStage n.pred)))
+  (n: Ordinal.{u})
+:
+  P (f0.lfpStage n) (f1.lfpStage n)
+:=
+  let ih := fun ⟨m, _⟩ => lfpStage_induction_stages2 f0 f1 P hLim hSucc m
+  if h: n.IsSuccPrelimit then
+    f0.lfpStage_eq_limit h ▸
+    f1.lfpStage_eq_limit h ▸
+    hLim n h ih
+  else
+    f0.lfpStage_eq_succ h ▸
+    f1.lfpStage_eq_succ h ▸
+    hSucc n h (Ordinal.pred_lt h) ih
+termination_by n
 
 def OrderHom.lfpStage_induction2
   {T0 T1: Type u}
@@ -228,21 +282,15 @@ def OrderHom.lfpStage_induction2
 :
   P f0.lfp f1.lfp
 :=
-  let rec p n :=
-    let ih := fun ⟨m, _⟩ => p m
-    if h: n.IsSuccPrelimit then
-      f0.lfpStage_eq_limit h ▸
-      f1.lfpStage_eq_limit h ▸
-      hLim n h ih
-    else
-      f0.lfpStage_eq_succ h ▸
-      f1.lfpStage_eq_succ h ▸
-      hSucc n h (Ordinal.pred_lt h) ih
-  termination_by n
-  
   let ⟨n0, eqAt0⟩ := f0.lfpStage_ex_fp
   let ⟨n1, eqAt1⟩ := f1.lfpStage_ex_fp
   
   (le_or_gt n0 n1).elim
-    (fun le => eqAt0 n1 le ▸ eqAt1 n1 le_rfl ▸ p n1)
-    (fun gt => eqAt0 n0 le_rfl ▸ eqAt1 n0 gt.le ▸ p n0)
+    (fun le =>
+      eqAt0 n1 le ▸
+      eqAt1 n1 le_rfl ▸
+      lfpStage_induction_stages2 f0 f1 P hLim hSucc n1)
+    (fun gt =>
+      eqAt0 n0 le_rfl ▸
+      eqAt1 n0 gt.le ▸
+      lfpStage_induction_stages2 f0 f1 P hLim hSucc n0)

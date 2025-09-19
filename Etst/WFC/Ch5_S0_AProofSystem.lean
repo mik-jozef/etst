@@ -1,4 +1,6 @@
 /-
+  # Chapter 5: A Proof System for Well-Founded Collections
+  
   In this chapter, we define a proof system for well-founded
   collections, and prove its soundness and completeness.
   

@@ -22,6 +22,19 @@ namespace Set3
   :=
     congr rfl eq
   
+  def eq4
+    {a b: Set3 D}
+    (abDef: ∀ d ∈ a.defMem, b.defMem d)
+    (baDef: ∀ d ∈ b.defMem, a.defMem d)
+    (abPos: ∀ d ∈ a.posMem, b.posMem d)
+    (baPos: ∀ d ∈ b.posMem, a.posMem d)
+  :
+    a = b
+  :=
+    Set3.eq
+      (Set.ext fun x => Iff.intro (abDef x) (baDef x))
+      (Set.ext fun x => Iff.intro (abPos x) (baPos x))
+  
   
   def just.inDefToEq
     {a b: D}

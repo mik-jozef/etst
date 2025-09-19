@@ -163,19 +163,19 @@ namespace Expr
     w
   
   
+  -- Valuation c would be redundant since Lean would ignore it, and
+  -- complain it cannot be synthetized.
   def ninsCpl
-    (c: Valuation salg.D)
     (w: Inw salg bv b b expr d)
   :
-    ¬Ins salg bv b c (cpl expr) d
+    ¬Ins salg bv b b (cpl expr) d
   :=
     fun ins => ins w
   
   def ninwCpl
-    (c: Valuation salg.D)
     (s: Ins salg bv b b expr d)
   :
-    ¬Inw salg bv b c (cpl expr) d
+    ¬Inw salg bv b b (cpl expr) d
   :=
     fun inw => inw s
   
@@ -223,8 +223,8 @@ namespace Expr
   def insAny: Ins salg bv b c any d := insArbUn d (insBound rfl)
   def inwAny: Inw salg bv b c any d := inwArbUn d (inwBound rfl)
   
-  def ninsNone: ¬Ins salg bv b c none d := ninsCpl c inwAny
-  def ninwNone: ¬Inw salg bv b c none d := ninwCpl c insAny
+  def ninsNone: ¬Ins salg bv b b none d := ninsCpl inwAny
+  def ninwNone: ¬Inw salg bv b b none d := ninwCpl insAny
   
   
   abbrev InsWfm

@@ -1,4 +1,6 @@
 /-
+  # Chapter 4: The Pair Salgebra
+  
   Here we define a particular salgebra of special interest.
   Its carrier type is Pair, which is inductively defined as
   either zero (called the improper pair) or a pair of pairs.

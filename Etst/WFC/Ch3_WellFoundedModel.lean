@@ -1,5 +1,5 @@
 /-
-  # Chapter 4: Operators B and C, and the Well-Founded Model
+  # Chapter 3: Operators B and C, and the Well-Founded Model
   
   Note: this description is meant to give an intuitive understanding
   of what's going on in the chapter.
@@ -314,6 +314,16 @@ def DefList.wfm_isLfpC
   conv => rhs; rw [eq]
   exact (operatorC salg dl (dl.wfm salg)).isLeast_lfp
 
+def DefList.wfm_eq_lfpC
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+:
+  let := Valuation.ordStdLattice salg.D
+  dl.wfm salg = (operatorC salg dl (dl.wfm salg)).lfp
+:=
+  let := Valuation.ordStdLattice salg.D
+  IsLeast.unique (dl.wfm_isLfpC salg) (OrderHom.isLeast_lfp _)
+
 def DefList.wfm_isLfpB
   (salg: Salgebra sig)
   (dl: DefList sig)
@@ -333,6 +343,17 @@ def DefList.wfm_isModel
   (dl.wfm salg).IsModel salg dl
 :=
   operatorB.fp_is_model salg dl (wfm_isLfpB salg dl).left
+
+def DefList.wfm_eq_def
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  (x: Nat)
+:
+  Eq
+    (dl.wfm salg x)
+    (dl.interpretation salg (dl.wfm salg) (dl.wfm salg) x)
+:=
+  congr (DefList.wfm_isModel salg dl) rfl
 
 
 /-
