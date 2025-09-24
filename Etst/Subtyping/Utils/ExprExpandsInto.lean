@@ -66,35 +66,36 @@ namespace PairExpr.ExpandsInto
   def rfl {dl e}: ExpandsInto dl e e :=
     ExpandsInto.refl e
   
-  def lfpStage_eq_std
+  def intp_eq_wfm
     (dl: PairDl)
+    (bv: List Pair)
   :
     ExpandsInto dl l r → l.intp bv dl.wfm = r.intp bv dl.wfm
   
   | .refl _ => _root_.rfl
     | .var x expr =>
-      let ih := expr.lfpStage_eq_std (bv := bv)
+      let ih := expr.intp_eq_wfm (bv := bv)
       let eqDef := dl.wfm_eq_def pairSalgebra x
       let eqClean := clearVars_preserves_interp
         (dl.getDef x) bv dl.wfm dl.wfm
       eqDef.trans (Eq.trans eqClean ih)
     | .pair left rite =>
-      eq_pair_of_eq left.lfpStage_eq_std rite.lfpStage_eq_std
+      eq_pair_of_eq (left.intp_eq_wfm dl bv) (rite.intp_eq_wfm dl bv)
     | .un left rite =>
-      eq_un_of_eq left.lfpStage_eq_std rite.lfpStage_eq_std
-    | .ir left rite =>
-      eq_ir_of_eq left.lfpStage_eq_std rite.lfpStage_eq_std
-    | .condSome expr =>
-      eq_condSome_of_eq expr.lfpStage_eq_std
-    | .condFull expr =>
-      eq_condFull_of_eq expr.lfpStage_eq_std
-    | .cpl expr =>
-      eq_cpl_of_eq expr.lfpStage_eq_std
-    | .arbUn expr =>
-      eq_arbUn_of_eq (fun _ => expr.lfpStage_eq_std)
-    | .arbIr expr =>
-      eq_arbIr_of_eq (fun _ => expr.lfpStage_eq_std)
-
+      eq_un_of_eq (left.intp_eq_wfm dl bv) (rite.intp_eq_wfm dl bv)
+        | .ir left rite =>
+      eq_ir_of_eq (left.intp_eq_wfm dl bv) (rite.intp_eq_wfm dl bv)
+        | .condSome expr =>
+      eq_condSome_of_eq (expr.intp_eq_wfm dl bv)
+        | .condFull expr =>
+      eq_condFull_of_eq (expr.intp_eq_wfm dl bv)
+        | .cpl expr =>
+      eq_cpl_of_eq (expr.intp_eq_wfm dl bv)
+        | .arbUn expr =>
+      eq_arbUn_of_eq (fun dB => expr.intp_eq_wfm dl (dB :: bv))
+        | .arbIr expr =>
+      eq_arbIr_of_eq (fun dB => expr.intp_eq_wfm dl (dB :: bv))
+  
   def lfpStage_le_std
     (expInto: ExpandsInto dl l r)
     (bv: List Pair)
@@ -137,13 +138,11 @@ namespace PairExpr.ExpandsInto
       let leRite := rite.lfpStage_le_std bv n
       intp_mono_std_ir leLeft leRite
     | condSome exp =>
-      let leBody := exp.lfpStage_le_std bv n
-      intp_mono_std_condSome leBody
+      intp_mono_std_condSome (exp.lfpStage_le_std bv n)
     | condFull exp =>
-      let leBody := exp.lfpStage_le_std bv n
-      intp_mono_std_condFull leBody
+      intp_mono_std_condFull (exp.lfpStage_le_std bv n)
     | cpl exp =>
-      let eqBody := exp.lfpStage_eq_std
+      let eqBody := exp.intp_eq_wfm dl bv
       inter_mono_std_cpl (le_of_eq eqBody.symm)
     | arbUn exp =>
       inter_mono_std_arbUn (fun dB =>
