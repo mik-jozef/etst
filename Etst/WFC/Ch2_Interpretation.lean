@@ -255,34 +255,11 @@ def Expr.interpretation
         posArgs
         fun arg => (interpretation salg bv b c (exprs arg)).defLePos
     ⟩
-| cpl e =>
-    let ie := (interpretation salg bv b b e)
-    ⟨
-      ie.posMemᶜ,
-      ie.defMemᶜ,
-      
-      fun _d dInNPos => fun dInDef => dInNPos dInDef.toPos
-    ⟩
+| cpl e => (interpretation salg bv b b e).cpl
 | arbUn body =>
-    let body.I (dX: salg.D): Set3 salg.D :=
-      interpretation salg (dX :: bv) b c body
-    
-    ⟨
-      fun d => ∃ dX, d ∈ (body.I dX).defMem,
-      fun d => ∃ dX, d ∈ (body.I dX).posMem,
-      
-      fun _d dDef => dDef.elim fun dX iXDef => ⟨dX, iXDef.toPos⟩
-    ⟩
+    Set3.arbUn (fun dX => interpretation salg (dX :: bv) b c body)
 | arbIr body =>
-    let body.I (dX: salg.D): Set3 salg.D :=
-      interpretation salg (dX :: bv) b c body
-    
-    ⟨
-      fun d => ∀ dX, d ∈ (body.I dX).defMem,
-      fun d => ∀ dX, d ∈ (body.I dX).posMem,
-      
-      fun _d dDefBody xDDef => (dDefBody xDDef).toPos
-    ⟩
+    Set3.arbIr (fun dX => interpretation salg (dX :: bv) b c body)
 
 -- Interpretation on definition lists is defined pointwise.
 def DefList.interpretation
