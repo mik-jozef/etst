@@ -71,4 +71,74 @@ namespace Expr
       (e.clearBvars.interpretation salg bv b c)
   :=
     clearVars_preserves_interp_bv e [] b c
+  
+  def clearVars_none_eq_none
+  :
+    clearBvars n none = none (sig := sig)
+  :=
+    show (if 0 < n + 1 then bvar 0 else none).arbUn.cpl = none from
+    if_pos (Nat.zero_lt_succ n) ▸ rfl
+  
+  def clearVars_idempotent (e: Expr sig):
+    (e.clearBvars n).clearBvars n = e.clearBvars n
+  :=
+    match e with
+    | .var _ => rfl
+    | .bvar x =>
+      if h: x < n then by
+        rw [clearBvars_eq_bvar h, clearBvars_eq_bvar h]
+      else by
+        rw [clearBvars_eq_none h]
+        exact clearVars_none_eq_none
+    | .op o args =>
+      congrArg
+        (Expr.op o)
+        (funext fun param => (args param).clearVars_idempotent)
+    | .cpl body =>
+      congrArg Expr.cpl body.clearVars_idempotent
+    | .arbUn body =>
+      congrArg Expr.arbUn (body.clearVars_idempotent)
+    | .arbIr body =>
+      congrArg Expr.arbIr (body.clearVars_idempotent)
+  
+  
+  def IsClean (e: Expr sig): Prop :=
+    e = e.clearBvars
+  
+  def clearVars_isClean (e: Expr sig): IsClean (e.clearBvars) :=
+    (clearVars_idempotent e).symm
+  
+  namespace IsClean
+    def bvar_independent
+      {e: Expr sig}
+      (isClean: e.IsClean)
+      (bv0 bv1: List salg.D)
+      (b c: Valuation salg.D)
+    :
+      e.interpretation salg bv0 b c = e.interpretation salg bv1 b c
+    :=
+      isClean ▸
+      clearVars_preserves_interp e bv0 b c ▸
+      clearVars_preserves_interp e bv1 b c ▸
+      rfl
+
+    def change_bv_defMem
+      (isClean: IsClean e)
+      {bv1: List salg.D}
+      (isDef: (e.interpretation salg bv0 b c).defMem d)
+    :
+      (e.interpretation salg bv1 b c).defMem d
+    :=
+      isClean.bvar_independent bv0 bv1 b c ▸ isDef
+    
+    def change_bv_posMem
+      (isClean: IsClean e)
+      {bv1: List salg.D}
+      (isPos: (e.interpretation salg bv0 b c).posMem d)
+    :
+      (e.interpretation salg bv1 b c).posMem d
+    :=
+      isClean.bvar_independent bv0 bv1 b c ▸ isPos
+  
+  end IsClean
 end Expr
