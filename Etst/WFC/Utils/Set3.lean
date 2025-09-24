@@ -199,6 +199,19 @@ namespace Set3
     defLePos := fun _d ddIn dd => (ddIn dd).toPos
   }
   
+  def cpl_inj_eq
+    (eq: cpl s0 = cpl s1)
+  :
+    s0 = s1
+  :=
+    let defEq: s0.cpl.defMem = s1.cpl.defMem := congr rfl eq
+    let posEq: s0.cpl.posMem = s1.cpl.posMem := congr rfl eq
+    Set3.eq (compl_inj_iff.mp posEq) (compl_inj_iff.mp defEq)
+  
+  def cpl_inj_neq (neq: s0 ≠ s1): cpl s0 ≠ cpl s1 :=
+    cpl_inj_eq.mt neq
+  
+  
   instance unionInst (D: Type u): Union (Set3 D) where
     union := union
   
@@ -426,6 +439,40 @@ namespace Set3
             False.elim (nba (h ▸ ab))
           else
             ⟨ab.defLe, ab.posLe, h⟩
+  
+  def LeApx.notDefLe
+    (ab: LeApx a b)
+  :
+    b.defMemᶜ ≤ a.defMemᶜ
+  :=
+    compl_le_compl (defLe ab)
+  
+  def LeApx.notPosLe
+    (ab: LeApx a b)
+  :
+    a.posMemᶜ ≤ b.posMemᶜ
+  :=
+    compl_le_compl (posLe ab)
+  
+  def LeStd.notDefLe
+    (ab: LeStd a b)
+  :
+    b.defMemᶜ ≤ a.defMemᶜ
+  :=
+    compl_le_compl (defLe ab)
+  
+  def LeStd.notPosLe
+    (ab: LeStd a b)
+  :
+    b.posMemᶜ ≤ a.posMemᶜ
+  :=
+    compl_le_compl (posLe ab)
+  
+  def LeStd.compl_le_compl (ab: LeStd a b): b.cpl ≤ a.cpl :=
+    LeStd.mk (LeStd.notPosLe ab) (LeStd.notDefLe ab)
+  
+  def LtStd.compl_lt_compl (ab: LtStd a b): b.cpl < a.cpl :=
+    LtStd.mk ab.toLe.notPosLe ab.toLe.notDefLe (cpl_inj_neq ab.neq.symm)
   
   
   -- The standard order is antisymmetric.
