@@ -27,16 +27,16 @@ namespace Expr
     {o: sig.Op}
     {args0 args1: sig.Params o → Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
       ∀ param: sig.Params o,
-        ((args0 param).interpretation salg bv0 b c).defMem
+        ((args0 param).interpretation salg bv0 b0 c0).defMem
           ≤
-        ((args1 param).interpretation salg bv1 b c).defMem)
+        ((args1 param).interpretation salg bv1 b1 c1).defMem)
   :
-    ((op o args0).interpretation salg bv0 b c).defMem
+    ((op o args0).interpretation salg bv0 b0 c0).defMem
       ⊆
-    ((op o args1).interpretation salg bv1 b c).defMem
+    ((op o args1).interpretation salg bv1 b1 c1).defMem
   :=
     fun _ dIn => salg.isMonotonic o _ _ le dIn
   
@@ -46,16 +46,16 @@ namespace Expr
     {o: sig.Op}
     {args0 args1: sig.Params o → Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
       ∀ param: sig.Params o,
-        ((args0 param).interpretation salg bv0 b c).posMem
+        ((args0 param).interpretation salg bv0 b0 c0).posMem
           ≤
-        ((args1 param).interpretation salg bv1 b c).posMem)
+        ((args1 param).interpretation salg bv1 b1 c1).posMem)
   :
-    ((op o args0).interpretation salg bv0 b c).posMem
+    ((op o args0).interpretation salg bv0 b0 c0).posMem
       ⊆
-    ((op o args1).interpretation salg bv1 b c).posMem
+    ((op o args1).interpretation salg bv1 b1 c1).posMem
   :=
     fun _ dIn => salg.isMonotonic o _ _ le dIn
   
@@ -65,16 +65,16 @@ namespace Expr
     {o: sig.Op}
     {args0 args1: sig.Params o → Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
       ∀ param: sig.Params o,
-        ((args0 param).interpretation salg bv0 b c)
+        ((args0 param).interpretation salg bv0 b0 c0)
           ≤
-        ((args1 param).interpretation salg bv1 b c))
+        ((args1 param).interpretation salg bv1 b1 c1))
   :
-    ((op o args0).interpretation salg bv0 b c)
+    ((op o args0).interpretation salg bv0 b0 c0)
       ≤
-    ((op o args1).interpretation salg bv1 b c)
+    ((op o args1).interpretation salg bv1 b1 c1)
   := {
     defLe := inter_mono_std_op_defMem (fun param => (le param).defLe)
     posLe := inter_mono_std_op_posMem (fun param => (le param).posLe)
@@ -86,16 +86,16 @@ namespace Expr
     {o: sig.Op}
     {args0 args1: sig.Params o → Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (eq:
       ∀ param: sig.Params o,
-        ((args0 param).interpretation salg bv0 b c)
+        ((args0 param).interpretation salg bv0 b0 c0)
           =
-        ((args1 param).interpretation salg bv1 b c))
+        ((args1 param).interpretation salg bv1 b1 c1))
   :
-    ((op o args0).interpretation salg bv0 b c)
+    ((op o args0).interpretation salg bv0 b0 c0)
       =
-    ((op o args1).interpretation salg bv1 b c)
+    ((op o args1).interpretation salg bv1 b1 c1)
   :=
     let _ := Set3.ordStd
     le_antisymm
@@ -103,59 +103,59 @@ namespace Expr
       (inter_mono_std_op (fun param => le_of_eq (eq param).symm))
   
   
-  -- Note we're using `b b` in the assumption.
+  -- Note we're using `b0 b0` and `b1 b1` in the assumption.
   def inter_mono_std_cpl_defMem
     {sig: Signature}
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
-      (e1.interpretation salg bv1 b b).posMem
+      (e1.interpretation salg bv1 b1 b1).posMem
         ≤
-      (e0.interpretation salg bv0 b b).posMem)
+      (e0.interpretation salg bv0 b0 b0).posMem)
   :
-    ((cpl e0).interpretation salg bv0 b c).defMem
+    ((cpl e0).interpretation salg bv0 b0 c0).defMem
       ⊆
-    ((cpl e1).interpretation salg bv1 b c).defMem
+    ((cpl e1).interpretation salg bv1 b1 c1).defMem
   :=
     fun _ ins =>
-      let ninwE := insCplElim (c := c) ins
-      insCpl c (fun isPos => ninwE (le isPos))
+      let ninwE := insCplElim (c := c0) ins
+      insCpl c0 (fun isPos => ninwE (le isPos))
 
   def inter_mono_std_cpl_posMem
     {sig: Signature}
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
-      (e1.interpretation salg bv1 b b).defMem
+      (e1.interpretation salg bv1 b1 b1).defMem
         ≤
-      (e0.interpretation salg bv0 b b).defMem)
+      (e0.interpretation salg bv0 b0 b0).defMem)
   :
-    ((cpl e0).interpretation salg bv0 b c).posMem
+    ((cpl e0).interpretation salg bv0 b0 c0).posMem
       ⊆
-    ((cpl e1).interpretation salg bv1 b c).posMem
+    ((cpl e1).interpretation salg bv1 b1 c1).posMem
   :=
     fun _ inw =>
-      let ninsE := inwCplElim (c := c) inw
-      inwCpl c (fun isDef => ninsE (le isDef))
+      let ninsE := inwCplElim (c := c0) inw
+      inwCpl c0 (fun isDef => ninsE (le isDef))
 
   def inter_mono_std_cpl
     {sig: Signature}
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
-      (e1.interpretation salg bv1 b b)
+      (e1.interpretation salg bv1 b1 b1)
         ≤
-      (e0.interpretation salg bv0 b b))
+      (e0.interpretation salg bv0 b0 b0))
   :
-    ((cpl e0).interpretation salg bv0 b c)
+    ((cpl e0).interpretation salg bv0 b0 c0)
       ≤
-    ((cpl e1).interpretation salg bv1 b c)
+    ((cpl e1).interpretation salg bv1 b1 c1)
   := {
     defLe := inter_mono_std_cpl_defMem le.posLe
     posLe := inter_mono_std_cpl_posMem le.defLe
@@ -166,15 +166,15 @@ namespace Expr
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (eq:
-      (e0.interpretation salg bv0 b b)
+      (e0.interpretation salg bv0 b0 b0)
         =
-      (e1.interpretation salg bv1 b b))
+      (e1.interpretation salg bv1 b1 b1))
   :
-    ((cpl e0).interpretation salg bv0 b c)
+    ((cpl e0).interpretation salg bv0 b0 c0)
       =
-    ((cpl e1).interpretation salg bv1 b c)
+    ((cpl e1).interpretation salg bv1 b1 c1)
   :=
     let _ := Set3.ordStd
     le_antisymm
@@ -187,16 +187,16 @@ namespace Expr
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
       ∀ dB,
-      (e0.interpretation salg (dB :: bv0) b c).defMem
+      (e0.interpretation salg (dB :: bv0) b0 c0).defMem
         ≤
-      (e1.interpretation salg (dB :: bv1) b c).defMem)
+      (e1.interpretation salg (dB :: bv1) b1 c1).defMem)
   :
-    ((arbUn e0).interpretation salg bv0 b c).defMem
+    ((arbUn e0).interpretation salg bv0 b0 c0).defMem
       ⊆
-    ((arbUn e1).interpretation salg bv1 b c).defMem
+    ((arbUn e1).interpretation salg bv1 b1 c1).defMem
   :=
     fun _ ⟨dB, isDef⟩ => ⟨dB, le dB isDef⟩
 
@@ -205,16 +205,16 @@ namespace Expr
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
       ∀ dB,
-      (e0.interpretation salg (dB :: bv0) b c).posMem
+      (e0.interpretation salg (dB :: bv0) b0 c0).posMem
         ≤
-      (e1.interpretation salg (dB :: bv1) b c).posMem)
+      (e1.interpretation salg (dB :: bv1) b1 c1).posMem)
   :
-    ((arbUn e0).interpretation salg bv0 b c).posMem
+    ((arbUn e0).interpretation salg bv0 b0 c0).posMem
       ⊆
-    ((arbUn e1).interpretation salg bv1 b c).posMem
+    ((arbUn e1).interpretation salg bv1 b1 c1).posMem
   :=
     fun _ ⟨dB, isPos⟩ => ⟨dB, le dB isPos⟩
 
@@ -223,16 +223,16 @@ namespace Expr
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
       ∀ dB,
-      (e0.interpretation salg (dB :: bv0) b c)
+      (e0.interpretation salg (dB :: bv0) b0 c0)
         ≤
-      (e1.interpretation salg (dB :: bv1) b c))
+      (e1.interpretation salg (dB :: bv1) b1 c1))
   :
-    ((arbUn e0).interpretation salg bv0 b c)
+    ((arbUn e0).interpretation salg bv0 b0 c0)
       ≤
-    ((arbUn e1).interpretation salg bv1 b c)
+    ((arbUn e1).interpretation salg bv1 b1 c1)
   := {
     defLe := inter_mono_std_arbUn_defMem (fun dB => (le dB).defLe)
     posLe := inter_mono_std_arbUn_posMem (fun dB => (le dB).posLe)
@@ -243,16 +243,16 @@ namespace Expr
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (eq:
       ∀ dB,
-      (e0.interpretation salg (dB :: bv0) b c)
+      (e0.interpretation salg (dB :: bv0) b0 c0)
         =
-      (e1.interpretation salg (dB :: bv1) b c))
+      (e1.interpretation salg (dB :: bv1) b1 c1))
   :
-    ((arbUn e0).interpretation salg bv0 b c)
+    ((arbUn e0).interpretation salg bv0 b0 c0)
       =
-    ((arbUn e1).interpretation salg bv1 b c)
+    ((arbUn e1).interpretation salg bv1 b1 c1)
   :=
     let _ := Set3.ordStd
     le_antisymm
@@ -265,16 +265,16 @@ namespace Expr
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
       ∀ dB,
-      (e0.interpretation salg (dB :: bv0) b c).defMem
+      (e0.interpretation salg (dB :: bv0) b0 c0).defMem
         ≤
-      (e1.interpretation salg (dB :: bv1) b c).defMem)
+      (e1.interpretation salg (dB :: bv1) b1 c1).defMem)
   :
-    ((arbIr e0).interpretation salg bv0 b c).defMem
+    ((arbIr e0).interpretation salg bv0 b0 c0).defMem
       ⊆
-    ((arbIr e1).interpretation salg bv1 b c).defMem
+    ((arbIr e1).interpretation salg bv1 b1 c1).defMem
   :=
     fun _ h dB => le dB (h dB)
 
@@ -283,16 +283,16 @@ namespace Expr
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
       ∀ dB,
-      (e0.interpretation salg (dB :: bv0) b c).posMem
+      (e0.interpretation salg (dB :: bv0) b0 c0).posMem
         ≤
-      (e1.interpretation salg (dB :: bv1) b c).posMem)
+      (e1.interpretation salg (dB :: bv1) b1 c1).posMem)
   :
-    ((arbIr e0).interpretation salg bv0 b c).posMem
+    ((arbIr e0).interpretation salg bv0 b0 c0).posMem
       ⊆
-    ((arbIr e1).interpretation salg bv1 b c).posMem
+    ((arbIr e1).interpretation salg bv1 b1 c1).posMem
   :=
     fun _ h dB => le dB (h dB)
 
@@ -301,16 +301,16 @@ namespace Expr
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (le:
       ∀ dB,
-      (e0.interpretation salg (dB :: bv0) b c)
+      (e0.interpretation salg (dB :: bv0) b0 c0)
         ≤
-      (e1.interpretation salg (dB :: bv1) b c))
+      (e1.interpretation salg (dB :: bv1) b1 c1))
   :
-    ((arbIr e0).interpretation salg bv0 b c)
+    ((arbIr e0).interpretation salg bv0 b0 c0)
       ≤
-    ((arbIr e1).interpretation salg bv1 b c)
+    ((arbIr e1).interpretation salg bv1 b1 c1)
   :=
   {
     defLe := inter_mono_std_arbIr_defMem (fun dB => (le dB).defLe)
@@ -322,16 +322,16 @@ namespace Expr
     {salg: Salgebra sig}
     {e0 e1: Expr sig}
     {bv0 bv1: List salg.D}
-    {b c: Valuation salg.D}
+    {b0 c0 b1 c1: Valuation salg.D}
     (eq:
       ∀ dB,
-      (e0.interpretation salg (dB :: bv0) b c)
+      (e0.interpretation salg (dB :: bv0) b0 c0)
         =
-      (e1.interpretation salg (dB :: bv1) b c))
+      (e1.interpretation salg (dB :: bv1) b1 c1))
   :
-    ((arbIr e0).interpretation salg bv0 b c)
+    ((arbIr e0).interpretation salg bv0 b0 c0)
       =
-    ((arbIr e1).interpretation salg bv1 b c)
+    ((arbIr e1).interpretation salg bv1 b1 c1)
   :=
     let _ := Set3.ordStd
     le_antisymm
