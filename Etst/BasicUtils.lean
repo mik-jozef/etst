@@ -65,6 +65,14 @@ noncomputable def List.Mem.index
   let ⟨i, eq⟩ := index memTail
   ⟨⟨.succ i, Nat.succ_lt_succ i.isLt⟩, eq⟩
 
+def List.Index.indexedTail
+  {P: T → Sort*}
+  (indexedFn: (i: (h :: t).Index) → P (h :: t)[i])
+:
+  (i: t.Index) → P t[i]
+:=
+  fun ⟨i, ilt⟩ => indexedFn ⟨i.succ, Nat.succ_lt_succ ilt⟩
+
 def List.Mem.toOr
   {t head: T}
   (mem: List.Mem t (head :: rest))
