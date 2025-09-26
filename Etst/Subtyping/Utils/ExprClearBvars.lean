@@ -122,7 +122,7 @@ namespace Expr
       clearVars_preserves_interp e bv1 b c ▸
       rfl
 
-    def change_bv_defMem
+    def changeBvDefMem
       (isClean: IsClean e)
       {bv1: List salg.D}
       (isDef: (e.interpretation salg bv0 b c).defMem d)
@@ -131,7 +131,7 @@ namespace Expr
     :=
       isClean.bvar_independent bv0 bv1 b c ▸ isDef
     
-    def change_bv_posMem
+    def changeBvPosMem
       (isClean: IsClean e)
       {bv1: List salg.D}
       (isPos: (e.interpretation salg bv0 b c).posMem d)
