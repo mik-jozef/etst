@@ -1024,3 +1024,40 @@ namespace PairExpr
     inwNatExprElimDepth s.toInw
   
 end PairExpr
+
+
+def Expr.toString: Expr pairSignature → String
+| .var x => s!"f{x}"
+| .bvar x => s!"b{x}"
+| .op pairSignature.Op.un args =>
+  let left := (args ArityTwo.zth).toString
+  let rite := (args ArityTwo.fst).toString
+  s!"({left}) | ({rite})"
+| .op pairSignature.Op.ir args =>
+  let left := (args ArityTwo.zth).toString
+  let rite := (args ArityTwo.fst).toString
+  s!"({left}) & ({rite})"
+| .op pairSignature.Op.condSome args =>
+  let cond := (args ArityOne.zth).toString
+  s!"(?i {cond})"
+| .op pairSignature.Op.condFull args =>
+  let cond := (args ArityOne.zth).toString
+  s!"(?f {cond})"
+| .op pairSignature.Op.null _ =>
+  "null"
+| .op pairSignature.Op.pair args =>
+  let left := (args ArityTwo.zth).toString
+  let rite := (args ArityTwo.fst).toString
+  s!"({left}, {rite})"
+| .cpl expr =>
+  let exprStr := expr.toString
+  s!"!({exprStr})"
+| .arbUn body =>
+  let bodyStr := body.toString
+  s!"Ex ({bodyStr})"
+| .arbIr body =>
+  let bodyStr := body.toString
+  s!"All ({bodyStr})"
+
+instance: ToString (Expr pairSignature) where
+  toString := Expr.toString
