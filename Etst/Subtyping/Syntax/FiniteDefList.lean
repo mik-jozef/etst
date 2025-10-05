@@ -217,6 +217,16 @@ syntax (name := pair_def_list)
 
 namespace pair_def_list
   
+  def termStxErr
+    (stx: Syntax)
+    (item: String)
+  :
+    TermElabM T
+  :=
+    throwErrorAt
+      stx
+      s!"Implementation error: unexpected syntax for {item}."
+  
   def cmdStxErr
     (stx: Syntax)
     (item: String)
@@ -232,18 +242,15 @@ namespace pair_def_list
     name: String
     descr: String
   
-  def getReservedNames (opt: Option T):
+  def getReservedNames:
     CommandElabM (List ReservedName)
   := do
-    match opt with
-    | some _ => return []
-    | none =>
-      let anyDef ← `(s3_pair_def| s3 $(mkIdent `Any) := Ex x, x)
-      let noneDef ← `(s3_pair_def| s3 $(mkIdent `None) := All x, x)
-      return [
-        ⟨anyDef, "Any", "universal"⟩,
-        ⟨noneDef, "None", "empty"⟩,
-      ]
+    let anyDef ← `(s3_pair_def| s3 $(mkIdent `Any) := Ex x, x)
+    let noneDef ← `(s3_pair_def| s3 $(mkIdent `None) := All x, x)
+    return [
+      ⟨anyDef, "Any", "universal"⟩,
+      ⟨noneDef, "None", "empty"⟩,
+    ]
   
   
   -- Convert `s3_pair_expr` syntax to a Lean term representing `Expr`
@@ -318,7 +325,7 @@ namespace pair_def_list
   def Vars.enc
     (vars: Vars)
   :
-    CommandElabM (String → Option (TSyntax `term))
+    TermElabM (String → Option (TSyntax `term))
   := do
     let encVars ← vars.mapIdxM (fun i _ => `(Expr.var $(mkNumLit i.repr)))
     return fun x =>
@@ -331,7 +338,7 @@ namespace pair_def_list
     (reservedNames: List ReservedName)
     (nameStx: TSyntax `ident)
   :
-    CommandElabM Vars
+    TermElabM Vars
   := do
     let resName name val :=
       s!"'{name}' is a reserved variable name denoting the {val} type."
@@ -383,7 +390,7 @@ namespace pair_def_list
     (defs: List Syntax)
     (varsSoFar: Vars)
   :
-    CommandElabM Vars
+    TermElabM Vars
   :=
     match defs with
     | [] => return varsSoFar
@@ -392,15 +399,15 @@ namespace pair_def_list
       | `(s3_pair_def| s3 $name:ident := $_) => do
         let varsSoFar ← varsSoFar.push reservedNames name
         getVars reservedNames defs varsSoFar
-      | stx => cmdStxErr stx "s3 in pairDefList"
+      | stx => termStxErr stx "s3 in pairDefList"
   
-  def getParentVars
+  def getFinDefListVars
     (reservedNames: List ReservedName)
-    (parentName: Option (TSyntax `ident))
+    (defListName: Option (TSyntax `ident))
   :
-    CommandElabM Vars
+    TermElabM Vars
   :=
-    match parentName with
+    match defListName with
     | none => return Vars.empty
     | some parentName => do
       let name ← resolveGlobalConstNoOverload parentName
@@ -409,8 +416,8 @@ namespace pair_def_list
       | none =>
         throwErrorAt parentName s!"Impossible -- we just resolved the name."
       | some parentInfo =>
-        let expr ← liftCoreM $ instantiateValueLevelParams parentInfo []
-        let varList ← liftTermElabM $ liftMetaM $ unsafe evalExpr
+        let expr ← instantiateValueLevelParams parentInfo []
+        let varList ← liftMetaM $ unsafe evalExpr
           (List String)
           (mkApp (.const ``List [0]) (.const ``String []))
           (mkApp2
@@ -436,7 +443,8 @@ namespace pair_def_list
       -- Why can't I merge these match expressions into one?
       match df with
       | `(s3_pair_def| s3 $name := $expr) =>
-        let expr ← makeExpr (←vars.enc) 0 expr
+        let varsEnc ← liftTermElabM vars.enc
+        let expr ← makeExpr varsEnc 0 expr
         let size ← `($(mkNumLit vars.length.repr))
         let df ← `({
           expr := $expr
@@ -468,13 +476,17 @@ namespace pair_def_list
           $defsArr*
         pairDefList.)
       =>
-        -- Note: these are empty lists if we're extending.
-        let reservedNames ← getReservedNames parentName
-        let reservedDefs := reservedNames.map ReservedName.stx
+        let reservedNames ← getReservedNames
+        let reservedDefs :=
+          match parentName with
+          | none => reservedNames.map ReservedName.stx
+          | some _ => []
         
         let defs := reservedDefs ++ defsArr.toList
-        let parentVars ← getParentVars reservedNames parentName
-        let vars ← getVars reservedNames defs parentVars
+        let parentVars ←
+          liftTermElabM $ getFinDefListVars reservedNames parentName
+        let vars ←
+          liftTermElabM $ getVars reservedNames defs parentVars
         
         if diagnostics.get (← getOptions) then
           logInfo s!"Declared variables: {repr vars}"
@@ -516,3 +528,14 @@ namespace pair_def_list
   -- #eval ExampleDL2.vars.C -- should be 7 (because of Any and None)
   
 end pair_def_list
+
+open pair_def_list in
+elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
+  let vars ← getFinDefListVars [] dl
+  let varsEnc ← vars.enc
+  let result ← liftCommandElabM (makeExpr varsEnc 0 expr)
+  elabTerm result none
+
+-- Test the new s3 syntax
+-- #check s3(Etst.pair_def_list.ExampleDL, X | Y)
+-- #check s3(pair_def_list.ExampleDL2, C | Y)
