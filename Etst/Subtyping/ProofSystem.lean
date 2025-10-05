@@ -156,7 +156,7 @@ inductive Subset
     Subset dl (.pair al ar) (.pair bl br)
 | unL (s: Subset dl a b) {r: PairExpr}: Subset dl a (.un b r)
 | unR (s: Subset dl a b) {l: PairExpr}: Subset dl a (.un l b)
-| induction
+| mutInduction
     (desc: MutIndDescriptor dl)
     (premises:
       (i: desc.Index) →
@@ -164,7 +164,7 @@ inductive Subset
     (i: desc.Index)
   :
     Subset dl desc[i].exprLeft desc[i].exprRite
-| coinduction
+| mutCoinduction
     (desc: MutCoindDescriptor dl)
     (premises:
       (i: desc.Index) →
@@ -172,3 +172,85 @@ inductive Subset
     (i: desc.Index)
   :
     Subset dl desc[i].exprLeft desc[i].exprRite
+
+
+def Subset.induction
+  (desc: InductionDescriptor dl)
+  (premise:
+    Subset
+      dl
+      (desc.expansion.replacePosVars fun x =>
+        desc.hypothesis x (.var x))
+      desc.rite)
+:
+  Subset dl (.var desc.left) desc.rite
+:=
+  Subset.mutInduction
+    [desc]
+    (fun
+      | ⟨0, _⟩ => premise)
+    ⟨0, Nat.zero_lt_succ _⟩
+
+def Subset.coinduction
+  (desc: CoinductionDescriptor dl)
+  (premise:
+    Subset
+      dl
+      desc.left
+      (.cpl
+        (desc.expansion.replacePosVars fun x =>
+          desc.hypothesis x (.var x))))
+:
+  Subset dl desc.left (.cpl (.var desc.rite))
+:=
+  Subset.mutCoinduction
+    [desc]
+    (fun
+      | ⟨0, _⟩ => premise)
+    ⟨0, Nat.zero_lt_succ _⟩
+
+
+def Subset.simpleInduction
+  (left: Nat)
+  (riteIsClean: Expr.IsClean rite)
+  (premise:
+    Subset
+      dl
+      ((dl.getDef left).replacePosVars fun x =>
+        if left = x then PairExpr.ir rite (.var x) else (.var x))
+      rite)
+:
+  Subset dl (.var left) rite
+:=
+  Subset.induction
+    {
+      left,
+      rite,
+      riteIsClean,
+      expansion := dl.getDef left,
+      expandsInto := .rfl
+    }
+    premise
+
+def Subset.simpleCoinduction
+  (rite: Nat)
+  (leftIsClean: Expr.IsClean left)
+  (premise:
+    Subset
+      dl
+      left
+      (.cpl
+        ((dl.getDef rite).replacePosVars fun x =>
+          if rite = x then PairExpr.ir (.cpl left) (.var x) else (.var x))))
+:
+  Subset dl left (.cpl (.var rite))
+:=
+  Subset.coinduction
+    {
+      left,
+      rite,
+      leftIsClean,
+      expansion := dl.getDef rite,
+      expandsInto := .rfl
+    }
+    premise
