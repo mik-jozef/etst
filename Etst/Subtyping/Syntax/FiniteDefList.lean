@@ -534,7 +534,9 @@ elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
   let vars ← getFinDefListVars [] dl
   let varsEnc ← vars.enc
   let result ← liftCommandElabM (makeExpr varsEnc 0 expr)
-  elabTerm result none
+  let expectedType ← ``(Expr pairSignature)
+  let expectedTypeExpr ← elabTerm expectedType none
+  elabTerm result (some expectedTypeExpr)
 
 -- Test the new s3 syntax
 -- #check s3(Etst.pair_def_list.ExampleDL, X | Y)
