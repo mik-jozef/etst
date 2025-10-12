@@ -1023,6 +1023,14 @@ namespace PairExpr
   :=
     inwNatExprElimDepth s.toInw
   
+  
+  def null_eq_null:
+    Eq
+      (Expr.op (sig := pairSignature) pairSignature.Op.null args0)
+      (Expr.op pairSignature.Op.null args1)
+  :=
+    congr rfl (funext nofun)
+  
 end PairExpr
 
 

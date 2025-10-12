@@ -48,4 +48,16 @@ namespace Pair
       (fun ⟨_, ltZero⟩ =>
         False.elim (Nat.not_lt_zero _ ltZero))
   
+  
+  def pairS3
+    (s0 s1: Set3 Pair)
+  :
+    Set3 Pair
+  := {
+    defMem := { p | ∃ p0 ∈ s0.defMem, ∃ p1 ∈ s1.defMem, p = Pair.pair p0 p1 },
+    posMem := { p | ∃ p0 ∈ s0.posMem, ∃ p1 ∈ s1.posMem, p = Pair.pair p0 p1 },
+    defLePos := fun _ ⟨p0, p0InDef, ⟨p1, p1InDef, pEq⟩⟩ =>
+      ⟨p0, s0.defLePos p0InDef, p1, s1.defLePos p1InDef, pEq⟩
+  }
+  
 end Pair
