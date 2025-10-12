@@ -259,7 +259,7 @@ namespace pair_def_list
     (bvi: Nat := 0) -- bound variable index
   :
     Syntax →
-    CommandElabM (TSyntax `term)
+    TermElabM (TSyntax `term)
   |
     `(s3_pair_expr| $name:ident) => do
       match vars name.getId.toString with
@@ -315,7 +315,7 @@ namespace pair_def_list
     match ← liftMacroM (Macro.expandMacro? stx) with
     | some stxNew => do
       makeExpr vars bvi stxNew
-    | none => cmdStxErr stx "s3_pair_expr"
+    | none => termStxErr stx "s3_pair_expr"
   
   
   abbrev Vars := List String
@@ -435,7 +435,7 @@ namespace pair_def_list
     (vars: Vars)
     (defs: List Syntax)
   :
-    CommandElabM (TSyntax `term)
+    TermElabM (TSyntax `term)
   := do
     match defs with
     | [] => `([])
@@ -443,8 +443,7 @@ namespace pair_def_list
       -- Why can't I merge these match expressions into one?
       match df with
       | `(s3_pair_def| s3 $name := $expr) =>
-        let varsEnc ← liftTermElabM vars.enc
-        let expr ← makeExpr varsEnc 0 expr
+        let expr ← makeExpr (← vars.enc) 0 expr
         let size ← `($(mkNumLit vars.length.repr))
         let df ← `({
           expr := $expr
@@ -457,7 +456,7 @@ namespace pair_def_list
         })
         `($df :: $(← getDefs vars defs))
       | stx =>
-        cmdStxErr stx "s3 in pairDefList"
+        termStxErr stx "s3 in pairDefList"
   
   def getParent
     (parentName: Option (TSyntax `ident))
@@ -494,7 +493,7 @@ namespace pair_def_list
         let output ← `(
           def $name : FiniteDefList pairSignature :=
             let parent := $(← getParent parentName)
-            let defs := $(← getDefs vars defs)
+            let defs := $(← liftTermElabM $ getDefs vars defs)
             
             FiniteDefList.extend parent defs (by decide)
           
@@ -533,7 +532,7 @@ open pair_def_list in
 elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
   let vars ← getFinDefListVars [] dl
   let varsEnc ← vars.enc
-  let result ← liftCommandElabM (makeExpr varsEnc 0 expr)
+  let result ← makeExpr varsEnc 0 expr
   let expectedType ← ``(Expr pairSignature)
   let expectedTypeExpr ← elabTerm expectedType none
   elabTerm result (some expectedTypeExpr)
