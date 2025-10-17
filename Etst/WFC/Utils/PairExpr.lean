@@ -161,8 +161,8 @@ namespace PairExpr
   | Nat.succ pred => succ (nat pred)
   
   
-  def InsP := Ins pairSalgebra
-  def InwP := Inw pairSalgebra
+  def InsP := Ins2 pairSalgebra
+  def InwP := Inw2 pairSalgebra
   
   
   def insUnL (s: InsP bv b c exprL d):
@@ -991,7 +991,7 @@ namespace PairExpr
   :
     p = .fromNat n
   :=
-    inwNatExprElim s.toInw
+    inwNatExprElim s.toInw2
   
   def inwNatExprElimNope
     (w: InwP bv b c (nat n) (.fromNat m))
@@ -1007,7 +1007,7 @@ namespace PairExpr
   :
     P
   :=
-    inwNatExprElimNope s.toInw neq
+    inwNatExprElimNope s.toInw2 neq
   
   def inwNatExprElimDepth
     (w: InwP bv b c (nat n) p)
@@ -1021,7 +1021,7 @@ namespace PairExpr
   :
     p.depth = n
   :=
-    inwNatExprElimDepth s.toInw
+    inwNatExprElimDepth s.toInw2
   
   
   def null_eq_null:

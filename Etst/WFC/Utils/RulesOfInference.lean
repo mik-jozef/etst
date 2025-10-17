@@ -11,11 +11,10 @@ namespace Expr
   def none: Expr sig := Expr.cpl any
 
 
-  abbrev Ins
+  abbrev Ins2
     (salg: Salgebra sig)
     (bv: List salg.D)
-    (b: Valuation salg.D)
-    (c: Valuation salg.D)
+    (b c: Valuation salg.D)
     (expr: Expr sig)
     (d: salg.D)
   :
@@ -23,71 +22,70 @@ namespace Expr
   :=
     (expr.interpretation salg bv b c).defMem d
   
-  abbrev Inw
+  abbrev Inw2
     (salg: Salgebra sig)
     (bv: List salg.D)
-    (b: Valuation salg.D)
-    (c: Valuation salg.D)
+    (b c: Valuation salg.D)
     (expr: Expr sig)
     (d: salg.D)
   :
     Prop
   :=
     (expr.interpretation salg bv b c).posMem d
-  
-  def Ins.toInw (s: Ins salg bv b c expr d):
-    Inw salg bv b c expr d
+
+  def Ins2.toInw2 (s: Ins2 salg bv b c expr d):
+    Inw2 salg bv b c expr d
   :=
     s.toPos
   
   
-  def Ins2
+  def Ins
     (salg: Salgebra sig)
     (bv: List salg.D)
     (v: Valuation salg.D)
     (expr: Expr sig)
     (d: salg.D)
   :=
-    Ins salg bv v v expr d
+    Ins2 salg bv v v expr d
   
-  def Inw2
+  def Inw
     (salg: Salgebra sig)
     (bv: List salg.D)
     (v: Valuation salg.D)
     (expr: Expr sig)
     (d: salg.D)
   :=
-    Inw salg bv v v expr d
+    Inw2 salg bv v v expr d
   
   
   def insArbUn
     dBound
-    (s: Ins salg (dBound :: bv) b c body d)
+    (s: Ins2 salg (dBound :: bv) b c body d)
   :
-    Ins salg bv b c (arbUn body) d
+    Ins2 salg bv b c (arbUn body) d
   :=
     ⟨dBound, s⟩
   
   def inwArbUn
     dBound
-    (s: Inw salg (dBound :: bv) b c body d)
+    (s: Inw2 salg (dBound :: bv) b c body d)
   :
-    Inw salg bv b c (arbUn body) d
+    Inw2 salg bv b c (arbUn body) d
   :=
     ⟨dBound, s⟩
   
   
   def insArbUnElim
-    (s: Ins salg bv b c (arbUn body) d)
+    (s: Ins2 salg bv b c (arbUn body) d)
   :
-    ∃ dBound, Ins salg (dBound :: bv) b c body d
+    ∃ dBound, Ins2 salg (dBound :: bv) b c body d
   :=
     s
   
   def inwArbUnElim
-    (s: Inw salg bv b c (arbUn body) d)
+    (s: Inw2 salg bv b c (arbUn body) d)
   :
-    ∃ dBound, Inw salg (dBound :: bv) b c body d
+    ∃ dBound, Inw2 salg (dBound :: bv) b c body d
   :=
     s
   
@@ -97,9 +95,9 @@ namespace Expr
     {bv: List salg.D}
     {b c: Valuation salg.D}
     {d: salg.D}
-    (s: ∀ dBound, Ins salg (dBound :: bv) b c body d)
+    (s: ∀ dBound, Ins2 salg (dBound :: bv) b c body d)
   :
-    Ins salg bv b c (arbIr body) d
+    Ins2 salg bv b c (arbIr body) d
   :=
     fun d => s d
   
@@ -108,57 +106,57 @@ namespace Expr
     {bv: List salg.D}
     {b c: Valuation salg.D}
     {d: salg.D}
-    (s: ∀ dBound, Inw salg (dBound :: bv) b c body d)
+    (s: ∀ dBound, Inw2 salg (dBound :: bv) b c body d)
   :
-    Inw salg bv b c (arbIr body) d
+    Inw2 salg bv b c (arbIr body) d
   :=
     fun d => s d
   
   
   def insArbIrElim
-    (s: Ins salg bv b c (arbIr body) d)
+    (s: Ins2 salg bv b c (arbIr body) d)
     (dBound: salg.D)
   :
-    Ins salg (dBound :: bv) b c body d
+    Ins2 salg (dBound :: bv) b c body d
   :=
     s dBound
   
   def inwArbIrElim
-    (s: Inw salg bv b c (arbIr body) d)
+    (s: Inw2 salg bv b c (arbIr body) d)
     (dBound: salg.D)
   :
-    Inw salg (dBound :: bv) b c body d
+    Inw2 salg (dBound :: bv) b c body d
   :=
     s dBound
   
   
   def insCpl
     (c: Valuation salg.D)
-    (w: ¬Inw salg bv b b expr d)
+    (w: ¬Inw2 salg bv b b expr d)
   :
-    Ins salg bv b c (cpl expr) d
+    Ins2 salg bv b c (cpl expr) d
   :=
     w
   
   def inwCpl
     (c: Valuation salg.D)
-    (s: ¬Ins salg bv b b expr d)
+    (s: ¬Ins2 salg bv b b expr d)
   :
-    Inw salg bv b c (cpl expr) d
+    Inw2 salg bv b c (cpl expr) d
   :=
     s
   
   def insCplElim
-    (s: Ins salg bv b c (cpl expr) d)
+    (s: Ins2 salg bv b c (cpl expr) d)
   :
-    ¬Inw salg bv b b expr d
+    ¬Inw2 salg bv b b expr d
   :=
     s
   
   def inwCplElim
-    (w: Inw salg bv b c (cpl expr) d)
+    (w: Inw2 salg bv b c (cpl expr) d)
   :
-    ¬Ins salg bv b b expr d
+    ¬Ins2 salg bv b b expr d
   :=
     w
   
@@ -166,18 +164,18 @@ namespace Expr
   -- Valuation c would be redundant since Lean would ignore it, and
   -- complain it cannot be synthetized.
   def ninsCpl
-    (w: Inw salg bv b b expr d)
+    (w: Inw2 salg bv b b expr d)
   :
-    ¬Ins salg bv b b (cpl expr) d
+    ¬Ins2 salg bv b b (cpl expr) d
   :=
-    fun ins => ins w
+    fun Ins2 => Ins2 w
   
   def ninwCpl
-    (s: Ins salg bv b b expr d)
+    (s: Ins2 salg bv b b expr d)
   :
-    ¬Inw salg bv b b (cpl expr) d
+    ¬Inw2 salg bv b b (cpl expr) d
   :=
-    fun inw => inw s
+    fun Inw2 => Inw2 s
   
   
   
@@ -186,9 +184,9 @@ namespace Expr
     {dBound: salg.D}
     (insBv: bv[x]? = some dBound)
   :
-    Ins salg bv b c (bvar x) dBound
+    Ins2 salg bv b c (bvar x) dBound
   := by
-    rw [Ins, interpretation, insBv]
+    rw [Ins2, interpretation, insBv]
     rfl
   
   def inwBound
@@ -196,35 +194,35 @@ namespace Expr
     {dBound: salg.D}
     (insBv: bv[x]? = some dBound)
   :
-    Inw salg bv b c (bvar x) dBound
+    Inw2 salg bv b c (bvar x) dBound
   := by
-    rw [Inw, interpretation, insBv]
+    rw [Inw2, interpretation, insBv]
     rfl
   
   def insBoundElim
-    (s: Ins salg bv b c (bvar x) d)
+    (s: Ins2 salg bv b c (bvar x) d)
     (eqBound: bv[x]? = some dBound)
   :
     d = dBound
   := by
-    rw [Ins, interpretation, eqBound] at s
+    rw [Ins2, interpretation, eqBound] at s
     exact s
   
   def inwBoundElim
-    (w: Inw salg bv b c (bvar x) d)
+    (w: Inw2 salg bv b c (bvar x) d)
     (eqBound: bv[x]? = some dBound)
   :
     d = dBound
   := by
-    rw [Inw, interpretation, eqBound] at w
+    rw [Inw2, interpretation, eqBound] at w
     exact w
   
 
-  def insAny: Ins salg bv b c any d := insArbUn d (insBound rfl)
-  def inwAny: Inw salg bv b c any d := inwArbUn d (inwBound rfl)
+  def insAny: Ins2 salg bv b c any d := insArbUn d (insBound rfl)
+  def inwAny: Inw2 salg bv b c any d := inwArbUn d (inwBound rfl)
   
-  def ninsNone: ¬Ins salg bv b b none d := ninsCpl inwAny
-  def ninwNone: ¬Inw salg bv b b none d := ninwCpl insAny
+  def ninsNone: ¬Ins2 salg bv b b none d := ninsCpl inwAny
+  def ninwNone: ¬Inw2 salg bv b b none d := ninwCpl insAny
   
   
   abbrev InsWfm
@@ -236,7 +234,7 @@ namespace Expr
   :
     Prop
   :=
-    expr.Ins2 salg bv (dl.wfm salg) d
+    expr.Ins salg bv (dl.wfm salg) d
   
   abbrev InwWfm
     (salg: Salgebra sig)
@@ -247,7 +245,7 @@ namespace Expr
   :
     Prop
   :=
-    expr.Inw2 salg bv (dl.wfm salg) d
+    expr.Inw salg bv (dl.wfm salg) d
   
   
   def InsWfm.of_ins_def
