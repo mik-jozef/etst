@@ -24,13 +24,13 @@ instance (T: Prop): ToString (Witness T) where
 
 namespace Pair
   def usedVarsLt
-    (expr: Expr pairSignature)
+    (expr: Expr E pairSignature)
     (bound: Nat)
   :
     Witness (∀ x: expr.UsesVar, x.val < bound)
   :=
     match expr with
-    | .var xV =>
+    | .var _ xV =>
       if hBLe: bound ≤ xV
         then .none
         else .isTrue fun ⟨x, eq⟩ =>
@@ -87,7 +87,7 @@ namespace Pair
           | ⟨x, ArityTwo.zth, isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
           | ⟨x, ArityTwo.fst, isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
     |
-      .cpl expr => usedVarsLt expr bound
+      .compl expr => usedVarsLt expr bound
     | .arbUn expr => usedVarsLt expr bound
     | .arbIr expr => usedVarsLt expr bound
   

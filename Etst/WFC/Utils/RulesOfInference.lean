@@ -6,288 +6,171 @@ namespace Etst
 
 namespace Expr
   -- `any` contains all elements, under any valuation.
-  def any: Expr sig := Expr.arbUn (.bvar 0)
+  def any: Expr E sig := .arbUn (.bvar 0)
   -- `none` contains no elements, under any valuation.
-  def none: Expr sig := Expr.cpl any
+  def none: Expr E sig := .compl any
+end Expr
 
-
-  abbrev Ins2
-    (salg: Salgebra sig)
-    (bv: List salg.D)
-    (b c: Valuation salg.D)
-    (expr: Expr sig)
-    (d: salg.D)
+namespace SingleLaneExpr
+  def inArbUn
+    (dBound: salg.D)
+    (inBody: body.interpretation salg (dBound :: bv) b c d)
   :
-    Prop
+    (arbUn body).interpretation salg bv b c d
   :=
-    (expr.interpretation salg bv b c).defMem d
+    ⟨dBound, inBody⟩
   
-  abbrev Inw2
-    (salg: Salgebra sig)
-    (bv: List salg.D)
-    (b c: Valuation salg.D)
-    (expr: Expr sig)
-    (d: salg.D)
+  
+  def inArbUnElim
+    (inArbUn: (arbUn body).interpretation salg bv b c d)
   :
-    Prop
+    ∃ dBound, body.interpretation salg (dBound :: bv) b c d
   :=
-    (expr.interpretation salg bv b c).posMem d
-
-  def Ins2.toInw2 (s: Ins2 salg bv b c expr d):
-    Inw2 salg bv b c expr d
-  :=
-    s.toPos
+    inArbUn
   
   
-  def Ins
-    (salg: Salgebra sig)
-    (bv: List salg.D)
-    (v: Valuation salg.D)
-    (expr: Expr sig)
-    (d: salg.D)
-  :=
-    Ins2 salg bv v v expr d
-  
-  def Inw
-    (salg: Salgebra sig)
-    (bv: List salg.D)
-    (v: Valuation salg.D)
-    (expr: Expr sig)
-    (d: salg.D)
-  :=
-    Inw2 salg bv v v expr d
-  
-  
-  def insArbUn
-    dBound
-    (s: Ins2 salg (dBound :: bv) b c body d)
-  :
-    Ins2 salg bv b c (arbUn body) d
-  :=
-    ⟨dBound, s⟩
-  
-  def inwArbUn
-    dBound
-    (s: Inw2 salg (dBound :: bv) b c body d)
-  :
-    Inw2 salg bv b c (arbUn body) d
-  :=
-    ⟨dBound, s⟩
-  
-  
-  def insArbUnElim
-    (s: Ins2 salg bv b c (arbUn body) d)
-  :
-    ∃ dBound, Ins2 salg (dBound :: bv) b c body d
-  :=
-    s
-  
-  def inwArbUnElim
-    (s: Inw2 salg bv b c (arbUn body) d)
-  :
-    ∃ dBound, Inw2 salg (dBound :: bv) b c body d
-  :=
-    s
-  
-  
-  def insArbIr
+  def inArbIr
     {salg: Salgebra sig}
     {bv: List salg.D}
     {b c: Valuation salg.D}
     {d: salg.D}
-    (s: ∀ dBound, Ins2 salg (dBound :: bv) b c body d)
+    (inBody: ∀ dBound, body.interpretation salg (dBound :: bv) b c d)
   :
-    Ins2 salg bv b c (arbIr body) d
+    (arbIr body).interpretation salg bv b c d
   :=
-    fun d => s d
-  
-  def inwArbIr
-    {salg: Salgebra sig}
-    {bv: List salg.D}
-    {b c: Valuation salg.D}
-    {d: salg.D}
-    (s: ∀ dBound, Inw2 salg (dBound :: bv) b c body d)
-  :
-    Inw2 salg bv b c (arbIr body) d
-  :=
-    fun d => s d
+    fun d => inBody d
   
   
-  def insArbIrElim
-    (s: Ins2 salg bv b c (arbIr body) d)
+  def inArbIrElim
+    (inArbIr: (arbIr body).interpretation salg bv b c d)
     (dBound: salg.D)
   :
-    Ins2 salg (dBound :: bv) b c body d
+    body.interpretation salg (dBound :: bv) b c d
   :=
-    s dBound
-  
-  def inwArbIrElim
-    (s: Inw2 salg bv b c (arbIr body) d)
-    (dBound: salg.D)
-  :
-    Inw2 salg (dBound :: bv) b c body d
-  :=
-    s dBound
+    inArbIr dBound
   
   
-  def insCpl
+  def inCompl
     (c: Valuation salg.D)
-    (w: ¬Inw2 salg bv b b expr d)
+    (ninBody: ¬body.interpretation salg bv b b d)
   :
-    Ins2 salg bv b c (cpl expr) d
+    (compl body).interpretation salg bv b c d
   :=
-    w
+    ninBody
   
-  def inwCpl
-    (c: Valuation salg.D)
-    (s: ¬Ins2 salg bv b b expr d)
+  def inComplElim
+    (inCompl: (compl body).interpretation salg bv b b d)
   :
-    Inw2 salg bv b c (cpl expr) d
+    ¬body.interpretation salg bv b b d
   :=
-    s
-  
-  def insCplElim
-    (s: Ins2 salg bv b c (cpl expr) d)
-  :
-    ¬Inw2 salg bv b b expr d
-  :=
-    s
-  
-  def inwCplElim
-    (w: Inw2 salg bv b c (cpl expr) d)
-  :
-    ¬Ins2 salg bv b b expr d
-  :=
-    w
-  
+    inCompl
   
   -- Valuation c would be redundant since Lean would ignore it, and
   -- complain it cannot be synthetized.
-  def ninsCpl
-    (w: Inw2 salg bv b b expr d)
+  def ninCompl
+    (inBody: body.interpretation salg bv b b d)
   :
-    ¬Ins2 salg bv b b (cpl expr) d
+    ¬(compl body).interpretation salg bv b b d
   :=
-    fun Ins2 => Ins2 w
+    (· inBody)
   
-  def ninwCpl
-    (s: Ins2 salg bv b b expr d)
+  
+  def interp_bvar_eq_empty
+    (nlt: ¬ x < bv.length)
   :
-    ¬Inw2 salg bv b b (cpl expr) d
-  :=
-    fun Inw2 => Inw2 s
+    (bvar x).interpretation salg bv b c = {}
+  := by
+    show (match bv[x]? with
+      | .none => ∅
+      | .some d => {d}) = _
+    rw [List.getElem?_eq_none_iff.mpr (le_of_not_gt nlt)]
   
+  def interp_bvar_eq_of_lt
+    (lt: x < bv.length)
+  :
+    (bvar x).interpretation salg bv b c = {bv[x]}
+  := by
+    show (match bv[x]? with
+      | .none => ∅
+      | .some d => {d}) = _
+    rw [List.getElem?_eq_getElem lt]
   
-  
-  def insBound
+  def interp_bvar_eq_singleton
     {bv: List salg.D}
     {dBound: salg.D}
-    (insBv: bv[x]? = some dBound)
+    (eq: bv[x]? = some dBound)
   :
-    Ins2 salg bv b c (bvar x) dBound
+    (bvar x).interpretation salg bv b c = {dBound}
   := by
-    rw [Ins2, interpretation, insBv]
-    rfl
+    show (match bv[x]? with
+      | .none => ∅
+      | .some d => {d}) = _
+    rw [eq]
   
-  def inwBound
+  def inBvar
     {bv: List salg.D}
     {dBound: salg.D}
-    (insBv: bv[x]? = some dBound)
+    (eq: bv[x]? = some dBound)
   :
-    Inw2 salg bv b c (bvar x) dBound
-  := by
-    rw [Inw2, interpretation, insBv]
-    rfl
+    (bvar x).interpretation salg bv b c dBound
+  :=
+    interp_bvar_eq_singleton eq ▸ rfl
   
-  def insBoundElim
-    (s: Ins2 salg bv b c (bvar x) d)
-    (eqBound: bv[x]? = some dBound)
+  def inBvarElim
+    (h: (bvar x).interpretation salg bv b c d)
+    (eq: bv[x]? = some dBound)
   :
     d = dBound
   := by
-    rw [Ins2, interpretation, eqBound] at s
-    exact s
-  
-  def inwBoundElim
-    (w: Inw2 salg bv b c (bvar x) d)
-    (eqBound: bv[x]? = some dBound)
-  :
-    d = dBound
-  := by
-    rw [Inw2, interpretation, eqBound] at w
-    exact w
-  
-
-  def insAny: Ins2 salg bv b c any d := insArbUn d (insBound rfl)
-  def inwAny: Inw2 salg bv b c any d := inwArbUn d (inwBound rfl)
-  
-  def ninsNone: ¬Ins2 salg bv b b none d := ninsCpl inwAny
-  def ninwNone: ¬Inw2 salg bv b b none d := ninwCpl insAny
+    rw [interp_bvar_eq_singleton eq] at h
+    exact Set.mem_singleton_iff.mp h
   
   
-  abbrev InsWfm
+  def inAny: interpretation salg bv b c Expr.any d := inArbUn d (inBvar rfl)
+  def ninNone: ¬ interpretation salg bv b b Expr.none d := ninCompl inAny
+  
+  def interp_none_eq_empty:
+    interpretation salg bv b c Expr.none = {}
+  :=
+    le_antisymm (fun _ => ninNone) nofun
+  
+  
+  abbrev InWfm
     (salg: Salgebra sig)
     (bv: List salg.D)
     (dl: DefList sig)
-    (expr: Expr sig)
+    (expr: SingleLaneExpr sig)
     (d: salg.D)
   :
     Prop
   :=
-    expr.Ins salg bv (dl.wfm salg) d
+    expr.interpretation salg bv (dl.wfm salg) (dl.wfm salg) d
   
-  abbrev InwWfm
-    (salg: Salgebra sig)
-    (bv: List salg.D)
-    (dl: DefList sig)
-    (expr: Expr sig)
-    (d: salg.D)
+  
+  def InsWfm.of_in_def
+    (inDef: InWfm salg [] dl ((dl.getDef x).toLane lane) d)
   :
-    Prop
-  :=
-    expr.Inw salg bv (dl.wfm salg) d
-  
-  
-  def InsWfm.of_ins_def
-    (s: InsWfm salg [] dl (dl.getDef x) d)
-  :
-    InsWfm salg [] dl (.var x) d
+    InWfm salg [] dl (.var lane x) d
   := by
-    unfold InsWfm;
-    exact (DefList.wfm_isModel salg dl) ▸ s
+    cases lane
+    all_goals
+    unfold InWfm
+    rw [DefList.wfm_isModel salg dl]
+    exact inDef
   
-  def InwWfm.of_inw_def
-    (w: InwWfm salg [] dl (dl.getDef x) d)
+  
+  def InsWfm.in_def
+    (s: InWfm salg [] dl (.var lane x) d)
   :
-    InwWfm salg [] dl (.var x) d
-  := by
-    unfold InwWfm;
-    exact (DefList.wfm_isModel salg dl) ▸ w
-  
-  
-  def InsWfm.ins_def_of_ins
-    (s: InsWfm salg [] dl (.var x) d)
-  :
-    InsWfm salg [] dl (dl.getDef x) d
+    InWfm salg [] dl ((dl.getDef x).toLane lane) d
   :=
     let v := dl.wfm salg
     
     let eqAtN: v x = dl.interpretation salg v v x :=
       congr (DefList.wfm_isModel salg dl) rfl
     
-    show (dl.interpretation salg v v x).defMem d from eqAtN ▸ s
+    match lane with
+    | .defLane => show (dl.interpretation salg v v x).defMem d from eqAtN ▸ s
+    | .posLane => show (dl.interpretation salg v v x).posMem d from eqAtN ▸ s
   
-  def InsWfm.inw_def_of_inw
-    (w: InwWfm salg [] dl (.var x) d)
-  :
-    InwWfm salg [] dl (dl.getDef x) d
-  :=
-    let v := dl.wfm salg
-    
-    let eqAtN:
-      v x = dl.interpretation salg v v x
-    :=
-      congr (DefList.wfm_isModel salg dl) rfl
-
-    show (dl.interpretation salg v v x).posMem d from eqAtN ▸ w
-end Expr
+end SingleLaneExpr

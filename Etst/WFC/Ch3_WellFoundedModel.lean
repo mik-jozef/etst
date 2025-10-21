@@ -273,7 +273,7 @@ def DefList.wfm_is_fp_operatorB
 noncomputable def DefList.exprInterp
   (salg: Salgebra sig)
   (dl: DefList sig)
-  (expr: Expr sig)
+  (expr: BasicExpr sig)
 :
   Set3 salg.D
 :=

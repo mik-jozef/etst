@@ -46,23 +46,44 @@ structure Signature where
   
   Variables are natural numbers. The arguments of an operator `op`
   are indexed by the type `sig.Params op`.
+  
+  `E` (extra info) is for storing arbitrary extra information in each
+  variable.
 -/
-inductive Expr (sig: Signature) where
-| var (x: Nat)
+inductive Expr (E: Type*) (sig: Signature) where
+| var (e: E) (x: Nat)
 | bvar (x: Nat) -- Uses de Bruijn indices
-| op (op: sig.Op) (args: sig.Params op → Expr sig)
-| cpl (expr: Expr sig)
-| arbUn (body: Expr sig)
-| arbIr (body: Expr sig)
+| op (op: sig.Op) (args: sig.Params op → Expr E sig)
+| compl (body: Expr E sig)
+| arbUn (body: Expr E sig)
+| arbIr (body: Expr E sig)
+
+
+abbrev BasicExpr := Expr Unit
+def BasicExpr.var (x: Nat): BasicExpr sig := Expr.var () x
+def BasicExpr.bvar (x: Nat): BasicExpr sig := Expr.bvar x
+def BasicExpr.op
+  (op: sig.Op)
+  (args: sig.Params op → BasicExpr sig)
+:
+  BasicExpr sig
+:=
+  Expr.op op args
+def BasicExpr.compl (body: BasicExpr sig): BasicExpr sig :=
+  Expr.compl body
+def BasicExpr.arbUn (body: BasicExpr sig): BasicExpr sig :=
+  Expr.arbUn body
+def BasicExpr.arbIr (body: BasicExpr sig): BasicExpr sig :=
+  Expr.arbIr body
 
 namespace Expr
-  def UsesVar (expr: Expr sig): Set Nat :=
+  def UsesVar (expr: Expr E sig): Set Nat :=
     fun x =>
       match expr with
-        | var v => x = v
+        | var _ v => x = v
         | bvar _ => False
         | op _ args => ∃ param, (args param).UsesVar x
-        | cpl expr => expr.UsesVar x
+        | compl body => body.UsesVar x
         | arbUn body => body.UsesVar x
         | arbIr body => body.UsesVar x
 
@@ -75,12 +96,12 @@ namespace Expr
     Complementing a bound variable is allowed because it is guaranteed
     to be two-valued, so it cannot result in a contradictory definition.
   -/
-  def IsPositive: Expr sig → Prop
-  | var _ => True
+  def IsPositive: Expr E sig → Prop
+  | var _ _ => True
   | bvar _ => True
   | op _ args => ∀ param, (args param).IsPositive
-  | cpl (.bvar _) => True
-  | cpl _ => False
+  | compl (bvar _) => True
+  | compl _ => False
   | arbUn body => body.IsPositive
   | arbIr body => body.IsPositive
 
@@ -91,18 +112,18 @@ namespace Expr
     This is a proper version of the sizeOf function defined natively
     by Lean.
   -/
-  noncomputable def sizeOf: Expr sig → Ordinal.{0}
-  | var _ => 0
+  noncomputable def sizeOf: Expr E sig → Ordinal.{0}
+  | var _ _ => 0
   | bvar _ => 0
   | op _ args =>
       iSup (fun arg => (args arg).sizeOf) + 1
-  | cpl expr => expr.sizeOf + 1
+  | compl body => body.sizeOf + 1
   | arbUn body => body.sizeOf + 1
   | arbIr body => body.sizeOf + 1
 end Expr
 
 
-def DefList.GetDef (sig: Signature) := Nat → Expr sig
+def DefList.GetDef (sig: Signature) := Nat → BasicExpr sig
 
 /-
   A definition list is a map from natural numbers to expressions.

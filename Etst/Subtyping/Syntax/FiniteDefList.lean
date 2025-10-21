@@ -11,7 +11,7 @@ open Lean Elab Command Term Meta Syntax
 
 
 def Expr.VarLtSize
-  (expr: Expr sig)
+  (expr: Expr E sig)
   (size: Nat)
 :=
   ∀ y ∈ expr.UsesVar, y < size
@@ -20,7 +20,7 @@ def Expr.noneLtSize
   {sig: Signature}
   (size: Nat)
 :
-  (none (sig := sig)).VarLtSize size
+  (none (E := E) (sig := sig)).VarLtSize size
 :=
   nofun
 
@@ -82,7 +82,7 @@ def FiniteDefList.emptySizeZero:
 
 structure FiniteDefList.Def (sig: Signature) (size: Nat) where
   name: String
-  expr: Expr sig
+  expr: BasicExpr sig
   varLt: expr.VarLtSize size
 
 def FiniteDefList.defsGetNth
@@ -277,7 +277,7 @@ namespace pair_def_list
         $(← makeExpr vars bvi b))
   |
     `(s3_pair_expr| ! $a:s3_pair_expr)
-    => do `(Expr.cpl $(← makeExpr vars bvi a))
+    => do `(Expr.compl $(← makeExpr vars bvi a))
   |
     `(s3_pair_expr|
       $a:s3_pair_expr | $b:s3_pair_expr)
@@ -327,7 +327,7 @@ namespace pair_def_list
   :
     TermElabM (String → Option (TSyntax `term))
   := do
-    let encVars ← vars.mapIdxM (fun i _ => `(Expr.var $(mkNumLit i.repr)))
+    let encVars ← vars.mapIdxM (fun i _ => `(Expr.var () $(mkNumLit i.repr)))
     return fun x =>
       match vars.idxOf? x with
       | none => none
@@ -524,7 +524,9 @@ namespace pair_def_list
   pairDefList.
   
   -- #print ExampleDL
-  -- #eval ExampleDL2.vars.C -- should be 7 (because of Any and None)
+  
+  -- equals 7 because of Any and None.
+  example: ExampleDL2.vars.C = 7 := rfl
   
 end pair_def_list
 
@@ -533,10 +535,10 @@ elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
   let vars ← getFinDefListVars [] dl
   let varsEnc ← vars.enc
   let result ← makeExpr varsEnc 0 expr
-  let expectedType ← ``(Expr pairSignature)
+  let expectedType ← ``(BasicPairExpr)
   let expectedTypeExpr ← elabTerm expectedType none
   elabTerm result (some expectedTypeExpr)
 
 -- Test the new s3 syntax
--- #check s3(Etst.pair_def_list.ExampleDL, X | Y)
--- #check s3(pair_def_list.ExampleDL2, C | Y)
+#check s3(Etst.pair_def_list.ExampleDL, X | Y)
+#check s3(pair_def_list.ExampleDL2, C | Y)

@@ -93,13 +93,12 @@ def List.Mem.elim
 :=
   mem.toOr.elim left rite
 
-def List.get?_append_left
-  (lt: i < List.length l)
+def List.length_le_append_rite
+  (l r: List T)
 :
-  l[i]? = (l ++ r)[i]?
+  l.length ≤ (l ++ r).length
 :=
-  match i, l with
-  | 0, cons _ _ => rfl
-  | n+1, cons _ t =>
-    show t[n]? = (t ++ r)[n]? from
-      List.get?_append_left (Nat.lt_of_succ_lt_succ lt)
+  match l with
+  | [] => Nat.zero_le _
+  | _ :: tail =>
+    Nat.succ_le_succ (List.length_le_append_rite tail r)

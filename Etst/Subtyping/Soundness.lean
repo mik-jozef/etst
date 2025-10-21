@@ -36,9 +36,9 @@ def Subset.isSound
     (fun _ isPos => isPos)
     (fun
     | _, _, isSubL, isSubR, .pair _ _, isPos =>
-      let ⟨inwL, inwR⟩ := inwPairElim isPos
-      insPair (isSubL inwL) (isSubR inwR))
-    (fun _ _ isSub _ isPos => insUnL (isSub isPos))
-    (fun _ _ isSub _ isPos => insUnR (isSub isPos))
+      let ⟨inwL, inwR⟩ := inPairElim isPos
+      inPair (isSubL inwL) (isSubR inwR))
+    (fun _ _ isSub _ isPos => inUnL (isSub isPos))
+    (fun _ _ isSub _ isPos => inUnR (isSub isPos))
     (fun _ _ out ih _ isPos => MutIndDescriptor.isSound _ ih out isPos)
     (fun _ _ out ih _ isPos => MutCoindDescriptor.isSound _ ih out isPos)

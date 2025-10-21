@@ -17,7 +17,7 @@ def every_cause_inapplicable_preserves_definitive_nonmember
   (salg: Salgebra sig)
   (b c: Valuation salg.D)
   (d: salg.D)
-  (expr: Expr sig)
+  (expr: BasicExpr sig)
   (outSet: Set (ValVar salg.D))
   (isEveryCauseInapplicable:
     {cause: Cause salg.D} →
@@ -120,7 +120,7 @@ def completenessProofC
                   byContradiction (isSat.backgroundOutHold · isPos)
               }
               
-              Expr.interpretation_mono_apx_defMem
+              BasicExpr.interpretation_mono_apx_defMem
                 isLe
                 (fun _ _ => isSat.contextInsHold)
                 isDefN

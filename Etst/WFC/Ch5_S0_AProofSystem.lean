@@ -117,25 +117,25 @@ def IsStrongCause
   (salg: Salgebra sig)
   (cause: Cause salg.D)
   (d: salg.D)
-  (expr: Expr sig)
+  (expr: BasicExpr sig)
 :
   Prop
 :=
   {b c: Valuation salg.D} →
   cause.IsStronglySatisfiedBy b c →
-  (expr.interpretation salg [] b c).defMem d
+  expr.interpretationDef salg [] b c d
 
 def IsWeakCause
   (salg: Salgebra sig)
   (cause: Cause salg.D)
   (d: salg.D)
-  (expr: Expr sig)
+  (expr: BasicExpr sig)
 :
   Prop
 :=
   {b c: Valuation salg.D} →
   cause.IsWeaklySatisfiedBy b c →
-  (expr.interpretation salg [] b c).posMem d
+  expr.interpretationPos salg [] b c d
 
 
 mutual

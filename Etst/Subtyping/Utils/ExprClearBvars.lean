@@ -1,14 +1,15 @@
-import Etst.WFC.Utils.ExprMonoEq
+import Etst.WFC.Utils.InterpretationMono
+import Etst.WFC.Utils.RulesOfInference
 
 namespace Etst
 
 
 namespace Expr
-  def clearBvars (max := 0): Expr sig → Expr sig
-    | .var x => .var x
+  def clearBvars (max := 0): Expr E sig → Expr E sig
+    | .var info x => .var info x
     | .bvar x => if x < max then .bvar x else .none
     | .op o args => .op o (fun p => (args p).clearBvars max)
-    | .cpl e => .cpl (e.clearBvars max)
+    | .compl e => .compl (e.clearBvars max)
     | .arbUn body => .arbUn (body.clearBvars (max + 1))
     | .arbIr body => .arbIr (body.clearBvars (max + 1))
   
@@ -16,7 +17,7 @@ namespace Expr
     {max: Nat}
     (lt: x < max)
   :
-    clearBvars (sig := sig) max (.bvar x) = .bvar x
+    clearBvars (E := E) (sig := sig) max (.bvar x) = .bvar x
   :=
     if_pos lt
   
@@ -24,121 +25,181 @@ namespace Expr
     {max: Nat}
     (nlt: ¬ x < max)
   :
-    clearBvars (sig := sig) max (.bvar x) = none
+    clearBvars (E := E) (sig := sig) max (.bvar x) = none
   :=
     if_neg nlt
   
-  
-  def clearVars_preserves_interp_bv
-    (e: Expr sig)
-    (bv: List salg.D)
-    (b c: Valuation salg.D)
+  def clearBvars_none_eq_none
   :
-    Eq
-      (e.interpretation salg bv b c)
-      ((e.clearBvars bv.length).interpretation salg (bv ++ bvRest) b c)
+    clearBvars (E := E) (sig := sig) n none = none
   :=
-    match e with
-    | var _ => rfl
-    | bvar x =>
-      if h: x < bv.length then by
-        unfold interpretation
-        rw [clearBvars_eq_bvar h, bv.get?_append_left h]
-      else
-        clearBvars_eq_none h ▸
-        inter_bvar_eq_empty h ▸
-        inter_none_eq_empty.symm
-    | op _ args =>
-      eq_op_of_eq (fun param =>
-        clearVars_preserves_interp_bv (args param) bv b c)
-    | cpl body =>
-      let ih := clearVars_preserves_interp_bv body bv b b
-      eq_cpl_of_eq ih
-    | arbUn body =>
-      eq_arbUn_of_eq (fun dX =>
-        clearVars_preserves_interp_bv body (dX :: bv) b c)
-    | arbIr body =>
-      eq_arbIr_of_eq (fun dX =>
-        clearVars_preserves_interp_bv (bvRest := bvRest) body (dX :: bv) b c)
-  
-  def clearVars_preserves_interp
-    (e: Expr sig)
-    (bv: List salg.D)
-    (b c: Valuation salg.D)
-  :
-    Eq
-      (e.interpretation salg [] b c)
-      (e.clearBvars.interpretation salg bv b c)
-  :=
-    clearVars_preserves_interp_bv e [] b c
-  
-  def clearVars_none_eq_none
-  :
-    clearBvars n none = none (sig := sig)
-  :=
-    show (if 0 < n + 1 then bvar 0 else none).arbUn.cpl = none from
+    show (if 0 < n + 1 then bvar 0 else none).arbUn.compl = none from
     if_pos (Nat.zero_lt_succ n) ▸ rfl
   
-  def clearVars_idempotent (e: Expr sig):
-    (e.clearBvars n).clearBvars n = e.clearBvars n
+  def clearBvars_idempotent (expr: Expr E sig):
+    (expr.clearBvars n).clearBvars n = expr.clearBvars n
   :=
-    match e with
-    | .var _ => rfl
+    match expr with
+    | .var _ _ => rfl
     | .bvar x =>
       if h: x < n then by
         rw [clearBvars_eq_bvar h, clearBvars_eq_bvar h]
       else by
         rw [clearBvars_eq_none h]
-        exact clearVars_none_eq_none
+        exact clearBvars_none_eq_none
     | .op o args =>
       congrArg
         (Expr.op o)
-        (funext fun param => (args param).clearVars_idempotent)
-    | .cpl body =>
-      congrArg Expr.cpl body.clearVars_idempotent
+        (funext fun param => (args param).clearBvars_idempotent)
+    | .compl body =>
+      congrArg Expr.compl body.clearBvars_idempotent
     | .arbUn body =>
-      congrArg Expr.arbUn (body.clearVars_idempotent)
+      congrArg Expr.arbUn (body.clearBvars_idempotent)
     | .arbIr body =>
-      congrArg Expr.arbIr (body.clearVars_idempotent)
+      congrArg Expr.arbIr (body.clearBvars_idempotent)
   
+  def IsClean (expr: Expr E sig): Prop :=
+    expr = expr.clearBvars
   
-  def IsClean (e: Expr sig): Prop :=
-    e = e.clearBvars
+  def clearBvars_isClean (expr: Expr E sig):
+    IsClean expr.clearBvars
+  :=
+    (clearBvars_idempotent expr).symm
   
-  def clearVars_isClean (e: Expr sig): IsClean (e.clearBvars) :=
-    (clearVars_idempotent e).symm
+end Expr
+
+namespace SingleLaneExpr
+  open Expr
+  
+  def clearBvars_preserves_interp_bv
+    (expr: SingleLaneExpr sig)
+    (bv bvRest: List salg.D)
+    (b c: Valuation salg.D)
+  :
+    Eq
+      (expr.interpretation salg bv b c)
+      (interpretation salg (bv ++ bvRest) b c (expr.clearBvars bv.length))
+  :=
+    match expr with
+    | .var _ _ => rfl
+    | .bvar x =>
+      if h: x < bv.length then
+        let ltExtra: x < (bv ++ bvRest).length := 
+          h.trans_le (bv.length_le_append_rite bvRest)
+        let eq: clearBvars bv.length (bvar x) = bvar x :=
+          clearBvars_eq_bvar h
+        by
+        rw [interp_bvar_eq_of_lt h, eq]
+        rw [interp_bvar_eq_of_lt ltExtra]
+        rw [bv.getElem_append_left h]
+      else
+        clearBvars_eq_none h ▸
+        SingleLaneExpr.interp_bvar_eq_empty h ▸
+        SingleLaneExpr.interp_none_eq_empty.symm
+    | .op _ args =>
+      eq_op_of_eq (fun param =>
+        clearBvars_preserves_interp_bv (args param) bv bvRest b c)
+    | .compl body =>
+      let ih := clearBvars_preserves_interp_bv body bv bvRest b b
+      eq_compl_of_eq c c ih
+    | .arbUn body =>
+      eq_arbUn_of_eq (fun dX =>
+        clearBvars_preserves_interp_bv body (dX :: bv) bvRest b c)
+    | .arbIr body =>
+      eq_arbIr_of_eq (fun dX =>
+        clearBvars_preserves_interp_bv (bvRest := bvRest) body (dX :: bv) b c)
+  
+  def clearBvars_preserves_interp
+    (expr: SingleLaneExpr sig)
+    (bv: List salg.D)
+    (b c: Valuation salg.D)
+  :
+    Eq
+      (expr.interpretation salg [] b c)
+      (SingleLaneExpr.interpretation salg bv b c expr.clearBvars)
+  :=
+    clearBvars_preserves_interp_bv expr [] bv b c
   
   namespace IsClean
     def bvar_independent
-      {e: Expr sig}
-      (isClean: e.IsClean)
+      {expr: SingleLaneExpr sig}
+      (isClean: expr.IsClean)
       (bv0 bv1: List salg.D)
       (b c: Valuation salg.D)
     :
-      e.interpretation salg bv0 b c = e.interpretation salg bv1 b c
+      expr.interpretation salg bv0 b c = expr.interpretation salg bv1 b c
     :=
       isClean ▸
-      clearVars_preserves_interp e bv0 b c ▸
-      clearVars_preserves_interp e bv1 b c ▸
+      clearBvars_preserves_interp expr bv0 b c ▸
+      clearBvars_preserves_interp expr bv1 b c ▸
       rfl
 
-    def changeBvDefMem
-      (isClean: IsClean e)
+    def changeBv
+      {expr: SingleLaneExpr sig}
+      (isClean: IsClean expr)
       {bv1: List salg.D}
-      (isDef: (e.interpretation salg bv0 b c).defMem d)
+      (dInExpr: expr.interpretation salg bv0 b c d)
     :
-      (e.interpretation salg bv1 b c).defMem d
+      expr.interpretation salg bv1 b c d
     :=
-      isClean.bvar_independent bv0 bv1 b c ▸ isDef
+      bvar_independent isClean bv0 bv1 b c ▸ dInExpr
     
-    def changeBvPosMem
-      (isClean: IsClean e)
-      {bv1: List salg.D}
-      (isPos: (e.interpretation salg bv0 b c).posMem d)
-    :
-      (e.interpretation salg bv1 b c).posMem d
-    :=
-      isClean.bvar_independent bv0 bv1 b c ▸ isPos
-  
   end IsClean
-end Expr
+end SingleLaneExpr
+
+namespace BasicExpr
+  def clearBvars_lane_comm
+    (expr: BasicExpr sig)
+    (lane: SingleLaneVarType)
+    (i: Nat := 0)
+  :
+    Eq
+      (Expr.clearBvars i (expr.toLane lane))
+      (BasicExpr.toLane (Expr.clearBvars i expr) lane)
+  :=
+    match expr with
+    | .var x => rfl
+    | .bvar x => by
+      show
+        Eq
+          (Expr.clearBvars i (.bvar x))
+          (toLane (Expr.clearBvars i (.bvar x)) lane)
+      if h: x < i then
+        rw [Expr.clearBvars_eq_bvar h, Expr.clearBvars_eq_bvar h]
+        rfl
+      else
+        rw [Expr.clearBvars_eq_none h, Expr.clearBvars_eq_none h]
+        rfl
+    | .op o args =>
+      congrArg
+        (SingleLaneExpr.op o)
+        (funext fun param =>
+          clearBvars_lane_comm (args param) lane i)
+    | .compl body =>
+      congrArg
+        SingleLaneExpr.compl
+        (clearBvars_lane_comm body lane.toggle i)
+    | .arbUn body =>
+      congrArg
+        SingleLaneExpr.arbUn
+        (clearBvars_lane_comm body lane (i + 1))
+    | .arbIr body =>
+      congrArg
+        SingleLaneExpr.arbIr
+        (clearBvars_lane_comm body lane (i + 1))
+  
+  def clearBvars_preserves_interp
+    (expr: BasicExpr sig)
+    (bv: List salg.D)
+    (b c: Valuation salg.D)
+  :
+    Eq
+      (expr.interpretation salg [] b c)
+      (interpretation salg bv b c expr.clearBvars)
+  :=
+    let eqBvDef := (expr.toLane .defLane).clearBvars_preserves_interp bv b c
+    let eqBvPos := (expr.toLane .posLane).clearBvars_preserves_interp bv b c
+    Set3.eq
+      (eqBvDef.trans (clearBvars_lane_comm expr .defLane ▸ rfl))
+      (eqBvPos.trans (clearBvars_lane_comm expr .posLane ▸ rfl))
+end BasicExpr

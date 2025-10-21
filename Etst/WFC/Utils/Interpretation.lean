@@ -1,96 +1,106 @@
+import Etst.WFC.Utils.Expr
 import Etst.WFC.Utils.Valuation
 
 namespace Etst
 
 
-def Expr.interpretation_mono_std_defMem
-  {bv: List salg.D}
-  {b c0 c1: Valuation salg.D}
-  (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
-  {expr: Expr sig}
+namespace SingleLaneExpr.interpretation_mono_std
+  def CtxLe (c0 c1: Valuation D):
+    Option SingleLaneVarType → Prop
+  | .none => (x: Nat) → c0 x ≤ c1 x
+  | .some .defLane => ∀ x: Nat, (c0 x).defMem ⊆ (c1 x).defMem
+  | .some .posLane => ∀ x: Nat, (c0 x).posMem ⊆ (c1 x).posMem
+  
+  def LaneEq (expr: SingleLaneExpr sig):
+    Option SingleLaneVarType → Prop
+  | .none => True
+  | .some lane => expr.LaneEqCtx lane
+  
+  def LaneEq.map
+    (laneEq: LaneEq expr premiseType)
+    (laneMap:
+      {lane: _} →
+      expr.LaneEqCtx lane →
+      Expr.LaneEqCtx lane exprOut)
+  :
+    LaneEq exprOut premiseType
+  :=
+    match premiseType with
+    | .none => trivial
+    | .some _ => laneMap laneEq
+  
+end SingleLaneExpr.interpretation_mono_std
+
+
+open SingleLaneExpr.interpretation_mono_std in
+def SingleLaneExpr.interpretation_mono_std
+  {c0 c1: Valuation salg.D}
+  (premiseType: Option SingleLaneVarType)
+  (cLe: CtxLe c0 c1 premiseType)
+  (laneEq: LaneEq expr premiseType)
 :
-  (expr.interpretation salg bv b c0).defMem
-    ⊆
-  (expr.interpretation salg bv b c1).defMem
+  Set.Subset
+    (expr.interpretation salg bv b c0)
+    (expr.interpretation salg bv b c1)
 :=
   fun _ dIn =>
     match expr with
-    | Expr.var x => cLeDef x dIn
-    | Expr.bvar _ => dIn
-    | Expr.op opr args =>
-      let defMem0 param :=
-        ((args param).interpretation salg bv b c0).defMem
-      
-      let defMem1 param :=
-        ((args param).interpretation salg bv b c1).defMem
-      
-      let isLe _ := interpretation_mono_std_defMem cLeDef
-
+    | .var lane x =>
+      match lane, premiseType with
+      | .defLane, .none => (cLe x).defLe dIn
+      | .posLane, .none => (cLe x).posLe dIn
+      | .defLane, .some .defLane => cLe x dIn
+      | .posLane, .some .posLane => cLe x dIn
+    | .bvar _ => dIn
+    | .op opr args =>
+      let defMem0 param := (args param).interpretation salg bv b c0
+      let defMem1 param := (args param).interpretation salg bv b c1
+      let laneEq param := laneEq.map (fun eq => .elimOp eq param)
+      let isLe param := interpretation_mono_std premiseType cLe (laneEq param)
       salg.isMonotonic opr defMem0 defMem1 isLe dIn
-    | Expr.cpl _ => dIn -- Note: cpl is not affected by context.
-    | Expr.arbUn _ =>
+    | .compl _ => dIn -- Note: complement is not affected by context.
+    | .arbUn _ =>
       let ⟨dX, dXIn⟩ := dIn.unwrap
-      ⟨dX, interpretation_mono_std_defMem cLeDef dXIn⟩
-    | Expr.arbIr _ =>
-      fun dX =>
-        interpretation_mono_std_defMem cLeDef (dIn dX)
+      let laneEq := laneEq.map .elimArbUn
+      ⟨dX, interpretation_mono_std premiseType cLe laneEq dXIn⟩
+    | .arbIr _ =>
+      let laneEq := laneEq.map .elimArbIr
+      fun dX => interpretation_mono_std premiseType cLe laneEq (dIn dX)
 
-def Expr.interpretation_mono_std_posMem
-  {bv: List salg.D}
-  {b c0 c1: Valuation salg.D}
-  (cLePos: (x: Nat) → (c0 x).posMem ⊆ (c1 x).posMem)
-  {expr: Expr sig}
+def BasicExpr.interpretation_mono_std_defMem
+  {c0 c1: Valuation salg.D}
+  (cLe: ∀ x, (c0 x).defMem ≤ (c1 x).defMem)
+  {expr: BasicExpr sig}
 :
-  (expr.interpretation salg bv b c0).posMem
-    ⊆
-  (expr.interpretation salg bv b c1).posMem
+  (interpretation salg bv b c0 expr).defMem ⊆ (interpretation salg bv b c1 expr).defMem
 :=
-  fun _ dIn =>
-    match expr with
-    | Expr.var x => cLePos x dIn
-    | Expr.bvar _ => dIn
-    | Expr.op opr args =>
-      let posMem0 param :=
-        ((args param).interpretation salg bv b c0).posMem
+  SingleLaneExpr.interpretation_mono_std
+    (.some .defLane)
+    cLe
+    (expr.posLaneEqCtx .defLane)
 
-      let posMem1 param :=
-        ((args param).interpretation salg bv b c1).posMem
+def BasicExpr.interpretation_mono_std_posMem
+  {c0 c1: Valuation salg.D}
+  (cLe: ∀ x, (c1 x).posMem ≤ (c0 x).posMem)
+  {expr: BasicExpr sig}
+:
+  (interpretation salg bv b c1 expr).posMem ⊆ (interpretation salg bv b c0 expr).posMem
+:=
+  SingleLaneExpr.interpretation_mono_std
+    (.some .posLane)
+    cLe
+    (expr.posLaneEqCtx .posLane)
 
-      let isLe _ := interpretation_mono_std_posMem cLePos
-
-      salg.isMonotonic opr posMem0 posMem1 isLe dIn
-    | Expr.cpl _ => dIn -- Note: cpl is not affected by context.
-    | Expr.arbUn _ =>
-      let ⟨dX, dXIn⟩ := dIn.unwrap
-      ⟨dX, interpretation_mono_std_posMem cLePos dXIn⟩
-    | Expr.arbIr _ =>
-      fun dX =>
-        interpretation_mono_std_posMem cLePos (dIn dX)
-
-def Expr.interpretation_mono_std
-  {bv: List salg.D}
-  {b: Valuation salg.D}
+def BasicExpr.interpretation_mono_std
   {c0 c1: Valuation salg.D}
   (cLe: c0 ≤ c1)
+  {expr: BasicExpr sig}
 :
-  interpretation salg bv b c0 e ≤ interpretation salg bv b c1 e
+  interpretation salg bv b c0 expr ≤ interpretation salg bv b c1 expr
 := {
-  defLe := interpretation_mono_std_defMem fun x => (cLe x).defLe
-  posLe := interpretation_mono_std_posMem fun x => (cLe x).posLe
+  defLe := interpretation_mono_std_defMem (fun x => (cLe x).defLe),
+  posLe := interpretation_mono_std_posMem (fun x => (cLe x).posLe)
 }
-
-def Expr.interpretation.isMonotonic.notPosMem
-  {b c0 c1: Valuation salg.D}
-  (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
-  {expr: Expr sig}
-:
-  ¬ (expr.interpretation salg bv b c0).posMem d
-    →
-  ¬ (expr.interpretation salg bv b c1).posMem d
-:=
-  let le := Expr.interpretation_mono_std_posMem cLePos
-  not_imp_not.mpr (@le d)
-
 
 def DefList.interpretation_mono_std
   {salg: Salgebra sig}
@@ -101,26 +111,26 @@ def DefList.interpretation_mono_std
 :
   dl.interpretation salg b c0 ≤ dl.interpretation salg b c1
 :=
-  fun _ => Expr.interpretation_mono_std cLe
+  fun _ => BasicExpr.interpretation_mono_std cLe
 
 
-def Expr.interpretation_mono_apx
+def BasicExpr.interpretation_mono_apx
   {salg: Salgebra sig}
-  {e: Expr sig}
+  {expr: BasicExpr sig}
   {bv: List salg.D}
   {b0 b1 c0 c1: Valuation salg.D}
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
-  interpretation salg bv b0 c0 e ⊑ interpretation salg bv b1 c1 e
+  expr.interpretation salg bv b0 c0 ⊑ expr.interpretation salg bv b1 c1
 :=
-  match e with
-  | Expr.var x => {
+  match expr with
+  | .var x => {
       defLe := fun _d dIn => (cLe x).defLe dIn
       posLe := fun _d dIn => (cLe x).posLe dIn
     }
-  | Expr.bvar _ => ⟨fun _ => id, fun _ => id⟩
-  | Expr.op opr args =>
+  | .bvar _ => ⟨fun _ => id, fun _ => id⟩
+  | .op opr args =>
       let ih _ := interpretation_mono_apx bLe cLe
       {
         defLe := fun _d dIn =>
@@ -144,7 +154,7 @@ def Expr.interpretation_mono_apx
           
           posArgsLe dIn
       }
-  | Expr.cpl _ =>
+  | .compl _ =>
       let ih := interpretation_mono_apx bLe bLe
       {
         defLe := fun d dIn =>
@@ -154,64 +164,48 @@ def Expr.interpretation_mono_apx
           let tmp: (d: salg.D) → _ → _ := ih.defLe
           not_imp_not.mpr (tmp d) dIn
       }
-  | Expr.arbUn _ =>
+  | .arbUn _ =>
       let ih _d := interpretation_mono_apx bLe cLe
       {
         defLe := fun _d ⟨dX, dXIn⟩ => ⟨dX, (ih dX).defLe dXIn⟩
         posLe := fun _d ⟨dX, dXIn⟩ => ⟨dX, (ih dX).posLe dXIn⟩
       }
-  | Expr.arbIr _ =>
+  | .arbIr _ =>
       let ih _d := interpretation_mono_apx bLe cLe
       {
         defLe := fun _d dIn dXPos1 => (ih dXPos1).defLe (dIn dXPos1)
         posLe := fun _d dIn dXPos0 => (ih dXPos0).posLe (dIn dXPos0)
       }
 
-def Expr.interpretation_mono_apx_defMem
-  {e: Expr sig}
-  {bv: List salg.D}
+def BasicExpr.interpretation_mono_apx_defMem
+  {expr: BasicExpr sig}
   {b0 b1 c0 c1: Valuation salg.D}
   (bLe: b0 ⊑ b1)
   (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
 :
-  (interpretation salg bv b0 c0 e).defMem
-    ⊆
-  (interpretation salg bv b1 c1 e).defMem
+  Set.Subset
+    (expr.interpretation salg bv b0 c0).defMem
+    (expr.interpretation salg bv b1 c1).defMem
 :=
   let c0LeSelf := (Valuation.ordApx salg.D).le_refl c0
   let isMonoB := interpretation_mono_apx bLe c0LeSelf
   let isMonoC := interpretation_mono_std_defMem cLeDef
   isMonoB.defLe.trans isMonoC
 
-def Expr.interpretation_mono_apx_posMem
-  {e: Expr sig}
-  {bv: List salg.D}
+def BasicExpr.interpretation_mono_apx_posMem
+  {expr: BasicExpr sig}
   {b0 b1 c0 c1: Valuation salg.D}
   (bLe: b0 ⊑ b1)
   (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
 :
-  (interpretation salg bv b1 c1 e).posMem
-    ⊆
-  (interpretation salg bv b0 c0 e).posMem
+  Set.Subset
+    (expr.interpretation salg bv b1 c1).posMem
+    (expr.interpretation salg bv b0 c0).posMem
 :=
   let c0LeSelf := (Valuation.ordApx salg.D).le_refl c1
   let isMonoB := interpretation_mono_apx bLe c0LeSelf
   let isMonoC := interpretation_mono_std_posMem cLePos
   isMonoB.posLe.trans isMonoC
-
-def Expr.interpretation_mono_apx_posMem_not
-  {e: Expr sig}
-  {bv: List salg.D}
-  {b0 b1 c0 c1: Valuation salg.D}
-  (bLe: b0 ⊑ b1)
-  (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
-:
-  ¬ (interpretation salg bv b0 c0 e).posMem d
-    →
-  ¬ (interpretation salg bv b1 c1 e).posMem d
-:=
-  let le := Expr.interpretation_mono_apx_posMem bLe cLePos
-  not_imp_not.mpr (@le d)
 
 def DefList.interpretation_mono_apx
   {salg: Salgebra sig}
@@ -222,4 +216,4 @@ def DefList.interpretation_mono_apx
 :
   dl.interpretation salg b0 c0 ⊑ dl.interpretation salg b1 c1
 :=
-  fun _ => Expr.interpretation_mono_apx bLe cLe
+  fun _ => BasicExpr.interpretation_mono_apx bLe cLe

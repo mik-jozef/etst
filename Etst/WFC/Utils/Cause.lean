@@ -519,7 +519,7 @@ noncomputable def IsWeakCause.ofValPos
   IsWeakCause salg (Cause.ofValPos b c) d expr
 :=
   fun isSat =>
-    Expr.interpretation_mono_apx_posMem
+    BasicExpr.interpretation_mono_apx_posMem
       (fun _ => {
         defLe :=
           fun _ isDef =>
