@@ -150,6 +150,8 @@ declare_syntax_cat s3_pair_expr
 
 -- Expressions
 syntax:70 ident : s3_pair_expr
+syntax:70 "."ident : s3_pair_expr
+syntax:70 ":"ident : s3_pair_expr
 syntax:70 "(" s3_pair_expr ")" : s3_pair_expr
 syntax:70 "null" : s3_pair_expr
 syntax:70 "(" s3_pair_expr ", " s3_pair_expr ")" : s3_pair_expr
@@ -252,10 +254,14 @@ namespace pair_def_list
       ⟨noneDef, "None", "empty"⟩,
     ]
   
+  inductive VarRepr
+  | var (x: Nat)
+  | bvar (x: Nat)
+  deriving DecidableEq
   
   -- Convert `s3_pair_expr` syntax to a Lean term representing `Expr`
   partial def makeExpr
-    (vars: String → Option (TSyntax `term))
+    (vars: String → Option VarRepr)
     (bvi: Nat := 0) -- bound variable index
   :
     Syntax →
@@ -265,7 +271,24 @@ namespace pair_def_list
       match vars name.getId.toString with
       | none =>
         throwErrorAt name (s!"Unknown variable '{name.getId}'")
-      | some stx => return stx
+      | some (.var x) => `(Expr.var () $(mkNumLit x.repr))
+      | some (.bvar x) => `(Expr.bvar $(mkNumLit x.repr))
+  |
+    `(s3_pair_expr| .$name:ident) => do
+      match vars name.getId.toString with
+      | none =>
+        throwErrorAt name (s!"Unknown variable '{name.getId}'")
+      | some (.var x) => `(SingleLaneExpr.var .posLane $(mkNumLit x.repr))
+      | some (.bvar _) =>
+        throwErrorAt name (s!"Bound variable cannot have a lane selector.")
+  |
+    `(s3_pair_expr| :$name:ident) => do
+      match vars name.getId.toString with
+      | none =>
+        throwErrorAt name (s!"Unknown variable '{name.getId}'")
+      | some (.var x) => `(SingleLaneExpr.var .defLane $(mkNumLit x.repr))
+      | some (.bvar _) =>
+        throwErrorAt name (s!"Bound variable cannot have a lane selector.")
   |
     `(s3_pair_expr| null) => `(PairExpr.null)
   |
@@ -301,13 +324,13 @@ namespace pair_def_list
   |
     `(s3_pair_expr| Ex $x:ident, $body:s3_pair_expr)
     => do
-      let var ← `(Expr.bvar $(mkNumLit bvi.repr))
+      let var := some (.bvar bvi)
       let vars := Function.update vars x.getId.toString var
       `(Expr.arbUn $(← makeExpr vars bvi.succ body))
   |
     `(s3_pair_expr| All $x:ident, $body:s3_pair_expr)
     => do
-      let var ← `(Expr.bvar $(mkNumLit bvi.repr))
+      let var := some (.bvar bvi)
       let vars := Function.update vars x.getId.toString var
       `(Expr.arbIr $(← makeExpr vars bvi.succ body))
   |
@@ -325,13 +348,13 @@ namespace pair_def_list
   def Vars.enc
     (vars: Vars)
   :
-    TermElabM (String → Option (TSyntax `term))
+    TermElabM (String → Option VarRepr)
   := do
     let encVars ← vars.mapIdxM (fun i _ => `(Expr.var () $(mkNumLit i.repr)))
     return fun x =>
       match vars.idxOf? x with
       | none => none
-      | some n => encVars[n]?
+      | some n => some (.var n)
   
   def Vars.push
     (vars: Vars)
@@ -531,14 +554,22 @@ namespace pair_def_list
 end pair_def_list
 
 open pair_def_list in
-elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
+elab head:("s3(" <|> "s3:(") dl:ident ", " expr:s3_pair_expr ")" : term => do
   let vars ← getFinDefListVars [] dl
   let varsEnc ← vars.enc
   let result ← makeExpr varsEnc 0 expr
-  let expectedType ← ``(BasicPairExpr)
+  let expectedType ←
+    match head.raw with
+    | node _ _ #[atom _ "s3("]  => ``(BasicPairExpr)
+    | node _ _ #[atom _ "s3:("] => ``(SingleLanePairExpr)
+    | _ => throwError "Implementation error: impossible head syntax"
   let expectedTypeExpr ← elabTerm expectedType none
   elabTerm result (some expectedTypeExpr)
 
+set_option pp.rawOnError true
 -- Test the new s3 syntax
 #check s3(Etst.pair_def_list.ExampleDL, X | Y)
 #check s3(pair_def_list.ExampleDL2, C | Y)
+
+#check s3:(Etst.pair_def_list.ExampleDL, .X | :Y)
+#check s3:(pair_def_list.ExampleDL2, :C | :Y)
