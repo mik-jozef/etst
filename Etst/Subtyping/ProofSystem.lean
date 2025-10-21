@@ -17,6 +17,30 @@
   TODO emphasize somewhere that induction/coinduction is built with the
   idea that our inductive structures are in the possible lane, while
   coinductive structures are in the definite lane.
+  
+  Some wisdom for the future:
+  Initially, I was only interested in creating a proof system for definite
+  subsethood, ie. `∀ p, p ∈ A.posMem → p ∈ B.posMem`. However, I found that
+  this notion of subsethood (strong as it is), does not permit any fixpoint
+  reasoning.
+  
+  For example, let's say one wants to show `Nat ⊆ Nat`. Diretly, we cannot,
+  because we may not assert for an arbitrary identifier that every its
+  possible member is also its definite member. We may try to use induction,
+  but while proving the inductive premise `succ (Nat & Nat) ⊆ succ Nat`,
+  we run into the same problem.
+  
+  The issue here is that the inductive hypothesis `Nat` ought to be interpreted
+  using definite membership, since for the "past" natural numbers, we were
+  supposed to have already shown that their possible members are also their
+  definite members. In a sense, definite subsethood is not closed under
+  induction and coinduction.
+  
+  This leads us to a system where some variables are interpreted using
+  possible membership, and some using definite membership. This system
+  allows us to mix possible and definite subsethood arbitrarily. Definite
+  subsethood is still the main notion of interest, but is no longer the
+  only one.
 -/
 
 import Etst.Subtyping.Utils.ExprExpandsInto
