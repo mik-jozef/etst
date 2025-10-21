@@ -27,9 +27,8 @@ namespace Etst
 open PairExpr
 
 
-abbrev PairDl.IsDefSubset (dl: PairDl) (a b: SingleLanePairExpr) :=
-  Set.Subset (a.intp [] dl.wfm) (b.intp [] dl.wfm)
-abbrev PairDl.IsPosSubset (dl: PairDl) (a b: SingleLanePairExpr) :=
+-- Semantic entailment.
+abbrev PairDl.Subset (dl: PairDl) (a b: SingleLanePairExpr) :=
   Set.Subset (a.intp [] dl.wfm) (b.intp [] dl.wfm)
 
 
@@ -151,118 +150,121 @@ def CoinductionDescriptor.exprRite
 :=
   .compl (.var .defLane desc.rite)
 
-inductive Subset
+
+-- Syntactic entailment.
+inductive PairDl.SubsetStx
   (dl: PairDl)
 :
   SingleLanePairExpr → SingleLanePairExpr → Type
 
-| null: Subset dl null null
+| null: SubsetStx dl null null
 | pair
-    (sl: Subset dl al bl)
-    (sr: Subset dl ar br)
+    (sl: SubsetStx dl al bl)
+    (sr: SubsetStx dl ar br)
   :
-    Subset dl (pair al ar) (pair bl br)
-| unL (s: Subset dl a b) {r: SingleLanePairExpr}: Subset dl a (un b r)
-| unR (s: Subset dl a b) {l: SingleLanePairExpr}: Subset dl a (un l b)
+    SubsetStx dl (pair al ar) (pair bl br)
+| unL (s: SubsetStx dl a b) {r: SingleLanePairExpr}: SubsetStx dl a (un b r)
+| unR (s: SubsetStx dl a b) {l: SingleLanePairExpr}: SubsetStx dl a (un l b)
 | mutInduction
     (desc: MutIndDescriptor dl)
     (premises:
       (i: desc.Index) →
-      Subset
+      SubsetStx
         dl
         (desc.hypothesify (desc[i].expansion.toLane .posLane))
         desc[i].rite)
     (i: desc.Index)
   :
-    Subset dl desc[i].exprLeft desc[i].exprRite
+    SubsetStx dl desc[i].exprLeft desc[i].exprRite
 | mutCoinduction
     (desc: MutCoindDescriptor dl)
     (premises:
       (i: desc.Index) →
-      Subset
+      SubsetStx
         dl
         desc[i].left
         (desc.hypothesify (desc[i].expansion.toLane .defLane)))
     (i: desc.Index)
   :
-    Subset dl desc[i].exprLeft desc[i].exprRite
+    SubsetStx dl desc[i].exprLeft desc[i].exprRite
 
-
-def Subset.induction
-  (desc: InductionDescriptor dl)
-  (premise:
-    Subset
-      dl
-      ((desc.expansion.toLane .posLane).replacePosVars fun _ x =>
-        desc.hypothesis x (.var .posLane x))
-      desc.rite)
-:
-  Subset dl (.var .posLane desc.left) desc.rite
-:=
-  Subset.mutInduction
-    [desc]
-    (fun | ⟨0, _⟩ => premise)
-    ⟨0, Nat.zero_lt_succ _⟩
-
-def Subset.coinduction
-  (desc: CoinductionDescriptor dl)
-  (premise:
-    Subset
-      dl
-      desc.left
-      (.compl
-        ((desc.expansion.toLane .defLane).replacePosVars fun _ x =>
-          desc.hypothesis x (.var .defLane x))))
-:
-  Subset dl desc.left (.compl (.var .defLane desc.rite))
-:=
-  Subset.mutCoinduction
-    [desc]
-    (fun | ⟨0, _⟩ => premise)
-    ⟨0, Nat.zero_lt_succ _⟩
-
-
-def Subset.simpleInduction
-  (left: Nat)
-  (riteIsClean: Expr.IsClean rite)
-  (premise:
-    Subset
-      dl
-      (((dl.getDef left).toLane .posLane).replacePosVars fun _ x =>
-        if left = x then PairExpr.ir rite (.var .posLane x) else (.var .posLane x))
-      rite)
-:
-  Subset dl (.var .posLane left) rite
-:=
-  Subset.induction
-    {
-      left,
-      rite,
-      riteIsClean,
-      expansion := dl.getDef left,
-      expandsInto := .rfl
-    }
-    premise
-
-def Subset.simpleCoinduction
-  (rite: Nat)
-  (leftIsClean: Expr.IsClean left)
-  (premise:
-    Subset
-      dl
-      left
-      (.compl
-        (((dl.getDef rite).toLane .defLane).replacePosVars fun _ x =>
-          if rite = x then PairExpr.ir (.compl left) (.var .defLane x) else (.var .defLane x))))
-:
-  Subset dl left (.compl (.var .defLane rite))
-:=
-  Subset.coinduction
-    {
-      left,
-      rite,
-      leftIsClean,
-      expansion := dl.getDef rite,
-      expandsInto := .rfl
-    }
-    premise
+namespace PairDl.SubsetStx
+  def induction
+    (desc: InductionDescriptor dl)
+    (premise:
+      SubsetStx
+        dl
+        ((desc.expansion.toLane .posLane).replacePosVars fun _ x =>
+          desc.hypothesis x (.var .posLane x))
+        desc.rite)
+  :
+    SubsetStx dl (.var .posLane desc.left) desc.rite
+  :=
+    mutInduction
+      [desc]
+      (fun | ⟨0, _⟩ => premise)
+      ⟨0, Nat.zero_lt_succ _⟩
+  
+  def coinduction
+    (desc: CoinductionDescriptor dl)
+    (premise:
+      SubsetStx
+        dl
+        desc.left
+        (.compl
+          ((desc.expansion.toLane .defLane).replacePosVars fun _ x =>
+            desc.hypothesis x (.var .defLane x))))
+  :
+    SubsetStx dl desc.left (.compl (.var .defLane desc.rite))
+  :=
+    mutCoinduction
+      [desc]
+      (fun | ⟨0, _⟩ => premise)
+      ⟨0, Nat.zero_lt_succ _⟩
+  
+  
+  def simpleInduction
+    (left: Nat)
+    (riteIsClean: Expr.IsClean rite)
+    (premise:
+      SubsetStx
+        dl
+        (((dl.getDef left).toLane .posLane).replacePosVars fun _ x =>
+          if left = x then PairExpr.ir rite (.var .posLane x) else (.var .posLane x))
+        rite)
+  :
+    SubsetStx dl (.var .posLane left) rite
+  :=
+    induction
+      {
+        left,
+        rite,
+        riteIsClean,
+        expansion := dl.getDef left,
+        expandsInto := .rfl
+      }
+      premise
+  
+  def simpleCoinduction
+    (rite: Nat)
+    (leftIsClean: Expr.IsClean left)
+    (premise:
+      SubsetStx
+        dl
+        left
+        (.compl
+          (((dl.getDef rite).toLane .defLane).replacePosVars fun _ x =>
+            if rite = x then PairExpr.ir (.compl left) (.var .defLane x) else (.var .defLane x))))
+  :
+    SubsetStx dl left (.compl (.var .defLane rite))
+  :=
+    coinduction
+      {
+        left,
+        rite,
+        leftIsClean,
+        expansion := dl.getDef rite,
+        expandsInto := .rfl
+      }
+      premise
+end PairDl.SubsetStx

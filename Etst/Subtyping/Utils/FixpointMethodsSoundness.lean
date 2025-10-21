@@ -147,12 +147,12 @@ def MutIndDescriptor.isSound
   (desc: MutIndDescriptor dl)
   (premisesHold:
     (i: desc.Index) →
-    dl.IsDefSubset
+    dl.Subset
       (desc.hypothesify (desc[i].expansion.toLane .posLane))
       desc[i].rite)
   (i: desc.Index)
 :
-  dl.IsDefSubset desc[i].exprLeft desc[i].exprRite
+  dl.Subset desc[i].exprLeft desc[i].exprRite
 :=
   let := Valuation.ordStdLattice
   let eq: dl.wfm = (operatorC pairSalgebra dl dl.wfm).lfp :=
@@ -187,12 +187,12 @@ def MutCoindDescriptor.isSound
   (desc: MutCoindDescriptor dl)
   (premisesHold:
     (i: desc.Index) →
-    dl.IsDefSubset
+    dl.Subset
       desc[i].left
       (desc.hypothesify (desc[i].expansion.toLane .defLane)))
   (i: desc.Index)
 :
-  dl.IsDefSubset desc[i].exprLeft desc[i].exprRite
+  dl.Subset desc[i].exprLeft desc[i].exprRite
 :=
   let := Valuation.ordStdLattice
   let eq: dl.wfm = (operatorC pairSalgebra dl dl.wfm).lfp :=

@@ -26,13 +26,13 @@ open PairExpr
 --     | _, @Premise.indCoind dl fmsa vf df => sorry
 --   fmsIsSound fms premisesHold out isPos
 
-def Subset.isSound
-  (sub: Subset dl a b)
+def PairDl.SubsetStx.isSound
+  (sub: SubsetStx dl a b)
 :
-  dl.IsDefSubset a b
+  dl.Subset a b
 :=
   sub.rec
-    (motive := fun a b _ => dl.IsDefSubset a b)
+    (motive := fun a b _ => dl.Subset a b)
     (fun _ isPos => isPos)
     (fun
     | _, _, isSubL, isSubR, .pair _ _, isPos =>
