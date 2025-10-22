@@ -345,16 +345,10 @@ namespace pair_def_list
   
   def Vars.empty: Vars := []
   
-  def Vars.enc
-    (vars: Vars)
-  :
-    TermElabM (String → Option VarRepr)
-  := do
-    let encVars ← vars.mapIdxM (fun i _ => `(Expr.var () $(mkNumLit i.repr)))
-    return fun x =>
-      match vars.idxOf? x with
-      | none => none
-      | some n => some (.var n)
+  def Vars.enc (vars: Vars) (x: String): Option VarRepr :=
+    match vars.idxOf? x with
+    | none => none
+    | some n => some (.var n)
   
   def Vars.push
     (vars: Vars)
@@ -367,9 +361,8 @@ namespace pair_def_list
       s!"'{name}' is a reserved variable name denoting the {val} type."
     
     let name := nameStx.getId.toString
-    let enc := (←vars.enc) name
     
-    if enc != none then
+    if vars.enc name != none then
       let filter := (ReservedName.name · == name)
       match reservedNames.find? filter with
       | some ⟨_, _, descr⟩ =>
@@ -466,7 +459,7 @@ namespace pair_def_list
       -- Why can't I merge these match expressions into one?
       match df with
       | `(s3_pair_def| s3 $name := $expr) =>
-        let expr ← makeExpr (← vars.enc) 0 expr
+        let expr ← makeExpr vars.enc 0 expr
         let size ← `($(mkNumLit vars.length.repr))
         let df ← `({
           expr := $expr
@@ -556,8 +549,7 @@ end pair_def_list
 open pair_def_list in
 elab head:("s3(" <|> "s3:(") dl:ident ", " expr:s3_pair_expr ")" : term => do
   let vars ← getFinDefListVars [] dl
-  let varsEnc ← vars.enc
-  let result ← makeExpr varsEnc 0 expr
+  let result ← makeExpr vars.enc 0 expr
   let expectedType ←
     match head.raw with
     | node _ _ #[atom _ "s3("]  => ``(BasicPairExpr)
