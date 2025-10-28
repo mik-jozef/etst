@@ -147,7 +147,7 @@ namespace SingleLaneExpr
     expr.interpretation salg bv (dl.wfm salg) (dl.wfm salg) d
   
   
-  def InsWfm.of_in_def
+  def InWfm.of_in_def
     (inDef: InWfm salg [] dl ((dl.getDef x).toLane lane) d)
   :
     InWfm salg [] dl (.var lane x) d
@@ -159,7 +159,7 @@ namespace SingleLaneExpr
     exact inDef
   
   
-  def InsWfm.in_def
+  def InWfm.in_def
     (s: InWfm salg [] dl (.var lane x) d)
   :
     InWfm salg [] dl ((dl.getDef x).toLane lane) d

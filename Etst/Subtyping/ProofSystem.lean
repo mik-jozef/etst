@@ -181,14 +181,62 @@ inductive PairDl.SubsetStx
 :
   SingleLanePairExpr → SingleLanePairExpr → Type
 
-| null: SubsetStx dl null null
-| pair
+| varDef
+    {x: Nat}
+    {lane: SingleLaneVarType}
+  :
+    SubsetStx dl (.var .defLane x) (.var lane x)
+| varPos {x: Nat}:
+    SubsetStx dl (.var .posLane x) (.var .posLane x)
+| bvar {x: Nat}:
+    SubsetStx dl (.bvar x) (.bvar x)
+
+| subNull: SubsetStx dl null null
+| subPair
     (sl: SubsetStx dl al bl)
     (sr: SubsetStx dl ar br)
   :
     SubsetStx dl (pair al ar) (pair bl br)
-| unL (s: SubsetStx dl a b) {r: SingleLanePairExpr}: SubsetStx dl a (un b r)
-| unR (s: SubsetStx dl a b) {l: SingleLanePairExpr}: SubsetStx dl a (un l b)
+
+| subUnL {r: SingleLanePairExpr} (s: SubsetStx dl a b): SubsetStx dl a (un b r)
+| subUn
+    (ac: SubsetStx dl a c)
+    (bc: SubsetStx dl b c)
+  :
+    SubsetStx dl (un a b) c
+| subUnSymmA (s: SubsetStx dl (un x y) b): SubsetStx dl (un y x) b
+| subUnSymmB (s: SubsetStx dl a (un x y)): SubsetStx dl a (un y x)
+
+| subIrL
+    {r: SingleLanePairExpr}
+    (s: SubsetStx dl a b)
+  :
+    SubsetStx dl (ir a r) b
+| subIr
+    (ac: SubsetStx dl c a)
+    (bc: SubsetStx dl c b)
+  :
+    SubsetStx dl c (ir a b)
+| subIrSymmA (s: SubsetStx dl (ir x y) b): SubsetStx dl (ir y x) b
+| subIrSymmB (s: SubsetStx dl a (ir x y)): SubsetStx dl a (ir y x)
+
+| unfoldA
+    (s: SubsetStx dl (.var lane a) b)
+  :
+    SubsetStx dl ((dl.getDef a).toLane lane) b
+| unfoldB
+    (s: SubsetStx dl a (.var lane b))
+  :
+    SubsetStx dl a ((dl.getDef b).toLane lane)
+
+| foldA
+    (s: SubsetStx dl ((dl.getDef a).toLane lane) b)
+  :
+    SubsetStx dl (.var lane a) b
+| foldB
+    (s: SubsetStx dl a ((dl.getDef b).toLane lane))
+  :
+    SubsetStx dl a (.var lane b)
 | mutInduction
     (desc: MutIndDescriptor dl)
     (premises:
@@ -212,7 +260,47 @@ inductive PairDl.SubsetStx
   :
     SubsetStx dl desc[i].exprLeft desc[i].exprRite
 
+
 namespace PairDl.SubsetStx
+  def subUnR
+    {l: SingleLanePairExpr}
+    (s: SubsetStx dl a b)
+  :
+    SubsetStx dl a (PairExpr.un l b)
+  :=
+    subUnSymmB (subUnL s)
+  
+  def subIrR
+    {l: SingleLanePairExpr}
+    (s: SubsetStx dl a b)
+  :
+    SubsetStx dl (PairExpr.ir l a) b
+  :=
+    subIrSymmA (subIrL s)
+  
+  
+  def subId
+    {a: Expr SingleLaneVarType pairSignature}
+  :
+    SubsetStx dl a a
+  :=
+    match a with
+    | .var lane _ =>
+      match lane with
+      | .defLane => varDef
+      | .posLane => varPos
+    | .bvar _ => bvar
+    | .op .null args => null_eq ▸ subNull
+    | .op .pair args => pair_eq args ▸ subPair subId subId
+    | .op .un args => un_eq args ▸ subUn (subUnL subId) (subUnR subId)
+    | .op .ir args => ir_eq args ▸ subIr (subIrL subId) (subIrR subId)
+    | .op .condSome args => condSome_eq args ▸ sorry
+    | .op .condFull args => condFull_eq args ▸ sorry
+    | .compl body => sorry
+    | .arbUn body => sorry
+    | .arbIr body => sorry
+  
+  
   def induction
     (desc: InductionDescriptor dl)
     (premise:

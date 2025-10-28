@@ -9,22 +9,22 @@ open PairExpr
 --   Subset dl a b →
 --   IsDefSubset (a.intp [] dl.wfm) (b.intp [] dl.wfm)
 -- |
---   null, _, isPos => isPos
--- | pair sl sr, .pair a b, isPos =>
---   let ⟨inwL, inwR⟩ := inwPairElim isPos
+--   null, _, isIn => isIn
+-- | pair sl sr, .pair a b, isIn =>
+--   let ⟨inwL, inwR⟩ := inwPairElim isIn
 --   insPair (sl.isSound inwL) (sr.isSound inwR)
--- | unL s, _, isPos =>
---   insUnL (s.isSound isPos)
--- | unR s, _, isPos =>
---   insUnR (s.isSound isPos)
--- | fixpointMethods fms premises out, _, isPos =>
+-- | unL s, _, isIn =>
+--   insUnL (s.isSound isIn)
+-- | unR s, _, isIn =>
+--   insUnR (s.isSound isIn)
+-- | fixpointMethods fms premises out, _, isIn =>
 --   let premisesHold (i: fms.Index): PremiseHolds fms fms[i] :=
 --     match fms[i], premises i with
 --     | .induction desc, .ind premise =>
 --       PremiseHolds.ind premise.isSound
 --     | _, @Premise.coind dl fmsa vf df => sorry
 --     | _, @Premise.indCoind dl fmsa vf df => sorry
---   fmsIsSound fms premisesHold out isPos
+--   fmsIsSound fms premisesHold out isIn
 
 def PairDl.SubsetStx.isSound
   (sub: SubsetStx dl a b)
@@ -33,12 +33,28 @@ def PairDl.SubsetStx.isSound
 :=
   sub.rec
     (motive := fun a b _ => dl.Subset a b)
-    (fun _ isPos => isPos)
     (fun
-    | _, _, isSubL, isSubR, .pair _ _, isPos =>
-      let ⟨inwL, inwR⟩ := inPairElim isPos
+      | _, .defLane, _, isIn => isIn
+      | _, .posLane, _, isIn => isIn.toPos)
+    (fun _ _ isIn => isIn)
+    (fun _ _ isIn => isIn)
+    (fun _ isIn => isIn)
+    (fun
+    | _, _, isSubL, isSubR, .pair _ _, isIn =>
+      let ⟨inwL, inwR⟩ := inPairElim isIn
       inPair (isSubL inwL) (isSubR inwR))
-    (fun _ _ isSub _ isPos => inUnL (isSub isPos))
-    (fun _ _ isSub _ isPos => inUnR (isSub isPos))
-    (fun _ _ out ih _ isPos => MutIndDescriptor.isSound _ ih out isPos)
-    (fun _ _ out ih _ isPos => MutCoindDescriptor.isSound _ ih out isPos)
+    (fun _ isSub _ isIn => inUnL (isSub isIn))
+    (fun _ _ isSubAc isSubBc _ isIn =>
+      isIn.elim (fun i => isSubAc i) (fun i => isSubBc i))
+    (fun _ isSub _ isIn => isSub isIn.symm)
+    (fun _ isSub _ isIn => (isSub isIn).symm)
+    (fun _ isSub _ isIn => isSub isIn.left)
+    (fun _ _ isSubA isSubB _ isIn => inIr (isSubA isIn) (isSubB isIn))
+    (fun _ isSub _ isIn => isSub isIn.symm)
+    (fun _ isSub _ isIn => (isSub isIn).symm)
+    (fun _ isSub _ isIn => isSub (SingleLaneExpr.InWfm.of_in_def isIn))
+    (fun _ isSub _ isIn => SingleLaneExpr.InWfm.in_def (isSub isIn))
+    (fun _ isSub _ isIn => isSub (SingleLaneExpr.InWfm.in_def isIn))
+    (fun _ isSub _ isIn => SingleLaneExpr.InWfm.of_in_def (isSub isIn))
+    (fun _ _ out ih _ isIn => MutIndDescriptor.isSound _ ih out isIn)
+    (fun _ _ out ih _ isIn => MutCoindDescriptor.isSound _ ih out isIn)

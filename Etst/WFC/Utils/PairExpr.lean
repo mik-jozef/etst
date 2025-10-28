@@ -645,14 +645,66 @@ namespace PairExpr
     inNatElimDepth inNatExpr
   
   
-  def null_eq_null:
+  def null_eq:
     Eq
       (Expr.op (sig := pairSignature) pairSignature.Op.null args0)
       (Expr.op pairSignature.Op.null args1)
   :=
     congr rfl (funext nofun)
   
+  def pair_eq
+    (args: ArityTwo → PairExpr E)
+  :
+    Eq
+      (Expr.op pairSignature.Op.pair args)
+      (pair (args .zth) (args .fst))
+  :=
+    congr rfl (funext fun
+      | .zth => rfl
+      | .fst => rfl)
   
+  def un_eq
+    (args: ArityTwo → PairExpr E)
+  :
+    Eq
+      (Expr.op pairSignature.Op.un args)
+      (un (args .zth) (args .fst))
+  :=
+    congr rfl (funext fun
+      | .zth => rfl
+      | .fst => rfl)
+  
+  def ir_eq
+    (args: ArityTwo → PairExpr E)
+  :
+    Eq
+      (Expr.op pairSignature.Op.ir args)
+      (ir (args .zth) (args .fst))
+  :=
+    congr rfl (funext fun
+      | .zth => rfl
+      | .fst => rfl)
+
+  def condSome_eq
+    (args: ArityOne → PairExpr E)
+  :
+    Eq
+      (Expr.op pairSignature.Op.condSome args)
+      (condSome (args .zth))
+  :=
+    congr rfl (funext fun
+      | .zth => rfl)
+
+  def condFull_eq
+    (args: ArityOne → PairExpr E)
+  :
+    Eq
+      (Expr.op pairSignature.Op.condFull args)
+      (condFull (args .zth))
+  :=
+    congr rfl (funext fun
+      | .zth => rfl)
+
 end PairExpr
 
 

@@ -21,7 +21,7 @@ namespace PairExpr
         isTrue (h ▸ rfl)
       else
         isFalse (fun eq => h (Expr.noConfusion eq id))
-    | .op .null _, .op .null _ => isTrue null_eq_null
+    | .op .null _, .op .null _ => isTrue null_eq
     | .op .pair argsA, .op .pair argsB =>
       let ihZth := decidePairExprEq (argsA .zth) (argsB .zth)
       let ihFst := decidePairExprEq (argsA .fst) (argsB .fst)
