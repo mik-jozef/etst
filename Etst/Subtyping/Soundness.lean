@@ -33,11 +33,11 @@ def PairDl.SubsetStx.isSound
 :=
   sub.rec
     (motive := fun a b _ => dl.Subset a b)
-    (fun
+    (@fun
       | _, .defLane, _, isIn => isIn
       | _, .posLane, _, isIn => isIn.toPos)
-    (fun _ _ isIn => isIn)
-    (fun _ _ isIn => isIn)
+    id
+    id
     (fun _ isIn => isIn)
     (fun
     | _, _, isSubL, isSubR, .pair _ _, isIn =>
@@ -52,6 +52,7 @@ def PairDl.SubsetStx.isSound
     (fun _ _ isSubA isSubB _ isIn => inIr (isSubA isIn) (isSubB isIn))
     (fun _ isSub _ isIn => isSub isIn.symm)
     (fun _ isSub _ isIn => (isSub isIn).symm)
+    (fun _ isSub _ isInBCompl isInA => isInBCompl (isSub isInA))
     (fun _ isSub _ isIn => isSub (SingleLaneExpr.InWfm.of_in_def isIn))
     (fun _ isSub _ isIn => SingleLaneExpr.InWfm.in_def (isSub isIn))
     (fun _ isSub _ isIn => isSub (SingleLaneExpr.InWfm.in_def isIn))

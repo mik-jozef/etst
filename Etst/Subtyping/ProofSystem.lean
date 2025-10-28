@@ -220,6 +220,11 @@ inductive PairDl.SubsetStx
 | subIrSymmA (s: SubsetStx dl (ir x y) b): SubsetStx dl (ir y x) b
 | subIrSymmB (s: SubsetStx dl a (ir x y)): SubsetStx dl a (ir y x)
 
+| subCompl
+    (s: SubsetStx dl a b)
+  :
+    SubsetStx dl (.compl b) (.compl a)
+
 | unfoldA
     (s: SubsetStx dl (.var lane a) b)
   :
@@ -296,7 +301,7 @@ namespace PairDl.SubsetStx
     | .op .ir args => ir_eq args ▸ subIr (subIrL subId) (subIrR subId)
     | .op .condSome args => condSome_eq args ▸ sorry
     | .op .condFull args => condFull_eq args ▸ sorry
-    | .compl body => sorry
+    | .compl body => subCompl subId
     | .arbUn body => sorry
     | .arbIr body => sorry
   
