@@ -52,6 +52,14 @@ def PairDl.SubsetStx.isSound
     (fun _ _ isSubA isSubB _ isIn => inIr (isSubA isIn) (isSubB isIn))
     (fun _ isSub _ isIn => isSub isIn.symm)
     (fun _ isSub _ isIn => (isSub isIn).symm)
+    (fun _ _ => ⟨.null, rfl⟩)
+    (fun _ _ isSubL isSubR _ _ =>
+      let ⟨_, inL⟩ := isSubL ⟨.null, rfl⟩
+      let ⟨_, inR⟩ := isSubR ⟨.null, rfl⟩
+      ⟨_, ⟨⟨_, inL⟩, ⟨⟨_, inR⟩, rfl⟩⟩⟩)
+    (fun _ _ ab a _ _ =>
+      let ⟨_, inA⟩ := a ⟨.null, rfl⟩
+      ⟨_, ab inA⟩)
     (fun _ isSub _ isInBCompl isInA => isInBCompl (isSub isInA))
     (fun _ isSub _ isIn => isSub (SingleLaneExpr.InWfm.of_in_def isIn))
     (fun _ isSub _ isIn => SingleLaneExpr.InWfm.in_def (isSub isIn))

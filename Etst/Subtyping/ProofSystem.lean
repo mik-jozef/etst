@@ -220,6 +220,20 @@ inductive PairDl.SubsetStx
 | subIrSymmA (s: SubsetStx dl (ir x y) b): SubsetStx dl (ir y x) b
 | subIrSymmB (s: SubsetStx dl a (ir x y)): SubsetStx dl a (ir y x)
 
+| subCondSomeNull:
+    SubsetStx dl Expr.any (condSome null)
+| subCondSomePair
+    (sl: SubsetStx dl Expr.any (condSome l))
+    (sr: SubsetStx dl Expr.any (condSome r))
+  :
+    SubsetStx dl Expr.any (condSome (pair l r))
+    
+| subCondSome
+    (ab: SubsetStx dl a b)
+    (sa: SubsetStx dl Expr.any (condSome a))
+  :
+    SubsetStx dl Expr.any (condSome b)
+
 | subCompl
     (s: SubsetStx dl a b)
   :
