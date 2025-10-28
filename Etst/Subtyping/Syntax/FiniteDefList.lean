@@ -193,10 +193,7 @@ macro_rules
   `(s3_pair_expr| Ex $x, $(x):ident & $domain then $body)
 -- Bounded universal quantifier
 | `(s3_pair_expr| All $x:ident: $domain, $body) =>
-  `(s3_pair_expr|
-    All $x,
-    (!($(x):ident & $domain) then
-    $(mkIdent `Any):ident) | $body)
+  `(s3_pair_expr| All $x, (?some ($(x):ident & !$domain)) | $body)
 
 
 -- Definitions
@@ -231,6 +228,9 @@ namespace pair_def_list
       stx
       s!"Implementation error: unexpected syntax for {item}."
   
+  -- Reserved names were implemented because bounded arbitrary intersection
+  -- was syntax sugar for an expression that used `Any`. It escapes my how
+  -- I did not think of a better syntax expansion instead.
   structure ReservedName where
     stx: TSyntax `s3_pair_def
     name: String
