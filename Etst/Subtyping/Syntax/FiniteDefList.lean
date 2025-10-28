@@ -152,6 +152,8 @@ declare_syntax_cat s3_pair_expr
 syntax:70 ident : s3_pair_expr
 syntax:70 "."ident : s3_pair_expr
 syntax:70 ":"ident : s3_pair_expr
+syntax:70 "(?some " s3_pair_expr ")" : s3_pair_expr
+syntax:70 "(?full " s3_pair_expr ")" : s3_pair_expr
 syntax:70 "(" s3_pair_expr ")" : s3_pair_expr
 syntax:70 "null" : s3_pair_expr
 syntax:70 "(" s3_pair_expr ", " s3_pair_expr ")" : s3_pair_expr
@@ -169,18 +171,6 @@ syntax:00 "Ex " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
 syntax:00 "All " ident ", " s3_pair_expr : s3_pair_expr
 syntax:00 "All " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
 
-def s3IdentOfIdent
-  (ident: TSyntax `ident)
-:
-  TSyntax `s3_pair_expr
-:= {
-  raw :=
-    match ident.raw.getInfo? with
-    | some srcInfo =>
-      Syntax.node srcInfo `s3_pair_expr_ #[ident]
-    | none => missing
-}
-
 macro_rules
 -- Parentheses removal
 | `(s3_pair_expr| ($expr)) => `(s3_pair_expr| $expr)
@@ -191,6 +181,8 @@ macro_rules
 | `(s3_pair_expr| | $a | $b) => `(s3_pair_expr| $a | $b)
 -- Remove leading "&"
 | `(s3_pair_expr| & $a & $b) => `(s3_pair_expr| $a & $b)
+-- Then to condSome
+| `(s3_pair_expr| $a then $b) => `(s3_pair_expr| (?some $a) & $b)
 -- Implication (->) to disjunction
 | `(s3_pair_expr| $a -> $b) => `(s3_pair_expr| !$a | $b)
 -- Equivalence (<->) to conjunction of implications
@@ -198,13 +190,13 @@ macro_rules
   `(s3_pair_expr| ($a -> $b) & ($b -> $a))
 -- Bounded existential quantifier
 | `(s3_pair_expr| Ex $x:ident: $domain, $body) =>
-  `(s3_pair_expr| Ex $x, $(s3IdentOfIdent x) & $domain then $body)
+  `(s3_pair_expr| Ex $x, $(x):ident & $domain then $body)
 -- Bounded universal quantifier
 | `(s3_pair_expr| All $x:ident: $domain, $body) =>
   `(s3_pair_expr|
     All $x,
-    (!($(s3IdentOfIdent x) & $domain) then
-    $(s3IdentOfIdent <| mkIdent `Any)) | $body)
+    (!($(x):ident & $domain) then
+    $(mkIdent `Any):ident) | $body)
 
 
 -- Definitions
@@ -291,6 +283,16 @@ namespace pair_def_list
         throwErrorAt name (s!"Bound variable cannot have a lane selector.")
   |
     `(s3_pair_expr| null) => `(PairExpr.null)
+  |
+    `(s3_pair_expr|
+      (?some $body:s3_pair_expr))
+    => do
+      `(PairExpr.condSome $(← makeExpr vars bvi body))
+  |
+    `(s3_pair_expr|
+      (?full $body:s3_pair_expr))
+    => do
+      `(PairExpr.condFull $(← makeExpr vars bvi body))
   |
     `(s3_pair_expr|
       ($a:s3_pair_expr, $b:s3_pair_expr))
@@ -547,21 +549,15 @@ namespace pair_def_list
 end pair_def_list
 
 open pair_def_list in
-elab head:("s3(" <|> "s3:(") dl:ident ", " expr:s3_pair_expr ")" : term => do
+elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
   let vars ← getFinDefListVars [] dl
   let result ← makeExpr vars.enc 0 expr
-  let expectedType ←
-    match head.raw with
-    | node _ _ #[atom _ "s3("]  => ``(BasicPairExpr)
-    | node _ _ #[atom _ "s3:("] => ``(SingleLanePairExpr)
-    | _ => throwError "Implementation error: impossible head syntax"
-  let expectedTypeExpr ← elabTerm expectedType none
-  elabTerm result (some expectedTypeExpr)
+  elabTerm result none
 
 set_option pp.rawOnError true
 -- Test the new s3 syntax
 #check s3(Etst.pair_def_list.ExampleDL, X | Y)
 #check s3(pair_def_list.ExampleDL2, C | Y)
 
-#check s3:(Etst.pair_def_list.ExampleDL, .X | :Y)
-#check s3:(pair_def_list.ExampleDL2, :C | :Y)
+#check s3(Etst.pair_def_list.ExampleDL, .X | :Y)
+#check s3(pair_def_list.ExampleDL2, :C | :Y)
