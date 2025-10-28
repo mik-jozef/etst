@@ -652,41 +652,57 @@ namespace PairExpr
   :=
     congr rfl (funext nofun)
   
+  
 end PairExpr
 
 
-def Expr.toString: BasicExpr pairSignature → String
-| .var x => s!"f{x}"
+def Expr.toString (serializeVar: E → Nat → String):
+  Expr E pairSignature → String
+| .var info x => serializeVar info x
 | .bvar x => s!"b{x}"
 | .op pairSignature.Op.un args =>
-  let left := (args ArityTwo.zth).toString
-  let rite := (args ArityTwo.fst).toString
+  let left := (args ArityTwo.zth).toString serializeVar
+  let rite := (args ArityTwo.fst).toString serializeVar
   s!"({left}) | ({rite})"
 | .op pairSignature.Op.ir args =>
-  let left := (args ArityTwo.zth).toString
-  let rite := (args ArityTwo.fst).toString
+  let left := (args ArityTwo.zth).toString serializeVar
+  let rite := (args ArityTwo.fst).toString serializeVar
   s!"({left}) & ({rite})"
 | .op pairSignature.Op.condSome args =>
-  let cond := (args ArityOne.zth).toString
+  let cond := (args ArityOne.zth).toString serializeVar
   s!"(?i {cond})"
 | .op pairSignature.Op.condFull args =>
-  let cond := (args ArityOne.zth).toString
+  let cond := (args ArityOne.zth).toString serializeVar
   s!"(?f {cond})"
 | .op pairSignature.Op.null _ =>
   "null"
 | .op pairSignature.Op.pair args =>
-  let left := (args ArityTwo.zth).toString
-  let rite := (args ArityTwo.fst).toString
+  let left := (args ArityTwo.zth).toString serializeVar
+  let rite := (args ArityTwo.fst).toString serializeVar
   s!"({left}, {rite})"
 | .compl expr =>
-  let exprStr := expr.toString
+  let exprStr := expr.toString serializeVar
   s!"!({exprStr})"
 | .arbUn body =>
-  let bodyStr := body.toString
+  let bodyStr := body.toString serializeVar
   s!"Ex ({bodyStr})"
 | .arbIr body =>
-  let bodyStr := body.toString
+  let bodyStr := body.toString serializeVar
   s!"All ({bodyStr})"
 
-instance: ToString (BasicExpr pairSignature) where
-  toString := Expr.toString
+def BasicPairExpr.toString: BasicPairExpr → String :=
+  Expr.toString fun _ x => s!"{x}"
+
+def SingleLanePairExpr.toString: SingleLanePairExpr → String :=
+  Expr.toString fun
+    | .defLane, x => s!":{x}"
+    | .posLane, x => s!".{x}"
+
+instance: ToString BasicPairExpr where
+  toString := BasicPairExpr.toString
+
+instance: ToString SingleLanePairExpr where
+  toString := SingleLanePairExpr.toString
+
+instance: ToString (PairExpr Unit) := instToStringBasicPairExpr
+instance: ToString (PairExpr SingleLaneVarType) := instToStringSingleLanePairExpr

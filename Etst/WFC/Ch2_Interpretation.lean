@@ -207,6 +207,7 @@ structure Salgebra (sig: Signature) where
 inductive SingleLaneVarType
   | posLane
   | defLane
+deriving DecidableEq
 
 def SingleLaneVarType.toggle:
   SingleLaneVarType → SingleLaneVarType

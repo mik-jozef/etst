@@ -102,3 +102,30 @@ def List.length_le_append_rite
   | [] => Nat.zero_le _
   | _ :: tail =>
     Nat.succ_le_succ (List.length_le_append_rite tail r)
+
+
+def String.append_inj_left
+  {a0 a1 b0 b1: String}
+  (eq: a0 ++ b0 = a1 ++ b1)
+  (eqLength: a0.length = a1.length)
+:
+  a0 = a1
+:= by
+  apply String.data_injective
+  apply List.append_inj_left _ eqLength
+  exact b0.data
+  exact b1.data
+  rw [←String.data_append, ←String.data_append]
+  exact congr rfl eq
+
+def String.append_inj_rite
+  {a0 a1 b0 b1: String}
+  (eq: a0 ++ b0 = a1 ++ b1)
+  (eqLength: a0.length = a1.length)
+:
+  b0 = b1
+:= by
+  apply String.data_injective
+  apply List.append_inj_right _ eqLength
+  rw [←String.data_append, ←String.data_append]
+  exact congr rfl eq

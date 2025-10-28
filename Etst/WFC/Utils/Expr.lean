@@ -90,3 +90,11 @@ def BasicExpr.posLaneEqCtx
   | .compl body => .compl (body.toLane lane.toggle)
   | .arbUn body => .arbUn (body.posLaneEqCtx lane)
   | .arbIr body => .arbIr (body.posLaneEqCtx lane)
+
+
+def Expr.eq_args_of_eq_op
+  (eq: Expr.op opr argsL = Expr.op opr argsR)
+:
+  argsL = argsR
+:=
+  Expr.noConfusion eq (fun _ => eq_of_heq)

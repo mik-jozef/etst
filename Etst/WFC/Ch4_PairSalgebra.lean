@@ -112,12 +112,12 @@ end Pair
 inductive pairSignature.Op where
 | null
 | pair
+| un
+| ir
   -- If inhabited, then any, else empty.
 | condSome
   -- If full, then any, else empty.
 | condFull
-| un
-| ir
 
 def pairSignature.Params: Op → Type
 | Op.null => ArityZero
