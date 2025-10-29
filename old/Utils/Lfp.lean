@@ -715,12 +715,13 @@ def IsLfp
   fixed point of `op`.
 -/
 noncomputable def lfp.fixedIndex
+  {T: Type u}
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
   (op: T → T)
   (opMono: IsMonotonic ord ord op)
 :
-  { n: Ordinal // IsLfp ord op (stage cc op opMono n) }
+  { n: Ordinal.{u} // IsLfp ord op (stage cc op opMono n) }
 :=
   let stages: Ordinal → T := lfp.stage cc op opMono
   let stagesNotInjective := not_injective_of_ordinal stages
@@ -759,6 +760,7 @@ noncomputable def lfp.fixedIndex
   `op`, returns the least fixed point of `op`.
 -/
 noncomputable def lfp
+  {T: Type u}
   {ord: PartialOrder T}
   (cc: IsChainComplete ord)
   (op: T → T)
