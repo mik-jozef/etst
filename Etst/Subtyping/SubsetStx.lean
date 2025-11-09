@@ -56,7 +56,7 @@ abbrev PairDl.Subset (dl: PairDl) (a b: SingleLanePairExpr) :=
   Set.Subset (a.intp [] dl.wfm) (b.intp [] dl.wfm)
 
 
-def Expr.replacePosVars
+def Expr.replaceComplZeroVars
   (e: Expr E sig)
   (replacer: E → Nat → Expr E sig)
 :
@@ -65,10 +65,10 @@ def Expr.replacePosVars
   match e with
   | var i x => replacer i x
   | bvar x => .bvar x
-  | op o args => op o fun param => (args param).replacePosVars replacer
+  | op o args => op o fun param => (args param).replaceComplZeroVars replacer
   | compl body => compl body -- Note: no replacing in complements.
-  | arbUn body => arbUn (body.replacePosVars replacer)
-  | arbIr body => arbIr (body.replacePosVars replacer)
+  | arbUn body => arbUn (body.replaceComplZeroVars replacer)
+  | arbIr body => arbIr (body.replaceComplZeroVars replacer)
 
 
 -- Represents an inductive proof of `var .posLane left ⊆ rite`
@@ -136,7 +136,7 @@ def MutIndDescriptor.hypothesify
 :
   SingleLanePairExpr
 :=
-  expr.replacePosVars desc.hypothesis
+  expr.replaceComplZeroVars desc.hypothesis
 
 def MutCoindDescriptor.hypothesify
   (desc: MutCoindDescriptor dl)
@@ -144,7 +144,7 @@ def MutCoindDescriptor.hypothesify
 :
   SingleLanePairExpr
 :=
-  .compl (expr.replacePosVars desc.hypothesis)
+  .compl (expr.replaceComplZeroVars desc.hypothesis)
 
 def InductionDescriptor.exprLeft
   (desc: InductionDescriptor dl)
@@ -207,6 +207,18 @@ inductive PairDl.SubsetStx
 | subUnSymmA (s: SubsetStx dl (un x y) b): SubsetStx dl (un y x) b
 | subUnSymmB (s: SubsetStx dl a (un x y)): SubsetStx dl a (un y x)
 
+-- TODO emDef (a ⊆ :b | !:b)
+-- emPos
+-- peDef (:a & !:a ⊆ b)
+-- pePos
+-- subUn[LR] -> subUnFn[LR]
+-- un ir distribution
+-- compl distribution
+
+-- a & x ⊆ b -> a ⊆ b | x
+-- a & a -> b ⊆ b
+-- (al | ar) & (al -> bl) & (ar -> br) ⊆ bl | br
+
 | subIrL
     {r: SingleLanePairExpr}
     (s: SubsetStx dl a b)
@@ -220,6 +232,11 @@ inductive PairDl.SubsetStx
 | subIrSymmA (s: SubsetStx dl (ir x y) b): SubsetStx dl (ir y x) b
 | subIrSymmB (s: SubsetStx dl a (ir x y)): SubsetStx dl a (ir y x)
 
+| subCondSomeExp
+    (sx: SubsetStx dl Expr.any (condSome a))
+    (s: SubsetStx dl a (condSome b))
+  :
+    SubsetStx dl Expr.any (condSome b)
 | subCondSomeNull:
     SubsetStx dl Expr.any (condSome null)
 | subCondSomePair
@@ -267,6 +284,8 @@ inductive PairDl.SubsetStx
     (i: desc.Index)
   :
     SubsetStx dl desc[i].exprLeft desc[i].exprRite
+-- TODO this should be reducible to mutInduction using
+-- some complement magic, not a separate rule.
 | mutCoinduction
     (desc: MutCoindDescriptor dl)
     (premises:
@@ -281,6 +300,14 @@ inductive PairDl.SubsetStx
 
 
 namespace PairDl.SubsetStx
+  -- def elimSubUn
+  --   (s: SubsetStx dl (un al ar) b)
+  -- :
+  --   SubsetStx dl al b × SubsetStx dl ar b
+  -- :=
+  --   match s with
+  --   | subUn ac bc => (ac, bc)
+  
   def subUnR
     {l: SingleLanePairExpr}
     (s: SubsetStx dl a b)
@@ -288,6 +315,13 @@ namespace PairDl.SubsetStx
     SubsetStx dl a (PairExpr.un l b)
   :=
     subUnSymmB (subUnL s)
+  
+  def subUnSymmA.test
+    (s: SubsetStx dl (un x y) b)
+  :
+    SubsetStx dl (un y x) b
+  :=
+    sorry
   
   def subIrR
     {l: SingleLanePairExpr}
@@ -325,7 +359,7 @@ namespace PairDl.SubsetStx
     (premise:
       SubsetStx
         dl
-        ((desc.expansion.toLane .posLane).replacePosVars fun _ x =>
+        ((desc.expansion.toLane .posLane).replaceComplZeroVars fun _ x =>
           desc.hypothesis x (.var .posLane x))
         desc.rite)
   :
@@ -343,7 +377,7 @@ namespace PairDl.SubsetStx
         dl
         desc.left
         (.compl
-          ((desc.expansion.toLane .defLane).replacePosVars fun _ x =>
+          ((desc.expansion.toLane .defLane).replaceComplZeroVars fun _ x =>
             desc.hypothesis x (.var .defLane x))))
   :
     SubsetStx dl desc.left (.compl (.var .defLane desc.rite))
@@ -360,7 +394,7 @@ namespace PairDl.SubsetStx
     (premise:
       SubsetStx
         dl
-        (((dl.getDef left).toLane .posLane).replacePosVars fun _ x =>
+        (((dl.getDef left).toLane .posLane).replaceComplZeroVars fun _ x =>
           if left = x then PairExpr.ir rite (.var .posLane x) else (.var .posLane x))
         rite)
   :
@@ -384,7 +418,7 @@ namespace PairDl.SubsetStx
         dl
         left
         (.compl
-          (((dl.getDef rite).toLane .defLane).replacePosVars fun _ x =>
+          (((dl.getDef rite).toLane .defLane).replaceComplZeroVars fun _ x =>
             if rite = x then PairExpr.ir (.compl left) (.var .defLane x) else (.var .defLane x))))
   :
     SubsetStx dl left (.compl (.var .defLane rite))

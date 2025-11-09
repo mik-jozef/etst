@@ -1,4 +1,5 @@
 import Etst.Subtyping.Utils.FixpointMethodsSoundness
+import Etst.Subtyping.UnivStx
 
 namespace Etst
 open PairExpr
@@ -52,6 +53,10 @@ def PairDl.SubsetStx.isSound
     (fun _ _ isSubA isSubB _ isIn => inIr (isSubA isIn) (isSubB isIn))
     (fun _ isSub _ isIn => isSub isIn.symm)
     (fun _ isSub _ isIn => (isSub isIn).symm)
+    (fun _ _ isSubA isSubB _ _ =>
+      let ⟨_, inA⟩ := isSubA ⟨.null, rfl⟩
+      let ⟨_, inCondB⟩ := isSubB inA
+      ⟨_, inCondB⟩)
     (fun _ _ => ⟨.null, rfl⟩)
     (fun _ _ isSubL isSubR _ _ =>
       let ⟨_, inL⟩ := isSubL ⟨.null, rfl⟩
@@ -67,3 +72,86 @@ def PairDl.SubsetStx.isSound
     (fun _ isSub _ isIn => SingleLaneExpr.InWfm.of_in_def (isSub isIn))
     (fun _ _ out ih _ isIn => MutIndDescriptor.isSound _ ih out isIn)
     (fun _ _ out ih _ isIn => MutCoindDescriptor.isSound _ ih out isIn)
+
+
+def PairDl.Subset.toUniv
+  (sub: Subset dl a b)
+:
+  dl.Univ (un (.compl a) b)
+:=
+  fun p =>
+    if h: a.intp [] dl.wfm p
+    then inUnR (sub h)
+    else inUnL h
+
+def PairDl.Univ.toSubset
+  {a b: SingleLanePairExpr}
+  (univ: Univ dl (un (.compl a) b))
+:
+  Subset dl a b
+:=
+  fun p inA =>
+    (univ p).elim
+      (fun inComplA => (inComplA inA).elim)
+      id
+
+
+def PairDl.UnivStx.isSound
+  (univ: UnivStx dl expr)
+:
+  dl.Univ expr
+:=
+  univ.rec
+    (motive := fun expr _ => dl.Univ expr)
+    (fun expr p =>
+      if h: expr.intp [] dl.wfm p
+      then Or.inr h
+      else Or.inl h)
+    (fun
+      | _, _, _, _, .null => inUnL inNull
+      | _, _, univL, univR, .pair a b => inUnR (inPair (univL a) (univR b)))
+    (fun _ univL p => inUnL (univL p))
+    (fun _ univ p => (univ p).symm)
+    (fun _ _ univL univR p => inIr (univL p) (univR p))
+    (fun _ univ p => (univ p).symm)
+    (fun mutDesc _ i premises p =>
+      let isSubset := mutDesc.isSound (fun i => (premises i).toSubset) i
+      isSubset.toUniv p)
+
+open PairDl.UnivStx in
+noncomputable def PairDl.SubsetStx.toUniv
+  (sub: SubsetStx dl a b)
+:
+  UnivStx dl (un (.compl a) b)
+:=
+  sub.rec
+    (motive := fun a b _ => UnivStx dl (un (.compl a) b))
+    (@fun
+      | x, .defLane => excludedMiddle (.var .defLane x)
+      | x, .posLane =>
+        let em := excludedMiddle (dl := dl) (.var .posLane x)
+        show dl.UnivStx (un (Expr.compl (.var .defLane x)) (.var .posLane x)) from
+        sorry)
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry
+    sorry

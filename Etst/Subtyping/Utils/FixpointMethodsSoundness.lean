@@ -1,9 +1,22 @@
-import Etst.Subtyping.ProofSystem
+import Etst.Subtyping.SubsetStx
 import Etst.Subtyping.Utils.IsLaneConstrained
 
 namespace Etst
 open PairExpr
 open SingleLaneExpr
+
+
+def DefList.lfpStage_le_wfm_std
+  (salg: Salgebra sig)
+  (dl: DefList sig)
+  (n: Ordinal)
+:
+  let _ := Valuation.ordStdLattice
+  (operatorC salg dl (dl.wfm salg)).lfpStage n ≤ dl.wfm salg
+:= by
+  intro
+  conv => rhs; rw [dl.wfm_eq_lfpC salg]
+  exact (operatorC salg dl (dl.wfm salg)).lfpStage_le_lfp n
 
 
 def InductionDescriptor.Invariant
@@ -101,7 +114,7 @@ def MutCoindDescriptor.hypothesify_le
   (isConstrained: IsPosVarLaneOnly .defLane expr)
   (v_le: v ≤ dl.wfm)
 :
-  (intp (expr.replacePosVars desc.hypothesis) bv dl.wfm).compl
+  (intp (expr.replaceComplZeroVars desc.hypothesis) bv dl.wfm).compl
     ≤
   (expr.intp2 bv dl.wfm v).compl
 :=
@@ -112,7 +125,7 @@ def MutCoindDescriptor.hypothesify_le
   :
     Set.Subset
       (expr.intp2 bv dl.wfm v)
-      (intp (expr.replacePosVars desc.hypothesis) bv dl.wfm)
+      (intp (expr.replaceComplZeroVars desc.hypothesis) bv dl.wfm)
   :=
     match expr with
     | .var .defLane _ => desc.var_hypothesify_le inv v_le
@@ -130,18 +143,6 @@ def MutCoindDescriptor.hypothesify_le
   
   compl_le_compl (helper bv isConstrained)
 
-
-def DefList.lfpStage_le_wfm_std
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  (n: Ordinal)
-:
-  let _ := Valuation.ordStdLattice
-  (operatorC salg dl (dl.wfm salg)).lfpStage n ≤ dl.wfm salg
-:= by
-  intro
-  conv => rhs; rw [dl.wfm_eq_lfpC salg]
-  exact (operatorC salg dl (dl.wfm salg)).lfpStage_le_lfp n
 
 def MutIndDescriptor.isSound
   (desc: MutIndDescriptor dl)
@@ -197,7 +198,7 @@ def MutCoindDescriptor.isSound
   let := Valuation.ordStdLattice
   let eq: dl.wfm = (operatorC pairSalgebra dl dl.wfm).lfp :=
     dl.wfm_eq_lfpC pairSalgebra
-
+  
   let isDefSub :=
     OrderHom.lfpStage_induction
       (operatorC pairSalgebra dl dl.wfm)
@@ -221,5 +222,5 @@ def MutCoindDescriptor.isSound
         let lePremiseR := desc.hypothesify_le ihPred isLaneOnly predStageLe
         expLe.notDefLe (lePremiseR (premisesHold i isPos))
       )
-
+  
   by rw [←eq] at isDefSub; exact isDefSub i

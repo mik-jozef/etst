@@ -56,6 +56,28 @@ def Iff.nmpr {P Q: Prop} (h: P ↔ Q) : ¬Q → ¬P :=
 
 abbrev List.Index (l: List T) := Fin l.length
 
+def List.Index.map
+  {list: List A}
+  (i: list.Index)
+  (f: A → B)
+:
+  (list.map f).Index
+:= ⟨
+  i.val,
+  by rw [List.length_map]; exact i.isLt
+⟩
+
+def List.Index.unmap
+  {list: List A}
+  {f: A → B}
+  (i: (list.map f).Index)
+:
+  list.Index
+:= ⟨
+  i.val,
+  by rw [←List.length_map f]; exact i.isLt
+⟩
+
 noncomputable def List.Mem.index 
   {l: List T}
 :

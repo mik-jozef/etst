@@ -1,12 +1,10 @@
 import Etst.WFC.Utils.PairExprDecideEq
 import Etst.Subtyping.Syntax.FiniteDefList
-import Etst.Subtyping.ProofSystem
+import Etst.Subtyping.UnivStx
 
 namespace Etst
 open PairDl
 open PairDl.SubsetStx
-
-set_option pp.raw true
 
 pairDefList TestDl
   s3 Nat := null | (Nat, null)
@@ -18,6 +16,13 @@ pairDefList TestDl
   s3 OddMut := (EvenMut, null)
   
   s3 EvenNeg := !(EvenNeg, null)
+  
+  
+  s3 Eq := Ex t, (t, (t, Any))
+  s3 EqSymm := All a, All b, Eq a b -> Eq b a
+  
+  s3 zth := Ex a, Ex b, ((a, b), a)
+  s3 fst := Ex a, Ex b, ((a, b), b)
   
   s3 succ := Ex x: Nat, (x, (x, null))
   
@@ -33,6 +38,17 @@ pairDefList TestDl
       Ex b: Nat,
         (a, (succ b, add (mul a b) b)))
   
+  
+  s3 NatLe :=
+    | ((null, (Nat, Any)))
+    | (Ex le: NatLe, (succ (zth le), (succ (fst le), Any)))
+  
+  s3 NatLeZero := NatLe null
+  s3 AllNatLeZero := All n: Nat, NatLeZero n
+  
+  s3 ThenNatLeZero := Ex n: Nat, NatLeZero n then n
+  s3 ThoseNatLeZero := Ex n: Nat, (n, NatLeZero n)
+  
   s3 Prime :=
     & !succ null
     & (Ex n: Nat,
@@ -40,11 +56,11 @@ pairDefList TestDl
         mul m Nat & n then (?some m & succ null) | (?some m & n) then n)
   
   s3 InList :=
-    Ex v,
+    Ex e,
     Ex tail,
-    | (v, ((v, tail), Any))
+    | (e, ((e, tail), Any))
     | (Ex h,
-      InList v tail then (v, (h, tail)))
+      InList e tail then (e, (h, tail)))
   
   s3 PrimesInf := All list, Ex p: Prime, !InList p list
 pairDefList.
@@ -87,13 +103,23 @@ def SubsetStx.convertB
 
 abbrev IsSub := SubsetStx TestDl.toDefList
 
+def UnivStx.convert
+  (decEq: DecEq src dest)
+  (sub: UnivStx dl src)
+:
+  UnivStx dl dest
+:=
+  eq_of_decide decEq ▸ sub
+
+abbrev IsUniv := UnivStx TestDl.toDefList
+
 
 def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
   simpleInduction
     TestDl.vars.Nat
     rfl
     (SubsetStx.convertA
-      (srcA := s3((null) | (((:Nat) & (.Nat), null))))
+      (srcA := s3(null | (:Nat & .Nat, null)))
       (fun _ => Decidable.noConfusion)
       (.foldB
         (SubsetStx.convertB
@@ -107,4 +133,62 @@ def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
                   .varDef)
                 .subNull))))))
 
-def SubsetStx.infinitudeOfPrimes: IsSub s3(.Any) s3(:PrimesInf) := sorry
+def SubsetStx.natNotNat: IsSub s3(.Any) s3(:Nat | !.Nat) :=
+  sorry
+
+
+def natLeZeroThen: IsSub s3(.Nat) s3(:ThenNatLeZero) :=
+  simpleInduction
+    TestDl.vars.Nat
+    (eq_of_decide (fun _ => Decidable.noConfusion))
+    (SubsetStx.convertA
+      (srcA := s3(null | (:ThenNatLeZero & .Nat, null)))
+      (fun _ => Decidable.noConfusion)
+      (.foldB
+        (.subUn
+          sorry
+          sorry)))
+
+
+
+
+
+
+
+
+
+
+def SubsetStx.AddSymm :=
+  BasicExpr.toDefLane
+    s3(All a: Nat, All b: Nat, Eq (add a b) (add b a))
+
+def SubsetStx.addSymmNat:
+  IsSub s3(.Nat) AddSymm
+:=
+  simpleInduction
+    TestDl.vars.Nat
+    (eq_of_decide (fun _ => Decidable.noConfusion))
+    (SubsetStx.convertA
+      (srcA := s3(null | ((All a: .Nat, All b: .Nat, :Eq (:add a b) (:add b a)) & .Nat, null)))
+      (fun _ => Decidable.noConfusion)
+      sorry)
+
+def SubsetStx.addSymm:
+  IsSub s3(:Any) AddSymm
+:=
+  sorry
+
+
+def SubsetStx.infinitudeOfPrimes:
+  IsSub s3(.Any) s3(:PrimesInf)
+:=
+  sorry
+
+
+/-
+  Any ⊆ Ex x, (A & x) | ~A & x then x
+  Any ⊆ Ex x, (A & x) | ~A & x then x
+  
+  A ⊆ B | C
+  A & ~B ⊆ C
+-/
