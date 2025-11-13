@@ -170,12 +170,12 @@ structure ValVar (D: Type*) where
 
 -- ## Section 3: The Interpretation Function
 
-def Signature.Args
+abbrev Signature.Args
   (sig: Signature)
   (op: sig.Op)
   (D: Type u)
 :=
-  sig.Params op → Set D
+  List.Vector (Set D) (sig.arity op)
 
 /-
   A salgebra on T is an algebra on sets of T whose operations are
@@ -199,7 +199,7 @@ structure Salgebra (sig: Signature) where
   isMonotonic
     (op: sig.Op)
     (args0 args1: sig.Args op D)
-    (le: ∀ param: sig.Params op, args0 param ≤ args1 param)
+    (le: ∀ param, (h: param < sig.arity op) → args0[param] ≤ args1[param])
   :
     I op args0 ≤ I op args1
 
@@ -225,7 +225,13 @@ def SingleLaneVarType.getSet
   | .defLane => s3.defMem
 
 
-def SingleLaneExpr := Expr SingleLaneVarType
+def SingleLaneExpr sig := Expr SingleLaneVarType sig
+
+
+-- I'd rather use mutual recursion, but termination checking fails.
+abbrev InterpretationRet (D: Type u): ExprKind → Type u
+| .expr => Set D
+| .args n => List.Vector (Set D) n
 
 /-
   The interpretation of an expression is defined using two valuations
@@ -248,52 +254,57 @@ def SingleLaneExpr.interpretation
   (bv: List salg.D)
   (b c: Valuation salg.D)
 :
-  SingleLaneExpr sig → Set salg.D
+  SingleLaneExpr sig kind → InterpretationRet salg.D kind
 
 | .var lane a => lane.getSet (c a)
 | .bvar a =>
     match bv[a]? with
-    | none => {}
-    | some d => {d}
+    | none => ({}: Set salg.D)
+    | some d => ({d}: Set salg.D)
 | .op opr exprs =>
-    let args param := interpretation salg bv b c (exprs param)
-    salg.I opr args
+    salg.I opr (interpretation salg bv b c exprs)
 | .compl body => (interpretation salg bv b b body).compl
 | .arbUn body =>
     fun d => ∃ dX, interpretation salg (dX :: bv) b c body d
 | .arbIr body =>
     fun d => ∀ dX, interpretation salg (dX :: bv) b c body d
-
+| .nil => List.Vector.nil
+| .cons head tail =>
+    let headSet := interpretation salg bv b c head
+    let tailSets := interpretation salg bv b c tail
+    tailSets.cons headSet
 
 -- Note the lane gets toggled inside complements.
 def BasicExpr.toLane
-  (expr: BasicExpr sig)
+  (expr: BasicExpr sig kind)
   (lane: SingleLaneVarType)
 :
-  SingleLaneExpr sig
+  SingleLaneExpr sig kind
 :=
   match expr with
-  | .var a => .var lane a
+  | Expr.var _ a => .var lane a
   | .bvar a => .bvar a
-  | .op opr exprs =>
-      .op opr (fun param => (exprs param).toLane lane)
+  | .op opr exprs => .op opr (toLane exprs lane)
   | .compl body => .compl (body.toLane lane.toggle)
   | .arbUn body => .arbUn (body.toLane lane)
   | .arbIr body => .arbIr (body.toLane lane)
+  | .nil => .nil
+  | .cons head tail =>
+      .cons (toLane head lane) (toLane tail lane)
 
-def BasicExpr.toDefLane (expr: BasicExpr sig): SingleLaneExpr sig :=
+def BasicExpr.toDefLane (expr: BasicExpr sig kind): SingleLaneExpr sig kind :=
   expr.toLane .defLane
 
-def BasicExpr.toPosLane (expr: BasicExpr sig): SingleLaneExpr sig :=
+def BasicExpr.toPosLane (expr: BasicExpr sig kind): SingleLaneExpr sig kind :=
   expr.toLane .posLane
 
 def BasicExpr.interpretationDef
   (salg: Salgebra sig)
   (bv: List salg.D)
   (b c: Valuation salg.D)
-  (expr: BasicExpr sig)
+  (expr: BasicExpr sig kind)
 :
-  Set salg.D
+  InterpretationRet salg.D kind
 :=
   (expr.toLane .defLane).interpretation salg bv b c
 
@@ -301,11 +312,32 @@ def BasicExpr.interpretationPos
   (salg: Salgebra sig)
   (bv: List salg.D)
   (b c: Valuation salg.D)
-  (expr: BasicExpr sig)
+  (expr: BasicExpr sig kind)
 :
-  Set salg.D
+  InterpretationRet salg.D kind
 :=
   (expr.toLane .posLane).interpretation salg bv b c
+
+
+def Interpretation_defLePosRet
+  (salg: Salgebra sig)
+  (bv: List salg.D)
+  (b c: Valuation salg.D)
+  (expr: BasicExpr sig kind)
+:
+  Prop
+:=
+  match kind with
+  | .expr =>
+      ∀ d,
+      expr.interpretationDef salg bv b c d →
+      expr.interpretationPos salg bv b c d
+  | .args n =>
+      ∀ i,
+        (h: i < n) →
+      ∀ d,
+        (expr.interpretationDef salg bv b c)[i] d →
+        (expr.interpretationPos salg bv b c)[i] d
 
 -- A proof that definite membership implies possible membership.
 def BasicExpr.interpretation_defLePos
@@ -313,24 +345,26 @@ def BasicExpr.interpretation_defLePos
   (bv: List salg.D)
   (b c: Valuation salg.D)
 :
-  (expr: BasicExpr sig) →
-  (d: salg.D) →
-  expr.interpretationDef salg bv b c d →
-  expr.interpretationPos salg bv b c d
-| .var x, _, isDef => (c x).defLePos isDef
-| .bvar _, _, isDef => isDef
-| .op opr exprs, _, isDef =>
-    salg.isMonotonic opr _ _
-      (fun param dX isDefX =>
-        interpretation_defLePos salg bv b c (exprs param) dX isDefX)
-      isDef
-| .compl body, d, isDef => fun isPos =>
+  (expr: BasicExpr sig kind) →
+  Interpretation_defLePosRet salg bv b c expr
+| Expr.var _ x => fun _ isDef => (c x).defLePos isDef
+| .bvar _ => fun _ => id
+| .op opr args =>
+    salg.isMonotonic opr _ _ (interpretation_defLePos salg bv b c args)
+| .compl body => fun d isDef isPos =>
     let ih := interpretation_defLePos salg bv b b body d
     isDef (ih isPos)
-| .arbUn body, d, ⟨dX, isDef⟩ =>
+| .arbUn body => fun d ⟨dX, isDef⟩ =>
     ⟨dX, interpretation_defLePos salg (dX :: bv) b c body d isDef⟩
-| .arbIr body, d, isDef => fun dX =>
+| .arbIr body => fun d isDef dX =>
     interpretation_defLePos salg (dX :: bv) b c body d (isDef dX)
+| .nil => nofun
+| .cons head tail =>
+    let headLe := interpretation_defLePos salg bv b c head
+    let tailLe := interpretation_defLePos salg bv b c tail
+    fun
+      | .zero, _, d => headLe d
+      | .succ i', h, d => tailLe i' (Nat.lt_of_succ_lt_succ h) d
 
 /-
   A three-valued interpretation is an intuitive extension of single-lane
@@ -347,7 +381,7 @@ def BasicExpr.interpretation
   (salg: Salgebra sig)
   (bv: List salg.D)
   (b c: Valuation salg.D)
-  (expr: BasicExpr sig)
+  (expr: BasicExpr sig .expr)
 :
   Set3 salg.D
 := {

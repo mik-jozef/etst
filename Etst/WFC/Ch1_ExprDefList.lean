@@ -25,18 +25,16 @@ def ArityZero.elim (az: ArityZero): T := nomatch az
   
   `Op` is the type (or "set") of operators of the signature.
   
-  `Params` is a function that maps each operator to a type whose
-  elements represent the individual parameters of the operator.
-  For example, for a nullary operator (a constant) `op`, `Params op`
-  would be the empty type, and for a binary operator, `Params op`
-  would be a type having exactly two elements.
-  
   Thanks to answerers of https://proofassistants.stackexchange.com/q/1740
 -/
 structure Signature where
   Op: Type u
-  Params: Op → Type v
+  arity: Op → Nat
 
+
+inductive ExprKind
+| expr
+| args (n: Nat)
 
 /-
   An expression is an inductive structure defined over a signature
@@ -50,43 +48,59 @@ structure Signature where
   `E` (extra info) is for storing arbitrary extra information in each
   variable.
 -/
-inductive Expr (E: Type*) (sig: Signature) where
-| var (e: E) (x: Nat)
-| bvar (x: Nat) -- Uses de Bruijn indices
-| op (op: sig.Op) (args: sig.Params op → Expr E sig)
-| compl (body: Expr E sig)
-| arbUn (body: Expr E sig)
-| arbIr (body: Expr E sig)
+inductive Expr (E: Type u) (sig: Signature): ExprKind → Type u
+| var (e: E) (x: Nat): Expr E sig .expr
+| bvar (x: Nat): Expr E sig .expr -- Uses de Bruijn indices
+| op
+    (op: sig.Op)
+    (args: Expr E sig (.args (sig.arity op)))
+  :
+    Expr E sig .expr
+| compl (body: Expr E sig .expr): Expr E sig .expr
+| arbUn (body: Expr E sig .expr): Expr E sig .expr
+| arbIr (body: Expr E sig .expr): Expr E sig .expr
 
+| nil: Expr E sig (.args 0)
+| cons
+    (head: Expr E sig .expr)
+    {n}
+    (tail: Expr E sig (.args n))
+  :
+    Expr E sig (.args n.succ)
 
-abbrev BasicExpr := Expr Unit
-def BasicExpr.var (x: Nat): BasicExpr sig := Expr.var () x
-def BasicExpr.bvar (x: Nat): BasicExpr sig := Expr.bvar x
+def Expr.args: Expr E sig (.args n) → List.Vector (Expr E sig .expr) n
+| nil => ⟨[], rfl⟩
+| cons head tail => tail.args.cons head
+
+abbrev BasicExpr sig kind := Expr Unit sig kind
+def BasicExpr.var (x: Nat): BasicExpr sig .expr := Expr.var () x
+def BasicExpr.bvar (x: Nat): BasicExpr sig .expr := Expr.bvar x
 def BasicExpr.op
   (op: sig.Op)
-  (args: sig.Params op → BasicExpr sig)
+  (args: Expr Unit sig (.args (sig.arity op)))
 :
-  BasicExpr sig
+  BasicExpr sig .expr
 :=
   Expr.op op args
-def BasicExpr.compl (body: BasicExpr sig): BasicExpr sig :=
+def BasicExpr.compl (body: BasicExpr sig .expr): BasicExpr sig .expr :=
   Expr.compl body
-def BasicExpr.arbUn (body: BasicExpr sig): BasicExpr sig :=
+def BasicExpr.arbUn (body: BasicExpr sig .expr): BasicExpr sig .expr :=
   Expr.arbUn body
-def BasicExpr.arbIr (body: BasicExpr sig): BasicExpr sig :=
+def BasicExpr.arbIr (body: BasicExpr sig .expr): BasicExpr sig .expr :=
   Expr.arbIr body
 
 namespace Expr
-  def UsesVar (expr: Expr E sig): Set Nat :=
+  def UsesVar (expr: Expr E sig kind): Set Nat :=
     fun x =>
       match expr with
         | var _ v => x = v
         | bvar _ => False
-        | op _ args => ∃ param, (args param).UsesVar x
+        | op _ args => args.UsesVar x
         | compl body => body.UsesVar x
         | arbUn body => body.UsesVar x
         | arbIr body => body.UsesVar x
-
+        | nil => False
+        | cons head tail => head.UsesVar x ∨ tail.UsesVar x
 
   /-
     A positive expression is an expression that does not contain
@@ -96,14 +110,16 @@ namespace Expr
     Complementing a bound variable is allowed because it is guaranteed
     to be two-valued, so it cannot result in a contradictory definition.
   -/
-  def IsPositive: Expr E sig → Prop
+  def IsPositive: Expr E sig kind → Prop
   | var _ _ => True
   | bvar _ => True
-  | op _ args => ∀ param, (args param).IsPositive
+  | op _ args => args.IsPositive
   | compl (bvar _) => True
   | compl _ => False
   | arbUn body => body.IsPositive
   | arbIr body => body.IsPositive
+  | nil => True
+  | cons head tail => head.IsPositive ∧ tail.IsPositive
 
   /-
     A helper function that we can use to show termination of
@@ -112,18 +128,19 @@ namespace Expr
     This is a proper version of the sizeOf function defined natively
     by Lean.
   -/
-  noncomputable def sizeOf: Expr E sig → Ordinal.{0}
+  noncomputable def sizeOf: Expr E sig kind → Ordinal.{0}
   | var _ _ => 0
   | bvar _ => 0
-  | op _ args =>
-      iSup (fun arg => (args arg).sizeOf) + 1
+  | op _ args => args.sizeOf + 1
   | compl body => body.sizeOf + 1
   | arbUn body => body.sizeOf + 1
   | arbIr body => body.sizeOf + 1
+  | nil => 0
+  | cons head tail => max head.sizeOf tail.sizeOf + 1
 end Expr
 
 
-def DefList.GetDef (sig: Signature) := Nat → BasicExpr sig
+def DefList.GetDef (sig: Signature) := Nat → BasicExpr sig .expr
 
 /-
   A definition list is a map from natural numbers to expressions.

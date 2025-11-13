@@ -60,7 +60,7 @@ def MutIndDescriptor.var_le_hypothesify
 def MutIndDescriptor.le_hypothesify
   (desc: MutIndDescriptor dl)
   (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
-  (isConstrained: expr.IsPosVarLaneOnly .posLane)
+  (isConstrained: expr.IsPosVarLaneOnly .posLane) -- TODO replace with Expr.LaneEqCtx
   (v_le: v ≤ dl.wfm)
 :
   expr.intp2 bv dl.wfm v

@@ -11,7 +11,7 @@ namespace SingleLaneExpr.interpretation_mono_std
   | .some .defLane => ∀ x: Nat, (c0 x).defMem ⊆ (c1 x).defMem
   | .some .posLane => ∀ x: Nat, (c0 x).posMem ⊆ (c1 x).posMem
   
-  def LaneEq (expr: SingleLaneExpr sig):
+  def LaneEq (expr: SingleLaneExpr sig kind):
     Option SingleLaneVarType → Prop
   | .none => True
   | .some lane => expr.LaneEqCtx lane

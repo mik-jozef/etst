@@ -4,22 +4,22 @@ namespace Etst
 
 
 namespace SingleLaneExpr
-  def var (lane: SingleLaneVarType) (x: Nat): SingleLaneExpr sig :=
+  def var (lane: SingleLaneVarType) (x: Nat): SingleLaneExpr sig .expr :=
     Expr.var lane x
-  def bvar (x: Nat): SingleLaneExpr sig :=
+  def bvar (x: Nat): SingleLaneExpr sig .expr :=
     Expr.bvar x
   def op
     (opr: sig.Op)
-    (args: (param: sig.Params opr) → SingleLaneExpr sig)
+    (args: SingleLaneExpr sig (.args (sig.arity opr)))
   :
-    SingleLaneExpr sig
+    SingleLaneExpr sig .expr
   :=
     Expr.op opr args
-  def compl (body: SingleLaneExpr sig): SingleLaneExpr sig :=
+  def compl (body: SingleLaneExpr sig .expr): SingleLaneExpr sig .expr :=
     Expr.compl body
-  def arbUn (body: SingleLaneExpr sig): SingleLaneExpr sig :=
+  def arbUn (body: SingleLaneExpr sig .expr): SingleLaneExpr sig .expr :=
     Expr.arbUn body
-  def arbIr (body: SingleLaneExpr sig): SingleLaneExpr sig :=
+  def arbIr (body: SingleLaneExpr sig .expr): SingleLaneExpr sig .expr :=
     Expr.arbIr body
 end SingleLaneExpr
 
@@ -28,16 +28,16 @@ end SingleLaneExpr
   (anything not under a complement) only refers to variables from
   the given lane.
 -/
-inductive Expr.LaneEqCtx (lane: SingleLaneVarType): Expr E sig → Prop
+inductive Expr.LaneEqCtx (lane: SingleLaneVarType): Expr E sig kind → Prop
 | var (x: Nat): Expr.LaneEqCtx lane (Expr.var lane x)
 | bvar (x: Nat): Expr.LaneEqCtx lane (Expr.bvar x)
 | op
-    (opr: sig.Op)
-    (args: (param: sig.Params opr) → Expr E sig)
-    (argsLaneEq: (param: sig.Params opr) → Expr.LaneEqCtx lane (args param))
+    {opr: sig.Op}
+    {args: Expr E sig (.args (sig.arity opr))}
+    (argsLaneEq: Expr.LaneEqCtx lane args)
   :
     Expr.LaneEqCtx lane (Expr.op opr args)
-| compl (body: Expr E sig): Expr.LaneEqCtx lane (body.compl)
+| compl (body: Expr E sig .expr): Expr.LaneEqCtx lane body.compl
 | arbUn
     (laneEqBody: Expr.LaneEqCtx lane body)
   :
@@ -46,18 +46,25 @@ inductive Expr.LaneEqCtx (lane: SingleLaneVarType): Expr E sig → Prop
     (laneEqBody: Expr.LaneEqCtx lane body)
   :
     Expr.LaneEqCtx lane (Expr.arbIr body)
+| nil: Expr.LaneEqCtx lane Expr.nil
+| cons
+    (headLaneEq: Expr.LaneEqCtx lane head)
+    (tailLaneEq: Expr.LaneEqCtx lane tail)
+  :
+    Expr.LaneEqCtx lane (Expr.cons head tail)
 
-def Expr.LaneEqCtx.elimOp
-  {sig: Signature}
-  {opr: sig.Op}
-  {args: (param: sig.Params opr) → Expr E sig}
-  (laneEq: Expr.LaneEqCtx lane (Expr.op opr args))
-  (param: sig.Params opr)
-:
-  Expr.LaneEqCtx lane (args param)
-:=
-  match laneEq with
-  | .op _ _ argsLaneEq => argsLaneEq param
+-- TODO delete?
+-- def Expr.LaneEqCtx.elimOp
+--   {sig: Signature}
+--   {opr: sig.Op}
+--   {args: (param: sig.Params opr) → Expr E sig}
+--   (laneEq: Expr.LaneEqCtx lane (Expr.op opr args))
+--   (param: sig.Params opr)
+-- :
+--   Expr.LaneEqCtx lane (args param)
+-- :=
+--   match laneEq with
+--   | .op _ _ argsLaneEq => argsLaneEq param
 
 def Expr.LaneEqCtx.elimArbUn
   (laneEq: Expr.LaneEqCtx lane (body.arbUn))
@@ -77,19 +84,20 @@ def Expr.LaneEqCtx.elimArbIr
 
 
 def BasicExpr.posLaneEqCtx
-  (expr: BasicExpr sig)
+  (expr: BasicExpr sig kind)
   (lane: SingleLaneVarType)
 :
   Expr.LaneEqCtx lane (expr.toLane lane)
 :=
   match expr with
-  | .var x => .var x
+  | Expr.var _ x => .var x
   | .bvar x => .bvar x
-  | .op opr args =>
-    .op opr _ (fun param => (args param).posLaneEqCtx lane)
+  | .op _ args => .op (posLaneEqCtx args lane)
   | .compl body => .compl (body.toLane lane.toggle)
   | .arbUn body => .arbUn (body.posLaneEqCtx lane)
   | .arbIr body => .arbIr (body.posLaneEqCtx lane)
+  | .nil => .nil
+  | .cons head tail => .cons (posLaneEqCtx head lane) (posLaneEqCtx tail lane)
 
 
 def Expr.eq_args_of_eq_op

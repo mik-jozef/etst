@@ -300,13 +300,14 @@ inductive PairDl.SubsetStx
 
 
 namespace PairDl.SubsetStx
-  -- def elimSubUn
-  --   (s: SubsetStx dl (un al ar) b)
-  -- :
-  --   SubsetStx dl al b × SubsetStx dl ar b
-  -- :=
-  --   match s with
-  --   | subUn ac bc => (ac, bc)
+  def elimSubUn
+    (s: SubsetStx dl (un al ar) b)
+  :
+    Nat -- SubsetStx dl al b × SubsetStx dl ar b
+  :=
+    match s with
+    -- | a => sorry
+    | subUn ac bc => 42 -- (ac, bc)
   
   def subUnR
     {l: SingleLanePairExpr}
