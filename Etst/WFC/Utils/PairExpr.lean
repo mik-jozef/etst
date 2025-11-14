@@ -1,30 +1,22 @@
-import Etst.WFC.Ch4_PairSalgebra
+import Etst.WFC.Ch3_WellFoundedModel
 import Etst.WFC.Utils.Pair
 import Etst.WFC.Utils.RulesOfInference
 
 namespace Etst
 
 
-abbrev PairExpr E := Expr E pairSignature
-abbrev BasicPairExpr := BasicExpr pairSignature
-abbrev SingleLanePairExpr := SingleLaneExpr pairSignature
-abbrev PairDl := DefList pairSignature
-
-noncomputable def PairDl.wfm (dl: PairDl) :=
-  DefList.wfm pairSalgebra dl
-
 namespace BasicExpr
   abbrev triIntp2
-    (expr: BasicPairExpr)
+    (expr: BasicExpr)
     (bv: List Pair := [])
     (b c: Valuation Pair)
   :
     Set3 Pair
   :=
-    expr.interpretation pairSalgebra bv b c
+    expr.interpretation bv b c
   
   abbrev triIntp
-    (expr: BasicPairExpr)
+    (expr: BasicExpr)
     (bv: List Pair := [])
     (v: Valuation Pair)
   :
@@ -35,16 +27,16 @@ end BasicExpr
 
 namespace SingleLaneExpr
   abbrev intp2
-    (expr: SingleLanePairExpr)
+    (expr: SingleLaneExpr)
     (bv: List Pair := [])
     (b c: Valuation Pair)
   :
     Set Pair
   :=
-    expr.interpretation pairSalgebra bv b c
+    expr.interpretation bv b c
   
   abbrev intp
-    (expr: SingleLanePairExpr)
+    (expr: SingleLaneExpr)
     (bv: List Pair := [])
     (v: Valuation Pair)
   :
@@ -54,45 +46,21 @@ namespace SingleLaneExpr
   
 end SingleLaneExpr
 
-namespace PairExpr
+namespace Expr
   open Expr
   open SingleLaneExpr
   
   
-  def null: PairExpr E := Expr.op pairSignature.Op.null nofun
-  
-  def pair (l r: PairExpr E): PairExpr E :=
-    Expr.op pairSignature.Op.pair fun
-      | .zth => l
-      | .fst => r
-  
-  def un (l r: PairExpr E): PairExpr E :=
-    Expr.op pairSignature.Op.un fun
-      | .zth => l
-      | .fst => r
-  
-  def ir (l r: PairExpr E): PairExpr E :=
-    Expr.op pairSignature.Op.ir fun
-      | .zth => l
-      | .fst => r
-  
-  def condSome (body: PairExpr E): PairExpr E :=
-    Expr.op pairSignature.Op.condSome fun _ => body
-
-  def condFull (body: PairExpr E): PairExpr E :=
-    Expr.op pairSignature.Op.condFull fun _ => body
-
-  
-  def ifThen (cond body: PairExpr E): PairExpr E :=
+  def ifThen (cond body: Expr E): Expr E :=
     ir (condSome cond) body
   
-  def ifElse (cond body: PairExpr E): PairExpr E :=
+  def ifElse (cond body: Expr E): Expr E :=
     ir (condFull cond.compl) body
   
-  def ite (cond yes no: PairExpr E): PairExpr E :=
+  def ite (cond yes no: Expr E): Expr E :=
     un (ifThen cond yes) (ifElse cond no)
   
-  def pairCompl (a b: PairExpr E) :=
+  def pairCompl (a b: Expr E) :=
     un
       null
       (un
@@ -109,7 +77,7 @@ namespace PairExpr
     that the bound variables of `domain` need to be incremented. In
     particular, `.bvar 0` should never be used in `domain`.
   -/
-  def arbUnDom (domain body: PairExpr E): PairExpr E :=
+  def arbUnDom (domain body: Expr E): Expr E :=
     arbUn (ifThen (ir (.bvar 0) domain) body)
   
   /-
@@ -121,11 +89,11 @@ namespace PairExpr
     that the bound variables of `domain` need to be incremented. In
     particular, `.bvar 0` should never be used in `domain`.
   -/
-  def arbIrDom (domain body: PairExpr E): PairExpr E :=
+  def arbIrDom (domain body: Expr E): Expr E :=
     arbIr (un body (ifElse (ir (.bvar 0) domain) any))
   
   -- A union of finitely many expressions.
-  def finUn: List (PairExpr E) → PairExpr E
+  def finUn: List (Expr E) → Expr E
   | List.nil => none
   | List.cons expr tail =>
     un expr (finUn (tail))
@@ -139,7 +107,7 @@ namespace PairExpr
     `zthMember` introduces an existential quantifier, the
     bound variables of `expr` need to be incremented.
   -/
-  def zthMember (expr: PairExpr E): PairExpr E :=
+  def zthMember (expr: Expr E): Expr E :=
     arbUn (ifThen (ir (pair (.bvar 0) any) expr) (.bvar 0))
   
   /-
@@ -151,7 +119,7 @@ namespace PairExpr
     `fstMember` introduces an existential quantifier, the
     bound variables of `expr` need to be incremented.
   -/
-  def fstMember (expr: PairExpr E): PairExpr E :=
+  def fstMember (expr: Expr E): Expr E :=
     arbUn (ifThen (ir (pair any (.bvar 0)) expr) (.bvar 0))
   
   /-
@@ -167,7 +135,7 @@ namespace PairExpr
     `call` introduces an existential quantifier, the
     bound variables of `fn` and `arg` need to be incremented.
   -/
-  def call (fn arg: PairExpr E): PairExpr E :=
+  def call (fn arg: Expr E): Expr E :=
     fstMember (ir fn (pair arg any))
   
   /-
@@ -175,9 +143,9 @@ namespace PairExpr
     `succ nEnc` represents the encoding of `n + 1`.
     (Note 0 is reprezented by `Pair.null`.)
   -/
-  def succ (expr: PairExpr E): PairExpr E := pair expr null
+  def succ (expr: Expr E): Expr E := pair expr null
   
-  def nat: Nat → PairExpr E
+  def nat: Nat → Expr E
   | Nat.zero => null
   | Nat.succ pred => succ (nat pred)
   
@@ -185,10 +153,10 @@ namespace PairExpr
   def InP
     (bv: List Pair)
     (b c: Valuation Pair)
-    (expr: SingleLaneExpr pairSignature)
+    (expr: SingleLaneExpr)
     (d: Pair)
   :=
-    expr.interpretation pairSalgebra bv b c d
+    expr.interpretation bv b c d
   
   
   def inUnL (inL: InP bv b c exprL d):
@@ -245,7 +213,7 @@ namespace PairExpr
   
   
   def inCondFull
-    (allInExpr: (dE: pairSalgebra.D) → InP bv b c expr dE)
+    (allInExpr: (dE: Pair) → InP bv b c expr dE)
     (d: Pair)
   :
     InP bv b c (condFull expr) d
@@ -261,7 +229,7 @@ namespace PairExpr
   
   
   def inIfThen
-    {cond: SingleLanePairExpr}
+    {cond: SingleLaneExpr}
     (inCond: InP bv b c cond dC)
     (inBody: InP bv b c body d)
   :
@@ -270,7 +238,7 @@ namespace PairExpr
     ⟨⟨dC, inCond⟩, inBody⟩
   
   def inIfThenElim
-    {cond: SingleLanePairExpr}
+    {cond: SingleLaneExpr}
     (inIfThen: InP bv b c (ifThen cond body) d)
   :
     And
@@ -309,7 +277,7 @@ namespace PairExpr
     (b c: Valuation Pair)
     (x: Nat)
     (dB: Pair)
-    (domain body: SingleLanePairExpr)
+    (domain body: SingleLaneExpr)
     (d: Pair): Prop
   where
     inDomain: InP (dB :: bv) b c domain dB
@@ -327,7 +295,7 @@ namespace PairExpr
   
   
   def inFinUn
-    {list: List SingleLanePairExpr}
+    {list: List SingleLaneExpr}
     (exprIn: expr ∈ list)
     (inExpr: InP bv b c expr p)
   :
@@ -345,7 +313,7 @@ namespace PairExpr
     (d: Pair)
     (P: Prop)
   :
-    List SingleLanePairExpr → Prop
+    List SingleLaneExpr → Prop
   | List.nil => P
   | List.cons head tail =>
     (InP bv b c head d → P) → InFinUnElim bv b c d P tail
@@ -404,12 +372,12 @@ namespace PairExpr
   :
     InP bv b c (pair exprL exprR) (Pair.pair pairL pairR)
   :=
-    ⟨⟨pairL, inL⟩, ⟨pairR, inR⟩, rfl⟩
+    ⟨pairL, pairR, rfl, inL, inR⟩
   
   structure InPairElim
     (bv: List Pair)
     (b c: Valuation Pair)
-    (exprL exprR: SingleLanePairExpr)
+    (exprL exprR: SingleLaneExpr)
     (pairL pairR: Pair): Prop
   where
     inL: InP bv b c exprL pairL
@@ -420,23 +388,14 @@ namespace PairExpr
   :
     InPairElim bv b c exprL exprR pairL pairR
   :=
-    let pl := inPair.unwrap
-    let pr := pl.property.unwrap
-    
-    let plEq: pairL = pl :=
-      Pair.noConfusion pr.property (fun eq _ => eq)
-    let prEq: pairR = pr :=
-      Pair.noConfusion pr.property (fun _ eq => eq)
-    
-    {
-      inL := plEq ▸ pl.val.property
-      inR := prEq ▸ pr.val.property
-    }
+    let ⟨_pairL, _pairR, eq, inL, inR⟩ := inPair
+    let ⟨eqL, eqR⟩ := Pair.noConfusion eq And.intro
+    ⟨eqL ▸ inL, eqR ▸ inR⟩
   
   structure InPairElimEx
     (bv: List Pair)
     (b c: Valuation Pair)
-    (exprL exprR: SingleLanePairExpr)
+    (exprL exprR: SingleLaneExpr)
     (p pairL pairR: Pair)
   :
     Prop
@@ -452,8 +411,6 @@ namespace PairExpr
       InPairElimEx bv b c exprL exprR p pairL pairR
   :=
     match p with
-    | Pair.null =>
-      Pair.noConfusion (inPair.unwrap.property.unwrap.property)
     | Pair.pair a b => ⟨a, b, {
         __ := inPairElim inPair
         eq := rfl
@@ -644,94 +601,33 @@ namespace PairExpr
   :=
     inNatElimDepth inNatExpr
   
-  
-  def null_eq:
-    Eq
-      (Expr.op (sig := pairSignature) pairSignature.Op.null args0)
-      (Expr.op pairSignature.Op.null args1)
-  :=
-    congr rfl (funext nofun)
-  
-  def pair_eq
-    (args: ArityTwo → PairExpr E)
-  :
-    Eq
-      (Expr.op pairSignature.Op.pair args)
-      (pair (args .zth) (args .fst))
-  :=
-    congr rfl (funext fun
-      | .zth => rfl
-      | .fst => rfl)
-  
-  def un_eq
-    (args: ArityTwo → PairExpr E)
-  :
-    Eq
-      (Expr.op pairSignature.Op.un args)
-      (un (args .zth) (args .fst))
-  :=
-    congr rfl (funext fun
-      | .zth => rfl
-      | .fst => rfl)
-  
-  def ir_eq
-    (args: ArityTwo → PairExpr E)
-  :
-    Eq
-      (Expr.op pairSignature.Op.ir args)
-      (ir (args .zth) (args .fst))
-  :=
-    congr rfl (funext fun
-      | .zth => rfl
-      | .fst => rfl)
-
-  def condSome_eq
-    (args: ArityOne → PairExpr E)
-  :
-    Eq
-      (Expr.op pairSignature.Op.condSome args)
-      (condSome (args .zth))
-  :=
-    congr rfl (funext fun
-      | .zth => rfl)
-
-  def condFull_eq
-    (args: ArityOne → PairExpr E)
-  :
-    Eq
-      (Expr.op pairSignature.Op.condFull args)
-      (condFull (args .zth))
-  :=
-    congr rfl (funext fun
-      | .zth => rfl)
-
-end PairExpr
+end Expr
 
 
 def Expr.toString (serializeVar: E → Nat → String):
-  Expr E pairSignature → String
+  Expr E → String
 | .var info x => serializeVar info x
 | .bvar x => s!"b{x}"
-| .op pairSignature.Op.un args =>
-  let left := (args ArityTwo.zth).toString serializeVar
-  let rite := (args ArityTwo.fst).toString serializeVar
-  s!"({left}) | ({rite})"
-| .op pairSignature.Op.ir args =>
-  let left := (args ArityTwo.zth).toString serializeVar
-  let rite := (args ArityTwo.fst).toString serializeVar
-  s!"({left}) & ({rite})"
-| .op pairSignature.Op.condSome args =>
-  let cond := (args ArityOne.zth).toString serializeVar
-  s!"(?i {cond})"
-| .op pairSignature.Op.condFull args =>
-  let cond := (args ArityOne.zth).toString serializeVar
-  s!"(?f {cond})"
-| .op pairSignature.Op.null _ =>
+| .null =>
   "null"
-| .op pairSignature.Op.pair args =>
-  let left := (args ArityTwo.zth).toString serializeVar
-  let rite := (args ArityTwo.fst).toString serializeVar
+| .pair left rite =>
+  let left := left.toString serializeVar
+  let rite := rite.toString serializeVar
   s!"({left}, {rite})"
+| .un left rite =>
+  let left := left.toString serializeVar
+  let rite := rite.toString serializeVar
+  s!"({left}) | ({rite})"
+| .ir left rite =>
+  let left := left.toString serializeVar
+  let rite := rite.toString serializeVar
+  s!"({left}) & ({rite})"
+| .condSome body =>
+  let cond := body.toString serializeVar
+  s!"(?i {cond})"
+| .condFull body =>
+  let cond := body.toString serializeVar
+  s!"(?f {cond})"
 | .compl expr =>
   let exprStr := expr.toString serializeVar
   s!"!({exprStr})"
@@ -742,19 +638,19 @@ def Expr.toString (serializeVar: E → Nat → String):
   let bodyStr := body.toString serializeVar
   s!"All ({bodyStr})"
 
-def BasicPairExpr.toString: BasicPairExpr → String :=
+def BasicExpr.toString: BasicExpr → String :=
   Expr.toString fun _ x => s!"{x}"
 
-def SingleLanePairExpr.toString: SingleLanePairExpr → String :=
+def SingleLaneExpr.toString: SingleLaneExpr → String :=
   Expr.toString fun
     | .defLane, x => s!":{x}"
     | .posLane, x => s!".{x}"
 
-instance: ToString BasicPairExpr where
-  toString := BasicPairExpr.toString
+instance: ToString BasicExpr where
+  toString := BasicExpr.toString
 
-instance: ToString SingleLanePairExpr where
-  toString := SingleLanePairExpr.toString
+instance: ToString SingleLaneExpr where
+  toString := SingleLaneExpr.toString
 
-instance: ToString (PairExpr Unit) := instToStringBasicPairExpr
-instance: ToString (PairExpr SingleLaneVarType) := instToStringSingleLanePairExpr
+instance: ToString (Expr Unit) := instToStringBasicExpr
+instance: ToString (Expr SingleLaneVarType) := instToStringSingleLaneExpr

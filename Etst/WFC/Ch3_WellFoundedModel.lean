@@ -131,110 +131,103 @@ def isCcApx {T} := Valuation.ordApx.isChainComplete T
 
 -- The family of operators C_b (often called "the" operator C).
 def operatorC
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList)
+  (b: Valuation Pair)
 :
-  OrderHomWrt (Valuation.ordStd salg.D) (Valuation.ordStd salg.D)
+  OrderHomWrt (Valuation.ordStd Pair) (Valuation.ordStd Pair)
 :=
   -- :/
   -- https://github.com/leanprover/lean4/issues/952
-  let _ := Valuation.ordStd salg.D
+  let _ := Valuation.ordStd Pair
   {
-    toFun := dl.interpretation salg b
+    toFun := dl.interpretation b
     monotone' := fun _ _ => dl.interpretation_mono_std
   }
 
 -- The least fixed point of the operator C.
 def operatorC.lfp
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList)
+  (b: Valuation Pair)
 :
-  Valuation salg.D
+  Valuation Pair
 :=
-  let _ := Valuation.ordStdLattice salg.D
-  (operatorC salg dl b).lfp
+  let _ := Valuation.ordStdLattice Pair
+  (operatorC dl b).lfp
 
 -- The operator C is monotonic wrt. the standard order.
 def operatorC.mono_std
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  (b: Valuation salg.D)
+  (dl: DefList)
+  (b: Valuation Pair)
 :
   IsMonotonic
-    (Valuation.ordStd salg.D)
-    (Valuation.ordStd salg.D)
-    (operatorC salg dl b)
+    (Valuation.ordStd Pair)
+    (Valuation.ordStd Pair)
+    (operatorC dl b)
 :=
-  let _ := Valuation.ordStd salg.D
-  (operatorC salg dl b).monotone'
+  let _ := Valuation.ordStd Pair
+  (operatorC dl b).monotone'
 
 -- The operator C is monotonic wrt. the approximation order (incl.
 -- across different background valuations).
 def operatorC.mono_apx
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  {b0 b1: Valuation salg.D}
+  (dl: DefList)
+  {b0 b1: Valuation Pair}
   (bLe: b0 ⊑ b1)
-  {c0 c1: Valuation salg.D}
+  {c0 c1: Valuation Pair}
   (cLe: c0 ⊑ c1)
 :
-  operatorC salg dl b0 c0 ⊑ operatorC salg dl b1 c1
+  operatorC dl b0 c0 ⊑ operatorC dl b1 c1
 :=
   dl.interpretation_mono_apx bLe cLe
 
 
 def operatorB.monotone'
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  ⦃a b: Valuation salg.D⦄
+  (dl: DefList)
+  ⦃a b: Valuation Pair⦄
   (le: a ⊑ b)
 :
-  operatorC.lfp salg dl a ⊑ operatorC.lfp salg dl b
+  operatorC.lfp dl a ⊑ operatorC.lfp dl b
 :=
-  let _ := Valuation.ordStdLattice salg.D
+  let _ := Valuation.ordStdLattice Pair
   OrderHom.lfpStage_induction2
-    (operatorC salg dl a)
-    (operatorC salg dl b)
-    (Valuation.ordApx salg.D).le
+    (operatorC dl a)
+    (operatorC dl b)
+    (Valuation.ordApx Pair).le
     (fun _n _isLim ih =>
       Valuation.ordStd.lubPreservesLeApxLub
         isLUB_iSup
         isLUB_iSup
         (fun _ ⟨m, eq⟩ => ⟨
-          (operatorC salg dl b).lfpStage m,
+          (operatorC dl b).lfpStage m,
           ⟨m, rfl⟩,
           eq ▸ ih m,
         ⟩)
         (fun _ ⟨m, eq⟩ => ⟨
-          (operatorC salg dl a).lfpStage m,
+          (operatorC dl a).lfpStage m,
           ⟨m, rfl⟩,
           eq ▸ ih m,
         ⟩))
     (fun _n _notLim prevLt ih =>
-      operatorC.mono_apx salg dl le (ih ⟨_, prevLt⟩))
+      operatorC.mono_apx dl le (ih ⟨_, prevLt⟩))
 
 -- The operator B.
 noncomputable def operatorB
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  OrderHomWrt (Valuation.ordApx salg.D) (Valuation.ordApx salg.D)
+  OrderHomWrt (Valuation.ordApx Pair) (Valuation.ordApx Pair)
 :=
-  let := Valuation.ordApx salg.D
+  let := Valuation.ordApx Pair
   {
-    toFun := operatorC.lfp salg dl,
-    monotone' := operatorB.monotone' salg dl
+    toFun := operatorC.lfp dl,
+    monotone' := operatorB.monotone' dl
   }
 
 noncomputable def operatorB.lfp
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  Valuation salg.D
+  Valuation Pair
 :=
-  (operatorB salg dl).lfpCc isCcApx
+  (operatorB dl).lfpCc isCcApx
 
 
 /-
@@ -242,12 +235,11 @@ noncomputable def operatorB.lfp
   `dl` in the valuation gives the same valuation.
 -/
 def Valuation.IsModel
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  Set (Valuation salg.D)
+  Set (Valuation Pair)
 :=
-  fun v => v = dl.interpretation salg v v
+  fun v => v = dl.interpretation v v
 
 /-
   The well-founded model of a definition list `dl` defines the
@@ -255,29 +247,26 @@ def Valuation.IsModel
   of the operator B.
 -/
 noncomputable def DefList.wfm
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  Valuation salg.D
+  Valuation Pair
 :=
-  (operatorB salg dl).lfpCc isCcApx
+  (operatorB dl).lfpCc isCcApx
 
 def DefList.wfm_is_fp_operatorB
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  dl.wfm salg = operatorC.lfp salg dl (dl.wfm salg)
+  dl.wfm = operatorC.lfp dl (dl.wfm)
 :=
-  ((operatorB salg dl).lfpCc_isLfp isCcApx).left.symm
+  ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
 
 noncomputable def DefList.exprInterp
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  (expr: BasicExpr sig)
+  (dl: DefList)
+  (expr: BasicExpr)
 :
-  Set3 salg.D
+  Set3 Pair
 :=
-  expr.interpretation salg [] (dl.wfm salg) (dl.wfm salg)
+  expr.interpretation [] (dl.wfm) (dl.wfm)
 
 
 /-
@@ -285,98 +274,87 @@ noncomputable def DefList.exprInterp
   list.
 -/
 def operatorB.fp_is_model
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  {fp: Valuation salg.D}
-  (isFp: Function.fixedPoints (operatorB salg dl) fp)
+  (dl: DefList)
+  {fp: Valuation Pair}
+  (isFp: Function.fixedPoints (operatorB dl) fp)
 :
-  fp.IsModel salg dl
+  fp.IsModel dl
 := by
-  let _ := Valuation.ordStdLattice salg.D
-  let eqC: fp = (operatorC salg dl fp).lfp := isFp.symm
-  let eq: fp = operatorC.lfp salg dl fp := isFp.symm
-  rw [operatorC.lfp, ←(operatorC salg dl fp).map_lfp] at eq
+  let _ := Valuation.ordStdLattice Pair
+  let eqC: fp = (operatorC dl fp).lfp := isFp.symm
+  let eq: fp = operatorC.lfp dl fp := isFp.symm
+  rw [operatorC.lfp, ←(operatorC dl fp).map_lfp] at eq
   conv at eq => rhs; rw [←eqC]
   exact eq
 
 def DefList.wfm_isLfpC
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
   IsLfp
-    (Valuation.ordStd salg.D).le
-    (operatorC salg dl (dl.wfm salg))
-    (dl.wfm salg)
+    (Valuation.ordStd Pair).le
+    (operatorC dl (dl.wfm))
+    (dl.wfm)
 := by
   let _ := Valuation.ordStdLattice
-  let eq: (dl.wfm salg) = (operatorC salg dl (dl.wfm salg)).lfp :=
-    ((operatorB salg dl).lfpCc_isLfp isCcApx).left.symm
+  let eq: (dl.wfm) = (operatorC dl (dl.wfm)).lfp :=
+    ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
   conv => rhs; rw [eq]
-  exact (operatorC salg dl (dl.wfm salg)).isLeast_lfp
+  exact (operatorC dl (dl.wfm)).isLeast_lfp
 
 def DefList.wfm_eq_lfpC
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  let := Valuation.ordStdLattice salg.D
-  dl.wfm salg = (operatorC salg dl (dl.wfm salg)).lfp
+  let := Valuation.ordStdLattice Pair
+  dl.wfm = (operatorC dl (dl.wfm)).lfp
 :=
-  let := Valuation.ordStdLattice salg.D
-  IsLeast.unique (dl.wfm_isLfpC salg) (OrderHom.isLeast_lfp _)
+  let := Valuation.ordStdLattice Pair
+  IsLeast.unique (dl.wfm_isLfpC) (OrderHom.isLeast_lfp _)
 
 def DefList.wfm_isLfpB
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
   IsLfp
-    (Valuation.ordApx salg.D).le
-    (operatorB salg dl)
-    (dl.wfm salg)
+    (Valuation.ordApx Pair).le
+    (operatorB dl)
+    (dl.wfm)
 :=
-  (operatorB salg dl).lfpCc_isLfp isCcApx
+  (operatorB dl).lfpCc_isLfp isCcApx
 
 -- The well-founded model is a model of the definition list.
 def DefList.wfm_isModel
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  (dl.wfm salg).IsModel salg dl
+  (dl.wfm).IsModel dl
 :=
-  operatorB.fp_is_model salg dl (wfm_isLfpB salg dl).left
+  operatorB.fp_is_model dl (wfm_isLfpB dl).left
 
 def DefList.wfm_eq_def
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
   (x: Nat)
 :
   Eq
-    (dl.wfm salg x)
-    (dl.interpretation salg (dl.wfm salg) (dl.wfm salg) x)
+    (dl.wfm x)
+    (dl.interpretation (dl.wfm) (dl.wfm) x)
 :=
-  congr (DefList.wfm_isModel salg dl) rfl
+  congr (DefList.wfm_isModel dl) rfl
 
 
 /-
-  A triset is definable in a salgebra if there exists a finitely
+  A triset is definable in aebra if there exists a finitely
   bounded definition list whose well-founded model contains the
   triset.
   
   See `DefList.IsFinBounded` from Chapter 3.
 -/
-def Salgebra.IsDefinable
-  (salg: Salgebra sig)
-  (set: Set3 salg.D)
+def DefList.IsDefinable
+  (set: Set3 Pair)
 :
   Prop
 :=
-  ∃ (dl: FinBoundedDL sig)
+  ∃ (dl: FinBoundedDL)
     (x: Nat),
-    set = dl.wfm salg x
+    set = dl.wfm x
 
--- The type of trisets definable in a salgebra.
-def Salgebra.Definable
-  (salg: Salgebra sig)
-:
-  Type
-:=
-  { set: Set3 salg.D // salg.IsDefinable set }
+-- The type of trisets definable in aebra.
+def DefList.Definable: Type :=
+  { set: Set3 Pair // IsDefinable set }

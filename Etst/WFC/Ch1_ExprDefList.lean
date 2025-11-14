@@ -20,69 +20,60 @@ inductive ArityTwo | zth | fst
 def ArityZero.elim (az: ArityZero): T := nomatch az
 
 /-
-  A signature is a set of operators, each with a fixed number of
-  parameters.
-  
-  `Op` is the type (or "set") of operators of the signature.
-  
-  `Params` is a function that maps each operator to a type whose
-  elements represent the individual parameters of the operator.
-  For example, for a nullary operator (a constant) `op`, `Params op`
-  would be the empty type, and for a binary operator, `Params op`
-  would be a type having exactly two elements.
-  
-  Thanks to answerers of https://proofassistants.stackexchange.com/q/1740
--/
-structure Signature where
-  Op: Type u
-  Params: Op → Type v
-
-
-/-
-  An expression is an inductive structure defined over a signature
-  `sig`. It can be a variable, the application of an operator to its
-  parameters, the complement of an expression, or an arbitrary union
-  or intersection.
-  
-  Variables are natural numbers. The arguments of an operator `op`
-  are indexed by the type `sig.Params op`.
+  An expression is an inductive structure that (as we later define)
+  can be evaluated to a triset.
   
   `E` (extra info) is for storing arbitrary extra information in each
   variable.
 -/
-inductive Expr (E: Type*) (sig: Signature) where
+inductive Expr (E: Type*) where
 | var (e: E) (x: Nat)
 | bvar (x: Nat) -- Uses de Bruijn indices
-| op (op: sig.Op) (args: sig.Params op → Expr E sig)
-| compl (body: Expr E sig)
-| arbUn (body: Expr E sig)
-| arbIr (body: Expr E sig)
+| null
+| pair (left rite: Expr E)
+| un (left rite: Expr E)
+| ir (left rite: Expr E)
+| condSome (body: Expr E)
+| condFull (body: Expr E)
+| compl (body: Expr E)
+| arbUn (body: Expr E)
+| arbIr (body: Expr E)
+deriving DecidableEq
 
 
 abbrev BasicExpr := Expr Unit
-def BasicExpr.var (x: Nat): BasicExpr sig := Expr.var () x
-def BasicExpr.bvar (x: Nat): BasicExpr sig := Expr.bvar x
-def BasicExpr.op
-  (op: sig.Op)
-  (args: sig.Params op → BasicExpr sig)
-:
-  BasicExpr sig
-:=
-  Expr.op op args
-def BasicExpr.compl (body: BasicExpr sig): BasicExpr sig :=
+def BasicExpr.var (x: Nat): BasicExpr := Expr.var () x
+def BasicExpr.bvar (x: Nat): BasicExpr := Expr.bvar x
+def BasicExpr.null: BasicExpr := Expr.null
+def BasicExpr.pair (left rite: BasicExpr): BasicExpr :=
+  Expr.pair left rite
+def BasicExpr.un (left rite: BasicExpr): BasicExpr :=
+  Expr.un left rite
+def BasicExpr.ir (left rite: BasicExpr): BasicExpr :=
+  Expr.ir left rite
+def BasicExpr.condSome (body: BasicExpr): BasicExpr :=
+  Expr.condSome body
+def BasicExpr.condFull (body: BasicExpr): BasicExpr :=
+  Expr.condFull body
+def BasicExpr.compl (body: BasicExpr): BasicExpr :=
   Expr.compl body
-def BasicExpr.arbUn (body: BasicExpr sig): BasicExpr sig :=
+def BasicExpr.arbUn (body: BasicExpr): BasicExpr :=
   Expr.arbUn body
-def BasicExpr.arbIr (body: BasicExpr sig): BasicExpr sig :=
+def BasicExpr.arbIr (body: BasicExpr): BasicExpr :=
   Expr.arbIr body
 
 namespace Expr
-  def UsesVar (expr: Expr E sig): Set Nat :=
+  def UsesVar (expr: Expr E): Set Nat :=
     fun x =>
       match expr with
         | var _ v => x = v
         | bvar _ => False
-        | op _ args => ∃ param, (args param).UsesVar x
+        | null => False
+        | pair left rite => left.UsesVar x ∨ rite.UsesVar x
+        | un left rite => left.UsesVar x ∨ rite.UsesVar x
+        | ir left rite => left.UsesVar x ∨ rite.UsesVar x
+        | condSome body => body.UsesVar x
+        | condFull body => body.UsesVar x
         | compl body => body.UsesVar x
         | arbUn body => body.UsesVar x
         | arbIr body => body.UsesVar x
@@ -96,10 +87,15 @@ namespace Expr
     Complementing a bound variable is allowed because it is guaranteed
     to be two-valued, so it cannot result in a contradictory definition.
   -/
-  def IsPositive: Expr E sig → Prop
+  def IsPositive: Expr E → Prop
   | var _ _ => True
   | bvar _ => True
-  | op _ args => ∀ param, (args param).IsPositive
+  | null => True
+  | pair left rite => left.IsPositive ∧ rite.IsPositive
+  | un left rite => left.IsPositive ∧ rite.IsPositive
+  | ir left rite => left.IsPositive ∧ rite.IsPositive
+  | condSome body => body.IsPositive
+  | condFull body => body.IsPositive
   | compl (bvar _) => True
   | compl _ => False
   | arbUn body => body.IsPositive
@@ -112,30 +108,34 @@ namespace Expr
     This is a proper version of the sizeOf function defined natively
     by Lean.
   -/
-  noncomputable def sizeOf: Expr E sig → Ordinal.{0}
+  noncomputable def sizeOf: Expr E → Ordinal.{0}
   | var _ _ => 0
   | bvar _ => 0
-  | op _ args =>
-      iSup (fun arg => (args arg).sizeOf) + 1
+  | null => 0
+  | pair left rite => max left.sizeOf rite.sizeOf + 1
+  | un left rite => max left.sizeOf rite.sizeOf + 1
+  | ir left rite => max left.sizeOf rite.sizeOf + 1
+  | condSome body => body.sizeOf + 1
+  | condFull body => body.sizeOf + 1
   | compl body => body.sizeOf + 1
   | arbUn body => body.sizeOf + 1
   | arbIr body => body.sizeOf + 1
 end Expr
 
 
-def DefList.GetDef (sig: Signature) := Nat → BasicExpr sig
+def DefList.GetDef := Nat → BasicExpr
 
 /-
   A definition list is a map from natural numbers to expressions.
   It is used to allow recursive definitions -- the free variables
   in a definition refer to other definitions of the definition list.
 -/
-structure DefList (sig: Signature) where
-  getDef: DefList.GetDef sig
+structure DefList where
+  getDef: DefList.GetDef
 
 -- The definition x depends on y x contains y, possibly transitively.
 inductive DefList.DependsOn
-  (getDef: GetDef sig)
+  (getDef: GetDef)
 :
   Nat → Nat → Prop
 where
@@ -154,7 +154,7 @@ where
   also depends on `c`.
 -/
 def DefList.DependsOn.push
-  {getDef: GetDef sig}
+  {getDef: GetDef}
   (dependsOn: DependsOn getDef a b)
   (isFree: (getDef b).UsesVar c)
 :
@@ -188,7 +188,7 @@ def DefList.DependsOn.push
     ...
   ```
 -/
-def DefList.IsFinBounded (getDef: GetDef sig): Prop :=
+def DefList.IsFinBounded (getDef: GetDef): Prop :=
   ∀ name,
   ∃ upperBound,
   ∀ {dep}
@@ -197,5 +197,5 @@ def DefList.IsFinBounded (getDef: GetDef sig): Prop :=
     dep < upperBound
 
 -- A finitely bounded definition list. See IsFinBounded above.
-structure FinBoundedDL (sig: Signature) extends DefList sig where
+structure FinBoundedDL extends DefList where
   isFinBounded: DefList.IsFinBounded getDef

@@ -1,9 +1,67 @@
-import Etst.WFC.Ch4_PairSalgebra
+import Etst.WFC.Ch2_Interpretation
 
 namespace Etst
 
 
 namespace Pair
+  protected def eq: l0 = l1 → r0 = r1 → pair l0 r0 = pair l1 r1
+  | rfl, rfl => rfl
+  
+  /-
+    `Pair.null` encodes the number zero, while `Pair.pair n zero`
+    encodes the successor of `n`.
+  -/
+  def IsNatEncoding: Set Pair
+  | null => True
+  | pair a b => (IsNatEncoding a) ∧ b = null
+  
+  def NatEncoding := { p // IsNatEncoding p }
+  
+  
+  def fromNat: Nat → Pair
+  | Nat.zero => Pair.null
+  | Nat.succ n => Pair.pair (fromNat n) null
+  
+  instance fromNat.inst: Coe Nat Pair := ⟨fromNat⟩
+  
+  def depth: Pair → Nat
+  | null => 0
+  | pair a b => Nat.succ (max a.depth b.depth)
+  
+  
+  /-
+    `Pair.null` encodes the empty list, while
+    
+        Pair.pair head tailEncoding
+    
+    encodes the list
+    
+        [ head, ...tail ] \,,
+    
+    where `tail` is the list encoded by `tailEncoding`.
+  -/
+  def arrayLength: Pair → Nat
+  | null => 0
+  | pair _ b => Nat.succ b.arrayLength
+  
+  def arrayAt (p: Pair) (n: Nat): Option Pair :=
+    match p, n with
+    | null, _ => none
+    | pair head _tail, Nat.zero => head
+    | pair _head tail, Nat.succ pred => tail.arrayAt pred
+  
+  
+  def arrayLast (head tail: Pair): Pair :=
+    match tail with
+    | null => head
+    | pair tailHead tailTail => tailHead.arrayLast tailTail
+  
+  def arrayUpToLast (head tail: Pair): Pair :=
+    match tail with
+    | null => null
+    | pair tailHead tailTail =>
+      pair head (tailHead.arrayUpToLast tailTail)
+  
   
   def fromNat_inj_eq
     (eq: fromNat n = fromNat m)
@@ -61,3 +119,34 @@ namespace Pair
   }
   
 end Pair
+
+
+/-
+  `fn.pairCallJust arg` is the triset of pairs `b` such that
+  `(arg, b)` is in `fn`.
+  
+  You can think of `fn` as a set of input-output pairs representing
+  a function `f: Pair → Set3 Pair`.
+-/
+def Set3.pairCallJust
+  (fn: Set3 Pair)
+  (arg: Pair)
+:
+  Set3 Pair
+:= {
+  defMem := fun p => fn.defMem (Pair.pair arg p)
+  posMem := fun p => fn.posMem (Pair.pair arg p)
+  defLePos := fun _ pInDef => pInDef.toPos
+}
+
+def Set3.PairMem
+  (s e: Set3 Pair)
+:
+  Prop
+:=
+  ∃ i: Pair, s.pairCallJust i = e
+
+instance Set3.pairInstMem:
+  Membership (Set3 Pair) (Set3 Pair)
+:=
+  ⟨Set3.PairMem⟩

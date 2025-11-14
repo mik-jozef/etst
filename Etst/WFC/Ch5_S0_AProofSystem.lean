@@ -11,7 +11,7 @@
   they are not necessary for understanding the proof system itself.
 -/
 
-import Etst.WFC.Ch4_PairSalgebra
+import Etst.WFC.Ch3_WellFoundedModel
 import Etst.WFC.Utils.RulesOfInference
 
 namespace Etst
@@ -108,39 +108,37 @@ where
     ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).posMem d
 
 /-
-  `Is[X]Cause salg cause d expr` means that for every pair of
+  `Is[X]Cause cause d expr` means that for every pair of
   valuations `(b, c)` that satisfies `cause`, `d ∈ expr` holds
   (with `b` and `c` serving as background and context valuations,
   respectively).
 -/
 def IsStrongCause
-  (salg: Salgebra sig)
-  (cause: Cause salg.D)
-  (d: salg.D)
-  (expr: BasicExpr sig)
+  (cause: Cause Pair)
+  (d: Pair)
+  (expr: BasicExpr)
 :
   Prop
 :=
-  {b c: Valuation salg.D} →
+  {b c: Valuation Pair} →
   cause.IsStronglySatisfiedBy b c →
-  expr.interpretationDef salg [] b c d
+  expr.interpretationDef [] b c d
 
 def IsWeakCause
-  (salg: Salgebra sig)
-  (cause: Cause salg.D)
-  (d: salg.D)
-  (expr: BasicExpr sig)
+  (cause: Cause Pair)
+  (d: Pair)
+  (expr: BasicExpr)
 :
   Prop
 :=
-  {b c: Valuation salg.D} →
+  {b c: Valuation Pair} →
   cause.IsWeaklySatisfiedBy b c →
-  expr.interpretationPos salg [] b c d
+  expr.interpretationPos [] b c d
 
 
 mutual
 /-
-  `Ins salg dl d x` means that `d` is (provably) a member of `x`
+  `Ins dl d x` means that `d` is (provably) a member of `x`
   (in the well-founded model of `dl`).
   
   If there exists a strong cause of `d ∈ dl.getDef x` such that
@@ -156,20 +154,19 @@ mutual
   then `d` is provably a member of `x`.
 -/
 inductive Ins
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  salg.D → Nat → Prop
+  Pair → Nat → Prop
 
 | intro:
-  (d: salg.D) →
+  (d: Pair) →
   (x: Nat) →
-  (cause: Cause salg.D) →
-  IsStrongCause salg cause d (dl.getDef x) →
-  (∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → Ins salg dl d x) →
-  (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → Ins salg dl d x) →
-  (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundOut → Out salg dl d x) →
-  Ins salg dl d x
+  (cause: Cause Pair) →
+  IsStrongCause cause d (dl.getDef x) →
+  (∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → Ins dl d x) →
+  (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → Ins dl d x) →
+  (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundOut → Out dl d x) →
+  Ins dl d x
 
 
 /-
@@ -190,60 +187,58 @@ inductive Ins
   that do not contain any elements in the well-founded model.
 -/
 inductive IsCauseInapplicable
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  Set (ValVar salg.D) →
-  Cause salg.D →
+  Set (ValVar Pair) →
+  Cause Pair →
   Prop
 
 | blockedContextIns
-  (cause: Cause salg.D)
+  (cause: Cause Pair)
   {d x}
   (inContextIns: ⟨d, x⟩ ∈ cause.contextIns)
   (inCycle: ⟨d, x⟩ ∈ cycle)
 :
-  IsCauseInapplicable salg dl cycle cause
+  IsCauseInapplicable dl cycle cause
 
 | blockedBackgroundIns
-  (cause: Cause salg.D)
+  (cause: Cause Pair)
   {d x}
   (inBins: ⟨d, x⟩ ∈ cause.backgroundIns)
-  (isOut: Out salg dl d x)
+  (isOut: Out dl d x)
 :
-  IsCauseInapplicable salg dl cycle cause
+  IsCauseInapplicable dl cycle cause
 
 | blockedBackgroundOut
-  (cause: Cause salg.D)
+  (cause: Cause Pair)
   {d x}
   (inBout: ⟨d, x⟩ ∈ cause.backgroundOut)
-  (isIns: Ins salg dl d x)
+  (isIns: Ins dl d x)
 :
-  IsCauseInapplicable salg dl cycle cause
+  IsCauseInapplicable dl cycle cause
 
 /-
-  `Out salg dl d x` means that `d` is a definitive non-member of
+  `Out dl d x` means that `d` is a definitive non-member of
   `x` in the well-founded model of `dl`.
   
   A `d` is provably a non-member of `x` if there exists an empty
   cycle containing the pair `(d, x)`.
 -/
 inductive Out
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  salg.D → Nat → Prop
+  Pair → Nat → Prop
 
 | intro:
-  (cycle: Set (ValVar salg.D)) →
+  (cycle: Set (ValVar Pair)) →
   (isEmptyCycle:
     ∀ {d x},
     ⟨d, x⟩ ∈ cycle →
-    (cause: Cause salg.D) →
-    IsWeakCause salg cause d (dl.getDef x) →
-    IsCauseInapplicable salg dl cycle cause) →
+    (cause: Cause Pair) →
+    IsWeakCause cause d (dl.getDef x) →
+    IsCauseInapplicable dl cycle cause) →
   ⟨d, x⟩ ∈ cycle →
-  Out salg dl d x
+  Out dl d x
 end
 
 /-

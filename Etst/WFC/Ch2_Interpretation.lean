@@ -170,38 +170,9 @@ structure ValVar (D: Type*) where
 
 -- ## Section 3: The Interpretation Function
 
-def Signature.Args
-  (sig: Signature)
-  (op: sig.Op)
-  (D: Type u)
-:=
-  sig.Params op → Set D
-
-/-
-  A salgebra on T is an algebra on sets of T whose operations are
-  monotonic.
-  
-  A salgebra with a signature `sig` provides an interpretation of
-  each operation in the signature.
-  
-  The reason for using salgebras rather than algebras and defining
-  the operations on sets in the standard manner (which would get
-  us monotonicity for free) is that some operations, for example
-  the dual of string concatenation, are not definable in this way.
-  Take
-      { '' } ⊙ {}      = { '' }.
-      { 'a' } ⊙ {}     = {}.
-      { '', 'a' } ⊙ {} = { '', 'a' }.
--/
-structure Salgebra (sig: Signature) where
-  D: Type u
-  I: (op: sig.Op) → sig.Args op D → Set D
-  isMonotonic
-    (op: sig.Op)
-    (args0 args1: sig.Args op D)
-    (le: ∀ param: sig.Params op, args0 param ≤ args1 param)
-  :
-    I op args0 ≤ I op args1
+inductive Pair where
+| null -- Null is considered an improper pair.
+| pair (a b: Pair)
 
 
 inductive SingleLaneVarType
@@ -244,93 +215,122 @@ def SingleLaneExpr := Expr SingleLaneVarType
   definition reduces to the usual one with a single valuation.
 -/
 def SingleLaneExpr.interpretation
-  (salg: Salgebra sig)
-  (bv: List salg.D)
-  (b c: Valuation salg.D)
+  (bv: List Pair)
+  (b c: Valuation Pair)
 :
-  SingleLaneExpr sig → Set salg.D
+  SingleLaneExpr → Set Pair
 
 | .var lane a => lane.getSet (c a)
 | .bvar a =>
     match bv[a]? with
     | none => {}
     | some d => {d}
-| .op opr exprs =>
-    let args param := interpretation salg bv b c (exprs param)
-    salg.I opr args
-| .compl body => (interpretation salg bv b b body).compl
+| .null => {.null}
+| .pair left rite =>
+    fun d => ∃ dL dR,
+      d = .pair dL dR ∧
+      interpretation bv b c left dL ∧
+      interpretation bv b c rite dR
+| .un left rite =>
+    fun d =>
+      Or
+        (interpretation bv b c left d)
+        (interpretation bv b c rite d)
+| .ir left rite =>
+    fun d =>
+      And
+        (interpretation bv b c left d)
+        (interpretation bv b c rite d)
+| .condSome body =>
+    fun _ => ∃ dB, interpretation bv b c body dB
+| .condFull body =>
+    fun _ => ∀ dB, interpretation bv b c body dB
+| .compl body => (interpretation bv b b body).compl
 | .arbUn body =>
-    fun d => ∃ dX, interpretation salg (dX :: bv) b c body d
+    fun d => ∃ dX, interpretation (dX :: bv) b c body d
 | .arbIr body =>
-    fun d => ∀ dX, interpretation salg (dX :: bv) b c body d
+    fun d => ∀ dX, interpretation (dX :: bv) b c body d
 
 
 -- Note the lane gets toggled inside complements.
 def BasicExpr.toLane
-  (expr: BasicExpr sig)
+  (expr: BasicExpr)
   (lane: SingleLaneVarType)
 :
-  SingleLaneExpr sig
+  SingleLaneExpr
 :=
   match expr with
   | .var a => .var lane a
   | .bvar a => .bvar a
-  | .op opr exprs =>
-      .op opr (fun param => (exprs param).toLane lane)
+  | .null => .null
+  | .pair left rite => .pair (left.toLane lane) (rite.toLane lane)
+  | .un left rite => .un (left.toLane lane) (rite.toLane lane)
+  | .ir left rite => .ir (left.toLane lane) (rite.toLane lane)
+  | .condSome body => .condSome (body.toLane lane)
+  | .condFull body => .condFull (body.toLane lane)
   | .compl body => .compl (body.toLane lane.toggle)
   | .arbUn body => .arbUn (body.toLane lane)
   | .arbIr body => .arbIr (body.toLane lane)
 
-def BasicExpr.toDefLane (expr: BasicExpr sig): SingleLaneExpr sig :=
+def BasicExpr.toDefLane (expr: BasicExpr): SingleLaneExpr :=
   expr.toLane .defLane
 
-def BasicExpr.toPosLane (expr: BasicExpr sig): SingleLaneExpr sig :=
+def BasicExpr.toPosLane (expr: BasicExpr): SingleLaneExpr :=
   expr.toLane .posLane
 
 def BasicExpr.interpretationDef
-  (salg: Salgebra sig)
-  (bv: List salg.D)
-  (b c: Valuation salg.D)
-  (expr: BasicExpr sig)
+  (bv: List Pair)
+  (b c: Valuation Pair)
+  (expr: BasicExpr)
 :
-  Set salg.D
+  Set Pair
 :=
-  (expr.toLane .defLane).interpretation salg bv b c
+  (expr.toLane .defLane).interpretation bv b c
 
 def BasicExpr.interpretationPos
-  (salg: Salgebra sig)
-  (bv: List salg.D)
-  (b c: Valuation salg.D)
-  (expr: BasicExpr sig)
+  (bv: List Pair)
+  (b c: Valuation Pair)
+  (expr: BasicExpr)
 :
-  Set salg.D
+  Set Pair
 :=
-  (expr.toLane .posLane).interpretation salg bv b c
+  (expr.toLane .posLane).interpretation bv b c
 
 -- A proof that definite membership implies possible membership.
 def BasicExpr.interpretation_defLePos
-  (salg: Salgebra sig)
-  (bv: List salg.D)
-  (b c: Valuation salg.D)
+  (bv: List Pair)
+  (b c: Valuation Pair)
 :
-  (expr: BasicExpr sig) →
-  (d: salg.D) →
-  expr.interpretationDef salg bv b c d →
-  expr.interpretationPos salg bv b c d
+  (expr: BasicExpr) →
+  (d: Pair) →
+  expr.interpretationDef bv b c d →
+  expr.interpretationPos bv b c d
 | .var x, _, isDef => (c x).defLePos isDef
 | .bvar _, _, isDef => isDef
-| .op opr exprs, _, isDef =>
-    salg.isMonotonic opr _ _
-      (fun param dX isDefX =>
-        interpretation_defLePos salg bv b c (exprs param) dX isDefX)
-      isDef
+| .null, _, isDef => isDef
+| .pair left rite, _, ⟨pl, pr, eq, isDefL, isDefR⟩ =>
+    let ihL := interpretation_defLePos bv b c left pl isDefL
+    let ihR := interpretation_defLePos bv b c rite pr isDefR
+    ⟨pl, pr, eq, ihL, ihR⟩
+| .un left _, d, Or.inl isDef =>
+    Or.inl (interpretation_defLePos bv b c left d isDef)
+| .un _ rite, d, Or.inr isDef =>
+    Or.inr (interpretation_defLePos bv b c rite d isDef)
+| .ir left rite, d, ⟨isDefL, isDefR⟩ => ⟨
+    interpretation_defLePos bv b c left d isDefL,
+    interpretation_defLePos bv b c rite d isDefR
+  ⟩
+| .condSome body, _d, ⟨dB, isDef⟩ =>
+    ⟨dB, interpretation_defLePos bv b c body dB isDef⟩
+| .condFull body, _d, isDef => fun dB =>
+    interpretation_defLePos bv b c body dB (isDef dB)
 | .compl body, d, isDef => fun isPos =>
-    let ih := interpretation_defLePos salg bv b b body d
+    let ih := interpretation_defLePos bv b b body d
     isDef (ih isPos)
 | .arbUn body, d, ⟨dX, isDef⟩ =>
-    ⟨dX, interpretation_defLePos salg (dX :: bv) b c body d isDef⟩
+    ⟨dX, interpretation_defLePos (dX :: bv) b c body d isDef⟩
 | .arbIr body, d, isDef => fun dX =>
-    interpretation_defLePos salg (dX :: bv) b c body d (isDef dX)
+    interpretation_defLePos (dX :: bv) b c body d (isDef dX)
 
 /-
   A three-valued interpretation is an intuitive extension of single-lane
@@ -344,24 +344,22 @@ def BasicExpr.interpretation_defLePos
   in `toLane` by toggling the lane of variables inside complements.
 -/
 def BasicExpr.interpretation
-  (salg: Salgebra sig)
-  (bv: List salg.D)
-  (b c: Valuation salg.D)
-  (expr: BasicExpr sig)
+  (bv: List Pair)
+  (b c: Valuation Pair)
+  (expr: BasicExpr)
 :
-  Set3 salg.D
+  Set3 Pair
 := {
-  defMem := expr.interpretationDef salg bv b c,
-  posMem := expr.interpretationPos salg bv b c,
-  defLePos := interpretation_defLePos salg bv b c expr
+  defMem := expr.interpretationDef bv b c,
+  posMem := expr.interpretationPos bv b c,
+  defLePos := interpretation_defLePos bv b c expr
 }
 
 -- Interpretation on definition lists is defined pointwise.
 def DefList.interpretation
-  (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (dl: DefList sig)
+  (b c: Valuation Pair)
+  (dl: DefList)
 :
-  Valuation salg.D
+  Valuation Pair
 :=
-  fun x => (dl.getDef x).interpretation salg [] b c
+  fun x => (dl.getDef x).interpretation [] b c

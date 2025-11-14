@@ -1,22 +1,20 @@
 import Etst.Subtyping.SubsetStx
-import Etst.Subtyping.Utils.IsLaneConstrained
 
 namespace Etst
-open PairExpr
+open Expr
 open SingleLaneExpr
 
 
 def DefList.lfpStage_le_wfm_std
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
   (n: Ordinal)
 :
   let _ := Valuation.ordStdLattice
-  (operatorC salg dl (dl.wfm salg)).lfpStage n ≤ dl.wfm salg
+  (operatorC dl (dl.wfm)).lfpStage n ≤ dl.wfm
 := by
   intro
-  conv => rhs; rw [dl.wfm_eq_lfpC salg]
-  exact (operatorC salg dl (dl.wfm salg)).lfpStage_le_lfp n
+  conv => rhs; rw [dl.wfm_eq_lfpC]
+  exact (operatorC dl (dl.wfm)).lfpStage_le_lfp n
 
 
 def InductionDescriptor.Invariant
@@ -50,7 +48,7 @@ def MutIndDescriptor.var_le_hypothesify
       if_pos h ▸
       fun _ inX =>
         let inRite := inv ⟨0, Nat.zero_lt_succ _⟩ (h ▸ inX)
-        inIr
+        Expr.inIr
           (IsClean.changeBv head.riteIsClean inRite)
           (rest.var_le_hypothesify invTail v_le inX)
     else
@@ -60,7 +58,7 @@ def MutIndDescriptor.var_le_hypothesify
 def MutIndDescriptor.le_hypothesify
   (desc: MutIndDescriptor dl)
   (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
-  (isConstrained: expr.IsPosVarLaneOnly .posLane)
+  (isConstrained: expr.LaneEqCtx .posLane)
   (v_le: v ≤ dl.wfm)
 :
   expr.intp2 bv dl.wfm v
@@ -70,9 +68,25 @@ def MutIndDescriptor.le_hypothesify
   match expr with
   | .var .posLane _ => var_le_hypothesify desc inv v_le
   | .bvar _ => le_rfl
-  | .op _ _ =>
-    inter_mono_std_op fun param =>
-      desc.le_hypothesify inv (isConstrained.elimOp param) v_le
+  | .null => le_rfl
+  | .pair _ _ =>
+    intp2_mono_std_pair
+      (desc.le_hypothesify inv isConstrained.elimPairLeft v_le)
+      (desc.le_hypothesify inv isConstrained.elimPairRite v_le)
+  | .un _ _ =>
+    intp2_mono_std_un
+      (desc.le_hypothesify inv isConstrained.elimUnLeft v_le)
+      (desc.le_hypothesify inv isConstrained.elimUnRite v_le)
+  | .ir _ _ =>
+    intp2_mono_std_ir
+      (desc.le_hypothesify inv isConstrained.elimIrLeft v_le)
+      (desc.le_hypothesify inv isConstrained.elimIrRite v_le)
+  | .condSome _ => 
+    intp2_mono_std_condSome
+      (desc.le_hypothesify inv isConstrained.elimCondSome v_le)
+  | .condFull _ =>
+    intp2_mono_std_condFull
+      (desc.le_hypothesify inv isConstrained.elimCondFull v_le)
   | .compl _ => le_rfl
   | .arbUn _ =>
     inter_mono_std_arbUn fun _d =>
@@ -99,7 +113,7 @@ def MutCoindDescriptor.var_hypothesify_le
     if h: desc.rite = x then
       if_pos h ▸
       fun _ inX =>
-        inIr
+        Expr.inIr
           (fun inLeft =>
             let inLeft := IsClean.changeBv desc.leftIsClean inLeft
             inv ⟨0, Nat.zero_lt_succ _⟩ inLeft (h ▸ inX))
@@ -111,7 +125,8 @@ def MutCoindDescriptor.var_hypothesify_le
 def MutCoindDescriptor.hypothesify_le
   (desc: MutCoindDescriptor dl)
   (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
-  (isConstrained: IsPosVarLaneOnly .defLane expr)
+  {expr: SingleLaneExpr}
+  (isConstrained: expr.LaneEqCtx .defLane)
   (v_le: v ≤ dl.wfm)
 :
   (intp (expr.replaceComplZeroVars desc.hypothesis) bv dl.wfm).compl
@@ -120,8 +135,8 @@ def MutCoindDescriptor.hypothesify_le
 :=
   let rec helper
     (bv: List Pair)
-    {expr: SingleLanePairExpr}
-    (isConstrained: IsPosVarLaneOnly .defLane expr)
+    {expr: SingleLaneExpr}
+    (isConstrained: Expr.LaneEqCtx .defLane expr)
   :
     Set.Subset
       (expr.intp2 bv dl.wfm v)
@@ -130,9 +145,25 @@ def MutCoindDescriptor.hypothesify_le
     match expr with
     | .var .defLane _ => desc.var_hypothesify_le inv v_le
     | .bvar _ => fun _ => id
-    | .op _ _ =>
-      inter_mono_std_op fun param =>
-        helper bv (isConstrained.elimOp param)
+    | .null => fun _ => id
+    | .pair _ _ =>
+      intp2_mono_std_pair
+        (helper bv (isConstrained.elimPairLeft))
+        (helper bv (isConstrained.elimPairRite))
+    | .un _ _ =>
+      intp2_mono_std_un
+        (helper bv (isConstrained.elimUnLeft))
+        (helper bv (isConstrained.elimUnRite))
+    | .ir _ _ =>
+      intp2_mono_std_ir
+        (helper bv (isConstrained.elimIrLeft))
+        (helper bv (isConstrained.elimIrRite))
+    | .condSome _ =>
+      intp2_mono_std_condSome
+        (helper bv (isConstrained.elimCondSome))
+    | .condFull _ =>
+      intp2_mono_std_condFull
+        (helper bv (isConstrained.elimCondFull))
     | .compl _ => fun _ => id
     | .arbUn _ =>
       inter_mono_std_arbUn fun d =>
@@ -156,29 +187,28 @@ def MutIndDescriptor.isSound
   dl.Subset desc[i].exprLeft desc[i].exprRite
 :=
   let := Valuation.ordStdLattice
-  let eq: dl.wfm = (operatorC pairSalgebra dl dl.wfm).lfp :=
-    dl.wfm_eq_lfpC pairSalgebra
+  let eq: dl.wfm = (operatorC dl dl.wfm).lfp := dl.wfm_eq_lfpC
   
   let isDefSub :=
     OrderHom.lfpStage_induction
-      (operatorC pairSalgebra dl dl.wfm)
+      (operatorC dl dl.wfm)
       (fun v =>
         ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
       (fun n isLim ih i p ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, atStage⟩ =>
-        let vEq: (operatorC pairSalgebra dl dl.wfm).lfpStage m = v := vEq
+        let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
         let s3Eq: v _ = s3 := s3Eq
         let pIn:
-          p ∈ ((operatorC _ dl dl.wfm).lfpStage m desc[i].left).posMem
+          p ∈ ((operatorC dl dl.wfm).lfpStage m desc[i].left).posMem
         :=
           vEq ▸ s3Eq ▸ atStage
         ih m i pIn)
       (fun n notLim predLt ih i _ isPos =>
         let ihPred := ih ⟨n.pred, predLt⟩
-        let op := operatorC pairSalgebra dl dl.wfm
+        let op := operatorC dl dl.wfm
         let predStage := op.lfpStage n.pred
-        let predStageLe := dl.lfpStage_le_wfm_std pairSalgebra n.pred
-        let isLaneOnly := BasicExpr.toIsLaneOnly _
-        let lePremiseL := desc.le_hypothesify ihPred isLaneOnly predStageLe
+        let predStageLe := dl.lfpStage_le_wfm_std n.pred
+        let laneEq := desc[i].expansion.laneEqCtx .posLane
+        let lePremiseL := desc.le_hypothesify ihPred laneEq predStageLe
         let leExp := desc[i].expandsInto.lfpStage_le_std [] n.pred
         premisesHold i (lePremiseL (leExp.posLe isPos)))
   
@@ -196,30 +226,29 @@ def MutCoindDescriptor.isSound
   dl.Subset desc[i].exprLeft desc[i].exprRite
 :=
   let := Valuation.ordStdLattice
-  let eq: dl.wfm = (operatorC pairSalgebra dl dl.wfm).lfp :=
-    dl.wfm_eq_lfpC pairSalgebra
+  let eq: dl.wfm = (operatorC dl dl.wfm).lfp := dl.wfm_eq_lfpC
   
   let isDefSub :=
     OrderHom.lfpStage_induction
-      (operatorC pairSalgebra dl dl.wfm)
+      (operatorC dl dl.wfm)
       (fun v =>
         ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
       (fun n isLim ih i p isPos ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, atStage⟩ =>
-        let vEq: (operatorC pairSalgebra dl dl.wfm).lfpStage m = v := vEq
+        let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
         let s3Eq: v _ = s3 := s3Eq
         let pIn:
-          p ∈ ((operatorC _ dl dl.wfm).lfpStage m desc[i].rite).defMem
+          p ∈ ((operatorC dl dl.wfm).lfpStage m desc[i].rite).defMem
         :=
           vEq ▸ s3Eq ▸ atStage
         ih m i isPos pIn)
       (fun n notLim predLt ih i _ isPos =>
         let ihPred := ih ⟨n.pred, predLt⟩
-        let op := operatorC pairSalgebra dl dl.wfm
+        let op := operatorC dl dl.wfm
         let predStage := op.lfpStage n.pred
-        let predStageLe := dl.lfpStage_le_wfm_std pairSalgebra n.pred
+        let predStageLe := dl.lfpStage_le_wfm_std n.pred
         let expLe := desc[i].expandsInto.lfpStage_le_std [] n.pred
-        let isLaneOnly := BasicExpr.toIsLaneOnly _
-        let lePremiseR := desc.hypothesify_le ihPred isLaneOnly predStageLe
+        let laneEq := desc[i].expansion.laneEqCtx .defLane
+        let lePremiseR := desc.hypothesify_le ihPred laneEq predStageLe
         expLe.notDefLe (lePremiseR (premisesHold i isPos))
       )
   

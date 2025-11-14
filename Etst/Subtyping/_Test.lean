@@ -1,10 +1,9 @@
-import Etst.WFC.Utils.PairExprDecideEq
 import Etst.Subtyping.Syntax.FiniteDefList
 import Etst.Subtyping.UnivStx
 
 namespace Etst
-open PairDl
-open PairDl.SubsetStx
+open DefList
+open DefList.SubsetStx
 
 pairDefList TestDl
   s3 Nat := null | (Nat, null)
@@ -68,49 +67,7 @@ pairDefList.
 local macro "s3(" e:s3_pair_expr ")" : term => `(s3(TestDl, $e))
 
 
-def DecEq
-  (a b: SingleLanePairExpr)
-:
-  Prop
-:=
-  ∀ (neq: a ≠ b), PairExpr.decidePairExprEq a b ≠ .isFalse neq
-
-def eq_of_decide
-  {a b: SingleLanePairExpr}
-  (decEq: DecEq a b)
-:
-  a = b
-:=
-  match h: PairExpr.decidePairExprEq a b with
-    | isTrue eq => eq
-    | isFalse neq => absurd h (decEq neq)
-
-def SubsetStx.convertA
-  (decEq: DecEq srcA destA)
-  (sub: SubsetStx dl srcA b)
-:
-  SubsetStx dl destA b
-:=
-  eq_of_decide decEq ▸ sub
-
-def SubsetStx.convertB
-  (decEq: DecEq srcB destB)
-  (sub: SubsetStx dl a srcB)
-:
-  SubsetStx dl a destB
-:=
-  eq_of_decide decEq ▸ sub
-
 abbrev IsSub := SubsetStx TestDl.toDefList
-
-def UnivStx.convert
-  (decEq: DecEq src dest)
-  (sub: UnivStx dl src)
-:
-  UnivStx dl dest
-:=
-  eq_of_decide decEq ▸ sub
-
 abbrev IsUniv := UnivStx TestDl.toDefList
 
 
@@ -118,20 +75,14 @@ def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
   simpleInduction
     TestDl.vars.Nat
     rfl
-    (SubsetStx.convertA
-      (srcA := s3(null | (:Nat & .Nat, null)))
-      (fun _ => Decidable.noConfusion)
-      (.foldB
-        (SubsetStx.convertB
-          (srcB := s3(null | (:Nat, null)))
-          (fun _ => Decidable.noConfusion)
-          (.subUn
-            (.subUnL .subNull)
-            (.subUnR
-              (.subPair
-                (.subIrL
-                  .varDef)
-                .subNull))))))
+    (.foldB
+      (.subUn
+        (.subUnL .subNull)
+        (.subUnR
+          (.subPair
+            (.subIrL
+              .varDef)
+            .subNull))))
 
 def SubsetStx.natNotNat: IsSub s3(.Any) s3(:Nat | !.Nat) :=
   sorry
@@ -140,14 +91,11 @@ def SubsetStx.natNotNat: IsSub s3(.Any) s3(:Nat | !.Nat) :=
 def natLeZeroThen: IsSub s3(.Nat) s3(:ThenNatLeZero) :=
   simpleInduction
     TestDl.vars.Nat
-    (eq_of_decide (fun _ => Decidable.noConfusion))
-    (SubsetStx.convertA
-      (srcA := s3(null | (:ThenNatLeZero & .Nat, null)))
-      (fun _ => Decidable.noConfusion)
-      (.foldB
-        (.subUn
-          sorry
-          sorry)))
+    rfl
+    (.foldB
+      (.subUn
+        sorry
+        sorry))
 
 
 
@@ -167,11 +115,8 @@ def SubsetStx.addSymmNat:
 :=
   simpleInduction
     TestDl.vars.Nat
-    (eq_of_decide (fun _ => Decidable.noConfusion))
-    (SubsetStx.convertA
-      (srcA := s3(null | ((All a: .Nat, All b: .Nat, :Eq (:add a b) (:add b a)) & .Nat, null)))
-      (fun _ => Decidable.noConfusion)
-      sorry)
+    rfl
+    sorry
 
 def SubsetStx.addSymm:
   IsSub s3(:Any) AddSymm

@@ -12,10 +12,10 @@ namespace Etst
   Eg. if `dl` contains `Nat = 0 | succ Nat`, then `Nat` can expand into
   `0 | succ (0 | succ Nat)`.
 -/
-inductive PairExpr.ExpandsInto
-  (dl: PairDl)
+inductive Expr.ExpandsInto
+  (dl: DefList)
 :
-  BasicPairExpr → BasicPairExpr → Type
+  BasicExpr → BasicExpr → Type
 
 | refl e: ExpandsInto dl e e
 | var (x: Nat)
@@ -26,25 +26,25 @@ inductive PairExpr.ExpandsInto
     (left: ExpandsInto dl l lExp)
     (rite: ExpandsInto dl r rExp)
   :
-    ExpandsInto dl (pair l r) (pair lExp rExp)
+    ExpandsInto dl (.pair l r) (.pair lExp rExp)
 | condSome
     (exp: ExpandsInto dl body bodyExp)
   :
-    ExpandsInto dl (condSome body) (condSome bodyExp)
+    ExpandsInto dl (.condSome body) (.condSome bodyExp)
 | condFull
     (exp: ExpandsInto dl body bodyExp)
   :
-    ExpandsInto dl (condFull body) (condFull bodyExp)
+    ExpandsInto dl (.condFull body) (.condFull bodyExp)
 | un
     (left: ExpandsInto dl l lExp)
     (rite: ExpandsInto dl r rExp)
   :
-    ExpandsInto dl (un l r) (un lExp rExp)
+    ExpandsInto dl (.un l r) (.un lExp rExp)
 | ir
     (left: ExpandsInto dl l lExp)
     (rite: ExpandsInto dl r rExp)
   :
-    ExpandsInto dl (ir l r) (ir lExp rExp)
+    ExpandsInto dl (.ir l r) (.ir lExp rExp)
 | compl
     (exp: ExpandsInto dl body bodyExp)
   :
@@ -58,7 +58,7 @@ inductive PairExpr.ExpandsInto
   :
     ExpandsInto dl (.arbIr body) (.arbIr bodyExp)
 
-namespace PairExpr.ExpandsInto
+namespace Expr.ExpandsInto
   open Expr
   
   def rfl {dl e}: ExpandsInto dl e e :=
@@ -66,7 +66,7 @@ namespace PairExpr.ExpandsInto
   
   open BasicExpr in
   def intp_eq_wfm
-    (dl: PairDl)
+    (dl: DefList)
     (bv: List Pair)
   :
     ExpandsInto dl left rite →
@@ -75,7 +75,7 @@ namespace PairExpr.ExpandsInto
   | .refl _ => _root_.rfl
     | .var x expr =>
       let ih := expr.intp_eq_wfm (bv := bv)
-      let eqDef := dl.wfm_eq_def pairSalgebra x
+      let eqDef := dl.wfm_eq_def x
       let eqClean :=
         BasicExpr.clearBvars_preserves_interp
           (dl.getDef x) bv dl.wfm dl.wfm
@@ -105,7 +105,7 @@ namespace PairExpr.ExpandsInto
     (n: Ordinal.{0})
   :
     let _ := Valuation.ordStdLattice
-    let op := operatorC pairSalgebra dl dl.wfm
+    let op := operatorC dl dl.wfm
     let intpN e bv n := e.triIntp2 bv dl.wfm (op.lfpStage n)
     
     intpN l bv n ≤ intpN r bv n
@@ -124,7 +124,7 @@ namespace PairExpr.ExpandsInto
         let eqNext: intpN defX [] n = op.lfpStage n.succ x :=
           congr (op.lfpStage_apply_eq_succ n) _root_.rfl
         let eqClear: intpN defX [] n = intpN defX.clearBvars bv n :=
-          clearBvars_preserves_interp (salg := pairSalgebra) _ _ _ _
+          clearBvars_preserves_interp _ _ _ _
         
         eqClear ▸ eqNext ▸ op.lfpStage_mono (Order.le_succ n) x
       leNextStage.trans ih
@@ -153,4 +153,4 @@ namespace PairExpr.ExpandsInto
     | arbIr exp =>
       triIntp2_mono_std_arbIr (fun dB =>
         exp.lfpStage_le_std (dB :: bv) n)
-end PairExpr.ExpandsInto
+end Expr.ExpandsInto

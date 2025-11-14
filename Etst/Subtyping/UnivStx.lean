@@ -1,4 +1,3 @@
-import Etst.WFC.Utils.PairExprDecideEq
 import Etst.Subtyping.Syntax.FiniteDefList
 
 /-
@@ -11,16 +10,16 @@ import Etst.Subtyping.Syntax.FiniteDefList
 import Etst.Subtyping.SubsetStx
 
 namespace Etst
-open PairExpr
+open Expr
 
 
 def MutIndDescriptor.hypothesifyUniv
   (mutDesc: MutIndDescriptor dl)
   (desc: InductionDescriptor dl)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
-  un
+  .un
     (.compl
       ((desc.expansion.toLane .posLane).replaceComplZeroVars mutDesc.hypothesis))
     desc.rite
@@ -28,32 +27,31 @@ def MutIndDescriptor.hypothesifyUniv
 
 def Set.Univ (s: Set T): Prop := ∀ x, s x
 
-def PairDl.Univ (dl: PairDl) (expr: SingleLanePairExpr): Prop :=
+def DefList.Univ (dl: DefList) (expr: SingleLaneExpr): Prop :=
   Set.Univ (expr.intp [] dl.wfm)
 
 
 -- Note: `A ⊆ B` is equivalent to (encodeable as) `Univ (~A | B)`.
-inductive PairDl.UnivStx (dl: PairDl): SingleLanePairExpr → Type
+inductive DefList.UnivStx (dl: DefList): SingleLaneExpr → Type
 
 | excludedMiddle
-    (expr: SingleLanePairExpr)
+    (expr: SingleLaneExpr)
   :
     -- A.k.a. `A ⊆ A`
-    UnivStx dl (un (.compl expr) expr)
+    UnivStx dl (.un (.compl expr) expr)
 
 -- TODO should this be somehow provable using induction?
 | nullPair
     (univL: UnivStx dl l)
     (univR: UnivStx dl r)
   :
-    UnivStx dl (un .null (pair l r))
+    UnivStx dl (.un .null (.pair l r))
 
-| univUnL {l r: SingleLanePairExpr} (u: UnivStx dl l): UnivStx dl (un l r)
-| univUnSymm (u: UnivStx dl (un a b)): UnivStx dl (un b a)
+| univUnL {l r: SingleLaneExpr} (u: UnivStx dl l): UnivStx dl (.un l r)
+| univUnSymm (u: UnivStx dl (.un a b)): UnivStx dl (.un b a)
 
-| univIr (ul: UnivStx dl l) (ur: UnivStx dl r): UnivStx dl (ir l r)
-| univIrSymm (u: UnivStx dl (ir a b)): UnivStx dl (ir b a)
-
+| univIr (ul: UnivStx dl l) (ur: UnivStx dl r): UnivStx dl (.ir l r)
+| univIrSymm (u: UnivStx dl (.ir a b)): UnivStx dl (.ir b a)
 | mutInduction
     (desc: MutIndDescriptor dl)
     (premises:
@@ -63,15 +61,15 @@ inductive PairDl.UnivStx (dl: PairDl): SingleLanePairExpr → Type
         (desc.hypothesifyUniv desc[i]))
     (i: desc.Index)
   :
-    UnivStx dl (un (.compl desc[i].exprLeft) desc[i].exprRite)
+    UnivStx dl (.un (.compl desc[i].exprLeft) desc[i].exprRite)
 
 
-namespace PairDl.UnivStx
+namespace DefList.UnivStx
   def univUnR
-    {l: SingleLanePairExpr}
+    {l: SingleLaneExpr}
     (u: UnivStx dl r)
   :
-    UnivStx dl (un l r)
+    UnivStx dl (.un l r)
   :=
     univUnSymm (univUnL u)
   
@@ -81,13 +79,13 @@ namespace PairDl.UnivStx
     (premise:
       UnivStx
         dl
-        (un
+        (.un
           (.compl
             ((desc.expansion.toLane .posLane).replaceComplZeroVars fun _ x =>
               desc.hypothesis x (.var .posLane x)))
           desc.rite))
   :
-    UnivStx dl (un (.compl desc.exprLeft) desc.rite)
+    UnivStx dl (.un (.compl desc.exprLeft) desc.rite)
   :=
     mutInduction
       [desc]
@@ -100,15 +98,15 @@ namespace PairDl.UnivStx
     (premise:
       UnivStx
         dl
-        (un
+        (.un
           (.compl
             (((dl.getDef x).toLane .posLane).replaceComplZeroVars fun _ xR =>
               if x = xR
-              then PairExpr.ir expr (.var .posLane xR)
+              then .ir expr (.var .posLane xR)
               else (.var .posLane xR)))
           expr))
   :
-    UnivStx dl (un (.compl (.var .posLane x)) expr)
+    UnivStx dl (.un (.compl (.var .posLane x)) expr)
   :=
     induction
       {
@@ -120,4 +118,4 @@ namespace PairDl.UnivStx
       }
       premise
   
-end PairDl.UnivStx
+end DefList.UnivStx

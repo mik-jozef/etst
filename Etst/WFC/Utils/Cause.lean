@@ -514,9 +514,9 @@ def Cause.IsWeaklySatisfiedBy.elimArbUn
 
 
 noncomputable def IsWeakCause.ofValPos
-  (isPos: (expr.interpretation salg [] b c).posMem d)
+  (isPos: (expr.interpretation [] b c).posMem d)
 :
-  IsWeakCause salg (Cause.ofValPos b c) d expr
+  IsWeakCause (Cause.ofValPos b c) d expr
 :=
   fun isSat =>
     BasicExpr.interpretation_mono_apx_posMem
@@ -530,24 +530,22 @@ noncomputable def IsWeakCause.ofValPos
       isPos
 
 def IsWeakCause.isPosOfIsApplicable
-  {salg: Salgebra sig}
-  {cause: Cause salg.D}
-  {d: salg.D}
-  (isCause: IsWeakCause salg cause d expr)
-  {b c: Valuation salg.D}
+  {cause: Cause Pair}
+  {d: Pair}
+  (isCause: IsWeakCause cause d expr)
+  {b c: Valuation Pair}
   (isApp: ¬ cause.IsInapplicable c.nonmembers b)
 :
-  (expr.interpretation salg [] b c).posMem d
+  (expr.interpretation [] b c).posMem d
 :=
   isCause (Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy isApp)
 
 def IsWeakCause.isInapplicableOfIsNonmember
-  {salg: Salgebra sig}
-  {cause: Cause salg.D}
-  {d: salg.D}
-  (isCause: IsWeakCause salg cause d expr)
-  {b c: Valuation salg.D}
-  (notPos: ¬(expr.interpretation salg [] b c).posMem d)
+  {cause: Cause Pair}
+  {d: Pair}
+  (isCause: IsWeakCause cause d expr)
+  {b c: Valuation Pair}
+  (notPos: ¬(expr.interpretation [] b c).posMem d)
 :
   cause.IsInapplicable c.nonmembers b
 :=

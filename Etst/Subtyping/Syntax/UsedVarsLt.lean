@@ -3,7 +3,7 @@
   of an expression.
 -/
 
-import Etst.WFC.Ch4_PairSalgebra
+import Etst.WFC.Ch3_WellFoundedModel
 
 namespace Etst
 
@@ -24,7 +24,7 @@ instance (T: Prop): ToString (Witness T) where
 
 namespace Pair
   def usedVarsLt
-    (expr: Expr E pairSignature)
+    (expr: Expr E)
     (bound: Nat)
   :
     Witness (∀ x: expr.UsesVar, x.val < bound)
@@ -37,55 +37,43 @@ namespace Pair
           show x < bound from
           eq ▸ Nat.lt_of_not_le hBLe
     | .bvar _ => .isTrue nofun
-    | .op pairSignature.Op.null _ => .isTrue nofun
-    | .op pairSignature.Op.pair args =>
-      let freeVarsZth := usedVarsLt (args ArityTwo.zth) bound
-      let freeVarsFst := usedVarsLt (args ArityTwo.fst) bound
-      match freeVarsZth, freeVarsFst with
+    | .null => .isTrue nofun
+    | .pair left rite =>
+      match usedVarsLt left bound, usedVarsLt rite bound with
       | .none, _ => .none
       | _, .none => .none
       | .isTrue freeVarsZth, .isTrue freeVarsFst =>
         .isTrue fun
-          | ⟨x, ArityTwo.zth, isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
-          | ⟨x, ArityTwo.fst, isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
+          | ⟨x, Or.inl isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
+          | ⟨x, Or.inr isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
+    | .un left rite =>
+      match usedVarsLt left bound, usedVarsLt rite bound with
+      | .none, _ => .none
+      | _, .none => .none
+      | .isTrue freeVarsZth, .isTrue freeVarsFst =>
+        .isTrue fun
+          | ⟨x, Or.inl isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
+          | ⟨x, Or.inr isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
+    | .ir left rite =>
+      match usedVarsLt left bound, usedVarsLt rite bound with
+      | .none, _ => .none
+      | _, .none => .none
+      | .isTrue freeVarsZth, .isTrue freeVarsFst =>
+        .isTrue fun
+          | ⟨x, Or.inl isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
+          | ⟨x, Or.inr isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
     |
-      .op pairSignature.Op.condSome args =>
-      let freeVarsArg := usedVarsLt (args ArityOne.zth) bound
-      match freeVarsArg with
+      .condSome body =>
+      match usedVarsLt body bound with
       | .none => .none
       | .isTrue freeVarsArg =>
-        .isTrue fun
-          | ⟨x, ArityOne.zth, isUsed⟩ => freeVarsArg ⟨x, isUsed⟩
+        .isTrue fun ⟨x, isUsed⟩ => freeVarsArg ⟨x, isUsed⟩
     |
-      .op pairSignature.Op.condFull args =>
-      let freeVarsArg := usedVarsLt (args ArityOne.zth) bound
-      match freeVarsArg with
+      .condFull body =>
+      match usedVarsLt body bound with
       | .none => .none
       | .isTrue freeVarsArg =>
-        .isTrue fun
-          | ⟨x, ArityOne.zth, isUsed⟩ => freeVarsArg ⟨x, isUsed⟩
-    |
-      .op pairSignature.Op.un args =>
-      let freeVarsZth := usedVarsLt (args ArityTwo.zth) bound
-      let freeVarsFst := usedVarsLt (args ArityTwo.fst) bound
-      match freeVarsZth, freeVarsFst with
-      | .none, _ => .none
-      | _, .none => .none
-      | .isTrue freeVarsZth, .isTrue freeVarsFst =>
-        .isTrue fun
-          | ⟨x, ArityTwo.zth, isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
-          | ⟨x, ArityTwo.fst, isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
-    |
-      .op pairSignature.Op.ir args =>
-      let freeVarsZth := usedVarsLt (args ArityTwo.zth) bound
-      let freeVarsFst := usedVarsLt (args ArityTwo.fst) bound
-      match freeVarsZth, freeVarsFst with
-      | .none, _ => .none
-      | _, .none => .none
-      | .isTrue freeVarsZth, .isTrue freeVarsFst =>
-        .isTrue fun
-          | ⟨x, ArityTwo.zth, isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
-          | ⟨x, ArityTwo.fst, isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
+        .isTrue fun ⟨x, isUsed⟩ => freeVarsArg ⟨x, isUsed⟩
     |
       .compl expr => usedVarsLt expr bound
     | .arbUn expr => usedVarsLt expr bound

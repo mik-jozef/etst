@@ -14,19 +14,18 @@ def ValVar.eqX: @Eq (ValVar D) ⟨d0, x0⟩ ⟨d1, x1⟩ → x0 = x1
 
 
 def every_cause_inapplicable_preserves_definitive_nonmember
-  (salg: Salgebra sig)
-  (b c: Valuation salg.D)
-  (d: salg.D)
-  (expr: BasicExpr sig)
-  (outSet: Set (ValVar salg.D))
+  (b c: Valuation Pair)
+  (d: Pair)
+  (expr: BasicExpr)
+  (outSet: Set (ValVar Pair))
   (isEveryCauseInapplicable:
-    {cause: Cause salg.D} →
-    IsWeakCause salg cause d expr →
+    {cause: Cause Pair} →
+    IsWeakCause cause d expr →
     cause.IsInapplicable outSet b)
   (outSetIsEmpty:
     ∀ {d x}, ⟨d, x⟩ ∈ outSet → ¬ (c x).posMem d)
 :
-  ¬(expr.interpretation salg [] b c).posMem d
+  ¬(expr.interpretation [] b c).posMem d
 :=
   let isSat := Cause.IsWeaklySatisfiedBy.ofValPos b c
   let isApp := isSat.toIsApplicable outSet outSetIsEmpty
@@ -34,36 +33,35 @@ def every_cause_inapplicable_preserves_definitive_nonmember
   isApp ∘ isEveryCauseInapplicable ∘ IsWeakCause.ofValPos
 
 def empty_cycle_is_out
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  (cycle: Set (ValVar salg.D))
+  (dl: DefList)
+  (cycle: Set (ValVar Pair))
   (isEmptyCycle:
     ∀ {d x},
     ⟨d, x⟩ ∈ cycle →
-    (cause: Cause salg.D) →
-    IsWeakCause salg cause d (dl.getDef x) →  
-    cause.IsInapplicable cycle (dl.wfm salg))
+    (cause: Cause Pair) →
+    IsWeakCause cause d (dl.getDef x) →  
+    cause.IsInapplicable cycle (dl.wfm))
   {d x}
   (inCycle: ⟨d, x⟩ ∈ cycle)
 :
-  ¬(dl.wfm salg x).posMem d
+  ¬(dl.wfm x).posMem d
 :=
   let _ := Valuation.ordStdLattice
-  let wfm := dl.wfm salg
-  let ⟨isFp, _⟩ := DefList.wfm_isLfpB salg dl
+  let wfm := dl.wfm
+  let ⟨isFp, _⟩ := DefList.wfm_isLfpB dl
   
   isFp ▸
   OrderHom.lfpStage_induction
-    (operatorC salg dl wfm)
+    (operatorC dl wfm)
     (fun v => ∀ vv ∈ cycle, ¬(v vv.x).posMem vv.d)
     (fun _n _isLim ih ⟨d, x⟩ inCycle =>
       (Valuation.ordStd.in_set_in_sup_posMem isLUB_iSup).nmp
         fun ⟨prev, ⟨⟨i, eqAtI⟩, dInPrev⟩⟩ =>
-          let eq: (operatorC salg dl wfm).lfpStage i = prev := eqAtI
+          let eq: (operatorC dl wfm).lfpStage i = prev := eqAtI
           ih i ⟨d, x⟩ inCycle (eq ▸ dInPrev))
     (fun n _notLim predLt ih ⟨d, x⟩ inCycle =>
       every_cause_inapplicable_preserves_definitive_nonmember
-        salg wfm _ d
+        wfm _ d
         (dl.getDef x)
         cycle
         (isEmptyCycle inCycle _)
@@ -73,32 +71,31 @@ def empty_cycle_is_out
 
 
 structure InsOutComplete
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  (v: Valuation salg.D)
+  (dl: DefList)
+  (v: Valuation Pair)
 :
   Prop
 where
   insIsComplete:
-    ∀ {d x}, (v x).defMem d → Ins salg dl d x
+    ∀ {d x}, (v x).defMem d → Ins dl d x
   outIsComplete:
-    ∀ {d x}, ¬(v x).posMem d → Out salg dl d x
+    ∀ {d x}, ¬(v x).posMem d → Out dl d x
 
 def completenessProofC
-  (isComplete: InsOutComplete salg dl b)
+  (isComplete: InsOutComplete dl b)
 :
-  InsOutComplete salg dl (operatorC.lfp salg dl b)
+  InsOutComplete dl (operatorC.lfp dl b)
 :=
   let _ := Valuation.ordStdLattice
   -- TODO do I need this variable?
-  let opC := operatorC salg dl b
-  -- let isMono {v0 v1: Valuation salg.D} (isLe: v0 ≤ v1) :=
-  --   operatorC.mono_std salg dl b isLe
+  let opC := operatorC dl b
+  -- let isMono {v0 v1: Valuation Pair} (isLe: v0 ≤ v1) :=
+  --   operatorC.mono_std dl b isLe
   
   {
     insIsComplete :=
       opC.lfpStage_induction
-        (fun v => ∀ {d x}, (v x).defMem d → Ins salg dl d x)
+        (fun v => ∀ {d x}, (v x).defMem d → Ins dl d x)
         (fun _n _isLim ih _d _x isDefN =>
           let ⟨_v, ⟨m, (vEq: opC.lfpStage _ = _)⟩, inDefV⟩ :=
             (Valuation.ordStd.in_set_in_sup_defMem isLUB_iSup).mpr isDefN
@@ -106,13 +103,13 @@ def completenessProofC
         (fun n _notLim predLt ih d x isDefN =>
           let c := opC.lfpStage n.pred
           
-          let cause: Cause salg.D := {
+          let cause: Cause Pair := {
             contextIns := fun ⟨d, x⟩ => (c x).defMem d
             backgroundIns := fun ⟨d, x⟩ => (b x).defMem d
             backgroundOut := fun ⟨d, x⟩ => ¬(b x).posMem d
           }
           
-          let isCause: IsStrongCause salg cause d (dl.getDef x) :=
+          let isCause: IsStrongCause cause d (dl.getDef x) :=
             fun {b1 _c1} isSat =>
               let isLe: b ⊑ b1 := fun _ => {
                 defLe := fun _ => isSat.backgroundInsHold
@@ -131,11 +128,11 @@ def completenessProofC
             isComplete.outIsComplete)
     outIsComplete :=
       Out.intro
-        (fun ⟨d, x⟩ => ¬(operatorC.lfp salg dl b x).posMem d)
+        (fun ⟨d, x⟩ => ¬(operatorC.lfp dl b x).posMem d)
         (fun {dd xx} notPos _cause isCause =>
-          let opC := operatorC salg dl b
-          let lfp := operatorC.lfp salg dl b
-          let isFp: _ = _ := (operatorC salg dl b).isFixedPt_lfp
+          let opC := operatorC dl b
+          let lfp := operatorC.lfp dl b
+          let isFp: _ = _ := (operatorC dl b).isFixedPt_lfp
           
           let notPos: ¬((opC lfp) xx).posMem dd := isFp ▸ notPos
           
@@ -151,17 +148,16 @@ def completenessProofC
   }
 
 def completenessProofB
-  (salg: Salgebra sig)
-  (dl: DefList sig)
+  (dl: DefList)
 :
-  InsOutComplete salg dl (dl.wfm salg)
+  InsOutComplete dl (dl.wfm)
 :=
   let _ := Valuation.ordApx
-  let opB := operatorB salg dl
+  let opB := operatorB dl
   
   opB.lfpStageCc_induction
     isCcApx
-    (InsOutComplete salg dl)
+    (InsOutComplete dl)
     (fun _n _isLim ih isChain => {
       insIsComplete isDefN :=
         let isLub := (isCcApx isChain).choose_spec
@@ -182,10 +178,10 @@ def completenessProofB
 
 
 def IsCauseInapplicable.toSuperCause
-  (isInapp: IsCauseInapplicable salg dl cycle causeA)
+  (isInapp: IsCauseInapplicable dl cycle causeA)
   (isSuper: causeA ⊆ causeB)
 :
-  IsCauseInapplicable salg dl cycle causeB
+  IsCauseInapplicable dl cycle causeB
 :=
   match isInapp with
   | blockedContextIns _ inCins inCycle =>
@@ -196,10 +192,10 @@ def IsCauseInapplicable.toSuperCause
     blockedBackgroundOut _ (isSuper.boutLe inBout) isIns
 
 def IsCauseInapplicable.toSuperCycle
-  (isInapp: IsCauseInapplicable salg dl cycleA cause)
+  (isInapp: IsCauseInapplicable dl cycleA cause)
   (isSuper: cycleA ⊆ cycleB)
 :
-  IsCauseInapplicable salg dl cycleB cause
+  IsCauseInapplicable dl cycleB cause
 :=
   match isInapp with
   | blockedContextIns _ inCins inCycle =>
@@ -210,11 +206,11 @@ def IsCauseInapplicable.toSuperCycle
     blockedBackgroundOut _ inBout isIns
 
 def IsCauseInapplicable.toSuper
-  (isInapp: IsCauseInapplicable salg dl cycleA causeA)
+  (isInapp: IsCauseInapplicable dl cycleA causeA)
   (isSuper: cycleA ⊆ cycleB)
   (isSuperCause: causeA ⊆ causeB)
 :
-  IsCauseInapplicable salg dl cycleB causeB
+  IsCauseInapplicable dl cycleB causeB
 :=
   let isInapp := isInapp.toSuperCause isSuperCause
   isInapp.toSuperCycle isSuper

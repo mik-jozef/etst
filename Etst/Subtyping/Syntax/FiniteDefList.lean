@@ -11,21 +11,20 @@ open Lean Elab Command Term Meta Syntax
 
 
 def Expr.VarLtSize
-  (expr: Expr E sig)
+  (expr: Expr E)
   (size: Nat)
 :=
   ∀ y ∈ expr.UsesVar, y < size
 
 def Expr.noneLtSize
-  {sig: Signature}
   (size: Nat)
 :
-  (none (E := E) (sig := sig)).VarLtSize size
+  (none (E := E)).VarLtSize size
 :=
   nofun
 
 def DefList.DependsOn.toUsesVar
-  {getDef: GetDef sig}
+  {getDef: GetDef}
   (depOn: DependsOn getDef a b)
 :
   ∃ x, (getDef x).UsesVar b
@@ -38,7 +37,7 @@ def DefList.DependsOn.toUsesVar
 
 
 def FiniteDefList.VarLtSize
-  (getDef: DefList.GetDef sig)
+  (getDef: DefList.GetDef)
   (size: Nat)
 :=
   ∀ x, (getDef x).VarLtSize size
@@ -55,41 +54,34 @@ def FiniteDefList.isFinBounded_of_varLtSize
       varLtSize x _ usesVar,
   ⟩
 
-structure FiniteDefList
-  (sig: Signature)
-extends
-  FinBoundedDL sig
-where
+structure FiniteDefList extends FinBoundedDL where
   varList: List String
   varLtSize: FiniteDefList.VarLtSize getDef varList.length
   isFinBounded := FiniteDefList.isFinBounded_of_varLtSize varLtSize
 
 def FiniteDefList.size
-  (dl: FiniteDefList sig)
+  (dl: FiniteDefList)
 :=
   dl.varList.length
 
-def FiniteDefList.empty: FiniteDefList sig := {
+def FiniteDefList.empty: FiniteDefList := {
   getDef := fun _ => Expr.none
   varList := []
   varLtSize := fun _ => Expr.noneLtSize _
 }
 
-def FiniteDefList.emptySizeZero:
-  (empty (sig := sig)).size = 0
-:=
-  rfl
+def FiniteDefList.emptySizeZero: empty.size = 0 := rfl
 
-structure FiniteDefList.Def (sig: Signature) (size: Nat) where
+structure FiniteDefList.Def (size: Nat) where
   name: String
-  expr: BasicExpr sig
+  expr: BasicExpr
   varLt: expr.VarLtSize size
 
 def FiniteDefList.defsGetNth
-  (defs: List (Def sig ub))
+  (defs: List (Def ub))
   (n: Nat)
 :
-  Def sig ub
+  Def ub
 :=
   defs[n]?.getD {
     name := "«empty»"
@@ -98,18 +90,18 @@ def FiniteDefList.defsGetNth
   }
 
 def FiniteDefList.defsToGetDef
-  (defs: List (Def sig ub))
+  (defs: List (Def ub))
 :
-  DefList.GetDef sig
+  DefList.GetDef
 :=
   fun x => (defsGetNth defs x).expr
 
 def FiniteDefList.extend
-  (dl: FiniteDefList sig)
-  (defs: List (Def sig ub))
+  (dl: FiniteDefList)
+  (defs: List (Def ub))
   (ubEq: ub = dl.size + defs.length)
 :
-  FiniteDefList sig
+  FiniteDefList
 :=
   let getDef :=
     fun x =>
@@ -135,10 +127,10 @@ def FiniteDefList.extend
   }
 
 def FiniteDefList.ofDefs
-  (defs: List (Def sig ub))
+  (defs: List (Def ub))
   (ubEq: ub = defs.length)
 :
-  FiniteDefList sig
+  FiniteDefList
 :=
   empty.extend defs (by
     rw [emptySizeZero, Nat.zero_add];
@@ -282,22 +274,22 @@ namespace pair_def_list
       | some (.bvar _) =>
         throwErrorAt name (s!"Bound variable cannot have a lane selector.")
   |
-    `(s3_pair_expr| null) => `(PairExpr.null)
+    `(s3_pair_expr| null) => `(Expr.null)
   |
     `(s3_pair_expr|
       (?some $body:s3_pair_expr))
     => do
-      `(PairExpr.condSome $(← makeExpr vars bvi body))
+      `(Expr.condSome $(← makeExpr vars bvi body))
   |
     `(s3_pair_expr|
       (?full $body:s3_pair_expr))
     => do
-      `(PairExpr.condFull $(← makeExpr vars bvi body))
+      `(Expr.condFull $(← makeExpr vars bvi body))
   |
     `(s3_pair_expr|
       ($a:s3_pair_expr, $b:s3_pair_expr))
     => do
-      `(PairExpr.pair
+      `(Expr.pair
         $(← makeExpr vars bvi a)
         $(← makeExpr vars bvi b))
   |
@@ -307,20 +299,20 @@ namespace pair_def_list
     `(s3_pair_expr|
       $a:s3_pair_expr | $b:s3_pair_expr)
     => do
-      `(PairExpr.un
+      `(Expr.un
         $(← makeExpr vars bvi a)
         $(← makeExpr vars bvi b))
   |
     `(s3_pair_expr|
       $a:s3_pair_expr & $b:s3_pair_expr)
     => do
-      `(PairExpr.ir
+      `(Expr.ir
         $(← makeExpr vars bvi a)
         $(← makeExpr vars bvi b))
   |
     `(s3_pair_expr| $a:s3_pair_expr then $b:s3_pair_expr)
     => do
-      `(PairExpr.ifThen
+      `(Expr.ifThen
         $(← makeExpr vars bvi a)
         $(← makeExpr vars bvi b))
   |
@@ -438,9 +430,8 @@ namespace pair_def_list
         let varList ← liftMetaM $ unsafe evalExpr
           (List String)
           (mkApp (.const ``List [0]) (.const ``String []))
-          (mkApp2
-            (.const ``FiniteDefList.varList [0, 0])
-            (.const ``pairSignature [])
+          (mkApp
+            (.const ``FiniteDefList.varList [])
             expr)
         
         varList.foldlM
@@ -509,7 +500,7 @@ namespace pair_def_list
           logInfo s!"Declared variables: {repr vars}"
         
         let output ← `(
-          def $name : FiniteDefList pairSignature :=
+          def $name : FiniteDefList :=
             let parent := $(← getParent parentName)
             let defs := $(← liftTermElabM $ getDefs vars defs)
             

@@ -10,72 +10,35 @@ namespace Etst
 
 
 namespace SingleLaneExpr
-  def inter_mono_std_op
-    {salg: Salgebra sig}
-    {bv0 bv1: List salg.D}
-    {b0 c0 b1 c1: Valuation salg.D}
-    (le:
-      ∀ param: sig.Params o,
-        Set.Subset
-          ((args0 param).interpretation salg bv0 b0 c0)
-          ((args1 param).interpretation salg bv1 b1 c1))
-  :
-    Set.Subset
-      ((op o args0).interpretation salg bv0 b0 c0)
-      ((op o args1).interpretation salg bv1 b1 c1)
-  :=
-    fun _ dIn => salg.isMonotonic o _ _ le dIn
-  
-  def eq_op_of_eq
-    {salg: Salgebra sig}
-    {bv0 bv1: List salg.D}
-    {b0 c0 b1 c1: Valuation salg.D}
-    (eq:
-      ∀ param: sig.Params o,
-      Eq
-        ((args0 param).interpretation salg bv0 b0 c0)
-        ((args1 param).interpretation salg bv1 b1 c1))
-  :
-    Eq
-      ((op o args0).interpretation salg bv0 b0 c0)
-      ((op o args1).interpretation salg bv1 b1 c1)
-  :=
-    le_antisymm
-      (inter_mono_std_op (fun param => le_of_eq (eq param)))
-      (inter_mono_std_op (fun param => le_of_eq (eq param).symm))
-  
-  
   -- Note we're using `b0 b0` and `b1 b1` in the assumption.
   def inter_mono_std_compl
-    {salg: Salgebra sig}
-    {bv0 bv1: List salg.D}
-    {b0 b1: Valuation salg.D}
-    (c0 c1: Valuation salg.D)
+    {bv0 bv1: List Pair}
+    {b0 b1: Valuation Pair}
+    (c0 c1: Valuation Pair)
     (le:
       Set.Subset
-        (e1.interpretation salg bv1 b1 b1)
-        (e0.interpretation salg bv0 b0 b0))
+        (e1.interpretation bv1 b1 b1)
+        (e0.interpretation bv0 b0 b0))
   :
     Set.Subset
-      ((compl e0).interpretation salg bv0 b0 c0)
-      ((compl e1).interpretation salg bv1 b1 c1)
+      ((compl e0).interpretation bv0 b0 c0)
+      ((compl e1).interpretation bv1 b1 c1)
   :=
     fun _ ins =>
       inCompl c0 (fun isPos => inComplElim ins (le isPos))
   
   def eq_compl_of_eq
-    {salg: Salgebra sig}
-    {bv0 bv1: List salg.D}
-    {b0 b1: Valuation salg.D}
-    (c0 c1: Valuation salg.D)
+    {bv0 bv1: List Pair}
+    {b0 b1: Valuation Pair}
+    (c0 c1: Valuation Pair)
     (eq:
       Eq
-        (e0.interpretation salg bv0 b0 b0)
-        (e1.interpretation salg bv1 b1 b1))
+        (e0.interpretation bv0 b0 b0)
+        (e1.interpretation bv1 b1 b1))
   :
     Eq
-      ((compl e0).interpretation salg bv0 b0 c0)
-      ((compl e1).interpretation salg bv1 b1 c1)
+      ((compl e0).interpretation bv0 b0 c0)
+      ((compl e1).interpretation bv1 b1 c1)
   :=
     le_antisymm
       (inter_mono_std_compl c0 c1 (le_of_eq eq.symm))
@@ -83,34 +46,32 @@ namespace SingleLaneExpr
   
   
   def inter_mono_std_arbUn
-    {salg: Salgebra sig}
-    {bv0 bv1: List salg.D}
-    {b0 c0 b1 c1: Valuation salg.D}
+    {bv0 bv1: List Pair}
+    {b0 c0 b1 c1: Valuation Pair}
     (le:
       ∀ dB,
       Set.Subset
-        (e0.interpretation salg (dB :: bv0) b0 c0)
-        (e1.interpretation salg (dB :: bv1) b1 c1))
+        (e0.interpretation (dB :: bv0) b0 c0)
+        (e1.interpretation (dB :: bv1) b1 c1))
   :
     Set.Subset
-      ((arbUn e0).interpretation salg bv0 b0 c0)
-      ((arbUn e1).interpretation salg bv1 b1 c1)
+      ((arbUn e0).interpretation bv0 b0 c0)
+      ((arbUn e1).interpretation bv1 b1 c1)
   :=
     fun _ ⟨dB, isDef⟩ => ⟨dB, (le dB) isDef⟩
   
   def eq_arbUn_of_eq
-    {salg: Salgebra sig}
-    {bv0 bv1: List salg.D}
-    {b0 c0 b1 c1: Valuation salg.D}
+    {bv0 bv1: List Pair}
+    {b0 c0 b1 c1: Valuation Pair}
     (eq:
       ∀ dB,
       Eq
-        (e0.interpretation salg (dB :: bv0) b0 c0)
-        (e1.interpretation salg (dB :: bv1) b1 c1))
+        (e0.interpretation (dB :: bv0) b0 c0)
+        (e1.interpretation (dB :: bv1) b1 c1))
   :
     Eq
-      ((arbUn e0).interpretation salg bv0 b0 c0)
-      ((arbUn e1).interpretation salg bv1 b1 c1)
+      ((arbUn e0).interpretation bv0 b0 c0)
+      ((arbUn e1).interpretation bv1 b1 c1)
   :=
     le_antisymm
       (inter_mono_std_arbUn (fun dB => le_of_eq (eq dB)))
@@ -118,34 +79,32 @@ namespace SingleLaneExpr
   
   
   def inter_mono_std_arbIr
-    {salg: Salgebra sig}
-    {bv0 bv1: List salg.D}
-    {b0 c0 b1 c1: Valuation salg.D}
+    {bv0 bv1: List Pair}
+    {b0 c0 b1 c1: Valuation Pair}
     (le:
       ∀ dB,
       Set.Subset
-        (e0.interpretation salg (dB :: bv0) b0 c0)
-        (e1.interpretation salg (dB :: bv1) b1 c1))
+        (e0.interpretation (dB :: bv0) b0 c0)
+        (e1.interpretation (dB :: bv1) b1 c1))
   :
     Set.Subset
-      ((arbIr e0).interpretation salg bv0 b0 c0)
-      ((arbIr e1).interpretation salg bv1 b1 c1)
+      ((arbIr e0).interpretation bv0 b0 c0)
+      ((arbIr e1).interpretation bv1 b1 c1)
   :=
     fun _ h dB => (le dB) (h dB)
   
   def eq_arbIr_of_eq
-    {salg: Salgebra sig}
-    {bv0 bv1: List salg.D}
-    {b0 c0 b1 c1: Valuation salg.D}
+    {bv0 bv1: List Pair}
+    {b0 c0 b1 c1: Valuation Pair}
     (eq:
       ∀ dB,
       Eq
-        (e0.interpretation salg (dB :: bv0) b0 c0)
-        (e1.interpretation salg (dB :: bv1) b1 c1))
+        (e0.interpretation (dB :: bv0) b0 c0)
+        (e1.interpretation (dB :: bv1) b1 c1))
   :
     Eq
-      ((arbIr e0).interpretation salg bv0 b0 c0)
-      ((arbIr e1).interpretation salg bv1 b1 c1)
+      ((arbIr e0).interpretation bv0 b0 c0)
+      ((arbIr e1).interpretation bv1 b1 c1)
   :=
     le_antisymm
       (inter_mono_std_arbIr (fun dB => le_of_eq (eq dB)))
@@ -154,7 +113,6 @@ namespace SingleLaneExpr
 end SingleLaneExpr
 
 namespace BasicExpr
-  open PairExpr
   open SingleLaneExpr
   
   def triIntp2_mono_std_compl
@@ -227,10 +185,10 @@ end BasicExpr
 
 
 namespace SingleLaneExpr
-  open PairExpr
+  open Expr
   
   def intp2_mono_std_pair
-    {l0 l1 r0 r1: SingleLanePairExpr}
+    {l0 l1 r0 r1: SingleLaneExpr}
     (leL: intp2 l0 bv0 b0 c0 ≤ intp2 l1 bv1 b1 c1)
     (leR: intp2 r0 bv0 b0 c0 ≤ intp2 r1 bv1 b1 c1)
   :
@@ -335,7 +293,7 @@ namespace SingleLaneExpr
 end SingleLaneExpr
 
 namespace BasicExpr
-  open PairExpr
+  open Expr
   open SingleLaneExpr
   
   def triIntp2_mono_std_pair

@@ -12,16 +12,16 @@ namespace Etst
 
 
 def Ins.isSound
-  (ins: Ins salg dl d x)
+  (ins: Ins dl d x)
 :
-  (dl.wfm salg x).defMem d
+  (dl.wfm x).defMem d
 :=
   -- Cannot use structural recursion :(
   -- 
   -- ```
   --   failed to infer structural recursion:
   --   Cannot use parameter ins:
-  --     the type Ins salg dl does not have a `.brecOn` recursor
+  --     the type Ins dl does not have a `.brecOn` recursor
   -- ```
   -- 
   -- This would be a terrific feature, Lean:
@@ -31,7 +31,7 @@ def Ins.isSound
   --   let ihCins {d x} (inCins: ⟨d, x⟩ ∈ cause.contextIns) :=
   --     Ins.isSound (insCins inCins)
     
-  --   DefList.wellFoundedModel.isModel salg dl ▸
+  --   DefList.wellFoundedModel.isModel dl ▸
   --   isCause {
   --     contextInsHold := ihCins
   --     backgroundInsHold := sorry
@@ -40,82 +40,80 @@ def Ins.isSound
   
   open Cause.IsInapplicable in
   ins.rec
-    (motive_1 := fun d x _ => (dl.wfm salg x).defMem d)
+    (motive_1 := fun d x _ => (dl.wfm x).defMem d)
     (motive_2 := fun cycle cause _ =>
-      cause.IsInapplicable cycle (dl.wfm salg))
-    (motive_3 := fun d x _ => ¬(dl.wfm salg x).posMem d)
+      cause.IsInapplicable cycle (dl.wfm))
+    (motive_3 := fun d x _ => ¬(dl.wfm x).posMem d)
     (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
-      DefList.wfm_isModel salg dl ▸
+      DefList.wfm_isModel dl ▸
       isCause ⟨⟨ihBins, ihBout⟩, ihCins⟩)
     (fun _ _ _ => blockedContextIns)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundIns ihBins ihBout)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundOut ihBins ihBout)
     (fun cycle _ inCycle ih =>
-      empty_cycle_is_out salg dl cycle ih inCycle)
+      empty_cycle_is_out dl cycle ih inCycle)
 
 def Out.isSound
-  (out: Out salg dl d x)
+  (out: Out dl d x)
 :
-  ¬(dl.wfm salg x).posMem d
+  ¬(dl.wfm x).posMem d
 :=
   open Cause.IsInapplicable in
   out.rec
-    (motive_1 := fun d x _ => (dl.wfm salg x).defMem d)
+    (motive_1 := fun d x _ => (dl.wfm x).defMem d)
     (motive_2 := fun cycle cause _ =>
-      Cause.IsInapplicable cause cycle (dl.wfm salg))
-    (motive_3 := fun d x _ => ¬(dl.wfm salg x).posMem d)
+      Cause.IsInapplicable cause cycle (dl.wfm))
+    (motive_3 := fun d x _ => ¬(dl.wfm x).posMem d)
     (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
-      DefList.wfm_isModel salg dl ▸
+      DefList.wfm_isModel dl ▸
       isCause ⟨⟨ihBins, ihBout⟩, ihCins⟩)
     (fun _ _ _ => blockedContextIns)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundIns ihBins ihBout)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundOut ihBins ihBout)
     (fun cycle _ inCycle ih =>
-      empty_cycle_is_out salg dl cycle ih inCycle)
+      empty_cycle_is_out dl cycle ih inCycle)
 
 
 def Ins.isComplete
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  {d: salg.D}
+  (dl: DefList)
+  {d: Pair}
   {x: Nat}
-  (ins: (dl.wfm salg x).defMem d)
+  (ins: (dl.wfm x).defMem d)
 :
-  Ins salg dl d x
+  Ins dl d x
 :=
-  (completenessProofB salg dl).insIsComplete ins
+  (completenessProofB dl).insIsComplete ins
 
 def Out.isComplete
-  (salg: Salgebra sig)
-  (dl: DefList sig)
-  {d: salg.D}
+  (dl: DefList)
+  {d: Pair}
   {x: Nat}
-  (out: ¬(dl.wfm salg x).posMem d)
+  (out: ¬(dl.wfm x).posMem d)
 :
-  Out salg dl d x
+  Out dl d x
 :=
-  (completenessProofB salg dl).outIsComplete out
+  (completenessProofB dl).outIsComplete out
 
 
 def Ins.nopeOut
-  (isIns: Ins salg dl d x)
-  (isOut: Out salg dl d x)
+  (isIns: Ins dl d x)
+  (isOut: Out dl d x)
 :
   P
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
 
 def Ins.nopeNotDef
-  (isIns: Ins salg dl d x)
-  (notDef: ¬(dl.wfm salg x).defMem d)
+  (isIns: Ins dl d x)
+  (notDef: ¬(dl.wfm x).defMem d)
 :
   P
 :=
   False.elim (notDef (isIns.isSound))
 
 def Ins.nopeNotPos
-  (isIns: Ins salg dl d x)
-  (notPos: ¬(dl.wfm salg x).posMem d)
+  (isIns: Ins dl d x)
+  (notPos: ¬(dl.wfm x).posMem d)
 :
   P
 :=
@@ -123,24 +121,24 @@ def Ins.nopeNotPos
 
 
 def Out.nopeIns
-  (isOut: Out salg dl d x)
-  (isIns: Ins salg dl d x)
+  (isOut: Out dl d x)
+  (isIns: Ins dl d x)
 :
   P
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
 
 def Out.nopeDef
-  (isOut: Out salg dl d x)
-  (isDef: (dl.wfm salg x).defMem d)
+  (isOut: Out dl d x)
+  (isDef: (dl.wfm x).defMem d)
 :
   P
 :=
   False.elim (isOut.isSound (isDef.toPos))
 
 def Out.nopePos
-  (isOut: Out salg dl d x)
-  (isPos: (dl.wfm salg x).posMem d)
+  (isOut: Out dl d x)
+  (isPos: (dl.wfm x).posMem d)
 :
   P
 :=

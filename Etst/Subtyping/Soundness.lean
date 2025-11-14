@@ -2,7 +2,7 @@ import Etst.Subtyping.Utils.FixpointMethodsSoundness
 import Etst.Subtyping.UnivStx
 
 namespace Etst
-open PairExpr
+open Expr
 
 
 -- -- Fail to show termination ://///
@@ -27,7 +27,7 @@ open PairExpr
 --     | _, @Premise.indCoind dl fmsa vf df => sorry
 --   fmsIsSound fms premisesHold out isIn
 
-def PairDl.SubsetStx.isSound
+def DefList.SubsetStx.isSound
   (sub: SubsetStx dl a b)
 :
   dl.Subset a b
@@ -59,9 +59,9 @@ def PairDl.SubsetStx.isSound
       ⟨_, inCondB⟩)
     (fun _ _ => ⟨.null, rfl⟩)
     (fun _ _ isSubL isSubR _ _ =>
-      let ⟨_, inL⟩ := isSubL ⟨.null, rfl⟩
-      let ⟨_, inR⟩ := isSubR ⟨.null, rfl⟩
-      ⟨_, ⟨⟨_, inL⟩, ⟨⟨_, inR⟩, rfl⟩⟩⟩)
+      let ⟨l, inL⟩ := isSubL ⟨.null, rfl⟩
+      let ⟨r, inR⟩ := isSubR ⟨.null, rfl⟩
+      ⟨_, l, r, rfl, inL, inR⟩)
     (fun _ _ ab a _ _ =>
       let ⟨_, inA⟩ := a ⟨.null, rfl⟩
       ⟨_, ab inA⟩)
@@ -74,7 +74,7 @@ def PairDl.SubsetStx.isSound
     (fun _ _ out ih _ isIn => MutCoindDescriptor.isSound _ ih out isIn)
 
 
-def PairDl.Subset.toUniv
+def DefList.Subset.toUniv
   (sub: Subset dl a b)
 :
   dl.Univ (un (.compl a) b)
@@ -84,8 +84,8 @@ def PairDl.Subset.toUniv
     then inUnR (sub h)
     else inUnL h
 
-def PairDl.Univ.toSubset
-  {a b: SingleLanePairExpr}
+def DefList.Univ.toSubset
+  {a b: SingleLaneExpr}
   (univ: Univ dl (un (.compl a) b))
 :
   Subset dl a b
@@ -96,7 +96,7 @@ def PairDl.Univ.toSubset
       id
 
 
-def PairDl.UnivStx.isSound
+def DefList.UnivStx.isSound
   (univ: UnivStx dl expr)
 :
   dl.Univ expr
@@ -118,8 +118,8 @@ def PairDl.UnivStx.isSound
       let isSubset := mutDesc.isSound (fun i => (premises i).toSubset) i
       isSubset.toUniv p)
 
-open PairDl.UnivStx in
-noncomputable def PairDl.SubsetStx.toUniv
+open DefList.UnivStx in
+noncomputable def DefList.SubsetStx.toUniv
   (sub: SubsetStx dl a b)
 :
   UnivStx dl (un (.compl a) b)
@@ -130,7 +130,7 @@ noncomputable def PairDl.SubsetStx.toUniv
       | x, .defLane => excludedMiddle (.var .defLane x)
       | x, .posLane =>
         let em := excludedMiddle (dl := dl) (.var .posLane x)
-        show dl.UnivStx (un (Expr.compl (.var .defLane x)) (.var .posLane x)) from
+        show dl.UnivStx (un (.compl (.var .defLane x)) (.var .posLane x)) from
         sorry)
     sorry
     sorry

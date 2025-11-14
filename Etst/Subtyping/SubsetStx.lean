@@ -48,65 +48,81 @@ import Etst.WFC.Ch5_S1_AProofSystem
 import Etst.WFC.Utils.InterpretationMono
 
 namespace Etst
-open PairExpr
+open Expr
 
 
 -- Semantic entailment.
-abbrev PairDl.Subset (dl: PairDl) (a b: SingleLanePairExpr) :=
+abbrev DefList.Subset (dl: DefList) (a b: SingleLaneExpr) :=
   Set.Subset (a.intp [] dl.wfm) (b.intp [] dl.wfm)
 
 
 def Expr.replaceComplZeroVars
-  (e: Expr E sig)
-  (replacer: E → Nat → Expr E sig)
+  (e: Expr E)
+  (replacer: E → Nat → Expr E)
 :
-  Expr E sig
+  Expr E
 :=
   match e with
   | var i x => replacer i x
   | bvar x => .bvar x
-  | op o args => op o fun param => (args param).replaceComplZeroVars replacer
+  | null => null
+  | pair left rite =>
+      pair
+        (left.replaceComplZeroVars replacer)
+        (rite.replaceComplZeroVars replacer)
+  | un left rite =>
+      un
+        (left.replaceComplZeroVars replacer)
+        (rite.replaceComplZeroVars replacer)
+  | ir left rite =>
+      ir
+        (left.replaceComplZeroVars replacer)
+        (rite.replaceComplZeroVars replacer)
+  | condSome body =>
+      condSome (body.replaceComplZeroVars replacer)
+  | condFull body =>
+      condFull (body.replaceComplZeroVars replacer)
   | compl body => compl body -- Note: no replacing in complements.
   | arbUn body => arbUn (body.replaceComplZeroVars replacer)
   | arbIr body => arbIr (body.replaceComplZeroVars replacer)
 
 
 -- Represents an inductive proof of `var .posLane left ⊆ rite`
-structure InductionDescriptor (dl: PairDl) where
+structure InductionDescriptor (dl: DefList) where
   left: Nat
-  rite: SingleLanePairExpr
+  rite: SingleLaneExpr
   riteIsClean: rite.IsClean
-  expansion: BasicPairExpr
+  expansion: BasicExpr
   expandsInto: ExpandsInto dl (dl.getDef left) expansion
 
 -- Represents a coinductive proof of `left ⊆ var .defLane rite`
-structure CoinductionDescriptor (dl: PairDl) where
-  left: SingleLanePairExpr
+structure CoinductionDescriptor (dl: DefList) where
+  left: SingleLaneExpr
   rite: Nat
   leftIsClean: left.IsClean
-  expansion: BasicPairExpr
+  expansion: BasicExpr
   expandsInto: ExpandsInto dl (dl.getDef rite) expansion
 
-abbrev MutIndDescriptor (dl: PairDl) := List (InductionDescriptor dl)
-abbrev MutCoindDescriptor (dl: PairDl) := List (CoinductionDescriptor dl)
+abbrev MutIndDescriptor (dl: DefList) := List (InductionDescriptor dl)
+abbrev MutCoindDescriptor (dl: DefList) := List (CoinductionDescriptor dl)
 
 def InductionDescriptor.hypothesis
   (x: Nat)
   (desc: InductionDescriptor dl)
-  (expr: SingleLanePairExpr)
+  (expr: SingleLaneExpr)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
-  if desc.left = x then ir desc.rite expr else expr
+  if desc.left = x then .ir desc.rite expr else expr
 
 def CoinductionDescriptor.hypothesis
   (x: Nat)
   (desc: CoinductionDescriptor dl)
-  (expr: SingleLanePairExpr)
+  (expr: SingleLaneExpr)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
-  if desc.rite = x then ir (.compl desc.left) expr else expr
+  if desc.rite = x then .ir (.compl desc.left) expr else expr
 
 def MutIndDescriptor.hypothesis
   (desc: MutIndDescriptor dl)
@@ -116,7 +132,7 @@ def MutIndDescriptor.hypothesis
   (_: SingleLaneVarType)
   (x: Nat)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
   desc.foldr (InductionDescriptor.hypothesis x) (.var .posLane x)
 
@@ -126,60 +142,60 @@ def MutCoindDescriptor.hypothesis
   (_: SingleLaneVarType)
   (x: Nat)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
   desc.foldr (CoinductionDescriptor.hypothesis x) (.var .defLane x)
 
 def MutIndDescriptor.hypothesify
   (desc: MutIndDescriptor dl)
-  (expr: SingleLanePairExpr)
+  (expr: SingleLaneExpr)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
   expr.replaceComplZeroVars desc.hypothesis
 
 def MutCoindDescriptor.hypothesify
   (desc: MutCoindDescriptor dl)
-  (expr: SingleLanePairExpr)
+  (expr: SingleLaneExpr)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
   .compl (expr.replaceComplZeroVars desc.hypothesis)
 
 def InductionDescriptor.exprLeft
   (desc: InductionDescriptor dl)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
   .var .posLane desc.left
 
 def CoinductionDescriptor.exprLeft
   (desc: CoinductionDescriptor dl)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
   desc.left
 
 def InductionDescriptor.exprRite
   (desc: InductionDescriptor dl)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
   desc.rite
 
 def CoinductionDescriptor.exprRite
   (desc: CoinductionDescriptor dl)
 :
-  SingleLanePairExpr
+  SingleLaneExpr
 :=
   .compl (.var .defLane desc.rite)
 
 
 -- Syntactic entailment.
-inductive PairDl.SubsetStx
-  (dl: PairDl)
+inductive DefList.SubsetStx
+  (dl: DefList)
 :
-  SingleLanePairExpr → SingleLanePairExpr → Type
+  SingleLaneExpr → SingleLaneExpr → Type
 
 | varDef
     {x: Nat}
@@ -191,21 +207,25 @@ inductive PairDl.SubsetStx
 | bvar {x: Nat}:
     SubsetStx dl (.bvar x) (.bvar x)
 
-| subNull: SubsetStx dl null null
+| subNull: SubsetStx dl .null .null
 | subPair
     (sl: SubsetStx dl al bl)
     (sr: SubsetStx dl ar br)
   :
-    SubsetStx dl (pair al ar) (pair bl br)
+    SubsetStx dl (.pair al ar) (.pair bl br)
 
-| subUnL {r: SingleLanePairExpr} (s: SubsetStx dl a b): SubsetStx dl a (un b r)
+| subUnL
+    {r: SingleLaneExpr}
+    (s: SubsetStx dl a b)
+  :
+    SubsetStx dl a (.un b r)
 | subUn
     (ac: SubsetStx dl a c)
     (bc: SubsetStx dl b c)
   :
-    SubsetStx dl (un a b) c
-| subUnSymmA (s: SubsetStx dl (un x y) b): SubsetStx dl (un y x) b
-| subUnSymmB (s: SubsetStx dl a (un x y)): SubsetStx dl a (un y x)
+    SubsetStx dl (.un a b) c
+| subUnSymmA (s: SubsetStx dl (.un x y) b): SubsetStx dl (.un y x) b
+| subUnSymmB (s: SubsetStx dl a (.un x y)): SubsetStx dl a (.un y x)
 
 -- TODO emDef (a ⊆ :b | !:b)
 -- emPos
@@ -220,36 +240,36 @@ inductive PairDl.SubsetStx
 -- (al | ar) & (al -> bl) & (ar -> br) ⊆ bl | br
 
 | subIrL
-    {r: SingleLanePairExpr}
+    {r: SingleLaneExpr}
     (s: SubsetStx dl a b)
   :
-    SubsetStx dl (ir a r) b
+    SubsetStx dl (.ir a r) b
 | subIr
     (ac: SubsetStx dl c a)
     (bc: SubsetStx dl c b)
   :
-    SubsetStx dl c (ir a b)
-| subIrSymmA (s: SubsetStx dl (ir x y) b): SubsetStx dl (ir y x) b
-| subIrSymmB (s: SubsetStx dl a (ir x y)): SubsetStx dl a (ir y x)
+    SubsetStx dl c (.ir a b)
+| subIrSymmA (s: SubsetStx dl (.ir x y) b): SubsetStx dl (.ir y x) b
+| subIrSymmB (s: SubsetStx dl a (.ir x y)): SubsetStx dl a (.ir y x)
 
 | subCondSomeExp
-    (sx: SubsetStx dl Expr.any (condSome a))
-    (s: SubsetStx dl a (condSome b))
+    (sx: SubsetStx dl Expr.any (.condSome a))
+    (s: SubsetStx dl a (.condSome b))
   :
-    SubsetStx dl Expr.any (condSome b)
+    SubsetStx dl Expr.any (.condSome b)
 | subCondSomeNull:
-    SubsetStx dl Expr.any (condSome null)
+    SubsetStx dl Expr.any (.condSome .null)
 | subCondSomePair
-    (sl: SubsetStx dl Expr.any (condSome l))
-    (sr: SubsetStx dl Expr.any (condSome r))
+    (sl: SubsetStx dl Expr.any (.condSome l))
+    (sr: SubsetStx dl Expr.any (.condSome r))
   :
-    SubsetStx dl Expr.any (condSome (pair l r))
+    SubsetStx dl Expr.any (.condSome (.pair l r))
     
 | subCondSome
     (ab: SubsetStx dl a b)
-    (sa: SubsetStx dl Expr.any (condSome a))
+    (sa: SubsetStx dl Expr.any (.condSome a))
   :
-    SubsetStx dl Expr.any (condSome b)
+    SubsetStx dl Expr.any (.condSome b)
 
 | subCompl
     (s: SubsetStx dl a b)
@@ -299,7 +319,7 @@ inductive PairDl.SubsetStx
     SubsetStx dl desc[i].exprLeft desc[i].exprRite
 
 
-namespace PairDl.SubsetStx
+namespace DefList.SubsetStx
   -- def elimSubUn
   --   (s: SubsetStx dl (un al ar) b)
   -- :
@@ -309,31 +329,31 @@ namespace PairDl.SubsetStx
   --   | subUn ac bc => (ac, bc)
   
   def subUnR
-    {l: SingleLanePairExpr}
+    {l: SingleLaneExpr}
     (s: SubsetStx dl a b)
   :
-    SubsetStx dl a (PairExpr.un l b)
+    SubsetStx dl a (.un l b)
   :=
     subUnSymmB (subUnL s)
   
   def subUnSymmA.test
-    (s: SubsetStx dl (un x y) b)
+    (s: SubsetStx dl (.un x y) b)
   :
-    SubsetStx dl (un y x) b
+    SubsetStx dl (.un y x) b
   :=
     sorry
   
   def subIrR
-    {l: SingleLanePairExpr}
+    {l: SingleLaneExpr}
     (s: SubsetStx dl a b)
   :
-    SubsetStx dl (PairExpr.ir l a) b
+    SubsetStx dl (.ir l a) b
   :=
     subIrSymmA (subIrL s)
   
   
   def subId
-    {a: Expr SingleLaneVarType pairSignature}
+    {a: Expr SingleLaneVarType}
   :
     SubsetStx dl a a
   :=
@@ -343,15 +363,30 @@ namespace PairDl.SubsetStx
       | .defLane => varDef
       | .posLane => varPos
     | .bvar _ => bvar
-    | .op .null args => null_eq ▸ subNull
-    | .op .pair args => pair_eq args ▸ subPair subId subId
-    | .op .un args => un_eq args ▸ subUn (subUnL subId) (subUnR subId)
-    | .op .ir args => ir_eq args ▸ subIr (subIrL subId) (subIrR subId)
-    | .op .condSome args => condSome_eq args ▸ sorry
-    | .op .condFull args => condFull_eq args ▸ sorry
-    | .compl body => subCompl subId
-    | .arbUn body => sorry
-    | .arbIr body => sorry
+    | .null => subNull
+    | .pair _ _ => subPair subId subId
+    | .un _ _ => subUn (subUnL subId) (subUnR subId)
+    | .ir _ _ => subIr (subIrL subId) (subIrR subId)
+    | .condSome _ => sorry
+    | .condFull _ => sorry
+    | .compl _ => subCompl subId
+    | .arbUn _ => sorry
+    | .arbIr _ => sorry
+  
+  
+  def mutCoinduction.test
+    (desc: MutCoindDescriptor dl)
+    (premises:
+      (i: desc.Index) →
+      SubsetStx
+        dl
+        desc[i].left
+        (desc.hypothesify (desc[i].expansion.toLane .defLane)))
+    (i: desc.Index)
+  :
+    SubsetStx dl desc[i].exprLeft desc[i].exprRite
+  :=
+    sorry
   
   
   def induction
@@ -395,7 +430,7 @@ namespace PairDl.SubsetStx
       SubsetStx
         dl
         (((dl.getDef left).toLane .posLane).replaceComplZeroVars fun _ x =>
-          if left = x then PairExpr.ir rite (.var .posLane x) else (.var .posLane x))
+          if left = x then .ir rite (.var .posLane x) else (.var .posLane x))
         rite)
   :
     SubsetStx dl (.var .posLane left) rite
@@ -419,7 +454,7 @@ namespace PairDl.SubsetStx
         left
         (.compl
           (((dl.getDef rite).toLane .defLane).replaceComplZeroVars fun _ x =>
-            if rite = x then PairExpr.ir (.compl left) (.var .defLane x) else (.var .defLane x))))
+            if rite = x then .ir (.compl left) (.var .defLane x) else (.var .defLane x))))
   :
     SubsetStx dl left (.compl (.var .defLane rite))
   :=
@@ -432,4 +467,4 @@ namespace PairDl.SubsetStx
         expandsInto := .rfl
       }
       premise
-end PairDl.SubsetStx
+end DefList.SubsetStx
