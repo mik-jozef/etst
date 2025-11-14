@@ -51,11 +51,6 @@ namespace Etst
 open Expr
 
 
--- Semantic entailment.
-abbrev DefList.Subset (dl: DefList) (a b: SingleLaneExpr) :=
-  Set.Subset (a.intp [] dl.wfm) (b.intp [] dl.wfm)
-
-
 def Expr.replaceComplZeroVars
   (e: Expr E)
   (replacer: E → Nat → Expr E)
@@ -191,41 +186,54 @@ def CoinductionDescriptor.exprRite
   .compl (.var .defLane desc.rite)
 
 
+inductive ContextVariableKind
+| cs
+| ex
+| uv
+
+structure ContextVariable where
+  kind: ContextVariableKind
+  satisfies: SingleLaneExpr
+
 -- Syntactic entailment.
 inductive DefList.SubsetStx
   (dl: DefList)
 :
-  SingleLaneExpr → SingleLaneExpr → Type
+  List ContextVariable →
+  SingleLaneExpr →
+  SingleLaneExpr →
+  Type
 
 | varDef
     {x: Nat}
     {lane: SingleLaneVarType}
+    {ctx}
   :
-    SubsetStx dl (.var .defLane x) (.var lane x)
-| varPos {x: Nat}:
-    SubsetStx dl (.var .posLane x) (.var .posLane x)
-| bvar {x: Nat}:
-    SubsetStx dl (.bvar x) (.bvar x)
+    SubsetStx dl ctx (.var .defLane x) (.var lane x)
+| varPos {x: Nat} {ctx}:
+    SubsetStx dl ctx (.var .posLane x) (.var .posLane x)
+| bvar {x: Nat} {ctx}:
+    SubsetStx dl ctx (.bvar x) (.bvar x)
 
-| subNull: SubsetStx dl .null .null
+| subNull: SubsetStx dl ctx .null .null
 | subPair
-    (sl: SubsetStx dl al bl)
-    (sr: SubsetStx dl ar br)
+    (sl: SubsetStx dl ctx al bl)
+    (sr: SubsetStx dl ctx ar br)
   :
-    SubsetStx dl (.pair al ar) (.pair bl br)
+    SubsetStx dl ctx (.pair al ar) (.pair bl br)
 
 | subUnL
     {r: SingleLaneExpr}
-    (s: SubsetStx dl a b)
+    (s: SubsetStx dl ctx a b)
   :
-    SubsetStx dl a (.un b r)
+    SubsetStx dl ctx a (.un b r)
 | subUn
-    (ac: SubsetStx dl a c)
-    (bc: SubsetStx dl b c)
+    (ac: SubsetStx dl ctx a c)
+    (bc: SubsetStx dl ctx b c)
   :
-    SubsetStx dl (.un a b) c
-| subUnSymmA (s: SubsetStx dl (.un x y) b): SubsetStx dl (.un y x) b
-| subUnSymmB (s: SubsetStx dl a (.un x y)): SubsetStx dl a (.un y x)
+    SubsetStx dl ctx (.un a b) c
+| subUnSymmA (s: SubsetStx dl ctx (.un x y) b): SubsetStx dl ctx (.un y x) b
+| subUnSymmB (s: SubsetStx dl ctx a (.un x y)): SubsetStx dl ctx a (.un y x)
 
 -- TODO emDef (a ⊆ :b | !:b)
 -- emPos
@@ -241,69 +249,70 @@ inductive DefList.SubsetStx
 
 | subIrL
     {r: SingleLaneExpr}
-    (s: SubsetStx dl a b)
+    (s: SubsetStx dl ctx a b)
   :
-    SubsetStx dl (.ir a r) b
+    SubsetStx dl ctx (.ir a r) b
 | subIr
-    (ac: SubsetStx dl c a)
-    (bc: SubsetStx dl c b)
+    (ac: SubsetStx dl ctx c a)
+    (bc: SubsetStx dl ctx c b)
   :
-    SubsetStx dl c (.ir a b)
-| subIrSymmA (s: SubsetStx dl (.ir x y) b): SubsetStx dl (.ir y x) b
-| subIrSymmB (s: SubsetStx dl a (.ir x y)): SubsetStx dl a (.ir y x)
+    SubsetStx dl ctx c (.ir a b)
+| subIrSymmA (s: SubsetStx dl ctx (.ir x y) b): SubsetStx dl ctx (.ir y x) b
+| subIrSymmB (s: SubsetStx dl ctx a (.ir x y)): SubsetStx dl ctx a (.ir y x)
 
 | subCondSomeExp
-    (sx: SubsetStx dl Expr.any (.condSome a))
-    (s: SubsetStx dl a (.condSome b))
+    (sx: SubsetStx dl ctx Expr.any (.condSome a))
+    (s: SubsetStx dl ctx a (.condSome b))
   :
-    SubsetStx dl Expr.any (.condSome b)
+    SubsetStx dl ctx Expr.any (.condSome b)
 | subCondSomeNull:
-    SubsetStx dl Expr.any (.condSome .null)
+    SubsetStx dl ctx Expr.any (.condSome .null)
 | subCondSomePair
-    (sl: SubsetStx dl Expr.any (.condSome l))
-    (sr: SubsetStx dl Expr.any (.condSome r))
+    (sl: SubsetStx dl ctx Expr.any (.condSome l))
+    (sr: SubsetStx dl ctx Expr.any (.condSome r))
   :
-    SubsetStx dl Expr.any (.condSome (.pair l r))
+    SubsetStx dl ctx Expr.any (.condSome (.pair l r))
     
 | subCondSome
-    (ab: SubsetStx dl a b)
-    (sa: SubsetStx dl Expr.any (.condSome a))
+    (ab: SubsetStx dl ctx a b)
+    (sa: SubsetStx dl ctx Expr.any (.condSome a))
   :
-    SubsetStx dl Expr.any (.condSome b)
+    SubsetStx dl ctx Expr.any (.condSome b)
 
 | subCompl
-    (s: SubsetStx dl a b)
+    (s: SubsetStx dl ctx a b)
   :
-    SubsetStx dl (.compl b) (.compl a)
+    SubsetStx dl ctx (.compl b) (.compl a)
 
 | unfoldA
-    (s: SubsetStx dl (.var lane a) b)
+    (s: SubsetStx dl ctx (.var lane a) b)
   :
-    SubsetStx dl ((dl.getDef a).toLane lane) b
+    SubsetStx dl ctx ((dl.getDef a).toLane lane) b
 | unfoldB
-    (s: SubsetStx dl a (.var lane b))
+    (s: SubsetStx dl ctx a (.var lane b))
   :
-    SubsetStx dl a ((dl.getDef b).toLane lane)
+    SubsetStx dl ctx a ((dl.getDef b).toLane lane)
 
 | foldA
-    (s: SubsetStx dl ((dl.getDef a).toLane lane) b)
+    (s: SubsetStx dl ctx ((dl.getDef a).toLane lane) b)
   :
-    SubsetStx dl (.var lane a) b
+    SubsetStx dl ctx (.var lane a) b
 | foldB
-    (s: SubsetStx dl a ((dl.getDef b).toLane lane))
+    (s: SubsetStx dl ctx a ((dl.getDef b).toLane lane))
   :
-    SubsetStx dl a (.var lane b)
+    SubsetStx dl ctx a (.var lane b)
 | mutInduction
     (desc: MutIndDescriptor dl)
     (premises:
       (i: desc.Index) →
       SubsetStx
         dl
+        ctx
         (desc.hypothesify (desc[i].expansion.toLane .posLane))
         desc[i].rite)
     (i: desc.Index)
   :
-    SubsetStx dl desc[i].exprLeft desc[i].exprRite
+    SubsetStx dl ctx desc[i].exprLeft desc[i].exprRite
 -- TODO this should be reducible to mutInduction using
 -- some complement magic, not a separate rule.
 | mutCoinduction
@@ -312,11 +321,12 @@ inductive DefList.SubsetStx
       (i: desc.Index) →
       SubsetStx
         dl
+        ctx
         desc[i].left
         (desc.hypothesify (desc[i].expansion.toLane .defLane)))
     (i: desc.Index)
   :
-    SubsetStx dl desc[i].exprLeft desc[i].exprRite
+    SubsetStx dl ctx desc[i].exprLeft desc[i].exprRite
 
 
 namespace DefList.SubsetStx
@@ -330,24 +340,24 @@ namespace DefList.SubsetStx
   
   def subUnR
     {l: SingleLaneExpr}
-    (s: SubsetStx dl a b)
+    (s: SubsetStx dl ctx a b)
   :
-    SubsetStx dl a (.un l b)
+    SubsetStx dl ctx a (.un l b)
   :=
     subUnSymmB (subUnL s)
   
   def subUnSymmA.test
-    (s: SubsetStx dl (.un x y) b)
+    (s: SubsetStx dl ctx (.un x y) b)
   :
-    SubsetStx dl (.un y x) b
+    SubsetStx dl ctx (.un y x) b
   :=
     sorry
   
   def subIrR
     {l: SingleLaneExpr}
-    (s: SubsetStx dl a b)
+    (s: SubsetStx dl ctx a b)
   :
-    SubsetStx dl (.ir l a) b
+    SubsetStx dl ctx (.ir l a) b
   :=
     subIrSymmA (subIrL s)
   
@@ -355,7 +365,7 @@ namespace DefList.SubsetStx
   def subId
     {a: Expr SingleLaneVarType}
   :
-    SubsetStx dl a a
+    SubsetStx dl ctx a a
   :=
     match a with
     | .var lane _ =>
@@ -380,11 +390,12 @@ namespace DefList.SubsetStx
       (i: desc.Index) →
       SubsetStx
         dl
+        ctx
         desc[i].left
         (desc.hypothesify (desc[i].expansion.toLane .defLane)))
     (i: desc.Index)
   :
-    SubsetStx dl desc[i].exprLeft desc[i].exprRite
+    SubsetStx dl ctx desc[i].exprLeft desc[i].exprRite
   :=
     sorry
   
@@ -394,11 +405,12 @@ namespace DefList.SubsetStx
     (premise:
       SubsetStx
         dl
+        ctx
         ((desc.expansion.toLane .posLane).replaceComplZeroVars fun _ x =>
           desc.hypothesis x (.var .posLane x))
         desc.rite)
   :
-    SubsetStx dl (.var .posLane desc.left) desc.rite
+    SubsetStx dl ctx (.var .posLane desc.left) desc.rite
   :=
     mutInduction
       [desc]
@@ -410,12 +422,13 @@ namespace DefList.SubsetStx
     (premise:
       SubsetStx
         dl
+        ctx
         desc.left
         (.compl
           ((desc.expansion.toLane .defLane).replaceComplZeroVars fun _ x =>
             desc.hypothesis x (.var .defLane x))))
   :
-    SubsetStx dl desc.left (.compl (.var .defLane desc.rite))
+    SubsetStx dl ctx desc.left (.compl (.var .defLane desc.rite))
   :=
     mutCoinduction
       [desc]
@@ -429,11 +442,12 @@ namespace DefList.SubsetStx
     (premise:
       SubsetStx
         dl
+        ctx
         (((dl.getDef left).toLane .posLane).replaceComplZeroVars fun _ x =>
           if left = x then .ir rite (.var .posLane x) else (.var .posLane x))
         rite)
   :
-    SubsetStx dl (.var .posLane left) rite
+    SubsetStx dl ctx (.var .posLane left) rite
   :=
     induction
       {
@@ -451,12 +465,13 @@ namespace DefList.SubsetStx
     (premise:
       SubsetStx
         dl
+        ctx
         left
         (.compl
           (((dl.getDef rite).toLane .defLane).replaceComplZeroVars fun _ x =>
             if rite = x then .ir (.compl left) (.var .defLane x) else (.var .defLane x))))
   :
-    SubsetStx dl left (.compl (.var .defLane rite))
+    SubsetStx dl ctx left (.compl (.var .defLane rite))
   :=
     coinduction
       {
@@ -468,3 +483,11 @@ namespace DefList.SubsetStx
       }
       premise
 end DefList.SubsetStx
+
+
+-- Semantic entailment.
+abbrev DefList.Subset
+  (dl: DefList)
+  (a b: SingleLaneExpr)
+:=
+  Set.Subset (a.intp [] dl.wfm) (b.intp [] dl.wfm)

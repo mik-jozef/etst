@@ -71,7 +71,7 @@ abbrev IsSub := SubsetStx TestDl.toDefList
 abbrev IsUniv := UnivStx TestDl.toDefList
 
 
-def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
+def SubsetStx.natSub: IsSub [] s3(.Nat) s3(:Nat) :=
   simpleInduction
     TestDl.vars.Nat
     rfl
@@ -84,11 +84,11 @@ def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
               .varDef)
             .subNull))))
 
-def SubsetStx.natNotNat: IsSub s3(.Any) s3(:Nat | !.Nat) :=
+def SubsetStx.natNotNat: IsSub [] s3(.Any) s3(:Nat | !.Nat) :=
   sorry
 
 
-def natLeZeroThen: IsSub s3(.Nat) s3(:ThenNatLeZero) :=
+def natLeZeroThen: IsSub [] s3(.Nat) s3(:ThenNatLeZero) :=
   simpleInduction
     TestDl.vars.Nat
     rfl
@@ -111,7 +111,7 @@ def SubsetStx.AddSymm :=
     s3(All a: Nat, All b: Nat, Eq (add a b) (add b a))
 
 def SubsetStx.addSymmNat:
-  IsSub s3(.Nat) AddSymm
+  IsSub [] s3(.Nat) AddSymm
 :=
   simpleInduction
     TestDl.vars.Nat
@@ -119,13 +119,13 @@ def SubsetStx.addSymmNat:
     sorry
 
 def SubsetStx.addSymm:
-  IsSub s3(:Any) AddSymm
+  IsSub [] s3(:Any) AddSymm
 :=
   sorry
 
 
 def SubsetStx.infinitudeOfPrimes:
-  IsSub s3(.Any) s3(:PrimesInf)
+  IsSub [] s3(.Any) s3(:PrimesInf)
 :=
   sorry
 

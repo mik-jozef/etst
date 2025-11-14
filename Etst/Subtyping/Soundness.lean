@@ -5,41 +5,21 @@ namespace Etst
 open Expr
 
 
--- -- Fail to show termination ://///
--- def Subset.isSound:
---   Subset dl a b →
---   IsDefSubset (a.intp [] dl.wfm) (b.intp [] dl.wfm)
--- |
---   null, _, isIn => isIn
--- | pair sl sr, .pair a b, isIn =>
---   let ⟨inwL, inwR⟩ := inwPairElim isIn
---   insPair (sl.isSound inwL) (sr.isSound inwR)
--- | unL s, _, isIn =>
---   insUnL (s.isSound isIn)
--- | unR s, _, isIn =>
---   insUnR (s.isSound isIn)
--- | fixpointMethods fms premises out, _, isIn =>
---   let premisesHold (i: fms.Index): PremiseHolds fms fms[i] :=
---     match fms[i], premises i with
---     | .induction desc, .ind premise =>
---       PremiseHolds.ind premise.isSound
---     | _, @Premise.coind dl fmsa vf df => sorry
---     | _, @Premise.indCoind dl fmsa vf df => sorry
---   fmsIsSound fms premisesHold out isIn
-
 def DefList.SubsetStx.isSound
-  (sub: SubsetStx dl a b)
+  (sub: SubsetStx dl ctx a b)
 :
   dl.Subset a b
 :=
+  -- Using match expressions resulted in "failed to show termination".
+  -- That was before the removal of signatures, maybe now it would work :shrug:
   sub.rec
-    (motive := fun a b _ => dl.Subset a b)
+    (motive := fun _ctx a b _ => dl.Subset a b)
     (@fun
-      | _, .defLane, _, isIn => isIn
-      | _, .posLane, _, isIn => isIn.toPos)
+      | _, .defLane, _, _, isIn => isIn
+      | _, .posLane, _, _, isIn => isIn.toPos)
     id
     id
-    (fun _ isIn => isIn)
+    id
     (fun
     | _, _, isSubL, isSubR, .pair _ _, isIn =>
       let ⟨inwL, inwR⟩ := inPairElim isIn
@@ -57,7 +37,7 @@ def DefList.SubsetStx.isSound
       let ⟨_, inA⟩ := isSubA ⟨.null, rfl⟩
       let ⟨_, inCondB⟩ := isSubB inA
       ⟨_, inCondB⟩)
-    (fun _ _ => ⟨.null, rfl⟩)
+    (fun _ => ⟨.null, rfl⟩)
     (fun _ _ isSubL isSubR _ _ =>
       let ⟨l, inL⟩ := isSubL ⟨.null, rfl⟩
       let ⟨r, inR⟩ := isSubR ⟨.null, rfl⟩
@@ -120,12 +100,12 @@ def DefList.UnivStx.isSound
 
 open DefList.UnivStx in
 noncomputable def DefList.SubsetStx.toUniv
-  (sub: SubsetStx dl a b)
+  (sub: SubsetStx dl ctx a b)
 :
   UnivStx dl (un (.compl a) b)
 :=
   sub.rec
-    (motive := fun a b _ => UnivStx dl (un (.compl a) b))
+    (motive := fun _ a b _ => UnivStx dl (un (.compl a) b))
     (@fun
       | x, .defLane => excludedMiddle (.var .defLane x)
       | x, .posLane =>
