@@ -139,7 +139,7 @@ def MutCoindDescriptor.hypothesis
 :
   SingleLaneExpr
 :=
-  desc.foldr (CoinductionDescriptor.hypothesis x) (.var .defLane x)
+  desc.foldr (CoinductionDescriptor.hypothesis x) (.var .posLane x)
 
 def MutIndDescriptor.hypothesify
   (desc: MutIndDescriptor dl)
@@ -183,7 +183,7 @@ def CoinductionDescriptor.exprRite
 :
   SingleLaneExpr
 :=
-  .compl (.var .defLane desc.rite)
+  .compl (.var .posLane desc.rite)
 
 
 inductive ContextVariableKind
@@ -323,7 +323,7 @@ inductive DefList.SubsetStx
         dl
         ctx
         desc[i].left
-        (desc.hypothesify (desc[i].expansion.toLane .defLane)))
+        (desc.hypothesify (desc[i].expansion.toLane .posLane)))
     (i: desc.Index)
   :
     SubsetStx dl ctx desc[i].exprLeft desc[i].exprRite
@@ -425,10 +425,10 @@ namespace DefList.SubsetStx
         ctx
         desc.left
         (.compl
-          ((desc.expansion.toLane .defLane).replaceComplZeroVars fun _ x =>
-            desc.hypothesis x (.var .defLane x))))
+          ((desc.expansion.toLane .posLane).replaceComplZeroVars fun _ x =>
+            desc.hypothesis x (.var .posLane x))))
   :
-    SubsetStx dl ctx desc.left (.compl (.var .defLane desc.rite))
+    SubsetStx dl ctx desc.left (.compl (.var .posLane desc.rite))
   :=
     mutCoinduction
       [desc]
@@ -468,10 +468,10 @@ namespace DefList.SubsetStx
         ctx
         left
         (.compl
-          (((dl.getDef rite).toLane .defLane).replaceComplZeroVars fun _ x =>
-            if rite = x then .ir (.compl left) (.var .defLane x) else (.var .defLane x))))
+          (((dl.getDef rite).toLane .posLane).replaceComplZeroVars fun _ x =>
+            if rite = x then .ir (.compl left) (.var .posLane x) else (.var .posLane x))))
   :
-    SubsetStx dl ctx left (.compl (.var .defLane rite))
+    SubsetStx dl ctx left (.compl (.var .posLane rite))
   :=
     coinduction
       {

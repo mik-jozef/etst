@@ -27,7 +27,7 @@ def CoinductionDescriptor.Invariant
   (desc: CoinductionDescriptor dl)
   (wfm v: Valuation Pair)
 :=
-  Set.Subset (desc.left.intp [] wfm) (v desc.rite).defMem.compl
+  Set.Subset (desc.left.intp [] wfm) (v desc.rite).compl.defMem
 
 
 def MutIndDescriptor.var_le_hypothesify
@@ -101,10 +101,10 @@ def MutCoindDescriptor.var_hypothesify_le
   (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
   (v_le: v ≤ dl.wfm)
 :
-  (v x).defMem ≤ intp (desc.hypothesis .defLane x) bv dl.wfm
+  (v x).posMem ≤ intp (desc.hypothesis .defLane x) bv dl.wfm
 :=
   match desc with
-  | [] => (v_le x).defLe
+  | [] => (v_le x).posLe
   | desc :: (rest: MutCoindDescriptor dl) =>
     show _ ≤ intp (if _ then _ else _) bv dl.wfm from
     let invTail := List.Index.indexedTail
@@ -126,7 +126,7 @@ def MutCoindDescriptor.hypothesify_le
   (desc: MutCoindDescriptor dl)
   (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
   {expr: SingleLaneExpr}
-  (isConstrained: expr.LaneEqCtx .defLane)
+  (isConstrained: expr.LaneEqCtx .posLane)
   (v_le: v ≤ dl.wfm)
 :
   (intp (expr.replaceComplZeroVars desc.hypothesis) bv dl.wfm).compl
@@ -136,14 +136,14 @@ def MutCoindDescriptor.hypothesify_le
   let rec helper
     (bv: List Pair)
     {expr: SingleLaneExpr}
-    (isConstrained: Expr.LaneEqCtx .defLane expr)
+    (isConstrained: Expr.LaneEqCtx .posLane expr)
   :
     Set.Subset
       (expr.intp2 bv dl.wfm v)
       (intp (expr.replaceComplZeroVars desc.hypothesis) bv dl.wfm)
   :=
     match expr with
-    | .var .defLane _ => desc.var_hypothesify_le inv v_le
+    | .var .posLane _ => desc.var_hypothesify_le inv v_le
     | .bvar _ => fun _ => id
     | .null => fun _ => id
     | .pair _ _ =>
@@ -220,7 +220,7 @@ def MutCoindDescriptor.isSound
     (i: desc.Index) →
     dl.Subset
       desc[i].left
-      (desc.hypothesify (desc[i].expansion.toLane .defLane)))
+      (desc.hypothesify (desc[i].expansion.toLane .posLane)))
   (i: desc.Index)
 :
   dl.Subset desc[i].exprLeft desc[i].exprRite
@@ -237,7 +237,7 @@ def MutCoindDescriptor.isSound
         let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
         let s3Eq: v _ = s3 := s3Eq
         let pIn:
-          p ∈ ((operatorC dl dl.wfm).lfpStage m desc[i].rite).defMem
+          p ∈ ((operatorC dl dl.wfm).lfpStage m desc[i].rite).posMem
         :=
           vEq ▸ s3Eq ▸ atStage
         ih m i isPos pIn)
@@ -247,9 +247,9 @@ def MutCoindDescriptor.isSound
         let predStage := op.lfpStage n.pred
         let predStageLe := dl.lfpStage_le_wfm_std n.pred
         let expLe := desc[i].expandsInto.lfpStage_le_std [] n.pred
-        let laneEq := desc[i].expansion.laneEqCtx .defLane
+        let laneEq := desc[i].expansion.laneEqCtx .posLane
         let lePremiseR := desc.hypothesify_le ihPred laneEq predStageLe
-        expLe.notDefLe (lePremiseR (premisesHold i isPos))
+        expLe.notPosLe (lePremiseR (premisesHold i isPos))
       )
   
   by rw [←eq] at isDefSub; exact isDefSub i
