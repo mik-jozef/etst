@@ -13,31 +13,25 @@ def DefList.SubsetStx.isSound
   -- Using match expressions resulted in "failed to show termination".
   -- That was before the removal of signatures, maybe now it would work :shrug:
   sub.rec
-    (motive := fun _ctx a b _ => dl.Subset a b)
-    (@fun
-      | _, .defLane, _, _, isIn => isIn
-      | _, .posLane, _, _, isIn => isIn.toPos)
+    (motive := fun a b _ => dl.Subset a b)
     id
-    id
-    id
+    (Set3.defMem.toPos)
     (fun
     | _, _, isSubL, isSubR, .pair _ _, isIn =>
       let ⟨inwL, inwR⟩ := inPairElim isIn
       inPair (isSubL inwL) (isSubR inwR))
-    (fun _ isSub _ isIn => inUnL (isSub isIn))
+    inUnL
+    inUnR
     (fun _ _ isSubAc isSubBc _ isIn =>
       isIn.elim (fun i => isSubAc i) (fun i => isSubBc i))
-    (fun _ isSub _ isIn => isSub isIn.symm)
-    (fun _ isSub _ isIn => (isSub isIn).symm)
-    (fun _ isSub _ isIn => isSub isIn.left)
+    inIrElimL
+    inIrElimR
     (fun _ _ isSubA isSubB _ isIn => inIr (isSubA isIn) (isSubB isIn))
-    (fun _ isSub _ isIn => isSub isIn.symm)
-    (fun _ isSub _ isIn => (isSub isIn).symm)
-    (fun _ _ isSubA isSubB _ _ =>
-      let ⟨_, inA⟩ := isSubA ⟨.null, rfl⟩
-      let ⟨_, inCondB⟩ := isSubB inA
-      ⟨_, inCondB⟩)
-    (fun _ => ⟨.null, rfl⟩)
+    (fun _ _ isSubA isSubB _ isIn =>
+      (isSubA isIn).elim
+        (fun inAl => inUnL (inIr inAl (isSubB isIn)))
+        (fun inAr => inUnR (inIr inAr (isSubB isIn))))
+    (fun _ _ => ⟨.null, rfl⟩)
     (fun _ _ isSubL isSubR _ _ =>
       let ⟨l, inL⟩ := isSubL ⟨.null, rfl⟩
       let ⟨r, inR⟩ := isSubR ⟨.null, rfl⟩
@@ -45,11 +39,20 @@ def DefList.SubsetStx.isSound
     (fun _ _ ab a _ _ =>
       let ⟨_, inA⟩ := a ⟨.null, rfl⟩
       ⟨_, ab inA⟩)
-    (fun _ isSub _ isInBCompl isInA => isInBCompl (isSub isInA))
-    (fun _ isSub _ isIn => isSub (SingleLaneExpr.InWfm.of_in_def isIn))
-    (fun _ isSub _ isIn => SingleLaneExpr.InWfm.in_def (isSub isIn))
-    (fun _ isSub _ isIn => isSub (SingleLaneExpr.InWfm.in_def isIn))
-    (fun _ isSub _ isIn => SingleLaneExpr.InWfm.of_in_def (isSub isIn))
+    (fun _ _ isSubA isSubB _ _ =>
+      let ⟨_, inA⟩ := isSubA ⟨.null, rfl⟩
+      let ⟨_, inCondB⟩ := isSubB inA
+      ⟨_, inCondB⟩)
+    (fun _ sub _ _ p => sub ⟨p, rfl⟩)
+    (fun _ sub _ isIn => sub isIn _)
+    (fun _ _ subSome subFull _ isInAny p =>
+      let ⟨_, inA⟩ := subSome isInAny
+      subFull inA p)
+    SingleLaneExpr.InWfm.in_def
+    SingleLaneExpr.InWfm.of_in_def
+    (fun _ _ ab bc _ isIn => bc (ab isIn))
+    (fun _ => Classical.em _)
+    nofun
     (fun _ _ out ih _ isIn => MutIndDescriptor.isSound _ ih out isIn)
     (fun _ _ out ih _ isIn => MutCoindDescriptor.isSound _ ih out isIn)
 
@@ -105,13 +108,8 @@ noncomputable def DefList.SubsetStx.toUniv
   UnivStx dl (un (.compl a) b)
 :=
   sub.rec
-    (motive := fun _ a b _ => UnivStx dl (un (.compl a) b))
-    (@fun
-      | x, .defLane => excludedMiddle (.var .defLane x)
-      | x, .posLane =>
-        let em := excludedMiddle (dl := dl) (.var .posLane x)
-        show dl.UnivStx (un (.compl (.var .defLane x)) (.var .posLane x)) from
-        sorry)
+    (motive := fun a b _ => UnivStx dl (un (.compl a) b))
+    sorry
     sorry
     sorry
     sorry

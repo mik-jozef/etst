@@ -194,6 +194,20 @@ namespace Expr
   :=
     inIr
   
+  def inIrElimL
+    (inIr: InP bv b c (ir exprL exprR) d)
+  :
+    InP bv b c exprL d
+  :=
+    inIr.left
+
+  def inIrElimR
+    (inIr: InP bv b c (ir exprL exprR) d)
+  :
+    InP bv b c exprR d
+  :=
+    inIr.right
+  
   
   def inCondSome
     (inExpr: InP bv b c expr dE)
