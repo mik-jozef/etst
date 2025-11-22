@@ -1,5 +1,5 @@
 import Etst.Subtyping.Syntax.FiniteDefList
-import Etst.Subtyping.UnivStx
+import Etst.Subtyping.SubsetStx
 
 namespace Etst
 open DefList
@@ -68,7 +68,6 @@ local macro "s3(" e:s3_pair_expr ")" : term => `(s3(TestDl, $e))
 
 
 abbrev IsSub := SubsetStx TestDl.toDefList
-abbrev IsUniv := UnivStx TestDl.toDefList
 
 
 def SubsetStx.natSub: IsSub [] s3(.Nat) s3(:Nat) :=
