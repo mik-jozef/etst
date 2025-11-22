@@ -61,7 +61,9 @@ inductive DefList.UnivStx (dl: DefList): SingleLaneExpr → Type
         (desc.hypothesifyUniv desc[i]))
     (i: desc.Index)
   :
-    UnivStx dl (.un (.compl desc[i].exprLeft) desc[i].exprRite)
+    dl.UnivStx
+      (.un (.compl (.var .posLane desc[i].left))
+      desc[i].rite)
 
 
 namespace DefList.UnivStx
@@ -85,7 +87,10 @@ namespace DefList.UnivStx
               desc.hypothesis x (.var .posLane x)))
           desc.rite))
   :
-    UnivStx dl (.un (.compl desc.exprLeft) desc.rite)
+    dl.UnivStx
+      (.un
+        (.compl (.var .posLane desc.left))
+        desc.rite)
   :=
     mutInduction
       [desc]

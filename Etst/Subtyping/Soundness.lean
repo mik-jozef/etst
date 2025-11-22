@@ -54,7 +54,6 @@ def DefList.SubsetStx.isSound
     (fun _ => Classical.em _)
     nofun
     (fun _ _ out ih _ isIn => MutIndDescriptor.isSound _ ih out isIn)
-    (fun _ _ out ih _ isIn => MutCoindDescriptor.isSound _ ih out isIn)
 
 
 def DefList.Subset.toUniv
@@ -109,7 +108,6 @@ noncomputable def DefList.SubsetStx.toUniv
 :=
   sub.rec
     (motive := fun a b _ => UnivStx dl (un (.compl a) b))
-    sorry
     sorry
     sorry
     sorry

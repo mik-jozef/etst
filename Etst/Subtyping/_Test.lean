@@ -77,12 +77,13 @@ def SubsetStx.natSub: IsSub [] s3(.Nat) s3(:Nat) :=
     rfl
     (.foldB
       (.subUn
-        (.subUnL .subNull)
-        (.subUnR
+        (.unL
+          .subId)
+        (.unR
           (.subPair
-            (.subIrL
-              .varDef)
-            .subNull))))
+            (.irL
+              .subId)
+            .subId))))
 
 def SubsetStx.natNotNat: IsSub [] s3(.Any) s3(:Nat | !.Nat) :=
   sorry
