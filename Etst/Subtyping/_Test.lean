@@ -74,26 +74,26 @@ def SubsetStx.natSub: IsSub [] s3(.Nat) s3(:Nat) :=
   simpleInduction
     TestDl.vars.Nat
     rfl
-    (.foldB
-      (.subUn
-        (.unL
-          .subId)
-        (.unR
-          (.subPair
-            (.irL
-              .subId)
-            .subId))))
+    (foldB
+      (subUn
+        (unL
+          subId)
+        (unR
+          (subPair
+            (irL
+              subId)
+            subId))))
 
 def SubsetStx.natNotNat: IsSub [] s3(.Any) s3(:Nat | !.Nat) :=
-  sorry
+  em.trans (subUnLR natSub subId)
 
 
 def natLeZeroThen: IsSub [] s3(.Nat) s3(:ThenNatLeZero) :=
   simpleInduction
     TestDl.vars.Nat
     rfl
-    (.foldB
-      (.subUn
+    (foldB
+      (subUn
         sorry
         sorry))
 
@@ -131,9 +131,55 @@ def SubsetStx.infinitudeOfPrimes:
 
 
 /-
-  Any ⊆ Ex x, (A & x) | ~A & x then x
-  Any ⊆ Ex x, (A & x) | ~A & x then x
-  
-  A ⊆ B | C
-  A & ~B ⊆ C
+Any ⊆ Ex x, (A & x) | ~A & x then x
+Any ⊆ Ex x, (A & x) | ~A & x then x
+
+A ⊆ B | C
+A & ~B ⊆ C
+
+Ex n: Nat, n  ⊆  Nat
+
+TODO:
+Un a, a
+Un a, full a
+full Un a, a
+
+
+Un a, full Un b: a & null, b
+Ir a, full Un b: a & null, b
+
+
+(Ex a, (a, (a, Any))) & (Ex a, (Any, (a, a)))  ⊆  Ex a, (a, (a, a))
+  Ex a b, (a, (a, Any)) & (Any, (b, b))
+  Ex a b, (a & Any, (a & b, Any & b))
+  Ex a b, (a, (a & b, b))
+
+Ex a b, a & b then (a, b)  ⊆  Ex a, (a, a)
+
+
+Any ⊆ T := null | (T, T)
+
+Nat ⊆ zth (Ex n: Nat, (n, foo n))  ->  All n: Nat, condSome (foo n)
+(Nat, Any) ⊆ (Ex n: Nat, (n, foo n))  ->  All n: Nat, condFull (foo n)
+
+~Nat  ==  All n: Nat, ~n
+
+
+Desirables:
+(Un a, X) |& (Un b, Y) === (Un a b, X |& Y)
+Un a b, X === Un b a, X
+Ir a b, X === Ir b a, X
+
+
+Un a b, X  ⊆  Un b a, X
+
+-/
+
+
+/-
+Un t: T, B  ==  Un t, (condSome t & T) & B
+Ir t: T, B  ==  Ir t, (condSome t & ~T) | B
+
+Un t: T, B  ==  Un t, (condFull ~t | T) & B
+Ir t: T, B  ==  Ir t, (condFull ~t | ~T) | B
 -/

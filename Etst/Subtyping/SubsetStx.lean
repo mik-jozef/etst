@@ -780,22 +780,3 @@ abbrev DefList.Subset
   (a b: SingleLaneExpr)
 :=
   Set.Subset (a.intp [] dl.wfm) (b.intp [] dl.wfm)
-
-/-
-TODO:
-Un a, a
-Un a, full a
-full Un a, a
-
-
-Un a, full Un b: a & null, b
-Ir a, full Un b: a & null, b
-
-
-Desirables:
-(Un a, X) |& (Un b, Y) === (Un a b, X |& Y)
-Un a b, X === Un b a, X
-Ir a b, X === Ir b a, X
--/
-
-#print Nat.rec
