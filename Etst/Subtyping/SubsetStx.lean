@@ -289,13 +289,11 @@ namespace DefList.SubsetStx
     (trans · ab)
   
   def ofFn
-    (_sub: SubsetStx dl ctx x a → SubsetStx dl ctx x b)
+    (sub: ∀ x, SubsetStx dl ctx x a → SubsetStx dl ctx x b)
   :
-    -- SubsetStx dl ctx a b
-    Nat -- let's not accidentally use this.
+    SubsetStx dl ctx a b
   :=
-    -- If this is true in the first place, it's gonna be hard to prove.
-    42
+    sub a subId
   
   
   def pair
