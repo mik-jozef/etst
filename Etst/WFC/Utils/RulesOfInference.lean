@@ -14,17 +14,17 @@ end Expr
 namespace SingleLaneExpr
   def inArbUn
     (dBound: Pair)
-    (inBody: body.interpretation (dBound :: bv) b c d)
+    (inBody: body.intp2 (dBound :: bv) b c d)
   :
-    (arbUn body).interpretation bv b c d
+    (arbUn body).intp2 bv b c d
   :=
     ⟨dBound, inBody⟩
   
   
   def inArbUnElim
-    (inArbUn: (arbUn body).interpretation bv b c d)
+    (inArbUn: (arbUn body).intp2 bv b c d)
   :
-    ∃ dBound, body.interpretation (dBound :: bv) b c d
+    ∃ dBound, body.intp2 (dBound :: bv) b c d
   :=
     inArbUn
   
@@ -33,43 +33,43 @@ namespace SingleLaneExpr
     {bv: List Pair}
     {b c: Valuation Pair}
     {d: Pair}
-    (inBody: ∀ dBound, body.interpretation (dBound :: bv) b c d)
+    (inBody: ∀ dBound, body.intp2 (dBound :: bv) b c d)
   :
-    (arbIr body).interpretation bv b c d
+    (arbIr body).intp2 bv b c d
   :=
     fun d => inBody d
   
   
   def inArbIrElim
-    (inArbIr: (arbIr body).interpretation bv b c d)
+    (inArbIr: (arbIr body).intp2 bv b c d)
     (dBound: Pair)
   :
-    body.interpretation (dBound :: bv) b c d
+    body.intp2 (dBound :: bv) b c d
   :=
     inArbIr dBound
   
   
   def inCompl
     (c: Valuation Pair)
-    (ninBody: ¬body.interpretation bv b b d)
+    (ninBody: ¬body.intp2 bv b b d)
   :
-    (compl body).interpretation bv b c d
+    (compl body).intp2 bv b c d
   :=
     ninBody
   
   def inComplElim
-    (inCompl: (compl body).interpretation bv b b d)
+    (inCompl: (compl body).intp2 bv b b d)
   :
-    ¬body.interpretation bv b b d
+    ¬body.intp2 bv b b d
   :=
     inCompl
   
   -- Valuation c would be redundant since Lean would ignore it, and
   -- complain it cannot be synthetized.
   def ninCompl
-    (inBody: body.interpretation bv b b d)
+    (inBody: body.intp2 bv b b d)
   :
-    ¬(compl body).interpretation bv b b d
+    ¬(compl body).intp2 bv b b d
   :=
     (· inBody)
   
@@ -77,7 +77,7 @@ namespace SingleLaneExpr
   def interp_bvar_eq_empty
     (nlt: ¬ x < bv.length)
   :
-    (bvar x).interpretation bv b c = {}
+    (bvar x).intp2 bv b c = {}
   := by
     show (match bv[x]? with
       | .none => ∅
@@ -87,7 +87,7 @@ namespace SingleLaneExpr
   def interp_bvar_eq_of_lt
     (lt: x < bv.length)
   :
-    (bvar x).interpretation bv b c = {bv[x]}
+    (bvar x).intp2 bv b c = {bv[x]}
   := by
     show (match bv[x]? with
       | .none => ∅
@@ -99,7 +99,7 @@ namespace SingleLaneExpr
     {dBound: Pair}
     (eq: bv[x]? = some dBound)
   :
-    (bvar x).interpretation bv b c = {dBound}
+    (bvar x).intp2 bv b c = {dBound}
   := by
     show (match bv[x]? with
       | .none => ∅
@@ -111,12 +111,12 @@ namespace SingleLaneExpr
     {dBound: Pair}
     (eq: bv[x]? = some dBound)
   :
-    (bvar x).interpretation bv b c dBound
+    (bvar x).intp2 bv b c dBound
   :=
     interp_bvar_eq_singleton eq ▸ rfl
   
   def inBvarElim
-    (h: (bvar x).interpretation bv b c d)
+    (h: (bvar x).intp2 bv b c d)
     (eq: bv[x]? = some dBound)
   :
     d = dBound
@@ -125,11 +125,11 @@ namespace SingleLaneExpr
     exact Set.mem_singleton_iff.mp h
   
   
-  def inAny: interpretation bv b c Expr.any d := inArbUn d (inBvar rfl)
-  def ninNone: ¬ interpretation bv b b Expr.none d := ninCompl inAny
+  def inAny: intp2 .any bv b c d := inArbUn d (inBvar rfl)
+  def ninNone: ¬ intp2 .none bv b b d := ninCompl inAny
   
   def interp_none_eq_empty:
-    interpretation bv b c Expr.none = {}
+    intp2 .none bv b c = {}
   :=
     le_antisymm (fun _ => ninNone) nofun
   
@@ -142,7 +142,7 @@ namespace SingleLaneExpr
   :
     Prop
   :=
-    expr.interpretation bv dl.wfm dl.wfm d
+    expr.intp2 bv dl.wfm dl.wfm d
   
   
   def InWfm.of_in_def
@@ -164,11 +164,11 @@ namespace SingleLaneExpr
   :=
     let v := dl.wfm
     
-    let eqAtN: v x = dl.interpretation v v x :=
+    let eqAtN: v x = dl.triIntp2 v v x :=
       congr (DefList.wfm_isModel dl) rfl
     
     match lane with
-    | .defLane => show (dl.interpretation v v x).defMem d from eqAtN ▸ s
-    | .posLane => show (dl.interpretation v v x).posMem d from eqAtN ▸ s
+    | .defLane => show (dl.triIntp2 v v x).defMem d from eqAtN ▸ s
+    | .posLane => show (dl.triIntp2 v v x).posMem d from eqAtN ▸ s
   
 end SingleLaneExpr

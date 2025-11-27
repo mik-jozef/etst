@@ -140,8 +140,8 @@ def operatorC
   -- https://github.com/leanprover/lean4/issues/952
   let _ := Valuation.ordStd Pair
   {
-    toFun := dl.interpretation b
-    monotone' := fun _ _ => dl.interpretation_mono_std
+    toFun := dl.triIntp2 b
+    monotone' := fun _ _ => dl.triIntp2_mono_std
   }
 
 -- The least fixed point of the operator C.
@@ -178,7 +178,7 @@ def operatorC.mono_apx
 :
   operatorC dl b0 c0 ⊑ operatorC dl b1 c1
 :=
-  dl.interpretation_mono_apx bLe cLe
+  dl.triIntp2_mono_apx bLe cLe
 
 
 def operatorB.monotone'
@@ -239,7 +239,7 @@ def Valuation.IsModel
 :
   Set (Valuation Pair)
 :=
-  fun v => v = dl.interpretation v v
+  fun v => v = dl.triIntp v
 
 /-
   The well-founded model of a definition list `dl` defines the
@@ -260,13 +260,13 @@ def DefList.wfm_is_fp_operatorB
 :=
   ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
 
-noncomputable def DefList.exprInterp
+noncomputable def DefList.exprIntp
   (dl: DefList)
   (expr: BasicExpr)
 :
   Set3 Pair
 :=
-  expr.interpretation [] (dl.wfm) (dl.wfm)
+  expr.triIntp [] dl.wfm
 
 
 /-
@@ -332,11 +332,9 @@ def DefList.wfm_eq_def
   (dl: DefList)
   (x: Nat)
 :
-  Eq
-    (dl.wfm x)
-    (dl.interpretation (dl.wfm) (dl.wfm) x)
+  dl.wfm x = dl.triIntp dl.wfm x
 :=
-  congr (DefList.wfm_isModel dl) rfl
+  congr dl.wfm_isModel rfl
 
 
 /-

@@ -24,18 +24,18 @@ namespace Expr
     | .arbIr body => .arbIr (body.clearBvars (max + 1))
   
   def clearBvars_eq_bvar
-    {max: Nat}
-    (lt: x < max)
+    {ub: Nat}
+    (lt: x < ub)
   :
-    clearBvars (E := E) max (.bvar x) = .bvar x
+    clearBvars (E := E) ub (.bvar x) = .bvar x
   :=
     if_pos lt
   
   def clearBvars_eq_none
-    {max: Nat}
-    (nlt: ¬ x < max)
+    {ub: Nat}
+    (nlt: ¬ x < ub)
   :
-    clearBvars (E := E) max (.bvar x) = none
+    clearBvars (E := E) ub (.bvar x) = none
   :=
     if_neg nlt
   
@@ -100,8 +100,8 @@ namespace SingleLaneExpr
     (b c: Valuation Pair)
   :
     Eq
-      (expr.interpretation bv b c)
-      (interpretation (bv ++ bvRest) b c (expr.clearBvars bv.length))
+      (expr.intp2 bv b c)
+      (intp2 (expr.clearBvars bv.length) (bv ++ bvRest) b c)
   :=
     match expr with
     | .var _ _ => rfl
@@ -154,8 +154,8 @@ namespace SingleLaneExpr
     (b c: Valuation Pair)
   :
     Eq
-      (expr.interpretation [] b c)
-      (SingleLaneExpr.interpretation bv b c expr.clearBvars)
+      (expr.intp2 [] b c)
+      (intp2 expr.clearBvars bv b c)
   :=
     clearBvars_preserves_interp_bv expr [] bv b c
   
@@ -166,7 +166,7 @@ namespace SingleLaneExpr
       (bv0 bv1: List Pair)
       (b c: Valuation Pair)
     :
-      expr.interpretation bv0 b c = expr.interpretation bv1 b c
+      expr.intp2 bv0 b c = expr.intp2 bv1 b c
     :=
       isClean ▸
       clearBvars_preserves_interp expr bv0 b c ▸
@@ -177,9 +177,9 @@ namespace SingleLaneExpr
       {expr: SingleLaneExpr}
       (isClean: IsClean expr)
       {bv1: List Pair}
-      (dInExpr: expr.interpretation bv0 b c d)
+      (dInExpr: expr.intp2 bv0 b c d)
     :
-      expr.interpretation bv1 b c d
+      expr.intp2 bv1 b c d
     :=
       bvar_independent isClean bv0 bv1 b c ▸ dInExpr
     
@@ -251,9 +251,7 @@ namespace BasicExpr
     (bv: List Pair)
     (b c: Valuation Pair)
   :
-    Eq
-      (expr.interpretation [] b c)
-      (interpretation bv b c expr.clearBvars)
+    expr.triIntp2 [] b c = triIntp2 expr.clearBvars bv b c
   :=
     let eqBvDef := (expr.toLane .defLane).clearBvars_preserves_interp bv b c
     let eqBvPos := (expr.toLane .posLane).clearBvars_preserves_interp bv b c

@@ -25,7 +25,7 @@ def every_cause_inapplicable_preserves_definitive_nonmember
   (outSetIsEmpty:
     ∀ {d x}, ⟨d, x⟩ ∈ outSet → ¬ (c x).posMem d)
 :
-  ¬(expr.interpretation [] b c).posMem d
+  ¬(expr.triIntp2 [] b c).posMem d
 :=
   let isSat := Cause.IsWeaklySatisfiedBy.ofValPos b c
   let isApp := isSat.toIsApplicable outSet outSetIsEmpty
@@ -117,7 +117,7 @@ def completenessProofC
                   byContradiction (isSat.backgroundOutHold · isPos)
               }
               
-              BasicExpr.interpretation_mono_apx_defMem
+              BasicExpr.triIntp2_mono_apx_defMem
                 isLe
                 (fun _ _ => isSat.contextInsHold)
                 isDefN

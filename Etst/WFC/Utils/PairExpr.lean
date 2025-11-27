@@ -5,47 +5,6 @@ import Etst.WFC.Utils.RulesOfInference
 namespace Etst
 
 
-namespace BasicExpr
-  abbrev triIntp2
-    (expr: BasicExpr)
-    (bv: List Pair := [])
-    (b c: Valuation Pair)
-  :
-    Set3 Pair
-  :=
-    expr.interpretation bv b c
-  
-  abbrev triIntp
-    (expr: BasicExpr)
-    (bv: List Pair := [])
-    (v: Valuation Pair)
-  :
-    Set3 Pair
-  :=
-    triIntp2 expr bv v v
-end BasicExpr
-
-namespace SingleLaneExpr
-  abbrev intp2
-    (expr: SingleLaneExpr)
-    (bv: List Pair := [])
-    (b c: Valuation Pair)
-  :
-    Set Pair
-  :=
-    expr.interpretation bv b c
-  
-  abbrev intp
-    (expr: SingleLaneExpr)
-    (bv: List Pair := [])
-    (v: Valuation Pair)
-  :
-    Set Pair
-  :=
-    intp2 expr bv v v
-  
-end SingleLaneExpr
-
 namespace Expr
   open Expr
   open SingleLaneExpr
@@ -156,7 +115,7 @@ namespace Expr
     (expr: SingleLaneExpr)
     (d: Pair)
   :=
-    expr.interpretation bv b c d
+    expr.intp2 bv b c d
   
   
   def inUnL (inL: InP bv b c exprL d):

@@ -122,7 +122,7 @@ def IsStrongCause
 :=
   {b c: Valuation Pair} →
   cause.IsStronglySatisfiedBy b c →
-  expr.interpretationDef [] b c d
+  expr.triIntp2Def [] b c d
 
 def IsWeakCause
   (cause: Cause Pair)
@@ -133,7 +133,7 @@ def IsWeakCause
 :=
   {b c: Valuation Pair} →
   cause.IsWeaklySatisfiedBy b c →
-  expr.interpretationPos [] b c d
+  expr.triIntp2Pos [] b c d
 
 
 mutual

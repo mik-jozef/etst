@@ -1,7 +1,7 @@
 /-
-  In this file, we prove monotonicity of the interpretation of Expr
-  constructors. Unlike the file `Interpretation.lean`, where the assumptions
-  are that the valuations are ordered, here we assume that the interpretations
+  In this file, we prove monotonicity of the intp2 of Expr
+  constructors. Unlike the file `intp2.lean`, where the assumptions
+  are that the valuations are ordered, here we assume that the intp2s
   of the sub-expressions are ordered.
 -/
 import Etst.WFC.Utils.PairExpr
@@ -17,12 +17,12 @@ namespace SingleLaneExpr
     (c0 c1: Valuation Pair)
     (le:
       Set.Subset
-        (e1.interpretation bv1 b1 b1)
-        (e0.interpretation bv0 b0 b0))
+        (e1.intp2 bv1 b1 b1)
+        (e0.intp2 bv0 b0 b0))
   :
     Set.Subset
-      ((compl e0).interpretation bv0 b0 c0)
-      ((compl e1).interpretation bv1 b1 c1)
+      ((compl e0).intp2 bv0 b0 c0)
+      ((compl e1).intp2 bv1 b1 c1)
   :=
     fun _ ins =>
       inCompl c0 (fun isPos => inComplElim ins (le isPos))
@@ -33,12 +33,12 @@ namespace SingleLaneExpr
     (c0 c1: Valuation Pair)
     (eq:
       Eq
-        (e0.interpretation bv0 b0 b0)
-        (e1.interpretation bv1 b1 b1))
+        (e0.intp2 bv0 b0 b0)
+        (e1.intp2 bv1 b1 b1))
   :
     Eq
-      ((compl e0).interpretation bv0 b0 c0)
-      ((compl e1).interpretation bv1 b1 c1)
+      ((compl e0).intp2 bv0 b0 c0)
+      ((compl e1).intp2 bv1 b1 c1)
   :=
     le_antisymm
       (inter_mono_std_compl c0 c1 (le_of_eq eq.symm))
@@ -51,12 +51,12 @@ namespace SingleLaneExpr
     (le:
       ∀ dB,
       Set.Subset
-        (e0.interpretation (dB :: bv0) b0 c0)
-        (e1.interpretation (dB :: bv1) b1 c1))
+        (e0.intp2 (dB :: bv0) b0 c0)
+        (e1.intp2 (dB :: bv1) b1 c1))
   :
     Set.Subset
-      ((arbUn e0).interpretation bv0 b0 c0)
-      ((arbUn e1).interpretation bv1 b1 c1)
+      ((arbUn e0).intp2 bv0 b0 c0)
+      ((arbUn e1).intp2 bv1 b1 c1)
   :=
     fun _ ⟨dB, isDef⟩ => ⟨dB, (le dB) isDef⟩
   
@@ -66,12 +66,12 @@ namespace SingleLaneExpr
     (eq:
       ∀ dB,
       Eq
-        (e0.interpretation (dB :: bv0) b0 c0)
-        (e1.interpretation (dB :: bv1) b1 c1))
+        (e0.intp2 (dB :: bv0) b0 c0)
+        (e1.intp2 (dB :: bv1) b1 c1))
   :
     Eq
-      ((arbUn e0).interpretation bv0 b0 c0)
-      ((arbUn e1).interpretation bv1 b1 c1)
+      ((arbUn e0).intp2 bv0 b0 c0)
+      ((arbUn e1).intp2 bv1 b1 c1)
   :=
     le_antisymm
       (inter_mono_std_arbUn (fun dB => le_of_eq (eq dB)))
@@ -84,12 +84,12 @@ namespace SingleLaneExpr
     (le:
       ∀ dB,
       Set.Subset
-        (e0.interpretation (dB :: bv0) b0 c0)
-        (e1.interpretation (dB :: bv1) b1 c1))
+        (e0.intp2 (dB :: bv0) b0 c0)
+        (e1.intp2 (dB :: bv1) b1 c1))
   :
     Set.Subset
-      ((arbIr e0).interpretation bv0 b0 c0)
-      ((arbIr e1).interpretation bv1 b1 c1)
+      ((arbIr e0).intp2 bv0 b0 c0)
+      ((arbIr e1).intp2 bv1 b1 c1)
   :=
     fun _ h dB => (le dB) (h dB)
   
@@ -99,12 +99,12 @@ namespace SingleLaneExpr
     (eq:
       ∀ dB,
       Eq
-        (e0.interpretation (dB :: bv0) b0 c0)
-        (e1.interpretation (dB :: bv1) b1 c1))
+        (e0.intp2 (dB :: bv0) b0 c0)
+        (e1.intp2 (dB :: bv1) b1 c1))
   :
     Eq
-      ((arbIr e0).interpretation bv0 b0 c0)
-      ((arbIr e1).interpretation bv1 b1 c1)
+      ((arbIr e0).intp2 bv0 b0 c0)
+      ((arbIr e1).intp2 bv1 b1 c1)
   :=
     le_antisymm
       (inter_mono_std_arbIr (fun dB => le_of_eq (eq dB)))

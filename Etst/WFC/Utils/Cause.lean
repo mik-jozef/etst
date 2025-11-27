@@ -514,12 +514,12 @@ def Cause.IsWeaklySatisfiedBy.elimArbUn
 
 
 noncomputable def IsWeakCause.ofValPos
-  (isPos: (expr.interpretation [] b c).posMem d)
+  (isPos: (expr.triIntp2 [] b c).posMem d)
 :
   IsWeakCause (Cause.ofValPos b c) d expr
 :=
   fun isSat =>
-    BasicExpr.interpretation_mono_apx_posMem
+    BasicExpr.triIntp2_mono_apx_posMem
       (fun _ => {
         defLe :=
           fun _ isDef =>
@@ -536,7 +536,7 @@ def IsWeakCause.isPosOfIsApplicable
   {b c: Valuation Pair}
   (isApp: ¬ cause.IsInapplicable c.nonmembers b)
 :
-  (expr.interpretation [] b c).posMem d
+  (expr.triIntp2 [] b c).posMem d
 :=
   isCause (Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy isApp)
 
@@ -545,7 +545,7 @@ def IsWeakCause.isInapplicableOfIsNonmember
   {d: Pair}
   (isCause: IsWeakCause cause d expr)
   {b c: Valuation Pair}
-  (notPos: ¬(expr.interpretation [] b c).posMem d)
+  (notPos: ¬(expr.triIntp2 [] b c).posMem d)
 :
   cause.IsInapplicable c.nonmembers b
 :=
