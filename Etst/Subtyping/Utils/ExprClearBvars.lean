@@ -1,28 +1,9 @@
 import Etst.WFC.Utils.InterpretationMono
-import Etst.WFC.Utils.RulesOfInference
 
 namespace Etst
 
 
 namespace Expr
-  def clearBvars (max := 0): Expr E → Expr E
-    | .var info x => .var info x
-    | .bvar x => if x < max then .bvar x else .none
-    | .null => .null
-    | .pair left rite =>
-        .pair (left.clearBvars max) (rite.clearBvars max)
-    | .un left rite =>
-        .un (left.clearBvars max) (rite.clearBvars max)
-    | .ir left rite =>
-        .ir (left.clearBvars max) (rite.clearBvars max)
-    | .condSome body =>
-        .condSome (body.clearBvars max)
-    | .condFull body =>
-        .condFull (body.clearBvars max)
-    | .compl e => .compl (e.clearBvars max)
-    | .arbUn body => .arbUn (body.clearBvars (max + 1))
-    | .arbIr body => .arbIr (body.clearBvars (max + 1))
-  
   def clearBvars_eq_bvar
     {ub: Nat}
     (lt: x < ub)
@@ -80,9 +61,6 @@ namespace Expr
         congrArg Expr.arbUn (body.clearBvars_idempotent)
     | .arbIr body =>
         congrArg Expr.arbIr (body.clearBvars_idempotent)
-  
-  def IsClean (expr: Expr E): Prop :=
-    expr = expr.clearBvars
   
   def clearBvars_isClean (expr: Expr E):
     IsClean expr.clearBvars
@@ -259,3 +237,76 @@ namespace BasicExpr
       (eqBvDef.trans (clearBvars_lane_comm expr .defLane ▸ rfl))
       (eqBvPos.trans (clearBvars_lane_comm expr .posLane ▸ rfl))
 end BasicExpr
+
+namespace DefList
+  def interp_eq_bv
+    (dl: DefList)
+    (x: Nat)
+    (bv0 bv1: List Pair)
+    (b c: Valuation Pair)
+  :
+    (dl.getDef x).triIntp2 bv0 b c = (dl.getDef x).triIntp2 bv1 b c
+  :=
+    dl.isClean x ▸
+    BasicExpr.clearBvars_preserves_interp (dl.getDef x) bv0 b c ▸
+    BasicExpr.clearBvars_preserves_interp (dl.getDef x) bv1 b c ▸
+    rfl
+  
+  def interp_eq_bv_def
+    (dl: DefList)
+    (x: Nat)
+    (bv0 bv1: List Pair)
+    (b c: Valuation Pair)
+  :
+    Eq
+      (((dl.getDef x).toLane .defLane).intp2 bv0 b c)
+      (((dl.getDef x).toLane .defLane).intp2 bv1 b c)
+  :=
+    Set3.eq_def (dl.interp_eq_bv x bv0 bv1 b c)
+  
+  def interp_eq_bv_pos
+    (dl: DefList)
+    (x: Nat)
+    (bv0 bv1: List Pair)
+    (b c: Valuation Pair)
+  :
+    Eq
+      (((dl.getDef x).toLane .posLane).intp2 bv0 b c)
+      (((dl.getDef x).toLane .posLane).intp2 bv1 b c)
+  :=
+    Set3.eq_pos (dl.interp_eq_bv x bv0 bv1 b c)
+  
+end DefList
+
+namespace SingleLaneExpr
+  def InWfm.of_in_def
+    (inDef: InWfm bv dl ((dl.getDef x).toLane lane) d)
+  :
+    InWfm [] dl (.var lane x) d
+  :=
+    of_in_def_no_bv
+      (match lane with
+      | .defLane =>
+        let eqDef := dl.interp_eq_bv_def x [] bv dl.wfm dl.wfm
+        show intp2 _ _ _ _ _ from
+        eqDef ▸ inDef
+      | .posLane =>
+        let eqPos := dl.interp_eq_bv_pos x [] bv dl.wfm dl.wfm
+        show intp2 _ _ _ _ _ from
+        eqPos ▸ inDef)
+  
+  def InWfm.in_def
+    (inVar: InWfm [] dl (.var lane x) d)
+  :
+    InWfm bv dl ((dl.getDef x).toLane lane) d
+  :=
+    show intp2 _ _ _ _ _ from
+    match lane with
+    | .defLane =>
+      dl.interp_eq_bv_def x bv [] dl.wfm dl.wfm ▸
+      in_def_no_bv inVar
+    | .posLane =>
+      dl.interp_eq_bv_pos x bv [] dl.wfm dl.wfm ▸
+      in_def_no_bv inVar
+  
+end SingleLaneExpr

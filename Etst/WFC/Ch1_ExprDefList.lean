@@ -27,6 +27,7 @@ def ArityZero.elim (az: ArityZero): T := nomatch az
   variable.
 -/
 inductive Expr (E: Type*) where
+-- TODO perhaps rename to "const", and bvar to var?
 | var (e: E) (x: Nat)
 | bvar (x: Nat) -- Uses de Bruijn indices
 | null
@@ -120,6 +121,35 @@ namespace Expr
   | compl body => body.sizeOf + 1
   | arbUn body => body.sizeOf + 1
   | arbIr body => body.sizeOf + 1
+  
+  
+  -- `any` contains all elements, under any valuation.
+  def any: Expr E := .arbUn (.bvar 0)
+  -- `none` contains no elements, under any valuation.
+  def none: Expr E := .compl any
+  
+  -- Removes all bound variables with index >= ub.
+  def clearBvars (ub := 0): Expr E → Expr E
+    | .var info x => .var info x
+    | .bvar x => if x < ub then .bvar x else .none
+    | .null => .null
+    | .pair left rite =>
+        .pair (left.clearBvars ub) (rite.clearBvars ub)
+    | .un left rite =>
+        .un (left.clearBvars ub) (rite.clearBvars ub)
+    | .ir left rite =>
+        .ir (left.clearBvars ub) (rite.clearBvars ub)
+    | .condSome body =>
+        .condSome (body.clearBvars ub)
+    | .condFull body =>
+        .condFull (body.clearBvars ub)
+    | .compl e => .compl (e.clearBvars ub)
+    | .arbUn body => .arbUn (body.clearBvars (ub + 1))
+    | .arbIr body => .arbIr (body.clearBvars (ub + 1))
+  
+  def IsClean (expr: Expr E): Prop :=
+    expr = expr.clearBvars
+  
 end Expr
 
 
@@ -132,6 +162,7 @@ def DefList.GetDef := Nat → BasicExpr
 -/
 structure DefList where
   getDef: DefList.GetDef
+  isClean: ∀ name, (getDef name).IsClean
 
 -- The definition x depends on y x contains y, possibly transitively.
 inductive DefList.DependsOn

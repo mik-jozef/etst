@@ -44,6 +44,7 @@
 -/
 
 import Etst.Subtyping.Utils.ExprExpandsInto
+import Etst.Subtyping.Utils.ExprLiftBvars
 import Etst.WFC.Ch5_S1_AProofSystem
 import Etst.WFC.Utils.InterpretationMono
 
@@ -53,56 +54,58 @@ open Expr
 
 def Expr.replaceComplZeroVars
   (e: Expr E)
-  (replacer: E → Nat → Expr E)
+  (depth: Nat)
+  (replacer: (depth: Nat) → E → Nat → Expr E)
 :
   Expr E
 :=
   match e with
-  | var i x => replacer i x
+  | var i x => replacer depth i x
   | bvar x => .bvar x
   | null => null
   | pair left rite =>
       pair
-        (left.replaceComplZeroVars replacer)
-        (rite.replaceComplZeroVars replacer)
+        (left.replaceComplZeroVars depth replacer)
+        (rite.replaceComplZeroVars depth replacer)
   | un left rite =>
       un
-        (left.replaceComplZeroVars replacer)
-        (rite.replaceComplZeroVars replacer)
+        (left.replaceComplZeroVars depth replacer)
+        (rite.replaceComplZeroVars depth replacer)
   | ir left rite =>
       ir
-        (left.replaceComplZeroVars replacer)
-        (rite.replaceComplZeroVars replacer)
+        (left.replaceComplZeroVars depth replacer)
+        (rite.replaceComplZeroVars depth replacer)
   | condSome body =>
-      condSome (body.replaceComplZeroVars replacer)
+      condSome (body.replaceComplZeroVars depth replacer)
   | condFull body =>
-      condFull (body.replaceComplZeroVars replacer)
+      condFull (body.replaceComplZeroVars depth replacer)
   | compl body => compl body -- Note: no replacing in complements.
-  | arbUn body => arbUn (body.replaceComplZeroVars replacer)
-  | arbIr body => arbIr (body.replaceComplZeroVars replacer)
+  | arbUn body => arbUn (body.replaceComplZeroVars (depth + 1) replacer)
+  | arbIr body => arbIr (body.replaceComplZeroVars (depth + 1) replacer)
 
 
 -- Represents an inductive proof of `var .posLane left ⊆ rite`
 structure InductionDescriptor (dl: DefList) where
   left: Nat
   rite: SingleLaneExpr
-  riteIsClean: rite.IsClean
   expansion: BasicExpr
   expandsInto: ExpandsInto dl (dl.getDef left) expansion
 
 def InductionDescriptor.hypothesis
+  (depth: Nat)
   (x: Nat)
   (desc: InductionDescriptor dl)
   (expr: SingleLaneExpr)
 :
   SingleLaneExpr
 :=
-  if desc.left = x then .ir desc.rite expr else expr
+  if desc.left = x then .ir (desc.rite.lift 0 depth) expr else expr
 
 abbrev MutIndDescriptor (dl: DefList) := List (InductionDescriptor dl)
 
 def MutIndDescriptor.hypothesis
   (desc: MutIndDescriptor dl)
+  (depth: Nat)
   -- Because the hypothesis is only applied to positive variables,
   -- which are always possible-lane (see `InductionDescriptor`),
   -- we can ignore the lane type here.
@@ -111,21 +114,22 @@ def MutIndDescriptor.hypothesis
 :
   SingleLaneExpr
 :=
-  desc.foldr (InductionDescriptor.hypothesis x) (.var .posLane x)
+  desc.foldr (InductionDescriptor.hypothesis depth x) (.var .posLane x)
 
 def MutIndDescriptor.hypothesify
   (desc: MutIndDescriptor dl)
+  (depth := 0)
   (expr: SingleLaneExpr)
 :
   SingleLaneExpr
 :=
-  expr.replaceComplZeroVars desc.hypothesis
+  expr.replaceComplZeroVars depth desc.hypothesis
 
 
 inductive ContextVariableKind
-| cs
-| ex
-| uv
+| cst
+| exi
+| all
 
 structure ContextVariable where
   kind: ContextVariableKind
@@ -265,6 +269,29 @@ inductive DefList.SubsetStx
     {a b: SingleLaneExpr}
   :
     SubsetStx dl ctx (.ir a a.compl) b
+-- IsSingleton expr := (condSome expr) & (Ex p, condFull ~expr | p)
+-- TODO these are adapted from logic, but are not general enougn, I think.
+--   Logic has only `true = {*}` and `false = {}`, so it needs not deal
+--   with the general case of non-subsingleton types.
+-- note: replaceNextVar ought to bump bvars.
+-- q: can I make a separate rule for replacing bvar using replaceNextVar?
+-- existential introduction, sub form:
+--   (body: SingleLaneExpr)
+--   (IsSingleton t)
+--   SubsetStx (body.replaceNextVar t) (Ex x, body)
+-- existential elimination TODO this one is unfinished
+--   (body: SingleLaneExpr)
+--   (IsSingleton t)
+--   SubsetStx body b
+--   SubsetStx (arbUn body) b
+-- universal elimination
+--   (body: SingleLaneExpr)
+--   (IsSingleton t)
+--   SubsetStx (arbIr body) (body.replaceNextVar t)
+-- universal introduction
+--   (body: SingleLaneExpr)
+--   (IsSingleton t)
+--   SubsetStx (body.replaceNextVar t) (arbIr body)
 |
   mutInduction
     (desc: MutIndDescriptor dl)
@@ -273,7 +300,7 @@ inductive DefList.SubsetStx
       SubsetStx
         dl
         ctx
-        (desc.hypothesify (desc[i].expansion.toLane .posLane))
+        (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
         desc[i].rite)
     (i: desc.Index)
   :
@@ -735,8 +762,8 @@ namespace DefList.SubsetStx
       SubsetStx
         dl
         ctx
-        ((desc.expansion.toLane .posLane).replaceComplZeroVars fun _ x =>
-          desc.hypothesis x (.var .posLane x))
+        ((desc.expansion.toLane .posLane).replaceComplZeroVars 0 fun depth _ x =>
+          desc.hypothesis depth x (.var .posLane x))
         desc.rite)
   :
     SubsetStx dl ctx (.var .posLane desc.left) desc.rite
@@ -748,13 +775,13 @@ namespace DefList.SubsetStx
   
   def simpleInduction
     (left: Nat)
-    (riteIsClean: Expr.IsClean rite)
+    (rite: SingleLaneExpr)
     (premise:
       SubsetStx
         dl
         ctx
-        (((dl.getDef left).toLane .posLane).replaceComplZeroVars fun _ x =>
-          if left = x then .ir rite (.var .posLane x) else (.var .posLane x))
+        (((dl.getDef left).toLane .posLane).replaceComplZeroVars 0 fun depth _ x =>
+          if left = x then .ir (rite.lift 0 depth) (.var .posLane x) else (.var .posLane x))
         rite)
   :
     SubsetStx dl ctx (.var .posLane left) rite
@@ -763,7 +790,6 @@ namespace DefList.SubsetStx
       {
         left,
         rite,
-        riteIsClean,
         expansion := dl.getDef left,
         expandsInto := .rfl
       }
@@ -773,8 +799,16 @@ end DefList.SubsetStx
 
 
 -- Semantic entailment.
+abbrev DefList.SubsetBv
+  (dl: DefList)
+  (bv: List Pair)
+  (a b: SingleLaneExpr)
+:=
+  Set.Subset (a.intp bv dl.wfm) (b.intp bv dl.wfm)
+
+-- Semantic entailment.
 abbrev DefList.Subset
   (dl: DefList)
   (a b: SingleLaneExpr)
 :=
-  Set.Subset (a.intp [] dl.wfm) (b.intp [] dl.wfm)
+  ∀ bv, dl.SubsetBv bv a b

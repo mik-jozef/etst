@@ -68,6 +68,12 @@ namespace Set3
   -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1747
   | ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl => rfl
   
+  def eq_def {s0 s1: Set3 D} (eq: s0 = s1): s0.defMem = s1.defMem :=
+    congrArg Set3.defMem eq
+  
+  def eq_pos {s0 s1: Set3 D} (eq: s0 = s1): s0.posMem = s1.posMem :=
+    congrArg Set3.posMem eq
+  
   /-
     An element which is not a possible member is also not a
     definitive member.

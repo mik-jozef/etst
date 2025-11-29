@@ -10,7 +10,7 @@ def DefList.lfpStage_le_wfm_std
   (n: Ordinal)
 :
   let _ := Valuation.ordStdLattice
-  (operatorC dl (dl.wfm)).lfpStage n ≤ dl.wfm
+  (operatorC dl dl.wfm).lfpStage n ≤ dl.wfm
 := by
   intro
   conv => rhs; rw [dl.wfm_eq_lfpC]
@@ -21,84 +21,106 @@ def InductionDescriptor.Invariant
   (desc: InductionDescriptor dl)
   (wfm v: Valuation Pair)
 :=
-  Set.Subset (v desc.left).posMem (desc.rite.intp [] wfm)
+  ∀ bv, Set.Subset (v desc.left).posMem (desc.rite.intp bv wfm)
 
 def MutIndDescriptor.var_le_hypothesify
   (desc: MutIndDescriptor dl)
+  -- `bv` represent the bound variables of the induction itself,
+  -- `bvDepth` represent the bound variables introduced by the
+  -- quantifiers of the hypothesified expression.
+  (bv bvDepth: List Pair)
   (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
   (v_le: v ≤ dl.wfm)
 :
-  (v x).posMem ≤ (desc.hypothesify (.var .posLane x)).intp bv dl.wfm
+  Set.Subset
+    (v x).posMem
+    (SingleLaneExpr.intp
+      (desc.hypothesify bvDepth.length (.var .posLane x))
+      (bvDepth ++ bv)
+      dl.wfm)
 :=
   match desc with
   | [] => (v_le x).posLe
   | head :: (rest: MutIndDescriptor dl) =>
-    show _ ≤ SingleLaneExpr.intp (if _ then _ else _) bv dl.wfm from
+    show _ ≤ SingleLaneExpr.intp (if _ then _ else _) _ dl.wfm from
     let invTail := List.Index.indexedTail
-      (P := fun (desc: InductionDescriptor dl) => desc.Invariant dl.wfm v)
+      (P :=
+        fun (desc: InductionDescriptor dl) =>
+          desc.Invariant dl.wfm v)
       inv
     if h: head.left = x then
       if_pos h ▸
       fun _ inX =>
-        let inRite := inv ⟨0, Nat.zero_lt_succ _⟩ (h ▸ inX)
+        let inRite := inv ⟨0, Nat.zero_lt_succ _⟩ bv (h ▸ inX)
         Expr.inIr
-          (IsClean.changeBv head.riteIsClean inRite)
-          (rest.var_le_hypothesify invTail v_le inX)
+          (show intp2 _ _ _ _ _ from
+          head.rite.intp2_lift_eq bv bvDepth dl.wfm dl.wfm ▸
+          inRite)
+          (rest.var_le_hypothesify bv bvDepth invTail v_le inX)
     else
       if_neg h ▸
-      rest.var_le_hypothesify invTail v_le
+      rest.var_le_hypothesify bv bvDepth invTail v_le
 
 def MutIndDescriptor.le_hypothesify
   (desc: MutIndDescriptor dl)
+  -- The bound variables of the induction itself.
+  (bv: List Pair)
+  -- `bvDepth` are an internal matter of this function and are
+  -- only good for the recirsive calls. They represent the bound
+  -- variables introduced by the quantifiers of the hypothesified
+  -- expression.
+  (bvDepth: List Pair := [])
   (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
   (isConstrained: expr.LaneEqCtx .posLane)
   (v_le: v ≤ dl.wfm)
 :
-  expr.intp2 bv dl.wfm v
+  expr.intp2 (bvDepth ++ bv) dl.wfm v
     ≤
-  (desc.hypothesify expr).intp bv dl.wfm
+  (desc.hypothesify bvDepth.length expr).intp (bvDepth ++ bv) dl.wfm
 :=
   match expr with
-  | .var .posLane _ => var_le_hypothesify desc inv v_le
+  | .var .posLane _ => var_le_hypothesify desc bv bvDepth inv v_le
   | .bvar _ => le_rfl
   | .null => le_rfl
   | .pair _ _ =>
     intp2_mono_std_pair
-      (desc.le_hypothesify inv isConstrained.elimPairLeft v_le)
-      (desc.le_hypothesify inv isConstrained.elimPairRite v_le)
+      (desc.le_hypothesify bv bvDepth inv isConstrained.elimPairLeft v_le)
+      (desc.le_hypothesify bv bvDepth inv isConstrained.elimPairRite v_le)
   | .un _ _ =>
     intp2_mono_std_un
-      (desc.le_hypothesify inv isConstrained.elimUnLeft v_le)
-      (desc.le_hypothesify inv isConstrained.elimUnRite v_le)
+      (desc.le_hypothesify bv bvDepth inv isConstrained.elimUnLeft v_le)
+      (desc.le_hypothesify bv bvDepth inv isConstrained.elimUnRite v_le)
   | .ir _ _ =>
     intp2_mono_std_ir
-      (desc.le_hypothesify inv isConstrained.elimIrLeft v_le)
-      (desc.le_hypothesify inv isConstrained.elimIrRite v_le)
+      (desc.le_hypothesify bv bvDepth inv isConstrained.elimIrLeft v_le)
+      (desc.le_hypothesify bv bvDepth inv isConstrained.elimIrRite v_le)
   | .condSome _ => 
     intp2_mono_std_condSome
-      (desc.le_hypothesify inv isConstrained.elimCondSome v_le)
+      (desc.le_hypothesify bv bvDepth inv isConstrained.elimCondSome v_le)
   | .condFull _ =>
     intp2_mono_std_condFull
-      (desc.le_hypothesify inv isConstrained.elimCondFull v_le)
+      (desc.le_hypothesify bv bvDepth inv isConstrained.elimCondFull v_le)
   | .compl _ => le_rfl
   | .arbUn _ =>
-    inter_mono_std_arbUn fun _d =>
-      desc.le_hypothesify inv isConstrained.elimArbUn v_le
+    inter_mono_std_arbUn fun d =>
+      desc.le_hypothesify bv (d :: bvDepth) inv isConstrained.elimArbUn v_le
   | .arbIr _ =>
-    inter_mono_std_arbIr fun _d =>
-      desc.le_hypothesify inv isConstrained.elimArbIr v_le
+    inter_mono_std_arbIr fun d =>
+      desc.le_hypothesify bv (d :: bvDepth) inv isConstrained.elimArbIr v_le
 
 
 def MutIndDescriptor.isSound
   (desc: MutIndDescriptor dl)
   (premisesHold:
     (i: desc.Index) →
-    dl.Subset
-      (desc.hypothesify (desc[i].expansion.toLane .posLane))
+    (bv: List Pair) →
+    dl.SubsetBv bv
+      (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
       desc[i].rite)
   (i: desc.Index)
 :
-  dl.Subset (.var .posLane desc[i].left) desc[i].rite
+  ∀ bv,
+  dl.SubsetBv bv (.var .posLane desc[i].left) desc[i].rite
 :=
   let := Valuation.ordStdLattice
   let eq: dl.wfm = (operatorC dl dl.wfm).lfp := dl.wfm_eq_lfpC
@@ -108,34 +130,38 @@ def MutIndDescriptor.isSound
       (operatorC dl dl.wfm)
       (fun v =>
         ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
-      (fun n isLim ih i p ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, atStage⟩ =>
+      (fun n isLim ih i bv p ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, atStage⟩ =>
         let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
         let s3Eq: v _ = s3 := s3Eq
         let pIn:
           p ∈ ((operatorC dl dl.wfm).lfpStage m desc[i].left).posMem
         :=
           vEq ▸ s3Eq ▸ atStage
-        ih m i pIn)
-      (fun n notLim predLt ih i _ isPos =>
+        ih m i bv pIn)
+      (fun n notLim predLt ih i bv _ isPos =>
         let ihPred := ih ⟨n.pred, predLt⟩
         let op := operatorC dl dl.wfm
         let predStage := op.lfpStage n.pred
         let predStageLe := dl.lfpStage_le_wfm_std n.pred
         let laneEq := desc[i].expansion.laneEqCtx .posLane
-        let lePremiseL := desc.le_hypothesify ihPred laneEq predStageLe
-        let leExp := desc[i].expandsInto.lfpStage_le_std [] n.pred
-        premisesHold i (lePremiseL (leExp.posLe isPos)))
+        let lePremiseL := desc.le_hypothesify bv [] ihPred laneEq predStageLe
+        let leExp := desc[i].expandsInto.lfpStage_le_std bv n.pred
+        let isPosBv:
+          (BasicExpr.triIntp2 (dl.getDef desc[i].left) bv dl.wfm predStage).posMem _
+        :=
+          dl.interp_eq_bv desc[i].left [] bv dl.wfm predStage ▸
+          isPos
+        premisesHold i bv (lePremiseL (leExp.posLe isPosBv)))
   
   by rw [←eq] at isDefSub; exact isDefSub i
 
-
+-- def test {a b: Nat} (eq: a = b)
 -- ## Coinduction section
 
 -- Represents a coinductive proof of `left ⊆ var .defLane rite`
 structure CoinductionDescriptor (dl: DefList) where
   left: SingleLaneExpr
   rite: Nat
-  leftIsClean: left.IsClean
   expansion: BasicExpr
   expandsInto: ExpandsInto dl (dl.getDef rite) expansion
 
@@ -146,9 +172,6 @@ def CoinductionDescriptor.toInduction
 := {
   left := desc.rite
   rite := .compl desc.left
-  riteIsClean := by
-    unfold IsClean clearBvars
-    exact congr rfl desc.leftIsClean
   expansion := desc.expansion
   expandsInto := desc.expandsInto
 }
@@ -156,23 +179,25 @@ def CoinductionDescriptor.toInduction
 abbrev MutCoindDescriptor (dl: DefList) := List (CoinductionDescriptor dl)
 
 def CoinductionDescriptor.hypothesis
+  (depth: Nat)
   (x: Nat)
   (desc: CoinductionDescriptor dl)
   (expr: SingleLaneExpr)
 :
   SingleLaneExpr
 :=
-  if desc.rite = x then .ir (.compl desc.left) expr else expr
+  if desc.rite = x then .ir (.compl (desc.left.lift 0 depth)) expr else expr
 
 def MutCoindDescriptor.hypothesis
   (desc: MutCoindDescriptor dl)
+  (depth: Nat)
   -- We can ignore the lane analogously to `MutIndDescriptor.hypothesis`.
   (_: SingleLaneVarType)
   (x: Nat)
 :
   SingleLaneExpr
 :=
-  desc.foldr (CoinductionDescriptor.hypothesis x) (.var .posLane x)
+  desc.foldr (CoinductionDescriptor.hypothesis depth x) (.var .posLane x)
 
 def MutCoindDescriptor.hypothesify
   (desc: MutCoindDescriptor dl)
@@ -180,16 +205,16 @@ def MutCoindDescriptor.hypothesify
 :
   SingleLaneExpr
 :=
-  .compl (expr.replaceComplZeroVars desc.hypothesis)
+  .compl (expr.replaceComplZeroVars 0 desc.hypothesis)
 
 def MutCoindDescriptor.sub_hypothesify
   (desc: MutCoindDescriptor dl)
-  (sub: dl.SubsetStx ctx (replaceComplZeroVars expr desc.hypothesis) b)
+  (sub: dl.SubsetStx ctx (replaceComplZeroVars expr 0 desc.hypothesis) b)
 :
   let descMap: MutIndDescriptor dl :=
     desc.map CoinductionDescriptor.toInduction
   
-  dl.SubsetStx ctx (replaceComplZeroVars expr descMap.hypothesis) b
+  dl.SubsetStx ctx (replaceComplZeroVars expr 0 descMap.hypothesis) b
 :=
   let rec helper := 4
   match expr with
@@ -265,8 +290,8 @@ def mutCoinduction
         ctx
         desc.left
         (.compl
-          ((desc.expansion.toLane .posLane).replaceComplZeroVars fun _ x =>
-            desc.hypothesis x (.var .posLane x))))
+          ((desc.expansion.toLane .posLane).replaceComplZeroVars 0 fun depth _ x =>
+            desc.hypothesis depth x (.var .posLane x))))
   :
     dl.SubsetStx ctx desc.left (.compl (.var .posLane desc.rite))
   :=
@@ -277,15 +302,15 @@ def mutCoinduction
   
   def simpleCoinduction
     (rite: Nat)
-    (leftIsClean: Expr.IsClean left)
+    (left: SingleLaneExpr)
     (premise:
       DefList.SubsetStx
         dl
         ctx
         left
         (.compl
-          (((dl.getDef rite).toLane .posLane).replaceComplZeroVars fun _ x =>
-            if rite = x then .ir (.compl left) (.var .posLane x) else (.var .posLane x))))
+          (((dl.getDef rite).toLane .posLane).replaceComplZeroVars 0 fun depth _ x =>
+            if rite = x then .ir (.compl (left.lift 0 depth)) (.var .posLane x) else (.var .posLane x))))
   :
     dl.SubsetStx ctx left (.compl (.var .posLane rite))
   :=
@@ -293,7 +318,6 @@ def mutCoinduction
       {
         left,
         rite,
-        leftIsClean,
         expansion := dl.getDef rite,
         expandsInto := .rfl
       }

@@ -3,14 +3,6 @@ import Etst.WFC.Utils.Valuation
 
 namespace Etst
 
-
-namespace Expr
-  -- `any` contains all elements, under any valuation.
-  def any: Expr E := .arbUn (.bvar 0)
-  -- `none` contains no elements, under any valuation.
-  def none: Expr E := .compl any
-end Expr
-
 namespace SingleLaneExpr
   def inArbUn
     (dBound: Pair)
@@ -145,7 +137,7 @@ namespace SingleLaneExpr
     expr.intp2 bv dl.wfm dl.wfm d
   
   
-  def InWfm.of_in_def
+  def InWfm.of_in_def_no_bv
     (inDef: InWfm [] dl ((dl.getDef x).toLane lane) d)
   :
     InWfm [] dl (.var lane x) d
@@ -157,8 +149,8 @@ namespace SingleLaneExpr
     exact inDef
   
   
-  def InWfm.in_def
-    (s: InWfm [] dl (.var lane x) d)
+  def InWfm.in_def_no_bv
+    (inVar: InWfm [] dl (.var lane x) d)
   :
     InWfm [] dl ((dl.getDef x).toLane lane) d
   :=
@@ -168,7 +160,7 @@ namespace SingleLaneExpr
       congr (DefList.wfm_isModel dl) rfl
     
     match lane with
-    | .defLane => show (dl.triIntp2 v v x).defMem d from eqAtN ▸ s
-    | .posLane => show (dl.triIntp2 v v x).posMem d from eqAtN ▸ s
+    | .defLane => show (dl.triIntp2 v v x).defMem d from eqAtN ▸ inVar
+    | .posLane => show (dl.triIntp2 v v x).posMem d from eqAtN ▸ inVar
   
 end SingleLaneExpr
