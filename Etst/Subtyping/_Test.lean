@@ -137,7 +137,8 @@ Any ⊆ Ex x, (A & x) | ~A & x then x
 A ⊆ B | C
 A & ~B ⊆ C
 
-Ex n: Nat, n  ⊆  Nat
+Ex n: Nat, n  ===  Nat
+Nat  ⊆  Ex n: Nat, n
 
 TODO:
 Un a, a
