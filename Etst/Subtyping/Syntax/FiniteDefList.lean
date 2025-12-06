@@ -68,6 +68,7 @@ def FiniteDefList.empty: FiniteDefList := {
   getDef := fun _ => Expr.none
   varList := []
   varLtSize := fun _ => Expr.noneLtSize _
+  isClean := fun _ => rfl
 }
 
 def FiniteDefList.emptySizeZero: empty.size = 0 := rfl
@@ -76,6 +77,7 @@ structure FiniteDefList.Def (size: Nat) where
   name: String
   expr: BasicExpr
   varLt: expr.VarLtSize size
+  isClean: expr.IsClean
 
 def FiniteDefList.defsGetNth
   (defs: List (Def ub))
@@ -87,6 +89,7 @@ def FiniteDefList.defsGetNth
     name := "«empty»"
     expr := Expr.none
     varLt := Expr.noneLtSize ub
+    isClean := rfl
   }
 
 def FiniteDefList.defsToGetDef
@@ -124,6 +127,15 @@ def FiniteDefList.extend
           unfold size at ubEq
           rw [List.length_map, ←ubEq]
           exact (defsGetNth defs (x - dl.size)).varLt _ usesVar
+    isClean := by
+      intro x
+      unfold getDef
+      if h: x < dl.size then
+        rw [if_pos h]
+        exact dl.isClean x
+      else
+        rw [if_neg h]
+        exact (defsGetNth defs (x - dl.size)).isClean
   }
 
 def FiniteDefList.ofDefs
@@ -462,6 +474,7 @@ namespace pair_def_list
               match h: Pair.usedVarsLt $expr $size with
               | .isTrue isLe => isLe ⟨_, isUsed⟩
               | .none => Witness.noConfusion h
+          isClean := rfl
         })
         `($df :: $(← getDefs vars defs))
       | stx =>
