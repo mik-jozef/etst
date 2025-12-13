@@ -310,3 +310,169 @@ namespace SingleLaneExpr
       in_def_no_bv inVar
   
 end SingleLaneExpr
+
+
+namespace Expr
+  def looseBvarUB
+    (expr: Expr E)
+    (depth: Nat := 0)
+  :
+    Nat
+  :=
+    match expr with
+    | .var _ _ => 0
+    | .bvar x => if x < depth then 0 else x + 1 - depth
+    | .null => 0
+    | .pair left rite =>
+        Nat.max (left.looseBvarUB depth) (rite.looseBvarUB depth)
+    | .un left rite =>
+        Nat.max (left.looseBvarUB depth) (rite.looseBvarUB depth)
+    | .ir left rite =>
+        Nat.max (left.looseBvarUB depth) (rite.looseBvarUB depth)
+    | .condSome body => body.looseBvarUB depth
+    | .condFull body => body.looseBvarUB depth
+    | .compl body => body.looseBvarUB depth
+    | .arbUn body => body.looseBvarUB depth
+    | .arbIr body => body.looseBvarUB depth
+  
+  def looseBvarUB_pair_lt_left
+    (h : (pair l r).looseBvarUB d < x)
+  :
+    l.looseBvarUB d < x
+  :=
+    Nat.lt_of_le_of_lt (Nat.le_max_left _ _) h
+  
+  def looseBvarUB_pair_lt_rite
+    (h : (pair l r).looseBvarUB d < x)
+  :
+    r.looseBvarUB d < x
+  :=
+    Nat.lt_of_le_of_lt (Nat.le_max_right _ _) h
+  
+  def looseBvarUB_un_lt_left
+    (h : (un l r).looseBvarUB d < x)
+  :
+    l.looseBvarUB d < x
+  :=
+    Nat.lt_of_le_of_lt (Nat.le_max_left _ _) h
+  
+  def looseBvarUB_un_lt_rite
+    (h : (un l r).looseBvarUB d < x)
+  :
+    r.looseBvarUB d < x
+  :=
+    Nat.lt_of_le_of_lt (Nat.le_max_right _ _) h
+  
+  def looseBvarUB_ir_lt_left
+    (h : (ir l r).looseBvarUB d < x)
+  :
+    l.looseBvarUB d < x
+  :=
+    Nat.lt_of_le_of_lt (Nat.le_max_left _ _) h
+  
+  def looseBvarUB_ir_lt_rite
+    (h : (ir l r).looseBvarUB d < x)
+  :
+    r.looseBvarUB d < x
+  :=
+    Nat.lt_of_le_of_lt (Nat.le_max_right _ _) h
+  
+  def looseBvarUB_pair_le_left
+    (h : (pair l r).looseBvarUB d ≤ x)
+  :
+    l.looseBvarUB d ≤ x
+  :=
+    Nat.le_trans (Nat.le_max_left _ _) h
+  
+  def looseBvarUB_pair_le_rite
+    (h : (pair l r).looseBvarUB d ≤ x)
+  :
+    r.looseBvarUB d ≤ x
+  :=
+    Nat.le_trans (Nat.le_max_right _ _) h
+  
+  def looseBvarUB_un_le_left
+    (h : (un l r).looseBvarUB d ≤ x)
+  :
+    l.looseBvarUB d ≤ x
+  :=
+    Nat.le_trans (Nat.le_max_left _ _) h
+  
+  def looseBvarUB_un_le_rite
+    (h : (un l r).looseBvarUB d ≤ x)
+  :
+    r.looseBvarUB d ≤ x
+  :=
+    Nat.le_trans (Nat.le_max_right _ _) h
+  
+  def looseBvarUB_ir_le_left
+    (h : (ir l r).looseBvarUB d ≤ x)
+  :
+    l.looseBvarUB d ≤ x
+  :=
+    Nat.le_trans (Nat.le_max_left _ _) h
+  
+  def looseBvarUB_ir_le_rite
+    (h : (ir l r).looseBvarUB d ≤ x)
+  :
+    r.looseBvarUB d ≤ x
+  :=
+    Nat.le_trans (Nat.le_max_right _ _) h
+  
+  
+  def clearBvars_eq_of_ub
+    {expr: Expr E}
+    {ub: Nat}
+    (h: expr.looseBvarUB ≤ ub)
+  :
+    Expr.clearBvars ub expr = expr
+  :=
+    let leL {l r} (h: max l r ≤ ub) := Nat.le_trans (Nat.le_max_left l r) h
+    let leR {l r} (h: max l r ≤ ub) := Nat.le_trans (Nat.le_max_right l r) h
+    match expr with
+    | .var _ _ => rfl
+    | .bvar _ => clearBvars_eq_bvar (Nat.lt_of_succ_le h)
+    | .null => rfl
+    | .pair _ _ =>
+      congrArg₂ Expr.pair
+        (clearBvars_eq_of_ub (leL h))
+        (clearBvars_eq_of_ub (leR h))
+    | .un _ _ =>
+      congrArg₂ Expr.un
+        (clearBvars_eq_of_ub (leL h))
+        (clearBvars_eq_of_ub (leR h))
+    | .ir _ _ =>
+      congrArg₂ Expr.ir
+        (clearBvars_eq_of_ub (leL h))
+        (clearBvars_eq_of_ub (leR h))
+    | .condSome _ =>
+      congrArg Expr.condSome (clearBvars_eq_of_ub h)
+    | .condFull _ =>
+      congrArg Expr.condFull (clearBvars_eq_of_ub h)
+    | .compl _ =>
+      congrArg Expr.compl (clearBvars_eq_of_ub h)
+    | .arbUn _ =>
+      congrArg
+        Expr.arbUn
+        (clearBvars_eq_of_ub (Nat.le_trans h (Nat.le_succ _)))
+    | .arbIr _ =>
+      congrArg
+        Expr.arbIr
+        (clearBvars_eq_of_ub (Nat.le_trans h (Nat.le_succ _)))
+end Expr
+
+namespace SingleLaneExpr
+  def intp_append
+    (dl: DefList)
+    {expr: SingleLaneExpr}
+    {bv: List Pair}
+    (h: expr.looseBvarUB ≤ bv.length)
+    (rest: List Pair)
+    (p: Pair)
+  :
+    expr.intp bv dl.wfm p ↔ expr.intp (bv ++ rest) dl.wfm p
+  := by
+    unfold SingleLaneExpr.intp
+    rw [SingleLaneExpr.clearBvars_preserves_interp_bv]
+    rw [Expr.clearBvars_eq_of_ub h]
+end SingleLaneExpr

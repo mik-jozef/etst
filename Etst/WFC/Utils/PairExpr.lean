@@ -10,6 +10,8 @@ namespace Expr
   open SingleLaneExpr
   
   
+  def impl (left rite: Expr E) := un left.compl rite
+  
   def ifThen (cond body: Expr E): Expr E :=
     ir (condSome cond) body
   
@@ -199,6 +201,25 @@ namespace Expr
     ∀ dE, InP bv b c expr dE
   :=
     inCondFull
+  
+  
+  def inImpl
+    (inFn: InP bv b b exprA d → InP bv b c exprB d)
+  :
+    InP bv b c (impl exprA exprB) d
+  :=
+    match Classical.em (InP bv b b exprA d) with
+    | Or.inl inA => Or.inr (inFn inA)
+    | Or.inr notInA => Or.inl notInA
+  
+  def inImplElim
+    (inImpl: InP bv b c (impl exprA exprB) d)
+  :
+    (InP bv b b exprA d → InP bv b c exprB d)
+  :=
+    match inImpl with
+    | Or.inl notInA => fun inA => False.elim (notInA inA)
+    | Or.inr inB => fun _ => inB
   
   
   def inIfThen

@@ -25,6 +25,8 @@ namespace SingleLaneExpr
     Expr.arbUn body
   def arbIr (body: SingleLaneExpr): SingleLaneExpr :=
     Expr.arbIr body
+  def impl (left rite: SingleLaneExpr): SingleLaneExpr :=
+    Expr.un left.compl rite
 end SingleLaneExpr
 
 /-
