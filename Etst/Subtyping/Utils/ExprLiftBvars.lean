@@ -1,5 +1,3 @@
-import Mathlib.Tactic.Linarith.Frontend
-
 import Etst.WFC.Ch2_Interpretation
 import Etst.WFC.Utils.RulesOfInference
 import Etst.WFC.Utils.InterpretationMono
