@@ -24,17 +24,17 @@ namespace DefList
     TODO check if the nat parameter is used properly.
   -/
   inductive IsSomeStx (dl: DefList): Nat → SingleLaneExpr → Type
-  | bvar
+  | sBvar
       (le: n ≤ x)
     :
       IsSomeStx dl n (bvar x)
-  | null: IsSomeStx dl n null
-  | pair
+  | sNull: IsSomeStx dl n null
+  | sPair
       (someL: IsSomeStx dl n left)
       (someR: IsSomeStx dl n rite)
     :
       IsSomeStx dl n (pair left rite)
-  | full
+  | sFull
       (full: IsFullStx dl expr)
     :
       IsSomeStx dl n (expr.condFull)
@@ -52,11 +52,26 @@ namespace DefList
           (impl a (impl b c))
           (impl (impl a b) (impl a c)))
   | contra: IsFullStx dl (impl (impl a.compl b.compl) (impl b a))
-  | fPair
-      (fullL: IsFullStx dl left)
-      (fullR: IsFullStx dl rite)
-    :
-      IsFullStx dl (un null (pair left rite))
+  | fPair:
+      IsFullStx
+        dl
+        (impl
+          (condFull left)
+          (impl
+            (condFull rite)
+            (un null (pair left rite))))
+  | fPairMono:
+      IsFullStx
+        dl
+        (impl
+          (condFull (impl al bl))
+          (impl
+            (condFull (impl ar br))
+            (impl (pair al ar) (pair bl br))))
+  | fPairEmptyL:
+      IsFullStx dl (impl (condFull (compl left)) (compl (pair left rite)))
+  | fPairEmptyR:
+      IsFullStx dl (impl (condFull (compl rite)) (compl (pair left rite)))
   | fUnL: IsFullStx dl (impl a (un a b))
   | fUnR: IsFullStx dl (impl b (un a b))
   | fUn:
@@ -64,10 +79,15 @@ namespace DefList
   | fIr: IsFullStx dl (impl a (impl b (ir a b)))
   | fIrL: IsFullStx dl (impl (ir l r) l)
   | fIrR: IsFullStx dl (impl (ir l r) r)
-  | some
+  | fSome
       (some: IsSomeStx dl 0 expr)
     :
       IsFullStx dl (expr.condSome)
+  -- TODO this smells. How will one pass assumptions in and out?
+  | fFull
+      (full: IsFullStx dl expr)
+    :
+      IsFullStx dl (expr.condFull)
   end
   
   namespace IsFullStx
@@ -128,10 +148,14 @@ namespace DefList
     IsFullStx dl (un a.compl b)
   | subId => .em
   | subDefPos => .defPos
-  | subPair subL subR =>
-    let ihL := subL.toIsFullStx
-    let ihR := subR.toIsFullStx
-    let lk := IsFullStx.fPair ihL ihR
+  | subPair (al:=al) (ar:=ar) (bl:=bl) (br:=br) subL subR =>
+    let ihL: dl.IsFullStx (impl al bl) := subL.toIsFullStx
+    let ihR: dl.IsFullStx (impl ar br) := subR.toIsFullStx
+    let asdf:
+      dl.IsFullStx (un null (pair (impl al bl) (impl ar br)))
+    :=
+      (IsFullStx.fPair.mp (.fFull ihL)).mp (.fFull ihR)
+    show dl.IsFullStx (impl (pair al ar) (pair bl br)) from
     sorry
   | subUnL => .fUnL
   | subUnR => .fUnR
@@ -194,10 +218,37 @@ namespace DefList
   :=
     fun bvc =>
     match some with
-    | .bvar (x:=x) le =>
-        sorry
-    | .null => ⟨.null, fun _ _ => rfl⟩
-    | .pair someL someR =>
+    | .sBvar (x:=x) le =>
+        let idx := x - n
+        if h: idx < bvc.length then
+          let p := bvc[idx]
+          let witness (bv: List.Vector Pair n) bound :=
+            let h_len: bv.val.length = n := bv.property
+            let h_le: bv.val.length ≤ x := h_len.symm ▸ le
+            let h_get: (bv.val ++ bvc)[x]? = bvc[idx]? := by
+              rw [List.getElem?_append_right h_le, h_len]
+            let h_some: bvc[idx]? = Option.some p :=
+              List.getElem?_eq_getElem h
+            let h_res: (bv.val ++ bvc)[x]? = Option.some p :=
+              h_get.trans h_some
+            SingleLaneExpr.inBvar h_res
+          
+          ⟨p, witness⟩
+        else
+          let witness (bv: List.Vector Pair n) bound :=
+            let bound: x + 1 ≤ n + bvc.length := bound
+            let bound: n + idx + 1 ≤ n + bvc.length := by
+              rw [←Nat.add_sub_of_le le] at bound
+              exact bound
+            let in_bounds: idx < bvc.length := by
+              rw [Nat.add_assoc] at bound
+              have := Nat.le_of_add_le_add_left bound
+              exact Nat.lt_of_succ_le this
+            False.elim (h in_bounds)
+          
+          ⟨.null, witness⟩
+    | .sNull => ⟨.null, fun _ _ => rfl⟩
+    | .sPair someL someR =>
         let ⟨pL, ihL⟩ := someL.isSound bvc
         let ⟨pR, ihR⟩ := someR.isSound bvc
         let intpEq bv le :=
@@ -205,7 +256,7 @@ namespace DefList
           let intpR := ihR bv (looseBvarUB_pair_le_rite le)
           inPair intpL intpR
         ⟨.pair pL pR, intpEq⟩
-    | .full full =>
+    | .sFull full =>
         let isFull := full.isSound
         ⟨.null, fun bv bound dB =>
           let len_eq: (bv.val ++ bvc).length = n + bvc.length := by
@@ -254,14 +305,33 @@ namespace DefList
         inImpl fun inAbCompl =>
         inImpl fun inB =>
         (inImplElim inAbCompl).mtr inB
-    | .fPair fullL fullR =>
+    | .fPair =>
+        inImpl fun inFullL =>
+        inImpl fun inFullR =>
         match p with
-        | .null => Or.inl rfl
-        | .pair a b =>
-          let le := looseBvarUB_un_le_rite bound
-          let hL := fullL.isSound bv a (looseBvarUB_pair_le_left le)
-          let hR := fullR.isSound bv b (looseBvarUB_pair_le_rite le)
-          Or.inr (inPair hL hR)
+        | .null => inUnL inNull
+        | .pair l r =>
+            let inL := inCondFullElim inFullL l
+            let inR := inCondFullElim inFullR r
+            inUnR (inPair inL inR)
+    | .fPairMono =>
+        inImpl fun inAlBl =>
+        inImpl fun inArBr =>
+        inImpl fun inPairAlAr =>
+          let ⟨l, r, ⟨eq, inAl, inAr⟩⟩ := inPairElim.ex inPairAlAr
+          let inBl := inImplElim (inCondFullElim inAlBl l) inAl
+          let inBr := inImplElim (inCondFullElim inArBr r) inAr
+          eq ▸ inPair inBl inBr
+    | .fPairEmptyL =>
+        inImpl fun inComplPair =>
+        SingleLaneExpr.inCompl _ fun inPair =>
+          let ⟨l, _, ⟨_, inL, _⟩⟩ := inPairElim.ex inPair
+          SingleLaneExpr.inComplElim (inCondFullElim inComplPair l) inL
+    | .fPairEmptyR =>
+        inImpl fun inComplPair =>
+        SingleLaneExpr.inCompl _ fun inPair =>
+          let ⟨_, r, ⟨_, _, inR⟩⟩ := inPairElim.ex inPair
+          SingleLaneExpr.inComplElim (inCondFullElim inComplPair r) inR
     | .fUnL => inImpl inUnL
     | .fUnR => inImpl inUnR
     | .fUn =>
@@ -275,7 +345,7 @@ namespace DefList
         inIr inA inB
     | .fIrL => inImpl inIrElimL
     | .fIrR => inImpl inIrElimR
-    | .some (expr:=expr) s =>
+    | .fSome (expr:=expr) s =>
         let n := 0
         let isSome := s.isSound
         let nLe: n ≤ bv.length := Nat.zero_le _
@@ -296,6 +366,7 @@ namespace DefList
         let h_intp := h_witness inner_vec h_bound
         let h_eq_bv: inner ++ bvc = bv := List.take_append_drop n bv
         h_eq_bv ▸ ⟨p_witness, h_intp⟩
+    | .fFull full => fun p => full.isSound bv p bound
   
   end
 end DefList
