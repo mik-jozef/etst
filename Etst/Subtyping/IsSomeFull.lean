@@ -41,6 +41,10 @@ namespace DefList
   
   inductive IsFullStx (dl: DefList): SingleLaneExpr → Type
   | defPos: IsFullStx dl (impl (var .defLane x) (var .posLane x))
+  | unfold (lane: SingleLaneVarType) (x: Nat):
+      IsFullStx dl (impl (var lane x) ((dl.getDef x).toLane lane))
+  | fold (lane: SingleLaneVarType) (x: Nat):
+      IsFullStx dl (impl ((dl.getDef x).toLane lane) (var lane x))
   | mp
       (impl: IsFullStx dl (impl a b))
       (arg: IsFullStx dl a)
@@ -151,12 +155,7 @@ namespace DefList
   | subPair (al:=al) (ar:=ar) (bl:=bl) (br:=br) subL subR =>
     let ihL: dl.IsFullStx (impl al bl) := subL.toIsFullStx
     let ihR: dl.IsFullStx (impl ar br) := subR.toIsFullStx
-    let asdf:
-      dl.IsFullStx (un null (pair (impl al bl) (impl ar br)))
-    :=
-      (IsFullStx.fPair.mp (.fFull ihL)).mp (.fFull ihR)
-    show dl.IsFullStx (impl (pair al ar) (pair bl br)) from
-    sorry
+    .mp (.mp .fPairMono (.fFull ihL)) (.fFull ihR)
   | subUnL => .fUnL
   | subUnR => .fUnR
   | subUn l r => .fUnImpl l.toIsFullStx r.toIsFullStx
@@ -177,8 +176,8 @@ namespace DefList
   | condFull _ => sorry
   | condFullElim _ => sorry
   | condFullUpgrade _ _ => sorry
-  | subUnfold => sorry
-  | subFold => sorry
+  | subUnfold => .unfold _ _
+  | subFold => .fold _ _
   | trans ab bc => ab.toIsFullStx.trans bc.toIsFullStx
   | em =>  .mp .fUnR (.mp .unComm .em)
   | subPe => .subPe
@@ -275,6 +274,25 @@ namespace DefList
           Or.inr h.toPos
         else
           Or.inl h
+    | .unfold (lane:=lane) (x:=x) =>
+        inImpl fun inVar =>
+          let inDefNoBv := SingleLaneExpr.InWfm.in_def_no_bv inVar
+          let isClean := dl.isClean x
+          let isCleanLane: ((dl.getDef x).toLane lane).IsClean := by
+            unfold Expr.IsClean at isClean ⊢
+            rw [BasicExpr.clearBvars_lane_comm]
+            rw [←isClean]
+          SingleLaneExpr.IsClean.changeBv isCleanLane inDefNoBv
+    | .fold (lane:=lane) (x:=x) =>
+        inImpl fun inDef =>
+          let isClean := dl.isClean x
+          let isCleanLane: ((dl.getDef x).toLane lane).IsClean := by
+            unfold Expr.IsClean at isClean ⊢
+            rw [BasicExpr.clearBvars_lane_comm]
+            rw [←isClean]
+          let inDefNoBv := SingleLaneExpr.IsClean.changeBv (bv1:=[]) isCleanLane inDef
+          let inVarNoBv := SingleLaneExpr.InWfm.of_in_def_no_bv inDefNoBv
+          inVarNoBv
     | .mp (a:=a) (b:=b) impl arg =>
         let extra := List.replicate a.looseBvarUB Pair.null
         let bv' := bv ++ extra
