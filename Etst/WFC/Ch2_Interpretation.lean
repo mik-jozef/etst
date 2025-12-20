@@ -198,6 +198,16 @@ def SingleLaneVarType.getSet
 
 def SingleLaneExpr := Expr SingleLaneVarType
 
+def SingleLaneExpr.intp2Bvar
+  (bv: List Pair)
+  (x: Nat)
+:
+  Set Pair
+:=
+  match bv[x]? with
+  | none => {}
+  | some d => {d}
+
 /-
   The interpretation of an expression is defined using two valuations
   we will call "background" and "context". Context is the "main"
@@ -223,10 +233,7 @@ def SingleLaneExpr.intp2
 :=
   match expr with
   | .var lane a => lane.getSet (c a)
-  | .bvar a =>
-      match bv[a]? with
-      | none => {}
-      | some d => {d}
+  | .bvar x => intp2Bvar bv x
   | .null => {.null}
   | .pair left rite =>
       fun d => ∃ dL dR,

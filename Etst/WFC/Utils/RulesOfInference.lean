@@ -71,9 +71,8 @@ namespace SingleLaneExpr
   :
     (bvar x).intp2 bv b c = {}
   := by
-    show (match bv[x]? with
-      | .none => ∅
-      | .some d => {d}) = _
+    show intp2Bvar bv x = _
+    unfold intp2Bvar
     rw [List.getElem?_eq_none_iff.mpr (le_of_not_gt nlt)]
   
   def interp_bvar_eq_of_lt
@@ -81,9 +80,8 @@ namespace SingleLaneExpr
   :
     (bvar x).intp2 bv b c = {bv[x]}
   := by
-    show (match bv[x]? with
-      | .none => ∅
-      | .some d => {d}) = _
+    show intp2Bvar bv x = _
+    unfold intp2Bvar
     rw [List.getElem?_eq_getElem lt]
   
   def interp_bvar_eq_singleton
@@ -93,9 +91,8 @@ namespace SingleLaneExpr
   :
     (bvar x).intp2 bv b c = {dBound}
   := by
-    show (match bv[x]? with
-      | .none => ∅
-      | .some d => {d}) = _
+    show intp2Bvar bv x = _
+    unfold intp2Bvar
     rw [eq]
   
   def inBvar
