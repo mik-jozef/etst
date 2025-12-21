@@ -8,7 +8,8 @@ namespace Etst
 namespace Expr
   def lift
     (expr: Expr E)
-    (depth liftBy: Nat)
+    (depth := 0)
+    (liftBy := 1)
   :=
     match expr with
     | var lane x => var lane x
