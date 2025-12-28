@@ -52,44 +52,38 @@ namespace Etst
 open Expr
 
 
-def Expr.replaceComplZeroVars
+def Expr.replaceDepthEvenVars
   (e: Expr E)
-  (depth: Nat)
+  (depth: Nat) -- number of quantifiers crossed so far
+  (ed: Bool) -- "even depth", number of complements crossed so far
   (replacer: (depth: Nat) → E → Nat → Expr E)
 :
   Expr E
 :=
   match e with
-  | var i x => replacer depth i x
+  | var i x => if ed then replacer depth i x else .var i x
   | bvar x => .bvar x
   | null => null
   | pair left rite =>
       pair
-        (left.replaceComplZeroVars depth replacer)
-        (rite.replaceComplZeroVars depth replacer)
-  | un left rite =>
-      un
-        (left.replaceComplZeroVars depth replacer)
-        (rite.replaceComplZeroVars depth replacer)
+        (left.replaceDepthEvenVars depth ed replacer)
+        (rite.replaceDepthEvenVars depth ed replacer)
   | ir left rite =>
       ir
-        (left.replaceComplZeroVars depth replacer)
-        (rite.replaceComplZeroVars depth replacer)
-  | condSome body =>
-      condSome (body.replaceComplZeroVars depth replacer)
+        (left.replaceDepthEvenVars depth ed replacer)
+        (rite.replaceDepthEvenVars depth ed replacer)
   | condFull body =>
-      condFull (body.replaceComplZeroVars depth replacer)
-  | compl body => compl body -- Note: no replacing in complements.
-  | arbUn body => arbUn (body.replaceComplZeroVars (depth + 1) replacer)
-  | arbIr body => arbIr (body.replaceComplZeroVars (depth + 1) replacer)
-
+      condFull (body.replaceDepthEvenVars depth ed replacer)
+  | compl body =>
+      compl (body.replaceDepthEvenVars depth (!ed) replacer)
+  | arbIr body => arbIr (body.replaceDepthEvenVars (depth + 1) ed replacer)
 
 -- Represents an inductive proof of `var .posLane left ⊆ rite`
 structure InductionDescriptor (dl: DefList) where
   left: Nat
   rite: SingleLaneExpr
   expansion: BasicExpr
-  expandsInto: ExpandsInto dl (dl.getDef left) expansion
+  expandsInto: ExpandsInto dl true (dl.getDef left) expansion
 
 def InductionDescriptor.hypothesis
   (depth: Nat)
@@ -109,7 +103,7 @@ def MutIndDescriptor.hypothesis
   -- Because the hypothesis is only applied to positive variables,
   -- which are always possible-lane (see `InductionDescriptor`),
   -- we can ignore the lane type here.
-  (_: SingleLaneVarType)
+  (_: Set3.Lane)
   (x: Nat)
 :
   SingleLaneExpr
@@ -123,7 +117,7 @@ def MutIndDescriptor.hypothesify
 :
   SingleLaneExpr
 :=
-  expr.replaceComplZeroVars depth desc.hypothesis
+  expr.replaceDepthEvenVars depth true desc.hypothesis
 
 
 inductive ContextVariableKind
@@ -203,27 +197,6 @@ inductive DefList.SubsetStx
     (subB: SubsetStx dl ctx x b)
   :
     SubsetStx dl ctx x (.un (.ir al b) (.ir ar b))
-|
-  condSomeNull:
-    SubsetStx dl ctx Expr.any (.condSome .null)
-|
-  condSomePair
-    (sl: SubsetStx dl ctx Expr.any (.condSome l))
-    (sr: SubsetStx dl ctx Expr.any (.condSome r))
-  :
-    SubsetStx dl ctx Expr.any (.condSome (.pair l r))
-|
-  condSomeSubTrans
-    (ab: SubsetStx dl ctx a b)
-    (sa: SubsetStx dl ctx Expr.any (.condSome a))
-  :
-    SubsetStx dl ctx Expr.any (.condSome b)
-|
-  condSomeUpgrade
-    (sx: SubsetStx dl ctx Expr.any (.condSome a))
-    (sub: SubsetStx dl ctx a (.condSome b))
-  :
-    SubsetStx dl ctx Expr.any (.condSome b)
 |
   condFull
     (sub: SubsetStx dl ctx Expr.any e)
@@ -762,7 +735,7 @@ namespace DefList.SubsetStx
       SubsetStx
         dl
         ctx
-        ((desc.expansion.toLane .posLane).replaceComplZeroVars 0 fun depth _ x =>
+        ((desc.expansion.toLane .posLane).replaceDepthEvenVars 0 true fun depth _ x =>
           desc.hypothesis depth x (.var .posLane x))
         desc.rite)
   :
@@ -774,13 +747,13 @@ namespace DefList.SubsetStx
       ⟨0, Nat.zero_lt_succ _⟩
   
   def simpleInduction
-    (left: Nat)
-    (rite: SingleLaneExpr)
+    {left: Nat}
+    {rite: SingleLaneExpr}
     (premise:
       SubsetStx
         dl
         ctx
-        (((dl.getDef left).toLane .posLane).replaceComplZeroVars 0 fun depth _ x =>
+        (((dl.getDef left).toLane .posLane).replaceDepthEvenVars 0 true fun depth _ x =>
           if left = x then .ir (rite.lift 0 depth) (.var .posLane x) else (.var .posLane x))
         rite)
   :
@@ -794,6 +767,37 @@ namespace DefList.SubsetStx
         expandsInto := .rfl
       }
       premise
+  
+  def condSomeNull:
+    SubsetStx dl ctx Expr.any (.condSome .null)
+  :=
+    sorry
+  
+  def
+    condSomePair
+      (sl: SubsetStx dl ctx Expr.any (.condSome l))
+      (sr: SubsetStx dl ctx Expr.any (.condSome r))
+    :
+      SubsetStx dl ctx Expr.any (.condSome (.pair l r))
+  :=
+    sorry
+  
+  def condSomeSubTrans
+      (ab: SubsetStx dl ctx a b)
+      (sa: SubsetStx dl ctx Expr.any (.condSome a))
+    :
+      SubsetStx dl ctx Expr.any (.condSome b)
+  :=
+    sorry
+  
+  def condSomeUpgrade
+      (sx: SubsetStx dl ctx Expr.any (.condSome a))
+      (sub: SubsetStx dl ctx a (.condSome b))
+    :
+      SubsetStx dl ctx Expr.any (.condSome b)
+  :=
+    sorry
+
   
 end DefList.SubsetStx
 

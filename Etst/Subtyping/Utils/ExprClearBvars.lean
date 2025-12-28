@@ -43,22 +43,14 @@ namespace Expr
         congrArg₂ Expr.pair
           left.clearBvars_idempotent
           rite.clearBvars_idempotent
-    | .un left rite =>
-        congrArg₂ Expr.un
-          left.clearBvars_idempotent
-          rite.clearBvars_idempotent
     | .ir left rite =>
         congrArg₂ Expr.ir
           left.clearBvars_idempotent
           rite.clearBvars_idempotent
-    | .condSome body =>
-        congrArg Expr.condSome body.clearBvars_idempotent
     | .condFull body =>
         congrArg Expr.condFull body.clearBvars_idempotent
     | .compl body =>
         congrArg Expr.compl body.clearBvars_idempotent
-    | .arbUn body =>
-        congrArg Expr.arbUn (body.clearBvars_idempotent)
     | .arbIr body =>
         congrArg Expr.arbIr (body.clearBvars_idempotent)
   
@@ -90,38 +82,28 @@ namespace SingleLaneExpr
         let eq: clearBvars bv.length (bvar x) = bvar x :=
           clearBvars_eq_bvar h
         by
-        rw [interp_bvar_eq_of_lt h, eq]
-        rw [interp_bvar_eq_of_lt ltExtra]
+        rw [intp2_bvar_eq_of_lt h, eq]
+        rw [intp2_bvar_eq_of_lt ltExtra]
         rw [bv.getElem_append_left h]
       else
         clearBvars_eq_none h ▸
-        SingleLaneExpr.interp_bvar_eq_empty h ▸
-        SingleLaneExpr.interp_none_eq_empty.symm
+        SingleLaneExpr.intp2_bvar_eq_empty h ▸
+        SingleLaneExpr.intp2_none_eq_empty.symm
     | .null => rfl
     | .pair left rite =>
       eq_intp2_pair_of_eq
-        (clearBvars_preserves_interp_bv left bv bvRest b c)
-        (clearBvars_preserves_interp_bv rite bv bvRest b c)
-    | .un left rite =>
-      eq_intp2_un_of_eq
         (clearBvars_preserves_interp_bv left bv bvRest b c)
         (clearBvars_preserves_interp_bv rite bv bvRest b c)
     | .ir left rite =>
       eq_intp2_ir_of_eq
         (clearBvars_preserves_interp_bv left bv bvRest b c)
         (clearBvars_preserves_interp_bv rite bv bvRest b c)
-    | .condSome body =>
-      eq_intp2_condSome_of_eq
-        (clearBvars_preserves_interp_bv body bv bvRest b c)
     | .condFull body =>
       eq_intp2_condFull_of_eq
         (clearBvars_preserves_interp_bv body bv bvRest b c)
     | .compl body =>
-      let ih := clearBvars_preserves_interp_bv body bv bvRest b b
-      eq_compl_of_eq c c ih
-    | .arbUn body =>
-      eq_arbUn_of_eq (fun dX =>
-        clearBvars_preserves_interp_bv body (dX :: bv) bvRest b c)
+      let ih := clearBvars_preserves_interp_bv body bv bvRest c b
+      eq_compl_of_eq ih
     | .arbIr body =>
       eq_arbIr_of_eq (fun dX =>
         clearBvars_preserves_interp_bv (bvRest := bvRest) body (dX :: bv) b c)
@@ -167,7 +149,7 @@ end SingleLaneExpr
 namespace BasicExpr
   def clearBvars_lane_comm
     (expr: BasicExpr)
-    (lane: SingleLaneVarType)
+    (lane: Set3.Lane)
     (i: Nat := 0)
   :
     Eq
@@ -193,20 +175,11 @@ namespace BasicExpr
           SingleLaneExpr.pair
           (clearBvars_lane_comm left lane i)
           (clearBvars_lane_comm rite lane i)
-    | .un left rite =>
-        congrArg₂
-          SingleLaneExpr.un
-          (clearBvars_lane_comm left lane i)
-          (clearBvars_lane_comm rite lane i)
     | .ir left rite =>
         congrArg₂
           SingleLaneExpr.ir
           (clearBvars_lane_comm left lane i)
           (clearBvars_lane_comm rite lane i)
-    | .condSome body =>
-        congrArg
-          SingleLaneExpr.condSome
-          (clearBvars_lane_comm body lane i)
     | .condFull body =>
         congrArg
           SingleLaneExpr.condFull
@@ -215,10 +188,6 @@ namespace BasicExpr
         congrArg
           SingleLaneExpr.compl
           (clearBvars_lane_comm body lane.toggle i)
-    | .arbUn body =>
-        congrArg
-          SingleLaneExpr.arbUn
-          (clearBvars_lane_comm body lane (i + 1))
     | .arbIr body =>
         congrArg
           SingleLaneExpr.arbIr
@@ -325,14 +294,10 @@ namespace Expr
     | .null => 0
     | .pair left rite =>
         Nat.max (left.looseBvarUB depth) (rite.looseBvarUB depth)
-    | .un left rite =>
-        Nat.max (left.looseBvarUB depth) (rite.looseBvarUB depth)
     | .ir left rite =>
         Nat.max (left.looseBvarUB depth) (rite.looseBvarUB depth)
-    | .condSome body => body.looseBvarUB depth
     | .condFull body => body.looseBvarUB depth
     | .compl body => body.looseBvarUB depth
-    | .arbUn body => body.looseBvarUB depth
     | .arbIr body => body.looseBvarUB depth
   
   def looseBvarUB_pair_lt_left
@@ -437,24 +402,14 @@ namespace Expr
       congrArg₂ Expr.pair
         (clearBvars_eq_of_ub (leL h))
         (clearBvars_eq_of_ub (leR h))
-    | .un _ _ =>
-      congrArg₂ Expr.un
-        (clearBvars_eq_of_ub (leL h))
-        (clearBvars_eq_of_ub (leR h))
     | .ir _ _ =>
       congrArg₂ Expr.ir
         (clearBvars_eq_of_ub (leL h))
         (clearBvars_eq_of_ub (leR h))
-    | .condSome _ =>
-      congrArg Expr.condSome (clearBvars_eq_of_ub h)
     | .condFull _ =>
       congrArg Expr.condFull (clearBvars_eq_of_ub h)
     | .compl _ =>
       congrArg Expr.compl (clearBvars_eq_of_ub h)
-    | .arbUn _ =>
-      congrArg
-        Expr.arbUn
-        (clearBvars_eq_of_ub (Nat.le_trans h (Nat.le_succ _)))
     | .arbIr _ =>
       congrArg
         Expr.arbIr

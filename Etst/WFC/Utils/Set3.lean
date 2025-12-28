@@ -494,8 +494,8 @@ namespace Set3
     
     -- The transitivity of the standard order.
     le_trans (a b c: Set3 D) (ab: a ≤ b) (bc: b ≤ c) := {
-      defLe := Preorder.le_trans a.defMem b.defMem c.defMem ab.defLe bc.defLe
-      posLe := Preorder.le_trans a.posMem b.posMem c.posMem ab.posLe bc.posLe
+      defLe := Preorder.le_trans _ _ _ ab.defLe bc.defLe
+      posLe := Preorder.le_trans _ _ _ ab.posLe bc.posLe
     }
     
     -- The compatibility of the `le` and `lt` relations.

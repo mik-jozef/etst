@@ -45,7 +45,7 @@ import Etst.BasicUtils
 namespace Etst
 
 
--- The definition of Set3.
+-- The definition of trisets / three-valued sets.
 structure Set3 (D: Type u) where
   defMem: Set D -- The definitive members
   posMem: Set D -- The possible members
@@ -165,5 +165,24 @@ namespace Set3
   -- Support for the `⊏` symbol (approximation `lt`).
   instance sqltInst: SqLT (Set3 D) where
     lt := LtApx
+  
+  
+  inductive Lane
+  | posLane
+  | defLane
+  
+  def Lane.toggle: Lane → Lane
+  | .posLane => .defLane
+  | .defLane => .posLane
+  
+  def getLane
+    (s3: Set3 D)
+    (lane: Lane)
+  :
+    Set D
+  :=
+    match lane with
+    | .posLane => s3.posMem
+    | .defLane => s3.defMem
   
 end Set3

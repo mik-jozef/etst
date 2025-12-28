@@ -1,8 +1,8 @@
 /-
   In this file, we prove monotonicity of the intp2 of Expr
   constructors. Unlike the file `intp2.lean`, where the assumptions
-  are that the valuations are ordered, here we assume that the intp2s
-  of the sub-expressions are ordered.
+  are that the valuations are ordered, here we assume that the
+  interpretations of the sub-expressions are ordered.
 -/
 import Etst.WFC.Utils.PairExpr
 
@@ -10,39 +10,32 @@ namespace Etst
 
 
 namespace SingleLaneExpr
-  -- Note we're using `b0 b0` and `b1 b1` in the assumption.
   def inter_mono_std_compl
-    {bv0 bv1: List Pair}
-    {b0 b1: Valuation Pair}
-    (c0 c1: Valuation Pair)
     (le:
       Set.Subset
-        (e1.intp2 bv1 b1 b1)
-        (e0.intp2 bv0 b0 b0))
+        (e1.intp2 bv1 c1 b1)
+        (e0.intp2 bv0 c0 b0))
   :
     Set.Subset
       ((compl e0).intp2 bv0 b0 c0)
       ((compl e1).intp2 bv1 b1 c1)
   :=
     fun _ ins =>
-      inCompl c0 (fun isPos => inComplElim ins (le isPos))
+      inCompl (fun isPos => inComplElim ins (le isPos))
   
   def eq_compl_of_eq
-    {bv0 bv1: List Pair}
-    {b0 b1: Valuation Pair}
-    (c0 c1: Valuation Pair)
     (eq:
       Eq
-        (e0.intp2 bv0 b0 b0)
-        (e1.intp2 bv1 b1 b1))
+        (e0.intp2 bv0 c0 b0)
+        (e1.intp2 bv1 c1 b1))
   :
     Eq
       ((compl e0).intp2 bv0 b0 c0)
       ((compl e1).intp2 bv1 b1 c1)
   :=
     le_antisymm
-      (inter_mono_std_compl c0 c1 (le_of_eq eq.symm))
-      (inter_mono_std_compl c0 c1 (le_of_eq eq))
+      (inter_mono_std_compl (le_of_eq eq.symm))
+      (inter_mono_std_compl (le_of_eq eq))
   
   
   def inter_mono_std_arbUn
@@ -58,7 +51,9 @@ namespace SingleLaneExpr
       ((arbUn e0).intp2 bv0 b0 c0)
       ((arbUn e1).intp2 bv1 b1 c1)
   :=
-    fun _ ⟨dB, isDef⟩ => ⟨dB, (le dB) isDef⟩
+    fun _ in0 =>
+      let ⟨dB, isDef⟩ := inArbUnElim in0
+      inArbUn dB ((le dB) isDef)
   
   def eq_arbUn_of_eq
     {bv0 bv1: List Pair}
@@ -116,24 +111,22 @@ namespace BasicExpr
   open SingleLaneExpr
   
   def triIntp2_mono_std_compl
-    (c0 c1: Valuation Pair)
-    (le: triIntp2 e1 bv1 b1 b1 ≤ triIntp2 e0 bv0 b0 b0)
+    (le: triIntp2 e1 bv1 c1 b1 ≤ triIntp2 e0 bv0 c0 b0)
   :
     triIntp2 (compl e0) bv0 b0 c0 ≤ triIntp2 (compl e1) bv1 b1 c1
   := {
-    defLe := inter_mono_std_compl c0 c1 le.posLe
-    posLe := inter_mono_std_compl c0 c1 le.defLe
+    defLe := inter_mono_std_compl le.posLe
+    posLe := inter_mono_std_compl le.defLe
   }
 
   def eq_triIntp2_compl_of_eq
-    (c0 c1: Valuation Pair)
-    (eq: triIntp2 e0 bv0 b0 b0 = triIntp2 e1 bv1 b1 b1)
+    (eq: triIntp2 e0 bv0 c0 b0 = triIntp2 e1 bv1 c1 b1)
   :
     triIntp2 (compl e0) bv0 b0 c0 = triIntp2 (compl e1) bv1 b1 c1
   :=
     Set3.eq
-      (eq_compl_of_eq c0 c1 (Set3.pos_eq eq))
-      (eq_compl_of_eq c0 c1 (Set3.def_eq eq))
+      (eq_compl_of_eq (Set3.pos_eq eq))
+      (eq_compl_of_eq (Set3.def_eq eq))
   
   
   def triIntp2_mono_std_arbUn
@@ -260,7 +253,7 @@ namespace SingleLaneExpr
   :=
     fun _ ins =>
       let ⟨_, insE⟩ := inCondSomeElim ins (d := .null)
-      inCondSome (le insE) .null
+      inCondSome .null (le insE)
   
   def eq_intp2_condSome_of_eq
     (eq: intp2 e0 bv0 b0 c0 = intp2 e1 bv1 b1 c1)

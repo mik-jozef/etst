@@ -175,28 +175,7 @@ inductive Pair where
 | pair (a b: Pair)
 
 
-inductive SingleLaneVarType
-  | posLane
-  | defLane
-deriving DecidableEq
-
-def SingleLaneVarType.toggle:
-  SingleLaneVarType → SingleLaneVarType
-  | .posLane => .defLane
-  | .defLane => .posLane
-
-def SingleLaneVarType.getSet
-  (lane: SingleLaneVarType)
-  (s3: Set3 T)
-:
-  Set T
-:=
-  match lane with
-  | .posLane => s3.posMem
-  | .defLane => s3.defMem
-
-
-def SingleLaneExpr := Expr SingleLaneVarType
+abbrev SingleLaneExpr := Expr Set3.Lane
 
 def SingleLaneExpr.intp2Bvar
   (bv: List Pair)
@@ -211,16 +190,12 @@ def SingleLaneExpr.intp2Bvar
 /-
   The interpretation of an expression is defined using two valuations
   we will call "background" and "context". Context is the "main"
-  valuation that is normally used to interpret the variables in the
-  expression. Background is used to interpret complements and their
-  subexpressions. In particular,
+  valuation that is used to interpret variables under an even number
+  of complements, while background is used to interpret variables
+  under an odd number of complements.
   
-      (Expr.compl expr).intp2 b c
-  
-  is defined in terms of
-  
-      expr.intp2 b b \,.
-  
+  This division allows retaining monotonicity of interpretation
+  with respect to context (assuming a fixed background).
   When background and context are the same valuation, this
   definition reduces to the usual one with a single valuation.
 -/
@@ -232,45 +207,40 @@ def SingleLaneExpr.intp2
   Set Pair
 :=
   match expr with
-  | .var lane a => lane.getSet (c a)
+  | .var lane x => (c x).getLane lane
   | .bvar x => intp2Bvar bv x
   | .null => {.null}
   | .pair left rite =>
-      fun d => ∃ dL dR,
-        d = .pair dL dR ∧
-        intp2 left bv b c dL ∧
-        intp2 rite bv b c dR
-  | .un left rite =>
       fun d =>
-        Or
-          (intp2 left bv b c d)
-          (intp2 rite bv b c d)
+        ∃ dL dR,
+          d = .pair dL dR ∧
+          intp2 left bv b c dL ∧
+          intp2 rite bv b c dR
   | .ir left rite =>
       fun d =>
         And
           (intp2 left bv b c d)
           (intp2 rite bv b c d)
-  | .condSome body =>
-      fun _ => ∃ dB, intp2 body bv b c dB
   | .condFull body =>
       fun _ => ∀ dB, intp2 body bv b c dB
-  | .compl body => (intp2 body bv b b).compl
-  | .arbUn body =>
-      fun d => ∃ dX, intp2 body (dX :: bv) b c d
+  | .compl body =>
+      -- Note the swap of b and c.
+      (intp2 body bv c b).compl
   | .arbIr body =>
       fun d => ∀ dX, intp2 body (dX :: bv) b c d
 
-def SingleLaneExpr.intp
+abbrev SingleLaneExpr.intp
   (expr: SingleLaneExpr)
   (bv: List Pair)
   (v: Valuation Pair)
 :=
   expr.intp2 bv v v
 
+
 -- Note the lane gets toggled inside complements.
 def BasicExpr.toLane
   (expr: BasicExpr)
-  (lane: SingleLaneVarType)
+  (lane: Set3.Lane)
 :
   SingleLaneExpr
 :=
@@ -279,12 +249,9 @@ def BasicExpr.toLane
   | .bvar a => .bvar a
   | .null => .null
   | .pair left rite => .pair (left.toLane lane) (rite.toLane lane)
-  | .un left rite => .un (left.toLane lane) (rite.toLane lane)
   | .ir left rite => .ir (left.toLane lane) (rite.toLane lane)
-  | .condSome body => .condSome (body.toLane lane)
   | .condFull body => .condFull (body.toLane lane)
   | .compl body => .compl (body.toLane lane.toggle)
-  | .arbUn body => .arbUn (body.toLane lane)
   | .arbIr body => .arbIr (body.toLane lane)
 
 def BasicExpr.toDefLane (expr: BasicExpr): SingleLaneExpr :=
@@ -314,9 +281,6 @@ def BasicExpr.triIntp2Pos
 -- A proof that definite membership implies possible membership.
 def BasicExpr.triIntp2_defLePos
   (expr: BasicExpr)
-  (bv: List Pair)
-  (b c: Valuation Pair)
-  (d: Pair)
   (isDef: expr.triIntp2Def bv b c d)
 :
   expr.triIntp2Pos bv b c d
@@ -326,28 +290,19 @@ def BasicExpr.triIntp2_defLePos
   | .bvar _, isDef => isDef
   | .null, isDef => isDef
   | .pair left rite, ⟨pl, pr, eq, isDefL, isDefR⟩ =>
-      let ihL := triIntp2_defLePos left bv b c pl isDefL
-      let ihR := triIntp2_defLePos rite bv b c pr isDefR
+      let ihL := triIntp2_defLePos left isDefL
+      let ihR := triIntp2_defLePos rite isDefR
       ⟨pl, pr, eq, ihL, ihR⟩
-  | .un left _, Or.inl isDef =>
-      Or.inl (triIntp2_defLePos left bv b c d isDef)
-  | .un _ rite, Or.inr isDef =>
-      Or.inr (triIntp2_defLePos rite bv b c d isDef)
   | .ir left rite, ⟨isDefL, isDefR⟩ => ⟨
-      triIntp2_defLePos left bv b c d isDefL,
-      triIntp2_defLePos rite bv b c d isDefR
+      triIntp2_defLePos left isDefL,
+      triIntp2_defLePos rite isDefR
     ⟩
-  | .condSome body, ⟨dB, isDef⟩ =>
-      ⟨dB, triIntp2_defLePos body bv b c dB isDef⟩
   | .condFull body, isDef => fun dB =>
-      triIntp2_defLePos body bv b c dB (isDef dB)
+      triIntp2_defLePos body (isDef dB)
   | .compl body, isDef => fun isPos =>
-      let ih := triIntp2_defLePos body bv b b d
-      isDef (ih isPos)
-  | .arbUn body, ⟨dX, isDef⟩ =>
-      ⟨dX, triIntp2_defLePos body (dX :: bv) b c d isDef⟩
+      isDef (triIntp2_defLePos body isPos)
   | .arbIr body, isDef => fun dX =>
-      triIntp2_defLePos body (dX :: bv) b c d (isDef dX)
+      triIntp2_defLePos body (isDef dX)
 
 /-
   A three-valued interpretation is an intuitive extension of single-lane
@@ -367,9 +322,9 @@ def BasicExpr.triIntp2
 :
   Set3 Pair
 := {
-  defMem := expr.triIntp2Def bv b c,
-  posMem := expr.triIntp2Pos bv b c,
-  defLePos := triIntp2_defLePos expr bv b c
+  defMem := expr.triIntp2Def bv b c
+  posMem := expr.triIntp2Pos bv b c
+  defLePos _ := triIntp2_defLePos expr
 }
 
 abbrev BasicExpr.triIntp
@@ -381,15 +336,15 @@ abbrev BasicExpr.triIntp
 
 -- Interpretation on definition lists is defined pointwise.
 def DefList.triIntp2
-  (b c: Valuation Pair)
   (dl: DefList)
+  (b c: Valuation Pair)
 :
   Valuation Pair
 :=
   fun x => (dl.getDef x).triIntp2 [] b c
 
 abbrev DefList.triIntp
-  (v: Valuation Pair)
   (dl: DefList)
+  (v: Valuation Pair)
 :=
   dl.triIntp2 v v

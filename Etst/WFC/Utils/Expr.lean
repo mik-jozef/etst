@@ -4,7 +4,7 @@ namespace Etst
 
 
 namespace SingleLaneExpr
-  def var (lane: SingleLaneVarType) (x: Nat): SingleLaneExpr :=
+  def var (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
     Expr.var lane x
   def bvar (x: Nat): SingleLaneExpr :=
     Expr.bvar x
@@ -27,152 +27,202 @@ namespace SingleLaneExpr
     Expr.arbIr body
   def impl (left rite: SingleLaneExpr): SingleLaneExpr :=
     Expr.un left.compl rite
+  
+  
+  /-
+    This proposition asserts that all variables under an
+    even number of complements refer to the given lane.
+  -/
+  inductive LaneEqEven
+    (lane: Set3.Lane)
+  :
+    (isEvenDepth: Bool) →
+    SingleLaneExpr →
+    Prop
+  | varEven (x: Nat):
+      LaneEqEven lane true (var lane x)
+  | varOdd (varLane: Set3.Lane) (x: Nat):
+      LaneEqEven lane false (var varLane x)
+  | bvar (x: Nat) (isEvenDepth: Bool):
+      LaneEqEven lane isEvenDepth (bvar x)
+  | null (isEvenDepth: Bool): LaneEqEven lane isEvenDepth null
+  | pair
+      (leftEq: LaneEqEven lane isEvenDepth left)
+      (riteEq: LaneEqEven lane isEvenDepth rite)
+    :
+      LaneEqEven lane isEvenDepth (pair left rite)
+  | ir
+      (leftEq: LaneEqEven lane isEvenDepth left)
+      (riteEq: LaneEqEven lane isEvenDepth rite)
+    :
+      LaneEqEven lane isEvenDepth (ir left rite)
+  | condFull
+      (bodyEq: LaneEqEven lane isEvenDepth body)
+    :
+      LaneEqEven lane isEvenDepth (condFull body)
+  | compl
+      (bodyEq: LaneEqEven lane (!isEvenDepth) body)
+    :
+      LaneEqEven lane isEvenDepth (compl body)
+  | arbIr
+      (laneEqBody: LaneEqEven lane isEvenDepth body)
+    :
+      LaneEqEven lane isEvenDepth (arbIr body)
+  
+  namespace LaneEqEven
+    def elimPairLeft
+      (laneEq: LaneEqEven lane ed (Expr.pair left rite))
+    :
+      LaneEqEven lane ed left
+    :=
+      match laneEq with
+      | .pair leftEq _ => leftEq
+    
+    def elimPairRite
+      (laneEq: LaneEqEven lane ed (Expr.pair left rite))
+    :
+      LaneEqEven lane ed rite
+    :=
+      match laneEq with
+      | .pair _ riteEq => riteEq
+    
+    def elimIrLeft
+      (laneEq: LaneEqEven lane ed (Expr.ir left rite))
+    :
+      LaneEqEven lane ed left
+    :=
+      match laneEq with
+      | .ir leftEq _ => leftEq
+    
+    def elimIrRite
+      (laneEq: LaneEqEven lane ed (Expr.ir left rite))
+    :
+      LaneEqEven lane ed rite
+    :=
+      match laneEq with
+      | .ir _ riteEq => riteEq
+    
+    def elimCondFull
+      (laneEq: LaneEqEven lane ed (Expr.condFull body))
+    :
+      LaneEqEven lane ed body
+    :=
+      match laneEq with
+      | .condFull bodyEq => bodyEq
+    
+    def elimCompl
+      (laneEq: LaneEqEven lane ed (Expr.compl body))
+    :
+      LaneEqEven lane (!ed) body
+    :=
+      match laneEq with
+      | .compl bodyEq => bodyEq
+    
+    def elimArbIr
+      (laneEq: LaneEqEven lane ed (Expr.arbIr body))
+    :
+      LaneEqEven lane ed body
+    :=
+      match laneEq with
+      | .arbIr laneEqBody => laneEqBody
+  end LaneEqEven
 end SingleLaneExpr
 
-/-
-  This proposition asserts that the "context" part of an expression
-  (anything not under a complement) only refers to variables from
-  the given lane.
--/
-inductive Expr.LaneEqCtx (lane: SingleLaneVarType): Expr E → Prop
-| var (x: Nat): Expr.LaneEqCtx lane (Expr.var lane x)
-| bvar (x: Nat): Expr.LaneEqCtx lane (Expr.bvar x)
-| null: Expr.LaneEqCtx lane Expr.null
-| pair
-    (leftEq: Expr.LaneEqCtx lane left)
-    (riteEq: Expr.LaneEqCtx lane rite)
-  :
-    Expr.LaneEqCtx lane (Expr.pair left rite)
-| un
-    (leftEq: Expr.LaneEqCtx lane left)
-    (riteEq: Expr.LaneEqCtx lane rite)
-  :
-    Expr.LaneEqCtx lane (Expr.un left rite)
-| ir
-    (leftEq: Expr.LaneEqCtx lane left)
-    (riteEq: Expr.LaneEqCtx lane rite)
-  :
-    Expr.LaneEqCtx lane (Expr.ir left rite)
-| condSome
-    (bodyEq: Expr.LaneEqCtx lane body)
-  :
-    Expr.LaneEqCtx lane (Expr.condSome body)
-| condFull
-    (bodyEq: Expr.LaneEqCtx lane body)
-  :
-    Expr.LaneEqCtx lane (Expr.condFull body)
-| compl (body: Expr E): Expr.LaneEqCtx lane (body.compl)
-| arbUn
-    (laneEqBody: Expr.LaneEqCtx lane body)
-  :
-    Expr.LaneEqCtx lane (Expr.arbUn body)
-| arbIr
-    (laneEqBody: Expr.LaneEqCtx lane body)
-  :
-    Expr.LaneEqCtx lane (Expr.arbIr body)
 
-
-def Expr.LaneEqCtx.elimPairLeft
-  (laneEq: Expr.LaneEqCtx lane (Expr.pair left rite))
-:
-  Expr.LaneEqCtx lane left
-:=
-  match laneEq with
-  | .pair leftEq _ => leftEq
-
-def Expr.LaneEqCtx.elimPairRite
-  (laneEq: Expr.LaneEqCtx lane (Expr.pair left rite))
-:
-  Expr.LaneEqCtx lane rite
-:=
-  match laneEq with
-  | .pair _ riteEq => riteEq
-
-def Expr.LaneEqCtx.elimUnLeft
-  (laneEq: Expr.LaneEqCtx lane (Expr.un left rite))
-:
-  Expr.LaneEqCtx lane left
-:=
-  match laneEq with
-  | .un leftEq _ => leftEq
-
-def Expr.LaneEqCtx.elimUnRite
-  (laneEq: Expr.LaneEqCtx lane (Expr.un left rite))
-:
-  Expr.LaneEqCtx lane rite
-:=
-  match laneEq with
-  | .un _ riteEq => riteEq
-
-def Expr.LaneEqCtx.elimIrLeft
-  (laneEq: Expr.LaneEqCtx lane (Expr.ir left rite))
-:
-  Expr.LaneEqCtx lane left
-:=
-  match laneEq with
-  | .ir leftEq _ => leftEq
-
-def Expr.LaneEqCtx.elimIrRite
-  (laneEq: Expr.LaneEqCtx lane (Expr.ir left rite))
-:
-  Expr.LaneEqCtx lane rite
-:=
-  match laneEq with
-  | .ir _ riteEq => riteEq
-
-def Expr.LaneEqCtx.elimCondSome
-  (laneEq: Expr.LaneEqCtx lane (Expr.condSome body))
-:
-  Expr.LaneEqCtx lane body
-:=
-  match laneEq with
-  | .condSome bodyEq => bodyEq
-
-def Expr.LaneEqCtx.elimCondFull
-  (laneEq: Expr.LaneEqCtx lane (Expr.condFull body))
-:
-  Expr.LaneEqCtx lane body
-:=
-  match laneEq with
-  | .condFull bodyEq => bodyEq
-
-def Expr.LaneEqCtx.elimArbUn
-  (laneEq: Expr.LaneEqCtx lane (body.arbUn))
-:
-  Expr.LaneEqCtx lane body
-:=
-  match laneEq with
-  | .arbUn laneEqBody => laneEqBody
-
-def Expr.LaneEqCtx.elimArbIr
-  (laneEq: Expr.LaneEqCtx lane (body.arbIr))
-:
-  Expr.LaneEqCtx lane body
-:=
-  match laneEq with
-  | .arbIr laneEqBody => laneEqBody
-
-
-def BasicExpr.laneEqCtx
+def BasicExpr.laneEqEven
   (expr: BasicExpr)
-  (lane: SingleLaneVarType)
+  (lane: Set3.Lane)
+  (isEvenDepth: Bool)
 :
-  Expr.LaneEqCtx lane (expr.toLane lane)
+  SingleLaneExpr.LaneEqEven
+    lane
+    isEvenDepth
+    (expr.toLane (ite isEvenDepth lane lane.toggle))
 :=
-  match expr with
-  | .var x => .var x
-  | .bvar x => .bvar x
-  | .null => .null
-  | .pair left rite =>
-      .pair (left.laneEqCtx lane) (rite.laneEqCtx lane)
-  | .un left rite =>
-      .un (left.laneEqCtx lane) (rite.laneEqCtx lane)
-  | .ir left rite =>
-      .ir (left.laneEqCtx lane) (rite.laneEqCtx lane)
-  | .condSome body =>
-      .condSome (body.laneEqCtx lane)
-  | .condFull body =>
-      .condFull (body.laneEqCtx lane)
-  | .compl body => .compl (body.toLane lane.toggle)
-  | .arbUn body => .arbUn (body.laneEqCtx lane)
-  | .arbIr body => .arbIr (body.laneEqCtx lane)
+  match expr, isEvenDepth with
+  | .var x, true => .varEven x
+  | .var x, false => .varOdd lane.toggle x
+  | .bvar x, true => .bvar x true
+  | .bvar x, false => .bvar x false
+  | .null, true => .null true
+  | .null, false => .null false
+  | .pair left rite, true =>
+      .pair
+        (left.laneEqEven lane true)
+        (rite.laneEqEven lane true)
+  | .pair left rite, false =>
+      .pair
+        (left.laneEqEven lane false)
+        (rite.laneEqEven lane false)
+  | .ir left rite, true =>
+      .ir
+        (left.laneEqEven lane true)
+        (rite.laneEqEven lane true)
+  | .ir left rite, false =>
+      .ir
+        (left.laneEqEven lane false)
+        (rite.laneEqEven lane false)
+  | .condFull body, true =>
+      .condFull (body.laneEqEven lane true)
+  | .condFull body, false =>
+      .condFull (body.laneEqEven lane false)
+  | .compl body, true =>
+      .compl (body.laneEqEven lane false)
+  | .compl body, false =>
+      match lane with
+      | .posLane => .compl (body.laneEqEven .posLane true)
+      | .defLane => .compl (body.laneEqEven .defLane true)
+  | .arbIr body, true => .arbIr (body.laneEqEven lane true)
+  | .arbIr body, false => .arbIr (body.laneEqEven lane false)
+
+
+def Expr.toString (serializeVar: E → Nat → String):
+  Expr E → String
+| .un left rite =>
+  let left := left.toString serializeVar
+  let rite := rite.toString serializeVar
+  s!"({left}) | ({rite})"
+| .condSome body =>
+  let cond := body.toString serializeVar
+  s!"(?i {cond})"
+| .arbUn body =>
+  let bodyStr := body.toString serializeVar
+  s!"Ex ({bodyStr})"
+| .var info x => serializeVar info x
+| .bvar x => s!"b{x}"
+| .null =>
+  "null"
+| .pair left rite =>
+  let left := left.toString serializeVar
+  let rite := rite.toString serializeVar
+  s!"({left}, {rite})"
+| .ir left rite =>
+  let left := left.toString serializeVar
+  let rite := rite.toString serializeVar
+  s!"({left}) & ({rite})"
+| .condFull body =>
+  let cond := body.toString serializeVar
+  s!"(?f {cond})"
+| .compl expr =>
+  let exprStr := expr.toString serializeVar
+  s!"!({exprStr})"
+| .arbIr body =>
+  let bodyStr := body.toString serializeVar
+  s!"All ({bodyStr})"
+
+def BasicExpr.toString: BasicExpr → String :=
+  Expr.toString fun _ x => s!"{x}"
+
+def SingleLaneExpr.toString: SingleLaneExpr → String :=
+  Expr.toString fun
+    | .defLane, x => s!":{x}"
+    | .posLane, x => s!".{x}"
+
+instance: ToString BasicExpr where
+  toString := BasicExpr.toString
+
+instance: ToString SingleLaneExpr where
+  toString := SingleLaneExpr.toString
+
+instance: ToString (Expr Unit) := instToStringBasicExpr
+instance: ToString (Expr Set3.Lane) := instToStringSingleLaneExpr

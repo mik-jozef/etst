@@ -3,7 +3,7 @@ import Etst.WFC.Utils.PairExpr
 namespace Etst
 
 
-instance: ToString SingleLaneVarType where
+instance: ToString Set3.Lane where
   toString
   | .posLane => "posLane"
   | .defLane => "defLane"

@@ -72,8 +72,6 @@ abbrev IsSub := SubsetStx TestDl.toDefList
 
 def SubsetStx.natSub: IsSub [] s3(.Nat) s3(:Nat) :=
   simpleInduction
-    TestDl.vars.Nat
-    rfl
     (foldB
       (subUn
         (unL
@@ -90,8 +88,6 @@ def SubsetStx.natNotNat: IsSub [] s3(.Any) s3(:Nat | !.Nat) :=
 
 def natLeZeroThen: IsSub [] s3(.Nat) s3(:ThenNatLeZero) :=
   simpleInduction
-    TestDl.vars.Nat
-    rfl
     (foldB
       (subUn
         sorry
@@ -114,8 +110,6 @@ def SubsetStx.addSymmNat:
   IsSub [] s3(.Nat) AddSymm
 :=
   simpleInduction
-    TestDl.vars.Nat
-    rfl
     sorry
 
 def SubsetStx.addSymm:
@@ -156,6 +150,9 @@ Ir a, full Un b: a & null, b
   Ex a b, (a, (a & b, b))
 
 Ex a b, a & b then (a, b)  ⊆  Ex a, (a, a)
+
+condSome expr     ===  Ex x, (condFull ~x | expr)
+~condFull ~expr   ===  ~All x, ~(condFull ~x | expr)
 
 
 Any ⊆ T := null | (T, T)

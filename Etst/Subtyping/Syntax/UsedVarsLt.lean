@@ -46,14 +46,6 @@ namespace Pair
         .isTrue fun
           | ⟨x, Or.inl isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
           | ⟨x, Or.inr isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
-    | .un left rite =>
-      match usedVarsLt left bound, usedVarsLt rite bound with
-      | .none, _ => .none
-      | _, .none => .none
-      | .isTrue freeVarsZth, .isTrue freeVarsFst =>
-        .isTrue fun
-          | ⟨x, Or.inl isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
-          | ⟨x, Or.inr isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
     | .ir left rite =>
       match usedVarsLt left bound, usedVarsLt rite bound with
       | .none, _ => .none
@@ -63,12 +55,6 @@ namespace Pair
           | ⟨x, Or.inl isUsed⟩ => freeVarsZth ⟨x, isUsed⟩
           | ⟨x, Or.inr isUsed⟩ => freeVarsFst ⟨x, isUsed⟩
     |
-      .condSome body =>
-      match usedVarsLt body bound with
-      | .none => .none
-      | .isTrue freeVarsArg =>
-        .isTrue fun ⟨x, isUsed⟩ => freeVarsArg ⟨x, isUsed⟩
-    |
       .condFull body =>
       match usedVarsLt body bound with
       | .none => .none
@@ -76,7 +62,6 @@ namespace Pair
         .isTrue fun ⟨x, isUsed⟩ => freeVarsArg ⟨x, isUsed⟩
     |
       .compl expr => usedVarsLt expr bound
-    | .arbUn expr => usedVarsLt expr bound
     | .arbIr expr => usedVarsLt expr bound
   
 end Pair

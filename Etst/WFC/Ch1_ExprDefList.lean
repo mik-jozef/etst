@@ -9,17 +9,6 @@ namespace Etst
 
 
 /-
-  ArityZero, ArityOne, and ArityTwo are types that have exactly
-  zero, one, and two elements, respectively. They are useful for
-  defining particular signatures (see below).
--/
-inductive ArityZero
-inductive ArityOne | zth
-inductive ArityTwo | zth | fst
-
-def ArityZero.elim (az: ArityZero): T := nomatch az
-
-/-
   An expression is an inductive structure that (as we later define)
   can be evaluated to a triset.
   
@@ -32,17 +21,23 @@ inductive Expr (E: Type*) where
 | bvar (x: Nat) -- Uses de Bruijn indices
 | null
 | pair (left rite: Expr E)
-| un (left rite: Expr E)
 | ir (left rite: Expr E)
-| condSome (body: Expr E)
 | condFull (body: Expr E)
 | compl (body: Expr E)
-| arbUn (body: Expr E)
 | arbIr (body: Expr E)
 deriving DecidableEq
 
+def Expr.un (left rite: Expr E): Expr E :=
+  compl (ir (compl left) (compl rite))
+def Expr.condSome (body: Expr E): Expr E :=
+  compl (condFull (compl body))
+def Expr.arbUn (body: Expr E): Expr E :=
+  compl (arbIr (compl body))
+
 
 abbrev BasicExpr := Expr Unit
+
+-- Convenience definitions for preserving the `BasicExpr` type in arguments.
 def BasicExpr.var (x: Nat): BasicExpr := Expr.var () x
 def BasicExpr.bvar (x: Nat): BasicExpr := Expr.bvar x
 def BasicExpr.null: BasicExpr := Expr.null
@@ -71,57 +66,29 @@ namespace Expr
         | bvar _ => False
         | null => False
         | pair left rite => left.UsesVar x ∨ rite.UsesVar x
-        | un left rite => left.UsesVar x ∨ rite.UsesVar x
         | ir left rite => left.UsesVar x ∨ rite.UsesVar x
-        | condSome body => body.UsesVar x
         | condFull body => body.UsesVar x
         | compl body => body.UsesVar x
-        | arbUn body => body.UsesVar x
         | arbIr body => body.UsesVar x
-
-
-  /-
-    A positive expression is an expression that does not contain
-    complements of expressions, with the exception of complements
-    of bound variables.
-    
-    Complementing a bound variable is allowed because it is guaranteed
-    to be two-valued, so it cannot result in a contradictory definition.
-  -/
-  def IsPositive: Expr E → Prop
-  | var _ _ => True
-  | bvar _ => True
-  | null => True
-  | pair left rite => left.IsPositive ∧ rite.IsPositive
-  | un left rite => left.IsPositive ∧ rite.IsPositive
-  | ir left rite => left.IsPositive ∧ rite.IsPositive
-  | condSome body => body.IsPositive
-  | condFull body => body.IsPositive
-  | compl (bvar _) => True
-  | compl _ => False
-  | arbUn body => body.IsPositive
-  | arbIr body => body.IsPositive
-
-  /-
-    A helper function that we can use to show termination of
-    functions defined recursively over expressions.
-    
-    This is a proper version of the sizeOf function defined natively
-    by Lean.
-  -/
-  noncomputable def sizeOf: Expr E → Ordinal.{0}
-  | var _ _ => 0
-  | bvar _ => 0
-  | null => 0
-  | pair left rite => max left.sizeOf rite.sizeOf + 1
-  | un left rite => max left.sizeOf rite.sizeOf + 1
-  | ir left rite => max left.sizeOf rite.sizeOf + 1
-  | condSome body => body.sizeOf + 1
-  | condFull body => body.sizeOf + 1
-  | compl body => body.sizeOf + 1
-  | arbUn body => body.sizeOf + 1
-  | arbIr body => body.sizeOf + 1
   
+  
+  /-
+    A positive expression only refers to variables under an even
+    number of complements.
+  -/
+  def IsPositive (expr: Expr E) (isEvenD := true): Prop :=
+    match expr with
+    | var _ _ => isEvenD
+    | bvar _ => True
+    | null => True
+    | pair left rite =>
+        left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
+    | ir left rite =>
+        left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
+    | condFull body => body.IsPositive isEvenD
+    | compl body => body.IsPositive (!isEvenD)
+    | arbIr body => body.IsPositive isEvenD
+
   
   -- `any` contains all elements, under any valuation.
   def any: Expr E := .arbUn (.bvar 0)
@@ -135,16 +102,11 @@ namespace Expr
     | .null => .null
     | .pair left rite =>
         .pair (left.clearBvars ub) (rite.clearBvars ub)
-    | .un left rite =>
-        .un (left.clearBvars ub) (rite.clearBvars ub)
     | .ir left rite =>
         .ir (left.clearBvars ub) (rite.clearBvars ub)
-    | .condSome body =>
-        .condSome (body.clearBvars ub)
     | .condFull body =>
         .condFull (body.clearBvars ub)
     | .compl e => .compl (e.clearBvars ub)
-    | .arbUn body => .arbUn (body.clearBvars (ub + 1))
     | .arbIr body => .arbIr (body.clearBvars (ub + 1))
   
   def IsClean (expr: Expr E): Prop :=
@@ -157,7 +119,7 @@ def DefList.GetDef := Nat → BasicExpr
 
 /-
   A definition list is a map from natural numbers to expressions.
-  It is used to allow recursive definitions -- the free variables
+  It is used to allow recursive definitions -- the variables
   in a definition refer to other definitions of the definition list.
 -/
 structure DefList where

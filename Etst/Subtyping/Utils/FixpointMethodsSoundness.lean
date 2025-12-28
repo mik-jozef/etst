@@ -52,7 +52,7 @@ def MutIndDescriptor.var_le_hypothesify
       if_pos h ▸
       fun _ inX =>
         let inRite := inv ⟨0, Nat.zero_lt_succ _⟩ bv (h ▸ inX)
-        Expr.inIr
+        inIr
           (show intp2 _ _ _ _ _ from
           head.rite.intp2_lift_eq bv bvDepth dl.wfm dl.wfm ▸
           inRite)
@@ -65,48 +65,68 @@ def MutIndDescriptor.le_hypothesify
   (desc: MutIndDescriptor dl)
   -- The bound variables of the induction itself.
   (bv: List Pair)
-  -- `bvDepth` are an internal matter of this function and are
-  -- only good for the recirsive calls. They represent the bound
-  -- variables introduced by the quantifiers of the hypothesified
-  -- expression.
+  -- `bvDepth` is an internal matter of this function and is only
+  -- good for the recursive calls. It represents the bound variables
+  -- introduced by the quantifiers of the hypothesified expression.
   (bvDepth: List Pair := [])
   (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
-  (isConstrained: expr.LaneEqCtx .posLane)
+  {expr: SingleLaneExpr}
+  (laneEq: expr.LaneEqEven .posLane ed)
   (v_le: v ≤ dl.wfm)
 :
-  expr.intp2 (bvDepth ++ bv) dl.wfm v
-    ≤
-  (desc.hypothesify bvDepth.length expr).intp (bvDepth ++ bv) dl.wfm
+  if ed then
+    Set.Subset
+      (expr.intp2 (bvDepth ++ bv) dl.wfm v)
+      ((desc.hypothesify bvDepth.length expr).intp (bvDepth ++ bv) dl.wfm)
+  else
+    Set.Subset
+      (intp
+        (expr.replaceDepthEvenVars bvDepth.length false desc.hypothesis)
+        (bvDepth ++ bv)
+        dl.wfm)
+      (expr.intp2 (bvDepth ++ bv) v dl.wfm)
 :=
-  match expr with
-  | .var .posLane _ => var_le_hypothesify desc bv bvDepth inv v_le
-  | .bvar _ => le_rfl
-  | .null => le_rfl
-  | .pair _ _ =>
+  match expr, ed with
+  | .var .posLane _, true => var_le_hypothesify desc bv bvDepth inv v_le
+  | .var _ _, false => le_refl ((intp2 _ _ _ _))
+  | .bvar _, true => le_refl ((intp2 _ _ _ _))
+  | .bvar _, false => le_refl ((intp2 _ _ _ _))
+  | .null, true => le_refl ((intp2 _ _ _ _))
+  | .null, false => le_refl ((intp2 _ _ _ _))
+  | .pair _ _, true =>
     intp2_mono_std_pair
-      (desc.le_hypothesify bv bvDepth inv isConstrained.elimPairLeft v_le)
-      (desc.le_hypothesify bv bvDepth inv isConstrained.elimPairRite v_le)
-  | .un _ _ =>
-    intp2_mono_std_un
-      (desc.le_hypothesify bv bvDepth inv isConstrained.elimUnLeft v_le)
-      (desc.le_hypothesify bv bvDepth inv isConstrained.elimUnRite v_le)
-  | .ir _ _ =>
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimPairLeft v_le)
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimPairRite v_le)
+  | .pair _ _, false =>
+    intp2_mono_std_pair
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimPairLeft v_le)
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimPairRite v_le)
+  | .ir _ _, true =>
     intp2_mono_std_ir
-      (desc.le_hypothesify bv bvDepth inv isConstrained.elimIrLeft v_le)
-      (desc.le_hypothesify bv bvDepth inv isConstrained.elimIrRite v_le)
-  | .condSome _ => 
-    intp2_mono_std_condSome
-      (desc.le_hypothesify bv bvDepth inv isConstrained.elimCondSome v_le)
-  | .condFull _ =>
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimIrLeft v_le)
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimIrRite v_le)
+  | .ir _ _, false =>
+    intp2_mono_std_ir
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimIrLeft v_le)
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimIrRite v_le)
+  | .condFull _, true =>
     intp2_mono_std_condFull
-      (desc.le_hypothesify bv bvDepth inv isConstrained.elimCondFull v_le)
-  | .compl _ => le_rfl
-  | .arbUn _ =>
-    inter_mono_std_arbUn fun d =>
-      desc.le_hypothesify bv (d :: bvDepth) inv isConstrained.elimArbUn v_le
-  | .arbIr _ =>
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimCondFull v_le)
+  | .condFull _, false =>
+    intp2_mono_std_condFull
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimCondFull v_le)
+  | .compl _, true =>
+    inter_mono_std_compl
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimCompl v_le)
+  | .compl _, false =>
+    inter_mono_std_compl
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimCompl v_le)
+  | .arbIr _, true =>
     inter_mono_std_arbIr fun d =>
-      desc.le_hypothesify bv (d :: bvDepth) inv isConstrained.elimArbIr v_le
+      desc.le_hypothesify bv (d :: bvDepth) inv laneEq.elimArbIr v_le
+  | .arbIr _, false =>
+    inter_mono_std_arbIr fun d =>
+      desc.le_hypothesify bv (d :: bvDepth) inv laneEq.elimArbIr v_le
 
 
 def MutIndDescriptor.isSound
@@ -143,14 +163,14 @@ def MutIndDescriptor.isSound
         let op := operatorC dl dl.wfm
         let predStage := op.lfpStage n.pred
         let predStageLe := dl.lfpStage_le_wfm_std n.pred
-        let laneEq := desc[i].expansion.laneEqCtx .posLane
+        let laneEq := desc[i].expansion.laneEqEven .posLane true
         let lePremiseL := desc.le_hypothesify bv [] ihPred laneEq predStageLe
         let leExp := desc[i].expandsInto.lfpStage_le_std bv n.pred
         let isPosBv:
           (BasicExpr.triIntp2 (dl.getDef desc[i].left) bv dl.wfm predStage).posMem _
-        :=
-          dl.interp_eq_bv desc[i].left [] bv dl.wfm predStage ▸
-          isPos
+        := by
+          rw [←dl.interp_eq_bv desc[i].left [] bv dl.wfm predStage]
+          exact isPos
         premisesHold i bv (lePremiseL (leExp.posLe isPosBv)))
   
   by rw [←eq] at isDefSub; exact isDefSub i
@@ -163,7 +183,7 @@ structure CoinductionDescriptor (dl: DefList) where
   left: SingleLaneExpr
   rite: Nat
   expansion: BasicExpr
-  expandsInto: ExpandsInto dl (dl.getDef rite) expansion
+  expandsInto: ExpandsInto dl true (dl.getDef rite) expansion
 
 def CoinductionDescriptor.toInduction
   (desc: CoinductionDescriptor dl)
@@ -192,7 +212,7 @@ def MutCoindDescriptor.hypothesis
   (desc: MutCoindDescriptor dl)
   (depth: Nat)
   -- We can ignore the lane analogously to `MutIndDescriptor.hypothesis`.
-  (_: SingleLaneVarType)
+  (_: Set3.Lane)
   (x: Nat)
 :
   SingleLaneExpr
@@ -205,16 +225,16 @@ def MutCoindDescriptor.hypothesify
 :
   SingleLaneExpr
 :=
-  .compl (expr.replaceComplZeroVars 0 desc.hypothesis)
+  .compl (expr.replaceDepthEvenVars 0 true desc.hypothesis)
 
 def MutCoindDescriptor.sub_hypothesify
   (desc: MutCoindDescriptor dl)
-  (sub: dl.SubsetStx ctx (replaceComplZeroVars expr 0 desc.hypothesis) b)
+  (sub: dl.SubsetStx ctx (Expr.replaceDepthEvenVars expr 0 true desc.hypothesis) b)
 :
   let descMap: MutIndDescriptor dl :=
     desc.map CoinductionDescriptor.toInduction
   
-  dl.SubsetStx ctx (replaceComplZeroVars expr 0 descMap.hypothesis) b
+  dl.SubsetStx ctx (Expr.replaceDepthEvenVars expr 0 true descMap.hypothesis) b
 :=
   let rec helper := 4
   match expr with
@@ -222,18 +242,12 @@ def MutCoindDescriptor.sub_hypothesify
   | .bvar x => sub
   | .null => sub
   | .pair l r => sorry
-  | .un l r =>
-      .subUn
-        (sub_hypothesify desc sub.subUnElimL)
-        (sub_hypothesify desc sub.subUnElimR)
   | .ir l r =>
       -- let subL := sub_hypothesify desc sub.subIrSwapL
       -- let subR := sub_hypothesify desc sub.subIrSwapR
       sorry
-  | .condSome body => sorry
   | .condFull body => sorry
-  | .compl body => sub
-  | .arbUn body => sorry
+  | .compl body => sorry
   | .arbIr body => sorry
   
 def mutCoinduction
@@ -290,7 +304,7 @@ def mutCoinduction
         ctx
         desc.left
         (.compl
-          ((desc.expansion.toLane .posLane).replaceComplZeroVars 0 fun depth _ x =>
+          ((desc.expansion.toLane .posLane).replaceDepthEvenVars 0 true fun depth _ x =>
             desc.hypothesis depth x (.var .posLane x))))
   :
     dl.SubsetStx ctx desc.left (.compl (.var .posLane desc.rite))
@@ -309,7 +323,7 @@ def mutCoinduction
         ctx
         left
         (.compl
-          (((dl.getDef rite).toLane .posLane).replaceComplZeroVars 0 fun depth _ x =>
+          (((dl.getDef rite).toLane .posLane).replaceDepthEvenVars 0 true fun depth _ x =>
             if rite = x then .ir (.compl (left.lift 0 depth)) (.var .posLane x) else (.var .posLane x))))
   :
     dl.SubsetStx ctx left (.compl (.var .posLane rite))

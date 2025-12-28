@@ -4,6 +4,7 @@ namespace Etst
 open Expr
 
 
+open SingleLaneExpr in
 def DefList.SubsetStx.isSound
   (sub: SubsetStx dl ctx a b)
 :
@@ -22,34 +23,27 @@ def DefList.SubsetStx.isSound
     (fun _ _ => inUnL)
     (fun _ _ => inUnR)
     (fun _ _ isSubAc isSubBc bv _ isIn =>
-      isIn.elim (fun i => isSubAc bv i) (fun i => isSubBc bv i))
+      (inUnElim isIn).elim
+        (fun i => isSubAc bv i)
+        (fun i => isSubBc bv i))
     (fun _ _ => inIrElimL)
     (fun _ _ => inIrElimR)
-    (fun _ _ isSubA isSubB bv _ isIn => inIr (isSubA bv isIn) (isSubB bv isIn))
     (fun _ _ isSubA isSubB bv _ isIn =>
-      (isSubA bv isIn).elim
+      inIr (isSubA bv isIn) (isSubB bv isIn))
+    (fun _ _ isSubA isSubB bv _ isIn =>
+      (inUnElim (isSubA bv isIn)).elim
         (fun inAl => inUnL (inIr inAl (isSubB bv isIn)))
         (fun inAr => inUnR (inIr inAr (isSubB bv isIn))))
-    (fun _ _ _ => ⟨.null, rfl⟩)
-    (fun _ _ isSubL isSubR bv _ _ =>
-      let ⟨l, inL⟩ := isSubL bv ⟨.null, rfl⟩
-      let ⟨r, inR⟩ := isSubR bv ⟨.null, rfl⟩
-      ⟨_, l, r, rfl, inL, inR⟩)
-    (fun _ _ ab a bv _ _ =>
-      let ⟨_, inA⟩ := a bv ⟨.null, rfl⟩
-      ⟨_, ab bv inA⟩)
-    (fun _ _ isSubA isSubB bv _ _ =>
-      let ⟨_, inA⟩ := isSubA bv ⟨.null, rfl⟩
-      let ⟨_, inCondB⟩ := isSubB bv inA
-      ⟨_, inCondB⟩)
-    (fun _ sub bv _ _ p => sub bv ⟨p, rfl⟩)
+    (fun _ sub bv _ _ p => sub bv (inArbUn p rfl))
     (fun _ sub bv _ isIn => sub bv isIn _)
     (fun _ _ subSome subFull bv _ isInAny p =>
-      let ⟨_, inA⟩ := subSome bv isInAny
+      let ⟨_, inA⟩ := inCondSomeElim (subSome bv isInAny)
       subFull bv inA p)
     (fun _ _ => SingleLaneExpr.InWfm.in_def)
     (fun _ _ => SingleLaneExpr.InWfm.of_in_def)
     (fun _ _ ab bc bv _ isIn => bc bv (ab bv isIn))
-    (fun _ _ _ => Classical.em _)
+    (fun _ _ _ =>
+      (Classical.em _).elim inUnL (fun nin => inUnR nin))
     nofun
-    (fun _ _ out ih bv _ isIn => MutIndDescriptor.isSound _ ih out bv isIn)
+    (fun _ _ out ih bv _ isIn =>
+      MutIndDescriptor.isSound _ ih out bv isIn)

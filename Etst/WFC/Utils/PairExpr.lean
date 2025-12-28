@@ -6,10 +6,6 @@ namespace Etst
 
 
 namespace Expr
-  open Expr
-  open SingleLaneExpr
-  
-  
   def impl (left rite: Expr E) := un left.compl rite
   
   def ifThen (cond body: Expr E): Expr E :=
@@ -20,13 +16,6 @@ namespace Expr
   
   def ite (cond yes no: Expr E): Expr E :=
     un (ifThen cond yes) (ifElse cond no)
-  
-  def pairCompl (a b: Expr E) :=
-    un
-      null
-      (un
-        (pair a.compl any)
-        (pair any b.compl))
   
   
   /-
@@ -109,138 +98,53 @@ namespace Expr
   def nat: Nat → Expr E
   | Nat.zero => null
   | Nat.succ pred => succ (nat pred)
-  
-  
-  def InP
-    (bv: List Pair)
-    (b c: Valuation Pair)
-    (expr: SingleLaneExpr)
-    (d: Pair)
-  :=
-    expr.intp2 bv b c d
-  
-  
-  def inUnL (inL: InP bv b c exprL d):
-    InP bv b c (un exprL exprR) d
-  :=
-    Or.inl inL
-  
-  def inUnR (inR: InP bv b c exprR d):
-    InP bv b c (un exprL exprR) d
-  :=
-    Or.inr inR
-  
-  def inUnElim
-    (inUn: InP bv b c (un exprL exprR) d)
-  :
-    InP bv b c exprL d ∨ InP bv b c exprR d
-  :=
-    inUn
-  
-  
-  def inIr
-    (l: InP bv b c exprL d)
-    (r: InP bv b c exprR d)
-  :
-    InP bv b c (ir exprL exprR) d
-  :=
-    ⟨l, r⟩
-  
-  def inIrElim
-    (inIr: InP bv b c (ir exprL exprR) d)
-  :
-    And
-      (InP bv b c exprL d)
-      (InP bv b c exprR d)
-  :=
-    inIr
-  
-  def inIrElimL
-    (inIr: InP bv b c (ir exprL exprR) d)
-  :
-    InP bv b c exprL d
-  :=
-    inIr.left
+end Expr
 
-  def inIrElimR
-    (inIr: InP bv b c (ir exprL exprR) d)
-  :
-    InP bv b c exprR d
-  :=
-    inIr.right
-  
-  
-  def inCondSome
-    (inExpr: InP bv b c expr dE)
-    (d: Pair)
-  :
-    InP bv b c (condSome expr) d
-  :=
-    ⟨dE, inExpr⟩
-  
-  def inCondSomeElim
-    (inCondSome: InP bv b c (condSome expr) d)
-  :
-    ∃ dE, InP bv b c expr dE
-  :=
-    let ⟨dE, inExpr⟩ := inCondSome
-    ⟨dE, inExpr⟩
-  
-  
-  def inCondFull
-    (allInExpr: (dE: Pair) → InP bv b c expr dE)
-    (d: Pair)
-  :
-    InP bv b c (condFull expr) d
-  :=
-    allInExpr
-  
-  def inCondFullElim
-    (inCondFull: InP bv b c (condFull expr) d)
-  :
-    ∀ dE, InP bv b c expr dE
-  :=
-    inCondFull
-  
+
+namespace SingleLaneExpr
+  open Expr
   
   def inImpl
-    (inFn: InP bv b b exprA d → InP bv b c exprB d)
+    -- Note the swapped valuations in the domain.
+    (inFn: intp2 exprA bv c b d → intp2 exprB bv b c d)
   :
-    InP bv b c (impl exprA exprB) d
+    intp2 (impl exprA exprB) bv b c d
   :=
-    match Classical.em (InP bv b b exprA d) with
-    | Or.inl inA => Or.inr (inFn inA)
-    | Or.inr notInA => Or.inl notInA
+    match Classical.em (intp2 exprA bv c b d) with
+    | Or.inl inA => inUnR (inFn inA)
+    | Or.inr notInA => inUnL notInA
   
   def inImplElim
-    (inImpl: InP bv b c (impl exprA exprB) d)
+    (inImpl: intp2 (impl exprA exprB) bv b c d)
   :
-    (InP bv b b exprA d → InP bv b c exprB d)
+    -- Note the swapped valuations in the domain.
+    (intp2 exprA bv c b d → intp2 exprB bv b c d)
   :=
-    match inImpl with
-    | Or.inl notInA => fun inA => False.elim (notInA inA)
-    | Or.inr inB => fun _ => inB
+    fun inA =>
+      (inUnElim inImpl).elim
+        (fun inComplA => (inComplElim inComplA inA).elim)
+        id
   
   
   def inIfThen
     {cond: SingleLaneExpr}
-    (inCond: InP bv b c cond dC)
-    (inBody: InP bv b c body d)
+    (inCond: intp2 cond bv b c dC)
+    (inBody: intp2 body bv b c d)
   :
-    InP bv b c (ifThen cond body) d
+    intp2 (ifThen cond body) bv b c d
   :=
-    ⟨⟨dC, inCond⟩, inBody⟩
+    inIr (inCondSome dC inCond) inBody
   
   def inIfThenElim
     {cond: SingleLaneExpr}
-    (inIfThen: InP bv b c (ifThen cond body) d)
+    (inIfThen: intp2 (ifThen cond body) bv b c d)
   :
     And
-      (∃ dC, InP bv b c cond dC)
-      (InP bv b c body d)
+      (∃ dC, intp2 cond bv b c dC)
+      (intp2 body bv b c d)
   :=
-    let ⟨exCond, inBody⟩ := inIfThen
-    And.intro exCond inBody
+    let ⟨inCond, inBody⟩ := inIrElim inIfThen
+    And.intro (inCondSomeElim inCond) inBody
   
   
   /-
@@ -250,16 +154,13 @@ namespace Expr
   -/
   def inUnDom
     (inDomain:
-      InP (dB :: bv) b c domain dB)
+      intp2 domain (dB :: bv) b c dB)
     (inBody:
-      InP (dB :: bv) b c body d)
+      intp2 body (dB :: bv) b c d)
   :
-    InP bv b c (arbUnDom domain body) d
+    intp2 (arbUnDom domain body) bv b c d
   :=
-    -- let inUpdated: ((c.update x dBound) x).defMem dBound :=
-    --   Valuation.in_update_bound_defMem rfl
-    
-    inArbUn dB ⟨⟨dB, ⟨rfl, inDomain⟩⟩, inBody⟩
+    inArbUn dB (inIr (inCondSome dB ⟨rfl, inDomain⟩) inBody)
   
   -- I wish Lean supported anonymous structures.
   -- And also non-Prop-typed members of prop structures
@@ -274,26 +175,27 @@ namespace Expr
     (domain body: SingleLaneExpr)
     (d: Pair): Prop
   where
-    inDomain: InP (dB :: bv) b c domain dB
-    inBody: InP (dB :: bv) b c body d
+    inDomain: intp2 domain (dB :: bv) b c dB
+    inBody: intp2 body (dB :: bv) b c d
   
   def inUnDomElim
-    (inUnDom: InP bv b c (arbUnDom domain body) d)
+    (inUnDom: intp2 (arbUnDom domain body) bv b c d)
   :
     ∃ dBound, InsUnDomElim bv b c x dBound domain body d
   :=
-    let ⟨dBound, ⟨_, dInIr⟩, inBody⟩ := inUnDom.unwrap
-    let dEq := inBvarElim dInIr.left rfl
-    let inDomain := dEq ▸ dInIr.right
-    ⟨dBound, { inDomain, inBody }⟩
+    let ⟨dBound, inIfThen⟩ := inArbUnElim inUnDom
+    let ⟨⟨_dC, inBvDom⟩, inBody⟩ := inIfThenElim inIfThen
+    let ⟨inBv, inDom⟩ := inIrElim inBvDom
+    let bvEq := inBvarElim inBv rfl
+    ⟨dBound, { inDomain := bvEq ▸ inDom, inBody }⟩
   
   
   def inFinUn
     {list: List SingleLaneExpr}
     (exprIn: expr ∈ list)
-    (inExpr: InP bv b c expr p)
+    (inExpr: intp2 expr bv b c p)
   :
-    InP bv b c (finUn list) p
+    intp2 (finUn list) bv b c p
   :=
     match list with
     | List.cons _e0 _rest =>
@@ -310,10 +212,10 @@ namespace Expr
     List SingleLaneExpr → Prop
   | List.nil => P
   | List.cons head tail =>
-    (InP bv b c head d → P) → InFinUnElim bv b c d P tail
+    (intp2 head bv b c d → P) → InFinUnElim bv b c d P tail
   
   def inFinUnElim
-    (inFinUn: InP bv b c (finUn list) d)
+    (inFinUn: intp2 (finUn list) bv b c d)
   :
     InFinUnElim bv b c d P list
   :=
@@ -331,175 +233,61 @@ namespace Expr
         (fun inTail _ => inFinUnElim inTail)
   
   
-  def inNull:
-    InP bv b c null Pair.null
-  :=
-    rfl
-  
-  def inNullElim
-    (inNull: InP bv b c null p)
-  :
-    p = Pair.null
-  :=
-    inNull
-  
-  def inNullElim.neq
-    (inNull: InP bv b c null p)
-    a b
-  :
-    p ≠ Pair.pair a b
-  :=
-    fun eq =>
-      Pair.noConfusion (inNull.symm.trans eq)
-  
-  def inNullElim.nope
-    (inNull: InP bv b c null (Pair.pair pA pB))
-  :
-    P
-  :=
-    False.elim (inNullElim.neq inNull pA pB rfl)
-  
-  
-  def inPair
-    (inL: InP bv b c exprL pairL)
-    (inR: InP bv b c exprR pairR)
-  :
-    InP bv b c (pair exprL exprR) (Pair.pair pairL pairR)
-  :=
-    ⟨pairL, pairR, rfl, inL, inR⟩
-  
-  structure InPairElim
-    (bv: List Pair)
-    (b c: Valuation Pair)
-    (exprL exprR: SingleLaneExpr)
-    (pairL pairR: Pair): Prop
-  where
-    inL: InP bv b c exprL pairL
-    inR: InP bv b c exprR pairR
-  
-  def inPairElim
-    (inPair: InP bv b c (pair exprL exprR) (Pair.pair pairL pairR))
-  :
-    InPairElim bv b c exprL exprR pairL pairR
-  :=
-    let ⟨_pairL, _pairR, eq, inL, inR⟩ := inPair
-    let ⟨eqL, eqR⟩ := Pair.noConfusion eq And.intro
-    ⟨eqL ▸ inL, eqR ▸ inR⟩
-  
-  structure InPairElimEx
-    (bv: List Pair)
-    (b c: Valuation Pair)
-    (exprL exprR: SingleLaneExpr)
-    (p pairL pairR: Pair)
-  :
-    Prop
-  where
-    eq: p = Pair.pair pairL pairR
-    inL: InP bv b c exprL pairL
-    inR: InP bv b c exprR pairR
-  
-  def inPairElim.ex
-    (inPair: InP bv b c (pair exprL exprR) p)
-  :
-    ∃ pairL pairR: Pair,
-      InPairElimEx bv b c exprL exprR p pairL pairR
-  :=
-    match p with
-    | Pair.pair a b => ⟨a, b, {
-        __ := inPairElim inPair
-        eq := rfl
-      }⟩
-  
-  def inPairElim.notZero
-    (inPair: InP bv b c (pair exprL exprR) p)
-  :
-    p ≠ Pair.null
-  :=
-    let ⟨_pairL, prop⟩ := (ex inPair).unwrap
-    let ⟨_pairR, prop⟩ := prop.unwrap
-    
-    prop.eq ▸ Pair.noConfusion
-  
-  def inPairElim.nope
-    (inPair: InP bv b c (pair exprL exprR) Pair.null)
-  :
-    P
-  :=
-    (notZero inPair rfl).elim
-  
   
   def inZthMember
-    (inExpr: InP (pA :: bv) b c expr (Pair.pair pA pB))
+    (inExpr: intp2 expr (pA :: bv) b c (Pair.pair pA pB))
   :
-    InP bv b c (zthMember expr) pA
+    intp2 (zthMember expr) bv b c pA
   :=
-    inArbUn pA ⟨
-      ⟨Pair.pair pA pB, (inPair rfl inAny), inExpr⟩,
-      rfl,
-    ⟩
+    inArbUn pA (inIfThen (inIr (inPair rfl inAny) inExpr) rfl)
   
   
   def inFstMember
-    (inExpr: InP (pB :: bv) b c expr (Pair.pair pA pB))
+    (inExpr: intp2 expr (pB :: bv) b c (Pair.pair pA pB))
   :
-    InP bv b c (fstMember expr) pB
+    intp2 (fstMember expr) bv b c pB
   :=
-    inArbUn _ ⟨
-      ⟨Pair.pair pA pB, (inPair inAny rfl), inExpr⟩,
-      rfl,
-    ⟩
+    inArbUn pB (inIfThen (inIr (inPair inAny rfl) inExpr) rfl)
   
   
   def inZthMemberElim
-    (inZthMember: InP bv b c (zthMember expr) zth)
+    (inZthMember: intp2 (zthMember expr) bv b c zth)
   :
-    ∃ fst,
-      InP
-        (zth :: bv)
-        b
-        c
-        expr
-        (Pair.pair zth fst)
+    ∃ fst, intp2 expr (zth :: bv) b c (Pair.pair zth fst)
   :=
-    let ⟨pZth, ⟨inCond, inBody⟩⟩ := inZthMember
-    let ⟨pCond, ⟨InPairXaAny, pCondInsExpr⟩⟩ := inCond
+    let ⟨pZth, ⟨inCond, inBody⟩⟩ := inArbUnElim inZthMember
+    let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inCondSomeElim inCond
     
     match pCond with
-    | Pair.null => inPairElim.nope InPairXaAny
+    | Pair.null => inPairElimNope inPair
     | Pair.pair pCondZth pCondFst =>
-      let ⟨inL, _insR⟩ := inPairElim InPairXaAny
+      let ⟨inL, _insR⟩ := inPairElim inPair
       let eqPCondZth: pCondZth = pZth := inBvarElim inL rfl
       let eqPZth: zth = pZth := inBvarElim inBody rfl
-      ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInsExpr⟩
+      ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInExpr⟩
   
   def inFstMemberElim
-    (inFstMember: InP bv b c (fstMember expr) fst)
+    (inFstMember: intp2 (fstMember expr) bv b c fst)
   :
-    ∃ zth,
-      InP
-        (fst :: bv)
-        b
-        c
-        expr
-        (Pair.pair zth fst)
+    ∃ zth, intp2 expr (fst :: bv) b c (Pair.pair zth fst)
   :=
-    let ⟨pFst, ⟨inCond, inBody⟩⟩ := inFstMember
-    let ⟨pCond, ⟨InPairAnyXa, pCondInsExpr⟩⟩ := inCond
+    let ⟨pFst, ⟨inCond, inBody⟩⟩ := inArbUnElim inFstMember
+    let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inCondSomeElim inCond
     
     match pCond with
-    | Pair.null => inPairElim.nope InPairAnyXa
+    | Pair.null => inPairElimNope inPair
     | Pair.pair pCondZth pCondFst =>
-      let ⟨_insL, inR⟩ := inPairElim InPairAnyXa
-      let eqPCondZth: pCondFst = pFst := inBvarElim inR rfl
-      let eqPZth: fst = pFst := inBvarElim inBody rfl
-      ⟨pCondZth, eqPZth ▸ eqPCondZth ▸ pCondInsExpr⟩
+      let ⟨_insL, inR⟩ := inPairElim inPair
+      let eqPCondFst: pCondFst = pFst := inBvarElim inR rfl
+      let eqPFst: fst = pFst := inBvarElim inBody rfl
+      ⟨pCondZth, eqPFst ▸ eqPCondFst ▸ pCondInExpr⟩
   
   def inZthFstElim
-    (inZth: InP bv b c (zthMember (Expr.var lane x)) zth)
-    (inFst: InP bv b c (fstMember (Expr.var lane x)) fst)
+    (inZth: intp2 (zthMember (Expr.var lane x)) bv b c zth)
+    (inFst: intp2 (fstMember (Expr.var lane x)) bv b c fst)
     (isUnit: c x = Set3.just d)
   :
-    InP bv b c (Expr.var lane x) (Pair.pair zth fst)
+    intp2 (Expr.var lane x) bv b c (Pair.pair zth fst)
   :=
     let ⟨fstB, inFstB⟩ := inZthMemberElim inZth
     let ⟨zthB, inZthB⟩ := inFstMemberElim inFst
@@ -518,32 +306,32 @@ namespace Expr
   
   
   def inCall
-    (inFn: InP (pB :: bv) b c fn (Pair.pair pA pB))
-    (inArg: InP (pB :: bv) b c arg pA)
+    (inFn: intp2 fn (pB :: bv) b c (Pair.pair pA pB))
+    (inArg: intp2 arg (pB :: bv) b c pA)
   :
-    InP bv b c (call fn arg) pB
+    intp2 (call fn arg) bv b c pB
   :=
     inFstMember (inIr inFn (inPair inArg inAny))
   
   
   def inCallElim
-    (inCall: InP bv b c (call fn arg) pB)
+    (inCall: intp2 (call fn arg) bv b c pB)
   :
     ∃ pA,
       And
-        (InP (pB :: bv) b c fn (Pair.pair pA pB))
-        (InP (pB :: bv) b c arg pA)
+        (intp2 fn (pB :: bv) b c (Pair.pair pA pB))
+        (intp2 arg (pB :: bv) b c pA)
   :=
     let ⟨zth, inIr⟩ := inFstMemberElim inCall
     let ⟨inFn, inP⟩ := inIrElim inIr
     
-    ⟨zth, And.intro inFn (inPairElim inP).inL⟩
+    ⟨zth, And.intro inFn (inPairElim inP).left⟩
   
   def inCallElimBound
-    (inCall: InP bv b c (call fn (Expr.var lane arg)) pB)
+    (inCall: intp2 (call fn (Expr.var lane arg)) bv b c pB)
     (isUnit: c arg = Set3.just pA)
   :
-    InP (pB :: bv) b c fn (Pair.pair pA pB)
+    intp2 fn (pB :: bv) b c (Pair.pair pA pB)
   :=
     let ⟨aAlias, ⟨inFn, inArg⟩⟩ := inCallElim inCall
     let eq: aAlias = pA :=
@@ -555,26 +343,26 @@ namespace Expr
   
   def inNat b c n
   :
-    InP bv b c (nat n) (Pair.fromNat n)
+    intp2 (nat n) bv b c (Pair.fromNat n)
   :=
     match n with
     | Nat.zero => inNull
     | Nat.succ pred => inPair (inNat b c pred) inNull
   
   def inNatElim
-    (inNatExpr: InP bv b c (nat n) p)
+    (inNatExpr: intp2 (nat n) bv b c p)
   :
     p = Pair.fromNat n
   :=
     match n, p with
     | Nat.zero, _ => inNullElim inNatExpr ▸ rfl
-    | Nat.succ _, .null => inPairElim.nope inNatExpr
+    | Nat.succ _, .null => inPairElimNope inNatExpr
     | Nat.succ _, .pair _ _ =>
       let ⟨l, r⟩ := inPairElim inNatExpr
       (inNatElim l) ▸ (inNullElim r) ▸ rfl
   
   def inNatElimNope
-    (inNat: InP bv b c (nat n) (.fromNat m))
+    (inNat: intp2 (nat n) bv b c (.fromNat m))
     (neq: n ≠ m)
   :
     P
@@ -582,69 +370,17 @@ namespace Expr
     (neq (Pair.fromNat_inj_eq (Eq.symm (inNatElim inNat)))).elim
   
   def inNatElimDepth
-    (inNat: InP bv b c (nat n) p)
+    (inNat: intp2 (nat n) bv b c p)
   :
     p.depth = n
   :=
     (inNatElim inNat) ▸ (Pair.fromNat_depth_eq n)
   
   def inNatElimDecode
-    (inNatExpr: InP bv b c (nat n) p)
+    (inNatExpr: intp2 (nat n) bv b c p)
   :
     p.depth = n
   :=
     inNatElimDepth inNatExpr
   
-end Expr
-
-
-def Expr.toString (serializeVar: E → Nat → String):
-  Expr E → String
-| .var info x => serializeVar info x
-| .bvar x => s!"b{x}"
-| .null =>
-  "null"
-| .pair left rite =>
-  let left := left.toString serializeVar
-  let rite := rite.toString serializeVar
-  s!"({left}, {rite})"
-| .un left rite =>
-  let left := left.toString serializeVar
-  let rite := rite.toString serializeVar
-  s!"({left}) | ({rite})"
-| .ir left rite =>
-  let left := left.toString serializeVar
-  let rite := rite.toString serializeVar
-  s!"({left}) & ({rite})"
-| .condSome body =>
-  let cond := body.toString serializeVar
-  s!"(?i {cond})"
-| .condFull body =>
-  let cond := body.toString serializeVar
-  s!"(?f {cond})"
-| .compl expr =>
-  let exprStr := expr.toString serializeVar
-  s!"!({exprStr})"
-| .arbUn body =>
-  let bodyStr := body.toString serializeVar
-  s!"Ex ({bodyStr})"
-| .arbIr body =>
-  let bodyStr := body.toString serializeVar
-  s!"All ({bodyStr})"
-
-def BasicExpr.toString: BasicExpr → String :=
-  Expr.toString fun _ x => s!"{x}"
-
-def SingleLaneExpr.toString: SingleLaneExpr → String :=
-  Expr.toString fun
-    | .defLane, x => s!":{x}"
-    | .posLane, x => s!".{x}"
-
-instance: ToString BasicExpr where
-  toString := BasicExpr.toString
-
-instance: ToString SingleLaneExpr where
-  toString := SingleLaneExpr.toString
-
-instance: ToString (Expr Unit) := instToStringBasicExpr
-instance: ToString (Expr SingleLaneVarType) := instToStringSingleLaneExpr
+end SingleLaneExpr
