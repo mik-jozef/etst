@@ -121,26 +121,23 @@ namespace DefList
     let ihL: dl.IsFullStx (impl al bl) := subL.toIsFullStx
     let ihR: dl.IsFullStx (impl ar br) := subR.toIsFullStx
     .mp (.mp .fPairMono (.fFull ihL)) (.fFull ihR)
-  | subUnL => .fUnL
-  | subUnR => .fUnR
-  | subUn l r => .fUnImpl l.toIsFullStx r.toIsFullStx
   | subIrL => .fIrL
   | subIrR => .fIrR
   | subIr ac bc =>
       let ac' := ac.toIsFullStx
       let bc' := bc.toIsFullStx
       .mp (.mp .distImpl (ac'.trans .fIr)) bc'
-  | unIr subA subB =>
-      let subA' := subA.toIsFullStx
-      let subB' := subB.toIsFullStx
-      .mp (.mp .distImpl (subA'.trans .distrib)) subB'
-  | condFull _ => sorry
-  | condFullElim _ => sorry
-  | condFullUpgrade _ _ => sorry
-  | subUnfold => .unfold _ _
-  | subFold => .fold _ _
+  | irUnDistL => sorry
+  | subCompl sub => sorry
+  | dne => sorry
+  | dni => sorry
+  | isFull _ => sorry
+  | fullImplElim => sorry
+  | fullElim => sorry
+  | someStripFull => sorry
+  | unfold => .unfold _ _
+  | fold => .fold _ _
   | trans ab bc => ab.toIsFullStx.trans bc.toIsFullStx
-  | em =>  .mp .fUnR (.mp .unComm .em)
   | subPe => .subPe
   | mutInduction _ _ _ => sorry
   

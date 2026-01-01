@@ -144,6 +144,12 @@ Un a, full Un b: a & null, b
 Ir a, full Un b: a & null, b
 
 
+pair a b <= not null
+not null <= pair any any
+
+Ex n: Nat, (some n & !null) & n  ⊆  succ Nat
+
+
 (Ex a, (a, (a, Any))) & (Ex a, (Any, (a, a)))  ⊆  Ex a, (a, (a, a))
   Ex a b, (a, (a, Any)) & (Any, (b, b))
   Ex a b, (a & Any, (a & b, Any & b))
@@ -171,6 +177,14 @@ Ir a b, X === Ir b a, X
 
 Un a b, X  ⊆  Un b a, X
 
+condFull null  <=  none
+
+condX expr |& condX expr'  ==?  condX (expr |& expr')
+
+condFull B  ==  arbIr (condFull B)
+condSome B  ==  arbUn (condSome B)
+
+
 -/
 
 
@@ -180,4 +194,10 @@ Ir t: T, B  ==  Ir t, (condSome t & ~T) | B
 
 Un t: T, B  ==  Un t, (condFull ~t | T) & B
 Ir t: T, B  ==  Ir t, (condFull ~t | ~T) | B
+
+
+
+find an example A, B, C and D st.
+(A|B) & (C|D) rsub T  and  A|B not sub T, C|D not sub T
+(A|B) & (C|D) not rsub T   A&C | A&D | B&C | B&D rsub T
 -/

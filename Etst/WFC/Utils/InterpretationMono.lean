@@ -271,8 +271,8 @@ namespace SingleLaneExpr
     intp2 (condFull e0) bv0 b0 c0 ⊆ intp2 (condFull e1) bv1 b1 c1
   :=
     fun _ ins =>
-      let insE := inCondFullElim ins (d := .null)
-      inCondFull (fun d => le (insE d)) .null
+      let insE := inCondFullElim ins
+      inCondFull .null (fun d => le (insE d))
   
   def eq_intp2_condFull_of_eq
     (eq: intp2 e0 bv0 b0 c0 = intp2 e1 bv1 b1 c1)

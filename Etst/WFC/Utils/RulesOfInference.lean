@@ -157,15 +157,19 @@ namespace SingleLaneExpr
   
   
   def inCondFull
-    (allInExpr: (dE: Pair) → expr.intp2 bv b c dE)
     (d: Pair)
+    (allInExpr: (dE: Pair) → expr.intp2 bv b c dE)
   :
     (condFull expr).intp2 bv b c d
   :=
     allInExpr
   
   def inCondFullElim
-    (inCondFull: (condFull expr).intp2 bv b c d)
+    -- note we're using null instead of d here because
+    -- it is ignored by the interpretation function,
+    -- so Lean frequently fails with "don't know how to
+    -- synthesize this implicit argument" errors.
+    (inCondFull: (condFull expr).intp2 bv b c .null)
   :
     ∀ dE, expr.intp2 bv b c dE
   :=

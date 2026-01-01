@@ -10,40 +10,46 @@ def DefList.SubsetStx.isSound
 :
   dl.Subset a b
 :=
-  -- Using match expressions resulted in "failed to show termination".
-  -- That was before the removal of signatures, maybe now it would work :shrug:
-  sub.rec
-    (motive := fun a b _ => ∀ bv, dl.SubsetBv bv a b)
-    (fun _ _ => id)
-    (fun _ _ => Set3.defMem.toPos)
-    (fun
-    | _, _, isSubL, isSubR, bv, .pair _ _, isIn =>
-      let ⟨inwL, inwR⟩ := inPairElim isIn
-      inPair (isSubL bv inwL) (isSubR bv inwR))
-    (fun _ _ => inUnL)
-    (fun _ _ => inUnR)
-    (fun _ _ isSubAc isSubBc bv _ isIn =>
-      (inUnElim isIn).elim
-        (fun i => isSubAc bv i)
-        (fun i => isSubBc bv i))
-    (fun _ _ => inIrElimL)
-    (fun _ _ => inIrElimR)
-    (fun _ _ isSubA isSubB bv _ isIn =>
-      inIr (isSubA bv isIn) (isSubB bv isIn))
-    (fun _ _ isSubA isSubB bv _ isIn =>
-      (inUnElim (isSubA bv isIn)).elim
-        (fun inAl => inUnL (inIr inAl (isSubB bv isIn)))
-        (fun inAr => inUnR (inIr inAr (isSubB bv isIn))))
-    (fun _ sub bv _ _ p => sub bv (inArbUn p rfl))
-    (fun _ sub bv _ isIn => sub bv isIn _)
-    (fun _ _ subSome subFull bv _ isInAny p =>
-      let ⟨_, inA⟩ := inCondSomeElim (subSome bv isInAny)
-      subFull bv inA p)
-    (fun _ _ => SingleLaneExpr.InWfm.in_def)
-    (fun _ _ => SingleLaneExpr.InWfm.of_in_def)
-    (fun _ _ ab bc bv _ isIn => bc bv (ab bv isIn))
-    (fun _ _ _ =>
-      (Classical.em _).elim inUnL (fun nin => inUnR nin))
-    nofun
-    (fun _ _ out ih bv _ isIn =>
-      MutIndDescriptor.isSound _ ih out bv isIn)
+  fun bv d isIn =>
+    match sub with
+    | subId => isIn
+    | subDefPos => Set3.defMem.toPos isIn
+    | subPair subL subR =>
+        let ⟨_, _, eq, inL, inR⟩ := inPairElimEx isIn
+        eq ▸ inPair (subL.isSound bv inL) (subR.isSound bv inR)
+    | subIrL => inIrElimL isIn
+    | subIrR => inIrElimR isIn
+    | subIr subA subB =>
+        inIr (subA.isSound bv isIn) (subB.isSound bv isIn)
+    | irUnDistL =>
+        let ⟨isInUn, isInC⟩ := inIrElim isIn
+        (inUnElim isInUn).elim
+          (fun isInA => inUnL (inIr isInA isInC))
+          (fun isInB => inUnR (inIr isInB isInC))
+    | subCompl sub =>
+        fun isInA => isIn (sub.isSound bv isInA)
+    | dne =>
+        Classical.byContradiction isIn
+    | dni =>
+        fun nin => nin isIn
+    | isFull subA =>
+        fun _ => subA.isSound bv inAny
+    | fullImplElim =>
+        inImpl fun inFullA =>
+          inCondFull d (fun dB =>
+            inImplElim
+              (inCondFullElim isIn dB)
+              (inCondFullElim inFullA dB))
+    | fullElim =>
+        isIn _
+    | someStripFull =>
+        let ⟨_, inFullA⟩ := inCondSomeElim isIn
+        inFullA
+    | unfold => SingleLaneExpr.InWfm.in_def isIn
+    | fold => SingleLaneExpr.InWfm.of_in_def isIn
+    | trans ab bc => bc.isSound bv (ab.isSound bv isIn)
+    | subPe =>
+        let ⟨inA, inAc⟩ := inIrElim isIn
+        (inAc inA).elim
+    | mutInduction desc premises i =>
+        MutIndDescriptor.isSound desc (fun i => (premises i).isSound) i bv isIn
