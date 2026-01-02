@@ -11,133 +11,237 @@ open Expr
 
 namespace DefList
   inductive IsFullStx (dl: DefList): SingleLaneExpr → Type
-  | defPos: IsFullStx dl (impl (var .defLane x) (var .posLane x))
+  | defPos: dl.IsFullStx (impl (var .defLane x) (var .posLane x))
+    -- TODO should be probable using induction.
   | unfold (lane: Set3.Lane) (x: Nat):
-      IsFullStx dl (impl (var lane x) ((dl.getDef x).toLane lane))
+      dl.IsFullStx (impl (var lane x) ((dl.getDef x).toLane lane))
   | fold (lane: Set3.Lane) (x: Nat):
-      IsFullStx dl (impl ((dl.getDef x).toLane lane) (var lane x))
+      dl.IsFullStx (impl ((dl.getDef x).toLane lane) (var lane x))
   | mp
-      (impl: IsFullStx dl (impl a b))
-      (arg: IsFullStx dl a)
+      (impl: dl.IsFullStx (impl a b))
+      (arg: dl.IsFullStx a)
     :
-      IsFullStx dl b
+      dl.IsFullStx b
+  | simpl: dl.IsFullStx (impl a (impl b a))
   | distImpl:
-      IsFullStx dl
+      dl.IsFullStx
         (impl
           (impl a (impl b c))
           (impl (impl a b) (impl a c)))
-  | contra: IsFullStx dl (impl (impl a.compl b.compl) (impl b a))
+  | contra: dl.IsFullStx (impl (impl a.compl b.compl) (impl b a))
   | fPair:
-      IsFullStx
-        dl
+      dl.IsFullStx
         (impl
           (condFull left)
           (impl
             (condFull rite)
             (un null (pair left rite))))
   | fPairMono:
-      IsFullStx
-        dl
+      dl.IsFullStx
         (impl
           (condFull (impl al bl))
           (impl
             (condFull (impl ar br))
             (impl (pair al ar) (pair bl br))))
   | fPairEmptyL:
-      IsFullStx dl (impl (condFull (compl left)) (compl (pair left rite)))
+      dl.IsFullStx (impl (condFull (compl left)) (compl (pair left rite)))
   | fPairEmptyR:
-      IsFullStx dl (impl (condFull (compl rite)) (compl (pair left rite)))
-  | fUnL: IsFullStx dl (impl a (un a b))
-  | fUnR: IsFullStx dl (impl b (un a b))
-  | fUn:
-      IsFullStx dl (impl (impl a c) (impl (impl b c) (impl (un a b) c)))
-  | fIr: IsFullStx dl (impl a (impl b (ir a b)))
-  | fIrL: IsFullStx dl (impl (ir l r) l)
-  | fIrR: IsFullStx dl (impl (ir l r) r)
+      dl.IsFullStx (impl (condFull (compl rite)) (compl (pair left rite)))
+  | fIr: dl.IsFullStx (impl a (impl b (ir a b)))
+  | fIrL: dl.IsFullStx (impl (ir l r) l)
+  | fIrR: dl.IsFullStx (impl (ir l r) r)
   | fFull
-      (full: IsFullStx dl expr)
+      (full: dl.IsFullStx expr)
     :
-      IsFullStx dl (expr.condFull)
+      dl.IsFullStx (expr.condFull)
+  | fFullElim
+      (full: dl.IsFullStx (expr.condFull))
+    :
+      dl.IsFullStx expr
   
   namespace IsFullStx
-    def fUnImpl
-      (fullL: IsFullStx dl (impl l b))
-      (fullR: IsFullStx dl (impl r b))
-    :
-      IsFullStx dl (impl (un l r) b)
-    :=
-      (fUn.mp fullL).mp fullR
+    variable {dl: DefList}
     
-    def em: IsFullStx dl (impl a a) :=
+    def mp2
+      (abc: dl.IsFullStx (impl a (impl b c)))
+      (a: dl.IsFullStx a)
+      (b: dl.IsFullStx b)
+    :
+      dl.IsFullStx c
+    :=
+      mp (mp abc a) b
+    
+    def implSelf: dl.IsFullStx (impl a a) :=
+      mp2 distImpl simpl (simpl (b := a))
+    
+    -- The deduction theorem for IsFullStx. If assuming `hyp`
+    -- we can prove `expr` then we can prove `hyp -> expr`.
+    inductive IsFullStxFrom (dl: DefList) (hyp: SingleLaneExpr): SingleLaneExpr → Type
+    | fromHyp: IsFullStxFrom dl hyp hyp
+    | fromFull (full: dl.IsFullStx expr): IsFullStxFrom dl hyp expr
+    | mp (impl: IsFullStxFrom dl hyp (impl a b)) (arg: IsFullStxFrom dl hyp a): IsFullStxFrom dl hyp b
+
+    def IsFullStxFrom.toImpl
+      (fn: IsFullStxFrom dl a b)
+    :
+      dl.IsFullStx (impl a b)
+    :=
+      match fn with
+      | .fromHyp => implSelf
+      | .fromFull full => simpl.mp full
+      | .mp f_impl f_arg =>
+          let ih_impl := toImpl f_impl
+          let ih_arg := toImpl f_arg
+          mp2 distImpl ih_impl ih_arg
+    
+    def liftImpl:
+      dl.IsFullStx
+        (impl
+          (impl a b)
+          (impl (impl c a) (impl c b)))
+    :=
+      mp2 distImpl (mp simpl distImpl) simpl
+    
+    def exchange:
+      dl.IsFullStx (impl (impl a (impl b c)) (impl b (impl a c)))
+    :=
+      let T1 := mp (mp liftImpl simpl) distImpl
+      let T2 := mp (mp liftImpl distImpl) T1
+      mp2 distImpl T2 (mp simpl simpl)
+    
+    def trans:
+      dl.IsFullStx (impl (impl a b) (impl (impl b c) (impl a c)))
+    :=
+      mp exchange liftImpl
+    
+    def subPe: dl.IsFullStx (impl (ir a a.compl) b) :=
+      mp2 distImpl (trans.mp2 (trans.mp2 fIrR simpl) contra) fIrL
+    
+    def curry:
+      dl.IsFullStx (impl (impl (ir a b) c) (impl a (impl b c)))
+    :=
+      mp2 trans liftImpl (mp trans fIr)
+    
+    def uncurry:
+      dl.IsFullStx (impl (impl a (impl b c)) (impl (ir a b) c))
+    :=
+      let proof: IsFullStxFrom dl (impl a (impl b c)) (impl (ir a b) c) :=
+        let step0 := .fromFull fIrL
+        let step1 := .mp (.mp (.fromFull trans) step0) .fromHyp
+        .mp (.mp (.fromFull distImpl) step1) (.fromFull fIrR)
+      
+      proof.toImpl
+    
+    def byContra:
+      dl.IsFullStx
+        (impl
+          (impl (compl c) (compl b))
+          (impl (impl (compl c) b) c))
+    :=
+      let conj := ir (impl (compl c) (compl b)) (impl (compl c) b)
+      
+      let proof: IsFullStxFrom dl conj c :=
+        let h1 := .mp (.fromFull fIrL) .fromHyp
+        let h2 := .mp (.fromFull fIrR) .fromHyp
+        
+        -- nc -> (b & nb)
+        let step1 := .fromFull (mp liftImpl fIr)
+        let step2 := .mp step1 h2
+        let step3 := .fromFull distImpl
+        let step4 := .mp step3 step2
+        let step5 := .mp step4 h1
+        
+        -- nc -> ~T
+        let t := impl c c
+        let subPe' := subPe (a := b) (b := compl t)
+        let step6 := .fromFull (mp liftImpl subPe')
+        let step7 := .mp step6 step5
+        
+        -- T -> c
+        let step8 := .fromFull contra
+        let step9 := .mp step8 step7
+        
+        -- c
+        let step10 := .fromFull implSelf
+        .mp step9 step10
+      
+      mp curry proof.toImpl
+    
+    def dne: dl.IsFullStx (impl (compl (compl a)) a) :=
+      let lifted := mp2 trans (mp liftImpl byContra) distImpl
+      mp2 lifted simpl (mp simpl implSelf)
+    
+    def dni: dl.IsFullStx (impl a (compl (compl a))) :=
+      mp contra dne
+    
+    def mt: dl.IsFullStx (impl (impl a b) (impl b.compl a.compl)) :=
+      let step := mp2 trans (mp trans dne) (mp exchange byContra)
+      mp exchange (mp (mp trans simpl) (mp exchange step))
+    
+    
+    def fUnL: dl.IsFullStx (impl a (un a b)) :=
+      mp contra (mp2 trans dne fIrL)
+    
+    def fUnR: dl.IsFullStx (impl b (un a b)) :=
+      mp contra (mp2 trans dne fIrR)
+    
+    def fUn:
+      dl.IsFullStx (impl (impl a c) (impl (impl b c) (impl (un a b) c)))
+    :=
+      let step0 := mp liftImpl fIr
+      let step1 := mp2 trans (step0) distImpl
+      let step2 := mp2 trans mt step1
+      let step3 := mp exchange step2
+      let step4 := mp2 trans mt step3
+      let step5 := mp exchange step4
+      let step6 := mp liftImpl dni
+      let step7 := mp2 liftImpl trans step5
+      let step8 := mp exchange step7
+      let step9 := mp step8 step6
+      let step10 := mp2 liftImpl trans step9
+      let step11 := mp exchange step10
+      mp step11 contra
+    
+    def em: dl.IsFullStx (impl a a) :=
       (distImpl.mp fUnR).mp (fUnR (a := a))
     
-    def trans
-      (ab: IsFullStx dl (impl a b))
-      (bc: IsFullStx dl (impl b c))
-    :
-      IsFullStx dl (impl a c)
-    :=
-      mp (mp distImpl (mp fUnR bc)) ab
-    
-    def unImplTest
-      (fullUn: IsFullStx dl (un a0 b0))
-      (fullImpA: IsFullStx dl (impl a0 a1))
-      (fullImpB: IsFullStx dl (impl b0 b1))
-    :
-      IsFullStx dl (un a1 b1)
-    :=
-      let impA := trans fullImpA fUnL
-      let impB := trans fullImpB fUnR
-      mp (fUnImpl impA impB) fullUn
-    
-    def unComm: IsFullStx dl (impl (un a b) (un b a)) :=
-      fUnImpl fUnR fUnL
-    
-    def subPe: IsFullStx dl (impl (ir a a.compl) b) :=
-      (distImpl.mp (trans (trans fIrR fUnR) contra)).mp fIrL
-    
-    def lift
-      (f: IsFullStx dl (impl y z))
-    :
-      IsFullStx dl (impl (impl x y) (impl x z))
-    :=
-      mp distImpl (mp fUnR f)
+    def unComm: dl.IsFullStx (impl (un a b) (un b a)) :=
+      fUn.mp2 fUnR fUnL
     
     def distrib:
-      IsFullStx dl (impl (un al ar) (impl b (un (ir al b) (ir ar b))))
+      dl.IsFullStx (impl (un al ar) (impl b (un (ir al b) (ir ar b))))
     :=
-      let left_branch := trans fIr (lift fUnL)
-      let right_branch := trans fIr (lift fUnR)
-      fUnImpl left_branch right_branch
+      let left := mp2 trans fIr (mp liftImpl fUnL)
+      let rite := mp2 trans fIr (mp liftImpl fUnR)
+      mp2 fUn left rite
     
   end IsFullStx
   
   def SubsetStx.toIsFullStx:
     SubsetStx dl n a b →
-    IsFullStx dl (un a.compl b)
+    dl.IsFullStx (un a.compl b)
   | subId => .em
   | subDefPos => .defPos
-  | subPair (al:=al) (ar:=ar) (bl:=bl) (br:=br) subL subR =>
-    let ihL: dl.IsFullStx (impl al bl) := subL.toIsFullStx
-    let ihR: dl.IsFullStx (impl ar br) := subR.toIsFullStx
-    .mp (.mp .fPairMono (.fFull ihL)) (.fFull ihR)
+  | subPair subL subR =>
+    .mp2
+      .fPairMono
+      (.fFull subL.toIsFullStx)
+      (.fFull subR.toIsFullStx)
   | subIrL => .fIrL
   | subIrR => .fIrR
   | subIr ac bc =>
-      let ac' := ac.toIsFullStx
-      let bc' := bc.toIsFullStx
-      .mp (.mp .distImpl (ac'.trans .fIr)) bc'
-  | irUnDistL => sorry
-  | subCompl sub => sorry
-  | dne => sorry
-  | dni => sorry
+      .mp2 .distImpl (.mp2 .trans ac.toIsFullStx .fIr) bc.toIsFullStx
+  | irUnDistL => .mp .uncurry .distrib
+  | subCompl sub => .mp .mt sub.toIsFullStx
+  | dne => .dne
+  | dni => .dni
   | isFull _ => sorry
   | fullImplElim => sorry
   | fullElim => sorry
   | someStripFull => sorry
   | unfold => .unfold _ _
   | fold => .fold _ _
-  | trans ab bc => ab.toIsFullStx.trans bc.toIsFullStx
+  | trans ab bc => .mp2 .trans ab.toIsFullStx bc.toIsFullStx
   | subPe => .subPe
   | mutInduction _ _ _ => sorry
   
@@ -156,7 +260,7 @@ namespace DefList
   
   open SingleLaneExpr in
   def IsFullStx.isSound
-    (full: IsFullStx dl expr)
+    (full: dl.IsFullStx expr)
   :
     IsFull dl expr
   :=
@@ -214,6 +318,9 @@ namespace DefList
           (fun inB => inB)
           
         (intp_append dl bound (List.replicate diff Pair.null) p).mpr inB
+    | .simpl =>
+        inImpl fun inA =>
+        inImpl fun _ => inA
     | .distImpl =>
         inImpl fun inAbc =>
         inImpl fun inAb =>
@@ -252,13 +359,6 @@ namespace DefList
         inCompl fun inPair =>
           let ⟨_, r, ⟨_, _, inR⟩⟩ := inPairElimEx inPair
           inComplElim (inCondFullElim inComplPair r) inR
-    | .fUnL => inImpl inUnL
-    | .fUnR => inImpl inUnR
-    | .fUn =>
-        inImpl fun implAc =>
-        inImpl fun implBc =>
-        inImpl fun unAb =>
-          (inUnElim unAb).elim (inImplElim implAc) (inImplElim implBc)
     | .fIr =>
         inImpl fun inA =>
         inImpl fun inB =>
@@ -266,5 +366,8 @@ namespace DefList
     | .fIrL => inImpl inIrElimL
     | .fIrR => inImpl inIrElimR
     | .fFull full => fun p => full.isSound bv p bound
+    | .fFullElim fullCond =>
+        let inCond := fullCond.isSound bv p bound
+        inCondFullElim inCond p
   
 end DefList
