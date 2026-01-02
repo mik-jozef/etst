@@ -178,7 +178,7 @@ inductive DefList.SubsetStx
     (bc: SubsetStx dl ctx a r)
   :
     SubsetStx dl ctx a (ir l r)
-| -- TODO can we replace this with something more "traditional"?
+|
   irUnDistL
     {a b c: SingleLaneExpr}
   :
