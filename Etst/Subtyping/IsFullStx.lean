@@ -50,14 +50,27 @@ namespace DefList
   | fIr: dl.IsFullStx (impl a (impl b (ir a b)))
   | fIrL: dl.IsFullStx (impl (ir l r) l)
   | fIrR: dl.IsFullStx (impl (ir l r) r)
-  | fFull
-      (full: dl.IsFullStx expr)
+  | fFull (full: dl.IsFullStx a): dl.IsFullStx (condFull a)
+  -- Axiom K in modal logic.
+  | fFullImplElim:
+      dl.IsFullStx
+        (impl
+          (condFull (impl a b))
+          (impl (condFull a) (condFull b)))
+  -- Axiom T in modal logic.
+  | fFullElim:
+      dl.IsFullStx (impl (condFull expr) expr)
+  -- Contraposition of Axiom 5 (up to removal of negation from `a`)
+  | fsomeStripFull:
+      dl.IsFullStx (impl (condSome (condFull a)) (condFull a))
+  | mutInduction
+      (desc: MutIndDescriptor dl)
+      (premises:
+        (i: desc.Index) →
+        IsFullStx dl (impl (desc.hypothesify 0 (desc[i].expansion.toLane .posLane)) desc[i].rite))
+      (i: desc.Index)
     :
-      dl.IsFullStx (expr.condFull)
-  | fFullElim
-      (full: dl.IsFullStx (expr.condFull))
-    :
-      dl.IsFullStx expr
+      IsFullStx dl (impl (var .posLane desc[i].left) desc[i].rite)
   
   namespace IsFullStx
     variable {dl: DefList}
@@ -202,9 +215,6 @@ namespace DefList
       let step11 := mp exchange step10
       mp step11 contra
     
-    def em: dl.IsFullStx (impl a a) :=
-      (distImpl.mp fUnR).mp (fUnR (a := a))
-    
     def unComm: dl.IsFullStx (impl (un a b) (un b a)) :=
       fUn.mp2 fUnR fUnL
     
@@ -215,12 +225,15 @@ namespace DefList
       let rite := mp2 trans fIr (mp liftImpl fUnR)
       mp2 fUn left rite
     
+    -- TODO: `fAny` to be proven once IsFullStx has rules for quantifiers.
+    def fAny: dl.IsFullStx Expr.any := sorry
+    
   end IsFullStx
   
   def SubsetStx.toIsFullStx:
     SubsetStx dl n a b →
     dl.IsFullStx (un a.compl b)
-  | subId => .em
+  | subId => .implSelf
   | subDefPos => .defPos
   | subPair subL subR =>
     .mp2
@@ -235,15 +248,47 @@ namespace DefList
   | subCompl sub => .mp .mt sub.toIsFullStx
   | dne => .dne
   | dni => .dni
-  | isFull _ => sorry
-  | fullImplElim => sorry
-  | fullElim => sorry
-  | someStripFull => sorry
+  | isFull anyA => .mp .simpl (.fFull (.mp anyA.toIsFullStx .fAny))
+  | fullImplElim => .fFullImplElim
+  | fullElim => .fFullElim
+  | someStripFull => .fsomeStripFull
   | unfold => .unfold _ _
   | fold => .fold _ _
   | trans ab bc => .mp2 .trans ab.toIsFullStx bc.toIsFullStx
   | subPe => .subPe
-  | mutInduction _ _ _ => sorry
+  | mutInduction desc premises i =>
+      .mutInduction desc (fun j => (premises j).toIsFullStx) i
+  
+  def IsFullStx.toSubsetStx
+    (full: dl.IsFullStx a)
+  :
+    SubsetStx dl ctx Expr.any a
+  :=
+    match full with
+    | .defPos => .toImpl .subDefPos
+    | .unfold lane x => .toImpl .unfold
+    | .fold lane x => .toImpl .fold
+    | .mp impl arg => .implElim impl.toSubsetStx arg.toSubsetStx
+    | .simpl => .implIntro (.implIntro (.irL .subIrR))
+    | .distImpl => .toImpl .implDist
+    | .contra => .toImpl .contraImpl
+    | .fPair => sorry
+    | .fPairMono => sorry
+    | .fPairEmptyL => sorry
+    | .fPairEmptyR => sorry
+    | .fIr => .toImpl (.implIntro .subId)
+    | .fIrL => .toImpl .subIrL
+    | .fIrR => .toImpl .subIrR
+    | .fFull full => .isFull full.toSubsetStx
+    | .fFullImplElim => .toImpl .fullImplElim
+    | .fFullElim => .toImpl .fullElim
+    | .fsomeStripFull => .toImpl .someStripFull
+    | .mutInduction desc premises i =>
+        .toImpl
+          (.mutInduction
+            desc
+            (fun i => .ofImpl (premises i).toSubsetStx)
+            i)
   
   
   def IsFull
@@ -366,8 +411,9 @@ namespace DefList
     | .fIrL => inImpl inIrElimL
     | .fIrR => inImpl inIrElimR
     | .fFull full => fun p => full.isSound bv p bound
-    | .fFullElim fullCond =>
-        let inCond := fullCond.isSound bv p bound
-        inCondFullElim inCond p
+    | .fFullElim => inImpl fun inCond => inCondFullElim inCond p
+    | .fFullImplElim => sorry
+    | .fsomeStripFull => sorry
+    | .mutInduction _ _ _ => sorry
   
 end DefList

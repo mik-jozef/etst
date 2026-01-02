@@ -982,6 +982,38 @@ namespace DefList.SubsetStx
       }
       premise
   
+  
+  def implDist:
+    SubsetStx dl ctx (impl a (impl b c)) (impl (impl a b) (impl a c))
+  :=
+    .implIntro
+      (.implIntro
+        (.implElim
+          (.implElim (.irL .subIrL) .subIrR)
+          (.implElim (.irL .subIrR) .subIrR)))
+  
+  def subIrUnCompl
+    {a b: SingleLaneExpr}
+  :
+    SubsetStx dl ctx a (un (ir a b.compl) b)
+  :=
+    trans
+      (subIr subUnR em)
+      (trans subUnIrDistElimR subUnSymm)
+
+  def contraImpl
+    {a b: SingleLaneExpr}
+  :
+    SubsetStx dl ctx (impl a.compl b.compl) (impl b a)
+  :=
+    let step0 := trans dni (subCompl (implAbsorb subId))
+    let step1 :=
+      unElimOfCompl
+        subIrR
+        (trans subIrL subIrUnCompl)
+    implIntro (trans (subIrLR subId step0) step1)
+
+  
 end DefList.SubsetStx
 
 
