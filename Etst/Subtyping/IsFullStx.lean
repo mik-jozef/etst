@@ -347,14 +347,12 @@ namespace DefList
       let hR := .mp (.fromFull subR.toIsFullStx) .fromHyp
       .mp (.mp (.fromFull .fPairMonoFull) hL) hR
     proof.toImpl
-  | pairUnDistL => .fPairUnDistL
-  | pairUnDistR => .fPairUnDistR
-  | pairIrDistL => .fPairIrDistL
-  | pairIrDistR => .fPairIrDistR
-  | pairNoneL => .fPairNoneL
-  | pairNoneR => .fPairNoneR
-  | subIrNullPair => .fPairNullDisjoint
-  | nullPair => .mp .simpl .fNullPair
+  | subComplPairUn =>
+      sorry
+  | subUnComplPair =>
+      sorry
+  | subPairIrDistL => .fPairIrDistL
+  | subPairIrDistR => .fPairIrDistR
   | subIrL => .fIrL
   | subIrR => .fIrR
   | subIr ac bc =>
@@ -391,12 +389,12 @@ namespace DefList
       .toImpl
         (.implIntro
           (.trans (.pairMono .subIrL .subIrR) .fullElim))
-    | .fPairUnDistL => .toImpl .pairUnDistL
-    | .fPairUnDistR => .toImpl .pairUnDistR
-    | .fPairIrDistL => .toImpl .pairIrDistL
-    | .fPairIrDistR => .toImpl .pairIrDistR
-    | .fPairNoneL => .toImpl .pairNoneL
-    | .fPairNoneR => .toImpl .pairNoneR
+    | .fPairUnDistL => .toImpl .subPairUnDistL
+    | .fPairUnDistR => .toImpl .subPairUnDistR
+    | .fPairIrDistL => .toImpl .subPairIrDistL
+    | .fPairIrDistR => .toImpl .subPairIrDistR
+    | .fPairNoneL => .toImpl .subPairNoneL
+    | .fPairNoneR => .toImpl .subPairNoneR
     | .fPairNullDisjoint => .toImpl .subIrNullPair
     | .fNullPair => .nullPair
     | .fIr => .toImpl (.implIntro .subId)

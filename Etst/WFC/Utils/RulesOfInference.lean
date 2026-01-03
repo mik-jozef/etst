@@ -123,6 +123,14 @@ namespace SingleLaneExpr
     let ⟨_, _, eq, _⟩ := inPair
     Pair.noConfusion eq
   
+  def ninPairElim
+    (ninPair: ¬ (pair exprL exprR).intp2 bv b c (.pair pA pB))
+  :
+    ¬ exprL.intp2 bv b c pA ∨ ¬ exprR.intp2 bv b c pB
+  :=
+    not_and_or.mp fun ⟨inL, inR⟩ =>
+      ninPair ⟨pA, pB, rfl, inL, inR⟩
+  
   
   def inIr
     (l: exprL.intp2 bv b c d)

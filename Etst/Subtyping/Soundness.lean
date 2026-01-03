@@ -23,49 +23,44 @@ def DefList.SubsetStx.isSound
               let inImplA := inCondFullElim (subL.isSound bv isIn) pa
               let inImplB := inCondFullElim (subR.isSound bv isIn) pb
               inPair (inImplElim inImplA inA) (inImplElim inImplB inB)
-    | pairUnDistL =>
-      match d with
-      | .pair _ _ =>
-        let ⟨isInAb, isInC⟩ := inPairElim isIn
-        (inUnElim isInAb).elim
-          (fun isInA => inUnL (inPair isInA isInC))
-          (fun isInB => inUnR (inPair isInB isInC))
-    | pairUnDistR =>
-      match d with
-      | .pair _ _ =>
-        let ⟨isInC, isInAb⟩ := inPairElim isIn
-        (inUnElim isInAb).elim
-          (fun isInA => inUnL (inPair isInC isInA))
-          (fun isInB => inUnR (inPair isInC isInB))
-    | pairIrDistL =>
+    | subComplPairUn =>
+        match d with
+        | .null => inUnL inNull
+        | .pair _ _ =>
+          (ninPairElim isIn).elim
+            (fun ninA => inUnR (inUnL (inPair (inCompl ninA) inAny)))
+            (fun ninB => inUnR (inUnR (inPair inAny (inCompl ninB))))
+    | subUnComplPair =>
+        (inUnElim isIn).elim
+          (fun inN =>
+            let eqNull := inNullElim inN
+            eqNull ▸ fun inPair => inPairElimNope inPair)
+          (fun inP =>
+            (inUnElim inP).elim
+              (fun inPA =>
+                let ⟨_pA, _pB, eq, inCA, _⟩ := inPairElimEx inPA
+                eq ▸ fun inPair =>
+                  let ⟨inA, _⟩ := inPairElim inPair
+                  inComplElim inCA inA)
+              (fun inPB =>
+                let ⟨_pA, _pB, eq, _, inCB⟩ := inPairElimEx inPB
+                eq ▸ fun inPair =>
+                  let ⟨_, inB⟩ := inPairElim inPair
+                  inComplElim inCB inB))
+    | subPairIrDistL =>
       match d with
       | .pair _ _ =>
         let ⟨isInAc, isInBc⟩ := inIrElim isIn
         let ⟨inA, inC⟩ := inPairElim isInAc
         let ⟨inB, _⟩ := inPairElim isInBc
         inPair (inIr inA inB) inC
-    | pairIrDistR =>
+    | subPairIrDistR =>
       match d with
       | .pair _ _ =>
         let ⟨isInAb, isInAc⟩ := inIrElim isIn
         let ⟨inA, inB⟩ := inPairElim isInAb
         let ⟨_, inC⟩ := inPairElim isInAc
         inPair inA (inIr inB inC)
-    | pairNoneL =>
-      match d with
-      | .pair _ _ =>
-        let ⟨inNone, _⟩ := inPairElim isIn
-        inNoneElim inNone
-    | pairNoneR =>
-      match d with
-      | .pair _ _ =>
-        let ⟨_, inNone⟩ := inPairElim isIn
-        inNoneElim inNone
-    | subIrNullPair => nomatch d
-    | nullPair =>
-      match d with
-      | .null => inUnL inNull
-      | .pair _ _ => inUnR (inPair inAny inAny)
     | subIrL => inIrElimL isIn
     | subIrR => inIrElimR isIn
     | subIr subA subB =>

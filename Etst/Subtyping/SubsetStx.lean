@@ -51,6 +51,16 @@ import Etst.WFC.Utils.InterpretationMono
 namespace Etst
 open Expr
 
+/-
+  TODO: pair negation rule, splitting rule for condFull (un a b)
+  
+  can we prove this?:
+  
+  & condFull (un a b)
+  & condFull (impl (ir c a) d)
+  & condFull (impl (ir c b) d)
+  -> d
+-/
 
 def Expr.replaceDepthEvenVars
   (e: Expr E)
@@ -160,7 +170,7 @@ inductive DefList.SubsetStx
   SingleLaneExpr →
   Type
 |
-  subId {expr: SingleLaneExpr}: dl.SubsetStx ctx expr expr
+  subId {expr}: dl.SubsetStx ctx expr expr
 |
   subDefPos {x: Nat}:
     dl.SubsetStx ctx (var .defLane x) (var .posLane x)
@@ -171,28 +181,21 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx ctx x (condFull (impl (pair al ar) (pair bl br)))
 |
-  -- TODO is this one necessary? Rename to subPairUnDistL?
-  pairUnDistL:
-    dl.SubsetStx ctx (pair (un a b) c) (un (pair a c) (pair b c))
--- TODO is this one necessary? Rename to subPairUnDistR?
-| pairUnDistR:
-    dl.SubsetStx ctx (pair a (un b c)) (un (pair a b) (pair a c))
+  subComplPairUn:
+    dl.SubsetStx ctx
+      (compl (pair a b))
+      (un null (un (pair (compl a) any) (pair any (compl b))))
+|
+  subUnComplPair:
+    dl.SubsetStx ctx
+      (un null (un (pair (compl a) any) (pair any (compl b))))
+      (compl (pair a b))
 -- TODO is this one necessary? Rename to subPairIrDistL?
-| pairIrDistL:
+| subPairIrDistL:
     dl.SubsetStx ctx (ir (pair a c) (pair b c)) (pair (ir a b) c)
 -- TODO is this one necessary? Rename to subPairIrDistR?
-| pairIrDistR:
+| subPairIrDistR:
     dl.SubsetStx ctx (ir (pair a b) (pair a c)) (pair a (ir b c))
--- TODO is this one necessary? Rename to subPairNoneL?
-| pairNoneL:
-    dl.SubsetStx ctx (pair none a) x
--- TODO is this one necessary? Rename to subPairNoneR?
-| pairNoneR:
-    dl.SubsetStx ctx (pair a none) x
-| subIrNullPair:
-    dl.SubsetStx ctx (ir null (pair a b)) x
-| nullPair:
-    dl.SubsetStx ctx x (un null (pair any any))
 | subIrL:
     dl.SubsetStx ctx (ir a r) a
 | subIrR:
@@ -339,31 +342,27 @@ namespace DefList.SubsetStx
   :=
     (subCompl (subIr (subCompl ac) (subCompl bc))).trans subDne
 
-  def em
-    {x a: SingleLaneExpr}
-  :
+  def em {x a}:
     dl.SubsetStx ctx x (un a a.compl)
   :=
     subDni.trans (subCompl subPe)
   
   
-  def unL
-    {b: SingleLaneExpr}
+  def unL {x a b}
     (sub: dl.SubsetStx ctx x a)
   :
     dl.SubsetStx ctx x (un a b)
   :=
     sub.trans subUnL
   
-  def unR
-    {a: SingleLaneExpr}
+  def unR {x a b}
     (sub: dl.SubsetStx ctx x b)
   :
     dl.SubsetStx ctx x (un a b)
   :=
     sub.trans subUnR
   
-  def unCtxLR
+  def unCtxLR {al ar bl br}
     (subL: dl.SubsetStx ctx al bl)
     (subR: dl.SubsetStx ctx ar br)
   :
@@ -376,7 +375,7 @@ namespace DefList.SubsetStx
   :=
     unCtx subUnR subUnL
   
-  def unElimCtxL
+  def unElimCtxL {l r b}
     (sub: dl.SubsetStx ctx (un l r) b)
   :
     dl.SubsetStx ctx l b
@@ -954,7 +953,7 @@ namespace DefList.SubsetStx
   
   
   def condSomeNull:
-    dl.SubsetStx ctx Expr.any (condSome .null)
+    dl.SubsetStx ctx Expr.any (condSome null)
   :=
     sorry
   
@@ -1087,14 +1086,106 @@ namespace DefList.SubsetStx
           (.implElim (irCtxL .subIrL) .subIrR)
           (.implElim (irCtxL .subIrR) .subIrR)))
   
-  def subIrUnCompl
-    {a b: SingleLaneExpr}
-  :
+  def subIrUnCompl {a b}:
     dl.SubsetStx ctx a (un (ir a b.compl) b)
   :=
     trans
       (subIr subUnR em)
       (trans subUnIrDistElimR subUnSymm)
+  
+  def subIrPairComplUnL {a b c}:
+    dl.SubsetStx
+      ctx
+      (ir (pair (compl a) c) (pair (compl b) c))
+      (pair (compl (un a b)) c)
+  :=
+    trans subPairIrDistL <|
+    pairMonoOfSub subComplUnElim subId
+
+  def subIrPairComplUnR {a b c}:
+    dl.SubsetStx
+      ctx
+      (ir (pair a (compl b)) (pair a (compl c)))
+      (pair a (compl (un b c)))
+  :=
+    trans subPairIrDistR <|
+    pairMonoOfSub subId subComplUnElim
+
+  def subPairUnDistL {a b c}:
+    dl.SubsetStx ctx (pair (un a b) c) (un (pair a c) (pair b c))
+  :=
+    subComplElim <|
+    trans subComplUn <|
+    trans (irCtxLR subComplPairUn subComplPairUn) <|
+    trans (irCtxLR subUnSymm subUnSymm) <|
+    trans subUnIrDistElimL <|
+    trans (unCtxLR
+      (trans subUnIrDistElimL <|
+       unCtxLR
+         subIrPairComplUnL
+         subId)
+      subId) <|
+    trans subUnSymm <|
+    subUnComplPair
+  
+  def subPairUnDistR {a b c}:
+    dl.SubsetStx ctx (pair a (un b c)) (un (pair a b) (pair a c))
+  :=
+    subComplElim <|
+    trans subComplUn <|
+    trans (irCtxLR subComplPairUn subComplPairUn) <|
+    trans (irCtxLR subUnSymm subUnSymm) <|
+    trans subUnIrDistElimL <|
+    trans (unCtxLR
+      (trans (irCtxLR subUnSymm subUnSymm) <|
+       trans subUnIrDistElimL <|
+       unCtxLR
+         subIrPairComplUnR
+         subId)
+      subId) <|
+    trans subUnSymm <|
+    trans (unCtxLR subId subUnSymm) <|
+    subUnComplPair
+  
+  def subPairNoneL {a x}:
+    dl.SubsetStx ctx (pair .none a) x
+  :=
+    trans (pairMonoOfSub subId subAny) <|
+    trans
+      (subIr
+        (pairMonoOfSub subNone subId)
+        (trans (unR (unL subId)) subUnComplPair)) <|
+    subPe
+  
+  def subPairNoneR {a x}:
+    dl.SubsetStx ctx (pair a .none) x
+  :=
+    trans (pairMonoOfSub subAny subId) <|
+    trans
+      (subIr
+        (pairMonoOfSub subId subNone)
+        (trans (unR (unR subId)) subUnComplPair)) <|
+    subPe
+  
+  def subIrNullPair {a b x}:
+    dl.SubsetStx ctx (ir .null (pair a b)) x
+  :=
+    trans (irCtxLR subId (pairMonoOfSub subAny subAny)) <|
+    trans (irCtxLR (trans (unL subId) subUnComplPair) subId) <|
+    trans subIrSymm <|
+    subPe
+  
+  def nullPair {x}:
+    dl.SubsetStx ctx x (un .null (pair any any))
+  :=
+    trans subAny <|
+    trans (subCompl subPairNoneL) <|
+    trans (subComplPairUn (a:=.none) (b:=.none)) <|
+    unCtxLR
+      subId
+      (unCtx
+        (pairMonoOfSub subAny subId)
+        (pairMonoOfSub subId subAny))
   
 end DefList.SubsetStx
 
