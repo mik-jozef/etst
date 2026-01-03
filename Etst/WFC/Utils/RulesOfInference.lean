@@ -280,6 +280,7 @@ namespace SingleLaneExpr
   
   def inAny: intp2 .any bv b c d := inArbUn d (inBvar rfl)
   def ninNone: ¬ intp2 .none bv b c d := ninCompl inAny
+  def inNoneElim: intp2 .none bv b c d → P := ninNone.elim
   
   def intp2_none_eq_empty:
     intp2 .none bv b c = {}

@@ -72,24 +72,24 @@ abbrev IsSub := SubsetStx TestDl.toDefList
 
 def SubsetStx.natSub: IsSub [] s3(.Nat) s3(:Nat) :=
   simpleInduction
-    (foldB
-      (subUn
+    (fold
+      (unCtx
         (unL
           subId)
         (unR
-          (subPair
-            (irL
+          (pairMonoOfSub
+            (irCtxL
               subId)
             subId))))
 
 def SubsetStx.natNotNat: IsSub [] s3(.Any) s3(:Nat | !.Nat) :=
-  em.trans (subUnLR natSub subId)
+  trans em (unCtxLR natSub subId)
 
 
 def natLeZeroThen: IsSub [] s3(.Nat) s3(:ThenNatLeZero) :=
   simpleInduction
-    (foldB
-      (subUn
+    (fold
+      (unCtx
         sorry
         sorry))
 

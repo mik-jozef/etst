@@ -24,13 +24,6 @@ namespace DefList
           (impl a (impl b c))
           (impl (impl a b) (impl a c)))
   | contra: dl.IsFullStx (impl (impl a.compl b.compl) (impl b a))
-  | fPair:
-      dl.IsFullStx
-        (impl
-          (condFull left)
-          (impl
-            (condFull rite)
-            (un null (pair left rite))))
   | fPairMono:
       dl.IsFullStx
         (impl
@@ -38,10 +31,39 @@ namespace DefList
           (impl
             (condFull (impl ar br))
             (impl (pair al ar) (pair bl br))))
-  | fPairEmptyL:
-      dl.IsFullStx (impl (condFull (compl left)) (compl (pair left rite)))
-  | fPairEmptyR:
-      dl.IsFullStx (impl (condFull (compl rite)) (compl (pair left rite)))
+  -- TODO is this one necessary?
+  | fPairUnDistL:
+      dl.IsFullStx
+        (impl
+          (pair (un a b) c)
+          (un (pair a c) (pair b c)))
+  -- TODO is this one necessary?
+  | fPairUnDistR:
+      dl.IsFullStx
+        (impl
+          (pair a (un b c))
+          (un (pair a b) (pair a c)))
+  -- TODO is this one necessary?
+  | fPairIrDistL:
+      dl.IsFullStx
+        (impl
+          (ir (pair a c) (pair b c))
+          (pair (ir a b) c))
+  -- TODO is this one necessary?
+  | fPairIrDistR:
+      dl.IsFullStx
+        (impl
+          (ir (pair a b) (pair a c))
+          (pair a (ir b c)))
+  -- TODO is this one necessary?
+  | fPairNoneL:
+      dl.IsFullStx (impl (pair .none a) x)
+  -- TODO is this one necessary?
+  | fPairNoneR:
+      dl.IsFullStx (impl (pair a .none) x)
+  | fPairNullDisjoint:
+      dl.IsFullStx (impl (ir .null (pair a b)) x)
+  | fNullPair: dl.IsFullStx (un null (pair any any))
   | fIr: dl.IsFullStx (impl a (impl b (ir a b)))
   | fIrL: dl.IsFullStx (impl (ir l r) l)
   | fIrR: dl.IsFullStx (impl (ir l r) r)
@@ -56,7 +78,7 @@ namespace DefList
   | fFullElim:
       dl.IsFullStx (impl (condFull expr) expr)
   -- Contraposition of Axiom 5 (up to removal of negation from `a`)
-  | fsomeStripFull:
+  | fSomeStripFull:
       dl.IsFullStx (impl (condSome (condFull a)) (condFull a))
   | mutInduction
       (desc: MutIndDescriptor dl)
@@ -78,6 +100,17 @@ namespace DefList
       dl.IsFullStx c
     :=
       mp (mp abc a) b
+    
+    def mp3
+      (abcd: dl.IsFullStx (impl a (impl b (impl c d))))
+      (a: dl.IsFullStx a)
+      (b: dl.IsFullStx b)
+      (c: dl.IsFullStx c)
+    :
+      dl.IsFullStx d
+    :=
+      mp (mp (mp abcd a) b) c
+    
     
     def implSelf: dl.IsFullStx (impl a a) :=
       mp2 distImpl simpl (simpl (b := a))
@@ -220,8 +253,86 @@ namespace DefList
       let rite := mp2 trans fIr (mp liftImpl fUnR)
       mp2 fUn left rite
     
+    def unMonoR:
+      dl.IsFullStx (impl (impl a b) (impl (un c a) (un c b)))
+    :=
+      let left := mp2 trans fUnL simpl
+      let rite :=
+        mp2 trans
+          (mp exchange implSelf)
+          (mp liftImpl fUnR)
+      mp exchange (mp2 fUn left rite)
+    
+    def complSwapA
+      (sub: dl.IsFullStx (impl (compl a) b))
+    :
+      dl.IsFullStx (impl (compl b) a)
+    :=
+      mp2 trans (mt.mp sub) dne
+    
+    def someAddFull:
+      dl.IsFullStx (impl (condSome a) (condFull (condSome a)))
+    :=
+      complSwapA (fSomeStripFull (a := compl a))
+    
+    def fullFull: dl.IsFullStx (impl (condFull a) (condFull (condFull a))) :=
+      let step1 := mt.mp (fFullElim (expr := compl (condFull a)))
+      let step2 := trans.mp2 dni step1
+      let step3 := someAddFull (a := condFull a)
+      let step4 := fFull (full := fSomeStripFull (a := a))
+      let step5 := mp fFullImplElim step4
+      mp2 trans step2 (mp2 trans step3 step5)
+    
+    def fPairMonoFull:
+      dl.IsFullStx
+        (impl
+          (condFull (impl al bl))
+          (impl
+            (condFull (impl ar br))
+            (condFull (impl (pair al ar) (pair bl br)))))
+    :=
+      let A := condFull (impl al bl)
+      let B := condFull (impl ar br)
+      let C := impl (pair al ar) (pair bl br)
+      let proof: IsFullStxFrom dl (ir A B) (condFull C) :=
+        let hA := .mp (.fromFull fIrL) .fromHyp
+        let hB := .mp (.fromFull fIrR) .fromHyp
+        let hAA := .mp (.fromFull fullFull) hA
+        let hBB := .mp (.fromFull fullFull) hB
+        let step1 := .fromFull (fFull fPairMono)
+        let step2 := .mp (.fromFull fFullImplElim) step1
+        let step3 := .mp step2 hAA
+        let step4 := .mp (.fromFull fFullImplElim) step3
+        .mp step4 hBB
+      mp curry proof.toImpl
+    
     -- TODO: `fAny` to be proven once IsFullStx has rules for quantifiers.
     def fAny: dl.IsFullStx Expr.any := sorry
+    
+    
+    def condFullToImplAny:
+      dl.IsFullStx (impl (condFull a) (condFull (impl any a)))
+    :=
+      mp fFullImplElim (fFull simpl)
+    
+    def fPairOfFull:
+      dl.IsFullStx
+        (impl
+          (condFull left)
+          (impl
+            (condFull rite)
+            (un null (pair left rite))))
+    :=
+      let step1 := mp2 trans condFullToImplAny fPairMono
+      let step2 := mp exchange step1
+      let step3 := mp2 trans condFullToImplAny step2
+      let impl_A_C_E_F := mp exchange step3
+      
+      let impl_A_C_G_H := mp2 liftImpl (mp liftImpl unMonoR) impl_A_C_E_F
+      let impl_A_G_C_H := mp2 liftImpl exchange impl_A_C_G_H
+      let impl_G_A_C_H := mp exchange impl_A_G_C_H
+      
+      mp impl_G_A_C_H fNullPair
     
   end IsFullStx
   
@@ -230,25 +341,34 @@ namespace DefList
     dl.IsFullStx (un a.compl b)
   | subId => .implSelf
   | subDefPos => .defPos
-  | subPair subL subR =>
-    .mp2
-      .fPairMono
-      (.fFull subL.toIsFullStx)
-      (.fFull subR.toIsFullStx)
+  | pairMono (al := al) (ar := ar) (bl := bl) (br := br) subL subR =>
+    let proof: IsFullStx.IsFullStxFrom dl a _ :=
+      let hL := .mp (.fromFull subL.toIsFullStx) .fromHyp
+      let hR := .mp (.fromFull subR.toIsFullStx) .fromHyp
+      .mp (.mp (.fromFull .fPairMonoFull) hL) hR
+    proof.toImpl
+  | pairUnDistL => .fPairUnDistL
+  | pairUnDistR => .fPairUnDistR
+  | pairIrDistL => .fPairIrDistL
+  | pairIrDistR => .fPairIrDistR
+  | pairNoneL => .fPairNoneL
+  | pairNoneR => .fPairNoneR
+  | subIrNullPair => .fPairNullDisjoint
+  | nullPair => .mp .simpl .fNullPair
   | subIrL => .fIrL
   | subIrR => .fIrR
   | subIr ac bc =>
       .mp2 .distImpl (.mp2 .trans ac.toIsFullStx .fIr) bc.toIsFullStx
-  | irUnDistL => .mp .uncurry .distrib
+  | subIrUnDistL => .mp .uncurry .distrib
   | subCompl sub => .mp .mt sub.toIsFullStx
-  | dne => .dne
-  | dni => .dni
+  | subDne => .dne
+  | subDni => .dni
   | isFull anyA => .mp .simpl (.fFull (.mp anyA.toIsFullStx .fAny))
   | fullImplElim => .fFullImplElim
   | fullElim => .fFullElim
-  | someStripFull => .fsomeStripFull
-  | unfold => .unfold _ _
-  | fold => .fold _ _
+  | someStripFull => .fSomeStripFull
+  | subUnfold => .unfold _ _
+  | subFold => .fold _ _
   | trans ab bc => .mp2 .trans ab.toIsFullStx bc.toIsFullStx
   | subPe => .subPe
   | mutInduction desc premises i =>
@@ -261,29 +381,34 @@ namespace DefList
   :=
     match full with
     | .defPos => .toImpl .subDefPos
-    | .unfold lane x => .toImpl .unfold
-    | .fold lane x => .toImpl .fold
+    | .unfold lane x => .toImpl .subUnfold
+    | .fold lane x => .toImpl .subFold
     | .mp impl arg => .implElim impl.toSubsetStx arg.toSubsetStx
-    | .simpl => .implIntro (.implIntro (.irL .subIrR))
+    | .simpl => .implIntro (.implIntro (.irCtxL .subIrR))
     | .distImpl => .toImpl .implDist
-    | .contra => .toImpl .contraImpl
-    | .fPair => sorry
-    | .fPairMono => sorry
-    | .fPairEmptyL => sorry
-    | .fPairEmptyR => sorry
+    | .contra => .toImpl .subContraElim
+    | .fPairMono =>
+      .toImpl
+        (.implIntro
+          (.trans (.pairMono .subIrL .subIrR) .fullElim))
+    | .fPairUnDistL => .toImpl .pairUnDistL
+    | .fPairUnDistR => .toImpl .pairUnDistR
+    | .fPairIrDistL => .toImpl .pairIrDistL
+    | .fPairIrDistR => .toImpl .pairIrDistR
+    | .fPairNoneL => .toImpl .pairNoneL
+    | .fPairNoneR => .toImpl .pairNoneR
+    | .fPairNullDisjoint => .toImpl .subIrNullPair
+    | .fNullPair => .nullPair
     | .fIr => .toImpl (.implIntro .subId)
     | .fIrL => .toImpl .subIrL
     | .fIrR => .toImpl .subIrR
     | .fFull full => .isFull full.toSubsetStx
     | .fFullImplElim => .toImpl .fullImplElim
     | .fFullElim => .toImpl .fullElim
-    | .fsomeStripFull => .toImpl .someStripFull
+    | fSomeStripFull => .toImpl .someStripFull
     | .mutInduction desc premises i =>
-        .toImpl
-          (.mutInduction
-            desc
-            (fun i => .ofImpl (premises i).toSubsetStx)
-            i)
+        let premises_impl i := .ofImpl (premises i).toSubsetStx
+        .toImpl (.mutInduction desc premises_impl i)
   
   
   def IsFull

@@ -14,23 +14,72 @@ def DefList.SubsetStx.isSound
     match sub with
     | subId => isIn
     | subDefPos => Set3.defMem.toPos isIn
-    | subPair subL subR =>
-        let ⟨_, _, eq, inL, inR⟩ := inPairElimEx isIn
-        eq ▸ inPair (subL.isSound bv inL) (subR.isSound bv inR)
+    | pairMono subL subR =>
+        inCondFull .null fun p =>
+          inImpl fun inP =>
+            match p with
+            | .pair pa pb =>
+              let ⟨inA, inB⟩ := inPairElim inP
+              let inImplA := inCondFullElim (subL.isSound bv isIn) pa
+              let inImplB := inCondFullElim (subR.isSound bv isIn) pb
+              inPair (inImplElim inImplA inA) (inImplElim inImplB inB)
+    | pairUnDistL =>
+      match d with
+      | .pair _ _ =>
+        let ⟨isInAb, isInC⟩ := inPairElim isIn
+        (inUnElim isInAb).elim
+          (fun isInA => inUnL (inPair isInA isInC))
+          (fun isInB => inUnR (inPair isInB isInC))
+    | pairUnDistR =>
+      match d with
+      | .pair _ _ =>
+        let ⟨isInC, isInAb⟩ := inPairElim isIn
+        (inUnElim isInAb).elim
+          (fun isInA => inUnL (inPair isInC isInA))
+          (fun isInB => inUnR (inPair isInC isInB))
+    | pairIrDistL =>
+      match d with
+      | .pair _ _ =>
+        let ⟨isInAc, isInBc⟩ := inIrElim isIn
+        let ⟨inA, inC⟩ := inPairElim isInAc
+        let ⟨inB, _⟩ := inPairElim isInBc
+        inPair (inIr inA inB) inC
+    | pairIrDistR =>
+      match d with
+      | .pair _ _ =>
+        let ⟨isInAb, isInAc⟩ := inIrElim isIn
+        let ⟨inA, inB⟩ := inPairElim isInAb
+        let ⟨_, inC⟩ := inPairElim isInAc
+        inPair inA (inIr inB inC)
+    | pairNoneL =>
+      match d with
+      | .pair _ _ =>
+        let ⟨inNone, _⟩ := inPairElim isIn
+        inNoneElim inNone
+    | pairNoneR =>
+      match d with
+      | .pair _ _ =>
+        let ⟨_, inNone⟩ := inPairElim isIn
+        inNoneElim inNone
+    | subIrNullPair => nomatch d
+    | nullPair =>
+      match d with
+      | .null => inUnL inNull
+      | .pair _ _ => inUnR (inPair inAny inAny)
     | subIrL => inIrElimL isIn
     | subIrR => inIrElimR isIn
     | subIr subA subB =>
         inIr (subA.isSound bv isIn) (subB.isSound bv isIn)
-    | irUnDistL =>
+    | subIrUnDistL =>
         let ⟨isInUn, isInC⟩ := inIrElim isIn
         (inUnElim isInUn).elim
           (fun isInA => inUnL (inIr isInA isInC))
           (fun isInB => inUnR (inIr isInB isInC))
     | subCompl sub =>
         fun isInA => isIn (sub.isSound bv isInA)
-    | dne =>
+    | subDne =>
         Classical.byContradiction isIn
-    | dni =>
+    | subDni =>
         fun nin => nin isIn
     | isFull subA =>
         fun _ => subA.isSound bv inAny
@@ -45,8 +94,8 @@ def DefList.SubsetStx.isSound
     | someStripFull =>
         let ⟨_, inFullA⟩ := inCondSomeElim isIn
         inFullA
-    | unfold => SingleLaneExpr.InWfm.in_def isIn
-    | fold => SingleLaneExpr.InWfm.of_in_def isIn
+    | subUnfold => SingleLaneExpr.InWfm.in_def isIn
+    | subFold => SingleLaneExpr.InWfm.of_in_def isIn
     | trans ab bc => bc.isSound bv (ab.isSound bv isIn)
     | subPe =>
         let ⟨inA, inAc⟩ := inIrElim isIn

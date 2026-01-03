@@ -7,10 +7,10 @@
   
   TODO describe induction and coinduction:
   A ⊆ B may be proved by any of:
-  0. s A ⊆ B (unfolding A)
+  0. s A ⊆ B (subUnfolding A)
   1. s B ⊆ B (induction on A)
   2. s (A & B) ⊆ B (not implied by, but a moral combination of the above two)
-  3. A ⊆ t B (unfolding B, eq to `A ⊆ ~(t' B')`, `A ⊆ ~(t' ~B)`)
+  3. A ⊆ t B (subUnfolding B, eq to `A ⊆ ~(t' B')`, `A ⊆ ~(t' ~B)`)
   4. A ⊆ t A (coinduction on "B", or precisely on t)
   5. A ⊆ t (A | B)) (combination of 3 and 4, eq to `A ⊆ ~(t' (~A & B'))`)
   
@@ -130,19 +130,27 @@ structure ContextVariable where
   satisfies: SingleLaneExpr
 
 /-
-  Syntactic entailment. Note the similarities with propositional logic.
-  Naming convention (rough rules of thumb):
-  - subX if a basic rule (like ir intro), or "subset form"
-  - just X for derived and/or more complex rules, or "function form"
-  - fullX if of form `condFull x ⊆ y`
-  - isFullX if of form `x ⊆ condFull y`
-  - analogously for someX and isSomeX
+  Syntactic entailment. Note the similarities with natural deduction.
+  The left side is called context, the right side is called conclusion.
   
-  Typical subset form: A ⊆ B.
-  Typical function form: X ⊆ A → X ⊆ B.
+  Subset form: A ⊆ B. (No parameters.)
+  Context form: X ⊆ A → X ⊆ B.
   
-  In function form, the left expression is interpreted as "context".
-  Sometimes, this distinction is blurry.
+  Some rules are neither, because they take parameters (unlike the
+  subset form), but also manipulate the context (unlike the context
+  form).
+  
+  Naming conventions:
+  - `subX` if subset form
+  - just `X` if context form
+  - `fullX` if of form `condFull x ⊆ y`
+  - `isFullX` if of form `x ⊆ condFull y`
+  - analogously for `someX` and `isSomeX`
+  - context form rules where context is just a variable ought to
+    call the context `x`.
+  - rules that manipulate the context ought to have `ctx` in the
+    name, with the exception of implication rules where context
+    manipulation is expected (eg. implication introduction).
 -/
 inductive DefList.SubsetStx
   (dl: DefList)
@@ -152,70 +160,74 @@ inductive DefList.SubsetStx
   SingleLaneExpr →
   Type
 |
-  subId {expr: SingleLaneExpr}: SubsetStx dl ctx expr expr
+  subId {expr: SingleLaneExpr}: dl.SubsetStx ctx expr expr
 |
   subDefPos {x: Nat}:
-    SubsetStx dl ctx (var .defLane x) (var .posLane x)
+    dl.SubsetStx ctx (var .defLane x) (var .posLane x)
 |
-  subPair
-    (sl: SubsetStx dl ctx al bl)
-    (sr: SubsetStx dl ctx ar br)
+  pairMono
+    (sl: dl.SubsetStx ctx x (condFull (impl al bl)))
+    (sr: dl.SubsetStx ctx x (condFull (impl ar br)))
   :
-    SubsetStx dl ctx (pair al ar) (pair bl br)
+    dl.SubsetStx ctx x (condFull (impl (pair al ar) (pair bl br)))
 |
-  subIrL
-    {a r: SingleLaneExpr}
+  -- TODO is this one necessary? Rename to subPairUnDistL?
+  pairUnDistL:
+    dl.SubsetStx ctx (pair (un a b) c) (un (pair a c) (pair b c))
+-- TODO is this one necessary? Rename to subPairUnDistR?
+| pairUnDistR:
+    dl.SubsetStx ctx (pair a (un b c)) (un (pair a b) (pair a c))
+-- TODO is this one necessary? Rename to subPairIrDistL?
+| pairIrDistL:
+    dl.SubsetStx ctx (ir (pair a c) (pair b c)) (pair (ir a b) c)
+-- TODO is this one necessary? Rename to subPairIrDistR?
+| pairIrDistR:
+    dl.SubsetStx ctx (ir (pair a b) (pair a c)) (pair a (ir b c))
+-- TODO is this one necessary? Rename to subPairNoneL?
+| pairNoneL:
+    dl.SubsetStx ctx (pair none a) x
+-- TODO is this one necessary? Rename to subPairNoneR?
+| pairNoneR:
+    dl.SubsetStx ctx (pair a none) x
+| subIrNullPair:
+    dl.SubsetStx ctx (ir null (pair a b)) x
+| nullPair:
+    dl.SubsetStx ctx x (un null (pair any any))
+| subIrL:
+    dl.SubsetStx ctx (ir a r) a
+| subIrR:
+    dl.SubsetStx ctx (ir l a) a
+| subIr
+    (ac: dl.SubsetStx ctx x l)
+    (bc: dl.SubsetStx ctx x r)
   :
-    SubsetStx dl ctx (ir a r) a
+    dl.SubsetStx ctx x (ir l r)
 |
-  subIrR
-    {a l: SingleLaneExpr}
-  :
-    SubsetStx dl ctx (ir l a) a
-|
-  subIr
-    (ac: SubsetStx dl ctx a l)
-    (bc: SubsetStx dl ctx a r)
-  :
-    SubsetStx dl ctx a (ir l r)
-|
-  irUnDistL
-    {a b c: SingleLaneExpr}
-  :
-    SubsetStx dl ctx (ir (un a b) c) (un (ir a c) (ir b c))
+  subIrUnDistL:
+    dl.SubsetStx ctx (ir (un a b) c) (un (ir a c) (ir b c))
 |
   subCompl
-    {a b: SingleLaneExpr}
-    (sub: SubsetStx dl ctx a b)
+    (sub: dl.SubsetStx ctx a b)
   :
-    SubsetStx dl ctx b.compl a.compl
+    dl.SubsetStx ctx b.compl a.compl
 |
-  dne
-    {a: SingleLaneExpr}
+  subDne: dl.SubsetStx ctx a.compl.compl a
+| subDni: dl.SubsetStx ctx a a.compl.compl
+| isFull
+    (subA: dl.SubsetStx ctx Expr.any a)
   :
-    SubsetStx dl ctx a.compl.compl a
-|
-  dni
-    {a: SingleLaneExpr}
-  :
-    SubsetStx dl ctx a a.compl.compl
-|
-  isFull
-    (subA: SubsetStx dl ctx Expr.any a)
-  :
-    SubsetStx dl ctx x (condFull a)
+    dl.SubsetStx ctx x (condFull a)
 |
   -- Axiom K in modal logic.
   fullImplElim:
-    SubsetStx
-      dl
+    dl.SubsetStx
       ctx
       (condFull (impl a b))
       (impl (condFull a) (condFull b))
 |
   -- Axiom T in modal logic.
   fullElim:
-    SubsetStx dl ctx (condFull a) a
+    dl.SubsetStx ctx (condFull a) a
 |
   /-
     The contraposition of Axiom 5 in modal logic, up to
@@ -228,35 +240,31 @@ inductive DefList.SubsetStx
     as `someAddFull`.
   -/
   someStripFull:
-    SubsetStx dl ctx (condSome (condFull a)) (condFull a)
+    dl.SubsetStx ctx (condSome (condFull a)) (condFull a)
 |
   -- TODO should be provable with induction.
-  unfold:
-    SubsetStx
-      dl
+  subUnfold:
+    dl.SubsetStx
       ctx
       (var lane a)
       ((dl.getDef a).toLane lane)
 |
   -- TODO is this provable with induction?
-  fold:
-    SubsetStx
-      dl
+  subFold:
+    dl.SubsetStx
       ctx
       ((dl.getDef a).toLane lane)
       (var lane a)
 |
   trans
-    (ab: SubsetStx dl ctx a b)
-    (bc: SubsetStx dl ctx b c)
+    (ab: dl.SubsetStx ctx a b)
+    (bc: dl.SubsetStx ctx b c)
   :
-    SubsetStx dl ctx a c
+    dl.SubsetStx ctx a c
 | -- principle of explosion. Used as a basic rule instead of
   -- implication elimination, which is derived from this.
-  subPe
-    {a b: SingleLaneExpr}
-  :
-    SubsetStx dl ctx (ir a a.compl) b
+  subPe:
+    dl.SubsetStx ctx (ir a a.compl) b
 -- IsSingleton expr := (condSome expr) & (Ex p, condFull ~expr | p)
 -- TODO these are adapted from logic, but are not general enougn, I think.
 --   Logic has only `true = {*}` and `false = {}`, so it needs not deal
@@ -281,679 +289,767 @@ inductive DefList.SubsetStx
 --   (IsSingleton t)
 --   SubsetStx (body.replaceNextVar t) (arbIr body)
 |
+  -- TODO this should be modified to accommodate context.
   mutInduction
     (desc: MutIndDescriptor dl)
     (premises:
       (i: desc.Index) →
-      SubsetStx
-        dl
+      dl.SubsetStx
         ctx
         (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
         desc[i].rite)
     (i: desc.Index)
   :
-    SubsetStx dl ctx (var .posLane desc[i].left) desc[i].rite
+    dl.SubsetStx ctx (var .posLane desc[i].left) desc[i].rite
 
 
 namespace DefList.SubsetStx
-  def toFn
-    (ab: SubsetStx dl ctx a b)
+  variable {dl: DefList}
+  
+  def toFn {x a b}
+    (ab: dl.SubsetStx ctx a b)
   :
-    SubsetStx dl ctx x a → SubsetStx dl ctx x b
+    dl.SubsetStx ctx x a → dl.SubsetStx ctx x b
   :=
     (trans · ab)
   
-  def ofFn
-    (sub: ∀ x, SubsetStx dl ctx x a → SubsetStx dl ctx x b)
+  def ofFn {a b}
+    (sub: ∀ x, dl.SubsetStx ctx x a → dl.SubsetStx ctx x b)
   :
-    SubsetStx dl ctx a b
+    dl.SubsetStx ctx a b
   :=
     sub a subId
   
   
-  def subUnL
-    {a r: SingleLaneExpr}
-  :
-    SubsetStx dl ctx a (un a r)
+  def subUnL {a r}:
+    dl.SubsetStx ctx a (un a r)
   :=
-    dni.trans (subCompl subIrL)
+    subDni.trans (subCompl subIrL)
 
-  def subUnR
-    {a l: SingleLaneExpr}
-  :
-    SubsetStx dl ctx a (un l a)
+  def subUnR {a l}:
+    dl.SubsetStx ctx a (un l a)
   :=
-    dni.trans (subCompl subIrR)
+    subDni.trans (subCompl subIrR)
 
-  def subUn
-    (ac: SubsetStx dl ctx l b)
-    (bc: SubsetStx dl ctx r b)
+  def unCtx {l r b}
+    (ac: dl.SubsetStx ctx l b)
+    (bc: dl.SubsetStx ctx r b)
   :
-    SubsetStx dl ctx (un l r) b
+    dl.SubsetStx ctx (un l r) b
   :=
-    (subCompl (subIr (subCompl ac) (subCompl bc))).trans dne
+    (subCompl (subIr (subCompl ac) (subCompl bc))).trans subDne
 
   def em
-    {a b: SingleLaneExpr}
+    {x a: SingleLaneExpr}
   :
-    SubsetStx dl ctx a (un b b.compl)
+    dl.SubsetStx ctx x (un a a.compl)
   :=
-    dni.trans (subCompl subPe)
+    subDni.trans (subCompl subPe)
   
   
   def unL
-    {r: SingleLaneExpr}
-    (sub: SubsetStx dl ctx a b)
+    {b: SingleLaneExpr}
+    (sub: dl.SubsetStx ctx x a)
   :
-    SubsetStx dl ctx a (un b r)
+    dl.SubsetStx ctx x (un a b)
   :=
     sub.trans subUnL
   
   def unR
-    {l: SingleLaneExpr}
-    (sub: SubsetStx dl ctx a b)
+    {a: SingleLaneExpr}
+    (sub: dl.SubsetStx ctx x b)
   :
-    SubsetStx dl ctx a (un l b)
+    dl.SubsetStx ctx x (un a b)
   :=
     sub.trans subUnR
   
-  def subUnLR
-    (subL: SubsetStx dl ctx al bl)
-    (subR: SubsetStx dl ctx ar br)
+  def unCtxLR
+    (subL: dl.SubsetStx ctx al bl)
+    (subR: dl.SubsetStx ctx ar br)
   :
-    SubsetStx dl ctx (un al ar) (un bl br)
+    dl.SubsetStx ctx (un al ar) (un bl br)
   :=
-    subUn subL.unL subR.unR
+    unCtx subL.unL subR.unR
   
-  def subUnSymm
-    {l r: SingleLaneExpr}
-  :
-    SubsetStx dl ctx (un l r) (un r l)
+  def subUnSymm {l r}:
+    dl.SubsetStx ctx (un l r) (un r l)
   :=
-    subUn subUnR subUnL
+    unCtx subUnR subUnL
   
-  def subUnElimL
-    (sub: SubsetStx dl ctx (un l r) b)
+  def unElimCtxL
+    (sub: dl.SubsetStx ctx (un l r) b)
   :
-    SubsetStx dl ctx l b
+    dl.SubsetStx ctx l b
   :=
     trans subUnL sub
   
-  def subUnElimR
-    (sub: SubsetStx dl ctx (un l r) b)
+  def unElimCtxR
+    (sub: dl.SubsetStx ctx (un l r) b)
   :
-    SubsetStx dl ctx r b
+    dl.SubsetStx ctx r b
   :=
     trans subUnR sub
   
-  def subUnSymmA
-    (sub: SubsetStx dl ctx (un l r) b)
-  :
-    SubsetStx dl ctx (un r l) b
-  :=
-    subUn (subUnElimR sub) (subUnElimL sub)
-  
   def unSymm
-    (sub: SubsetStx dl ctx a (un l r))
+    (sub: dl.SubsetStx ctx x (un l r))
   :
-    SubsetStx dl ctx a (un r l)
+    dl.SubsetStx ctx x (un r l)
   :=
     sub.trans subUnSymm
   
-  def unElim
-    (sub: SubsetStx dl ctx a (un l r))
-    (subL: SubsetStx dl ctx l b)
-    (subR: SubsetStx dl ctx r b)
+  def unSymmCtx
+    (sub: dl.SubsetStx ctx (un l r) b)
   :
-    SubsetStx dl ctx a b
+    dl.SubsetStx ctx (un r l) b
   :=
-    sub.trans (subUn subL subR)
+    unCtx (unElimCtxR sub) (unElimCtxL sub)
   
-  
-  def irL
-    {r: SingleLaneExpr}
-    (sub: SubsetStx dl ctx a b)
+  def unElimSub
+    (sub: dl.SubsetStx ctx x (un l r))
+    (subL: dl.SubsetStx ctx l a)
+    (subR: dl.SubsetStx ctx r a)
   :
-    SubsetStx dl ctx (ir a r) b
+    dl.SubsetStx ctx x a
+  :=
+    sub.trans (unCtx subL subR)
+  
+  def unMonoSubL
+    (sub: dl.SubsetStx ctx x (un la r))
+    (subL: dl.SubsetStx ctx la lb)
+  :
+    dl.SubsetStx ctx x (un lb r)
+  :=
+    unElimSub sub (unL subL) subUnR
+  
+  def unMonoSubR
+    (sub: dl.SubsetStx ctx x (un l ra))
+    (subR: dl.SubsetStx ctx ra rb)
+  :
+    dl.SubsetStx ctx x (un l rb)
+  :=
+    unElimSub sub subUnL (unR subR)
+  
+  
+  def irCtxL
+    {r: SingleLaneExpr}
+    (sub: dl.SubsetStx ctx a b)
+  :
+    dl.SubsetStx ctx (ir a r) b
   :=
     trans subIrL sub
   
-  def irR
+  def irCtxR
     {l: SingleLaneExpr}
-    (sub: SubsetStx dl ctx a b)
+    (sub: dl.SubsetStx ctx a b)
   :
-    SubsetStx dl ctx (ir l a) b
+    dl.SubsetStx ctx (ir l a) b
   :=
     trans subIrR sub
   
-  def subIrLR
-    (subL: SubsetStx dl ctx al bl)
-    (subR: SubsetStx dl ctx ar br)
+  def irCtxLR
+    (subL: dl.SubsetStx ctx al bl)
+    (subR: dl.SubsetStx ctx ar br)
   :
-    SubsetStx dl ctx (ir al ar) (ir bl br)
+    dl.SubsetStx ctx (ir al ar) (ir bl br)
   :=
-    subIr subL.irL subR.irR
+    subIr subL.irCtxL subR.irCtxR
   
   def subIrSymm
     {l r: SingleLaneExpr}
   :
-    SubsetStx dl ctx (ir l r) (ir r l)
+    dl.SubsetStx ctx (ir l r) (ir r l)
   :=
     subIr subIrR subIrL
   
   def irElimL
-    (sub: SubsetStx dl ctx a (ir l r))
+    (sub: dl.SubsetStx ctx x (ir l r))
   :
-    SubsetStx dl ctx a l
+    dl.SubsetStx ctx x l
   :=
     sub.trans subIrL
   
   def irElimR
-    (sub: SubsetStx dl ctx a (ir l r))
+    (sub: dl.SubsetStx ctx x (ir l r))
   :
-    SubsetStx dl ctx a r
+    dl.SubsetStx ctx x r
   :=
     sub.trans subIrR
   
-  def subIrSymmA
-    (sub: SubsetStx dl ctx (ir l r) b)
-  :
-    SubsetStx dl ctx (ir r l) b
-  :=
-    trans subIrSymm sub
-  
   def irSymm
-    (sub: SubsetStx dl ctx a (ir l r))
+    (sub: dl.SubsetStx ctx x (ir l r))
   :
-    SubsetStx dl ctx a (ir r l)
+    dl.SubsetStx ctx x (ir r l)
   :=
     subIr (irElimR sub) (irElimL sub)
   
-  def irMonoL
-    (subA: SubsetStx dl ctx a al)
-    (sub: SubsetStx dl ctx (ir al ar) b)
+  def irSymmCtx
+    (sub: dl.SubsetStx ctx (ir l r) b)
   :
-    SubsetStx dl ctx (ir a ar) b
+    dl.SubsetStx ctx (ir r l) b
   :=
-    trans (subIrLR subA subId) sub
+    trans subIrSymm sub
   
-  def irMonoR
-    (subA: SubsetStx dl ctx a ar)
-    (sub: SubsetStx dl ctx (ir al ar) b)
+  def irMonoCtxL
+    (subA: dl.SubsetStx ctx a al)
+    (sub: dl.SubsetStx ctx (ir al ar) b)
   :
-    SubsetStx dl ctx (ir al a) b
+    dl.SubsetStx ctx (ir a ar) b
   :=
-    trans (subIrLR subId subA) sub
+    trans (irCtxLR subA subId) sub
   
-  def subOfSubIr
-    (subB: SubsetStx dl ctx a b)
-    (subC: SubsetStx dl ctx (ir a b) c)
+  def irMonoCtxR
+    (subA: dl.SubsetStx ctx a ar)
+    (sub: dl.SubsetStx ctx (ir al ar) b)
   :
-    SubsetStx dl ctx a c
+    dl.SubsetStx ctx (ir al a) b
   :=
-    trans (subIr subId subB) subC
+    trans (irCtxLR subId subA) sub
   
   def unIr
-    (subA: SubsetStx dl ctx x (un al ar))
-    (subB: SubsetStx dl ctx x b)
+    (subA: dl.SubsetStx ctx x (un al ar))
+    (subB: dl.SubsetStx ctx x b)
   :
-    SubsetStx dl ctx x (un (ir al b) (ir ar b))
+    dl.SubsetStx ctx x (un (ir al b) (ir ar b))
   :=
-    trans (subIr subA subB) irUnDistL
+    trans (subIr subA subB) subIrUnDistL
   
-  def subIrUnDistR
-    {dl ctx}
-    {al aur aul: SingleLaneExpr}
-  :
-    SubsetStx
-      dl
+  
+  def subIrUnDistR {al aur aul}:
+    dl.SubsetStx
       ctx
       (ir al (un aul aur))
       (un (ir al aul) (ir al aur))
   :=
     trans
-      (subIrSymmA
-        irUnDistL)
-        (subUnLR
+      (irSymmCtx
+        subIrUnDistL)
+        (unCtxLR
           subIrSymm
           subIrSymm)
   
-  def subIrUnDistElimL
-    {dl ctx}
-    {aul aur ar: SingleLaneExpr}
-  :
-    SubsetStx
-      dl
+  def subIrUnDistElimL {aul aur ar}:
+    dl.SubsetStx
       ctx
       (un (ir aul ar) (ir aur ar))
       (ir (un aul aur) ar)
   :=
-    subUn
-      (subIr (irL subUnL) subIrR)
-      (subIr (irL subUnR) subIrR)
+    unCtx
+      (subIr (irCtxL subUnL) subIrR)
+      (subIr (irCtxL subUnR) subIrR)
   
-  def subIrUnDistElimR
-    {dl ctx}
-    {al aur aul: SingleLaneExpr}
-  :
-    SubsetStx
-      dl
+  def subIrUnDistElimR {al aur aul}:
+    dl.SubsetStx
       ctx
       (un (ir al aul) (ir al aur))
       (ir al (un aul aur))
   :=
-    subUn
-      (subIr subIrL (irR subUnL))
-      (subIr subIrL (irR subUnR))
+    unCtx
+      (subIr subIrL (irCtxR subUnL))
+      (subIr subIrL (irCtxR subUnR))
   
   
-  def subUnIrDistL
-    {dl ctx}
-    {ail air ar: SingleLaneExpr}
-  :
-    SubsetStx
-      dl
+  def subUnIrDistL {ail air ar}:
+    dl.SubsetStx
       ctx
       (un (ir ail air) ar)
       (ir (un ail ar) (un air ar))
   :=
-    subUn
-      (subIrLR subUnL subUnL)
+    unCtx
+      (irCtxLR subUnL subUnL)
       (subIr subUnR subUnR)
   
-  def subUnIrDistR
-    {dl ctx}
-    {al air ail: SingleLaneExpr}
-  :
-    SubsetStx
-      dl
+  def subUnIrDistR {al air ail}:
+    dl.SubsetStx
       ctx
       (un al (ir ail air))
       (ir (un al ail) (un al air))
   :=
-    subUn
+    unCtx
       (subIr subUnL subUnL)
-      (subIrLR subUnR subUnR)
+      (irCtxLR subUnR subUnR)
   
-  def subUnIrDistElimL
-    {dl ctx}
-    {ail air ar: SingleLaneExpr}
-  :
-    SubsetStx
-      dl
+  def subUnIrDistElimL {ail air ar: SingleLaneExpr}:
+    dl.SubsetStx
       ctx
       (ir (un ail ar) (un air ar))
       (un (ir ail air) ar)
   :=
-    irUnDistL.trans
-      (subUn
+    subIrUnDistL.trans
+      (unCtx
         (subIrUnDistR.trans
-          (subUn subUnL (irR subUnR)))
-        (irL subUnR))
+          (unCtx subUnL (irCtxR subUnR)))
+        (irCtxL subUnR))
   
-  def subUnIrDistElimR
-    {dl ctx}
-    {al air ail: SingleLaneExpr}
-  :
-    SubsetStx
-      dl
+  def subUnIrDistElimR {al air ail}:
+    dl.SubsetStx
       ctx
       (ir (un al ail) (un al air))
       (un al (ir ail air))
   :=
-    irUnDistL.trans
-      (subUn
-        (irL subUnL)
+    subIrUnDistL.trans
+      (unCtx
+        (irCtxL subUnL)
         (subIrUnDistR.trans
-          (subUn (irR subUnL) subUnR)))
+          (unCtx (irCtxR subUnL) subUnR)))
   
   -- TODO finish once we can work with quantifiers.
-  def subAny: SubsetStx dl ctx a Expr.any := sorry
+  def subAny: dl.SubsetStx ctx a Expr.any := sorry
+  def subNone: dl.SubsetStx ctx Expr.none a := sorry
   
   
   def implIntro
-    (sub: SubsetStx dl ctx (ir l r) b)
+    (sub: dl.SubsetStx ctx (ir l r) b)
   :
-    SubsetStx dl ctx l (impl r b)
+    dl.SubsetStx ctx l (impl r b)
   :=
     trans
       (trans (subIr subUnR em.unSymm) subUnIrDistElimR)
-      (subUnLR subId sub)
+      (unCtxLR subId sub)
   
   def implElim
-    (subImpl: SubsetStx dl ctx x (impl a b))
-    (subA: SubsetStx dl ctx x a)
+    (subImpl: dl.SubsetStx ctx x (impl a b))
+    (subA: dl.SubsetStx ctx x a)
   :
-    SubsetStx dl ctx x b
+    dl.SubsetStx ctx x b
   :=
     trans
       (subIr subA subImpl)
-      (subIrUnDistR.trans (subUn subPe subIrR))
+      (subIrUnDistR.trans (unCtx subPe subIrR))
   
   def implElimExact
-    (subA: SubsetStx dl ctx a (impl a b))
+    (subA: dl.SubsetStx ctx a (impl a b))
   :
-    SubsetStx dl ctx a b
+    dl.SubsetStx ctx a b
   :=
     implElim subA subId
   
   def implAbsorb
-    (subImpl: SubsetStx dl ctx x (impl a b))
+    (subImpl: dl.SubsetStx ctx x (impl a b))
   :
-    SubsetStx dl ctx (ir x a) b
+    dl.SubsetStx ctx (ir x a) b
   :=
-    irMonoL
+    irMonoCtxL
       subImpl
       (trans
-        irUnDistL
-        (subUn (trans subIrSymm subPe) subIrL))
+        subIrUnDistL
+        (unCtx (trans subIrSymm subPe) subIrL))
   
   def toImpl
-    (sub: SubsetStx dl ctx a b)
+    (sub: dl.SubsetStx ctx a b)
   :
-    SubsetStx dl ctx x (impl a b)
+    dl.SubsetStx ctx x (impl a b)
   :=
     trans
       em
-      (subUn
+      (unCtx
         (trans sub subUnR)
         subUnL)
   
   def ofImpl
-    (sub: SubsetStx dl ctx Expr.any (impl a b))
+    (sub: dl.SubsetStx ctx Expr.any (impl a b))
   :
-    SubsetStx dl ctx a b
+    dl.SubsetStx ctx a b
   :=
     implElimExact (trans subAny sub)
   
-  def unElimOfCompl
-    (ab: SubsetStx dl ctx x (a.compl))
-    (acbur: SubsetStx dl ctx x (un a b))
+  def unElimComplL
+    (ab: dl.SubsetStx ctx x (un a b))
+    (aCompl: dl.SubsetStx ctx x (a.compl))
   :
-    SubsetStx dl ctx x b
+    dl.SubsetStx ctx x b
   :=
     trans
-      (subIr ab acbur)
-      (subIrUnDistR.trans (subUn subPe.subIrSymmA subIrR))
+      (subIr aCompl ab)
+      (subIrUnDistR.trans (unCtx subPe.irSymmCtx subIrR))
+  
+  def unElimComplR
+    (ab: dl.SubsetStx ctx x (un a b))
+    (bCompl: dl.SubsetStx ctx x (b.compl))
+  :
+    dl.SubsetStx ctx x a
+  :=
+    trans
+      (subIr bCompl ab)
+      (subIrUnDistR.trans (unCtx subIrR subPe.irSymmCtx))
   
   -- Principle of explosion.
   def pe
-    (subA: SubsetStx dl ctx x a)
-    (subAc: SubsetStx dl ctx x a.compl)
+    (subA: dl.SubsetStx ctx x a)
+    (subAc: dl.SubsetStx ctx x a.compl)
   :
-    SubsetStx dl ctx x b
+    dl.SubsetStx ctx x b
   :=
     trans (subIr subA subAc) subPe
   
   
+  def unElim
+    (sub: dl.SubsetStx ctx x (un l r))
+    (subL: dl.SubsetStx ctx x (impl l a))
+    (subR: dl.SubsetStx ctx x (impl r a))
+  :
+    dl.SubsetStx ctx x a
+  :=
+    trans
+      (trans (subIr sub subId) subIrUnDistL)
+      (unCtx
+        (trans subIrSymm (implAbsorb subL))
+        (trans subIrSymm (implAbsorb subR)))
+  
+  def unMonoL
+    (sub: dl.SubsetStx ctx x (un la r))
+    (subL: dl.SubsetStx ctx x (impl la lb))
+  :
+    dl.SubsetStx ctx x (un lb r)
+  :=
+    unElim
+      sub
+      (implIntro (trans (implAbsorb subL) subUnL))
+      (toImpl subUnR)
+  
+  def unMonoR
+    (sub: dl.SubsetStx ctx x (un l ra))
+    (subR: dl.SubsetStx ctx x (impl ra rb))
+  :
+    dl.SubsetStx ctx x (un l rb)
+  :=
+    unElim
+      sub
+      (toImpl subUnL)
+      (implIntro (trans (implAbsorb subR) subUnR))
+  
+  
+  def dne
+    (sub: dl.SubsetStx ctx x (compl (compl a)))
+  :
+    dl.SubsetStx ctx x a
+  :=
+    trans sub subDne
+  
+  def dneCtx
+    (sub: dl.SubsetStx ctx (compl (compl a)) b)
+  :
+    dl.SubsetStx ctx a b
+  :=
+    subDni.trans sub
+  
+  def dni
+    (sub: dl.SubsetStx ctx x a)
+  :
+    dl.SubsetStx ctx x (compl (compl a))
+  :=
+    trans sub subDni
+  
+  def dniCtx
+    (sub: dl.SubsetStx ctx a b)
+  :
+    dl.SubsetStx ctx (compl (compl a)) b
+  :=
+    subDne.trans sub
+  
   def subComplElim
-    (sub: SubsetStx dl ctx (compl a) (compl b))
+    (sub: dl.SubsetStx ctx (compl a) (compl b))
   :
-    SubsetStx dl ctx b a
+    dl.SubsetStx ctx b a
   :=
-    trans dni (trans (subCompl sub) dne)
+    trans subDni (trans (subCompl sub) subDne)
   
-  def complComplA
-    (sub: SubsetStx dl ctx a b)
+  def complSwapCtx
+    (sub: dl.SubsetStx ctx (compl a) b)
   :
-    SubsetStx dl ctx (compl (compl a)) b
+    dl.SubsetStx ctx (compl b) a
   :=
-    dne.trans sub
+    (subCompl sub).trans subDne
   
-  def complComplElimA
-    (sub: SubsetStx dl ctx (compl (compl a)) b)
+  def complSwap
+    (sub: dl.SubsetStx ctx a (compl b))
   :
-    SubsetStx dl ctx a b
+    dl.SubsetStx ctx b (compl a)
   :=
-    dni.trans sub
-  
-  def complSwapA
-    (sub: SubsetStx dl ctx (compl a) b)
-  :
-    SubsetStx dl ctx (compl b) a
-  :=
-    (subCompl sub).trans dne
-  
-  def complSwapB
-    (sub: SubsetStx dl ctx a (compl b))
-  :
-    SubsetStx dl ctx b (compl a)
-  :=
-    dni.trans (subCompl sub)
+    subDni.trans (subCompl sub)
   
   def subContra:
-    SubsetStx dl ctx (impl a b) (impl (compl b) (compl a))
+    dl.SubsetStx ctx (impl a b) (impl (compl b) (compl a))
   :=
-    trans subUnSymm (subUnLR dni subId)
+    trans subUnSymm (unCtxLR subDni subId)
   
-  def contra
-    (sub: SubsetStx dl ctx x (impl a b))
+  def subContraElim
+    {a b: SingleLaneExpr}
   :
-    SubsetStx dl ctx x (impl (compl b) (compl a))
+    dl.SubsetStx ctx (impl a.compl b.compl) (impl b a)
+  :=
+    em.unElim
+      (implIntro (unR subIrR))
+      (implIntro (unL (implElim subIrL subIrR)))
+
+  def contra
+    (sub: dl.SubsetStx ctx x (impl a b))
+  :
+    dl.SubsetStx ctx x (impl (compl b) (compl a))
   :=
     toFn subContra sub
   
+  def contraElim
+    (sub: dl.SubsetStx ctx x (impl a.compl b.compl))
+  :
+    dl.SubsetStx ctx x (impl b a)
+  :=
+    toFn subContraElim sub
+  
   
   def subComplUn:
-    SubsetStx dl ctx (compl (un l r)) (ir (compl l) (compl r))
+    dl.SubsetStx ctx (compl (un l r)) (ir (compl l) (compl r))
   :=
     subIr (subCompl subUnL) (subCompl subUnR)
   
   def subComplUnElim:
-    SubsetStx dl ctx (ir (compl l) (compl r)) (compl (un l r))
+    dl.SubsetStx ctx (ir (compl l) (compl r)) (compl (un l r))
   :=
-    complSwapB (subUn (complSwapB subIrL) (complSwapB subIrR))
+    complSwap (unCtx (complSwap subIrL) (complSwap subIrR))
   
   def complUn
-    (sub: SubsetStx dl ctx x (compl (un l r)))
+    (sub: dl.SubsetStx ctx x (compl (un l r)))
   :
-    SubsetStx dl ctx x (ir (compl l) (compl r))
+    dl.SubsetStx ctx x (ir (compl l) (compl r))
   :=
     sub.trans subComplUn
   
   def complUnElim
-    (sub: SubsetStx dl ctx x (ir (compl l) (compl r)))
+    (sub: dl.SubsetStx ctx x (ir (compl l) (compl r)))
   :
-    SubsetStx dl ctx x (compl (un l r))
+    dl.SubsetStx ctx x (compl (un l r))
   :=
     sub.trans subComplUnElim
   
   def complUnElimL
-    (sub: SubsetStx dl ctx x (compl (un l r)))
+    (sub: dl.SubsetStx ctx x (compl (un l r)))
   :
-    SubsetStx dl ctx x (compl l)
+    dl.SubsetStx ctx x (compl l)
   :=
     irElimL (complUn sub)
   
+  def complUnElimR
+    (sub: dl.SubsetStx ctx x (compl (un l r)))
+  :
+    dl.SubsetStx ctx x (compl r)
+  :=
+    irElimR (complUn sub)
+  
   
   def fullElimOfImpl
-    (fullAb: SubsetStx dl ctx Expr.any (condFull (impl a b)))
+    (fullAb: dl.SubsetStx ctx Expr.any (condFull (impl a b)))
   :
-    SubsetStx dl ctx (condFull a) (condFull b)
+    dl.SubsetStx ctx (condFull a) (condFull b)
   :=
     implElimExact
       (trans subAny (trans fullAb fullImplElim))
   
   def isFullImpl
-    (sub: SubsetStx dl ctx a b)
+    (sub: dl.SubsetStx ctx a b)
   :
-    SubsetStx dl ctx Expr.any (condFull (impl a b))
+    dl.SubsetStx ctx Expr.any (condFull (impl a b))
   :=
     isFull (toImpl sub)
   
   def isFullImplElim
-    (sub: SubsetStx dl ctx Expr.any (condFull (impl a b)))
+    (sub: dl.SubsetStx ctx Expr.any (condFull (impl a b)))
   :
-    SubsetStx dl ctx a b
+    dl.SubsetStx ctx a b
   :=
     ofImpl (trans sub fullElim)
   
   def fullMono
-    (sub: SubsetStx dl ctx a b)
+    (sub: dl.SubsetStx ctx a b)
   :
-    SubsetStx dl ctx (condFull a) (condFull b)
+    dl.SubsetStx ctx (condFull a) (condFull b)
   :=
     fullElimOfImpl (isFullImpl sub)
   
   def fullDne:
-    SubsetStx dl ctx (condFull (compl (compl a))) (condFull a)
+    dl.SubsetStx ctx (condFull (compl (compl a))) (condFull a)
   :=
-    fullMono dne
+    fullMono subDne
   
   def fullDni:
-    SubsetStx dl ctx (condFull a) (condFull (compl (compl a)))
+    dl.SubsetStx ctx (condFull a) (condFull (compl (compl a)))
   :=
-    fullMono dni
+    fullMono subDni
   
   def complFullAntimono
-    (sub: SubsetStx dl ctx a b)
+    (sub: dl.SubsetStx ctx a b)
   :
-    SubsetStx dl ctx (compl (condFull b)) (compl (condFull a))
+    dl.SubsetStx ctx (compl (condFull b)) (compl (condFull a))
   :=
     subCompl (fullMono sub)
   
   
   def subSome:
-    SubsetStx dl ctx a (condSome a)
+    dl.SubsetStx ctx a (condSome a)
   :=
-    trans dni (subCompl fullElim)
+    trans subDni (subCompl fullElim)
   
   def someMono
-    (sub: SubsetStx dl ctx a b)
+    (sub: dl.SubsetStx ctx a b)
   :
-    SubsetStx dl ctx (condSome a) (condSome b)
+    dl.SubsetStx ctx (condSome a) (condSome b)
   :=
     complFullAntimono (subCompl sub)
   
   
   def fullSome:
-    SubsetStx dl ctx (condFull a) (condSome a)
+    dl.SubsetStx ctx (condFull a) (condSome a)
   :=
     trans fullElim subSome
   
   def someElimFull
-    (sub: SubsetStx dl ctx a (condFull b))
+    (sub: dl.SubsetStx ctx a (condFull b))
   :
-    SubsetStx dl ctx (condSome a) (condFull b)
+    dl.SubsetStx ctx (condSome a) (condFull b)
   :=
     trans (someMono sub) someStripFull
   
   def isFullUpgrade
-    (isSomeA: SubsetStx dl ctx Expr.any (condSome a))
-    (aFullB: SubsetStx dl ctx a (condFull b))
+    (isSomeA: dl.SubsetStx ctx Expr.any (condSome a))
+    (aFullB: dl.SubsetStx ctx a (condFull b))
   :
-    SubsetStx dl ctx Expr.any (condFull b)
+    dl.SubsetStx ctx Expr.any (condFull b)
   :=
     trans isSomeA (someElimFull aFullB)
   
   def someAddFull:
-    SubsetStx dl ctx (condSome a) (condFull (condSome a))
+    dl.SubsetStx ctx (condSome a) (condFull (condSome a))
   :=
-    complSwapA someStripFull
+    complSwapCtx someStripFull
   
   def fullAddSome:
-    SubsetStx dl ctx (condFull a) (condSome (condFull a))
+    dl.SubsetStx ctx (condFull a) (condSome (condFull a))
   :=
     subSome
   
   def someAddSome:
-    SubsetStx dl ctx (condSome a) (condSome (condSome a))
+    dl.SubsetStx ctx (condSome a) (condSome (condSome a))
   :=
     subSome
   
   def subFullSome:
-    SubsetStx dl ctx a (condFull (condSome a))
+    dl.SubsetStx ctx a (condFull (condSome a))
   :=
     trans subSome someAddFull
   
   def fullAddFull:
-    SubsetStx dl ctx (condFull a) (condFull (condFull a))
+    dl.SubsetStx ctx (condFull a) (condFull (condFull a))
   :=
     trans subFullSome (fullMono someStripFull)
   
   def someElimComplFull
-    (sub: SubsetStx dl ctx a (compl (condFull b)))
+    (sub: dl.SubsetStx ctx a (compl (condFull b)))
   :
-    SubsetStx dl ctx (condSome a) (compl (condFull b))
+    dl.SubsetStx ctx (condSome a) (compl (condFull b))
   :=
-    subCompl (trans fullAddFull (fullMono (complSwapB sub)))
+    subCompl (trans fullAddFull (fullMono (complSwap sub)))
   
   def someStripSome:
-    SubsetStx dl ctx (condSome (condSome a)) (condSome a)
+    dl.SubsetStx ctx (condSome (condSome a)) (condSome a)
   :=
-    subCompl (trans fullAddFull (fullMono dni))
+    subCompl (trans fullAddFull (fullMono subDni))
   
   
   def condSomeNull:
-    SubsetStx dl ctx Expr.any (condSome .null)
+    dl.SubsetStx ctx Expr.any (condSome .null)
   :=
     sorry
   
   def condSomePair
-    (sl: SubsetStx dl ctx Expr.any (condSome l))
-    (sr: SubsetStx dl ctx Expr.any (condSome r))
+    (sl: dl.SubsetStx ctx Expr.any (condSome l))
+    (sr: dl.SubsetStx ctx Expr.any (condSome r))
   :
-    SubsetStx dl ctx Expr.any (condSome (pair l r))
+    dl.SubsetStx ctx Expr.any (condSome (pair l r))
   :=
     sorry
   
   def isSomeMono
-    (ab: SubsetStx dl ctx a b)
-    (sa: SubsetStx dl ctx Expr.any (condSome a))
+    (ab: dl.SubsetStx ctx a b)
+    (sa: dl.SubsetStx ctx Expr.any (condSome a))
   :
-    SubsetStx dl ctx Expr.any (condSome b)
+    dl.SubsetStx ctx Expr.any (condSome b)
   :=
     trans sa (someMono ab)
   
   def isSomeUpgrade
-    (isSomeA: SubsetStx dl ctx Expr.any (condSome a))
-    (aSomeB: SubsetStx dl ctx a (condSome b))
+    (isSomeA: dl.SubsetStx ctx Expr.any (condSome a))
+    (aSomeB: dl.SubsetStx ctx a (condSome b))
   :
-    SubsetStx dl ctx Expr.any (condSome b)
+    dl.SubsetStx ctx Expr.any (condSome b)
   :=
     trans (isSomeMono aSomeB isSomeA) someStripSome
   
   
-  def unfoldA
-      (sub: SubsetStx dl ctx (var lane a) b)
+  def unfoldCtx
+      (sub: dl.SubsetStx ctx (var lane a) b)
     :
-      SubsetStx dl ctx ((dl.getDef a).toLane lane) b
+      dl.SubsetStx ctx ((dl.getDef a).toLane lane) b
   :=
-    trans fold sub
+    trans subFold sub
   
-  def unfoldB
-      (sub: SubsetStx dl ctx a (var lane b))
+  def unfold
+      (sub: dl.SubsetStx ctx x (var lane a))
     :
-      SubsetStx dl ctx a ((dl.getDef b).toLane lane)
+      dl.SubsetStx ctx x ((dl.getDef a).toLane lane)
   :=
-    trans sub unfold
+    trans sub subUnfold
   
-  def foldA
-      (sub: SubsetStx dl ctx ((dl.getDef a).toLane lane) b)
+  def foldCtx
+      (sub: dl.SubsetStx ctx ((dl.getDef a).toLane lane) b)
     :
-      SubsetStx dl ctx (var lane a) b
+      dl.SubsetStx ctx (var lane a) b
   :=
-    trans unfold sub
+    trans subUnfold sub
   
-  def foldB
-      (sub: SubsetStx dl ctx a ((dl.getDef b).toLane lane))
+  def fold
+      (sub: dl.SubsetStx ctx x ((dl.getDef a).toLane lane))
     :
-      SubsetStx dl ctx a (var lane b)
+      dl.SubsetStx ctx x (var lane a)
     :=
-      trans sub fold
+      trans sub subFold
+  
+  
+  def implPairMono:
+    dl.SubsetStx
+      ctx
+      Expr.any
+      (impl
+        (condFull (impl al bl))
+        (impl
+          (condFull (impl ar br))
+          (impl (pair al ar) (pair bl br))))
+  :=
+    implIntro
+      (implIntro
+        (trans
+          (pairMono (irCtxL subIrR) subIrR)
+          fullElim))
+  
+  def pairMonoOfSub
+    (sl: dl.SubsetStx ctx al bl)
+    (sr: dl.SubsetStx ctx ar br)
+  :
+    dl.SubsetStx ctx (pair al ar) (pair bl br)
+  :=
+    ofImpl
+      (implElim
+        (implElim implPairMono (isFullImpl sl))
+        (isFullImpl sr))
   
   
   def induction
     (desc: InductionDescriptor dl)
     (premise:
-      SubsetStx
-        dl
+      dl.SubsetStx
         ctx
         ((desc.expansion.toLane .posLane).replaceDepthEvenVars 0 true fun depth _ x =>
           desc.hypothesis depth x (var .posLane x))
         desc.rite)
   :
-    SubsetStx dl ctx (var .posLane desc.left) desc.rite
+    dl.SubsetStx ctx (var .posLane desc.left) desc.rite
   :=
     mutInduction
       [desc]
@@ -964,14 +1060,13 @@ namespace DefList.SubsetStx
     {left: Nat}
     {rite: SingleLaneExpr}
     (premise:
-      SubsetStx
-        dl
+      dl.SubsetStx
         ctx
         (((dl.getDef left).toLane .posLane).replaceDepthEvenVars 0 true fun depth _ x =>
           if left = x then .ir (rite.lift 0 depth) (var .posLane x) else (var .posLane x))
         rite)
   :
-    SubsetStx dl ctx (var .posLane left) rite
+    dl.SubsetStx ctx (var .posLane left) rite
   :=
     induction
       {
@@ -984,35 +1079,22 @@ namespace DefList.SubsetStx
   
   
   def implDist:
-    SubsetStx dl ctx (impl a (impl b c)) (impl (impl a b) (impl a c))
+    dl.SubsetStx ctx (impl a (impl b c)) (impl (impl a b) (impl a c))
   :=
     .implIntro
       (.implIntro
         (.implElim
-          (.implElim (.irL .subIrL) .subIrR)
-          (.implElim (.irL .subIrR) .subIrR)))
+          (.implElim (irCtxL .subIrL) .subIrR)
+          (.implElim (irCtxL .subIrR) .subIrR)))
   
   def subIrUnCompl
     {a b: SingleLaneExpr}
   :
-    SubsetStx dl ctx a (un (ir a b.compl) b)
+    dl.SubsetStx ctx a (un (ir a b.compl) b)
   :=
     trans
       (subIr subUnR em)
       (trans subUnIrDistElimR subUnSymm)
-
-  def contraImpl
-    {a b: SingleLaneExpr}
-  :
-    SubsetStx dl ctx (impl a.compl b.compl) (impl b a)
-  :=
-    let step0 := trans dni (subCompl (implAbsorb subId))
-    let step1 :=
-      unElimOfCompl
-        subIrR
-        (trans subIrL subIrUnCompl)
-    implIntro (trans (subIrLR subId step0) step1)
-
   
 end DefList.SubsetStx
 

@@ -281,20 +281,17 @@ def mutCoinduction
           rfl
         eqMap ▸
         .subComplElim
-          (.complComplA
-            (.complSwapB
+          (.dniCtx
+            (.complSwap
               (MutCoindDescriptor.sub_hypothesify
                 desc
-                (.complSwapB
+                (.complSwap
                   (premises
                     i.unmap))))))
       iMap
   by
   rw [eqMap] at ind
-  exact
-    .subComplElim
-      (.complComplA
-        ind)
+  exact .subComplElim (.dniCtx ind)
 
 
   def coinduction
