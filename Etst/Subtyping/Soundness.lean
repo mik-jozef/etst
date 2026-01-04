@@ -3,6 +3,27 @@ import Etst.Subtyping.Utils.FixpointMethodsSoundness
 namespace Etst
 open Expr
 
+open SingleLaneExpr in
+def DefList.SubsetBv.subsetOfFullImpl {dl bv x a b d}
+  (h: SubsetBv dl bv x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b)))
+  (isIn: d ∈ x.intp bv dl.wfm)
+:
+  dl.SubsetBv bv a b
+:=
+  fun d' inA =>
+    inImplElim (inCondFullElim (h isIn) d') inA
+
+open SingleLaneExpr in
+def DefList.SubsetBv.fullImplOfSubset {dl bv x a b}
+  (h: SubsetBv dl bv a b)
+:
+  SubsetBv dl bv x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b))
+:=
+  fun _ _ =>
+    inCondFull .null fun _ =>
+      inImpl fun inA =>
+        h inA
+
 
 open SingleLaneExpr in
 def DefList.SubsetStx.isSound
@@ -96,4 +117,10 @@ def DefList.SubsetStx.isSound
         let ⟨inA, inAc⟩ := inIrElim isIn
         (inAc inA).elim
     | mutInduction desc premises i =>
-        MutIndDescriptor.isSound desc (fun i => (premises i).isSound) i bv isIn
+      let isSub :=
+        MutIndDescriptor.isSound
+          desc
+          bv
+          (fun i => ((premises i).isSound bv).subsetOfFullImpl isIn)
+          i
+      isSub.fullImplOfSubset isIn

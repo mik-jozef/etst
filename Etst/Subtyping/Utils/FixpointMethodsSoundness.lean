@@ -20,8 +20,9 @@ def DefList.lfpStage_le_wfm_std
 def InductionDescriptor.Invariant
   (desc: InductionDescriptor dl)
   (wfm v: Valuation Pair)
+  (bv: List Pair)
 :=
-  ∀ bv, Set.Subset (v desc.left).posMem (desc.rite.intp bv wfm)
+  Set.Subset (v desc.left).posMem (desc.rite.intp bv wfm)
 
 def MutIndDescriptor.var_le_hypothesify
   (desc: MutIndDescriptor dl)
@@ -29,7 +30,7 @@ def MutIndDescriptor.var_le_hypothesify
   -- `bvDepth` represent the bound variables introduced by the
   -- quantifiers of the hypothesified expression.
   (bv bvDepth: List Pair)
-  (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
+  (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v bv)
   (v_le: v ≤ dl.wfm)
 :
   Set.Subset
@@ -46,12 +47,12 @@ def MutIndDescriptor.var_le_hypothesify
     let invTail := List.Index.indexedTail
       (P :=
         fun (desc: InductionDescriptor dl) =>
-          desc.Invariant dl.wfm v)
+          desc.Invariant dl.wfm v bv)
       inv
     if h: head.left = x then
       if_pos h ▸
       fun _ inX =>
-        let inRite := inv ⟨0, Nat.zero_lt_succ _⟩ bv (h ▸ inX)
+        let inRite := inv ⟨0, Nat.zero_lt_succ _⟩ (h ▸ inX)
         inIr
           (show intp2 _ _ _ _ _ from
           head.rite.intp2_lift_eq bv bvDepth dl.wfm dl.wfm ▸
@@ -69,7 +70,7 @@ def MutIndDescriptor.le_hypothesify
   -- good for the recursive calls. It represents the bound variables
   -- introduced by the quantifiers of the hypothesified expression.
   (bvDepth: List Pair := [])
-  (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
+  (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v bv)
   {expr: SingleLaneExpr}
   (laneEq: expr.LaneEqEven .posLane ed)
   (v_le: v ≤ dl.wfm)
@@ -131,15 +132,14 @@ def MutIndDescriptor.le_hypothesify
 
 def MutIndDescriptor.isSound
   (desc: MutIndDescriptor dl)
+  (bv: List Pair)
   (premisesHold:
     (i: desc.Index) →
-    (bv: List Pair) →
     dl.SubsetBv bv
       (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
       desc[i].rite)
   (i: desc.Index)
 :
-  ∀ bv,
   dl.SubsetBv bv (.var .posLane desc[i].left) desc[i].rite
 :=
   let := Valuation.ordStdLattice
@@ -149,16 +149,16 @@ def MutIndDescriptor.isSound
     OrderHom.lfpStage_induction
       (operatorC dl dl.wfm)
       (fun v =>
-        ∀ (i: desc.Index), desc[i].Invariant dl.wfm v)
-      (fun n isLim ih i bv p ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, atStage⟩ =>
+        ∀ (i: desc.Index), desc[i].Invariant dl.wfm v bv)
+      (fun n isLim ih i p ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, atStage⟩ =>
         let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
         let s3Eq: v _ = s3 := s3Eq
         let pIn:
           p ∈ ((operatorC dl dl.wfm).lfpStage m desc[i].left).posMem
         :=
           vEq ▸ s3Eq ▸ atStage
-        ih m i bv pIn)
-      (fun n notLim predLt ih i bv _ isPos =>
+        ih m i pIn)
+      (fun n notLim predLt ih i _ isPos =>
         let ihPred := ih ⟨n.pred, predLt⟩
         let op := operatorC dl dl.wfm
         let predStage := op.lfpStage n.pred
@@ -171,12 +171,14 @@ def MutIndDescriptor.isSound
         := by
           rw [←dl.interp_eq_bv desc[i].left [] bv dl.wfm predStage]
           exact isPos
-        premisesHold i bv (lePremiseL (leExp.posLe isPosBv)))
+        premisesHold i (lePremiseL (leExp.posLe isPosBv)))
   
   by rw [←eq] at isDefSub; exact isDefSub i
 
--- def test {a b: Nat} (eq: a = b)
--- ## Coinduction section
+
+-- ## Coinduction section (TBD)
+-- note: before fixing this, generalize induction to arbitrary
+-- variables, not just positive lanes.
 
 -- Represents a coinductive proof of `left ⊆ var .defLane rite`
 structure CoinductionDescriptor (dl: DefList) where
@@ -249,8 +251,9 @@ def MutCoindDescriptor.sub_hypothesify
   | .condFull body => sorry
   | .compl body => sorry
   | .arbIr body => sorry
-  
-def mutCoinduction
+
+-- TODO we should be aiming for mutCoinduction here, not subMutInduction.
+def subMutCoinduction
   (desc: MutCoindDescriptor dl)
   (premises:
     (i: desc.Index) →
@@ -271,7 +274,7 @@ def mutCoinduction
     rw [listEq]
     rfl
   let ind :=
-    DefList.SubsetStx.mutInduction
+    DefList.SubsetStx.subMutInduction
       (ctx := ctx)
       descMap
       (fun i =>
@@ -306,7 +309,7 @@ def mutCoinduction
   :
     dl.SubsetStx ctx desc.left (.compl (.var .posLane desc.rite))
   :=
-    mutCoinduction
+    subMutCoinduction
       [desc]
       (fun | ⟨0, _⟩ => premise)
       ⟨0, Nat.zero_lt_succ _⟩

@@ -292,18 +292,23 @@ inductive DefList.SubsetStx
 --   (IsSingleton t)
 --   SubsetStx (body.replaceNextVar t) (arbIr body)
 |
-  -- TODO this should be modified to accommodate context.
   mutInduction
     (desc: MutIndDescriptor dl)
     (premises:
       (i: desc.Index) →
       dl.SubsetStx
         ctx
-        (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
-        desc[i].rite)
+        x
+        (condFull
+          (impl
+            (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
+            desc[i].rite)))
     (i: desc.Index)
   :
-    dl.SubsetStx ctx (var .posLane desc[i].left) desc[i].rite
+    dl.SubsetStx
+      ctx
+      x
+      (condFull (impl (var .posLane desc[i].left) desc[i].rite))
 
 
 namespace DefList.SubsetStx
@@ -1039,7 +1044,22 @@ namespace DefList.SubsetStx
         (isFullImpl sr))
   
   
-  def induction
+  def subMutInduction
+    (desc: MutIndDescriptor dl)
+    (premises:
+      (i: desc.Index) →
+      dl.SubsetStx
+        ctx
+        (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
+        desc[i].rite)
+    (i: desc.Index)
+  :
+    dl.SubsetStx ctx (var .posLane desc[i].left) desc[i].rite
+  :=
+    isFullImplElim
+      (mutInduction desc (fun i => isFullImpl (premises i)) i)
+  
+  def subInduction
     (desc: InductionDescriptor dl)
     (premise:
       dl.SubsetStx
@@ -1050,12 +1070,12 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx ctx (var .posLane desc.left) desc.rite
   :=
-    mutInduction
+    subMutInduction
       [desc]
       (fun | ⟨0, _⟩ => premise)
       ⟨0, Nat.zero_lt_succ _⟩
   
-  def simpleInduction
+  def subSimpleInduction
     {left: Nat}
     {rite: SingleLaneExpr}
     (premise:
@@ -1067,7 +1087,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx ctx (var .posLane left) rite
   :=
-    induction
+    subInduction
       {
         left,
         rite,
