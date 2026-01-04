@@ -78,16 +78,23 @@ namespace DefList
   | fFullElim:
       dl.IsFullStx (impl (condFull expr) expr)
   -- Contraposition of Axiom 5 (up to removal of negation from `a`)
-  | fSomeStripFull:
+  | fSomeStripFull {a}:
       dl.IsFullStx (impl (condSome (condFull a)) (condFull a))
-  | mutInduction
+  | mutInduction {x}
       (desc: MutIndDescriptor dl)
       (premises:
         (i: desc.Index) →
-        IsFullStx dl (impl (desc.hypothesify 0 (desc[i].expansion.toLane .posLane)) desc[i].rite))
+        dl.IsFullStx
+          (impl
+            x
+            (condFull
+              (impl
+                (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
+                desc[i].rite))))
       (i: desc.Index)
     :
-      IsFullStx dl (impl (var .posLane desc[i].left) desc[i].rite)
+      dl.IsFullStx
+        (impl x (condFull (impl (var .posLane desc[i].left) desc[i].rite)))
   
   namespace IsFullStx
     variable {dl: DefList}
@@ -310,8 +317,8 @@ namespace DefList
     def fAny: dl.IsFullStx Expr.any := sorry
     
     
-    def condFullToImplAny:
-      dl.IsFullStx (impl (condFull a) (condFull (impl any a)))
+    def fullSimpl:
+      dl.IsFullStx (impl (condFull a) (condFull (impl b a)))
     :=
       mp fFullImplElim (fFull simpl)
     
@@ -323,9 +330,9 @@ namespace DefList
             (condFull rite)
             (un null (pair left rite))))
     :=
-      let step1 := mp2 trans condFullToImplAny fPairMono
+      let step1 := mp2 trans fullSimpl fPairMono
       let step2 := mp exchange step1
-      let step3 := mp2 trans condFullToImplAny step2
+      let step3 := mp2 trans fullSimpl step2
       let impl_A_C_E_F := mp exchange step3
       
       let impl_A_C_G_H := mp2 liftImpl (mp liftImpl unMonoR) impl_A_C_E_F
@@ -333,6 +340,26 @@ namespace DefList
       let impl_G_A_C_H := mp exchange impl_A_G_C_H
       
       mp impl_G_A_C_H fNullPair
+    
+    def implToImplFull {x}
+      (h: dl.IsFullStx (impl a b))
+    :
+      dl.IsFullStx (impl x (condFull (impl a b)))
+    :=
+      mp simpl (fFull h)
+    
+    def mutInductionDirect
+      (desc: MutIndDescriptor dl)
+      (premises:
+        (i: desc.Index) →
+        IsFullStx dl (impl (desc.hypothesify 0 (desc[i].expansion.toLane .posLane)) desc[i].rite))
+      (i: desc.Index)
+    :
+      IsFullStx dl (impl (var .posLane desc[i].left) desc[i].rite)
+    :=
+      let premises' (j: desc.Index) := implToImplFull (x := Expr.any) (premises j)
+      let res := mutInduction (x := Expr.any) desc premises' i
+      mp fFullElim (mp res fAny)
     
   end IsFullStx
   
