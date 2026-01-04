@@ -22,7 +22,7 @@ def InductionDescriptor.Invariant
   (wfm v: Valuation Pair)
   (bv: List Pair)
 :=
-  Set.Subset (v desc.left).posMem (desc.rite.intp bv wfm)
+  Set.Subset (v desc.x).posMem (desc.expr.intp bv wfm)
 
 def MutIndDescriptor.var_le_hypothesify
   (desc: MutIndDescriptor dl)
@@ -49,13 +49,13 @@ def MutIndDescriptor.var_le_hypothesify
         fun (desc: InductionDescriptor dl) =>
           desc.Invariant dl.wfm v bv)
       inv
-    if h: head.left = x then
+    if h: head.x = x then
       if_pos h ▸
       fun _ inX =>
         let inRite := inv ⟨0, Nat.zero_lt_succ _⟩ (h ▸ inX)
         inIr
           (show intp2 _ _ _ _ _ from
-          head.rite.intp2_lift_eq bv bvDepth dl.wfm dl.wfm ▸
+          head.expr.intp2_lift_eq bv bvDepth dl.wfm dl.wfm ▸
           inRite)
           (rest.var_le_hypothesify bv bvDepth invTail v_le inX)
     else
@@ -137,10 +137,10 @@ def MutIndDescriptor.isSound
     (i: desc.Index) →
     dl.SubsetBv bv
       (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
-      desc[i].rite)
+      desc[i].expr)
   (i: desc.Index)
 :
-  dl.SubsetBv bv (.var .posLane desc[i].left) desc[i].rite
+  dl.SubsetBv bv (.var .posLane desc[i].x) desc[i].expr
 :=
   let := Valuation.ordStdLattice
   let eq: dl.wfm = (operatorC dl dl.wfm).lfp := dl.wfm_eq_lfpC
@@ -154,7 +154,7 @@ def MutIndDescriptor.isSound
         let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
         let s3Eq: v _ = s3 := s3Eq
         let pIn:
-          p ∈ ((operatorC dl dl.wfm).lfpStage m desc[i].left).posMem
+          p ∈ ((operatorC dl dl.wfm).lfpStage m desc[i].x).posMem
         :=
           vEq ▸ s3Eq ▸ atStage
         ih m i pIn)
@@ -167,9 +167,9 @@ def MutIndDescriptor.isSound
         let lePremiseL := desc.le_hypothesify bv [] ihPred laneEq predStageLe
         let leExp := desc[i].expandsInto.lfpStage_le_std bv n.pred
         let isPosBv:
-          (BasicExpr.triIntp2 (dl.getDef desc[i].left) bv dl.wfm predStage).posMem _
+          (BasicExpr.triIntp2 (dl.getDef desc[i].x) bv dl.wfm predStage).posMem _
         := by
-          rw [←dl.interp_eq_bv desc[i].left [] bv dl.wfm predStage]
+          rw [←dl.interp_eq_bv desc[i].x [] bv dl.wfm predStage]
           exact isPos
         premisesHold i (lePremiseL (leExp.posLe isPosBv)))
   
@@ -192,8 +192,8 @@ def CoinductionDescriptor.toInduction
 :
   InductionDescriptor dl
 := {
-  left := desc.rite
-  rite := .compl desc.left
+  x := desc.rite
+  expr := .compl desc.left
   expansion := desc.expansion
   expandsInto := desc.expandsInto
 }

@@ -170,6 +170,7 @@ namespace Set3
   inductive Lane
   | posLane
   | defLane
+  deriving DecidableEq
   
   def Lane.toggle: Lane → Lane
   | .posLane => .defLane

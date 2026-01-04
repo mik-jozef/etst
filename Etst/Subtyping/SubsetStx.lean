@@ -88,12 +88,12 @@ def Expr.replaceDepthEvenVars
       compl (body.replaceDepthEvenVars depth (!ed) replacer)
   | arbIr body => arbIr (body.replaceDepthEvenVars (depth + 1) ed replacer)
 
--- Represents an inductive proof of `var .posLane left ⊆ rite`
+-- Represents an inductive proof of `var .posLane x ⊆ expr`
 structure InductionDescriptor (dl: DefList) where
-  left: Nat
-  rite: SingleLaneExpr
+  x: Nat
+  expr: SingleLaneExpr
   expansion: BasicExpr
-  expandsInto: ExpandsInto dl true (dl.getDef left) expansion
+  expandsInto: ExpandsInto dl true (dl.getDef x) expansion
 
 def InductionDescriptor.hypothesis
   (depth: Nat)
@@ -103,7 +103,7 @@ def InductionDescriptor.hypothesis
 :
   SingleLaneExpr
 :=
-  if desc.left = x then .ir (desc.rite.lift 0 depth) expr else expr
+  if desc.x = x then .ir (desc.expr.lift 0 depth) expr else expr
 
 abbrev MutIndDescriptor (dl: DefList) := List (InductionDescriptor dl)
 
@@ -302,13 +302,13 @@ inductive DefList.SubsetStx
         (condFull
           (impl
             (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
-            desc[i].rite)))
+            desc[i].expr)))
     (i: desc.Index)
   :
     dl.SubsetStx
       ctx
       x
-      (condFull (impl (var .posLane desc[i].left) desc[i].rite))
+      (condFull (impl (var .posLane desc[i].x) desc[i].expr))
 
 
 namespace DefList.SubsetStx
@@ -1051,10 +1051,10 @@ namespace DefList.SubsetStx
       dl.SubsetStx
         ctx
         (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
-        desc[i].rite)
+        desc[i].expr)
     (i: desc.Index)
   :
-    dl.SubsetStx ctx (var .posLane desc[i].left) desc[i].rite
+    dl.SubsetStx ctx (var .posLane desc[i].x) desc[i].expr
   :=
     isFullImplElim
       (mutInduction desc (fun i => isFullImpl (premises i)) i)
@@ -1066,9 +1066,9 @@ namespace DefList.SubsetStx
         ctx
         ((desc.expansion.toLane .posLane).replaceDepthEvenVars 0 true fun depth _ x =>
           desc.hypothesis depth x (var .posLane x))
-        desc.rite)
+        desc.expr)
   :
-    dl.SubsetStx ctx (var .posLane desc.left) desc.rite
+    dl.SubsetStx ctx (var .posLane desc.x) desc.expr
   :=
     subMutInduction
       [desc]
@@ -1076,22 +1076,22 @@ namespace DefList.SubsetStx
       ⟨0, Nat.zero_lt_succ _⟩
   
   def subSimpleInduction
-    {left: Nat}
-    {rite: SingleLaneExpr}
+    {x: Nat}
+    {expr: SingleLaneExpr}
     (premise:
       dl.SubsetStx
         ctx
-        (((dl.getDef left).toLane .posLane).replaceDepthEvenVars 0 true fun depth _ x =>
-          if left = x then .ir (rite.lift 0 depth) (var .posLane x) else (var .posLane x))
-        rite)
+        (((dl.getDef x).toLane .posLane).replaceDepthEvenVars 0 true fun depth _ xR =>
+          if x = xR then .ir (expr.lift 0 depth) (var .posLane xR) else (var .posLane xR))
+        expr)
   :
-    dl.SubsetStx ctx (var .posLane left) rite
+    dl.SubsetStx ctx (var .posLane x) expr
   :=
     subInduction
       {
-        left,
-        rite,
-        expansion := dl.getDef left,
+        x,
+        expr,
+        expansion := dl.getDef x,
         expandsInto := .rfl
       }
       premise
