@@ -103,9 +103,9 @@ namespace SingleLaneExpr
         (clearBvars_preserves_interp_bv body bv bvRest b c)
     | .compl body =>
       let ih := clearBvars_preserves_interp_bv body bv bvRest c b
-      eq_compl_of_eq ih
+      eq_intp2_compl_of_eq ih
     | .arbIr body =>
-      eq_arbIr_of_eq (fun dX =>
+      eq_intp2_arbIr_of_eq (fun dX =>
         clearBvars_preserves_interp_bv (bvRest := bvRest) body (dX :: bv) b c)
   
   def clearBvars_preserves_interp

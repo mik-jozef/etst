@@ -160,10 +160,10 @@ namespace SingleLaneExpr
       eq_intp2_condFull_of_eq
         (intp2_lift_eq_helper body bv bvDepth bvLiftBy b c)
     | .compl body =>
-      eq_compl_of_eq -- TODO normalize the name
+      eq_intp2_compl_of_eq
         (intp2_lift_eq_helper body bv bvDepth bvLiftBy c b)
     | .arbIr body =>
-      eq_arbIr_of_eq fun d =>
+      eq_intp2_arbIr_of_eq fun d =>
         intp2_lift_eq_helper body bv (d :: bvDepth) bvLiftBy b c
   
   def intp2_lift_eq

@@ -7,7 +7,7 @@ open Expr
 namespace DefList
   inductive IsFullStx (dl: DefList): SingleLaneExpr → Type
   | defPos: dl.IsFullStx (impl (var .defLane x) (var .posLane x))
-    -- TODO should be probable using induction.
+    -- TODO should be provable using induction.
   | unfold (lane: Set3.Lane) (x: Nat):
       dl.IsFullStx (impl (var lane x) ((dl.getDef x).toLane lane))
   | fold (lane: Set3.Lane) (x: Nat):

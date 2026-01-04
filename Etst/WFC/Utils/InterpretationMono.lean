@@ -23,7 +23,7 @@ namespace SingleLaneExpr
     fun _ ins =>
       inCompl (fun isPos => inComplElim ins (le isPos))
   
-  def eq_compl_of_eq
+  def eq_intp2_compl_of_eq
     (eq:
       Eq
         (e0.intp2 bv0 c0 b0)
@@ -55,7 +55,7 @@ namespace SingleLaneExpr
       let ⟨dB, isDef⟩ := inArbUnElim in0
       inArbUn dB ((le dB) isDef)
   
-  def eq_arbUn_of_eq
+  def eq_intp2_arbUn_of_eq
     {bv0 bv1: List Pair}
     {b0 c0 b1 c1: Valuation Pair}
     (eq:
@@ -88,7 +88,7 @@ namespace SingleLaneExpr
   :=
     fun _ h dB => (le dB) (h dB)
   
-  def eq_arbIr_of_eq
+  def eq_intp2_arbIr_of_eq
     {bv0 bv1: List Pair}
     {b0 c0 b1 c1: Valuation Pair}
     (eq:
@@ -125,8 +125,8 @@ namespace BasicExpr
     triIntp2 (compl e0) bv0 b0 c0 = triIntp2 (compl e1) bv1 b1 c1
   :=
     Set3.eq
-      (eq_compl_of_eq (Set3.pos_eq eq))
-      (eq_compl_of_eq (Set3.def_eq eq))
+      (eq_intp2_compl_of_eq (Set3.pos_eq eq))
+      (eq_intp2_compl_of_eq (Set3.def_eq eq))
   
   
   def triIntp2_mono_std_arbUn
@@ -148,8 +148,8 @@ namespace BasicExpr
     triIntp2 (arbUn e0) bv0 b0 c0 = triIntp2 (arbUn e1) bv1 b1 c1
   :=
     Set3.eq
-      (eq_arbUn_of_eq (fun (dB: Pair) => Set3.def_eq (eq dB)))
-      (eq_arbUn_of_eq (fun (dB: Pair) => Set3.pos_eq (eq dB)))
+      (eq_intp2_arbUn_of_eq (fun (dB: Pair) => Set3.def_eq (eq dB)))
+      (eq_intp2_arbUn_of_eq (fun (dB: Pair) => Set3.pos_eq (eq dB)))
   
   
   def triIntp2_mono_std_arbIr
@@ -171,8 +171,8 @@ namespace BasicExpr
     triIntp2 (arbIr e0) bv0 b0 c0 = triIntp2 (arbIr e1) bv1 b1 c1
   :=
     Set3.eq
-      (eq_arbIr_of_eq (fun (dB: Pair) => Set3.def_eq (eq dB)))
-      (eq_arbIr_of_eq (fun (dB: Pair) => Set3.pos_eq (eq dB)))
+      (eq_intp2_arbIr_of_eq (fun (dB: Pair) => Set3.def_eq (eq dB)))
+      (eq_intp2_arbIr_of_eq (fun (dB: Pair) => Set3.pos_eq (eq dB)))
 
 end BasicExpr
 
