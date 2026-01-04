@@ -23,17 +23,14 @@ def Expr.noneLtSize
 :=
   nofun
 
-def DefList.DependsOn.toUsesVar
-  {getDef: GetDef}
+def DefList.DependsOn.toUsesVar {getDef a b}
   (depOn: DependsOn getDef a b)
 :
   ∃ x, (getDef x).UsesVar b
 :=
-  -- Why this no work. TODO investigate finally
-  -- match depOn with
-  -- | Base usesVar => ⟨_, usesVar⟩
-  -- | Rec usesVar depOn => depOn.toUsesVar
-  depOn.rec (fun usesVar => ⟨_, usesVar⟩) (fun _ _ => id)
+  match depOn with
+  | Base usesVar => ⟨_, usesVar⟩
+  | Rec _ depOn => depOn.toUsesVar
 
 
 def FiniteDefList.VarLtSize
@@ -233,7 +230,7 @@ namespace pair_def_list
       s!"Implementation error: unexpected syntax for {item}."
   
   -- Reserved names were implemented because bounded arbitrary intersection
-  -- was syntax sugar for an expression that used `Any`. It escapes my how
+  -- was syntax sugar for an expression that used `Any`. It escapes me how
   -- I did not think of a better syntax expansion instead.
   structure ReservedName where
     stx: TSyntax `s3_pair_def
@@ -382,28 +379,21 @@ namespace pair_def_list
   def Vars.getVarDefs
     (vars: Vars)
     (dlName: Name)
-    (list: List String := vars)
   :
     CommandElabM (TSyntaxArray `command)
   := do
-    match list with
-    | [] => return #[]
-    | name :: list =>
-      let num :=
-        ← match vars.indexesOf name with
-        | [] => throwError "Implementation error; Vars.getVarDefs"
-        | _::_::_ => throwError "Implementation error; Vars.getVarDefs"
-        | [num] => return mkNumLit num.repr
+    let mut cmds := #[]
+    let mut i := 0
+    for name in vars do
+      let num := mkNumLit i.repr
+      let varName := mkIdent ((dlName.append `vars).append name.toName)
+      let valName := mkIdent ((dlName.append `vals).append name.toName)
+      let dlIdent := mkIdent dlName
       
-      let var ← `(
-        def $(mkIdent ((dlName.append `vars).append name.toName)) :=
-          $num
-      )
-      let val ← `(
-        def $(mkIdent ((dlName.append `vals).append name.toName)) :=
-          ($(mkIdent dlName)).getDef $num
-      )
-      return #[ var, val ].append (← vars.getVarDefs dlName list)
+      cmds := cmds.push (← `(def $varName := $num))
+      cmds := cmds.push (← `(def $valName := ($dlIdent).getDef $num))
+      i := i + 1
+    return cmds
       
   
   -- Get all variable names defined in the def list.
@@ -414,13 +404,10 @@ namespace pair_def_list
   :
     TermElabM Vars
   :=
-    match defs with
-    | [] => return varsSoFar
-    | df :: defs =>
+    defs.foldlM (init := varsSoFar) fun vars df => do
       match df with
-      | `(s3_pair_def| s3 $name:ident := $_) => do
-        let varsSoFar ← varsSoFar.push reservedNames name
-        getVars reservedNames defs varsSoFar
+      | `(s3_pair_def| s3 $name:ident := $_) =>
+        vars.push reservedNames name
       | stx => termStxErr stx "s3 in pairDefList"
   
   def getFinDefListVars
@@ -458,15 +445,12 @@ namespace pair_def_list
   :
     TermElabM (TSyntax `term)
   := do
-    match defs with
-    | [] => `([])
-    | df :: defs =>
-      -- Why can't I merge these match expressions into one?
+    let defsTerms ← defs.mapM fun df => do
       match df with
       | `(s3_pair_def| s3 $name := $expr) =>
         let expr ← makeExpr vars.enc 0 expr
-        let size ← `($(mkNumLit vars.length.repr))
-        let df ← `({
+        let size := mkNumLit vars.length.repr
+        `({
           expr := $expr
           name := $(mkStrLit name.getId.toString)
           varLt :=
@@ -476,9 +460,10 @@ namespace pair_def_list
               | .none => Witness.noConfusion h
           isClean := rfl
         })
-        `($df :: $(← getDefs vars defs))
-      | stx =>
-        termStxErr stx "s3 in pairDefList"
+      | stx => termStxErr stx "s3 in pairDefList"
+    
+    let defsTermsArray := defsTerms.toArray
+    `([$defsTermsArray,*])
   
   def getParent
     (parentName: Option (TSyntax `ident))
@@ -512,23 +497,16 @@ namespace pair_def_list
         if diagnostics.get (← getOptions) then
           logInfo s!"Declared variables: {repr vars}"
         
-        let output ← `(
+        let mainDef ← `(
           def $name : FiniteDefList :=
             let parent := $(← getParent parentName)
             let defs := $(← liftTermElabM $ getDefs vars defs)
             
             FiniteDefList.extend parent defs (by decide)
-          
-          def a := 4 -- TODO if you delete this, .vars stop working
         )
         
-        -- TODO try creating a new root node instead of this
-        match output.raw with
-        | Syntax.node _ kind args =>
-          let varDefs ← vars.getVarDefs name.getId
-          return Syntax.node .none kind (args.append varDefs)
-        | _ =>
-          throwError "Implementation error, output not node; pairDefListImpl"
+        let varDefs ← vars.getVarDefs name.getId
+        return mkNullNode ((#[mainDef] ++ varDefs).map (·.raw))
       | stx => cmdStxErr stx "pairDefList"
   
   -- set_option diagnostics true
