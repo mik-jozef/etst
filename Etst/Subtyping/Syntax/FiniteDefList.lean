@@ -442,9 +442,17 @@ namespace pair_def_list
           name := $(mkStrLit name.getId.toString)
           varLt :=
             fun x isUsed =>
+              have hExtra: (Pair.usedVarsLt $expr $size).toBool = true := rfl
               match h: Pair.usedVarsLt $expr $size with
               | .isTrue isLe => isLe ⟨_, isUsed⟩
-              | .none => Witness.noConfusion h
+              | .none =>
+                -- TODO before an update to Lean, this used to be just
+                -- `Witness.noConfusion h`.
+                have hFalse: False := by
+                  rw [h] at hExtra
+                  unfold Witness.toBool at hExtra
+                  contradiction
+                hFalse.elim
           isClean := rfl
         })
       | stx => termStxErr stx "s3 in pairDefList"
@@ -483,7 +491,7 @@ namespace pair_def_list
             let parent := $(← getParent parentName)
             let defs := $(← liftTermElabM $ getDefs vars defs)
             
-            FiniteDefList.extend parent defs (by decide)
+            FiniteDefList.extend parent defs rfl
         )
         
         let varDefs ← vars.getVarDefs name.getId

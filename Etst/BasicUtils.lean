@@ -133,11 +133,11 @@ def String.append_inj_left
 :
   a0 = a1
 := by
-  apply String.data_injective
+  apply String.toList_injective
   apply List.append_inj_left _ eqLength
-  exact b0.data
-  exact b1.data
-  rw [←String.data_append, ←String.data_append]
+  exact b0.toList
+  exact b1.toList
+  rw [←String.toList_append, ←String.toList_append]
   exact congr rfl eq
 
 def String.append_inj_rite
@@ -147,7 +147,7 @@ def String.append_inj_rite
 :
   b0 = b1
 := by
-  apply String.data_injective
+  apply String.toList_injective
   apply List.append_inj_right _ eqLength
-  rw [←String.data_append, ←String.data_append]
+  rw [←String.toList_append, ←String.toList_append]
   exact congr rfl eq

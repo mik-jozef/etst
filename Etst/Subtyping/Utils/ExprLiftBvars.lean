@@ -84,69 +84,22 @@ namespace SingleLaneExpr
   :=
     match expr with
     | .var _ _ => rfl
-    | .bvar x =>
-      show _ = intp2 (.bvar _) _ _ _ from
-      if hD: x < bvDepth.length then
-        let ltBv2 l: x < (bvDepth ++ l).length :=
-          List.length_append ▸
-          hD.trans_le (Nat.le_add_right _ _)
-        let ltBv3: x < (bvDepth ++ bvLiftBy ++ bv).length :=
-          List.append_assoc _ _ _ ▸
-          List.length_append ▸
-          hD.trans_le (Nat.le_add_right _ _)
-        let eqAtX :=
-          List.getElem_append_left hD ▸
-          List.getElem_append_left (ltBv2 bvLiftBy) ▸
-          (List.getElem_append_left hD).symm ▸
-          rfl
-        if_pos hD ▸
-        intp2_bvar_eq_of_lt (ltBv2 bv) ▸
-        intp2_bvar_eq_of_lt ltBv3 ▸
-        Set.singleton_eq_singleton_iff.mpr eqAtX
-      else if hDB: x < ((bvDepth ++ bv).length) then
-        let ltBv3: x + bvLiftBy.length < (bvDepth ++ bvLiftBy ++ bv).length := by
-          rw [List.length_append]
-          rw [List.length_append]
-          rw [Nat.add_assoc _ _ _]
-          rw [Nat.add_comm bvLiftBy.length _]
-          rw [←Nat.add_assoc _ _ _]
-          rw [←List.length_append]
-          exact Nat.add_lt_add_right hDB bvLiftBy.length
-        let leXLift: (bvDepth ++ bvLiftBy).length ≤ x + bvLiftBy.length :=
-          List.length_append ▸
-          Nat.add_le_add_right (le_of_not_gt hD) _
-        let eqIndex:
-          x - bvDepth.length = x + bvLiftBy.length - (bvDepth ++ bvLiftBy).length
-        :=
-          List.length_append ▸
-          Nat.add_sub_add_right x bvLiftBy.length bvDepth.length ▸
-          rfl
-        let eqAtX :=
-          List.getElem_append_right (le_of_not_gt hD) ▸
-          List.getElem_append_right (as := bvDepth ++ bvLiftBy) leXLift ▸
-          show List.get _ _ = _ from
-          congr rfl (Fin.eq_of_val_eq eqIndex)
-        if_neg hD ▸
-        intp2_bvar_eq_of_lt hDB ▸
-        intp2_bvar_eq_of_lt ltBv3 ▸
-        Set.singleton_eq_singleton_iff.mpr eqAtX
-      else
-        let eq:
-          ¬x + bvLiftBy.length < (bvDepth ++ bvLiftBy ++ bv).length
-        :=
-          List.length_append ▸
-          List.length_append.symm ▸
-          Nat.add_assoc _ _ _ ▸
-          Nat.add_comm bvLiftBy.length bv.length ▸
-          Nat.add_assoc _ _ _ ▸
-          Nat.not_lt.mpr
-            (add_le_add_right
-              (le_of_not_gt (List.length_append ▸ hDB))
-              bvLiftBy.length)
-        if_neg hD ▸
-        intp2_bvar_eq_empty hDB ▸
-        intp2_bvar_eq_empty eq ▸
-        rfl
+    | .bvar x => by
+      show SingleLaneExpr.intp2Bvar (bvDepth ++ bv) x = SingleLaneExpr.intp2Bvar (bvDepth ++ bvLiftBy ++ bv) (if x < bvDepth.length then x else x + bvLiftBy.length)
+      unfold SingleLaneExpr.intp2Bvar
+      rw [List.append_assoc]
+      split_ifs with h1
+      · rw [List.getElem?_append_left h1]
+        rw [List.getElem?_append_left h1]
+      · rw [List.getElem?_append_right (Nat.le_of_not_lt h1)]
+        rw [List.getElem?_append_right (Nat.le_trans (Nat.le_of_not_lt h1) (Nat.le_add_right _ _))]
+        rw [List.getElem?_append_right]
+        · congr 1
+          rw [Nat.sub_sub]
+          rw [Nat.add_sub_add_right]
+        · rw [Nat.le_sub_iff_add_le (Nat.le_trans (Nat.le_of_not_lt h1) (Nat.le_add_right _ _))]
+          rw [Nat.add_comm bvLiftBy.length bvDepth.length]
+          exact Nat.add_le_add_right (Nat.le_of_not_lt h1) bvLiftBy.length
     | .null => rfl
     | .pair l r =>
       eq_intp2_pair_of_eq
