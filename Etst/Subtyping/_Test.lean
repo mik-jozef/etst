@@ -5,7 +5,7 @@ namespace Etst
 open DefList
 open DefList.SubsetStx
 
-pairDefList TestDl
+pairDefList TestDl extends FiniteDefList.Prelude
   s3 Nat := null | (Nat, null)
   
   s3 Even := null | ((Even, null), null)
@@ -71,7 +71,7 @@ abbrev IsSub := SubsetStx TestDl.toDefList
 
 
 def SubsetStx.natSub: IsSub [] s3(.Nat) s3(:Nat) :=
-  simpleInduction
+  subSimpleInduction
     (fold
       (unCtx
         (unL
@@ -87,7 +87,7 @@ def SubsetStx.natNotNat: IsSub [] s3(.Any) s3(:Nat | !.Nat) :=
 
 
 def natLeZeroThen: IsSub [] s3(.Nat) s3(:ThenNatLeZero) :=
-  simpleInduction
+  subSimpleInduction
     (fold
       (unCtx
         sorry
@@ -109,7 +109,7 @@ def SubsetStx.AddSymm :=
 def SubsetStx.addSymmNat:
   IsSub [] s3(.Nat) AddSymm
 :=
-  simpleInduction
+  subSimpleInduction
     sorry
 
 def SubsetStx.addSymm:

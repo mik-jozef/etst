@@ -145,6 +145,22 @@ def FiniteDefList.ofDefs
     rw [emptySizeZero, Nat.zero_add];
     exact ubEq)
 
+def FiniteDefList.Prelude: FiniteDefList :=
+  FiniteDefList.ofDefs (ub := 2) [
+    {
+      name := "Any"
+      expr := Expr.arbUn (Expr.bvar 0)
+      varLt := fun _ h => nomatch h
+      isClean := rfl
+    },
+    {
+      name := "None"
+      expr := Expr.arbIr (Expr.bvar 0)
+      varLt := fun _ h => nomatch h
+      isClean := rfl
+    }
+  ] rfl
+
 
 declare_syntax_cat s3_pair_def
 declare_syntax_cat s3_pair_expr
@@ -209,7 +225,7 @@ syntax (name := pair_def_list)
 
 namespace pair_def_list
   
-  def termStxErr
+  def termStxErr {T}
     (stx: Syntax)
     (item: String)
   :
@@ -219,7 +235,7 @@ namespace pair_def_list
       stx
       s!"Implementation error: unexpected syntax for {item}."
   
-  def cmdStxErr
+  def cmdStxErr {T}
     (stx: Syntax)
     (item: String)
   :
@@ -228,24 +244,6 @@ namespace pair_def_list
     throwErrorAt
       stx
       s!"Implementation error: unexpected syntax for {item}."
-  
-  -- Reserved names were implemented because bounded arbitrary intersection
-  -- was syntax sugar for an expression that used `Any`. It escapes me how
-  -- I did not think of a better syntax expansion instead.
-  structure ReservedName where
-    stx: TSyntax `s3_pair_def
-    name: String
-    descr: String
-  
-  def getReservedNames:
-    CommandElabM (List ReservedName)
-  := do
-    let anyDef ← `(s3_pair_def| s3 $(mkIdent `Any) := Ex x, x)
-    let noneDef ← `(s3_pair_def| s3 $(mkIdent `None) := All x, x)
-    return [
-      ⟨anyDef, "Any", "universal"⟩,
-      ⟨noneDef, "None", "empty"⟩,
-    ]
   
   inductive VarRepr
   | var (x: Nat)
@@ -355,23 +353,14 @@ namespace pair_def_list
   
   def Vars.push
     (vars: Vars)
-    (reservedNames: List ReservedName)
     (nameStx: TSyntax `ident)
   :
     TermElabM Vars
   := do
-    let resName name val :=
-      s!"'{name}' is a reserved variable name denoting the {val} type."
-    
     let name := nameStx.getId.toString
     
     if vars.enc name != none then
-      let filter := (ReservedName.name · == name)
-      match reservedNames.find? filter with
-      | some ⟨_, _, descr⟩ =>
-        throwErrorAt nameStx (resName name descr)
-      | _ =>
-        throwErrorAt nameStx (s!"Duplicate variable '{name}'.")
+      throwErrorAt nameStx (s!"Duplicate variable '{name}'.")
     else
       return vars.concat name
   
@@ -398,7 +387,6 @@ namespace pair_def_list
   
   -- Get all variable names defined in the def list.
   def getVars
-    (reservedNames: List ReservedName)
     (defs: List Syntax)
     (varsSoFar: Vars)
   :
@@ -407,11 +395,10 @@ namespace pair_def_list
     defs.foldlM (init := varsSoFar) fun vars df => do
       match df with
       | `(s3_pair_def| s3 $name:ident := $_) =>
-        vars.push reservedNames name
+        vars.push name
       | stx => termStxErr stx "s3 in pairDefList"
   
   def getFinDefListVars
-    (reservedNames: List ReservedName)
     (defListName: Option (TSyntax `ident))
   :
     TermElabM Vars
@@ -435,7 +422,7 @@ namespace pair_def_list
         
         varList.foldlM
           (fun vars name =>
-            vars.push reservedNames (mkIdent name.toName))
+            vars.push (mkIdent name.toName))
           Vars.empty
   
   
@@ -482,17 +469,11 @@ namespace pair_def_list
           $defsArr*
         pairDefList.)
       =>
-        let reservedNames ← getReservedNames
-        let reservedDefs :=
-          match parentName with
-          | none => reservedNames.map ReservedName.stx
-          | some _ => []
-        
-        let defs := reservedDefs ++ defsArr.toList
+        let defs := defsArr.toList
         let parentVars ←
-          liftTermElabM $ getFinDefListVars reservedNames parentName
+          liftTermElabM $ getFinDefListVars parentName
         let vars ←
-          liftTermElabM $ getVars reservedNames defs parentVars
+          liftTermElabM $ getVars defs parentVars
         
         if diagnostics.get (← getOptions) then
           logInfo s!"Declared variables: {repr vars}"
@@ -525,14 +506,13 @@ namespace pair_def_list
   
   -- #print ExampleDL
   
-  -- equals 7 because of Any and None.
-  example: ExampleDL2.vars.C = 7 := rfl
+  example: ExampleDL2.vars.C = 5 := rfl
   
 end pair_def_list
 
 open pair_def_list in
 elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
-  let vars ← getFinDefListVars [] dl
+  let vars ← getFinDefListVars (some dl)
   let result ← makeExpr vars.enc 0 expr
   elabTerm result none
 
