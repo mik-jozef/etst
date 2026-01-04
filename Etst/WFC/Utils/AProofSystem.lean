@@ -87,11 +87,7 @@ def completenessProofC
   InsOutComplete dl (operatorC.lfp dl b)
 :=
   let _ := Valuation.ordStdLattice
-  -- TODO do I need this variable?
   let opC := operatorC dl b
-  -- let isMono {v0 v1: Valuation Pair} (isLe: v0 ≤ v1) :=
-  --   operatorC.mono_std dl b isLe
-  
   {
     insIsComplete :=
       opC.lfpStage_induction
