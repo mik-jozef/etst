@@ -474,6 +474,15 @@ namespace Set3
   def LtStd.compl_lt_compl (ab: LtStd a b): b.compl < a.compl :=
     LtStd.mk ab.toLe.notPosLe ab.toLe.notDefLe (compl_inj_neq ab.neq.symm)
   
+  def LeStd.memLe
+    (ab: LeStd a b)
+  :
+    a.getLane lane ≤ b.getLane lane
+  :=
+    match lane with
+    | .defLane => ab.defLe
+    | .posLane => ab.posLe
+  
   
   -- The standard order is antisymmetric.
   def ordStd.le_antisymm (a b: Set3 D) (ab: a ≤ b) (ba: b ≤ a) :=
@@ -744,5 +753,29 @@ namespace Set3
           let ⟨s3, ninPos⟩ := ninPosSup.toEx fun _ => id
           ninPos (inAllSets s3 s3.property))
       (fun inLub s3 s3In => inLub ⟨s3, s3In⟩)
+  
+  
+  -- A definite member is a possible member, but not vice versa.
+  def Lane.Le: Lane → Lane → Prop
+  | .posLane, .defLane => False
+  | _, _ => True
+
+  instance (a b: Lane): Decidable (Lane.Le a b) :=
+    match a, b with
+    | .posLane, .defLane => isFalse id
+    | .defLane, _ => isTrue True.intro
+    | .posLane, .posLane => isTrue True.intro
+  
+  def Lane.Le.liftMem {laneA laneB D d}
+    (le: Lane.Le laneA laneB)
+    ⦃s: Set3 D⦄
+    (inA: s.getLane laneA d)
+  :
+    s.getLane laneB d
+  :=
+    match laneA, laneB with
+    | .defLane, .defLane => inA
+    | .defLane, .posLane => inA.toPos
+    | .posLane, .posLane => inA
   
 end Set3

@@ -88,8 +88,9 @@ def Expr.replaceDepthEvenVars
       compl (body.replaceDepthEvenVars depth (!ed) replacer)
   | arbIr body => arbIr (body.replaceDepthEvenVars (depth + 1) ed replacer)
 
--- Represents an inductive proof of `var .posLane x ⊆ expr`
+-- Represents an inductive proof of `var lane x ⊆ expr`
 structure InductionDescriptor (dl: DefList) where
+  lane: Set3.Lane
   x: Nat
   expr: SingleLaneExpr
   expansion: BasicExpr
@@ -97,28 +98,26 @@ structure InductionDescriptor (dl: DefList) where
 
 def InductionDescriptor.hypothesis
   (depth: Nat)
+  (lane: Set3.Lane)
   (x: Nat)
   (desc: InductionDescriptor dl)
   (expr: SingleLaneExpr)
 :
   SingleLaneExpr
 :=
-  if desc.x = x then .ir (desc.expr.lift 0 depth) expr else expr
+  if lane.Le desc.lane && desc.x = x then .ir (desc.expr.lift 0 depth) expr else expr
 
 abbrev MutIndDescriptor (dl: DefList) := List (InductionDescriptor dl)
 
 def MutIndDescriptor.hypothesis
   (desc: MutIndDescriptor dl)
   (depth: Nat)
-  -- Because the hypothesis is only applied to positive variables,
-  -- which are always possible-lane (see `InductionDescriptor`),
-  -- we can ignore the lane type here.
-  (_: Set3.Lane)
+  (lane: Set3.Lane)
   (x: Nat)
 :
   SingleLaneExpr
 :=
-  desc.foldr (InductionDescriptor.hypothesis depth x) (var .posLane x)
+  desc.foldr (InductionDescriptor.hypothesis depth lane x) (var lane x)
 
 def MutIndDescriptor.hypothesify
   (desc: MutIndDescriptor dl)
@@ -172,7 +171,7 @@ inductive DefList.SubsetStx
 |
   subId {expr}: dl.SubsetStx ctx expr expr
 |
-  subDefPos {x: Nat}:
+  subDefPos {x}:
     dl.SubsetStx ctx (var .defLane x) (var .posLane x)
 |
   pairMono
@@ -301,14 +300,14 @@ inductive DefList.SubsetStx
         x
         (condFull
           (impl
-            (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
+            (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
             desc[i].expr)))
     (i: desc.Index)
   :
     dl.SubsetStx
       ctx
       x
-      (condFull (impl (var .posLane desc[i].x) desc[i].expr))
+      (condFull (impl (var desc[i].lane desc[i].x) desc[i].expr))
 
 
 namespace DefList.SubsetStx
@@ -434,16 +433,14 @@ namespace DefList.SubsetStx
     unElimSub sub subUnL (unR subR)
   
   
-  def irCtxL
-    {r: SingleLaneExpr}
+  def irCtxL {a b r}
     (sub: dl.SubsetStx ctx a b)
   :
     dl.SubsetStx ctx (ir a r) b
   :=
     trans subIrL sub
   
-  def irCtxR
-    {l: SingleLaneExpr}
+  def irCtxR {a b l}
     (sub: dl.SubsetStx ctx a b)
   :
     dl.SubsetStx ctx (ir l a) b
@@ -1050,11 +1047,11 @@ namespace DefList.SubsetStx
       (i: desc.Index) →
       dl.SubsetStx
         ctx
-        (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
+        (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
         desc[i].expr)
     (i: desc.Index)
   :
-    dl.SubsetStx ctx (var .posLane desc[i].x) desc[i].expr
+    dl.SubsetStx ctx (var desc[i].lane desc[i].x) desc[i].expr
   :=
     isFullImplElim
       (mutInduction desc (fun i => isFullImpl (premises i)) i)
@@ -1064,32 +1061,31 @@ namespace DefList.SubsetStx
     (premise:
       dl.SubsetStx
         ctx
-        ((desc.expansion.toLane .posLane).replaceDepthEvenVars 0 true fun depth _ x =>
-          desc.hypothesis depth x (var .posLane x))
+        ((desc.expansion.toLane desc.lane).replaceDepthEvenVars 0 true fun depth lane x =>
+          desc.hypothesis depth lane x (var lane x))
         desc.expr)
   :
-    dl.SubsetStx ctx (var .posLane desc.x) desc.expr
+    dl.SubsetStx ctx (var desc.lane desc.x) desc.expr
   :=
     subMutInduction
       [desc]
       (fun | ⟨0, _⟩ => premise)
       ⟨0, Nat.zero_lt_succ _⟩
   
-  def subSimpleInduction
-    {x: Nat}
-    {expr: SingleLaneExpr}
+  def subSimpleInduction {x lane expr}
     (premise:
       dl.SubsetStx
         ctx
-        (((dl.getDef x).toLane .posLane).replaceDepthEvenVars 0 true fun depth _ xR =>
-          if x = xR then .ir (expr.lift 0 depth) (var .posLane xR) else (var .posLane xR))
+        (((dl.getDef x).toLane lane).replaceDepthEvenVars 0 true fun depth l xR =>
+          if l.Le lane && x = xR then .ir (expr.lift 0 depth) (var l xR) else (var l xR))
         expr)
   :
-    dl.SubsetStx ctx (var .posLane x) expr
+    dl.SubsetStx ctx (var lane x) expr
   :=
     subInduction
       {
         x,
+        lane,
         expr,
         expansion := dl.getDef x,
         expandsInto := .rfl

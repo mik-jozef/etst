@@ -89,12 +89,12 @@ namespace DefList
             x
             (condFull
               (impl
-                (desc.hypothesify 0 (desc[i].expansion.toLane .posLane))
-                desc[i].rite))))
+                (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
+                desc[i].expr))))
       (i: desc.Index)
     :
       dl.IsFullStx
-        (impl x (condFull (impl (var .posLane desc[i].left) desc[i].rite)))
+        (impl x (condFull (impl (var desc[i].lane desc[i].x) desc[i].expr)))
   
   namespace IsFullStx
     variable {dl: DefList}
@@ -352,10 +352,10 @@ namespace DefList
       (desc: MutIndDescriptor dl)
       (premises:
         (i: desc.Index) →
-        IsFullStx dl (impl (desc.hypothesify 0 (desc[i].expansion.toLane .posLane)) desc[i].rite))
+        IsFullStx dl (impl (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane)) desc[i].expr))
       (i: desc.Index)
     :
-      IsFullStx dl (impl (var .posLane desc[i].left) desc[i].rite)
+      IsFullStx dl (impl (var desc[i].lane desc[i].x) desc[i].expr)
     :=
       let premises' (j: desc.Index) := implToImplFull (x := Expr.any) (premises j)
       let res := mutInduction (x := Expr.any) desc premises' i

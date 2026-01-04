@@ -263,3 +263,15 @@ def DefList.triIntp2_mono_apx
   dl.triIntp2 b0 c0 ⊑ dl.triIntp2 b1 c1
 :=
   fun _ => BasicExpr.triIntp2_mono_apx bLe cLe
+
+
+def BasicExpr.triIntp2_getLane_eq {bv b c lane}
+  (expr: BasicExpr)
+:
+  Eq
+    ((expr.triIntp2 bv b c).getLane lane)
+    ((expr.toLane lane).intp2 bv b c)
+:=
+  match lane with
+  | .defLane => rfl
+  | .posLane => rfl
