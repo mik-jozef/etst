@@ -91,14 +91,6 @@ def DefList.SubsetStx.isSound
         (inUnElim isInUn).elim
           (fun isInA => inUnL (inIr isInA isInC))
           (fun isInB => inUnR (inIr isInB isInC))
-    | subCompl sub =>
-        fun isInA => isIn (sub.isSound bv isInA)
-    | subDne =>
-        Classical.byContradiction isIn
-    | subDni =>
-        fun nin => nin isIn
-    | isFull subA =>
-        fun _ => subA.isSound bv inAny
     | fullImplElim =>
         inImpl fun inFullA =>
           inCondFull d (fun dB =>
@@ -110,12 +102,20 @@ def DefList.SubsetStx.isSound
     | someStripFull =>
         let ⟨_, inFullA⟩ := inCondSomeElim isIn
         inFullA
-    | subUnfold => SingleLaneExpr.InWfm.in_def isIn
-    | subFold => SingleLaneExpr.InWfm.of_in_def isIn
-    | trans ab bc => bc.isSound bv (ab.isSound bv isIn)
+    | subCompl sub =>
+        fun isInA => isIn (sub.isSound bv isInA)
+    | subDne =>
+        Classical.byContradiction isIn
+    | subDni =>
+        fun nin => nin isIn
     | subPe =>
         let ⟨inA, inAc⟩ := inIrElim isIn
         (inAc inA).elim
+    | isFull subA =>
+        fun _ => subA.isSound bv inAny
+    | trans ab bc => bc.isSound bv (ab.isSound bv isIn)
+    | subUnfold => SingleLaneExpr.InWfm.in_def isIn
+    | subFold => SingleLaneExpr.InWfm.of_in_def isIn
     | mutInduction desc premises i =>
       let isSub :=
         MutIndDescriptor.isSound

@@ -160,6 +160,18 @@ structure ContextVariable where
   - rules that manipulate the context ought to have `ctx` in the
     name, with the exception of implication rules where context
     manipulation is expected (eg. implication introduction).
+  
+  TODO things to prove/axiomatize after we have quantifiers:
+  - reconstruction:  ir e (pair any any)  ⊆  pair (zth e) (fst e)
+  - projection l:  condSome b  ⊆  impl a (zth (pair a b))
+  - projection r:  condSome a  ⊆  impl b (zth (pair a b))
+  - monotonicity of projections
+  - distribution of projections over ir, un, arbIr, arbUn
+  - induction on pairs.
+  - (condFull a)  ⊆  b  ->  condFull a  ⊆  condFull b
+  - (a  ⊆  b  ->  a  ⊆  condFull b)  ->  condFull (impl a b)  ⊆  impl (condFull a) (condFull b)
+  
+  TODO make this a chapter, make IsFullStx an appendix.
 -/
 inductive DefList.SubsetStx
   (dl: DefList)
@@ -189,10 +201,10 @@ inductive DefList.SubsetStx
     dl.SubsetStx ctx
       (un null (un (pair (compl a) any) (pair any (compl b))))
       (compl (pair a b))
--- TODO is this one necessary? Rename to subPairIrDistL?
+-- TODO is this one necessary?
 | subPairIrDistL:
     dl.SubsetStx ctx (ir (pair a c) (pair b c)) (pair (ir a b) c)
--- TODO is this one necessary? Rename to subPairIrDistR?
+-- TODO is this one necessary?
 | subPairIrDistR:
     dl.SubsetStx ctx (ir (pair a b) (pair a c)) (pair a (ir b c))
 | subIrL:
@@ -208,14 +220,7 @@ inductive DefList.SubsetStx
   subIrUnDistL:
     dl.SubsetStx ctx (ir (un a b) c) (un (ir a c) (ir b c))
 |
-  subCompl
-    (sub: dl.SubsetStx ctx a b)
-  :
-    dl.SubsetStx ctx b.compl a.compl
-|
-  subDne: dl.SubsetStx ctx a.compl.compl a
-| subDni: dl.SubsetStx ctx a a.compl.compl
-| isFull
+  isFull
     (subA: dl.SubsetStx ctx Expr.any a)
   :
     dl.SubsetStx ctx x (condFull a)
@@ -244,28 +249,15 @@ inductive DefList.SubsetStx
   someStripFull:
     dl.SubsetStx ctx (condSome (condFull a)) (condFull a)
 |
-  -- TODO should be provable with induction.
-  subUnfold:
-    dl.SubsetStx
-      ctx
-      (var lane a)
-      ((dl.getDef a).toLane lane)
-|
-  -- TODO is this provable with induction?
-  subFold:
-    dl.SubsetStx
-      ctx
-      ((dl.getDef a).toLane lane)
-      (var lane a)
-|
-  trans
-    (ab: dl.SubsetStx ctx a b)
-    (bc: dl.SubsetStx ctx b c)
+  subCompl
+    (sub: dl.SubsetStx ctx a b)
   :
-    dl.SubsetStx ctx a c
-| -- principle of explosion. Used as a basic rule instead of
-  -- implication elimination, which is derived from this.
-  subPe:
+    dl.SubsetStx ctx b.compl a.compl
+| subDne: dl.SubsetStx ctx a.compl.compl a
+| subDni: dl.SubsetStx ctx a a.compl.compl
+-- Principle of explosion. Used as a basic rule instead of
+-- implication elimination, which is derived from this.
+| subPe:
     dl.SubsetStx ctx (ir a a.compl) b
 -- IsSingleton expr := (condSome expr) & (Ex p, condFull ~expr | p)
 -- TODO these are adapted from logic, but are not general enougn, I think.
@@ -290,6 +282,25 @@ inductive DefList.SubsetStx
 --   (body: SingleLaneExpr)
 --   (IsSingleton t)
 --   SubsetStx (body.replaceNextVar t) (arbIr body)
+|
+  trans
+    (ab: dl.SubsetStx ctx a b)
+    (bc: dl.SubsetStx ctx b c)
+  :
+    dl.SubsetStx ctx a c
+| -- TODO should be provable with induction.
+  subUnfold:
+    dl.SubsetStx
+      ctx
+      (var lane a)
+      ((dl.getDef a).toLane lane)
+|
+  -- TODO is this provable with induction?
+  subFold:
+    dl.SubsetStx
+      ctx
+      ((dl.getDef a).toLane lane)
+      (var lane a)
 |
   mutInduction
     (desc: MutIndDescriptor dl)
