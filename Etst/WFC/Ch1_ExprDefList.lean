@@ -16,9 +16,8 @@ namespace Etst
   variable.
 -/
 inductive Expr (E: Type*) where
--- TODO perhaps rename to "const", and bvar to var?
-| var (e: E) (x: Nat)
-| bvar (x: Nat) -- Uses de Bruijn indices
+| df (e: E) (x: Nat)
+| var (x: Nat) -- Uses de Bruijn indices
 | null
 | pair (left rite: Expr E)
 | ir (left rite: Expr E)
@@ -38,8 +37,8 @@ def Expr.arbUn (body: Expr E): Expr E :=
 abbrev BasicExpr := Expr Unit
 
 -- Convenience definitions for preserving the `BasicExpr` type in arguments.
-def BasicExpr.var (x: Nat): BasicExpr := Expr.var () x
-def BasicExpr.bvar (x: Nat): BasicExpr := Expr.bvar x
+def BasicExpr.df (x: Nat): BasicExpr := Expr.df () x
+def BasicExpr.var (x: Nat): BasicExpr := Expr.var x
 def BasicExpr.null: BasicExpr := Expr.null
 def BasicExpr.pair (left rite: BasicExpr): BasicExpr :=
   Expr.pair left rite
@@ -59,17 +58,17 @@ def BasicExpr.arbIr (body: BasicExpr): BasicExpr :=
   Expr.arbIr body
 
 namespace Expr
-  def UsesVar (expr: Expr E): Set Nat :=
+  def UsesDef (expr: Expr E): Set Nat :=
     fun x =>
       match expr with
-        | var _ v => x = v
-        | bvar _ => False
+        | df _ v => x = v
+        | var _ => False
         | null => False
-        | pair left rite => left.UsesVar x ∨ rite.UsesVar x
-        | ir left rite => left.UsesVar x ∨ rite.UsesVar x
-        | condFull body => body.UsesVar x
-        | compl body => body.UsesVar x
-        | arbIr body => body.UsesVar x
+        | pair left rite => left.UsesDef x ∨ rite.UsesDef x
+        | ir left rite => left.UsesDef x ∨ rite.UsesDef x
+        | condFull body => body.UsesDef x
+        | compl body => body.UsesDef x
+        | arbIr body => body.UsesDef x
   
   
   /-
@@ -78,8 +77,8 @@ namespace Expr
   -/
   def IsPositive (expr: Expr E) (isEvenD := true): Prop :=
     match expr with
-    | var _ _ => isEvenD
-    | bvar _ => True
+    | df _ _ => isEvenD
+    | var _ => True
     | null => True
     | pair left rite =>
         left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
@@ -91,26 +90,26 @@ namespace Expr
 
   
   -- `any` contains all elements, under any valuation.
-  def any: Expr E := .arbUn (.bvar 0)
+  def any: Expr E := .arbUn (.var 0)
   -- `none` contains no elements, under any valuation.
   def none: Expr E := .compl any
   
-  -- Removes all bound variables with index >= ub.
-  def clearBvars (ub := 0): Expr E → Expr E
-    | .var info x => .var info x
-    | .bvar x => if x < ub then .bvar x else .none
+  -- Removes all variables with index >= ub.
+  def clearVars (ub := 0): Expr E → Expr E
+    | .df info x => .df info x
+    | .var x => if x < ub then .var x else .none
     | .null => .null
     | .pair left rite =>
-        .pair (left.clearBvars ub) (rite.clearBvars ub)
+        .pair (left.clearVars ub) (rite.clearVars ub)
     | .ir left rite =>
-        .ir (left.clearBvars ub) (rite.clearBvars ub)
+        .ir (left.clearVars ub) (rite.clearVars ub)
     | .condFull body =>
-        .condFull (body.clearBvars ub)
-    | .compl e => .compl (e.clearBvars ub)
-    | .arbIr body => .arbIr (body.clearBvars (ub + 1))
+        .condFull (body.clearVars ub)
+    | .compl e => .compl (e.clearVars ub)
+    | .arbIr body => .arbIr (body.clearVars (ub + 1))
   
   def IsClean (expr: Expr E): Prop :=
-    expr = expr.clearBvars
+    expr = expr.clearVars
   
 end Expr
 
@@ -133,11 +132,11 @@ inductive DefList.DependsOn
   Nat → Nat → Prop
 where
 | Base
-  (aUsesB: (getDef a).UsesVar b)
+  (aUsesB: (getDef a).UsesDef b)
   :
     DependsOn getDef a b
 | Rec
-  (aUsesB: (getDef a).UsesVar b)
+  (aUsesB: (getDef a).UsesDef b)
   (bUsesC: DependsOn getDef b c)
   :
     DependsOn getDef a c
@@ -149,7 +148,7 @@ where
 def DefList.DependsOn.push
   {getDef: GetDef}
   (dependsOn: DependsOn getDef a b)
-  (isFree: (getDef b).UsesVar c)
+  (isFree: (getDef b).UsesDef c)
 :
   DependsOn getDef a c
 :=

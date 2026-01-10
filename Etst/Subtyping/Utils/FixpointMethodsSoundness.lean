@@ -24,7 +24,7 @@ def InductionDescriptor.Invariant
 :=
   Set.Subset ((v desc.x).getLane desc.lane) (desc.expr.intp bv wfm)
 
-def MutIndDescriptor.var_le_hypothesify
+def MutIndDescriptor.def_le_hypothesify
   (desc: MutIndDescriptor dl)
   -- `bv` represent the bound variables of the induction itself,
   -- `bvDepth` represent the bound variables introduced by the
@@ -36,7 +36,7 @@ def MutIndDescriptor.var_le_hypothesify
   Set.Subset
     ((v x).getLane lane)
     (SingleLaneExpr.intp
-      (desc.hypothesify bvDepth.length (.var lane x))
+      (desc.hypothesify bvDepth.length (.df lane x))
       (bvDepth ++ bv)
       dl.wfm)
 :=
@@ -68,10 +68,10 @@ def MutIndDescriptor.var_le_hypothesify
           (show intp2 _ _ _ _ _ from
           head.expr.intp2_lift_eq bv bvDepth dl.wfm dl.wfm ▸
           inRite)
-          (rest.var_le_hypothesify bv bvDepth invTail v_le inXLane)
+          (rest.def_le_hypothesify bv bvDepth invTail v_le inXLane)
     else
       if_neg h ▸
-      rest.var_le_hypothesify bv bvDepth invTail v_le
+      rest.def_le_hypothesify bv bvDepth invTail v_le
 
 def MutIndDescriptor.le_hypothesify
   (desc: MutIndDescriptor dl)
@@ -99,11 +99,11 @@ def MutIndDescriptor.le_hypothesify
       (expr.intp2 (bvDepth ++ bv) v dl.wfm)
 :=
   match expr, ed with
-  | .var _ _, true =>
-    var_le_hypothesify desc bv bvDepth inv v_le
-  | .var _ _, false => le_refl ((intp2 _ _ _ _))
-  | .bvar _, true => le_refl ((intp2 _ _ _ _))
-  | .bvar _, false => le_refl ((intp2 _ _ _ _))
+  | .df _ _, true =>
+    def_le_hypothesify desc bv bvDepth inv v_le
+  | .df _ _, false => le_refl ((intp2 _ _ _ _))
+  | .var _, true => le_refl ((intp2 _ _ _ _))
+  | .var _, false => le_refl ((intp2 _ _ _ _))
   | .null, true => le_refl ((intp2 _ _ _ _))
   | .null, false => le_refl ((intp2 _ _ _ _))
   | .pair _ _, true =>
@@ -152,7 +152,7 @@ def MutIndDescriptor.isSound
       desc[i].expr)
   (i: desc.Index)
 :
-  dl.SubsetBv bv (.var desc[i].lane desc[i].x) desc[i].expr
+  dl.SubsetBv bv (.df desc[i].lane desc[i].x) desc[i].expr
 :=
   let := Valuation.ordStdLattice
   let eq: dl.wfm = (operatorC dl dl.wfm).lfp := dl.wfm_eq_lfpC
@@ -202,22 +202,22 @@ def MutIndDescriptor.isSound
 -- note: before fixing this, generalize induction to arbitrary
 -- variables, not just positive lanes.
 
--- Represents a coinductive proof of `left ⊆ var .defLane rite`
+-- Represents a coinductive proof of `left ⊆ df .defLane x`
 structure CoinductionDescriptor (dl: DefList) where
   lane: Set3.Lane
-  rite: Nat -- TODO rename to `x`
-  left: SingleLaneExpr -- TODO rename to `expr`
+  x: Nat
+  expr: SingleLaneExpr
   expansion: BasicExpr
-  expandsInto: ExpandsInto dl true (dl.getDef rite) expansion
+  expandsInto: ExpandsInto dl true (dl.getDef x) expansion
 
 def CoinductionDescriptor.toInduction
   (desc: CoinductionDescriptor dl)
 :
   InductionDescriptor dl
 := {
-  x := desc.rite
+  x := desc.x
   lane := desc.lane
-  expr := .compl desc.left
+  expr := .compl desc.expr
   expansion := desc.expansion
   expandsInto := desc.expandsInto
 }
@@ -235,7 +235,7 @@ def CoinductionDescriptor.hypothesis
 :=
   -- TODO: lane should be used, but I'm not spending time on figuring
   -- how exactly right now.
-  if desc.rite = x then .ir (.compl (desc.left.lift 0 depth)) expr else expr
+  if desc.x = x then .ir (.compl (desc.expr.lift 0 depth)) expr else expr
 
 def MutCoindDescriptor.hypothesis
   (desc: MutCoindDescriptor dl)
@@ -245,7 +245,7 @@ def MutCoindDescriptor.hypothesis
 :
   SingleLaneExpr
 :=
-  desc.foldr (CoinductionDescriptor.hypothesis depth lane x) (.var lane x)
+  desc.foldr (CoinductionDescriptor.hypothesis depth lane x) (.df lane x)
 
 def MutCoindDescriptor.hypothesify
   (desc: MutCoindDescriptor dl)
@@ -266,8 +266,8 @@ def MutCoindDescriptor.sub_hypothesify
 :=
   let rec helper := 4
   match expr with
-  | .var _ x => sorry
-  | .bvar x => sub
+  | .df _ x => sorry
+  | .var x => sub
   | .null => sub
   | .pair l r => sorry
   | .ir l r =>
@@ -285,11 +285,11 @@ def subMutCoinduction
     (i: desc.Index) →
     dl.SubsetStx
       ctx
-      desc[i].left
+      desc[i].expr
       (desc.hypothesify (desc[i].expansion.toLane desc[i].lane)))
   (i: desc.Index)
 :
-  dl.SubsetStx ctx desc[i].left (.compl (.var desc[i].lane desc[i].rite))
+  dl.SubsetStx ctx desc[i].expr (.compl (.df desc[i].lane desc[i].x))
 :=
   let descMap := desc.map CoinductionDescriptor.toInduction
   let iMap := i.map CoinductionDescriptor.toInduction
@@ -328,12 +328,12 @@ def subMutCoinduction
     (premise:
       dl.SubsetStx
         ctx
-        desc.left
+        desc.expr
         (.compl
           ((desc.expansion.toLane desc.lane).replaceDepthEvenVars 0 true fun depth lane x =>
-            desc.hypothesis depth lane x (.var lane x))))
+            desc.hypothesis depth lane x (.df lane x))))
   :
-    dl.SubsetStx ctx desc.left (.compl (.var desc.lane desc.rite))
+    dl.SubsetStx ctx desc.expr (.compl (.df desc.lane desc.x))
   :=
     subMutCoinduction
       [desc]
@@ -342,25 +342,25 @@ def subMutCoinduction
   
   def simpleCoinduction
     (lane: Set3.Lane)
-    (rite: Nat)
-    (left: SingleLaneExpr)
+    (x: Nat)
+    (expr: SingleLaneExpr)
     (premise:
       DefList.SubsetStx
         dl
         ctx
-        left
+        expr
         (.compl
-          (((dl.getDef rite).toLane lane).replaceDepthEvenVars 0 true fun depth l x =>
-            if rite = x then .ir (.compl (left.lift 0 depth)) (.var l x) else (.var l x))))
+          (((dl.getDef x).toLane lane).replaceDepthEvenVars 0 true fun depth l xR =>
+            if x = xR then .ir (.compl (expr.lift 0 depth)) (.df l xR) else (.df l xR))))
   :
-    dl.SubsetStx ctx left (.compl (.var lane rite))
+    dl.SubsetStx ctx expr (.compl (.df lane x))
   :=
     coinduction
       {
         lane,
-        left,
-        rite,
-        expansion := dl.getDef rite,
+        expr,
+        x,
+        expansion := dl.getDef x,
         expandsInto := .rfl
       }
       premise

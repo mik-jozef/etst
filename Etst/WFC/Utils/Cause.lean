@@ -359,7 +359,7 @@ def Cause.SatisfiesBoundVar.toSubCause
 -/
 inductive Cause.IsInapplicable
   (cause: Cause D)
-  (outSet: Set (ValVar D))
+  (outSet: Set (ValDef D))
   (b: Valuation D)
 :
   Prop
@@ -419,7 +419,7 @@ def Cause.IsWeaklySatisfiedBy.Not.toIsInapplicable
 def Cause.IsWeaklySatisfiedBy.toIsApplicable
   {b c: Valuation D}
   (isSat: Cause.IsWeaklySatisfiedBy cause b c)
-  (outSet: Set (ValVar D))
+  (outSet: Set (ValDef D))
   (outSetIsEmpty: ∀ {d x}, ⟨d, x⟩ ∈ outSet → ¬ (c x).posMem d)
 :
   ¬ Cause.IsInapplicable cause outSet b

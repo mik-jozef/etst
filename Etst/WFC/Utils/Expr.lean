@@ -4,10 +4,10 @@ namespace Etst
 
 
 namespace SingleLaneExpr
-  def var (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
-    Expr.var lane x
-  def bvar (x: Nat): SingleLaneExpr :=
-    Expr.bvar x
+  def df (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
+    Expr.df lane x
+  def var (x: Nat): SingleLaneExpr :=
+    Expr.var x
   def null: SingleLaneExpr := Expr.null
   def pair (left rite: SingleLaneExpr): SingleLaneExpr :=
     Expr.pair left rite
@@ -39,12 +39,12 @@ namespace SingleLaneExpr
     (isEvenDepth: Bool) →
     SingleLaneExpr →
     Prop
-  | varEven (x: Nat):
-      LaneEqEven lane true (var lane x)
-  | varOdd (varLane: Set3.Lane) (x: Nat):
-      LaneEqEven lane false (var varLane x)
-  | bvar (x: Nat) (isEvenDepth: Bool):
-      LaneEqEven lane isEvenDepth (bvar x)
+  | dfEven (x: Nat):
+      LaneEqEven lane true (df lane x)
+  | dfOdd (dfLane: Set3.Lane) (x: Nat):
+      LaneEqEven lane false (df dfLane x)
+  | var (x: Nat) (isEvenDepth: Bool):
+      LaneEqEven lane isEvenDepth (var x)
   | null (isEvenDepth: Bool): LaneEqEven lane isEvenDepth null
   | pair
       (leftEq: LaneEqEven lane isEvenDepth left)
@@ -140,10 +140,10 @@ def BasicExpr.laneEqEven
     (expr.toLane (ite isEvenDepth lane lane.toggle))
 :=
   match expr, isEvenDepth with
-  | .var x, true => .varEven x
-  | .var x, false => .varOdd lane.toggle x
-  | .bvar x, true => .bvar x true
-  | .bvar x, false => .bvar x false
+  | .df x, true => .dfEven x
+  | .df x, false => .dfOdd lane.toggle x
+  | .var x, true => .var x true
+  | .var x, false => .var x false
   | .null, true => .null true
   | .null, false => .null false
   | .pair left rite, true =>
@@ -176,38 +176,38 @@ def BasicExpr.laneEqEven
   | .arbIr body, false => .arbIr (body.laneEqEven lane false)
 
 
-def Expr.toString (serializeVar: E → Nat → String):
+def Expr.toString (serializeDef: E → Nat → String):
   Expr E → String
 | .un left rite =>
-  let left := left.toString serializeVar
-  let rite := rite.toString serializeVar
+  let left := left.toString serializeDef
+  let rite := rite.toString serializeDef
   s!"({left}) | ({rite})"
 | .condSome body =>
-  let cond := body.toString serializeVar
+  let cond := body.toString serializeDef
   s!"(?i {cond})"
 | .arbUn body =>
-  let bodyStr := body.toString serializeVar
+  let bodyStr := body.toString serializeDef
   s!"Ex ({bodyStr})"
-| .var info x => serializeVar info x
-| .bvar x => s!"b{x}"
+| .df info x => serializeDef info x
+| .var x => s!"v{x}"
 | .null =>
   "null"
 | .pair left rite =>
-  let left := left.toString serializeVar
-  let rite := rite.toString serializeVar
+  let left := left.toString serializeDef
+  let rite := rite.toString serializeDef
   s!"({left}, {rite})"
 | .ir left rite =>
-  let left := left.toString serializeVar
-  let rite := rite.toString serializeVar
+  let left := left.toString serializeDef
+  let rite := rite.toString serializeDef
   s!"({left}) & ({rite})"
 | .condFull body =>
-  let cond := body.toString serializeVar
+  let cond := body.toString serializeDef
   s!"(?f {cond})"
 | .compl expr =>
-  let exprStr := expr.toString serializeVar
+  let exprStr := expr.toString serializeDef
   s!"!({exprStr})"
 | .arbIr body =>
-  let bodyStr := body.toString serializeVar
+  let bodyStr := body.toString serializeDef
   s!"All ({bodyStr})"
 
 def BasicExpr.toString: BasicExpr → String :=

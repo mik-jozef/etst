@@ -9,25 +9,25 @@ namespace Etst
 -- ## Section 0: Valuations
 
 /-
-  A valuation is a function from variables to trisets of values.
+  A valuation is a function from definitions to trisets of values.
 -/
 def Valuation D := Nat → Set3 D
 
 namespace Valuation
   /-
-    In the empty valuation, every variable represents the empty
+    In the empty valuation, every definition represents the empty
     triset.
   -/
   def empty: Valuation D := fun _ => Set3.empty
   
   /-
-    In the undetermined valuation, every variable represents
+    In the undetermined valuation, every definition represents
     the undetermined triset.
   -/
   def undetermined: Valuation D := fun _ => Set3.undetermined
   
   /-
-    In the full valuation, every variable represents the full
+    In the full valuation, every definition represents the full
     triset.
   -/
   def full: Valuation D := fun _ => Set3.full
@@ -155,15 +155,15 @@ namespace Valuation
 end Valuation
 
 /-
-  `ValVar` encodes some (usage-specific) relation between a variable
+  `ValDef` encodes some (usage-specific) relation between a definition
   and an element. For example, it may be used to represent the
-  assertion that a certain variable contains a certain element in
+  assertion that a certain definition contains a certain element in
   some valuation.
   
-  That the variable `x` contains the element `d` may be denoted
+  That the definition `x` contains the element `d` may be denoted
   as `d ∈ x`.
 -/
-structure ValVar (D: Type*) where
+structure ValDef (D: Type*) where
   d: D
   x: Nat
 
@@ -177,7 +177,7 @@ inductive Pair where
 
 abbrev SingleLaneExpr := Expr Set3.Lane
 
-def SingleLaneExpr.intp2Bvar
+def SingleLaneExpr.intp2Var
   (bv: List Pair)
   (x: Nat)
 :
@@ -207,8 +207,8 @@ def SingleLaneExpr.intp2
   Set Pair
 :=
   match expr with
-  | .var lane x => (c x).getLane lane
-  | .bvar x => intp2Bvar bv x
+  | .df lane x => (c x).getLane lane
+  | .var x => intp2Var bv x
   | .null => {.null}
   | .pair left rite =>
       fun d =>
@@ -245,8 +245,8 @@ def BasicExpr.toLane
   SingleLaneExpr
 :=
   match expr with
-  | .var a => .var lane a
-  | .bvar a => .bvar a
+  | .df a => .df lane a
+  | .var a => .var a
   | .null => .null
   | .pair left rite => .pair (left.toLane lane) (rite.toLane lane)
   | .ir left rite => .ir (left.toLane lane) (rite.toLane lane)
@@ -286,8 +286,8 @@ def BasicExpr.triIntp2_defLePos
   expr.triIntp2Pos bv b c d
 :=
   match expr, isDef with
-  | .var x, isDef => (c x).defLePos isDef
-  | .bvar _, isDef => isDef
+  | .df x, isDef => (c x).defLePos isDef
+  | .var _, isDef => isDef
   | .null, isDef => isDef
   | .pair left rite, ⟨pl, pr, eq, isDefL, isDefR⟩ =>
       let ihL := triIntp2_defLePos left isDefL
