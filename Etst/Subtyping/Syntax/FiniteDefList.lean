@@ -2,7 +2,7 @@ import Lean
 import Lean.Elab
 import Lean.Parser.Term
 
-import Etst.Subtyping.Syntax.UsedVarsLt
+import Etst.Subtyping.Syntax.VarsLt
 import Etst.WFC.Ch5_S1_AProofSystem
 import Etst.WFC.Utils.PairExpr
 
@@ -10,16 +10,10 @@ namespace Etst
 open Lean Elab Command Term Meta Syntax
 
 
-def Expr.VarLtSize
-  (expr: Expr E)
-  (size: Nat)
-:=
-  ∀ y ∈ expr.UsesVar, y < size
-
 def Expr.noneLtSize
   (size: Nat)
 :
-  (none (E := E)).VarLtSize size
+  (none (E := E)).VarsLt size
 :=
   nofun
 
@@ -33,14 +27,14 @@ def DefList.DependsOn.toUsesVar {getDef a b}
   | Rec _ depOn => depOn.toUsesVar
 
 
-def FiniteDefList.VarLtSize
+def FiniteDefList.VarsLt
   (getDef: DefList.GetDef)
   (size: Nat)
 :=
-  ∀ x, (getDef x).VarLtSize size
+  ∀ x, (getDef x).VarsLt size
 
-def FiniteDefList.isFinBounded_of_varLtSize
-  (varLtSize: VarLtSize getDef size)
+def FiniteDefList.isFinBounded_of_varsLt
+  (varsLt: VarsLt getDef size)
 :
   DefList.IsFinBounded getDef
 :=
@@ -48,13 +42,13 @@ def FiniteDefList.isFinBounded_of_varLtSize
     size,
     fun depOn =>
       let ⟨x, usesVar⟩ := depOn.toUsesVar
-      varLtSize x _ usesVar,
+      varsLt x _ usesVar,
   ⟩
 
 structure FiniteDefList extends FinBoundedDL where
   varList: List String
-  varLtSize: FiniteDefList.VarLtSize getDef varList.length
-  isFinBounded := FiniteDefList.isFinBounded_of_varLtSize varLtSize
+  varsLt: FiniteDefList.VarsLt getDef varList.length
+  isFinBounded := FiniteDefList.isFinBounded_of_varsLt varsLt
 
 def FiniteDefList.size
   (dl: FiniteDefList)
@@ -64,7 +58,7 @@ def FiniteDefList.size
 def FiniteDefList.empty: FiniteDefList := {
   getDef := fun _ => Expr.none
   varList := []
-  varLtSize := fun _ => Expr.noneLtSize _
+  varsLt := fun _ => Expr.noneLtSize _
   isClean := fun _ => rfl
 }
 
@@ -73,7 +67,7 @@ def FiniteDefList.emptySizeZero: empty.size = 0 := rfl
 structure FiniteDefList.Def (size: Nat) where
   name: String
   expr: BasicExpr
-  varLt: expr.VarLtSize size
+  varsLt: expr.VarsLt size
   isClean: expr.IsClean
 
 def FiniteDefList.defsGetNth
@@ -85,7 +79,7 @@ def FiniteDefList.defsGetNth
   defs[n]?.getD {
     name := "«empty»"
     expr := Expr.none
-    varLt := Expr.noneLtSize ub
+    varsLt := Expr.noneLtSize ub
     isClean := rfl
   }
 
@@ -111,19 +105,19 @@ def FiniteDefList.extend
   {
     getDef
     varList := dl.varList ++ defs.map Def.name
-    varLtSize :=
+    varsLt :=
       fun x y (usesVar: (getDef x).UsesVar y) => by
         unfold getDef at usesVar
         rw [List.length_append]
         if h: x < dl.size then
           rw [if_pos h] at usesVar
           apply Nat.lt_add_right
-          exact dl.varLtSize x y usesVar
+          exact dl.varsLt x y usesVar
         else
           rw [if_neg h] at usesVar
           unfold size at ubEq
           rw [List.length_map, ←ubEq]
-          exact (defsGetNth defs (x - dl.size)).varLt _ usesVar
+          exact (defsGetNth defs (x - dl.size)).varsLt _ usesVar
     isClean := by
       intro x
       unfold getDef
@@ -150,13 +144,13 @@ def FiniteDefList.Prelude: FiniteDefList :=
     {
       name := "Any"
       expr := Expr.arbUn (Expr.bvar 0)
-      varLt := fun _ h => nomatch h
+      varsLt := fun _ h => nomatch h
       isClean := rfl
     },
     {
       name := "None"
       expr := Expr.arbIr (Expr.bvar 0)
-      varLt := fun _ h => nomatch h
+      varsLt := fun _ h => nomatch h
       isClean := rfl
     }
   ] rfl
@@ -440,19 +434,7 @@ namespace pair_def_list
         `({
           expr := $expr
           name := $(mkStrLit name.getId.toString)
-          varLt :=
-            fun x isUsed =>
-              have hExtra: (Pair.usedVarsLt $expr $size).toBool = true := rfl
-              match h: Pair.usedVarsLt $expr $size with
-              | .isTrue isLe => isLe ⟨_, isUsed⟩
-              | .none =>
-                -- TODO before an update to Lean, this used to be just
-                -- `Witness.noConfusion h`.
-                have hFalse: False := by
-                  rw [h] at hExtra
-                  unfold Witness.toBool at hExtra
-                  contradiction
-                hFalse.elim
+          varsLt := (by decide: ($expr).VarsLt $size)
           isClean := rfl
         })
       | stx => termStxErr stx "s3 in pairDefList"
@@ -524,10 +506,31 @@ elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
   let result ← makeExpr vars.enc 0 expr
   elabTerm result none
 
-set_option pp.rawOnError true
 -- Test the new s3 syntax
-#check s3(Etst.pair_def_list.ExampleDL, X | Y)
-#check s3(pair_def_list.ExampleDL2, C | Y)
+example:
+  Eq
+    s3(Etst.pair_def_list.ExampleDL, X | Y)
+    (.un (.var () 0) (.var () 1))
+:=
+  rfl
 
-#check s3(Etst.pair_def_list.ExampleDL, .X | :Y)
-#check s3(pair_def_list.ExampleDL2, :C | :Y)
+example:
+  Eq
+    s3(pair_def_list.ExampleDL2, C | Y)
+    (.un (.var () 5) (.var () 1))
+:=
+  rfl
+
+example:
+  Eq
+    s3(Etst.pair_def_list.ExampleDL, .X | :Y)
+    (.un (.var .posLane 0) (.var .defLane 1))
+:=
+  rfl
+
+example:
+  Eq
+    s3(pair_def_list.ExampleDL2, :C | :Y)
+    (.un (.var .defLane 5) (.var .defLane 1))
+:=
+  rfl
