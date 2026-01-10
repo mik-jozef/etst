@@ -153,21 +153,9 @@ def DefList.DependsOn.push
 :
   DependsOn getDef a c
 :=
-  -- Lean cannot verify termination here :/
-  -- match dependsOn with
-  -- | Base b => Rec b (Base isFree)
-  -- | Rec head tail =>
-  --   let ih := push tail isFree
-  --   sorry
-  let thePrincipleTM:
-    (getDef b).UsesVar c → DependsOn getDef a c
-  :=
-    dependsOn.rec
-      (fun isFreeAB isFreeBC => Rec isFreeAB (Base isFreeBC))
-      (fun isFree _ ih ihh =>
-        Rec isFree (ih ihh))
-  
-  thePrincipleTM isFree
+  match dependsOn with
+  | Base b => Rec b (Base isFree)
+  | Rec head tail => Rec head (push tail isFree)
 
 /-
   A definition list is finitely bounded iff every definition only

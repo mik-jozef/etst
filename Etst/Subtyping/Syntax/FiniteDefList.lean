@@ -2,7 +2,7 @@ import Lean
 import Lean.Elab
 import Lean.Parser.Term
 
-import Etst.Subtyping.Syntax.VarsLt
+import Etst.Subtyping.Syntax.VarsSat
 import Etst.WFC.Ch5_S1_AProofSystem
 import Etst.WFC.Utils.PairExpr
 
