@@ -62,7 +62,7 @@ open Expr
   -> d
 -/
 
-def Expr.replaceDepthEvenVars
+def Expr.replaceDepthEvenConsts
   (e: Expr E)
   (depth: Nat) -- number of quantifiers crossed so far
   (ed: Bool) -- "even depth", number of complements crossed so far
@@ -76,17 +76,17 @@ def Expr.replaceDepthEvenVars
   | null => null
   | pair left rite =>
       pair
-        (left.replaceDepthEvenVars depth ed replacer)
-        (rite.replaceDepthEvenVars depth ed replacer)
+        (left.replaceDepthEvenConsts depth ed replacer)
+        (rite.replaceDepthEvenConsts depth ed replacer)
   | ir left rite =>
       ir
-        (left.replaceDepthEvenVars depth ed replacer)
-        (rite.replaceDepthEvenVars depth ed replacer)
+        (left.replaceDepthEvenConsts depth ed replacer)
+        (rite.replaceDepthEvenConsts depth ed replacer)
   | condFull body =>
-      condFull (body.replaceDepthEvenVars depth ed replacer)
+      condFull (body.replaceDepthEvenConsts depth ed replacer)
   | compl body =>
-      compl (body.replaceDepthEvenVars depth (!ed) replacer)
-  | arbIr body => arbIr (body.replaceDepthEvenVars (depth + 1) ed replacer)
+      compl (body.replaceDepthEvenConsts depth (!ed) replacer)
+  | arbIr body => arbIr (body.replaceDepthEvenConsts (depth + 1) ed replacer)
 
 -- Represents an inductive proof of `const lane x ⊆ expr`
 structure InductionDescriptor (dl: DefList) where
@@ -126,7 +126,7 @@ def MutIndDescriptor.hypothesify
 :
   SingleLaneExpr
 :=
-  expr.replaceDepthEvenVars depth true desc.hypothesis
+  expr.replaceDepthEvenConsts depth true desc.hypothesis
 
 
 inductive ContextVariableKind
@@ -1072,7 +1072,7 @@ namespace DefList.SubsetStx
     (premise:
       dl.SubsetStx
         ctx
-        ((desc.expansion.toLane desc.lane).replaceDepthEvenVars 0 true fun depth lane x =>
+        ((desc.expansion.toLane desc.lane).replaceDepthEvenConsts 0 true fun depth lane x =>
           desc.hypothesis depth lane x (const lane x))
         desc.expr)
   :
@@ -1087,7 +1087,7 @@ namespace DefList.SubsetStx
     (premise:
       dl.SubsetStx
         ctx
-        (((dl.getDef x).toLane lane).replaceDepthEvenVars 0 true fun depth l xR =>
+        (((dl.getDef x).toLane lane).replaceDepthEvenConsts 0 true fun depth l xR =>
           if l.Le lane && x = xR then .ir (expr.lift 0 depth) (const l xR) else (const l xR))
         expr)
   :

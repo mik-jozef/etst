@@ -93,7 +93,7 @@ def MutIndDescriptor.le_hypothesify
   else
     Set.Subset
       (intp
-        (expr.replaceDepthEvenVars bvDepth.length false desc.hypothesis)
+        (expr.replaceDepthEvenConsts bvDepth.length false desc.hypothesis)
         (bvDepth ++ bv)
         dl.wfm)
       (expr.intp2 (bvDepth ++ bv) v dl.wfm)
@@ -253,16 +253,16 @@ def MutCoindDescriptor.hypothesify
 :
   SingleLaneExpr
 :=
-  .compl (expr.replaceDepthEvenVars 0 true desc.hypothesis)
+  .compl (expr.replaceDepthEvenConsts 0 true desc.hypothesis)
 
 def MutCoindDescriptor.sub_hypothesify
   (desc: MutCoindDescriptor dl)
-  (sub: dl.SubsetStx ctx (Expr.replaceDepthEvenVars expr 0 true desc.hypothesis) b)
+  (sub: dl.SubsetStx ctx (Expr.replaceDepthEvenConsts expr 0 true desc.hypothesis) b)
 :
   let descMap: MutIndDescriptor dl :=
     desc.map CoinductionDescriptor.toInduction
   
-  dl.SubsetStx ctx (Expr.replaceDepthEvenVars expr 0 true descMap.hypothesis) b
+  dl.SubsetStx ctx (Expr.replaceDepthEvenConsts expr 0 true descMap.hypothesis) b
 :=
   let rec helper := 4
   match expr with
@@ -330,7 +330,7 @@ def subMutCoinduction
         ctx
         desc.left
         (.compl
-          ((desc.expansion.toLane desc.lane).replaceDepthEvenVars 0 true fun depth lane x =>
+          ((desc.expansion.toLane desc.lane).replaceDepthEvenConsts 0 true fun depth lane x =>
             desc.hypothesis depth lane x (.const lane x))))
   :
     dl.SubsetStx ctx desc.left (.compl (.const desc.lane desc.rite))
@@ -350,7 +350,7 @@ def subMutCoinduction
         ctx
         left
         (.compl
-          (((dl.getDef rite).toLane lane).replaceDepthEvenVars 0 true fun depth l x =>
+          (((dl.getDef rite).toLane lane).replaceDepthEvenConsts 0 true fun depth l x =>
             if rite = x then .ir (.compl (left.lift 0 depth)) (.const l x) else (.const l x))))
   :
     dl.SubsetStx ctx left (.compl (.const lane rite))
