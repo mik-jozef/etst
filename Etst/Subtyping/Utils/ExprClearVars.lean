@@ -417,7 +417,7 @@ namespace Expr
 end Expr
 
 namespace SingleLaneExpr
-  def intp_append
+  def intp2_bv_append
     (dl: DefList)
     {expr: SingleLaneExpr}
     {bv: List Pair}

@@ -76,7 +76,7 @@ namespace Expr.ExpandsInto
   
   
   open BasicExpr in
-  def intp_eq_wfm
+  def triIntp_eq_wfm
     (dl: DefList)
     (bv: List Pair)
   :
@@ -85,20 +85,25 @@ namespace Expr.ExpandsInto
   
   | .refl _ => _root_.rfl
   | .const x expr =>
-    let ih := expr.intp_eq_wfm (bv := bv)
+    let ih := expr.triIntp_eq_wfm (bv := bv)
     let eqDef := dl.wfm_eq_def x
     let eqBv := dl.interp_eq_bv x [] bv dl.wfm dl.wfm
     eqDef.trans (eqBv.trans ih)
   | .pair left rite =>
-    eq_triIntp2_pair_of_eq (left.intp_eq_wfm dl bv) (rite.intp_eq_wfm dl bv)
+    eq_triIntp2_pair_of_eq
+      (left.triIntp_eq_wfm dl bv)
+      (rite.triIntp_eq_wfm dl bv)
   | .condFull expr =>
-    eq_triIntp2_condFull_of_eq (expr.intp_eq_wfm dl bv)
+    eq_triIntp2_condFull_of_eq (expr.triIntp_eq_wfm dl bv)
   | .ir left rite =>
-    eq_triIntp2_ir_of_eq (left.intp_eq_wfm dl bv) (rite.intp_eq_wfm dl bv)
+    eq_triIntp2_ir_of_eq
+      (left.triIntp_eq_wfm dl bv)
+      (rite.triIntp_eq_wfm dl bv)
   | .compl expr =>
-    eq_triIntp2_compl_of_eq (expr.intp_eq_wfm dl bv)
+    eq_triIntp2_compl_of_eq (expr.triIntp_eq_wfm dl bv)
   | .arbIr expr =>
-    eq_triIntp2_arbIr_of_eq (fun dB => expr.intp_eq_wfm dl (dB :: bv))
+    eq_triIntp2_arbIr_of_eq
+      (fun dB => expr.triIntp_eq_wfm dl (dB :: bv))
   
   open BasicExpr in
   open SingleLaneExpr in
