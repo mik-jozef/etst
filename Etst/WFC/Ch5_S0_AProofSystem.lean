@@ -19,8 +19,8 @@ namespace Etst
 
 -- See `Cause` below.
 structure BackgroundCause (D: Type*) where
-  backgroundIns: Set (ValVar D)
-  backgroundOut: Set (ValVar D)
+  backgroundIns: Set (ValConst D)
+  backgroundOut: Set (ValConst D)
 
 /-
   If (under some valuation) expressions `a` and `c` contain an
@@ -28,7 +28,7 @@ structure BackgroundCause (D: Type*) where
   that element. For this reason, we may call `d ∈ a ∧ d ∈ c`
   a cause of `d ∈ a ∪ (b ∪ c)`.
   
-  We encode the causes as sets of `ValVar` instances. A cause
+  We encode the causes as sets of `ValConst` instances. A cause
   consists of three such sets:
   - those that need to be present in the context,
   - those that need to be present in the background, and
@@ -38,7 +38,7 @@ structure BackgroundCause (D: Type*) where
   from context in order to cause something.
 -/
 structure Cause (D: Type*) extends BackgroundCause D where
-  contextIns: Set (ValVar D)
+  contextIns: Set (ValConst D)
 
 def BackgroundCause.toCause
   (cause: BackgroundCause D)
@@ -171,13 +171,13 @@ inductive Ins
 
 /-
   A cause is *provably* inapplicable for a given set S of value–
-  variable pairs if for some element (d, x) of S, either:
+  constant pairs if for some element (d, x) of S, either:
   
   0. (d, x) is in the contextIns of the cause,
   1. (d, x) is in backgroundIns, and provably `d ∉ x`, or
   2. (d, x) is in backgroundOut, and provably `d ∈ x`.
   
-  A set of value–variable pairs is called an empty cycle if all
+  A set of value–constant pairs is called an empty cycle if all
   its elements have only inapplicable causes. Empty cycles formalize
   cyclic definitions like
   
@@ -189,7 +189,7 @@ inductive Ins
 inductive IsCauseInapplicable
   (dl: DefList)
 :
-  Set (ValVar Pair) →
+  Set (ValConst Pair) →
   Cause Pair →
   Prop
 
@@ -230,7 +230,7 @@ inductive Out
   Pair → Nat → Prop
 
 | intro:
-  (cycle: Set (ValVar Pair)) →
+  (cycle: Set (ValConst Pair)) →
   (isEmptyCycle:
     ∀ {d x},
     ⟨d, x⟩ ∈ cycle →

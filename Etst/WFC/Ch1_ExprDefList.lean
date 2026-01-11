@@ -13,12 +13,11 @@ namespace Etst
   can be evaluated to a triset.
   
   `E` (extra info) is for storing arbitrary extra information in each
-  variable.
+  constant.
 -/
 inductive Expr (E: Type*) where
--- TODO perhaps rename to "const", and bvar to var?
-| var (e: E) (x: Nat)
-| bvar (x: Nat) -- Uses de Bruijn indices
+| const (e: E) (x: Nat)
+| var (x: Nat) -- Uses de Bruijn indices
 | null
 | pair (left rite: Expr E)
 | ir (left rite: Expr E)
@@ -38,8 +37,8 @@ def Expr.arbUn (body: Expr E): Expr E :=
 abbrev BasicExpr := Expr Unit
 
 -- Convenience definitions for preserving the `BasicExpr` type in arguments.
-def BasicExpr.var (x: Nat): BasicExpr := Expr.var () x
-def BasicExpr.bvar (x: Nat): BasicExpr := Expr.bvar x
+def BasicExpr.const (x: Nat): BasicExpr := Expr.const () x
+def BasicExpr.var (x: Nat): BasicExpr := Expr.var x
 def BasicExpr.null: BasicExpr := Expr.null
 def BasicExpr.pair (left rite: BasicExpr): BasicExpr :=
   Expr.pair left rite
@@ -59,27 +58,27 @@ def BasicExpr.arbIr (body: BasicExpr): BasicExpr :=
   Expr.arbIr body
 
 namespace Expr
-  def UsesVar (expr: Expr E): Set Nat :=
+  def UsesConst (expr: Expr E): Set Nat :=
     fun x =>
       match expr with
-        | var _ v => x = v
-        | bvar _ => False
+        | const _ v => x = v
+        | var _ => False
         | null => False
-        | pair left rite => left.UsesVar x ∨ rite.UsesVar x
-        | ir left rite => left.UsesVar x ∨ rite.UsesVar x
-        | condFull body => body.UsesVar x
-        | compl body => body.UsesVar x
-        | arbIr body => body.UsesVar x
+        | pair left rite => left.UsesConst x ∨ rite.UsesConst x
+        | ir left rite => left.UsesConst x ∨ rite.UsesConst x
+        | condFull body => body.UsesConst x
+        | compl body => body.UsesConst x
+        | arbIr body => body.UsesConst x
   
   
   /-
-    A positive expression only refers to variables under an even
+    A positive expression only refers to constants under an even
     number of complements.
   -/
   def IsPositive (expr: Expr E) (isEvenD := true): Prop :=
     match expr with
-    | var _ _ => isEvenD
-    | bvar _ => True
+    | const _ _ => isEvenD
+    | var _ => True
     | null => True
     | pair left rite =>
         left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
@@ -91,26 +90,26 @@ namespace Expr
 
   
   -- `any` contains all elements, under any valuation.
-  def any: Expr E := .arbUn (.bvar 0)
+  def any: Expr E := .arbUn (.var 0)
   -- `none` contains no elements, under any valuation.
   def none: Expr E := .compl any
   
-  -- Removes all bound variables with index >= ub.
-  def clearBvars (ub := 0): Expr E → Expr E
-    | .var info x => .var info x
-    | .bvar x => if x < ub then .bvar x else .none
+  -- Removes all variables with index >= ub.
+  def clearVars (ub := 0): Expr E → Expr E
+    | .const info x => .const info x
+    | .var x => if x < ub then .var x else .none
     | .null => .null
     | .pair left rite =>
-        .pair (left.clearBvars ub) (rite.clearBvars ub)
+        .pair (left.clearVars ub) (rite.clearVars ub)
     | .ir left rite =>
-        .ir (left.clearBvars ub) (rite.clearBvars ub)
+        .ir (left.clearVars ub) (rite.clearVars ub)
     | .condFull body =>
-        .condFull (body.clearBvars ub)
-    | .compl e => .compl (e.clearBvars ub)
-    | .arbIr body => .arbIr (body.clearBvars (ub + 1))
+        .condFull (body.clearVars ub)
+    | .compl e => .compl (e.clearVars ub)
+    | .arbIr body => .arbIr (body.clearVars (ub + 1))
   
   def IsClean (expr: Expr E): Prop :=
-    expr = expr.clearBvars
+    expr = expr.clearVars
   
 end Expr
 
@@ -119,37 +118,37 @@ def DefList.GetDef := Nat → BasicExpr
 
 /-
   A definition list is a map from natural numbers to expressions.
-  It is used to allow recursive definitions -- the variables
+  It is used to allow recursive definitions -- the constants
   in a definition refer to other definitions of the definition list.
 -/
 structure DefList where
   getDef: DefList.GetDef
   isClean: ∀ name, (getDef name).IsClean
 
--- The definition x depends on y x contains y, possibly transitively.
+-- The definition x depends on y iff x contains y, possibly transitively.
 inductive DefList.DependsOn
   (getDef: GetDef)
 :
   Nat → Nat → Prop
 where
 | Base
-  (aUsesB: (getDef a).UsesVar b)
+  (aUsesB: (getDef a).UsesConst b)
   :
     DependsOn getDef a b
 | Rec
-  (aUsesB: (getDef a).UsesVar b)
+  (aUsesB: (getDef a).UsesConst b)
   (bUsesC: DependsOn getDef b c)
   :
     DependsOn getDef a c
 
 /-
-  If `a` depends on `b`, and `b` has a free variable `c`, then `a`
+  If `a` depends on `b`, and `b` has a free constant `c`, then `a`
   also depends on `c`.
 -/
 def DefList.DependsOn.push
   {getDef: GetDef}
   (dependsOn: DependsOn getDef a b)
-  (isFree: (getDef b).UsesVar c)
+  (isFree: (getDef b).UsesConst c)
 :
   DependsOn getDef a c
 :=

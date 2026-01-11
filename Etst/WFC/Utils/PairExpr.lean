@@ -24,11 +24,11 @@ namespace Expr
     
     Due to the implementation of `arbUnDom` (and necessarily so),
     `domain` is inside the introduced existential quantifier, meaning
-    that the bound variables of `domain` need to be incremented. In
-    particular, `.bvar 0` should never be used in `domain`.
+    that the variables of `domain` need to be incremented. In
+    particular, `.var 0` should never be used in `domain`.
   -/
   def arbUnDom (domain body: Expr E): Expr E :=
-    arbUn (ifThen (ir (.bvar 0) domain) body)
+    arbUn (ifThen (ir (.var 0) domain) body)
   
   /-
     `arbIrDom domain body` is "syntactic sugar" that represents
@@ -36,11 +36,11 @@ namespace Expr
     
     Due to the implementation of `arbIrDom` (and necessarily so),
     `domain` is inside the introduced universal quantifier, meaning
-    that the bound variables of `domain` need to be incremented. In
-    particular, `.bvar 0` should never be used in `domain`.
+    that the variables of `domain` need to be incremented. In
+    particular, `.var 0` should never be used in `domain`.
   -/
   def arbIrDom (domain body: Expr E): Expr E :=
-    arbIr (un body (ifElse (ir (.bvar 0) domain) any))
+    arbIr (un body (ifElse (ir (.var 0) domain) any))
   
   -- A union of finitely many expressions.
   def finUn: List (Expr E) → Expr E
@@ -55,10 +55,10 @@ namespace Expr
     `a` such that `(a, _) ∈ s3`.
     
     `zthMember` introduces an existential quantifier, the
-    bound variables of `expr` need to be incremented.
+    variables of `expr` need to be incremented.
   -/
   def zthMember (expr: Expr E): Expr E :=
-    arbUn (ifThen (ir (pair (.bvar 0) any) expr) (.bvar 0))
+    arbUn (ifThen (ir (pair (.var 0) any) expr) (.var 0))
   
   /-
     Let `expr` be an expression that represets a set of
@@ -67,10 +67,10 @@ namespace Expr
     `b` such that `(_, b) ∈ s3`.
     
     `fstMember` introduces an existential quantifier, the
-    bound variables of `expr` need to be incremented.
+    variables of `expr` need to be incremented.
   -/
   def fstMember (expr: Expr E): Expr E :=
-    arbUn (ifThen (ir (pair any (.bvar 0)) expr) (.bvar 0))
+    arbUn (ifThen (ir (pair any (.var 0)) expr) (.var 0))
   
   /-
     Let `fn` and `arg` be expressions that represent
@@ -83,7 +83,7 @@ namespace Expr
     contains its input-output pairs.
     
     `call` introduces an existential quantifier, the
-    bound variables of `fn` and `arg` need to be incremented.
+    variables of `fn` and `arg` need to be incremented.
   -/
   def call (fn arg: Expr E): Expr E :=
     fstMember (ir fn (pair arg any))
@@ -148,7 +148,7 @@ namespace SingleLaneExpr
   
   
   /-
-    This is not a mistake -- the bound vars of the domain are updated
+    This is not a mistake -- the vars of the domain are updated
     too. It's unfortunate, but inevitable -- have a look at the
     implementation of `arbUnDom` to see for yourself.
   -/
@@ -186,7 +186,7 @@ namespace SingleLaneExpr
     let ⟨dBound, inIfThen⟩ := inArbUnElim inUnDom
     let ⟨⟨_dC, inBvDom⟩, inBody⟩ := inIfThenElim inIfThen
     let ⟨inBv, inDom⟩ := inIrElim inBvDom
-    let bvEq := inBvarElim inBv rfl
+    let bvEq := inVarElim inBv rfl
     ⟨dBound, { inDomain := bvEq ▸ inDom, inBody }⟩
   
   
@@ -262,8 +262,8 @@ namespace SingleLaneExpr
     | Pair.null => inPairElimNope inPair
     | Pair.pair pCondZth pCondFst =>
       let ⟨inL, _insR⟩ := inPairElim inPair
-      let eqPCondZth: pCondZth = pZth := inBvarElim inL rfl
-      let eqPZth: zth = pZth := inBvarElim inBody rfl
+      let eqPCondZth: pCondZth = pZth := inVarElim inL rfl
+      let eqPZth: zth = pZth := inVarElim inBody rfl
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInExpr⟩
   
   def inFstMemberElim
@@ -278,16 +278,16 @@ namespace SingleLaneExpr
     | Pair.null => inPairElimNope inPair
     | Pair.pair pCondZth pCondFst =>
       let ⟨_insL, inR⟩ := inPairElim inPair
-      let eqPCondFst: pCondFst = pFst := inBvarElim inR rfl
-      let eqPFst: fst = pFst := inBvarElim inBody rfl
+      let eqPCondFst: pCondFst = pFst := inVarElim inR rfl
+      let eqPFst: fst = pFst := inVarElim inBody rfl
       ⟨pCondZth, eqPFst ▸ eqPCondFst ▸ pCondInExpr⟩
   
   def inZthFstElim
-    (inZth: intp2 (zthMember (Expr.var lane x)) bv b c zth)
-    (inFst: intp2 (fstMember (Expr.var lane x)) bv b c fst)
+    (inZth: intp2 (zthMember (Expr.const lane x)) bv b c zth)
+    (inFst: intp2 (fstMember (Expr.const lane x)) bv b c fst)
     (isUnit: c x = Set3.just d)
   :
-    intp2 (Expr.var lane x) bv b c (Pair.pair zth fst)
+    intp2 (Expr.const lane x) bv b c (Pair.pair zth fst)
   :=
     let ⟨fstB, inFstB⟩ := inZthMemberElim inZth
     let ⟨zthB, inZthB⟩ := inFstMemberElim inFst
@@ -328,7 +328,7 @@ namespace SingleLaneExpr
     ⟨zth, And.intro inFn (inPairElim inP).left⟩
   
   def inCallElimBound
-    (inCall: intp2 (call fn (Expr.var lane arg)) bv b c pB)
+    (inCall: intp2 (call fn (Expr.const lane arg)) bv b c pB)
     (isUnit: c arg = Set3.just pA)
   :
     intp2 fn (pB :: bv) b c (Pair.pair pA pB)

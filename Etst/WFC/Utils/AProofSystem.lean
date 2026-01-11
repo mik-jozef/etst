@@ -6,10 +6,10 @@ import Etst.WFC.Utils.Cause
 namespace Etst
 
 
-def ValVar.eq: d0 = d1 → x0 = x1 → ValVar.mk d0 x0 = ⟨d1, x1⟩
+def ValConst.eq: d0 = d1 → x0 = x1 → ValConst.mk d0 x0 = ⟨d1, x1⟩
 | rfl, rfl => rfl
 
-def ValVar.eqX: @Eq (ValVar D) ⟨d0, x0⟩ ⟨d1, x1⟩ → x0 = x1
+def ValConst.eqX: @Eq (ValConst D) ⟨d0, x0⟩ ⟨d1, x1⟩ → x0 = x1
 | rfl => rfl
 
 
@@ -17,7 +17,7 @@ def every_cause_inapplicable_preserves_definitive_nonmember
   (b c: Valuation Pair)
   (d: Pair)
   (expr: BasicExpr)
-  (outSet: Set (ValVar Pair))
+  (outSet: Set (ValConst Pair))
   (isEveryCauseInapplicable:
     {cause: Cause Pair} →
     IsWeakCause cause d expr →
@@ -34,7 +34,7 @@ def every_cause_inapplicable_preserves_definitive_nonmember
 
 def empty_cycle_is_out
   (dl: DefList)
-  (cycle: Set (ValVar Pair))
+  (cycle: Set (ValConst Pair))
   (isEmptyCycle:
     ∀ {d x},
     ⟨d, x⟩ ∈ cycle →

@@ -1,6 +1,6 @@
 import Etst.WFC.Ch5_S1_AProofSystem
 import Etst.WFC.Utils.InterpretationMono
-import Etst.Subtyping.Utils.ExprClearBvars
+import Etst.Subtyping.Utils.ExprClearVars
 
 namespace Etst
 
@@ -17,10 +17,10 @@ inductive Expr.ExpandsInto
   Bool → BasicExpr → BasicExpr → Type
 
 | refl e: ExpandsInto dl ed e e
-| var (x: Nat)
+| const (x: Nat)
     (exp: ExpandsInto dl true (dl.getDef x) xExp)
   :
-    ExpandsInto dl true (.var x) xExp
+    ExpandsInto dl true (.const x) xExp
 | pair
     (left: ExpandsInto dl ed l lExp)
     (rite: ExpandsInto dl ed r rExp)
@@ -84,7 +84,7 @@ namespace Expr.ExpandsInto
     left.triIntp bv dl.wfm = rite.triIntp bv dl.wfm
   
   | .refl _ => _root_.rfl
-  | .var x expr =>
+  | .const x expr =>
     let ih := expr.intp_eq_wfm (bv := bv)
     let eqDef := dl.wfm_eq_def x
     let eqBv := dl.interp_eq_bv x [] bv dl.wfm dl.wfm
@@ -124,17 +124,17 @@ namespace Expr.ExpandsInto
       match ed with
       | true => le_rfl
       | false => le_rfl
-    | var x exp =>
+    | const x exp =>
       let ih := exp.lfpStage_le_std bv n
       let defX := dl.getDef x
       let leNextStage:
-        intpE (.var x) [] ≤ intpE defX bv
+        intpE (.const x) [] ≤ intpE defX bv
       :=
         let eqNext: intpE defX [] = op.lfpStage n.succ x :=
           congr (op.lfpStage_apply_eq_succ n) _root_.rfl
         let eqClear: intpE defX [] = intpE (dl.getDef x) bv :=
           dl.isClean x ▸
-          clearBvars_preserves_interp _ _ _ _
+          clearVars_preserves_interp _ _ _ _
         
         eqClear ▸ eqNext ▸ op.lfpStage_mono (Order.le_succ n) x
       leNextStage.trans ih

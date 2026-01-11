@@ -4,10 +4,10 @@ namespace Etst
 
 
 namespace SingleLaneExpr
-  def var (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
-    Expr.var lane x
-  def bvar (x: Nat): SingleLaneExpr :=
-    Expr.bvar x
+  def const (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
+    Expr.const lane x
+  def var (x: Nat): SingleLaneExpr :=
+    Expr.var x
   def null: SingleLaneExpr := Expr.null
   def pair (left rite: SingleLaneExpr): SingleLaneExpr :=
     Expr.pair left rite
@@ -39,12 +39,12 @@ namespace SingleLaneExpr
     (isEvenDepth: Bool) →
     SingleLaneExpr →
     Prop
-  | varEven (x: Nat):
-      LaneEqEven lane true (var lane x)
-  | varOdd (varLane: Set3.Lane) (x: Nat):
-      LaneEqEven lane false (var varLane x)
-  | bvar (x: Nat) (isEvenDepth: Bool):
-      LaneEqEven lane isEvenDepth (bvar x)
+  | constEven (x: Nat):
+      LaneEqEven lane true (const lane x)
+  | constOdd (varLane: Set3.Lane) (x: Nat):
+      LaneEqEven lane false (const varLane x)
+  | var (x: Nat) (isEvenDepth: Bool):
+      LaneEqEven lane isEvenDepth (var x)
   | null (isEvenDepth: Bool): LaneEqEven lane isEvenDepth null
   | pair
       (leftEq: LaneEqEven lane isEvenDepth left)
@@ -140,10 +140,10 @@ def BasicExpr.laneEqEven
     (expr.toLane (ite isEvenDepth lane lane.toggle))
 :=
   match expr, isEvenDepth with
-  | .var x, true => .varEven x
-  | .var x, false => .varOdd lane.toggle x
-  | .bvar x, true => .bvar x true
-  | .bvar x, false => .bvar x false
+  | .const x, true => .constEven x
+  | .const x, false => .constOdd lane.toggle x
+  | .var x, true => .var x true
+  | .var x, false => .var x false
   | .null, true => .null true
   | .null, false => .null false
   | .pair left rite, true =>
@@ -188,8 +188,8 @@ def Expr.toString (serializeVar: E → Nat → String):
 | .arbUn body =>
   let bodyStr := body.toString serializeVar
   s!"Ex ({bodyStr})"
-| .var info x => serializeVar info x
-| .bvar x => s!"b{x}"
+| .const info x => serializeVar info x
+| .var x => s!"v{x}"
 | .null =>
   "null"
 | .pair left rite =>

@@ -58,14 +58,14 @@ def SingleLaneExpr.intp2_mono_std
 :=
   fun _ dIn =>
     match expr with
-    | .var lane x =>
+    | .const lane x =>
       match lane, ed, premiseType with
       | _, false, _ => dIn
       | .defLane, true, .none => (cLe x).defLe dIn
       | .posLane, true, .none => (cLe x).posLe dIn
       | .defLane, true, .some .defLane => cLe x dIn
       | .posLane, true, .some .posLane => cLe x dIn
-    | .bvar _ => dIn
+    | .var _ => dIn
     | .null => dIn
     | .pair _ _ =>
       let ⟨dL, dR, eq, dLIn, dRIn⟩ := dIn
@@ -177,11 +177,11 @@ def BasicExpr.triIntp2_mono_apx
   expr.triIntp2 bv b0 c0 ⊑ expr.triIntp2 bv b1 c1
 :=
   match expr with
-  | .var x => {
+  | .const x => {
       defLe := fun _d dIn => (cLe x).defLe dIn
       posLe := fun _d dIn => (cLe x).posLe dIn
     }
-  | .bvar _ => ⟨fun _ => id, fun _ => id⟩
+  | .var _ => ⟨fun _ => id, fun _ => id⟩
   | .null => ⟨fun _ => id, fun _ => id⟩
   | .pair _ _ =>
       let ihL := triIntp2_mono_apx bLe cLe

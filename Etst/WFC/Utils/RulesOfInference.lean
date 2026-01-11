@@ -4,51 +4,51 @@ import Etst.WFC.Utils.Valuation
 namespace Etst
 
 namespace SingleLaneExpr
-  def intp2_bvar_eq_empty
+  def intp2_var_eq_empty
     (nlt: ¬ x < bv.length)
   :
-    (bvar x).intp2 bv b c = {}
+    (var x).intp2 bv b c = {}
   := by
-    show intp2Bvar bv x = _
-    unfold intp2Bvar
+    show intp2Var bv x = _
+    unfold intp2Var
     rw [List.getElem?_eq_none_iff.mpr (le_of_not_gt nlt)]
   
-  def intp2_bvar_eq_of_lt
+  def intp2_var_eq_of_lt
     (lt: x < bv.length)
   :
-    (bvar x).intp2 bv b c = {bv[x]}
+    (var x).intp2 bv b c = {bv[x]}
   := by
-    show intp2Bvar bv x = _
-    unfold intp2Bvar
+    show intp2Var bv x = _
+    unfold intp2Var
     rw [List.getElem?_eq_getElem lt]
   
-  def intp2_bvar_eq_singleton
+  def intp2_var_eq_singleton
     {bv: List Pair}
     {dBound: Pair}
     (eq: bv[x]? = some dBound)
   :
-    (bvar x).intp2 bv b c = {dBound}
+    (var x).intp2 bv b c = {dBound}
   := by
-    show intp2Bvar bv x = _
-    unfold intp2Bvar
+    show intp2Var bv x = _
+    unfold intp2Var
     rw [eq]
   
-  def inBvar
+  def inVar
     {bv: List Pair}
     {dBound: Pair}
     (eq: bv[x]? = some dBound)
   :
-    (bvar x).intp2 bv b c dBound
+    (var x).intp2 bv b c dBound
   :=
-    intp2_bvar_eq_singleton eq ▸ rfl
+    intp2_var_eq_singleton eq ▸ rfl
   
-  def inBvarElim
-    (h: (bvar x).intp2 bv b c d)
+  def inVarElim
+    (h: (var x).intp2 bv b c d)
     (eq: bv[x]? = some dBound)
   :
     d = dBound
   := by
-    rw [intp2_bvar_eq_singleton eq] at h
+    rw [intp2_var_eq_singleton eq] at h
     exact Set.mem_singleton_iff.mp h
   
   
@@ -286,7 +286,7 @@ namespace SingleLaneExpr
       inArbUn (fun dBound ninBody => h ⟨dBound, ninBody⟩)
   
   
-  def inAny: intp2 .any bv b c d := inArbUn d (inBvar rfl)
+  def inAny: intp2 .any bv b c d := inArbUn d (inVar rfl)
   def ninNone: ¬ intp2 .none bv b c d := ninCompl inAny
   def inNoneElim: intp2 .none bv b c d → P := ninNone.elim
   
@@ -310,7 +310,7 @@ namespace SingleLaneExpr
   def InWfm.of_in_def_no_bv
     (inDef: InWfm [] dl ((dl.getDef x).toLane lane) d)
   :
-    InWfm [] dl (.var lane x) d
+    InWfm [] dl (.const lane x) d
   := by
     cases lane
     all_goals
@@ -320,7 +320,7 @@ namespace SingleLaneExpr
   
   
   def InWfm.in_def_no_bv
-    (inVar: InWfm [] dl (.var lane x) d)
+    (inConst: InWfm [] dl (.const lane x) d)
   :
     InWfm [] dl ((dl.getDef x).toLane lane) d
   :=
@@ -330,7 +330,7 @@ namespace SingleLaneExpr
       congr (DefList.wfm_isModel dl) rfl
     
     match lane with
-    | .defLane => show (dl.triIntp2 v v x).defMem d from eqAtN ▸ inVar
-    | .posLane => show (dl.triIntp2 v v x).posMem d from eqAtN ▸ inVar
+    | .defLane => show (dl.triIntp2 v v x).defMem d from eqAtN ▸ inConst
+    | .posLane => show (dl.triIntp2 v v x).posMem d from eqAtN ▸ inConst
   
 end SingleLaneExpr

@@ -9,25 +9,25 @@ namespace Etst
 -- ## Section 0: Valuations
 
 /-
-  A valuation is a function from variables to trisets of values.
+  A valuation is a function from constants to trisets of values.
 -/
 def Valuation D := Nat → Set3 D
 
 namespace Valuation
   /-
-    In the empty valuation, every variable represents the empty
+    In the empty valuation, every constant represents the empty
     triset.
   -/
   def empty: Valuation D := fun _ => Set3.empty
   
   /-
-    In the undetermined valuation, every variable represents
+    In the undetermined valuation, every constant represents
     the undetermined triset.
   -/
   def undetermined: Valuation D := fun _ => Set3.undetermined
   
   /-
-    In the full valuation, every variable represents the full
+    In the full valuation, every constant represents the full
     triset.
   -/
   def full: Valuation D := fun _ => Set3.full
@@ -155,15 +155,15 @@ namespace Valuation
 end Valuation
 
 /-
-  `ValVar` encodes some (usage-specific) relation between a variable
+  `ValConst` encodes some (usage-specific) relation between a constant
   and an element. For example, it may be used to represent the
-  assertion that a certain variable contains a certain element in
+  assertion that a certain constant contains a certain element in
   some valuation.
   
-  That the variable `x` contains the element `d` may be denoted
+  That the constant `x` contains the element `d` may be denoted
   as `d ∈ x`.
 -/
-structure ValVar (D: Type*) where
+structure ValConst (D: Type*) where
   d: D
   x: Nat
 
@@ -177,7 +177,7 @@ inductive Pair where
 
 abbrev SingleLaneExpr := Expr Set3.Lane
 
-def SingleLaneExpr.intp2Bvar
+def SingleLaneExpr.intp2Var
   (bv: List Pair)
   (x: Nat)
 :
@@ -190,8 +190,8 @@ def SingleLaneExpr.intp2Bvar
 /-
   The interpretation of an expression is defined using two valuations
   we will call "background" and "context". Context is the "main"
-  valuation that is used to interpret variables under an even number
-  of complements, while background is used to interpret variables
+  valuation that is used to interpret constants under an even number
+  of complements, while background is used to interpret constants
   under an odd number of complements.
   
   This division allows retaining monotonicity of interpretation
@@ -207,8 +207,8 @@ def SingleLaneExpr.intp2
   Set Pair
 :=
   match expr with
-  | .var lane x => (c x).getLane lane
-  | .bvar x => intp2Bvar bv x
+  | .const lane x => (c x).getLane lane
+  | .var x => intp2Var bv x
   | .null => {.null}
   | .pair left rite =>
       fun d =>
@@ -245,8 +245,8 @@ def BasicExpr.toLane
   SingleLaneExpr
 :=
   match expr with
-  | .var a => .var lane a
-  | .bvar a => .bvar a
+  | .const a => .const lane a
+  | .var a => .var a
   | .null => .null
   | .pair left rite => .pair (left.toLane lane) (rite.toLane lane)
   | .ir left rite => .ir (left.toLane lane) (rite.toLane lane)
@@ -286,8 +286,8 @@ def BasicExpr.triIntp2_defLePos
   expr.triIntp2Pos bv b c d
 :=
   match expr, isDef with
-  | .var x, isDef => (c x).defLePos isDef
-  | .bvar _, isDef => isDef
+  | .const x, isDef => (c x).defLePos isDef
+  | .var _, isDef => isDef
   | .null, isDef => isDef
   | .pair left rite, ⟨pl, pr, eq, isDefL, isDefR⟩ =>
       let ihL := triIntp2_defLePos left isDefL
@@ -313,7 +313,7 @@ def BasicExpr.triIntp2_defLePos
   An interesting exception is the complement, where `d` is a
   definite member of the complement of `expr` iff `d` is not
   a *possible* member of `expr`, and vice versa. This is handled
-  in `toLane` by toggling the lane of variables inside complements.
+  in `toLane` by toggling the lane of constants inside complements.
 -/
 def BasicExpr.triIntp2
   (expr: BasicExpr)

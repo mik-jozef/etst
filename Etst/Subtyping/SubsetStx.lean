@@ -44,7 +44,7 @@
 -/
 
 import Etst.Subtyping.Utils.ExprExpandsInto
-import Etst.Subtyping.Utils.ExprLiftBvars
+import Etst.Subtyping.Utils.ExprLiftVars
 import Etst.WFC.Ch5_S1_AProofSystem
 import Etst.WFC.Utils.InterpretationMono
 
@@ -71,8 +71,8 @@ def Expr.replaceDepthEvenVars
   Expr E
 :=
   match e with
-  | var i x => if ed then replacer depth i x else .var i x
-  | bvar x => .bvar x
+  | const i x => if ed then replacer depth i x else .const i x
+  | var x => .var x
   | null => null
   | pair left rite =>
       pair
@@ -88,7 +88,7 @@ def Expr.replaceDepthEvenVars
       compl (body.replaceDepthEvenVars depth (!ed) replacer)
   | arbIr body => arbIr (body.replaceDepthEvenVars (depth + 1) ed replacer)
 
--- Represents an inductive proof of `var lane x ⊆ expr`
+-- Represents an inductive proof of `const lane x ⊆ expr`
 structure InductionDescriptor (dl: DefList) where
   lane: Set3.Lane
   x: Nat
@@ -117,7 +117,7 @@ def MutIndDescriptor.hypothesis
 :
   SingleLaneExpr
 :=
-  desc.foldr (InductionDescriptor.hypothesis depth lane x) (var lane x)
+  desc.foldr (InductionDescriptor.hypothesis depth lane x) (const lane x)
 
 def MutIndDescriptor.hypothesify
   (desc: MutIndDescriptor dl)
@@ -184,7 +184,7 @@ inductive DefList.SubsetStx
   subId {expr}: dl.SubsetStx ctx expr expr
 |
   subDefPos {x}:
-    dl.SubsetStx ctx (var .defLane x) (var .posLane x)
+    dl.SubsetStx ctx (const .defLane x) (const .posLane x)
 |
   pairMono
     (sl: dl.SubsetStx ctx x (condFull (impl al bl)))
@@ -263,8 +263,8 @@ inductive DefList.SubsetStx
 -- TODO these are adapted from logic, but are not general enougn, I think.
 --   Logic has only `true = {*}` and `false = {}`, so it needs not deal
 --   with the general case of non-subsingleton types.
--- note: replaceNextVar ought to bump bvars.
--- q: can I make a separate rule for replacing bvar using replaceNextVar?
+-- note: replaceNextVar ought to bump vars.
+-- q: can I make a separate rule for replacing var using replaceNextVar?
 -- existential introduction, sub form:
 --   (body: SingleLaneExpr)
 --   (IsSingleton t)
@@ -292,7 +292,7 @@ inductive DefList.SubsetStx
   subUnfold:
     dl.SubsetStx
       ctx
-      (var lane a)
+      (const lane a)
       ((dl.getDef a).toLane lane)
 |
   -- TODO is this provable with induction?
@@ -300,7 +300,7 @@ inductive DefList.SubsetStx
     dl.SubsetStx
       ctx
       ((dl.getDef a).toLane lane)
-      (var lane a)
+      (const lane a)
 |
   mutInduction
     (desc: MutIndDescriptor dl)
@@ -318,7 +318,7 @@ inductive DefList.SubsetStx
     dl.SubsetStx
       ctx
       x
-      (condFull (impl (var desc[i].lane desc[i].x) desc[i].expr))
+      (condFull (impl (const desc[i].lane desc[i].x) desc[i].expr))
 
 
 namespace DefList.SubsetStx
@@ -996,14 +996,14 @@ namespace DefList.SubsetStx
   
   
   def unfoldCtx
-      (sub: dl.SubsetStx ctx (var lane a) b)
+      (sub: dl.SubsetStx ctx (const lane a) b)
     :
       dl.SubsetStx ctx ((dl.getDef a).toLane lane) b
   :=
     trans subFold sub
   
   def unfold
-      (sub: dl.SubsetStx ctx x (var lane a))
+      (sub: dl.SubsetStx ctx x (const lane a))
     :
       dl.SubsetStx ctx x ((dl.getDef a).toLane lane)
   :=
@@ -1012,14 +1012,14 @@ namespace DefList.SubsetStx
   def foldCtx
       (sub: dl.SubsetStx ctx ((dl.getDef a).toLane lane) b)
     :
-      dl.SubsetStx ctx (var lane a) b
+      dl.SubsetStx ctx (const lane a) b
   :=
     trans subUnfold sub
   
   def fold
       (sub: dl.SubsetStx ctx x ((dl.getDef a).toLane lane))
     :
-      dl.SubsetStx ctx x (var lane a)
+      dl.SubsetStx ctx x (const lane a)
     :=
       trans sub subFold
   
@@ -1062,7 +1062,7 @@ namespace DefList.SubsetStx
         desc[i].expr)
     (i: desc.Index)
   :
-    dl.SubsetStx ctx (var desc[i].lane desc[i].x) desc[i].expr
+    dl.SubsetStx ctx (const desc[i].lane desc[i].x) desc[i].expr
   :=
     isFullImplElim
       (mutInduction desc (fun i => isFullImpl (premises i)) i)
@@ -1073,10 +1073,10 @@ namespace DefList.SubsetStx
       dl.SubsetStx
         ctx
         ((desc.expansion.toLane desc.lane).replaceDepthEvenVars 0 true fun depth lane x =>
-          desc.hypothesis depth lane x (var lane x))
+          desc.hypothesis depth lane x (const lane x))
         desc.expr)
   :
-    dl.SubsetStx ctx (var desc.lane desc.x) desc.expr
+    dl.SubsetStx ctx (const desc.lane desc.x) desc.expr
   :=
     subMutInduction
       [desc]
@@ -1088,10 +1088,10 @@ namespace DefList.SubsetStx
       dl.SubsetStx
         ctx
         (((dl.getDef x).toLane lane).replaceDepthEvenVars 0 true fun depth l xR =>
-          if l.Le lane && x = xR then .ir (expr.lift 0 depth) (var l xR) else (var l xR))
+          if l.Le lane && x = xR then .ir (expr.lift 0 depth) (const l xR) else (const l xR))
         expr)
   :
-    dl.SubsetStx ctx (var lane x) expr
+    dl.SubsetStx ctx (const lane x) expr
   :=
     subInduction
       {

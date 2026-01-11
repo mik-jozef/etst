@@ -93,7 +93,7 @@ namespace Valuation
   def nonmembers
     (v: Valuation D)
   :
-    Set (ValVar D)
+    Set (ValConst D)
   :=
     fun ⟨d, x⟩ => ¬ (v x).posMem d
   
@@ -101,7 +101,7 @@ namespace Valuation
   def posNonmembers
     (v: Valuation D)
   :
-    Set (ValVar D)
+    Set (ValConst D)
   :=
     fun ⟨d, x⟩ => ¬ (v x).defMem d
   
@@ -109,7 +109,7 @@ namespace Valuation
   def members
     (v: Valuation D)
   :
-    Set (ValVar D)
+    Set (ValConst D)
   :=
     fun ⟨d, x⟩ => (v x).defMem d
   
@@ -117,7 +117,7 @@ namespace Valuation
   def posMembers
     (v: Valuation D)
   :
-    Set (ValVar D)
+    Set (ValConst D)
   :=
     fun ⟨d, x⟩ => (v x).posMem d
   

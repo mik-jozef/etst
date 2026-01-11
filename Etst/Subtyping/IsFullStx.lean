@@ -6,12 +6,12 @@ open Expr
 
 namespace DefList
   inductive IsFullStx (dl: DefList): SingleLaneExpr → Type
-  | defPos: dl.IsFullStx (impl (var .defLane x) (var .posLane x))
+  | defPos: dl.IsFullStx (impl (const .defLane x) (const .posLane x))
     -- TODO should be provable using induction.
   | unfold (lane: Set3.Lane) (x: Nat):
-      dl.IsFullStx (impl (var lane x) ((dl.getDef x).toLane lane))
+      dl.IsFullStx (impl (const lane x) ((dl.getDef x).toLane lane))
   | fold (lane: Set3.Lane) (x: Nat):
-      dl.IsFullStx (impl ((dl.getDef x).toLane lane) (var lane x))
+      dl.IsFullStx (impl ((dl.getDef x).toLane lane) (const lane x))
   | mp
       (impl: dl.IsFullStx (impl a b))
       (arg: dl.IsFullStx a)
@@ -94,7 +94,7 @@ namespace DefList
       (i: desc.Index)
     :
       dl.IsFullStx
-        (impl x (condFull (impl (var desc[i].lane desc[i].x) desc[i].expr)))
+        (impl x (condFull (impl (const desc[i].lane desc[i].x) desc[i].expr)))
   
   namespace IsFullStx
     variable {dl: DefList}
@@ -355,7 +355,7 @@ namespace DefList
         IsFullStx dl (impl (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane)) desc[i].expr))
       (i: desc.Index)
     :
-      IsFullStx dl (impl (var desc[i].lane desc[i].x) desc[i].expr)
+      IsFullStx dl (impl (const desc[i].lane desc[i].x) desc[i].expr)
     :=
       let premises' (j: desc.Index) := implToImplFull (x := Expr.any) (premises j)
       let res := mutInduction (x := Expr.any) desc premises' i
@@ -444,7 +444,7 @@ namespace DefList
   :=
     ∀ bv: List Pair,
     ∀ p: Pair,
-      expr.looseBvarUB ≤ bv.length →
+      expr.freeVarUB ≤ bv.length →
       expr.intp bv dl.wfm p
   
   

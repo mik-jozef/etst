@@ -12,8 +12,8 @@ namespace Expr
     (liftBy := 1)
   :=
     match expr with
-    | var lane x => var lane x
-    | bvar x => bvar (if x < depth then x else x + liftBy)
+    | const info x => const info x
+    | var x => var (if x < depth then x else x + liftBy)
     | null => null
     | pair l r => pair (l.lift depth liftBy) (r.lift depth liftBy)
     | ir l r => ir (l.lift depth liftBy) (r.lift depth liftBy)
@@ -21,23 +21,23 @@ namespace Expr
     | compl body => compl (body.lift depth liftBy)
     | arbIr body => arbIr (body.lift (depth + 1) liftBy)
   
-  def lift_bvar_lt
+  def lift_var_lt
     (x: Nat)
     (lt: x < depth)
     (liftBy: Nat)
   :
-    (bvar (E := E) x).lift depth liftBy = bvar x
+    (var (E := E) x).lift depth liftBy = var x
   :=
-    show bvar _ = _ from if_pos lt ▸ rfl
+    show var _ = _ from if_pos lt ▸ rfl
   
-  def lift_bvar_ge
+  def lift_var_ge
     (x: Nat)
     (ge: x >= depth)
     (liftBy: Nat)
   :
-    (bvar (E := E) x).lift depth liftBy = bvar (x + liftBy)
+    (var (E := E) x).lift depth liftBy = var (x + liftBy)
   :=
-    show bvar _ = _ from if_neg (not_lt.mpr ge) ▸ rfl
+    show var _ = _ from if_neg (not_lt.mpr ge) ▸ rfl
   
   def lift_eq_zero
     (expr: Expr E)
@@ -46,12 +46,12 @@ namespace Expr
     expr.lift depth 0 = expr
   :=
     match expr with
-    | var _ _ => rfl
-    | bvar x =>
+    | const _ _ => rfl
+    | var x =>
         if h: x < depth then
-          (lift_bvar_lt x h 0).symm ▸ rfl
+          (lift_var_lt x h 0).symm ▸ rfl
         else
-          (lift_bvar_ge x (not_lt.mp h) 0).symm ▸ rfl
+          (lift_var_ge x (not_lt.mp h) 0).symm ▸ rfl
     | null => rfl
     | pair l r =>
       congrArg₂
@@ -83,10 +83,10 @@ namespace SingleLaneExpr
         c)
   :=
     match expr with
-    | .var _ _ => rfl
-    | .bvar x => by
-      show SingleLaneExpr.intp2Bvar (bvDepth ++ bv) x = SingleLaneExpr.intp2Bvar (bvDepth ++ bvLiftBy ++ bv) (if x < bvDepth.length then x else x + bvLiftBy.length)
-      unfold SingleLaneExpr.intp2Bvar
+    | .const _ _ => rfl
+    | .var x => by
+      show SingleLaneExpr.intp2Var (bvDepth ++ bv) x = SingleLaneExpr.intp2Var (bvDepth ++ bvLiftBy ++ bv) (if x < bvDepth.length then x else x + bvLiftBy.length)
+      unfold SingleLaneExpr.intp2Var
       rw [List.append_assoc]
       split_ifs with h1
       · rw [List.getElem?_append_left h1]

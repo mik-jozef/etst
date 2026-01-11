@@ -2,7 +2,7 @@ import Lean
 import Lean.Elab
 import Lean.Parser.Term
 
-import Etst.Subtyping.Syntax.VarsSat
+import Etst.Subtyping.Syntax.ConstsSat
 import Etst.WFC.Ch5_S1_AProofSystem
 import Etst.WFC.Utils.PairExpr
 
@@ -13,52 +13,52 @@ open Lean Elab Command Term Meta Syntax
 def Expr.noneLtSize
   (size: Nat)
 :
-  (none (E := E)).VarsLt size
+  (none (E := E)).ConstsLt size
 :=
   nofun
 
-def DefList.DependsOn.toUsesVar {getDef a b}
+def DefList.DependsOn.toUsesConst {getDef a b}
   (depOn: DependsOn getDef a b)
 :
-  ∃ x, (getDef x).UsesVar b
+  ∃ x, (getDef x).UsesConst b
 :=
   match depOn with
   | Base usesVar => ⟨_, usesVar⟩
-  | Rec _ depOn => depOn.toUsesVar
+  | Rec _ depOn => depOn.toUsesConst
 
 
-def FiniteDefList.VarsLt
+def FiniteDefList.ConstsLt
   (getDef: DefList.GetDef)
   (size: Nat)
 :=
-  ∀ x, (getDef x).VarsLt size
+  ∀ x, (getDef x).ConstsLt size
 
-def FiniteDefList.isFinBounded_of_varsLt
-  (varsLt: VarsLt getDef size)
+def FiniteDefList.isFinBounded_of_constsLt
+  (constsLt: ConstsLt getDef size)
 :
   DefList.IsFinBounded getDef
 :=
   fun _ => ⟨
     size,
     fun depOn =>
-      let ⟨x, usesVar⟩ := depOn.toUsesVar
-      varsLt x _ usesVar,
+      let ⟨x, usesVar⟩ := depOn.toUsesConst
+      constsLt x _ usesVar,
   ⟩
 
 structure FiniteDefList extends FinBoundedDL where
-  varList: List String
-  varsLt: FiniteDefList.VarsLt getDef varList.length
-  isFinBounded := FiniteDefList.isFinBounded_of_varsLt varsLt
+  constNames: List String
+  constsLt: FiniteDefList.ConstsLt getDef constNames.length
+  isFinBounded := FiniteDefList.isFinBounded_of_constsLt constsLt
 
 def FiniteDefList.size
   (dl: FiniteDefList)
 :=
-  dl.varList.length
+  dl.constNames.length
 
 def FiniteDefList.empty: FiniteDefList := {
   getDef := fun _ => Expr.none
-  varList := []
-  varsLt := fun _ => Expr.noneLtSize _
+  constNames := []
+  constsLt := fun _ => Expr.noneLtSize _
   isClean := fun _ => rfl
 }
 
@@ -67,7 +67,7 @@ def FiniteDefList.emptySizeZero: empty.size = 0 := rfl
 structure FiniteDefList.Def (size: Nat) where
   name: String
   expr: BasicExpr
-  varsLt: expr.VarsLt size
+  constsLt: expr.ConstsLt size
   isClean: expr.IsClean
 
 def FiniteDefList.defsGetNth
@@ -79,7 +79,7 @@ def FiniteDefList.defsGetNth
   defs[n]?.getD {
     name := "«empty»"
     expr := Expr.none
-    varsLt := Expr.noneLtSize ub
+    constsLt := Expr.noneLtSize ub
     isClean := rfl
   }
 
@@ -104,20 +104,20 @@ def FiniteDefList.extend
       else defsToGetDef defs (x - dl.size)
   {
     getDef
-    varList := dl.varList ++ defs.map Def.name
-    varsLt :=
-      fun x y (usesVar: (getDef x).UsesVar y) => by
+    constNames := dl.constNames ++ defs.map Def.name
+    constsLt :=
+      fun x y (usesVar: (getDef x).UsesConst y) => by
         unfold getDef at usesVar
         rw [List.length_append]
         if h: x < dl.size then
           rw [if_pos h] at usesVar
           apply Nat.lt_add_right
-          exact dl.varsLt x y usesVar
+          exact dl.constsLt x y usesVar
         else
           rw [if_neg h] at usesVar
           unfold size at ubEq
           rw [List.length_map, ←ubEq]
-          exact (defsGetNth defs (x - dl.size)).varsLt _ usesVar
+          exact (defsGetNth defs (x - dl.size)).constsLt _ usesVar
     isClean := by
       intro x
       unfold getDef
@@ -143,14 +143,14 @@ def FiniteDefList.Prelude: FiniteDefList :=
   FiniteDefList.ofDefs (ub := 2) [
     {
       name := "Any"
-      expr := Expr.arbUn (Expr.bvar 0)
-      varsLt := fun _ h => nomatch h
+      expr := Expr.arbUn (Expr.var 0)
+      constsLt := fun _ h => nomatch h
       isClean := rfl
     },
     {
       name := "None"
-      expr := Expr.arbIr (Expr.bvar 0)
-      varsLt := fun _ h => nomatch h
+      expr := Expr.arbIr (Expr.var 0)
+      constsLt := fun _ h => nomatch h
       isClean := rfl
     }
   ] rfl
@@ -201,10 +201,10 @@ macro_rules
   `(s3_pair_expr| ($a -> $b) & ($b -> $a))
 -- Bounded existential quantifier
 | `(s3_pair_expr| Ex $x:ident: $domain, $body) =>
-  `(s3_pair_expr| Ex $x, $(x):ident & $domain then $body)
+  `(s3_pair_expr| Ex $x, $x:ident & $domain then $body)
 -- Bounded universal quantifier
 | `(s3_pair_expr| All $x:ident: $domain, $body) =>
-  `(s3_pair_expr| All $x, (?some ($(x):ident & !$domain)) | $body)
+  `(s3_pair_expr| All $x, (?some ($x:ident & !$domain)) | $body)
 
 
 -- Definitions
@@ -239,40 +239,40 @@ namespace pair_def_list
       stx
       s!"Implementation error: unexpected syntax for {item}."
   
-  inductive VarRepr
+  inductive Ident
+  | const (x: Nat)
   | var (x: Nat)
-  | bvar (x: Nat)
   deriving DecidableEq
   
   -- Convert `s3_pair_expr` syntax to a Lean term representing `Expr`
   partial def makeExpr
-    (vars: String → Option VarRepr)
-    (bvi: Nat := 0) -- bound variable index
+    (idents: String → Option Ident)
+    (varDepth: Nat := 0) -- how many quantifiers we've gone under
   :
     Syntax →
     TermElabM (TSyntax `term)
   |
     `(s3_pair_expr| $name:ident) => do
-      match vars name.getId.toString with
+      match idents name.getId.toString with
       | none =>
-        throwErrorAt name (s!"Unknown variable '{name.getId}'")
-      | some (.var x) => `(Expr.var () $(mkNumLit x.repr))
-      | some (.bvar x) => `(Expr.bvar $(mkNumLit x.repr))
+        throwErrorAt name (s!"Unknown identifier '{name.getId}'")
+      | some (.const x) => `(Expr.const () $(mkNumLit x.repr))
+      | some (.var x) => `(Expr.var $(mkNumLit x.repr))
   |
     `(s3_pair_expr| .$name:ident) => do
-      match vars name.getId.toString with
+      match idents name.getId.toString with
       | none =>
-        throwErrorAt name (s!"Unknown variable '{name.getId}'")
-      | some (.var x) => `(SingleLaneExpr.var .posLane $(mkNumLit x.repr))
-      | some (.bvar _) =>
+        throwErrorAt name (s!"Unknown identifier '{name.getId}'")
+      | some (.const x) => `(SingleLaneExpr.const .posLane $(mkNumLit x.repr))
+      | some (.var _) =>
         throwErrorAt name (s!"Bound variable cannot have a lane selector.")
   |
     `(s3_pair_expr| :$name:ident) => do
-      match vars name.getId.toString with
+      match idents name.getId.toString with
       | none =>
-        throwErrorAt name (s!"Unknown variable '{name.getId}'")
-      | some (.var x) => `(SingleLaneExpr.var .defLane $(mkNumLit x.repr))
-      | some (.bvar _) =>
+        throwErrorAt name (s!"Unknown identifier '{name.getId}'")
+      | some (.const x) => `(SingleLaneExpr.const .defLane $(mkNumLit x.repr))
+      | some (.var _) =>
         throwErrorAt name (s!"Bound variable cannot have a lane selector.")
   |
     `(s3_pair_expr| null) => `(Expr.null)
@@ -280,125 +280,132 @@ namespace pair_def_list
     `(s3_pair_expr|
       (?some $body:s3_pair_expr))
     => do
-      `(Expr.condSome $(← makeExpr vars bvi body))
+      `(Expr.condSome $(← makeExpr idents varDepth body))
   |
     `(s3_pair_expr|
       (?full $body:s3_pair_expr))
     => do
-      `(Expr.condFull $(← makeExpr vars bvi body))
+      `(Expr.condFull $(← makeExpr idents varDepth body))
   |
     `(s3_pair_expr|
       ($a:s3_pair_expr, $b:s3_pair_expr))
     => do
       `(Expr.pair
-        $(← makeExpr vars bvi a)
-        $(← makeExpr vars bvi b))
+        $(← makeExpr idents varDepth a)
+        $(← makeExpr idents varDepth b))
   |
     `(s3_pair_expr| ! $a:s3_pair_expr)
-    => do `(Expr.compl $(← makeExpr vars bvi a))
+    => do `(Expr.compl $(← makeExpr idents varDepth a))
   |
     `(s3_pair_expr|
       $a:s3_pair_expr | $b:s3_pair_expr)
     => do
       `(Expr.un
-        $(← makeExpr vars bvi a)
-        $(← makeExpr vars bvi b))
+        $(← makeExpr idents varDepth a)
+        $(← makeExpr idents varDepth b))
   |
     `(s3_pair_expr|
       $a:s3_pair_expr & $b:s3_pair_expr)
     => do
       `(Expr.ir
-        $(← makeExpr vars bvi a)
-        $(← makeExpr vars bvi b))
+        $(← makeExpr idents varDepth a)
+        $(← makeExpr idents varDepth b))
   |
     `(s3_pair_expr| $a:s3_pair_expr then $b:s3_pair_expr)
     => do
       `(Expr.ifThen
-        $(← makeExpr vars bvi a)
-        $(← makeExpr vars bvi b))
+        $(← makeExpr idents varDepth a)
+        $(← makeExpr idents varDepth b))
   |
     `(s3_pair_expr| Ex $x:ident, $body:s3_pair_expr)
     => do
-      let var := some (.bvar bvi)
-      let vars := Function.update vars x.getId.toString var
-      `(Expr.arbUn $(← makeExpr vars bvi.succ body))
+      let ident := some (.var varDepth)
+      let idents := Function.update idents x.getId.toString ident
+      `(Expr.arbUn $(← makeExpr idents varDepth.succ body))
   |
     `(s3_pair_expr| All $x:ident, $body:s3_pair_expr)
     => do
-      let var := some (.bvar bvi)
-      let vars := Function.update vars x.getId.toString var
-      `(Expr.arbIr $(← makeExpr vars bvi.succ body))
+      let ident := some (.var varDepth)
+      let idents := Function.update idents x.getId.toString ident
+      `(Expr.arbIr $(← makeExpr idents varDepth.succ body))
   |
     stx => do
     match ← liftMacroM (Macro.expandMacro? stx) with
     | some stxNew => do
-      makeExpr vars bvi stxNew
+      makeExpr idents varDepth stxNew
     | none => termStxErr stx "s3_pair_expr"
   
   
-  abbrev Vars := List String
+  abbrev DefNames := List String
   
-  def Vars.empty: Vars := []
+  def DefNames.empty: DefNames := []
   
-  def Vars.enc (vars: Vars) (x: String): Option VarRepr :=
-    match vars.idxOf? x with
+  def DefNames.enc (names: DefNames) (x: String): Option Ident :=
+    match names.idxOf? x with
     | none => none
-    | some n => some (.var n)
+    | some n => some (.const n)
   
-  def Vars.push
-    (vars: Vars)
+  def DefNames.push
+    (names: DefNames)
     (nameStx: TSyntax `ident)
   :
-    TermElabM Vars
+    TermElabM DefNames
   := do
     let name := nameStx.getId.toString
     
-    if vars.enc name != none then
-      throwErrorAt nameStx (s!"Duplicate variable '{name}'.")
+    if names.enc name != none then
+      throwErrorAt nameStx (s!"Duplicate identifier '{name}'.")
     else
-      return vars.concat name
+      return names.concat name
   
-  -- For a def list named `dl`, generates `def dl.vars.foo: Nat := ...`.
-  def Vars.getVarDefs
-    (vars: Vars)
+  /-
+    For a def list named `dl`, generates syntax for
+    
+    ```
+      def dl.consts.foo := [foo's index]
+      def dl.vals.foo := dl.getDef [foo's index]
+      ...
+    ```
+  -/
+  def DefNames.mkAccessors
+    (names: DefNames)
     (dlName: Name)
   :
     CommandElabM (TSyntaxArray `command)
   := do
     let mut cmds := #[]
     let mut i := 0
-    for name in vars do
+    for name in names do
       let num := mkNumLit i.repr
-      let varName := mkIdent ((dlName.append `vars).append name.toName)
+      let defName := mkIdent ((dlName.append `consts).append name.toName)
       let valName := mkIdent ((dlName.append `vals).append name.toName)
       let dlIdent := mkIdent dlName
       
-      cmds := cmds.push (← `(def $varName := $num))
+      cmds := cmds.push (← `(def $defName := $num))
       cmds := cmds.push (← `(def $valName := ($dlIdent).getDef $num))
       i := i + 1
     return cmds
       
   
-  -- Get all variable names defined in the def list.
-  def getVars
-    (defs: List Syntax)
-    (varsSoFar: Vars)
+  def DefNames.appendNames
+    (names: DefNames)
+    (toAppend: List Syntax)
   :
-    TermElabM Vars
+    TermElabM DefNames
   :=
-    defs.foldlM (init := varsSoFar) fun vars df => do
+    toAppend.foldlM (init := names) fun names df => do
       match df with
       | `(s3_pair_def| s3 $name:ident := $_) =>
-        vars.push name
+        names.push name
       | stx => termStxErr stx "s3 in pairDefList"
   
-  def getFinDefListVars
+  def getFinDlDefNames
     (defListName: Option (TSyntax `ident))
   :
-    TermElabM Vars
+    TermElabM DefNames
   :=
     match defListName with
-    | none => return Vars.empty
+    | none => return DefNames.empty
     | some parentName => do
       let name ← resolveGlobalConstNoOverload parentName
       let env ← getEnv
@@ -407,42 +414,42 @@ namespace pair_def_list
         throwErrorAt parentName s!"Impossible -- we just resolved the name."
       | some parentInfo =>
         let expr ← instantiateValueLevelParams parentInfo []
-        let varList ← liftMetaM $ unsafe evalExpr
+        let constNames ← liftMetaM $ unsafe evalExpr
           (List String)
           (mkApp (.const ``List [0]) (.const ``String []))
           (mkApp
-            (.const ``FiniteDefList.varList [])
+            (.const ``FiniteDefList.constNames [])
             expr)
         
-        varList.foldlM
-          (fun vars name =>
-            vars.push (mkIdent name.toName))
-          Vars.empty
+        constNames.foldlM
+          (fun names name =>
+            names.push (mkIdent name.toName))
+          DefNames.empty
   
   
-  def getDefs
-    (vars: Vars)
+  def processDefs
+    (names: DefNames)
     (defs: List Syntax)
   :
     TermElabM (TSyntax `term)
   := do
-    let defsTerms ← defs.mapM fun df => do
+    let defTerms ← defs.mapM fun df => do
       match df with
       | `(s3_pair_def| s3 $name := $expr) =>
-        let expr ← makeExpr vars.enc 0 expr
-        let size := mkNumLit vars.length.repr
+        let expr ← makeExpr names.enc 0 expr
+        let size := mkNumLit names.length.repr
         `({
           expr := $expr
           name := $(mkStrLit name.getId.toString)
-          varsLt := (by decide: ($expr).VarsLt $size)
+          constsLt := (by decide: ($expr).ConstsLt $size)
           isClean := rfl
         })
       | stx => termStxErr stx "s3 in pairDefList"
     
-    let defsTermsArray := defsTerms.toArray
-    `([$defsTermsArray,*])
+    let defTermsArray := defTerms.toArray
+    `([$defTermsArray,*])
   
-  def getParent
+  def getParentName
     (parentName: Option (TSyntax `ident))
   :
     CommandElabM (TSyntax `term)
@@ -460,24 +467,24 @@ namespace pair_def_list
         pairDefList.)
       =>
         let defs := defsArr.toList
-        let parentVars ←
-          liftTermElabM $ getFinDefListVars parentName
-        let vars ←
-          liftTermElabM $ getVars defs parentVars
+        let parentDefNames ←
+          liftTermElabM $ getFinDlDefNames parentName
+        let names ←
+          liftTermElabM $ parentDefNames.appendNames defs
         
         if diagnostics.get (← getOptions) then
-          logInfo s!"Declared variables: {repr vars}"
+          logInfo s!"Declared identifiers: {repr names}"
         
         let mainDef ← `(
           def $name : FiniteDefList :=
-            let parent := $(← getParent parentName)
-            let defs := $(← liftTermElabM $ getDefs vars defs)
+            let parent := $(← getParentName parentName)
+            let defs := $(← liftTermElabM $ processDefs names defs)
             
             FiniteDefList.extend parent defs rfl
         )
         
-        let varDefs ← vars.getVarDefs name.getId
-        return mkNullNode ((#[mainDef] ++ varDefs).map (·.raw))
+        let accessors ← names.mkAccessors name.getId
+        return mkNullNode ((#[mainDef] ++ accessors).map (·.raw))
       | stx => cmdStxErr stx "pairDefList"
   
   -- set_option diagnostics true
@@ -496,41 +503,41 @@ namespace pair_def_list
   
   -- #print ExampleDL
   
-  example: ExampleDL2.vars.C = 5 := rfl
+  example: ExampleDL2.consts.C = 5 := rfl
   
 end pair_def_list
 
 open pair_def_list in
 elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
-  let vars ← getFinDefListVars (some dl)
-  let result ← makeExpr vars.enc 0 expr
+  let names ← getFinDlDefNames (some dl)
+  let result ← makeExpr names.enc 0 expr
   elabTerm result none
 
 -- Test the new s3 syntax
 example:
   Eq
     s3(Etst.pair_def_list.ExampleDL, X | Y)
-    (.un (.var () 0) (.var () 1))
+    (.un (.const () 0) (.const () 1))
 :=
   rfl
 
 example:
   Eq
     s3(pair_def_list.ExampleDL2, C | Y)
-    (.un (.var () 5) (.var () 1))
+    (.un (.const () 5) (.const () 1))
 :=
   rfl
 
 example:
   Eq
     s3(Etst.pair_def_list.ExampleDL, .X | :Y)
-    (.un (.var .posLane 0) (.var .defLane 1))
+    (.un (.const .posLane 0) (.const .defLane 1))
 :=
   rfl
 
 example:
   Eq
     s3(pair_def_list.ExampleDL2, :C | :Y)
-    (.un (.var .defLane 5) (.var .defLane 1))
+    (.un (.const .defLane 5) (.const .defLane 1))
 :=
   rfl

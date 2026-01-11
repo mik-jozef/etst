@@ -1,6 +1,6 @@
 /-
-  Defines `freeVars`, a function that computes the free variables
-  of an expression.
+  Defines `constsSat`, a function that checks if all constants
+  of an expression satisfy a computable predicate.
 -/
 
 import Etst.WFC.Ch1_ExprDefList
@@ -8,30 +8,30 @@ import Etst.WFC.Ch1_ExprDefList
 namespace Etst
 
 
-abbrev Expr.VarsSat (expr: Expr E) (P: Nat → Prop): Prop :=
-  ∀ x ∈ expr.UsesVar, P x
+abbrev Expr.ConstsSat (expr: Expr E) (P: Nat → Prop): Prop :=
+  ∀ x ∈ expr.UsesConst, P x
 
-abbrev Expr.VarsLt (expr: Expr E) (bound: Nat): Prop :=
-  expr.VarsSat (· < bound)
+abbrev Expr.ConstsLt (expr: Expr E) (bound: Nat): Prop :=
+  expr.ConstsSat (· < bound)
 
 namespace Expr
-  instance varsSat
+  instance constsSat
     (expr: Expr E)
     (P: Nat → Prop)
     [DecidablePred P]
   :
-    Decidable (expr.VarsSat P)
+    Decidable (expr.ConstsSat P)
   :=
     match expr with
-    | .var _ xV =>
+    | .const _ xV =>
       if h: P xV then
         .isTrue (fun x (hx: x = xV) => hx.symm ▸ h)
       else
         .isFalse (fun hAll => h (hAll xV rfl))
-    | .bvar _ => .isTrue (fun _ h => h.elim)
+    | .var _ => .isTrue (fun _ h => h.elim)
     | .null => .isTrue (fun _ h => h.elim)
     | .pair left rite =>
-      match varsSat left P, varsSat rite P with
+      match constsSat left P, constsSat rite P with
       | .isTrue hL, .isTrue hR =>
         .isTrue fun
           | x, Or.inl isUsed => hL x isUsed
@@ -39,7 +39,7 @@ namespace Expr
       | .isFalse hL, _ => .isFalse (fun hAll => hL (fun x isUsed => hAll x (Or.inl isUsed)))
       | _, .isFalse hR => .isFalse (fun hAll => hR (fun x isUsed => hAll x (Or.inr isUsed)))
     | .ir left rite =>
-      match varsSat left P, varsSat rite P with
+      match constsSat left P, constsSat rite P with
       | .isTrue hL, .isTrue hR =>
         .isTrue fun
           | x, Or.inl isUsed => hL x isUsed
@@ -47,10 +47,10 @@ namespace Expr
       | .isFalse hL, _ => .isFalse (fun hAll => hL (fun x isUsed => hAll x (Or.inl isUsed)))
       | _, .isFalse hR => .isFalse (fun hAll => hR (fun x isUsed => hAll x (Or.inr isUsed)))
     | .condFull body =>
-      match varsSat body P with
+      match constsSat body P with
       | .isTrue h => .isTrue fun x isUsed => h x isUsed
       | .isFalse h => .isFalse fun hFull => h fun x isUsed => hFull x isUsed
-    | .compl expr => varsSat expr P
-    | .arbIr expr => varsSat expr P
+    | .compl expr => constsSat expr P
+    | .arbIr expr => constsSat expr P
 
 end Expr
