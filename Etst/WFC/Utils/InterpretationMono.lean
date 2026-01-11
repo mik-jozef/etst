@@ -8,175 +8,6 @@ import Etst.WFC.Utils.PairExpr
 
 namespace Etst
 
-
-namespace SingleLaneExpr
-  def inter_mono_std_compl
-    (le:
-      Set.Subset
-        (e1.intp2 bv1 c1 b1)
-        (e0.intp2 bv0 c0 b0))
-  :
-    Set.Subset
-      ((compl e0).intp2 bv0 b0 c0)
-      ((compl e1).intp2 bv1 b1 c1)
-  :=
-    fun _ ins =>
-      inCompl (fun isPos => inComplElim ins (le isPos))
-  
-  def eq_intp2_compl_of_eq
-    (eq:
-      Eq
-        (e0.intp2 bv0 c0 b0)
-        (e1.intp2 bv1 c1 b1))
-  :
-    Eq
-      ((compl e0).intp2 bv0 b0 c0)
-      ((compl e1).intp2 bv1 b1 c1)
-  :=
-    le_antisymm
-      (inter_mono_std_compl (le_of_eq eq.symm))
-      (inter_mono_std_compl (le_of_eq eq))
-  
-  
-  def inter_mono_std_arbUn
-    {bv0 bv1: List Pair}
-    {b0 c0 b1 c1: Valuation Pair}
-    (le:
-      ∀ dB,
-      Set.Subset
-        (e0.intp2 (dB :: bv0) b0 c0)
-        (e1.intp2 (dB :: bv1) b1 c1))
-  :
-    Set.Subset
-      ((arbUn e0).intp2 bv0 b0 c0)
-      ((arbUn e1).intp2 bv1 b1 c1)
-  :=
-    fun _ in0 =>
-      let ⟨dB, isDef⟩ := inArbUnElim in0
-      inArbUn dB ((le dB) isDef)
-  
-  def eq_intp2_arbUn_of_eq
-    {bv0 bv1: List Pair}
-    {b0 c0 b1 c1: Valuation Pair}
-    (eq:
-      ∀ dB,
-      Eq
-        (e0.intp2 (dB :: bv0) b0 c0)
-        (e1.intp2 (dB :: bv1) b1 c1))
-  :
-    Eq
-      ((arbUn e0).intp2 bv0 b0 c0)
-      ((arbUn e1).intp2 bv1 b1 c1)
-  :=
-    le_antisymm
-      (inter_mono_std_arbUn (fun dB => le_of_eq (eq dB)))
-      (inter_mono_std_arbUn (fun dB => le_of_eq (eq dB).symm))
-  
-  
-  def inter_mono_std_arbIr
-    {bv0 bv1: List Pair}
-    {b0 c0 b1 c1: Valuation Pair}
-    (le:
-      ∀ dB,
-      Set.Subset
-        (e0.intp2 (dB :: bv0) b0 c0)
-        (e1.intp2 (dB :: bv1) b1 c1))
-  :
-    Set.Subset
-      ((arbIr e0).intp2 bv0 b0 c0)
-      ((arbIr e1).intp2 bv1 b1 c1)
-  :=
-    fun _ h dB => (le dB) (h dB)
-  
-  def eq_intp2_arbIr_of_eq
-    {bv0 bv1: List Pair}
-    {b0 c0 b1 c1: Valuation Pair}
-    (eq:
-      ∀ dB,
-      Eq
-        (e0.intp2 (dB :: bv0) b0 c0)
-        (e1.intp2 (dB :: bv1) b1 c1))
-  :
-    Eq
-      ((arbIr e0).intp2 bv0 b0 c0)
-      ((arbIr e1).intp2 bv1 b1 c1)
-  :=
-    le_antisymm
-      (inter_mono_std_arbIr (fun dB => le_of_eq (eq dB)))
-      (inter_mono_std_arbIr (fun dB => le_of_eq (eq dB).symm))
-  
-end SingleLaneExpr
-
-namespace BasicExpr
-  open SingleLaneExpr
-  
-  def triIntp2_mono_std_compl
-    (le: triIntp2 e1 bv1 c1 b1 ≤ triIntp2 e0 bv0 c0 b0)
-  :
-    triIntp2 (compl e0) bv0 b0 c0 ≤ triIntp2 (compl e1) bv1 b1 c1
-  := {
-    defLe := inter_mono_std_compl le.posLe
-    posLe := inter_mono_std_compl le.defLe
-  }
-
-  def eq_triIntp2_compl_of_eq
-    (eq: triIntp2 e0 bv0 c0 b0 = triIntp2 e1 bv1 c1 b1)
-  :
-    triIntp2 (compl e0) bv0 b0 c0 = triIntp2 (compl e1) bv1 b1 c1
-  :=
-    Set3.eq
-      (eq_intp2_compl_of_eq (Set3.pos_eq eq))
-      (eq_intp2_compl_of_eq (Set3.def_eq eq))
-  
-  
-  def triIntp2_mono_std_arbUn
-    (le:
-      ∀ dB,
-      triIntp2 e0 (dB :: bv0) b0 c0 ≤ triIntp2 e1 (dB :: bv1) b1 c1)
-  :
-    triIntp2 (arbUn e0) bv0 b0 c0 ≤ triIntp2 (arbUn e1) bv1 b1 c1
-  := {
-    defLe := inter_mono_std_arbUn (fun (dB: Pair) => (le dB).defLe)
-    posLe := inter_mono_std_arbUn (fun (dB: Pair) => (le dB).posLe)
-  }
-  
-  def eq_triIntp2_arbUn_of_eq
-    (eq:
-      ∀ dB,
-      triIntp2 e0 (dB :: bv0) b0 c0 = triIntp2 e1 (dB :: bv1) b1 c1)
-  :
-    triIntp2 (arbUn e0) bv0 b0 c0 = triIntp2 (arbUn e1) bv1 b1 c1
-  :=
-    Set3.eq
-      (eq_intp2_arbUn_of_eq (fun (dB: Pair) => Set3.def_eq (eq dB)))
-      (eq_intp2_arbUn_of_eq (fun (dB: Pair) => Set3.pos_eq (eq dB)))
-  
-  
-  def triIntp2_mono_std_arbIr
-    (le:
-      ∀ dB,
-      triIntp2 e0 (dB :: bv0) b0 c0 ≤ triIntp2 e1 (dB :: bv1) b1 c1)
-  :
-    triIntp2 (arbIr e0) bv0 b0 c0 ≤ triIntp2 (arbIr e1) bv1 b1 c1
-  := {
-    defLe := inter_mono_std_arbIr (fun (dB: Pair) => (le dB).defLe)
-    posLe := inter_mono_std_arbIr (fun (dB: Pair) => (le dB).posLe)
-  }
-  
-  def eq_triIntp2_arbIr_of_eq
-    (eq:
-      ∀ dB,
-      triIntp2 e0 (dB :: bv0) b0 c0 = triIntp2 e1 (dB :: bv1) b1 c1)
-  :
-    triIntp2 (arbIr e0) bv0 b0 c0 = triIntp2 (arbIr e1) bv1 b1 c1
-  :=
-    Set3.eq
-      (eq_intp2_arbIr_of_eq (fun (dB: Pair) => Set3.def_eq (eq dB)))
-      (eq_intp2_arbIr_of_eq (fun (dB: Pair) => Set3.pos_eq (eq dB)))
-
-end BasicExpr
-
-
 namespace SingleLaneExpr
   open Expr
   
@@ -283,6 +114,67 @@ namespace SingleLaneExpr
       (intp2_mono_std_condFull (le_of_eq eq))
       (intp2_mono_std_condFull (le_of_eq eq.symm))
   
+  
+  def intp2_mono_std_compl
+    (le:
+      Set.Subset
+        (e1.intp2 bv1 c1 b1)
+        (e0.intp2 bv0 c0 b0))
+  :
+    Set.Subset
+      ((compl e0).intp2 bv0 b0 c0)
+      ((compl e1).intp2 bv1 b1 c1)
+  :=
+    fun _ ins =>
+      inCompl (fun isPos => inComplElim ins (le isPos))
+  
+  def eq_intp2_compl_of_eq
+    (eq:
+      Eq
+        (e0.intp2 bv0 c0 b0)
+        (e1.intp2 bv1 c1 b1))
+  :
+    Eq
+      ((compl e0).intp2 bv0 b0 c0)
+      ((compl e1).intp2 bv1 b1 c1)
+  :=
+    le_antisymm
+      (intp2_mono_std_compl (le_of_eq eq.symm))
+      (intp2_mono_std_compl (le_of_eq eq))
+  
+  
+  def intp2_mono_std_arbIr
+    {bv0 bv1: List Pair}
+    {b0 c0 b1 c1: Valuation Pair}
+    (le:
+      ∀ dB,
+      Set.Subset
+        (e0.intp2 (dB :: bv0) b0 c0)
+        (e1.intp2 (dB :: bv1) b1 c1))
+  :
+    Set.Subset
+      ((arbIr e0).intp2 bv0 b0 c0)
+      ((arbIr e1).intp2 bv1 b1 c1)
+  :=
+    fun _ h dB => (le dB) (h dB)
+  
+  def eq_intp2_arbIr_of_eq
+    {bv0 bv1: List Pair}
+    {b0 c0 b1 c1: Valuation Pair}
+    (eq:
+      ∀ dB,
+      Eq
+        (e0.intp2 (dB :: bv0) b0 c0)
+        (e1.intp2 (dB :: bv1) b1 c1))
+  :
+    Eq
+      ((arbIr e0).intp2 bv0 b0 c0)
+      ((arbIr e1).intp2 bv1 b1 c1)
+  :=
+    le_antisymm
+      (intp2_mono_std_arbIr (fun dB => le_of_eq (eq dB)))
+      (intp2_mono_std_arbIr (fun dB => le_of_eq (eq dB).symm))
+  
 end SingleLaneExpr
 
 namespace BasicExpr
@@ -388,5 +280,47 @@ namespace BasicExpr
     Set3.eq
       (eq_intp2_condFull_of_eq (Set3.def_eq eq))
       (eq_intp2_condFull_of_eq (Set3.pos_eq eq))
+  
+  
+  def triIntp2_mono_std_compl
+    (le: triIntp2 e1 bv1 c1 b1 ≤ triIntp2 e0 bv0 c0 b0)
+  :
+    triIntp2 (compl e0) bv0 b0 c0 ≤ triIntp2 (compl e1) bv1 b1 c1
+  := {
+    defLe := intp2_mono_std_compl le.posLe
+    posLe := intp2_mono_std_compl le.defLe
+  }
+
+  def eq_triIntp2_compl_of_eq
+    (eq: triIntp2 e0 bv0 c0 b0 = triIntp2 e1 bv1 c1 b1)
+  :
+    triIntp2 (compl e0) bv0 b0 c0 = triIntp2 (compl e1) bv1 b1 c1
+  :=
+    Set3.eq
+      (eq_intp2_compl_of_eq (Set3.pos_eq eq))
+      (eq_intp2_compl_of_eq (Set3.def_eq eq))
+  
+  
+  def triIntp2_mono_std_arbIr
+    (le:
+      ∀ dB,
+      triIntp2 e0 (dB :: bv0) b0 c0 ≤ triIntp2 e1 (dB :: bv1) b1 c1)
+  :
+    triIntp2 (arbIr e0) bv0 b0 c0 ≤ triIntp2 (arbIr e1) bv1 b1 c1
+  := {
+    defLe := intp2_mono_std_arbIr (fun (dB: Pair) => (le dB).defLe)
+    posLe := intp2_mono_std_arbIr (fun (dB: Pair) => (le dB).posLe)
+  }
+  
+  def eq_triIntp2_arbIr_of_eq
+    (eq:
+      ∀ dB,
+      triIntp2 e0 (dB :: bv0) b0 c0 = triIntp2 e1 (dB :: bv1) b1 c1)
+  :
+    triIntp2 (arbIr e0) bv0 b0 c0 = triIntp2 (arbIr e1) bv1 b1 c1
+  :=
+    Set3.eq
+      (eq_intp2_arbIr_of_eq (fun (dB: Pair) => Set3.def_eq (eq dB)))
+      (eq_intp2_arbIr_of_eq (fun (dB: Pair) => Set3.pos_eq (eq dB)))
   
 end BasicExpr

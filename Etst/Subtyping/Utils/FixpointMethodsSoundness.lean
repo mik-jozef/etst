@@ -129,16 +129,16 @@ def MutIndDescriptor.le_hypothesify
     intp2_mono_std_condFull
       (desc.le_hypothesify bv bvDepth inv laneEq.elimCondFull v_le)
   | .compl _, true =>
-    inter_mono_std_compl
+    intp2_mono_std_compl
       (desc.le_hypothesify bv bvDepth inv laneEq.elimCompl v_le)
   | .compl _, false =>
-    inter_mono_std_compl
+    intp2_mono_std_compl
       (desc.le_hypothesify bv bvDepth inv laneEq.elimCompl v_le)
   | .arbIr _, true =>
-    inter_mono_std_arbIr fun d =>
+    intp2_mono_std_arbIr fun d =>
       desc.le_hypothesify bv (d :: bvDepth) inv laneEq.elimArbIr v_le
   | .arbIr _, false =>
-    inter_mono_std_arbIr fun d =>
+    intp2_mono_std_arbIr fun d =>
       desc.le_hypothesify bv (d :: bvDepth) inv laneEq.elimArbIr v_le
 
 
