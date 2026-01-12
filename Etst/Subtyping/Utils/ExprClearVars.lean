@@ -290,7 +290,7 @@ namespace Expr
   :=
     match expr with
     | .const _ _ => 0
-    | .var x => if x < depth then 0 else x + 1 - depth
+    | .var x => x + 1 - depth
     | .null => 0
     | .pair left rite =>
         Nat.max (left.freeVarUB depth) (rite.freeVarUB depth)
@@ -298,87 +298,87 @@ namespace Expr
         Nat.max (left.freeVarUB depth) (rite.freeVarUB depth)
     | .condFull body => body.freeVarUB depth
     | .compl body => body.freeVarUB depth
-    | .arbIr body => body.freeVarUB depth
+    | .arbIr body => body.freeVarUB (depth + 1)
   
   def freeVarUB_pair_lt_left
-    (h : (pair l r).freeVarUB d < x)
+    (h: (pair l r).freeVarUB d < x)
   :
     l.freeVarUB d < x
   :=
     Nat.lt_of_le_of_lt (Nat.le_max_left _ _) h
   
   def freeVarUB_pair_lt_rite
-    (h : (pair l r).freeVarUB d < x)
+    (h: (pair l r).freeVarUB d < x)
   :
     r.freeVarUB d < x
   :=
     Nat.lt_of_le_of_lt (Nat.le_max_right _ _) h
   
   def freeVarUB_un_lt_left
-    (h : (un l r).freeVarUB d < x)
+    (h: (un l r).freeVarUB d < x)
   :
     l.freeVarUB d < x
   :=
     Nat.lt_of_le_of_lt (Nat.le_max_left _ _) h
   
   def freeVarUB_un_lt_rite
-    (h : (un l r).freeVarUB d < x)
+    (h: (un l r).freeVarUB d < x)
   :
     r.freeVarUB d < x
   :=
     Nat.lt_of_le_of_lt (Nat.le_max_right _ _) h
   
   def freeVarUB_ir_lt_left
-    (h : (ir l r).freeVarUB d < x)
+    (h: (ir l r).freeVarUB d < x)
   :
     l.freeVarUB d < x
   :=
     Nat.lt_of_le_of_lt (Nat.le_max_left _ _) h
   
   def freeVarUB_ir_lt_rite
-    (h : (ir l r).freeVarUB d < x)
+    (h: (ir l r).freeVarUB d < x)
   :
     r.freeVarUB d < x
   :=
     Nat.lt_of_le_of_lt (Nat.le_max_right _ _) h
   
   def freeVarUB_pair_le_left
-    (h : (pair l r).freeVarUB d ≤ x)
+    (h: (pair l r).freeVarUB d ≤ x)
   :
     l.freeVarUB d ≤ x
   :=
     Nat.le_trans (Nat.le_max_left _ _) h
   
   def freeVarUB_pair_le_rite
-    (h : (pair l r).freeVarUB d ≤ x)
+    (h: (pair l r).freeVarUB d ≤ x)
   :
     r.freeVarUB d ≤ x
   :=
     Nat.le_trans (Nat.le_max_right _ _) h
   
   def freeVarUB_un_le_left
-    (h : (un l r).freeVarUB d ≤ x)
+    (h: (un l r).freeVarUB d ≤ x)
   :
     l.freeVarUB d ≤ x
   :=
     Nat.le_trans (Nat.le_max_left _ _) h
   
   def freeVarUB_un_le_rite
-    (h : (un l r).freeVarUB d ≤ x)
+    (h: (un l r).freeVarUB d ≤ x)
   :
     r.freeVarUB d ≤ x
   :=
     Nat.le_trans (Nat.le_max_right _ _) h
   
   def freeVarUB_ir_le_left
-    (h : (ir l r).freeVarUB d ≤ x)
+    (h: (ir l r).freeVarUB d ≤ x)
   :
     l.freeVarUB d ≤ x
   :=
     Nat.le_trans (Nat.le_max_left _ _) h
   
   def freeVarUB_ir_le_rite
-    (h : (ir l r).freeVarUB d ≤ x)
+    (h: (ir l r).freeVarUB d ≤ x)
   :
     r.freeVarUB d ≤ x
   :=
@@ -387,16 +387,22 @@ namespace Expr
   
   def clearVars_eq_of_ub
     {expr: Expr E}
-    {ub: Nat}
-    (h: expr.freeVarUB ≤ ub)
+    {ub depth: Nat}
+    (h: expr.freeVarUB depth ≤ ub)
   :
-    Expr.clearVars ub expr = expr
+    Expr.clearVars (ub + depth) expr = expr
   :=
     let leL {l r} (h: max l r ≤ ub) := Nat.le_trans (Nat.le_max_left l r) h
     let leR {l r} (h: max l r ≤ ub) := Nat.le_trans (Nat.le_max_right l r) h
     match expr with
     | .const _ _ => rfl
-    | .var _ => clearVars_eq_var (Nat.lt_of_succ_le h)
+    | .var _ => by
+      unfold clearVars
+      split_ifs with h_cv
+      · rfl
+      · exfalso
+        unfold freeVarUB at h
+        · omega
     | .null => rfl
     | .pair _ _ =>
       congrArg₂ Expr.pair
@@ -413,7 +419,7 @@ namespace Expr
     | .arbIr _ =>
       congrArg
         Expr.arbIr
-        (clearVars_eq_of_ub (Nat.le_trans h (Nat.le_succ _)))
+        (clearVars_eq_of_ub (depth := depth + 1) h)
 end Expr
 
 namespace SingleLaneExpr
@@ -429,5 +435,7 @@ namespace SingleLaneExpr
   := by
     unfold SingleLaneExpr.intp
     rw [SingleLaneExpr.clearVars_preserves_interp_bv]
-    rw [Expr.clearVars_eq_of_ub h]
+    have: Expr.clearVars bv.length expr = expr :=
+      Expr.clearVars_eq_of_ub h
+    rw [this]
 end SingleLaneExpr
