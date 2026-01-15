@@ -265,13 +265,11 @@ namespace SingleLaneExpr
       (expr.intp2 bvLeft b c)
       (intp2 (expr.replaceVarsNat bvMap) bvRite b c)
   :=
-    let bvEq (x) (hx: x ∈ expr.UsesFreeVar):
-      intp2Var bvLeft x = intp2Var bvRite (bvMap x)
-    :=
-      congrArg
-        (fun | none => (∅: Set Pair) | some d => {d})
-        (bvEq x hx)
-    
-    intp2_replaceVars_eq2 (fun x => .var (bvMap x)) bvEq bvEq
+    (fun ab a => ab a a)
+      (intp2_replaceVars_eq2 (fun x => .var (bvMap x)))
+      (fun x hx =>
+        congrArg
+          (fun | none => (∅: Set Pair) | some d => {d})
+          (bvEq x hx))
   
 end SingleLaneExpr
