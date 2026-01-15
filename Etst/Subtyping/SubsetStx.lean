@@ -121,12 +121,11 @@ def MutIndDescriptor.hypothesis
 
 def MutIndDescriptor.hypothesify
   (desc: MutIndDescriptor dl)
-  (depth := 0)
   (expr: SingleLaneExpr)
 :
   SingleLaneExpr
 :=
-  expr.replaceDepthEvenConsts depth true desc.hypothesis
+  expr.replaceDepthEvenConsts 0 true desc.hypothesis
 
 
 inductive ContextVariableKind
@@ -311,7 +310,7 @@ inductive DefList.SubsetStx
         x
         (condFull
           (impl
-            (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
+            (desc.hypothesify (desc[i].expansion.toLane desc[i].lane))
             desc[i].expr)))
     (i: desc.Index)
   :
@@ -1058,7 +1057,7 @@ namespace DefList.SubsetStx
       (i: desc.Index) →
       dl.SubsetStx
         ctx
-        (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
+        (desc.hypothesify (desc[i].expansion.toLane desc[i].lane))
         desc[i].expr)
     (i: desc.Index)
   :
@@ -1217,17 +1216,22 @@ namespace DefList.SubsetStx
 end DefList.SubsetStx
 
 
--- Semantic entailment.
-abbrev DefList.SubsetBv
-  (dl: DefList)
-  (bv: List Pair)
-  (a b: SingleLaneExpr)
+abbrev SingleLaneExpr.intpUnivClosure
+  (expr: SingleLaneExpr)
+  (v: Valuation Pair)
+:
+  Set Pair
 :=
-  Set.Subset (a.intp bv dl.wfm) (b.intp bv dl.wfm)
+  fun p =>
+    ∀ bv,
+      expr.freeVarUB ≤ bv.length →
+      expr.intp bv v p
 
 -- Semantic entailment.
 abbrev DefList.Subset
   (dl: DefList)
   (a b: SingleLaneExpr)
 :=
-  ∀ bv, dl.SubsetBv bv a b
+  Set.Subset
+    (a.intpUnivClosure dl.wfm)
+    (b.intpUnivClosure dl.wfm)

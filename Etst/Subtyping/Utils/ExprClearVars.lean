@@ -300,6 +300,15 @@ namespace Expr
     | .compl body => body.freeVarUB depth
     | .arbIr body => body.freeVarUB (depth + 1)
   
+  
+  def freeVarUB_pair_lt
+    (hl: l.freeVarUB d < x)
+    (hr: r.freeVarUB d < x)
+  :
+    (pair l r).freeVarUB d < x
+  :=
+    Nat.max_lt.mpr ⟨hl, hr⟩
+  
   def freeVarUB_pair_lt_left
     (h: (pair l r).freeVarUB d < x)
   :
@@ -313,6 +322,22 @@ namespace Expr
     r.freeVarUB d < x
   :=
     Nat.lt_of_le_of_lt (Nat.le_max_right _ _) h
+  
+  def freeVarUB_pair_lt_elim
+    (h: (pair l r).freeVarUB d < x)
+  :
+    l.freeVarUB d < x ∧ r.freeVarUB d < x
+  :=
+    ⟨freeVarUB_pair_lt_left h, freeVarUB_pair_lt_rite h⟩
+  
+  
+  def freeVarUB_un_lt
+    (hl: l.freeVarUB d < x)
+    (hr: r.freeVarUB d < x)
+  :
+    (un l r).freeVarUB d < x
+  :=
+    Nat.max_lt.mpr ⟨hl, hr⟩
   
   def freeVarUB_un_lt_left
     (h: (un l r).freeVarUB d < x)
@@ -328,6 +353,22 @@ namespace Expr
   :=
     Nat.lt_of_le_of_lt (Nat.le_max_right _ _) h
   
+  def freeVarUB_un_lt_elim
+    (h: (un l r).freeVarUB d < x)
+  :
+    l.freeVarUB d < x ∧ r.freeVarUB d < x
+  :=
+    ⟨freeVarUB_un_lt_left h, freeVarUB_un_lt_rite h⟩
+  
+  
+  def freeVarUB_ir_lt
+    (hl: l.freeVarUB d < x)
+    (hr: r.freeVarUB d < x)
+  :
+    (ir l r).freeVarUB d < x
+  :=
+    Nat.max_lt.mpr ⟨hl, hr⟩
+  
   def freeVarUB_ir_lt_left
     (h: (ir l r).freeVarUB d < x)
   :
@@ -341,6 +382,33 @@ namespace Expr
     r.freeVarUB d < x
   :=
     Nat.lt_of_le_of_lt (Nat.le_max_right _ _) h
+  
+  def freeVarUB_ir_lt_elim
+    (h: (ir l r).freeVarUB d < x)
+  :
+    l.freeVarUB d < x ∧ r.freeVarUB d < x
+  :=
+    ⟨freeVarUB_ir_lt_left h, freeVarUB_ir_lt_rite h⟩
+  
+  
+  def freeVarUB_null_le {E d x}:
+    freeVarUB null (E := E) d ≤ x
+  :=
+    Nat.zero_le _
+  
+  def freeVarUB_any_le {E d x}:
+    freeVarUB any (E := E) d ≤ x
+  :=
+    show 0 + 1 - (d + 1) ≤ x by simp
+  
+  
+  def freeVarUB_pair_le
+    (hl: l.freeVarUB d ≤ x)
+    (hr: r.freeVarUB d ≤ x)
+  :
+    (pair l r).freeVarUB d ≤ x
+  :=
+    Nat.max_le.mpr ⟨hl, hr⟩
   
   def freeVarUB_pair_le_left
     (h: (pair l r).freeVarUB d ≤ x)
@@ -356,6 +424,22 @@ namespace Expr
   :=
     Nat.le_trans (Nat.le_max_right _ _) h
   
+  def freeVarUB_pair_le_elim
+    (h: (pair l r).freeVarUB d ≤ x)
+  :
+    l.freeVarUB d ≤ x ∧ r.freeVarUB d ≤ x
+  :=
+    ⟨freeVarUB_pair_le_left h, freeVarUB_pair_le_rite h⟩
+  
+  
+  def freeVarUB_un_le
+    (hl: l.freeVarUB d ≤ x)
+    (hr: r.freeVarUB d ≤ x)
+  :
+    (un l r).freeVarUB d ≤ x
+  :=
+    Nat.max_le.mpr ⟨hl, hr⟩
+  
   def freeVarUB_un_le_left
     (h: (un l r).freeVarUB d ≤ x)
   :
@@ -369,6 +453,22 @@ namespace Expr
     r.freeVarUB d ≤ x
   :=
     Nat.le_trans (Nat.le_max_right _ _) h
+  
+  def freeVarUB_un_le_elim
+    (h: (un l r).freeVarUB d ≤ x)
+  :
+    l.freeVarUB d ≤ x ∧ r.freeVarUB d ≤ x
+  :=
+    ⟨freeVarUB_un_le_left h, freeVarUB_un_le_rite h⟩
+  
+  
+  def freeVarUB_ir_le
+    (hl: l.freeVarUB d ≤ x)
+    (hr: r.freeVarUB d ≤ x)
+  :
+    (ir l r).freeVarUB d ≤ x
+  :=
+    Nat.max_le.mpr ⟨hl, hr⟩
   
   def freeVarUB_ir_le_left
     (h: (ir l r).freeVarUB d ≤ x)
