@@ -1,6 +1,7 @@
 import Etst.WFC.Ch2_Interpretation
 import Etst.WFC.Utils.RulesOfInference
 import Etst.WFC.Utils.InterpretationMono
+import Etst.Subtyping.Utils.ExprConstsVarsSat
 
 namespace Etst
 
@@ -39,7 +40,7 @@ namespace Expr
   :=
     show var _ = _ from if_neg (not_lt.mpr ge) ▸ rfl
   
-  def lift_eq_zero
+  def lift_zero_eq
     (expr: Expr E)
     (depth: Nat)
   :
@@ -56,20 +57,20 @@ namespace Expr
     | pair l r =>
       congrArg₂
         pair
-        (l.lift_eq_zero depth)
-        (r.lift_eq_zero depth)
+        (l.lift_zero_eq depth)
+        (r.lift_zero_eq depth)
     | ir l r =>
       congrArg₂
         ir
-        (l.lift_eq_zero depth)
-        (r.lift_eq_zero depth)
-    | condFull body => congrArg condFull (body.lift_eq_zero depth)
-    | compl body => congrArg compl (body.lift_eq_zero depth)
-    | arbIr body => congrArg arbIr (body.lift_eq_zero depth.succ)
+        (l.lift_zero_eq depth)
+        (r.lift_zero_eq depth)
+    | condFull body => congrArg condFull (body.lift_zero_eq depth)
+    | compl body => congrArg compl (body.lift_zero_eq depth)
+    | arbIr body => congrArg arbIr (body.lift_zero_eq depth.succ)
 end Expr
 
 namespace SingleLaneExpr
-  def intp2_lift_eq_helper
+  def intp2_lift_eq_depth
     (expr: SingleLaneExpr)
     (bv bvDepth bvLiftBy: List Pair)
     (b c: Valuation Pair)
@@ -103,21 +104,21 @@ namespace SingleLaneExpr
     | .null => rfl
     | .pair l r =>
       eq_intp2_pair_of_eq
-        (intp2_lift_eq_helper l bv bvDepth bvLiftBy b c)
-        (intp2_lift_eq_helper r bv bvDepth bvLiftBy b c)
+        (intp2_lift_eq_depth l bv bvDepth bvLiftBy b c)
+        (intp2_lift_eq_depth r bv bvDepth bvLiftBy b c)
     | .ir l r =>
       eq_intp2_ir_of_eq
-        (intp2_lift_eq_helper l bv bvDepth bvLiftBy b c)
-        (intp2_lift_eq_helper r bv bvDepth bvLiftBy b c)
+        (intp2_lift_eq_depth l bv bvDepth bvLiftBy b c)
+        (intp2_lift_eq_depth r bv bvDepth bvLiftBy b c)
     | .condFull body =>
       eq_intp2_condFull_of_eq
-        (intp2_lift_eq_helper body bv bvDepth bvLiftBy b c)
+        (intp2_lift_eq_depth body bv bvDepth bvLiftBy b c)
     | .compl body =>
       eq_intp2_compl_of_eq
-        (intp2_lift_eq_helper body bv bvDepth bvLiftBy c b)
+        (intp2_lift_eq_depth body bv bvDepth bvLiftBy c b)
     | .arbIr body =>
       eq_intp2_arbIr_of_eq fun d =>
-        intp2_lift_eq_helper body bv (d :: bvDepth) bvLiftBy b c
+        intp2_lift_eq_depth body bv (d :: bvDepth) bvLiftBy b c
   
   def intp2_lift_eq
     (expr: SingleLaneExpr)
@@ -132,6 +133,145 @@ namespace SingleLaneExpr
         b
         c)
   :=
-    intp2_lift_eq_helper expr bv [] bvLiftBy b c
+    intp2_lift_eq_depth expr bv [] bvLiftBy b c
+  
+end SingleLaneExpr
+
+
+def liftVarMap
+  (varMap: Nat → Expr E)
+:
+  Nat → Expr E
+| 0 => .var 0
+| n + 1 => (varMap n).lift
+
+def Expr.replaceVars {E}
+  (varMap: Nat → Expr E)
+:
+  Expr E → Expr E
+| .const e x => .const e x
+| .var x => varMap x
+| .null => .null
+| .pair left rite =>
+  .pair (replaceVars varMap left) (replaceVars varMap rite)
+| .ir left rite =>
+  .ir (replaceVars varMap left) (replaceVars varMap rite)
+| .condFull body =>
+  .condFull (replaceVars varMap body)
+| .compl body =>
+  .compl (replaceVars varMap body)
+| .arbIr body =>
+  .arbIr (replaceVars (liftVarMap varMap) body)
+
+def Expr.replaceVarsNat {E}
+  (varMap: Nat → Nat)
+:
+  Expr E → Expr E
+:=
+  replaceVars (fun x => .var (varMap x))
+
+namespace SingleLaneExpr
+  def intp2_replaceVars_eq2
+    (bvMap: Nat → SingleLaneExpr)
+    {expr: SingleLaneExpr}
+    {b c: Valuation Pair}
+    {bvLeft bvRite}
+    (bvEq:
+      ∀ x ∈ expr.UsesFreeVar,
+        intp2Var bvLeft x = (bvMap x).intp2 bvRite b c)
+    (bvEqCpl:
+      ∀ x ∈ expr.UsesFreeVar,
+        intp2Var bvLeft x = (bvMap x).intp2 bvRite c b)
+  :
+    Eq
+      (expr.intp2 bvLeft b c)
+      (intp2 (expr.replaceVars bvMap) bvRite b c)
+  :=
+    match expr with
+    | .const _ _ => rfl
+    | .var x => bvEq x rfl
+    | .null => rfl
+    | .pair _ _ =>
+      eq_intp2_pair_of_eq
+        (intp2_replaceVars_eq2
+          bvMap
+          (fun x h => bvEq x (Or.inl h))
+          (fun x h => bvEqCpl x (Or.inl h)))
+        (intp2_replaceVars_eq2
+          bvMap
+          (fun x h => bvEq x (Or.inr h))
+          (fun x h => bvEqCpl x (Or.inr h)))
+    | .ir _ _ =>
+      eq_intp2_ir_of_eq
+        (intp2_replaceVars_eq2
+          bvMap
+          (fun x h => bvEq x (Or.inl h))
+          (fun x h => bvEqCpl x (Or.inl h)))
+        (intp2_replaceVars_eq2
+          bvMap
+          (fun x h => bvEq x (Or.inr h))
+          (fun x h => bvEqCpl x (Or.inr h)))
+    | .condFull body =>
+      eq_intp2_condFull_of_eq
+        (intp2_replaceVars_eq2 (expr := body) bvMap bvEq bvEqCpl)
+    | .compl body =>
+      eq_intp2_compl_of_eq
+        (intp2_replaceVars_eq2 (expr := body) bvMap bvEqCpl bvEq)
+    | .arbIr body =>
+      let bvMap': Nat → SingleLaneExpr := liftVarMap bvMap
+      let bvEqLifted {b c}
+        (hyp:
+          ∀ x ∈ (arbIr body).UsesFreeVar,
+            intp2Var bvLeft x = (bvMap x).intp2 bvRite b c)
+        (d: Pair)
+        (x: Nat)
+        (h: x ∈ body.UsesFreeVar)
+      :
+        intp2Var (d :: bvLeft) x = (bvMap' x).intp2 (d :: bvRite) b c
+      :=
+        match x with
+        | 0 => rfl
+        | x + 1 =>
+          intp2_lift_eq (bvMap x) bvRite [d] b c ▸ hyp x h
+      
+      eq_intp2_arbIr_of_eq fun d =>
+        intp2_replaceVars_eq2
+          bvMap'
+          (bvEqLifted bvEq d)
+          (bvEqLifted bvEqCpl d)
+  
+  def intp2_replaceVars_eq
+    (bvMap: Nat → SingleLaneExpr)
+    {expr: SingleLaneExpr}
+    {bvLeft bvRite v}
+    (bvEq:
+      ∀ x ∈ expr.UsesFreeVar,
+        intp2Var bvLeft x = (bvMap x).intp2 bvRite v v)
+  :
+    Eq
+      (expr.intp2 bvLeft v v)
+      (intp2 (expr.replaceVars bvMap) bvRite v v)
+  :=
+    intp2_replaceVars_eq2 bvMap bvEq bvEq
+  
+  def intp2_replaceVarsNat_eq
+    (bvMap: Nat → Nat)
+    {expr: SingleLaneExpr}
+    {b c: Valuation Pair}
+    {bvLeft bvRite}
+    (bvEq: ∀ x ∈ expr.UsesFreeVar, bvLeft[x]? = bvRite[bvMap x]?)
+  :
+    Eq
+      (expr.intp2 bvLeft b c)
+      (intp2 (expr.replaceVarsNat bvMap) bvRite b c)
+  :=
+    let bvEq (x) (hx: x ∈ expr.UsesFreeVar):
+      intp2Var bvLeft x = intp2Var bvRite (bvMap x)
+    :=
+      congrArg
+        (fun | none => (∅: Set Pair) | some d => {d})
+        (bvEq x hx)
+    
+    intp2_replaceVars_eq2 (fun x => .var (bvMap x)) bvEq bvEq
   
 end SingleLaneExpr
