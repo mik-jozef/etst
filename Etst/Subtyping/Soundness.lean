@@ -33,7 +33,6 @@ def DefList.SubsetStx.isSound
 :=
   fun bv d isIn =>
     match sub with
-    | subId => isIn
     | subDefPos => Set3.defMem.toPos isIn
     | pairMono subL subR =>
         inCondFull .null fun p =>
@@ -113,6 +112,15 @@ def DefList.SubsetStx.isSound
         (inAc inA).elim
     | isFull subA =>
         fun _ => subA.isSound bv inAny
+    | univIntro sub =>
+        fun dX =>
+          let eq := by
+            unfold SingleLaneExpr.intp
+            rw [intp2_lift_eq a bv [dX] dl.wfm dl.wfm]
+            rfl
+          sub.isSound
+            (dX :: bv)
+            (cast eq isIn)
     | trans ab bc => bc.isSound bv (ab.isSound bv isIn)
     | subUnfold => SingleLaneExpr.InWfm.in_def isIn
     | subFold => SingleLaneExpr.InWfm.of_in_def isIn

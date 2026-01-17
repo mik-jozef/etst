@@ -181,8 +181,6 @@ inductive DefList.SubsetStx
   SingleLaneExpr →
   Type
 |
-  subId {expr}: dl.SubsetStx ctx expr expr
-|
   subDefPos {x}:
     dl.SubsetStx ctx (const .defLane x) (const .posLane x)
 |
@@ -259,7 +257,7 @@ inductive DefList.SubsetStx
 -- implication elimination, which is derived from this.
 | subPe:
     dl.SubsetStx ctx (ir a a.compl) b
--- IsSingleton expr := (condSome expr) & (Ex p, condFull ~expr | p)
+-- IsSingleton expr := (condSome expr) & (Ex p, condFull (impl expr p))
 -- TODO these are adapted from logic, but are not general enougn, I think.
 --   Logic has only `true = {*}` and `false = {}`, so it needs not deal
 --   with the general case of non-subsingleton types.
@@ -278,10 +276,11 @@ inductive DefList.SubsetStx
 --   (body: SingleLaneExpr)
 --   (IsSingleton t)
 --   SubsetStx (arbIr body) (body.replaceNextVar t)
--- universal introduction
---   (body: SingleLaneExpr)
---   (IsSingleton t)
---   SubsetStx (body.replaceNextVar t) (arbIr body)
+|
+  univIntro
+    (sub: dl.SubsetStx ctx x.lift a)
+  :
+    dl.SubsetStx ctx x (arbIr a)
 |
   trans
     (ab: dl.SubsetStx ctx a b)
@@ -323,6 +322,11 @@ inductive DefList.SubsetStx
 
 namespace DefList.SubsetStx
   variable {dl: DefList}
+  
+  def subId {ctx expr}:
+    dl.SubsetStx ctx expr expr
+  :=
+    trans subDni subDne
   
   def toFn {x a b}
     (ab: dl.SubsetStx ctx a b)
@@ -610,9 +614,9 @@ namespace DefList.SubsetStx
   
   
   def implIntro
-    (sub: dl.SubsetStx ctx (ir l r) b)
+    (sub: dl.SubsetStx ctx (ir x a) b)
   :
-    dl.SubsetStx ctx l (impl r b)
+    dl.SubsetStx ctx x (impl a b)
   :=
     trans
       (trans (subIr subUnR em.unSymm) subUnIrDistElimR)
