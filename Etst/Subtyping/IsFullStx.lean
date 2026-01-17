@@ -314,7 +314,7 @@ namespace DefList
       mp curry proof.toImpl
     
     -- TODO: `fAny` to be proven once IsFullStx has rules for quantifiers.
-    def fAny: dl.IsFullStx Expr.any := sorry
+    def fAny: dl.IsFullStx any := sorry
     
     
     def fullSimpl:
@@ -364,9 +364,8 @@ namespace DefList
   end IsFullStx
   
   def SubsetStx.toIsFullStx:
-    SubsetStx dl n a b →
+    SubsetStx dl a b →
     dl.IsFullStx (un a.compl b)
-  | subId => .implSelf
   | subDefPos => .defPos
   | pairMono (al := al) (ar := ar) (bl := bl) (br := br) subL subR =>
     let proof: IsFullStx.IsFullStxFrom dl a _ :=
@@ -394,6 +393,8 @@ namespace DefList
   | someStripFull => .fSomeStripFull
   | subUnfold => .unfold _ _
   | subFold => .fold _ _
+  | univIntro sub =>
+      sorry
   | trans ab bc => .mp2 .trans ab.toIsFullStx bc.toIsFullStx
   | subPe => .subPe
   | mutInduction desc premises i =>
@@ -402,7 +403,7 @@ namespace DefList
   def IsFullStx.toSubsetStx
     (full: dl.IsFullStx a)
   :
-    SubsetStx dl ctx Expr.any a
+    SubsetStx dl Expr.any a
   :=
     match full with
     | .defPos => .toImpl .subDefPos
@@ -454,6 +455,6 @@ namespace DefList
   :
     IsFull dl expr
   :=
-    fun bv _p _bound => full.toSubsetStx.isSound (ctx := []) bv inAny
+    fun bv _p _bound => full.toSubsetStx.isSound  bv inAny
   
 end DefList

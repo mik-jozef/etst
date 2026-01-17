@@ -257,12 +257,12 @@ def MutCoindDescriptor.hypothesify
 
 def MutCoindDescriptor.sub_hypothesify
   (desc: MutCoindDescriptor dl)
-  (sub: dl.SubsetStx ctx (Expr.replaceDepthEvenConsts expr 0 true desc.hypothesis) b)
+  (sub: dl.SubsetStx (Expr.replaceDepthEvenConsts expr 0 true desc.hypothesis) b)
 :
   let descMap: MutIndDescriptor dl :=
     desc.map CoinductionDescriptor.toInduction
   
-  dl.SubsetStx ctx (Expr.replaceDepthEvenConsts expr 0 true descMap.hypothesis) b
+  dl.SubsetStx (Expr.replaceDepthEvenConsts expr 0 true descMap.hypothesis) b
 :=
   let rec helper := 4
   match expr with
@@ -284,12 +284,11 @@ def subMutCoinduction
   (premises:
     (i: desc.Index) →
     dl.SubsetStx
-      ctx
       desc[i].left
       (desc.hypothesify (desc[i].expansion.toLane desc[i].lane)))
   (i: desc.Index)
 :
-  dl.SubsetStx ctx desc[i].left (.compl (.const desc[i].lane desc[i].rite))
+  dl.SubsetStx desc[i].left (.compl (.const desc[i].lane desc[i].rite))
 :=
   let descMap := desc.map CoinductionDescriptor.toInduction
   let iMap := i.map CoinductionDescriptor.toInduction
@@ -301,7 +300,6 @@ def subMutCoinduction
     rfl
   let ind :=
     DefList.SubsetStx.subMutInduction
-      (ctx := ctx)
       descMap
       (fun i =>
         let eqMap: descMap[i] = desc[i.unmap].toInduction := by
@@ -327,13 +325,12 @@ def subMutCoinduction
     (desc: CoinductionDescriptor dl)
     (premise:
       dl.SubsetStx
-        ctx
         desc.left
         (.compl
           ((desc.expansion.toLane desc.lane).replaceDepthEvenConsts 0 true fun depth lane x =>
             desc.hypothesis depth lane x (.const lane x))))
   :
-    dl.SubsetStx ctx desc.left (.compl (.const desc.lane desc.rite))
+    dl.SubsetStx desc.left (.compl (.const desc.lane desc.rite))
   :=
     subMutCoinduction
       [desc]
@@ -347,13 +344,12 @@ def subMutCoinduction
     (premise:
       DefList.SubsetStx
         dl
-        ctx
         left
         (.compl
           (((dl.getDef rite).toLane lane).replaceDepthEvenConsts 0 true fun depth l x =>
             if rite = x then .ir (.compl (left.lift 0 depth)) (.const l x) else (.const l x))))
   :
-    dl.SubsetStx ctx left (.compl (.const lane rite))
+    dl.SubsetStx left (.compl (.const lane rite))
   :=
     coinduction
       {

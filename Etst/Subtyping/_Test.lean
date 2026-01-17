@@ -70,7 +70,7 @@ local macro "s3(" e:s3_pair_expr ")" : term => `(s3(TestDl, $e))
 abbrev IsSub := SubsetStx TestDl.toDefList
 
 
-def SubsetStx.natSub: IsSub [] s3(.Nat) s3(:Nat) :=
+def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
   subSimpleInduction
     (fold
       (unCtx
@@ -82,11 +82,11 @@ def SubsetStx.natSub: IsSub [] s3(.Nat) s3(:Nat) :=
               subId)
             subId))))
 
-def SubsetStx.natNotNat: IsSub [] s3(.Any) s3(:Nat | !.Nat) :=
+def SubsetStx.natNotNat: IsSub s3(.Any) s3(:Nat | !.Nat) :=
   trans em (unCtxLR natSub subId)
 
 
-def natLeZeroThen: IsSub [] s3(.Nat) s3(:ThenNatLeZero) :=
+def natLeZeroThen: IsSub s3(.Nat) s3(:ThenNatLeZero) :=
   subSimpleInduction
     (fold
       (unCtx
@@ -107,19 +107,19 @@ def SubsetStx.AddSymm :=
     s3(All a: Nat, All b: Nat, Eq (add a b) (add b a))
 
 def SubsetStx.addSymmNat:
-  IsSub [] s3(.Nat) AddSymm
+  IsSub s3(.Nat) AddSymm
 :=
   subSimpleInduction
     sorry
 
 def SubsetStx.addSymm:
-  IsSub [] s3(:Any) AddSymm
+  IsSub s3(:Any) AddSymm
 :=
   sorry
 
 
 def SubsetStx.infinitudeOfPrimes:
-  IsSub [] s3(.Any) s3(:PrimesInf)
+  IsSub s3(.Any) s3(:PrimesInf)
 :=
   sorry
 

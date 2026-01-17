@@ -27,7 +27,7 @@ def DefList.SubsetBv.fullImplOfSubset {dl bv x a b}
 
 open SingleLaneExpr in
 def DefList.SubsetStx.isSound
-  (sub: SubsetStx dl ctx a b)
+  (sub: SubsetStx dl a b)
 :
   dl.Subset a b
 :=
