@@ -2,6 +2,7 @@ import Etst.WFC.Ch2_Interpretation
 import Etst.WFC.Utils.RulesOfInference
 import Etst.WFC.Utils.InterpretationMono
 import Etst.Subtyping.Utils.ExprConstsVarsSat
+import Etst.Subtyping.Utils.ExprClearVars
 
 namespace Etst
 
@@ -67,6 +68,48 @@ namespace Expr
     | condFull body => congrArg condFull (body.lift_zero_eq depth)
     | compl body => congrArg compl (body.lift_zero_eq depth)
     | arbIr body => congrArg arbIr (body.lift_zero_eq depth.succ)
+  
+  def freeVarUB_lift_eq_depth
+    (expr: Expr E)
+    (liftBy depth liftDepth: Nat)
+  :
+    Eq
+      ((expr.lift liftDepth liftBy).freeVarUB
+        (liftBy + depth + liftDepth))
+      (expr.freeVarUB (depth + liftDepth))
+  :=
+    match expr with
+    | .const _ _ => rfl
+    | .var x => by
+        unfold lift freeVarUB
+        split_ifs <;> omega
+    | .null => rfl
+    | .pair l r => by
+        unfold lift freeVarUB
+        rw [freeVarUB_lift_eq_depth l, freeVarUB_lift_eq_depth r]
+    | .ir l r => by
+        unfold lift freeVarUB
+        rw [freeVarUB_lift_eq_depth l, freeVarUB_lift_eq_depth r]
+    | .condFull body => by
+        unfold lift freeVarUB
+        rw [freeVarUB_lift_eq_depth body]
+    | .compl body => by
+        unfold lift freeVarUB
+        rw [freeVarUB_lift_eq_depth body]
+    | .arbIr body => by
+        unfold lift freeVarUB
+        rw [Nat.add_assoc (liftBy + depth), Nat.add_assoc depth]
+        exact freeVarUB_lift_eq_depth body liftBy depth (liftDepth + 1)
+
+  def freeVarUB_lift_eq
+    (expr: Expr E)
+    (liftBy depth: Nat)
+  :
+    Eq
+      ((expr.lift 0 liftBy).freeVarUB (liftBy + depth))
+      (expr.freeVarUB depth)
+  :=
+    freeVarUB_lift_eq_depth expr liftBy depth 0
 end Expr
 
 namespace SingleLaneExpr

@@ -35,7 +35,7 @@ def MutIndDescriptor.var_le_hypothesify
 :
   Set.Subset
     ((v x).getLane lane)
-    (SingleLaneExpr.intp
+    (intp
       (desc.hypothesify bvDepth.length (.const lane x))
       (bvDepth ++ bv)
       dl.wfm)
@@ -46,7 +46,7 @@ def MutIndDescriptor.var_le_hypothesify
     | .posLane => (v_le x).posLe
     | .defLane => (v_le x).defLe
   | head :: (rest: MutIndDescriptor dl) =>
-    show _ ≤ SingleLaneExpr.intp (if _ then _ else _) _ dl.wfm from
+    show _ ≤ intp (if _ then _ else _) _ dl.wfm from
     let invTail := List.Index.indexedTail
       (P :=
         fun (desc: InductionDescriptor dl) =>
@@ -86,16 +86,16 @@ def MutIndDescriptor.le_hypothesify
   (laneEq: expr.LaneEqEven lane ed)
   (v_le: v ≤ dl.wfm)
 :
+  let exprHypothesified: SingleLaneExpr :=
+    expr.replaceDepthEvenConsts bvDepth.length ed desc.hypothesis
+  
   if ed then
     Set.Subset
       (expr.intp2 (bvDepth ++ bv) dl.wfm v)
-      ((desc.hypothesify bvDepth.length expr).intp (bvDepth ++ bv) dl.wfm)
+      (exprHypothesified.intp (bvDepth ++ bv) dl.wfm)
   else
     Set.Subset
-      (intp
-        (expr.replaceDepthEvenConsts bvDepth.length false desc.hypothesis)
-        (bvDepth ++ bv)
-        dl.wfm)
+      (exprHypothesified.intp (bvDepth ++ bv) dl.wfm)
       (expr.intp2 (bvDepth ++ bv) v dl.wfm)
 :=
   match expr, ed with

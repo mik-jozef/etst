@@ -1217,7 +1217,7 @@ namespace DefList.SubsetStx
 end DefList.SubsetStx
 
 
--- Semantic entailment.
+-- Semantic entailment for a given assignment of variables.
 abbrev DefList.SubsetBv
   (dl: DefList)
   (bv: List Pair)
