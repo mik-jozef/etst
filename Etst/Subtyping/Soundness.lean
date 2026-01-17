@@ -4,25 +4,27 @@ namespace Etst
 open Expr
 
 open SingleLaneExpr in
-def DefList.SubsetBv.subsetOfFullImpl {dl bv x a b d}
-  (h: SubsetBv dl bv x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b)))
-  (isIn: d ∈ x.intp bv dl.wfm)
+def DefList.SubsetBv.subsetOfFullImpl {dl bv x a b dX}
+  (h: Subset dl x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b)))
+  (isIn: dX ∈ x.intp bv dl.wfm)
 :
-  dl.SubsetBv bv a b
+  dl.Subset a b
 :=
-  fun d' inA =>
-    inImplElim (inCondFullElim (h isIn) d') inA
+  -- fun d inA =>
+  --   inImplElim (inCondFullElim (h isIn) d) inA
+  sorry
 
 open SingleLaneExpr in
-def DefList.SubsetBv.fullImplOfSubset {dl bv x a b}
-  (h: SubsetBv dl bv a b)
+def DefList.SubsetBv.fullImplOfSubset {dl x a b}
+  (h: Subset dl a b)
 :
-  SubsetBv dl bv x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b))
+  Subset dl x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b))
 :=
-  fun _ _ =>
-    inCondFull .null fun _ =>
-      inImpl fun inA =>
-        h inA
+  -- fun _ _ bv ubLe =>
+  --   inCondFull .null fun _ =>
+  --     inImpl fun inA =>
+  --       h fun bv' ubLe' => inA
+  sorry
 
 
 open SingleLaneExpr in
@@ -122,11 +124,26 @@ def DefList.SubsetStx.isSound
         let ⟨inA, inB⟩ := inPairElim inAB
         let ⟨_, inC⟩ := inPairElim inAC
         inPair inA (inIr inB inC)
-    | subIrL =>
-      let ubLeSrc := freeVarUB_ir_le ubLe sorry
-      inIrElimL (isIn bv ubLeSrc)
-    | subIrR =>
-      inIrElimR (isIn bv sorry)
+    | subIrL (r := r) =>
+      let bvPadded: List Pair :=
+        bv ++ (List.replicate (b.ir r).freeVarUB .null)
+      let bvPaddedLenEq:
+        bvPadded.length = bv.length + (b.ir r).freeVarUB
+      :=
+        List.length_replicate (n := (b.ir r).freeVarUB) ▸
+        List.length_append
+      let inIr := isIn bvPadded (bvPaddedLenEq ▸ Nat.le_add_left _ _)
+      (intp2_bv_append dl ubLe _ _).mpr (inIrElimL inIr)
+    | subIrR (l := l) =>
+      let bvPadded: List Pair :=
+        bv ++ (List.replicate (l.ir b).freeVarUB .null)
+      let bvPaddedLenEq:
+        bvPadded.length = bv.length + (l.ir b).freeVarUB
+      :=
+        List.length_replicate (n := (l.ir b).freeVarUB) ▸
+        List.length_append
+      let inIr := isIn bvPadded (bvPaddedLenEq ▸ Nat.le_add_left _ _)
+      (intp2_bv_append dl ubLe _ _).mpr (inIrElimR inIr)
     | subIr subA subB =>
       inIr (subA.isSound isIn bv (freeVarUB_ir_le_left ubLe))
            (subB.isSound isIn bv (freeVarUB_ir_le_rite ubLe))
@@ -141,36 +158,49 @@ def DefList.SubsetStx.isSound
         (inUnElim isInUn).elim
           (fun isInA => inUnL (inIr isInA isInC))
           (fun isInB => inUnR (inIr isInB isInC))
-    -- | fullImplElim =>
-    --     inImpl fun inFullA =>
-    --       inCondFull d (fun dB =>
-    --         inImplElim
-    --           (inCondFullElim isIn dB)
-    --           (inCondFullElim inFullA dB))
-    -- | fullElim =>
-    --     isIn _
-    -- | someStripFull =>
-    --     let ⟨_, inFullA⟩ := inCondSomeElim isIn
-    --     inFullA
-    -- | subCompl sub =>
-    --     fun isInA => isIn (sub.isSound bv isInA)
-    -- | subDne =>
-    --     Classical.byContradiction isIn
-    -- | subDni =>
-    --     fun nin => nin isIn
-    -- | subPe =>
-    --     let ⟨inA, inAc⟩ := inIrElim isIn
-    --     (inAc inA).elim
-    -- | isFull subA =>
-    --     fun _ => subA.isSound bv inAny
-    -- | trans ab bc => bc.isSound bv (ab.isSound bv isIn)
-    -- | subUnfold => SingleLaneExpr.InWfm.in_def isIn
-    -- | subFold => SingleLaneExpr.InWfm.of_in_def isIn
-    -- | mutInduction desc premises i =>
-    --   let isSub :=
-    --     MutIndDescriptor.isSound
-    --       desc
-    --       bv
-    --       (fun i => ((premises i).isSound bv).subsetOfFullImpl isIn)
-    --       i
-    --   isSub.fullImplOfSubset isIn
+    | fullImplElim =>
+        inImpl fun inFullA =>
+          inCondFull .null fun dB =>
+            let inA := inCondFullElim inFullA dB
+            let inImpl := inCondFullElim (isIn bv ubLe) dB
+            inImplElim inImpl inA
+    | fullElim =>
+        inCondFullElim (isIn bv ubLe) p
+    | someStripFull =>
+        let ⟨_q, inFullA⟩ := inCondSomeElim (isIn bv ubLe)
+        inFullA
+    | subCompl sub =>
+        -- fun isInA => isIn (sub.isSound bv isInA)
+        sorry
+    | subDne =>
+        Classical.byContradiction (isIn bv ubLe)
+    | subDni =>
+        fun nin => nin (isIn bv ubLe)
+    | subPe (a := a) =>
+        let ubLeLHS := (a.ir a.compl).freeVarUB
+        let bvPadded: List Pair := bv ++ (List.replicate ubLeLHS .null)
+        let bvPaddedLenEq:
+          bvPadded.length = bv.length + ubLeLHS
+        :=
+          List.length_replicate (n := ubLeLHS) ▸
+          List.length_append
+        let lePadded :=
+          bvPaddedLenEq ▸ Nat.le_add_left _ _
+        let ⟨inA, inAc⟩ := inIrElim (isIn bvPadded lePadded)
+        (inComplElim inAc inA).elim
+    | isFull subA =>
+        inCondFull .null fun _ =>
+          subA.isSound (fun _ _ => inAny) bv ubLe
+    -- | subArbIr => -- IGNORE --
+    --   fun dX =>
+    --     sorry
+    | trans ab bc => bc.isSound (ab.isSound isIn) bv ubLe
+    | subUnfold => SingleLaneExpr.InWfm.in_def (isIn [] (Nat.zero_le _))
+    | subFold => SingleLaneExpr.InWfm.of_in_def (isIn bv sorry)
+    | mutInduction desc premises i =>
+        let isSub :=
+          MutIndDescriptor.isSound
+            desc
+            sorry--(fun j => ((premises j).isSound).subsetOfFullImpl isIn)
+            i
+        sorry -- isSub.fullImplOfSubset isIn
