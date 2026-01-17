@@ -215,12 +215,12 @@ inductive DefList.SubsetStx
     (bc: dl.SubsetStx ctx x r)
   :
     dl.SubsetStx ctx x (ir l r)
-|
+| -- TODO is this one necessary?
   subIrUnDistL:
     dl.SubsetStx ctx (ir (un a b) c) (un (ir a c) (ir b c))
 |
   isFull
-    (subA: dl.SubsetStx ctx Expr.any a)
+    (subA: dl.SubsetStx ctx any a)
   :
     dl.SubsetStx ctx x (condFull a)
 |
@@ -247,17 +247,27 @@ inductive DefList.SubsetStx
   -/
   someStripFull:
     dl.SubsetStx ctx (condSome (condFull a)) (condFull a)
-|
-  subCompl
-    (sub: dl.SubsetStx ctx a b)
+-- TODO is this one necessary?
+-- | subCompl:
+--     dl.SubsetStx ctx (ir (impl a b) (impl a b.compl)) a.compl
+| -- TODO is this one necessary?
+  implIntro
+    (sub: dl.SubsetStx ctx (ir x a) b)
   :
-    dl.SubsetStx ctx b.compl a.compl
-| subDne: dl.SubsetStx ctx a.compl.compl a
-| subDni: dl.SubsetStx ctx a a.compl.compl
+    dl.SubsetStx ctx x (impl a b)
+-- TODO is this one necessary?
+-- | subDne: dl.SubsetStx ctx a.compl.compl a
+-- TODO is this one necessary?
+-- | subDni: dl.SubsetStx ctx a a.compl.compl
 -- Principle of explosion. Used as a basic rule instead of
 -- implication elimination, which is derived from this.
+-- TODO is this one necessary?
 | subPe:
     dl.SubsetStx ctx (ir a a.compl) b
+-- TODO is this one necessary?
+| subImplCompl:
+    dl.SubsetStx ctx (impl a none) a.compl
+    -- TODO subComplImpl, subImplElim (ir a (impl a b) ⊆ b)
 -- IsSingleton expr := (condSome expr) & (Ex p, condFull ~expr | p)
 -- TODO these are adapted from logic, but are not general enougn, I think.
 --   Logic has only `true = {*}` and `false = {}`, so it needs not deal
@@ -277,10 +287,9 @@ inductive DefList.SubsetStx
 --   (body: SingleLaneExpr)
 --   (IsSingleton t)
 --   SubsetStx (arbIr body) (body.replaceNextVar t)
--- universal introduction
---   (body: SingleLaneExpr)
---   (IsSingleton t)
---   SubsetStx (body.replaceNextVar t) (arbIr body)
+-- | subArbIr {body}:
+--   dl.SubsetStx ctx body (arbIr (body.lift 1))
+-- | subArbIrElim
 |
   trans
     (ab: dl.SubsetStx ctx a b)
@@ -338,15 +347,106 @@ namespace DefList.SubsetStx
     sub a subId
   
   
+  def irCtxL {a b r}
+    (sub: dl.SubsetStx ctx a b)
+  :
+    dl.SubsetStx ctx (ir a r) b
+  :=
+    trans subIrL sub
+  
+  def irCtxR {a b l}
+    (sub: dl.SubsetStx ctx a b)
+  :
+    dl.SubsetStx ctx (ir l a) b
+  :=
+    trans subIrR sub
+  
+  def irCtxLR
+    (subL: dl.SubsetStx ctx al bl)
+    (subR: dl.SubsetStx ctx ar br)
+  :
+    dl.SubsetStx ctx (ir al ar) (ir bl br)
+  :=
+    subIr subL.irCtxL subR.irCtxR
+  
+  def subIrSymm
+    {l r: SingleLaneExpr}
+  :
+    dl.SubsetStx ctx (ir l r) (ir r l)
+  :=
+    subIr subIrR subIrL
+  
+  def irElimL
+    (sub: dl.SubsetStx ctx x (ir l r))
+  :
+    dl.SubsetStx ctx x l
+  :=
+    sub.trans subIrL
+  
+  def irElimR
+    (sub: dl.SubsetStx ctx x (ir l r))
+  :
+    dl.SubsetStx ctx x r
+  :=
+    sub.trans subIrR
+  
+  def irSymm
+    (sub: dl.SubsetStx ctx x (ir l r))
+  :
+    dl.SubsetStx ctx x (ir r l)
+  :=
+    subIr (irElimR sub) (irElimL sub)
+  
+  def irSymmCtx
+    (sub: dl.SubsetStx ctx (ir l r) b)
+  :
+    dl.SubsetStx ctx (ir r l) b
+  :=
+    trans subIrSymm sub
+  
+  def irMonoCtxL
+    (subA: dl.SubsetStx ctx a al)
+    (sub: dl.SubsetStx ctx (ir al ar) b)
+  :
+    dl.SubsetStx ctx (ir a ar) b
+  :=
+    trans (irCtxLR subA subId) sub
+  
+  def irMonoCtxR
+    (subA: dl.SubsetStx ctx a ar)
+    (sub: dl.SubsetStx ctx (ir al ar) b)
+  :
+    dl.SubsetStx ctx (ir al a) b
+  :=
+    trans (irCtxLR subId subA) sub
+  
+  
+  def complIntro
+    (sub: dl.SubsetStx ctx (ir x a) none)
+  :
+    dl.SubsetStx ctx x a.compl
+  :=
+    trans (implIntro sub) subImplCompl
+  
   def subUnL {a r}:
     dl.SubsetStx ctx a (un a r)
   :=
-    subDni.trans (subCompl subIrL)
+    trans
+      (implIntro
+        (trans
+          (irCtxLR subId subIrL)
+          subPe))
+      subImplCompl
 
   def subUnR {a l}:
     dl.SubsetStx ctx a (un l a)
   :=
-    subDni.trans (subCompl subIrR)
+    trans
+      (implIntro
+        (trans
+          (irCtxLR subId subIrR)
+          subPe))
+      subImplCompl
 
   def unCtx {l r b}
     (ac: dl.SubsetStx ctx l b)
@@ -360,7 +460,6 @@ namespace DefList.SubsetStx
     dl.SubsetStx ctx x (un a a.compl)
   :=
     subDni.trans (subCompl subPe)
-  
   
   def unL {x a b}
     (sub: dl.SubsetStx ctx x a)
@@ -441,80 +540,6 @@ namespace DefList.SubsetStx
     dl.SubsetStx ctx x (un l rb)
   :=
     unElimSub sub subUnL (unR subR)
-  
-  
-  def irCtxL {a b r}
-    (sub: dl.SubsetStx ctx a b)
-  :
-    dl.SubsetStx ctx (ir a r) b
-  :=
-    trans subIrL sub
-  
-  def irCtxR {a b l}
-    (sub: dl.SubsetStx ctx a b)
-  :
-    dl.SubsetStx ctx (ir l a) b
-  :=
-    trans subIrR sub
-  
-  def irCtxLR
-    (subL: dl.SubsetStx ctx al bl)
-    (subR: dl.SubsetStx ctx ar br)
-  :
-    dl.SubsetStx ctx (ir al ar) (ir bl br)
-  :=
-    subIr subL.irCtxL subR.irCtxR
-  
-  def subIrSymm
-    {l r: SingleLaneExpr}
-  :
-    dl.SubsetStx ctx (ir l r) (ir r l)
-  :=
-    subIr subIrR subIrL
-  
-  def irElimL
-    (sub: dl.SubsetStx ctx x (ir l r))
-  :
-    dl.SubsetStx ctx x l
-  :=
-    sub.trans subIrL
-  
-  def irElimR
-    (sub: dl.SubsetStx ctx x (ir l r))
-  :
-    dl.SubsetStx ctx x r
-  :=
-    sub.trans subIrR
-  
-  def irSymm
-    (sub: dl.SubsetStx ctx x (ir l r))
-  :
-    dl.SubsetStx ctx x (ir r l)
-  :=
-    subIr (irElimR sub) (irElimL sub)
-  
-  def irSymmCtx
-    (sub: dl.SubsetStx ctx (ir l r) b)
-  :
-    dl.SubsetStx ctx (ir r l) b
-  :=
-    trans subIrSymm sub
-  
-  def irMonoCtxL
-    (subA: dl.SubsetStx ctx a al)
-    (sub: dl.SubsetStx ctx (ir al ar) b)
-  :
-    dl.SubsetStx ctx (ir a ar) b
-  :=
-    trans (irCtxLR subA subId) sub
-  
-  def irMonoCtxR
-    (subA: dl.SubsetStx ctx a ar)
-    (sub: dl.SubsetStx ctx (ir al ar) b)
-  :
-    dl.SubsetStx ctx (ir al a) b
-  :=
-    trans (irCtxLR subId subA) sub
   
   def unIr
     (subA: dl.SubsetStx ctx x (un al ar))
@@ -604,18 +629,9 @@ namespace DefList.SubsetStx
           (unCtx (irCtxR subUnL) subUnR)))
   
   -- TODO finish once we can work with quantifiers.
-  def subAny: dl.SubsetStx ctx a Expr.any := sorry
-  def subNone: dl.SubsetStx ctx Expr.none a := sorry
+  def subAny: dl.SubsetStx ctx a any := sorry
+  def subNone: dl.SubsetStx ctx none a := sorry
   
-  
-  def implIntro
-    (sub: dl.SubsetStx ctx (ir l r) b)
-  :
-    dl.SubsetStx ctx l (impl r b)
-  :=
-    trans
-      (trans (subIr subUnR em.unSymm) subUnIrDistElimR)
-      (unCtxLR subId sub)
   
   def implElim
     (subImpl: dl.SubsetStx ctx x (impl a b))
@@ -657,7 +673,7 @@ namespace DefList.SubsetStx
         subUnL)
   
   def ofImpl
-    (sub: dl.SubsetStx ctx Expr.any (impl a b))
+    (sub: dl.SubsetStx ctx any (impl a b))
   :
     dl.SubsetStx ctx a b
   :=
@@ -847,7 +863,7 @@ namespace DefList.SubsetStx
   
   
   def fullElimOfImpl
-    (fullAb: dl.SubsetStx ctx Expr.any (condFull (impl a b)))
+    (fullAb: dl.SubsetStx ctx any (condFull (impl a b)))
   :
     dl.SubsetStx ctx (condFull a) (condFull b)
   :=
@@ -857,12 +873,12 @@ namespace DefList.SubsetStx
   def isFullImpl
     (sub: dl.SubsetStx ctx a b)
   :
-    dl.SubsetStx ctx Expr.any (condFull (impl a b))
+    dl.SubsetStx ctx any (condFull (impl a b))
   :=
     isFull (toImpl sub)
   
   def isFullImplElim
-    (sub: dl.SubsetStx ctx Expr.any (condFull (impl a b)))
+    (sub: dl.SubsetStx ctx any (condFull (impl a b)))
   :
     dl.SubsetStx ctx a b
   :=
@@ -919,10 +935,10 @@ namespace DefList.SubsetStx
     trans (someMono sub) someStripFull
   
   def isFullUpgrade
-    (isSomeA: dl.SubsetStx ctx Expr.any (condSome a))
+    (isSomeA: dl.SubsetStx ctx any (condSome a))
     (aFullB: dl.SubsetStx ctx a (condFull b))
   :
-    dl.SubsetStx ctx Expr.any (condFull b)
+    dl.SubsetStx ctx any (condFull b)
   :=
     trans isSomeA (someElimFull aFullB)
   
@@ -965,31 +981,31 @@ namespace DefList.SubsetStx
   
   
   def condSomeNull:
-    dl.SubsetStx ctx Expr.any (condSome null)
+    dl.SubsetStx ctx any (condSome null)
   :=
     sorry
   
   def condSomePair
-    (sl: dl.SubsetStx ctx Expr.any (condSome l))
-    (sr: dl.SubsetStx ctx Expr.any (condSome r))
+    (sl: dl.SubsetStx ctx any (condSome l))
+    (sr: dl.SubsetStx ctx any (condSome r))
   :
-    dl.SubsetStx ctx Expr.any (condSome (pair l r))
+    dl.SubsetStx ctx any (condSome (pair l r))
   :=
     sorry
   
   def isSomeMono
     (ab: dl.SubsetStx ctx a b)
-    (sa: dl.SubsetStx ctx Expr.any (condSome a))
+    (sa: dl.SubsetStx ctx any (condSome a))
   :
-    dl.SubsetStx ctx Expr.any (condSome b)
+    dl.SubsetStx ctx any (condSome b)
   :=
     trans sa (someMono ab)
   
   def isSomeUpgrade
-    (isSomeA: dl.SubsetStx ctx Expr.any (condSome a))
+    (isSomeA: dl.SubsetStx ctx any (condSome a))
     (aSomeB: dl.SubsetStx ctx a (condSome b))
   :
-    dl.SubsetStx ctx Expr.any (condSome b)
+    dl.SubsetStx ctx any (condSome b)
   :=
     trans (isSomeMono aSomeB isSomeA) someStripSome
   
@@ -1026,7 +1042,7 @@ namespace DefList.SubsetStx
   def implPairMono:
     dl.SubsetStx
       ctx
-      Expr.any
+      any
       (impl
         (condFull (impl al bl))
         (impl

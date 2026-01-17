@@ -4,9 +4,9 @@ namespace Etst
 open Expr
 
 open SingleLaneExpr in
-def DefList.SubsetBv.subsetOfFullImpl {dl bv x a b dX}
-  (h: Subset dl x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b)))
-  (isIn: dX ∈ x.intp bv dl.wfm)
+def DefList.Subset.ofFullImpl {dl x a b dX}
+  (h: Subset dl x (.condFull (.impl a b)))
+  (isIn: dX ∈ x.intpUnivClosure dl.wfm)
 :
   dl.Subset a b
 :=
@@ -15,15 +15,17 @@ def DefList.SubsetBv.subsetOfFullImpl {dl bv x a b dX}
   sorry
 
 open SingleLaneExpr in
-def DefList.SubsetBv.fullImplOfSubset {dl x a b}
+def DefList.Subset.toFullImpl {dl x a b}
   (h: Subset dl a b)
 :
-  Subset dl x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b))
+  Subset dl x (.condFull (.impl a b))
 :=
   -- fun _ _ bv ubLe =>
   --   inCondFull .null fun _ =>
   --     inImpl fun inA =>
   --       h fun bv' ubLe' => inA
+  -- Unsound for Univ ⊆ Univ. 
+  -- Requires PointwiseSubset for proper implication introduction.
   sorry
 
 
@@ -169,8 +171,18 @@ def DefList.SubsetStx.isSound
     | someStripFull =>
         let ⟨_q, inFullA⟩ := inCondSomeElim (isIn bv ubLe)
         inFullA
-    | subCompl sub =>
-        -- fun isInA => isIn (sub.isSound bv isInA)
+    | subCompl sub (b := b) =>
+        -- This rule is unsound for `Subset := Univ ⊆ Univ`.
+        --
+        -- Counterexample sketch:
+        -- Let world be `0, 1` (bool). `bv` has length 1.
+        -- Let `A` be `var 0`. `A[0]=False, A[1]=True`. `Univ(A) = False`.
+        -- Let `B` be `False`. `B[0]=False, B[1]=False`. `Univ(B) = False`.
+        -- `Univ(A) ⊆ Univ(B)` holds (False implies everything).
+        -- `A.compl` is `¬(var 0)`. `Ac[0]=True, Ac[1]=False`. `Univ(Ac) = False`.
+        -- `B.compl` is `True`. `Bc[0]=True, Bc[1]=True`. `Univ(Bc) = True`.
+        -- We expect `Univ(B.compl) ⊆ Univ(A.compl)`, i.e. `True ⊆ False`.
+        -- This is False.
         sorry
     | subDne =>
         Classical.byContradiction (isIn bv ubLe)
@@ -195,12 +207,17 @@ def DefList.SubsetStx.isSound
     --   fun dX =>
     --     sorry
     | trans ab bc => bc.isSound (ab.isSound isIn) bv ubLe
-    | subUnfold => SingleLaneExpr.InWfm.in_def (isIn [] (Nat.zero_le _))
-    | subFold => SingleLaneExpr.InWfm.of_in_def (isIn bv sorry)
+    | subUnfold => InWfm.in_def (isIn [] (Nat.zero_le _))
+    | subFold (a := a) (lane := lane) =>
+        let df := (dl.getDef a).toLane lane
+        let bv' := List.replicate df.freeVarUB Pair.null
+        let ubLe :=
+          List.length_replicate ▸ Nat.le_refl _
+        InWfm.of_in_def (isIn bv' ubLe)
     | mutInduction desc premises i =>
         let isSub :=
           MutIndDescriptor.isSound
             desc
-            sorry--(fun j => ((premises j).isSound).subsetOfFullImpl isIn)
+            (fun j => (premises j).isSound.ofFullImpl isIn)
             i
-        sorry -- isSub.fullImplOfSubset isIn
+        isSub.toFullImpl isIn bv ubLe
