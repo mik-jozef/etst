@@ -445,10 +445,10 @@ namespace DefList
   :
     Prop
   :=
-    ∀ bv: List Pair,
+    ∀ fv: List Pair,
     ∀ p: Pair,
-      expr.freeVarUB ≤ bv.length →
-      expr.intp bv dl.wfm p
+      expr.freeVarUB ≤ fv.length →
+      expr.intp fv dl.wfm p
   
   
   open SingleLaneExpr in
@@ -457,6 +457,6 @@ namespace DefList
   :
     IsFull dl expr
   :=
-    fun bv _p _bound => full.toSubsetStx.isSound  bv inAny
+    fun fv _p _bound => full.toSubsetStx.isSound  fv inAny
   
 end DefList

@@ -5,46 +5,46 @@ namespace Etst
 
 namespace SingleLaneExpr
   def intp2_var_eq_empty
-    (nlt: ¬ x < bv.length)
+    (nlt: ¬ x < fv.length)
   :
-    (var x).intp2 bv b c = {}
+    (var x).intp2 fv b c = {}
   := by
-    show intpVar bv x = _
+    show intpVar fv x = _
     unfold intpVar
     rw [List.getElem?_eq_none_iff.mpr (le_of_not_gt nlt)]
   
   def intp2_var_eq_of_lt
-    (lt: x < bv.length)
+    (lt: x < fv.length)
   :
-    (var x).intp2 bv b c = {bv[x]}
+    (var x).intp2 fv b c = {fv[x]}
   := by
-    show intpVar bv x = _
+    show intpVar fv x = _
     unfold intpVar
     rw [List.getElem?_eq_getElem lt]
   
   def intp2_var_eq_singleton
-    {bv: List Pair}
+    {fv: List Pair}
     {dBound: Pair}
-    (eq: bv[x]? = .some dBound)
+    (eq: fv[x]? = .some dBound)
   :
-    (var x).intp2 bv b c = {dBound}
+    (var x).intp2 fv b c = {dBound}
   := by
-    show intpVar bv x = _
+    show intpVar fv x = _
     unfold intpVar
     rw [eq]
   
   def inVar
-    {bv: List Pair}
+    {fv: List Pair}
     {dBound: Pair}
-    (eq: bv[x]? = .some dBound)
+    (eq: fv[x]? = .some dBound)
   :
-    (var x).intp2 bv b c dBound
+    (var x).intp2 fv b c dBound
   :=
     intp2_var_eq_singleton eq ▸ rfl
   
   def inVarElim
-    (h: (var x).intp2 bv b c d)
-    (eq: bv[x]? = .some dBound)
+    (h: (var x).intp2 fv b c d)
+    (eq: fv[x]? = .some dBound)
   :
     d = dBound
   := by
@@ -53,19 +53,19 @@ namespace SingleLaneExpr
   
   
   def inNull:
-    null.intp2 bv b c .null
+    null.intp2 fv b c .null
   :=
     rfl
   
   def inNullElim
-    (inNull: null.intp2 bv b c d)
+    (inNull: null.intp2 fv b c d)
   :
     d = .null
   :=
     inNull
   
   def inNullElimNeq
-    (inNull: null.intp2 bv b c d)
+    (inNull: null.intp2 fv b c d)
     a b
   :
     d ≠ Pair.pair a b
@@ -73,7 +73,7 @@ namespace SingleLaneExpr
     fun eq => Pair.noConfusion (inNull.symm.trans eq)
   
   def inNullElimPair
-    (inNull: null.intp2 bv b c (Pair.pair pA pB))
+    (inNull: null.intp2 fv b c (Pair.pair pA pB))
     {P: Prop}
   :
     P
@@ -82,31 +82,31 @@ namespace SingleLaneExpr
   
   
   def inPair
-    (inLeft: exprL.intp2 bv b c pA)
-    (inRite: exprR.intp2 bv b c pB)
+    (inLeft: exprL.intp2 fv b c pA)
+    (inRite: exprR.intp2 fv b c pB)
   :
-    (pair exprL exprR).intp2 bv b c (Pair.pair pA pB)
+    (pair exprL exprR).intp2 fv b c (Pair.pair pA pB)
   :=
     ⟨pA, pB, rfl, inLeft, inRite⟩
   
   def inPairElim
-    (inPair: (pair exprL exprR).intp2 bv b c (Pair.pair pA pB))
+    (inPair: (pair exprL exprR).intp2 fv b c (Pair.pair pA pB))
   :
     And
-      (exprL.intp2 bv b c pA)
-      (exprR.intp2 bv b c pB)
+      (exprL.intp2 fv b c pA)
+      (exprR.intp2 fv b c pB)
   :=
     let ⟨_pairL, _pairR, eq, inL, inR⟩ := inPair
     let ⟨eqL, eqR⟩ := Pair.noConfusion eq And.intro
     ⟨eqL ▸ inL, eqR ▸ inR⟩
   
   def inPairElimEx
-    (inPair: (pair exprL exprR).intp2 bv b c d)
+    (inPair: (pair exprL exprR).intp2 fv b c d)
   :
     ∃ pA pB,
       d = Pair.pair pA pB ∧
-      exprL.intp2 bv b c pA ∧
-      exprR.intp2 bv b c pB
+      exprL.intp2 fv b c pA ∧
+      exprR.intp2 fv b c pB
   :=
     match d with
     | Pair.pair pA pB =>
@@ -115,7 +115,7 @@ namespace SingleLaneExpr
       ⟨pA, pB, ⟨rfl, eqL ▸ inL, eqR ▸ inR⟩⟩
   
   def inPairElimNope
-    (inPair: (pair exprL exprR).intp2 bv b c .null)
+    (inPair: (pair exprL exprR).intp2 fv b c .null)
     {P: Prop}
   :
     P
@@ -124,51 +124,51 @@ namespace SingleLaneExpr
     Pair.noConfusion eq
   
   def ninPairElim
-    (ninPair: ¬ (pair exprL exprR).intp2 bv b c (.pair pA pB))
+    (ninPair: ¬ (pair exprL exprR).intp2 fv b c (.pair pA pB))
   :
-    ¬ exprL.intp2 bv b c pA ∨ ¬ exprR.intp2 bv b c pB
+    ¬ exprL.intp2 fv b c pA ∨ ¬ exprR.intp2 fv b c pB
   :=
     not_and_or.mp fun ⟨inL, inR⟩ =>
       ninPair ⟨pA, pB, rfl, inL, inR⟩
   
   
   def inIr
-    (l: exprL.intp2 bv b c d)
-    (r: exprR.intp2 bv b c d)
+    (l: exprL.intp2 fv b c d)
+    (r: exprR.intp2 fv b c d)
   :
-    (ir exprL exprR).intp2 bv b c d
+    (ir exprL exprR).intp2 fv b c d
   :=
     ⟨l, r⟩
   
   def inIrElim
-    (inIr: (ir exprL exprR).intp2 bv b c d)
+    (inIr: (ir exprL exprR).intp2 fv b c d)
   :
     And
-      (exprL.intp2 bv b c d)
-      (exprR.intp2 bv b c d)
+      (exprL.intp2 fv b c d)
+      (exprR.intp2 fv b c d)
   :=
     inIr
   
   def inIrElimL
-    (inIr: (ir exprL exprR).intp2 bv b c d)
+    (inIr: (ir exprL exprR).intp2 fv b c d)
   :
-    exprL.intp2 bv b c d
+    exprL.intp2 fv b c d
   :=
     inIr.left
 
   def inIrElimR
-    (inIr: (ir exprL exprR).intp2 bv b c d)
+    (inIr: (ir exprL exprR).intp2 fv b c d)
   :
-    exprR.intp2 bv b c d
+    exprR.intp2 fv b c d
   :=
     inIr.right
   
   
   def inFull
     (d: Pair)
-    (allInExpr: (dE: Pair) → expr.intp2 bv b c dE)
+    (allInExpr: (dE: Pair) → expr.intp2 fv b c dE)
   :
-    (full expr).intp2 bv b c d
+    (full expr).intp2 fv b c d
   :=
     allInExpr
   
@@ -177,75 +177,75 @@ namespace SingleLaneExpr
     -- it is ignored by the interpretation function,
     -- so Lean frequently fails with "don't know how to
     -- synthesize this implicit argument" errors.
-    (inFull: (full expr).intp2 bv b c .null)
+    (inFull: (full expr).intp2 fv b c .null)
   :
-    ∀ dE, expr.intp2 bv b c dE
+    ∀ dE, expr.intp2 fv b c dE
   :=
     inFull
   
   
   def inCompl
-    (ninBody: ¬body.intp2 bv b c d)
+    (ninBody: ¬body.intp2 fv b c d)
   :
-    (compl body).intp2 bv c b d
+    (compl body).intp2 fv c b d
   :=
     ninBody
   
   def inComplElim
-    (inCompl: (compl body).intp2 bv b c d)
+    (inCompl: (compl body).intp2 fv b c d)
   :
-    ¬body.intp2 bv c b d
+    ¬body.intp2 fv c b d
   :=
     inCompl
   
   def ninCompl
-    (inBody: body.intp2 bv b c d)
+    (inBody: body.intp2 fv b c d)
   :
-    ¬(compl body).intp2 bv c b d
+    ¬(compl body).intp2 fv c b d
   :=
     (· inBody)
   
   
   def inArbIr
-    {bv: List Pair}
+    {fv: List Pair}
     {b c: Valuation Pair}
     {d: Pair}
-    (inBody: ∀ dBound, body.intp2 (dBound :: bv) b c d)
+    (inBody: ∀ dBound, body.intp2 (dBound :: fv) b c d)
   :
-    (arbIr body).intp2 bv b c d
+    (arbIr body).intp2 fv b c d
   :=
     fun d => inBody d
   
   
   def inArbIrElim
-    (inArbIr: (arbIr body).intp2 bv b c d)
+    (inArbIr: (arbIr body).intp2 fv b c d)
     (dBound: Pair)
   :
-    body.intp2 (dBound :: bv) b c d
+    body.intp2 (dBound :: fv) b c d
   :=
     inArbIr dBound
   
   
   def inUnL
-    (inLeft: left.intp2 bv b c d)
+    (inLeft: left.intp2 fv b c d)
   :
-    (un left rite).intp2 bv b c d
+    (un left rite).intp2 fv b c d
   :=
     inCompl (fun ⟨ninL, _⟩ => ninL inLeft)
   
   def inUnR
-    (inRite: rite.intp2 bv b c d)
+    (inRite: rite.intp2 fv b c d)
   :
-    (un left rite).intp2 bv b c d
+    (un left rite).intp2 fv b c d
   :=
     inCompl (fun ⟨_, ninR⟩ => ninR inRite)
   
   def inUnElim
-    (inUn: (un left rite).intp2 bv b c d)
+    (inUn: (un left rite).intp2 fv b c d)
   :
-    Or (left.intp2 bv b c d) (rite.intp2 bv b c d)
+    Or (left.intp2 fv b c d) (rite.intp2 fv b c d)
   :=
-    match Classical.em (left.intp2 bv b c d) with
+    match Classical.em (left.intp2 fv b c d) with
     | .inl inL => .inl inL
     | .inr ninL =>
       .inr <| Classical.byContradiction fun ninR =>
@@ -254,16 +254,16 @@ namespace SingleLaneExpr
   
   def inSome
     (d: Pair)
-    (inBody: body.intp2 bv b c dE)
+    (inBody: body.intp2 fv b c dE)
   :
-    (some body).intp2 bv b c d
+    (some body).intp2 fv b c d
   :=
     inCompl (fun h => h dE inBody)
   
   def inSomeElim
-    (inSome: (some body).intp2 bv b c d)
+    (inSome: (some body).intp2 fv b c d)
   :
-    ∃ dE, body.intp2 bv b c dE
+    ∃ dE, body.intp2 fv b c dE
   :=
     Classical.byContradiction fun h =>
       inSome (fun dE ninBody => h ⟨dE, ninBody⟩)
@@ -271,40 +271,40 @@ namespace SingleLaneExpr
   
   def inArbUn
     (dBound: Pair)
-    (inBody: body.intp2 (dBound :: bv) b c d)
+    (inBody: body.intp2 (dBound :: fv) b c d)
   :
-    (arbUn body).intp2 bv b c d
+    (arbUn body).intp2 fv b c d
   :=
     inCompl (fun h => h dBound inBody)
   
   def inArbUnElim
-    (inArbUn: (arbUn body).intp2 bv b c d)
+    (inArbUn: (arbUn body).intp2 fv b c d)
   :
-    ∃ dBound, body.intp2 (dBound :: bv) b c d
+    ∃ dBound, body.intp2 (dBound :: fv) b c d
   :=
     Classical.byContradiction fun h =>
       inArbUn (fun dBound ninBody => h ⟨dBound, ninBody⟩)
   
   
-  def inAny: intp2 .any bv b c d := inArbUn d (inVar rfl)
-  def ninNone: ¬ intp2 .none bv b c d := ninCompl inAny
-  def inNoneElim: intp2 .none bv b c d → P := ninNone.elim
+  def inAny: intp2 .any fv b c d := inArbUn d (inVar rfl)
+  def ninNone: ¬ intp2 .none fv b c d := ninCompl inAny
+  def inNoneElim: intp2 .none fv b c d → P := ninNone.elim
   
   def intp2_none_eq_empty:
-    intp2 .none bv b c = {}
+    intp2 .none fv b c = {}
   :=
     le_antisymm (fun _ => ninNone) nofun
   
   
   abbrev InWfm
-    (bv: List Pair)
+    (fv: List Pair)
     (dl: DefList)
     (expr: SingleLaneExpr)
     (d: Pair)
   :
     Prop
   :=
-    expr.intp2 bv dl.wfm dl.wfm d
+    expr.intp2 fv dl.wfm dl.wfm d
   
   
   def InWfm.of_in_def_no_bv

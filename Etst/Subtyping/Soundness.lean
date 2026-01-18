@@ -4,20 +4,20 @@ namespace Etst
 open Expr
 
 open SingleLaneExpr in
-def DefList.SubsetBv.subsetOfFullImpl {dl bv x a b d}
-  (h: SubsetBv dl bv x (SingleLaneExpr.full (SingleLaneExpr.impl a b)))
-  (isIn: d ∈ x.intp bv dl.wfm)
+def DefList.SubsetBv.subsetOfFullImpl {dl fv x a b d}
+  (h: SubsetBv dl fv x (SingleLaneExpr.full (SingleLaneExpr.impl a b)))
+  (isIn: d ∈ x.intp fv dl.wfm)
 :
-  dl.SubsetBv bv a b
+  dl.SubsetBv fv a b
 :=
   fun d' inA =>
     inImplElim (inFullElim (h isIn) d') inA
 
 open SingleLaneExpr in
-def DefList.SubsetBv.fullImplOfSubset {dl bv x a b}
-  (h: SubsetBv dl bv a b)
+def DefList.SubsetBv.fullImplOfSubset {dl fv x a b}
+  (h: SubsetBv dl fv a b)
 :
-  SubsetBv dl bv x (SingleLaneExpr.full (SingleLaneExpr.impl a b))
+  SubsetBv dl fv x (SingleLaneExpr.full (SingleLaneExpr.impl a b))
 :=
   fun _ _ =>
     inFull .null fun _ =>
@@ -31,7 +31,7 @@ def DefList.SubsetStx.isSound
 :
   dl.Subset a b
 :=
-  fun bv d isIn =>
+  fun fv d isIn =>
     match sub with
     | subDefPos => Set3.defMem.toPos isIn
     | pairMono subL subR =>
@@ -40,8 +40,8 @@ def DefList.SubsetStx.isSound
             match p with
             | .pair pa pb =>
               let ⟨inA, inB⟩ := inPairElim inP
-              let inImplA := inFullElim (subL.isSound bv isIn) pa
-              let inImplB := inFullElim (subR.isSound bv isIn) pb
+              let inImplA := inFullElim (subL.isSound fv isIn) pa
+              let inImplB := inFullElim (subR.isSound fv isIn) pb
               inPair (inImplElim inImplA inA) (inImplElim inImplB inB)
     | subComplPairUn =>
         match d with
@@ -84,7 +84,7 @@ def DefList.SubsetStx.isSound
     | subIrL => inIrElimL isIn
     | subIrR => inIrElimR isIn
     | subIr subA subB =>
-        inIr (subA.isSound bv isIn) (subB.isSound bv isIn)
+        inIr (subA.isSound fv isIn) (subB.isSound fv isIn)
     | subIrUnDistL =>
         let ⟨isInUn, isInC⟩ := inIrElim isIn
         (inUnElim isInUn).elim
@@ -102,7 +102,7 @@ def DefList.SubsetStx.isSound
         let ⟨_, inFullA⟩ := inSomeElim isIn
         inFullA
     | subCompl sub =>
-        fun isInA => isIn (sub.isSound bv isInA)
+        fun isInA => isIn (sub.isSound fv isInA)
     | subDne =>
         Classical.byContradiction isIn
     | subDni =>
@@ -111,43 +111,43 @@ def DefList.SubsetStx.isSound
         let ⟨inA, inAc⟩ := inIrElim isIn
         (inAc inA).elim
     | isFull subA =>
-        fun _ => subA.isSound bv inAny
+        fun _ => subA.isSound fv inAny
     | univIntro sub =>
         fun dX =>
           let eq := by
             unfold SingleLaneExpr.intp
-            rw [intp2_lift_eq a bv [dX] dl.wfm dl.wfm]
+            rw [intp2_lift_eq a fv [dX] dl.wfm dl.wfm]
             rfl
           sub.isSound
-            (dX :: bv)
+            (dX :: fv)
             (cast eq isIn)
     | univElim (t:=t) (a:=a) isSome isSubsingle sub =>
-        let ⟨_dt, inT⟩ := inSomeElim (isSome.isSound bv isIn)
-        let ⟨dX, inCond⟩ := inArbUnElim (isSubsingle.isSound bv isIn)
+        let ⟨_dt, inT⟩ := inSomeElim (isSome.isSound fv isIn)
+        let ⟨dX, inCond⟩ := inArbUnElim (isSubsingle.isSound fv isIn)
         let inImpl := inFullElim inCond
         
-        let tSub: intp t bv dl.wfm ⊆ {dX} := fun z hz =>
-          let hz_lift: z ∈ intp t.lift (dX :: bv) dl.wfm :=
-            (intp_lift_eq t bv [dX] dl.wfm) ▸ hz
+        let tSub: intp t fv dl.wfm ⊆ {dX} := fun z hz =>
+          let hz_lift: z ∈ intp t.lift (dX :: fv) dl.wfm :=
+            (intp_lift_eq t fv [dX] dl.wfm) ▸ hz
           inImplElim (inImpl z) hz_lift
         
-        let tEq: intp t bv dl.wfm = {dX} :=
+        let tEq: intp t fv dl.wfm = {dX} :=
           Set.eq_singleton_iff_unique_mem.mpr ⟨
              by cases tSub inT; exact inT,
              fun _ hy => tSub hy
           ⟩
         
         intp_instantiateVar_eq a t tEq ▸
-        inArbIrElim (sub.isSound bv isIn) dX
+        inArbIrElim (sub.isSound fv isIn) dX
 
-    | trans ab bc => bc.isSound bv (ab.isSound bv isIn)
+    | trans ab bc => bc.isSound fv (ab.isSound fv isIn)
     | subUnfold => SingleLaneExpr.InWfm.in_def isIn
     | subFold => SingleLaneExpr.InWfm.of_in_def isIn
     | mutInduction desc premises i =>
       let isSub :=
         MutIndDescriptor.isSound
           desc
-          bv
-          (fun i => ((premises i).isSound bv).subsetOfFullImpl isIn)
+          fv
+          (fun i => ((premises i).isSound fv).subsetOfFullImpl isIn)
           i
       isSub.fullImplOfSubset isIn

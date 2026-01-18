@@ -1286,14 +1286,14 @@ end DefList.SubsetStx
 -- Semantic entailment for a given assignment of variables.
 abbrev DefList.SubsetBv
   (dl: DefList)
-  (bv: List Pair)
+  (fv: List Pair)
   (a b: SingleLaneExpr)
 :=
-  Set.Subset (a.intp bv dl.wfm) (b.intp bv dl.wfm)
+  Set.Subset (a.intp fv dl.wfm) (b.intp fv dl.wfm)
 
 -- Semantic entailment.
 abbrev DefList.Subset
   (dl: DefList)
   (a b: SingleLaneExpr)
 :=
-  ∀ bv, dl.SubsetBv bv a b
+  ∀ fv, dl.SubsetBv fv a b

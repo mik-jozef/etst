@@ -53,8 +53,8 @@ def SingleLaneExpr.intp2_mono_std
   (laneEq: LaneEq expr ed premiseType)
 :
   Set.Subset
-    (expr.intp2 bv (ite ed b c1) (ite ed c0 b))
-    (expr.intp2 bv (ite ed b c0) (ite ed c1 b))
+    (expr.intp2 fv (ite ed b c1) (ite ed c0 b))
+    (expr.intp2 fv (ite ed b c0) (ite ed c1 b))
 :=
   fun _ dIn =>
     match expr with
@@ -106,8 +106,8 @@ def BasicExpr.triIntp2_mono_std_defMem
 :
   let lane: Set3.Lane := ite ed .defLane .posLane
   Subset
-    ((expr.triIntp2 bv (ite ed b c1) (ite ed c0 b)).getLane lane)
-    ((expr.triIntp2 bv (ite ed b c0) (ite ed c1 b)).getLane lane)
+    ((expr.triIntp2 fv (ite ed b c1) (ite ed c0 b)).getLane lane)
+    ((expr.triIntp2 fv (ite ed b c0) (ite ed c1 b)).getLane lane)
 := by
   cases ed <;>
   exact
@@ -124,8 +124,8 @@ def BasicExpr.triIntp2_mono_std_posMem
 :
   let lane: Set3.Lane := ite ed .posLane .defLane
   Subset
-    ((expr.triIntp2 bv (ite ed b c1) (ite ed c0 b)).getLane lane)
-    ((expr.triIntp2 bv (ite ed b c0) (ite ed c1 b)).getLane lane)
+    ((expr.triIntp2 fv (ite ed b c1) (ite ed c0 b)).getLane lane)
+    ((expr.triIntp2 fv (ite ed b c0) (ite ed c1 b)).getLane lane)
 := by
   cases ed <;>
   exact
@@ -141,8 +141,8 @@ def BasicExpr.triIntp2_mono_std
   (ed: Bool)
 :
   Set3.LeStd
-    (expr.triIntp2 bv (ite ed b c1) (ite ed c0 b))
-    (expr.triIntp2 bv (ite ed b c0) (ite ed c1 b))
+    (expr.triIntp2 fv (ite ed b c1) (ite ed c0 b))
+    (expr.triIntp2 fv (ite ed b c0) (ite ed c1 b))
 :=
   match ed with
   | true =>
@@ -169,12 +169,12 @@ def DefList.triIntp2_mono_std
 
 def BasicExpr.triIntp2_mono_apx
   {expr: BasicExpr}
-  {bv: List Pair}
+  {fv: List Pair}
   {b0 b1 c0 c1: Valuation Pair}
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
-  expr.triIntp2 bv b0 c0 ⊑ expr.triIntp2 bv b1 c1
+  expr.triIntp2 fv b0 c0 ⊑ expr.triIntp2 fv b1 c1
 :=
   match expr with
   | .const x => {
@@ -231,8 +231,8 @@ def BasicExpr.triIntp2_mono_apx_defMem
   (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
 :
   Set.Subset
-    (expr.triIntp2 bv b0 c0).defMem
-    (expr.triIntp2 bv b1 c1).defMem
+    (expr.triIntp2 fv b0 c0).defMem
+    (expr.triIntp2 fv b1 c1).defMem
 :=
   let c0LeSelf := (Valuation.ordApx Pair).le_refl c0
   let isMonoB := triIntp2_mono_apx bLe c0LeSelf
@@ -246,8 +246,8 @@ def BasicExpr.triIntp2_mono_apx_posMem
   (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
 :
   Set.Subset
-    (expr.triIntp2 bv b1 c1).posMem
-    (expr.triIntp2 bv b0 c0).posMem
+    (expr.triIntp2 fv b1 c1).posMem
+    (expr.triIntp2 fv b0 c0).posMem
 :=
   let c0LeSelf := (Valuation.ordApx Pair).le_refl c1
   let isMonoB := triIntp2_mono_apx bLe c0LeSelf
@@ -265,12 +265,12 @@ def DefList.triIntp2_mono_apx
   fun _ => BasicExpr.triIntp2_mono_apx bLe cLe
 
 
-def BasicExpr.triIntp2_getLane_eq {bv b c lane}
+def BasicExpr.triIntp2_getLane_eq {fv b c lane}
   (expr: BasicExpr)
 :
   Eq
-    ((expr.triIntp2 bv b c).getLane lane)
-    ((expr.toLane lane).intp2 bv b c)
+    ((expr.triIntp2 fv b c).getLane lane)
+    ((expr.toLane lane).intp2 fv b c)
 :=
   match lane with
   | .defLane => rfl

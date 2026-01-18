@@ -178,12 +178,12 @@ inductive Pair where
 abbrev SingleLaneExpr := Expr Set3.Lane
 
 def SingleLaneExpr.intpVar
-  (bv: List Pair)
+  (fv: List Pair)
   (x: Nat)
 :
   Set Pair
 :=
-  match bv[x]? with
+  match fv[x]? with
   | none => {}
   | some d => {d}
 
@@ -201,40 +201,40 @@ def SingleLaneExpr.intpVar
 -/
 def SingleLaneExpr.intp2
   (expr: SingleLaneExpr)
-  (bv: List Pair)
+  (fv: List Pair)
   (b c: Valuation Pair)
 :
   Set Pair
 :=
   match expr with
   | .const lane x => (c x).getLane lane
-  | .var x => intpVar bv x
+  | .var x => intpVar fv x
   | .null => {.null}
   | .pair left rite =>
       fun d =>
         ∃ dL dR,
           d = .pair dL dR ∧
-          intp2 left bv b c dL ∧
-          intp2 rite bv b c dR
+          intp2 left fv b c dL ∧
+          intp2 rite fv b c dR
   | .ir left rite =>
       fun d =>
         And
-          (intp2 left bv b c d)
-          (intp2 rite bv b c d)
+          (intp2 left fv b c d)
+          (intp2 rite fv b c d)
   | .full body =>
-      fun _ => ∀ dB, intp2 body bv b c dB
+      fun _ => ∀ dB, intp2 body fv b c dB
   | .compl body =>
       -- Note the swap of b and c.
-      (intp2 body bv c b).compl
+      (intp2 body fv c b).compl
   | .arbIr body =>
-      fun d => ∀ dX, intp2 body (dX :: bv) b c d
+      fun d => ∀ dX, intp2 body (dX :: fv) b c d
 
 abbrev SingleLaneExpr.intp
   (expr: SingleLaneExpr)
-  (bv: List Pair)
+  (fv: List Pair)
   (v: Valuation Pair)
 :=
-  expr.intp2 bv v v
+  expr.intp2 fv v v
 
 
 -- Note the lane gets toggled inside complements.
@@ -262,28 +262,28 @@ def BasicExpr.toPosLane (expr: BasicExpr): SingleLaneExpr :=
 
 def BasicExpr.triIntp2Def
   (expr: BasicExpr)
-  (bv: List Pair)
+  (fv: List Pair)
   (b c: Valuation Pair)
 :
   Set Pair
 :=
-  (expr.toLane .defLane).intp2 bv b c
+  (expr.toLane .defLane).intp2 fv b c
 
 def BasicExpr.triIntp2Pos
   (expr: BasicExpr)
-  (bv: List Pair)
+  (fv: List Pair)
   (b c: Valuation Pair)
 :
   Set Pair
 :=
-  (expr.toLane .posLane).intp2 bv b c
+  (expr.toLane .posLane).intp2 fv b c
 
 -- A proof that definite membership implies possible membership.
 def BasicExpr.triIntp2_defLePos
   (expr: BasicExpr)
-  (isDef: expr.triIntp2Def bv b c d)
+  (isDef: expr.triIntp2Def fv b c d)
 :
-  expr.triIntp2Pos bv b c d
+  expr.triIntp2Pos fv b c d
 :=
   match expr, isDef with
   | .const x, isDef => (c x).defLePos isDef
@@ -317,22 +317,22 @@ def BasicExpr.triIntp2_defLePos
 -/
 def BasicExpr.triIntp2
   (expr: BasicExpr)
-  (bv: List Pair)
+  (fv: List Pair)
   (b c: Valuation Pair)
 :
   Set3 Pair
 := {
-  defMem := expr.triIntp2Def bv b c
-  posMem := expr.triIntp2Pos bv b c
+  defMem := expr.triIntp2Def fv b c
+  posMem := expr.triIntp2Pos fv b c
   defLePos _ := triIntp2_defLePos expr
 }
 
 abbrev BasicExpr.triIntp
   (expr: BasicExpr)
-  (bv: List Pair)
+  (fv: List Pair)
   (v: Valuation Pair)
 :=
-  expr.triIntp2 bv v v
+  expr.triIntp2 fv v v
 
 -- Interpretation on definition lists is defined pointwise.
 def DefList.triIntp2
