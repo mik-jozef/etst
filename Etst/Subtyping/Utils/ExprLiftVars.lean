@@ -129,19 +129,28 @@ namespace SingleLaneExpr
     match expr with
     | .const _ _ => rfl
     | .var x => by
-      show SingleLaneExpr.intp2Var (bvDepth ++ bv) x = SingleLaneExpr.intp2Var (bvDepth ++ bvLiftBy ++ bv) (if x < bvDepth.length then x else x + bvLiftBy.length)
-      unfold SingleLaneExpr.intp2Var
+      show
+        Eq
+          (intpVar (bvDepth ++ bv) x)
+          (intpVar
+            (bvDepth ++ bvLiftBy ++ bv)
+            (if x < bvDepth.length then x else x + bvLiftBy.length))
+      unfold intpVar
       rw [List.append_assoc]
       split_ifs with h1
       · rw [List.getElem?_append_left h1]
         rw [List.getElem?_append_left h1]
       · rw [List.getElem?_append_right (Nat.le_of_not_lt h1)]
-        rw [List.getElem?_append_right (Nat.le_trans (Nat.le_of_not_lt h1) (Nat.le_add_right _ _))]
+        rw [
+          List.getElem?_append_right
+            (Nat.le_trans (Nat.le_of_not_lt h1) (Nat.le_add_right _ _))]
         rw [List.getElem?_append_right]
         · congr 1
           rw [Nat.sub_sub]
           rw [Nat.add_sub_add_right]
-        · rw [Nat.le_sub_iff_add_le (Nat.le_trans (Nat.le_of_not_lt h1) (Nat.le_add_right _ _))]
+        · rw [
+            Nat.le_sub_iff_add_le
+              (Nat.le_trans (Nat.le_of_not_lt h1) (Nat.le_add_right _ _))]
           rw [Nat.add_comm bvLiftBy.length bvDepth.length]
           exact Nat.add_le_add_right (Nat.le_of_not_lt h1) bvLiftBy.length
     | .null => rfl
@@ -221,10 +230,10 @@ namespace SingleLaneExpr
     {bvLeft bvRite}
     (bvEq:
       ∀ x ∈ expr.UsesFreeVar,
-        intp2Var bvLeft x = (bvMap x).intp2 bvRite b c)
+        intpVar bvLeft x = (bvMap x).intp2 bvRite b c)
     (bvEqCpl:
       ∀ x ∈ expr.UsesFreeVar,
-        intp2Var bvLeft x = (bvMap x).intp2 bvRite c b)
+        intpVar bvLeft x = (bvMap x).intp2 bvRite c b)
   :
     Eq
       (expr.intp2 bvLeft b c)
@@ -265,12 +274,12 @@ namespace SingleLaneExpr
       let bvEqLifted {b c}
         (hyp:
           ∀ x ∈ (arbIr body).UsesFreeVar,
-            intp2Var bvLeft x = (bvMap x).intp2 bvRite b c)
+            intpVar bvLeft x = (bvMap x).intp2 bvRite b c)
         (d: Pair)
         (x: Nat)
         (h: x ∈ body.UsesFreeVar)
       :
-        intp2Var (d :: bvLeft) x = (bvMap' x).intp2 (d :: bvRite) b c
+        intpVar (d :: bvLeft) x = (bvMap' x).intp2 (d :: bvRite) b c
       :=
         match x with
         | 0 => rfl
@@ -283,13 +292,13 @@ namespace SingleLaneExpr
           (bvEqLifted bvEq d)
           (bvEqLifted bvEqCpl d)
   
-  def intp2_replaceVars_eq
+  def intp_replaceVars_eq
     (bvMap: Nat → SingleLaneExpr)
     {expr: SingleLaneExpr}
     {bvLeft bvRite v}
     (bvEq:
       ∀ x ∈ expr.UsesFreeVar,
-        intp2Var bvLeft x = (bvMap x).intp2 bvRite v v)
+        intpVar bvLeft x = (bvMap x).intp bvRite v)
   :
     Eq
       (expr.intp2 bvLeft v v)

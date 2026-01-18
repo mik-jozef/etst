@@ -177,7 +177,7 @@ inductive Pair where
 
 abbrev SingleLaneExpr := Expr Set3.Lane
 
-def SingleLaneExpr.intp2Var
+def SingleLaneExpr.intpVar
   (bv: List Pair)
   (x: Nat)
 :
@@ -208,7 +208,7 @@ def SingleLaneExpr.intp2
 :=
   match expr with
   | .const lane x => (c x).getLane lane
-  | .var x => intp2Var bv x
+  | .var x => intpVar bv x
   | .null => {.null}
   | .pair left rite =>
       fun d =>
