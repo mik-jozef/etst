@@ -180,12 +180,11 @@ inductive DefList.SubsetStx
 | -- TODO is this provable with induction?
   subDefPos {x}:
     dl.SubsetStx (const .defLane x) (const .posLane x)
-|
-  pairMono
-    (sl: dl.SubsetStx x (full (impl al bl)))
-    (sr: dl.SubsetStx x (full (impl ar br)))
+| pairMono
+    (sl: dl.SubsetStx al bl)
+    (sr: dl.SubsetStx ar br)
   :
-    dl.SubsetStx x (full (impl (pair al ar) (pair bl br)))
+    dl.SubsetStx (pair al ar) (pair bl br)
 |
   subComplPairUn:
     dl.SubsetStx
@@ -1010,7 +1009,56 @@ namespace DefList.SubsetStx
       trans sub subFold
   
   
-  def implPairMono:
+  def pairMonoWithCtx
+    (dist: ∀ {s a b}, dl.SubsetStx (ir (full s) (pair a b)) (pair (ir (full s) a) (ir (full s) b)))
+    (sl: dl.SubsetStx x (full (impl al bl)))
+    (sr: dl.SubsetStx x (full (impl ar br)))
+  :
+    dl.SubsetStx x (full (impl (pair al ar) (pair bl br)))
+  :=
+    let cal := full (impl al bl)
+    let car := full (impl ar br)
+    
+    let lemma1 {A B l} (subL: dl.SubsetStx l (full (impl A B))) (subR: dl.SubsetStx l A) : dl.SubsetStx l B :=
+      implElim (trans subL fullElim) subR
+      
+    let core: dl.SubsetStx (ir cal (ir car (pair al ar))) (pair bl br) :=
+      trans (irCtxLR subId dist) <|
+      trans dist <|
+      pairMono
+        (lemma1 subIrL (trans subIrR subIrR))
+        (lemma1 (trans subIrR subIrL) (trans subIrR subIrR))
+    
+    let subAssoc {a b c} : dl.SubsetStx (ir (ir a b) c) (ir a (ir b c)) :=
+      subIr
+        (trans subIrL subIrL)
+        (subIr
+          (trans subIrL subIrR)
+          subIrR)
+
+    let bigImpl: dl.SubsetStx any (impl cal (impl car (impl (pair al ar) (pair bl br)))) :=
+      implIntro <| implIntro <| implIntro <|
+      trans (irCtxLR (irCtxLR subIrR subId) subId) <|
+      trans subAssoc <|
+      core
+
+    let fullBig: dl.SubsetStx x (full (impl cal (impl car (impl (pair al ar) (pair bl br))))) :=
+      isFull bigImpl
+
+    let step1: dl.SubsetStx x (impl (full cal) (full (impl car (impl (pair al ar) (pair bl br))))) :=
+      trans fullBig fullImplElim
+    
+    let elim1: dl.SubsetStx x (full (impl car (impl (pair al ar) (pair bl br)))) :=
+      implElim step1 (trans sl fullAddFull)
+
+    let step2: dl.SubsetStx x (impl (full car) (full (impl (pair al ar) (pair bl br)))) :=
+      trans elim1 fullImplElim
+
+    implElim step2 (trans sr fullAddFull)
+  
+  def implPairMono
+    (dist: ∀ {s a b}, dl.SubsetStx (ir (full s) (pair a b)) (pair (ir (full s) a) (ir (full s) b)))
+  :
     dl.SubsetStx
       any
       (impl
@@ -1022,19 +1070,8 @@ namespace DefList.SubsetStx
     implIntro
       (implIntro
         (trans
-          (pairMono (irCtxL subIrR) subIrR)
+          (pairMonoWithCtx dist (irCtxL subIrR) subIrR)
           fullElim))
-  
-  def pairMonoOfSub
-    (sl: dl.SubsetStx al bl)
-    (sr: dl.SubsetStx ar br)
-  :
-    dl.SubsetStx (pair al ar) (pair bl br)
-  :=
-    ofImpl
-      (implElim
-        (implElim implPairMono (isFullImpl sl))
-        (isFullImpl sr))
   
   
   def subMutInduction
@@ -1108,7 +1145,7 @@ namespace DefList.SubsetStx
       (pair (compl (un a b)) c)
   :=
     trans subPairIrDistL <|
-    pairMonoOfSub subComplUnElim subId
+    pairMono subComplUnElim subId
 
   def subIrPairComplUnR {a b c}:
     dl.SubsetStx
@@ -1116,7 +1153,7 @@ namespace DefList.SubsetStx
       (pair a (compl (un b c)))
   :=
     trans subPairIrDistR <|
-    pairMonoOfSub subId subComplUnElim
+    pairMono subId subComplUnElim
 
   def subPairUnDistL {a b c}:
     dl.SubsetStx (pair (un a b) c) (un (pair a c) (pair b c))
@@ -1167,7 +1204,7 @@ namespace DefList.SubsetStx
   def subIrNullPair {a b x}:
     dl.SubsetStx (ir .null (pair a b)) x
   :=
-    trans (irCtxLR subId (pairMonoOfSub subAny subAny)) <|
+    trans (irCtxLR subId (pairMono subAny subAny)) <|
     trans (irCtxLR (trans (unL subId) subUnComplPair) subId) <|
     trans subIrSymm <|
     subPe
@@ -1181,8 +1218,8 @@ namespace DefList.SubsetStx
     unCtxLR
       subId
       (unCtx
-        (pairMonoOfSub subAny subId)
-        (pairMonoOfSub subId subAny))
+        (pairMono subAny subId)
+        (pairMono subId subAny))
   
   
   def subArbUnIntro {a t}
