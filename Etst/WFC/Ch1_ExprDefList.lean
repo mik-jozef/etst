@@ -90,9 +90,9 @@ namespace Expr
 
   
   -- `any` contains all elements, under any valuation.
-  def any: Expr E := .arbUn (.var 0)
+  def any: Expr E := arbUn (var 0)
   -- `none` contains no elements, under any valuation.
-  def none: Expr E := .compl any
+  def none: Expr E := arbIr (compl (var 0))
   
   -- Removes all variables with index >= ub.
   def clearVars (ub := 0): Expr E → Expr E

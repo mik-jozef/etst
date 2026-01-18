@@ -24,8 +24,7 @@ namespace Expr
   :
     clearVars (E := E) n none = none
   :=
-    show (if 0 < n + 1 then var 0 else none).arbUn.compl = none from
-    if_pos (Nat.zero_lt_succ n) ▸ rfl
+    rfl
   
   def clearVars_idempotent (expr: Expr E):
     (expr.clearVars n).clearVars n = expr.clearVars n
