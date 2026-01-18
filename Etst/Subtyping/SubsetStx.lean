@@ -177,7 +177,7 @@ inductive DefList.SubsetStx
   SingleLaneExpr →
   SingleLaneExpr →
   Type
-|
+| -- TODO is this provable with induction?
   subDefPos {x}:
     dl.SubsetStx (const .defLane x) (const .posLane x)
 |
@@ -253,25 +253,6 @@ inductive DefList.SubsetStx
 -- implication elimination, which is derived from this.
 | subPe:
     dl.SubsetStx (ir a a.compl) b
--- IsSingleton expr := (some expr) & (Ex p, full (impl expr p))
--- TODO these are adapted from logic, but are not general enougn, I think.
---   Logic has only `true = {*}` and `false = {}`, so it needs not deal
---   with the general case of non-subsingleton types.
--- note: replaceNextVar ought to bump vars.
--- q: can I make a separate rule for replacing var using replaceNextVar?
--- existential introduction, sub form:
---   (body: SingleLaneExpr)
---   (IsSingleton t)
---   SubsetStx (body.replaceNextVar t) (Ex x, body)
--- existential elimination TODO this one is unfinished
---   (body: SingleLaneExpr)
---   (IsSingleton t)
---   SubsetStx body b
---   SubsetStx (arbUn body) b
--- universal elimination
---   (body: SingleLaneExpr)
---   (IsSingleton t)
---   SubsetStx (arbIr body) (body.replaceNextVar t)
 |
   univIntro
     (sub: dl.SubsetStx x.lift a)
