@@ -15,10 +15,10 @@ namespace SingleLaneExpr
     Expr.un left rite
   def ir (left rite: SingleLaneExpr): SingleLaneExpr :=
     Expr.ir left rite
-  def condSome (body: SingleLaneExpr): SingleLaneExpr :=
-    Expr.condSome body
-  def condFull (body: SingleLaneExpr): SingleLaneExpr :=
-    Expr.condFull body
+  def some (body: SingleLaneExpr): SingleLaneExpr :=
+    Expr.some body
+  def full (body: SingleLaneExpr): SingleLaneExpr :=
+    Expr.full body
   def compl (body: SingleLaneExpr): SingleLaneExpr :=
     Expr.compl body
   def arbUn (body: SingleLaneExpr): SingleLaneExpr :=
@@ -56,10 +56,10 @@ namespace SingleLaneExpr
       (riteEq: LaneEqEven lane isEvenDepth rite)
     :
       LaneEqEven lane isEvenDepth (ir left rite)
-  | condFull
+  | full
       (bodyEq: LaneEqEven lane isEvenDepth body)
     :
-      LaneEqEven lane isEvenDepth (condFull body)
+      LaneEqEven lane isEvenDepth (full body)
   | compl
       (bodyEq: LaneEqEven lane (!isEvenDepth) body)
     :
@@ -102,13 +102,13 @@ namespace SingleLaneExpr
       match laneEq with
       | .ir _ riteEq => riteEq
     
-    def elimCondFull
-      (laneEq: LaneEqEven lane ed (Expr.condFull body))
+    def elimFull
+      (laneEq: LaneEqEven lane ed (Expr.full body))
     :
       LaneEqEven lane ed body
     :=
       match laneEq with
-      | .condFull bodyEq => bodyEq
+      | .full bodyEq => bodyEq
     
     def elimCompl
       (laneEq: LaneEqEven lane ed (Expr.compl body))
@@ -162,10 +162,10 @@ def BasicExpr.laneEqEven
       .ir
         (left.laneEqEven lane false)
         (rite.laneEqEven lane false)
-  | .condFull body, true =>
-      .condFull (body.laneEqEven lane true)
-  | .condFull body, false =>
-      .condFull (body.laneEqEven lane false)
+  | .full body, true =>
+      .full (body.laneEqEven lane true)
+  | .full body, false =>
+      .full (body.laneEqEven lane false)
   | .compl body, true =>
       .compl (body.laneEqEven lane false)
   | .compl body, false =>
@@ -182,9 +182,9 @@ def Expr.toString (serializeVar: E → Nat → String):
   let left := left.toString serializeVar
   let rite := rite.toString serializeVar
   s!"({left}) | ({rite})"
-| .condSome body =>
+| .some body =>
   let cond := body.toString serializeVar
-  s!"(?i {cond})"
+  s!"(◇ {cond})"
 | .arbUn body =>
   let bodyStr := body.toString serializeVar
   s!"Ex ({bodyStr})"
@@ -200,9 +200,9 @@ def Expr.toString (serializeVar: E → Nat → String):
   let left := left.toString serializeVar
   let rite := rite.toString serializeVar
   s!"({left}) & ({rite})"
-| .condFull body =>
+| .full body =>
   let cond := body.toString serializeVar
-  s!"(?f {cond})"
+  s!"(□ {cond})"
 | .compl expr =>
   let exprStr := expr.toString serializeVar
   s!"!({exprStr})"

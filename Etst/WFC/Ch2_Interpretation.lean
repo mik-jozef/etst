@@ -30,7 +30,7 @@ namespace Valuation
     In the full valuation, every constant represents the full
     triset.
   -/
-  def full: Valuation D := fun _ => Set3.full
+  def univ: Valuation D := fun _ => Set3.univ
   
   -- The approximation order on valuations is defined pointwise.
   def ordApx (D: Type u):
@@ -221,7 +221,7 @@ def SingleLaneExpr.intp2
         And
           (intp2 left bv b c d)
           (intp2 rite bv b c d)
-  | .condFull body =>
+  | .full body =>
       fun _ => ∀ dB, intp2 body bv b c dB
   | .compl body =>
       -- Note the swap of b and c.
@@ -250,7 +250,7 @@ def BasicExpr.toLane
   | .null => .null
   | .pair left rite => .pair (left.toLane lane) (rite.toLane lane)
   | .ir left rite => .ir (left.toLane lane) (rite.toLane lane)
-  | .condFull body => .condFull (body.toLane lane)
+  | .full body => .full (body.toLane lane)
   | .compl body => .compl (body.toLane lane.toggle)
   | .arbIr body => .arbIr (body.toLane lane)
 
@@ -297,7 +297,7 @@ def BasicExpr.triIntp2_defLePos
       triIntp2_defLePos left isDefL,
       triIntp2_defLePos rite isDefR
     ⟩
-  | .condFull body, isDef => fun dB =>
+  | .full body, isDef => fun dB =>
       triIntp2_defLePos body (isDef dB)
   | .compl body, isDef => fun isPos =>
       isDef (triIntp2_defLePos body isPos)

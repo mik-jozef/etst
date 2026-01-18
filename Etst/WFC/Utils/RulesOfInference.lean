@@ -25,7 +25,7 @@ namespace SingleLaneExpr
   def intp2_var_eq_singleton
     {bv: List Pair}
     {dBound: Pair}
-    (eq: bv[x]? = some dBound)
+    (eq: bv[x]? = .some dBound)
   :
     (var x).intp2 bv b c = {dBound}
   := by
@@ -36,7 +36,7 @@ namespace SingleLaneExpr
   def inVar
     {bv: List Pair}
     {dBound: Pair}
-    (eq: bv[x]? = some dBound)
+    (eq: bv[x]? = .some dBound)
   :
     (var x).intp2 bv b c dBound
   :=
@@ -44,7 +44,7 @@ namespace SingleLaneExpr
   
   def inVarElim
     (h: (var x).intp2 bv b c d)
-    (eq: bv[x]? = some dBound)
+    (eq: bv[x]? = .some dBound)
   :
     d = dBound
   := by
@@ -164,24 +164,24 @@ namespace SingleLaneExpr
     inIr.right
   
   
-  def inCondFull
+  def inFull
     (d: Pair)
     (allInExpr: (dE: Pair) → expr.intp2 bv b c dE)
   :
-    (condFull expr).intp2 bv b c d
+    (full expr).intp2 bv b c d
   :=
     allInExpr
   
-  def inCondFullElim
+  def inFullElim
     -- note we're using null instead of d here because
     -- it is ignored by the interpretation function,
     -- so Lean frequently fails with "don't know how to
     -- synthesize this implicit argument" errors.
-    (inCondFull: (condFull expr).intp2 bv b c .null)
+    (inFull: (full expr).intp2 bv b c .null)
   :
     ∀ dE, expr.intp2 bv b c dE
   :=
-    inCondFull
+    inFull
   
   
   def inCompl
@@ -252,21 +252,21 @@ namespace SingleLaneExpr
         inUn ⟨ninL, ninR⟩
   
   
-  def inCondSome
+  def inSome
     (d: Pair)
     (inBody: body.intp2 bv b c dE)
   :
-    (condSome body).intp2 bv b c d
+    (some body).intp2 bv b c d
   :=
     inCompl (fun h => h dE inBody)
   
-  def inCondSomeElim
-    (inCondSome: (condSome body).intp2 bv b c d)
+  def inSomeElim
+    (inSome: (some body).intp2 bv b c d)
   :
     ∃ dE, body.intp2 bv b c dE
   :=
     Classical.byContradiction fun h =>
-      inCondSome (fun dE ninBody => h ⟨dE, ninBody⟩)
+      inSome (fun dE ninBody => h ⟨dE, ninBody⟩)
   
   
   def inArbUn

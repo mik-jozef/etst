@@ -9,10 +9,10 @@ namespace Expr
   def impl (left rite: Expr E) := un left.compl rite
   
   def ifThen (cond body: Expr E): Expr E :=
-    ir (condSome cond) body
+    ir (some cond) body
   
   def ifElse (cond body: Expr E): Expr E :=
-    ir (condFull cond.compl) body
+    ir (full cond.compl) body
   
   def ite (cond yes no: Expr E): Expr E :=
     un (ifThen cond yes) (ifElse cond no)
@@ -133,7 +133,7 @@ namespace SingleLaneExpr
   :
     intp2 (ifThen cond body) bv b c d
   :=
-    inIr (inCondSome dC inCond) inBody
+    inIr (inSome dC inCond) inBody
   
   def inIfThenElim
     {cond: SingleLaneExpr}
@@ -144,7 +144,7 @@ namespace SingleLaneExpr
       (intp2 body bv b c d)
   :=
     let ⟨inCond, inBody⟩ := inIrElim inIfThen
-    And.intro (inCondSomeElim inCond) inBody
+    And.intro (inSomeElim inCond) inBody
   
   
   /-
@@ -160,7 +160,7 @@ namespace SingleLaneExpr
   :
     intp2 (arbUnDom domain body) bv b c d
   :=
-    inArbUn dB (inIr (inCondSome dB ⟨rfl, inDomain⟩) inBody)
+    inArbUn dB (inIr (inSome dB ⟨rfl, inDomain⟩) inBody)
   
   -- I wish Lean supported anonymous structures.
   -- And also non-Prop-typed members of prop structures
@@ -256,7 +256,7 @@ namespace SingleLaneExpr
     ∃ fst, intp2 expr (zth :: bv) b c (Pair.pair zth fst)
   :=
     let ⟨pZth, ⟨inCond, inBody⟩⟩ := inArbUnElim inZthMember
-    let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inCondSomeElim inCond
+    let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inSomeElim inCond
     
     match pCond with
     | Pair.null => inPairElimNope inPair
@@ -272,7 +272,7 @@ namespace SingleLaneExpr
     ∃ zth, intp2 expr (fst :: bv) b c (Pair.pair zth fst)
   :=
     let ⟨pFst, ⟨inCond, inBody⟩⟩ := inArbUnElim inFstMember
-    let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inCondSomeElim inCond
+    let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inSomeElim inCond
     
     match pCond with
     | Pair.null => inPairElimNope inPair

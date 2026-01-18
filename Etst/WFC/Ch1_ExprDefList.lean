@@ -21,15 +21,15 @@ inductive Expr (E: Type*) where
 | null
 | pair (left rite: Expr E)
 | ir (left rite: Expr E)
-| condFull (body: Expr E)
+| full (body: Expr E)
 | compl (body: Expr E)
 | arbIr (body: Expr E)
 deriving DecidableEq
 
 def Expr.un (left rite: Expr E): Expr E :=
   compl (ir (compl left) (compl rite))
-def Expr.condSome (body: Expr E): Expr E :=
-  compl (condFull (compl body))
+def Expr.some (body: Expr E): Expr E :=
+  compl (full (compl body))
 def Expr.arbUn (body: Expr E): Expr E :=
   compl (arbIr (compl body))
 
@@ -46,10 +46,10 @@ def BasicExpr.un (left rite: BasicExpr): BasicExpr :=
   Expr.un left rite
 def BasicExpr.ir (left rite: BasicExpr): BasicExpr :=
   Expr.ir left rite
-def BasicExpr.condSome (body: BasicExpr): BasicExpr :=
-  Expr.condSome body
-def BasicExpr.condFull (body: BasicExpr): BasicExpr :=
-  Expr.condFull body
+def BasicExpr.some (body: BasicExpr): BasicExpr :=
+  Expr.some body
+def BasicExpr.full (body: BasicExpr): BasicExpr :=
+  Expr.full body
 def BasicExpr.compl (body: BasicExpr): BasicExpr :=
   Expr.compl body
 def BasicExpr.arbUn (body: BasicExpr): BasicExpr :=
@@ -66,7 +66,7 @@ namespace Expr
         | null => False
         | pair left rite => left.UsesConst x ∨ rite.UsesConst x
         | ir left rite => left.UsesConst x ∨ rite.UsesConst x
-        | condFull body => body.UsesConst x
+        | full body => body.UsesConst x
         | compl body => body.UsesConst x
         | arbIr body => body.UsesConst x
   
@@ -84,7 +84,7 @@ namespace Expr
         left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
     | ir left rite =>
         left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
-    | condFull body => body.IsPositive isEvenD
+    | full body => body.IsPositive isEvenD
     | compl body => body.IsPositive (!isEvenD)
     | arbIr body => body.IsPositive isEvenD
 
@@ -103,8 +103,8 @@ namespace Expr
         .pair (left.clearVars ub) (rite.clearVars ub)
     | .ir left rite =>
         .ir (left.clearVars ub) (rite.clearVars ub)
-    | .condFull body =>
-        .condFull (body.clearVars ub)
+    | .full body =>
+        .full (body.clearVars ub)
     | .compl e => .compl (e.clearVars ub)
     | .arbIr body => .arbIr (body.clearVars (ub + 1))
   

@@ -157,14 +157,14 @@ Ex n: Nat, (some n & !null) & n  ⊆  succ Nat
 
 Ex a b, a & b then (a, b)  ⊆  Ex a, (a, a)
 
-condSome expr     ===  Ex x, (condFull ~x | expr)
-~condFull ~expr   ===  ~All x, ~(condFull ~x | expr)
+some expr     ===  Ex x, (full ~x | expr)
+~full ~expr   ===  ~All x, ~(full ~x | expr)
 
 
 Any ⊆ T := null | (T, T)
 
-Nat ⊆ zth (Ex n: Nat, (n, foo n))  ->  All n: Nat, condSome (foo n)
-(Nat, Any) ⊆ (Ex n: Nat, (n, foo n))  ->  All n: Nat, condFull (foo n)
+Nat ⊆ zth (Ex n: Nat, (n, foo n))  ->  All n: Nat, some (foo n)
+(Nat, Any) ⊆ (Ex n: Nat, (n, foo n))  ->  All n: Nat, full (foo n)
 
 ~Nat  ==  All n: Nat, ~n
 
@@ -177,23 +177,23 @@ Ir a b, X === Ir b a, X
 
 Un a b, X  ⊆  Un b a, X
 
-condFull null  <=  none
+full null  <=  none
 
 condX expr |& condX expr'  ==?  condX (expr |& expr')
 
-condFull B  ==  arbIr (condFull B)
-condSome B  ==  arbUn (condSome B)
+full B  ==  arbIr (full B)
+some B  ==  arbUn (some B)
 
 
 -/
 
 
 /-
-Un t: T, B  ==  Un t, (condSome t & T) & B
-Ir t: T, B  ==  Ir t, (condSome t & ~T) | B
+Un t: T, B  ==  Un t, (some t & T) & B
+Ir t: T, B  ==  Ir t, (some t & ~T) | B
 
-Un t: T, B  ==  Un t, (condFull ~t | T) & B
-Ir t: T, B  ==  Ir t, (condFull ~t | ~T) | B
+Un t: T, B  ==  Un t, (full ~t | T) & B
+Ir t: T, B  ==  Ir t, (full ~t | ~T) | B
 
 
 

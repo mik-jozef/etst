@@ -169,13 +169,13 @@ namespace Set3
   }
   
   
-  def condSome (s: Set3 D): Set3 D := {
+  def some (s: Set3 D): Set3 D := {
     defMem := fun _ => ∃ d: D, d ∈ s.defMem
     posMem := fun _ => ∃ d: D, d ∈ s.posMem
     defLePos := fun _ ⟨d, dIn⟩ => ⟨d, dIn.toPos⟩
   }
   
-  def condFull (s: Set3 D): Set3 D := {
+  def full (s: Set3 D): Set3 D := {
     defMem := fun _ => ∀ d: D, d ∈ s.defMem
     posMem := fun _ => ∀ d: D, d ∈ s.posMem
     defLePos := fun _ dIn d => (dIn d).toPos
@@ -665,7 +665,7 @@ namespace Set3
   def ordStdLattice D: CompleteLattice (Set3 D) := {
     __ := ordStd D
     
-    top := Set3.full
+    top := Set3.univ
     bot := Set3.empty
     
     le_top := fun _ => LeStd.mk (fun _ _ => trivial) (fun _ _ => trivial)

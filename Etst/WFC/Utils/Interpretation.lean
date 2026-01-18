@@ -81,9 +81,9 @@ def SingleLaneExpr.intp2_mono_std
       let ihR := intp2_mono_std
         premiseType cLe (laneEq.map .elimIrRite) dRIn
       ⟨ihL, ihR⟩
-    | .condFull _ =>
+    | .full _ =>
       fun dB => intp2_mono_std
-        premiseType cLe (laneEq.map .elimCondFull) (dIn dB)
+        premiseType cLe (laneEq.map .elimFull) (dIn dB)
     | .compl _ =>
       match ed with
       | true =>
@@ -201,7 +201,7 @@ def BasicExpr.triIntp2_mono_apx
         posLe := fun _d ⟨dLIn, dRIn⟩ =>
           ⟨ihL.posLe dLIn, ihR.posLe dRIn⟩
       }
-  | .condFull _ =>
+  | .full _ =>
       let ih := triIntp2_mono_apx bLe cLe
       {
         defLe := fun _d dIn dB => ih.defLe (dIn dB)

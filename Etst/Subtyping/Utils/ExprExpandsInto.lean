@@ -26,10 +26,10 @@ inductive Expr.ExpandsInto
     (rite: ExpandsInto dl ed r rExp)
   :
     ExpandsInto dl ed (.pair l r) (.pair lExp rExp)
-| condFull
+| full
     (exp: ExpandsInto dl ed body bodyExp)
   :
-    ExpandsInto dl ed (.condFull body) (.condFull bodyExp)
+    ExpandsInto dl ed (.full body) (.full bodyExp)
 | ir
     (left: ExpandsInto dl ed l lExp)
     (rite: ExpandsInto dl ed r rExp)
@@ -49,12 +49,12 @@ namespace Expr.ExpandsInto
   
   def rfl {dl ed e}: ExpandsInto dl ed e e := .refl e
   
-  def condSome
+  def some
     (exp: ExpandsInto dl ed body bodyExp)
   :
-    ExpandsInto dl ed (.condSome body) (.condSome bodyExp)
+    ExpandsInto dl ed (.some body) (.some bodyExp)
   :=
-    compl (condFull (compl (Bool.not_not _ ▸ exp)))
+    compl (full (compl (Bool.not_not _ ▸ exp)))
   
   def un
     (left: ExpandsInto dl ed l lExp)
@@ -93,8 +93,8 @@ namespace Expr.ExpandsInto
     eq_triIntp2_pair_of_eq
       (left.triIntp_eq_wfm dl bv)
       (rite.triIntp_eq_wfm dl bv)
-  | .condFull expr =>
-    eq_triIntp2_condFull_of_eq (expr.triIntp_eq_wfm dl bv)
+  | .full expr =>
+    eq_triIntp2_full_of_eq (expr.triIntp_eq_wfm dl bv)
   | .ir left rite =>
     eq_triIntp2_ir_of_eq
       (left.triIntp_eq_wfm dl bv)
@@ -163,10 +163,10 @@ namespace Expr.ExpandsInto
         let leLeft := left.lfpStage_le_std bv n
         let leRite := rite.lfpStage_le_std bv n
         triIntp2_mono_std_ir leLeft leRite
-    | condFull exp =>
+    | full exp =>
       match ed with
-      | true => triIntp2_mono_std_condFull (exp.lfpStage_le_std bv n)
-      | false => triIntp2_mono_std_condFull (exp.lfpStage_le_std bv n)
+      | true => triIntp2_mono_std_full (exp.lfpStage_le_std bv n)
+      | false => triIntp2_mono_std_full (exp.lfpStage_le_std bv n)
     | compl exp =>
       match ed with
       | true => triIntp2_mono_std_compl (exp.lfpStage_le_std bv n)

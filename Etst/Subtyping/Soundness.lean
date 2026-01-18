@@ -5,22 +5,22 @@ open Expr
 
 open SingleLaneExpr in
 def DefList.SubsetBv.subsetOfFullImpl {dl bv x a b d}
-  (h: SubsetBv dl bv x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b)))
+  (h: SubsetBv dl bv x (SingleLaneExpr.full (SingleLaneExpr.impl a b)))
   (isIn: d ∈ x.intp bv dl.wfm)
 :
   dl.SubsetBv bv a b
 :=
   fun d' inA =>
-    inImplElim (inCondFullElim (h isIn) d') inA
+    inImplElim (inFullElim (h isIn) d') inA
 
 open SingleLaneExpr in
 def DefList.SubsetBv.fullImplOfSubset {dl bv x a b}
   (h: SubsetBv dl bv a b)
 :
-  SubsetBv dl bv x (SingleLaneExpr.condFull (SingleLaneExpr.impl a b))
+  SubsetBv dl bv x (SingleLaneExpr.full (SingleLaneExpr.impl a b))
 :=
   fun _ _ =>
-    inCondFull .null fun _ =>
+    inFull .null fun _ =>
       inImpl fun inA =>
         h inA
 
@@ -35,13 +35,13 @@ def DefList.SubsetStx.isSound
     match sub with
     | subDefPos => Set3.defMem.toPos isIn
     | pairMono subL subR =>
-        inCondFull .null fun p =>
+        inFull .null fun p =>
           inImpl fun inP =>
             match p with
             | .pair pa pb =>
               let ⟨inA, inB⟩ := inPairElim inP
-              let inImplA := inCondFullElim (subL.isSound bv isIn) pa
-              let inImplB := inCondFullElim (subR.isSound bv isIn) pb
+              let inImplA := inFullElim (subL.isSound bv isIn) pa
+              let inImplB := inFullElim (subR.isSound bv isIn) pb
               inPair (inImplElim inImplA inA) (inImplElim inImplB inB)
     | subComplPairUn =>
         match d with
@@ -92,14 +92,14 @@ def DefList.SubsetStx.isSound
           (fun isInB => inUnR (inIr isInB isInC))
     | fullImplElim =>
         inImpl fun inFullA =>
-          inCondFull d (fun dB =>
+          inFull d (fun dB =>
             inImplElim
-              (inCondFullElim isIn dB)
-              (inCondFullElim inFullA dB))
+              (inFullElim isIn dB)
+              (inFullElim inFullA dB))
     | fullElim =>
         isIn _
     | someStripFull =>
-        let ⟨_, inFullA⟩ := inCondSomeElim isIn
+        let ⟨_, inFullA⟩ := inSomeElim isIn
         inFullA
     | subCompl sub =>
         fun isInA => isIn (sub.isSound bv isInA)
@@ -122,9 +122,9 @@ def DefList.SubsetStx.isSound
             (dX :: bv)
             (cast eq isIn)
     | univElim (t:=t) (a:=a) isSome isSubsingle sub =>
-        let ⟨_dt, inT⟩ := inCondSomeElim (isSome.isSound bv isIn)
+        let ⟨_dt, inT⟩ := inSomeElim (isSome.isSound bv isIn)
         let ⟨dX, inCond⟩ := inArbUnElim (isSubsingle.isSound bv isIn)
-        let inImpl := inCondFullElim inCond
+        let inImpl := inFullElim inCond
         
         let tSub: intp t bv dl.wfm ⊆ {dX} := fun z hz =>
           let hz_lift: z ∈ intp t.lift (dX :: bv) dl.wfm :=

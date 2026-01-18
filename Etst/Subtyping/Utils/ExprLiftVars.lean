@@ -19,7 +19,7 @@ namespace Expr
     | null => null
     | pair l r => pair (l.lift depth liftBy) (r.lift depth liftBy)
     | ir l r => ir (l.lift depth liftBy) (r.lift depth liftBy)
-    | condFull body => condFull (body.lift depth liftBy)
+    | full body => full (body.lift depth liftBy)
     | compl body => compl (body.lift depth liftBy)
     | arbIr body => arbIr (body.lift (depth + 1) liftBy)
   
@@ -65,7 +65,7 @@ namespace Expr
         ir
         (l.lift_zero_eq depth)
         (r.lift_zero_eq depth)
-    | condFull body => congrArg condFull (body.lift_zero_eq depth)
+    | full body => congrArg full (body.lift_zero_eq depth)
     | compl body => congrArg compl (body.lift_zero_eq depth)
     | arbIr body => congrArg arbIr (body.lift_zero_eq depth.succ)
   
@@ -90,7 +90,7 @@ namespace Expr
     | .ir l r => by
         unfold lift freeVarUB
         rw [freeVarUB_lift_eq_depth l, freeVarUB_lift_eq_depth r]
-    | .condFull body => by
+    | .full body => by
         unfold lift freeVarUB
         rw [freeVarUB_lift_eq_depth body]
     | .compl body => by
@@ -162,8 +162,8 @@ namespace SingleLaneExpr
       eq_intp2_ir_of_eq
         (intp2_lift_eq_depth l bv bvDepth bvLiftBy b c)
         (intp2_lift_eq_depth r bv bvDepth bvLiftBy b c)
-    | .condFull body =>
-      eq_intp2_condFull_of_eq
+    | .full body =>
+      eq_intp2_full_of_eq
         (intp2_lift_eq_depth body bv bvDepth bvLiftBy b c)
     | .compl body =>
       eq_intp2_compl_of_eq
@@ -215,8 +215,8 @@ def Expr.replaceVars {E}
   .pair (replaceVars varMap left) (replaceVars varMap rite)
 | .ir left rite =>
   .ir (replaceVars varMap left) (replaceVars varMap rite)
-| .condFull body =>
-  .condFull (replaceVars varMap body)
+| .full body =>
+  .full (replaceVars varMap body)
 | .compl body =>
   .compl (replaceVars varMap body)
 | .arbIr body =>
@@ -266,8 +266,8 @@ namespace SingleLaneExpr
         (intp2_replaceVars_eq
           (fun x h => bvEq x (Or.inr h))
           (fun x h => bvEqCpl x (Or.inr h)))
-    | .condFull body =>
-      eq_intp2_condFull_of_eq
+    | .full body =>
+      eq_intp2_full_of_eq
         (intp2_replaceVars_eq (expr := body) bvEq bvEqCpl)
     | .compl body =>
       eq_intp2_compl_of_eq
@@ -323,7 +323,7 @@ namespace SingleLaneExpr
       intp2_replaceVars_eq
       (fun x hx =>
         congrArg
-          (fun | none => (∅: Set Pair) | some d => {d})
+          (fun | .none => (∅: Set Pair) | .some d => {d})
           (bvEq x hx))
   
 end SingleLaneExpr

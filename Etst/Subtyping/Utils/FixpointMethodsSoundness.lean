@@ -122,12 +122,12 @@ def MutIndDescriptor.le_hypothesify
     intp2_mono_std_ir
       (desc.le_hypothesify bv bvDepth inv laneEq.elimIrLeft v_le)
       (desc.le_hypothesify bv bvDepth inv laneEq.elimIrRite v_le)
-  | .condFull _, true =>
-    intp2_mono_std_condFull
-      (desc.le_hypothesify bv bvDepth inv laneEq.elimCondFull v_le)
-  | .condFull _, false =>
-    intp2_mono_std_condFull
-      (desc.le_hypothesify bv bvDepth inv laneEq.elimCondFull v_le)
+  | .full _, true =>
+    intp2_mono_std_full
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimFull v_le)
+  | .full _, false =>
+    intp2_mono_std_full
+      (desc.le_hypothesify bv bvDepth inv laneEq.elimFull v_le)
   | .compl _, true =>
     intp2_mono_std_compl
       (desc.le_hypothesify bv bvDepth inv laneEq.elimCompl v_le)
@@ -274,7 +274,7 @@ def MutCoindDescriptor.sub_hypothesify
       -- let subL := sub_hypothesify desc sub.subIrSwapL
       -- let subR := sub_hypothesify desc sub.subIrSwapR
       sorry
-  | .condFull body => sorry
+  | .full body => sorry
   | .compl body => sorry
   | .arbIr body => sorry
 

@@ -27,9 +27,9 @@ namespace DefList
   | fPairMono:
       dl.IsFullStx
         (impl
-          (condFull (impl al bl))
+          (full (impl al bl))
           (impl
-            (condFull (impl ar br))
+            (full (impl ar br))
             (impl (pair al ar) (pair bl br))))
   -- TODO is this one necessary?
   | fPairUnDistL:
@@ -67,19 +67,19 @@ namespace DefList
   | fIr: dl.IsFullStx (impl a (impl b (ir a b)))
   | fIrL: dl.IsFullStx (impl (ir l r) l)
   | fIrR: dl.IsFullStx (impl (ir l r) r)
-  | fFull (full: dl.IsFullStx a): dl.IsFullStx (condFull a)
+  | fFull (full: dl.IsFullStx a): dl.IsFullStx (full a)
   -- Axiom K in modal logic.
   | fFullImplElim:
       dl.IsFullStx
         (impl
-          (condFull (impl a b))
-          (impl (condFull a) (condFull b)))
+          (full (impl a b))
+          (impl (full a) (full b)))
   -- Axiom T in modal logic.
   | fFullElim:
-      dl.IsFullStx (impl (condFull expr) expr)
+      dl.IsFullStx (impl (full expr) expr)
   -- Contraposition of Axiom 5 (up to removal of negation from `a`)
   | fSomeStripFull {a}:
-      dl.IsFullStx (impl (condSome (condFull a)) (condFull a))
+      dl.IsFullStx (impl (some (full a)) (full a))
   | mutInduction {x}
       (desc: MutIndDescriptor dl)
       (premises:
@@ -87,14 +87,14 @@ namespace DefList
         dl.IsFullStx
           (impl
             x
-            (condFull
+            (full
               (impl
                 (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
                 desc[i].expr))))
       (i: desc.Index)
     :
       dl.IsFullStx
-        (impl x (condFull (impl (const desc[i].lane desc[i].x) desc[i].expr)))
+        (impl x (full (impl (const desc[i].lane desc[i].x) desc[i].expr)))
   
   namespace IsFullStx
     variable {dl: DefList}
@@ -278,14 +278,14 @@ namespace DefList
       mp2 trans (mt.mp sub) dne
     
     def someAddFull:
-      dl.IsFullStx (impl (condSome a) (condFull (condSome a)))
+      dl.IsFullStx (impl (some a) (full (some a)))
     :=
       complSwapA (fSomeStripFull (a := compl a))
     
-    def fullFull: dl.IsFullStx (impl (condFull a) (condFull (condFull a))) :=
-      let step1 := mt.mp (fFullElim (expr := compl (condFull a)))
+    def fullFull: dl.IsFullStx (impl (full a) (full (full a))) :=
+      let step1 := mt.mp (fFullElim (expr := compl (full a)))
       let step2 := trans.mp2 dni step1
-      let step3 := someAddFull (a := condFull a)
+      let step3 := someAddFull (a := full a)
       let step4 := fFull (full := fSomeStripFull (a := a))
       let step5 := mp fFullImplElim step4
       mp2 trans step2 (mp2 trans step3 step5)
@@ -293,15 +293,15 @@ namespace DefList
     def fPairMonoFull:
       dl.IsFullStx
         (impl
-          (condFull (impl al bl))
+          (full (impl al bl))
           (impl
-            (condFull (impl ar br))
-            (condFull (impl (pair al ar) (pair bl br)))))
+            (full (impl ar br))
+            (full (impl (pair al ar) (pair bl br)))))
     :=
-      let A := condFull (impl al bl)
-      let B := condFull (impl ar br)
+      let A := full (impl al bl)
+      let B := full (impl ar br)
       let C := impl (pair al ar) (pair bl br)
-      let proof: IsFullStxFrom dl (ir A B) (condFull C) :=
+      let proof: IsFullStxFrom dl (ir A B) (full C) :=
         let hA := .mp (.fromFull fIrL) .fromHyp
         let hB := .mp (.fromFull fIrR) .fromHyp
         let hAA := .mp (.fromFull fullFull) hA
@@ -318,16 +318,16 @@ namespace DefList
     
     
     def fullSimpl:
-      dl.IsFullStx (impl (condFull a) (condFull (impl b a)))
+      dl.IsFullStx (impl (full a) (full (impl b a)))
     :=
       mp fFullImplElim (fFull simpl)
     
     def fPairOfFull:
       dl.IsFullStx
         (impl
-          (condFull left)
+          (full left)
           (impl
-            (condFull rite)
+            (full rite)
             (un null (pair left rite))))
     :=
       let step1 := mp2 trans fullSimpl fPairMono
@@ -344,7 +344,7 @@ namespace DefList
     def implToImplFull {x}
       (h: dl.IsFullStx (impl a b))
     :
-      dl.IsFullStx (impl x (condFull (impl a b)))
+      dl.IsFullStx (impl x (full (impl a b)))
     :=
       mp simpl (fFull h)
     

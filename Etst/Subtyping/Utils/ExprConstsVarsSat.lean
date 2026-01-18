@@ -51,7 +51,7 @@ instance Expr.constsSat
     | _, .isFalse hR =>
       .isFalse (fun hSat =>
         hR (fun x isUsed => hSat x (Or.inr isUsed)))
-  | .condFull body =>
+  | .full body =>
     match constsSat body P with
     | .isTrue h => .isTrue fun x isUsed => h x isUsed
     | .isFalse h =>
@@ -68,7 +68,7 @@ def Expr.UsesFreeVar (expr: Expr E): Set Nat :=
       | null => False
       | pair left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
       | ir left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
-      | condFull body => body.UsesFreeVar x
+      | full body => body.UsesFreeVar x
       | compl body => body.UsesFreeVar x
       | arbIr body => body.UsesFreeVar (x + 1)
 
@@ -104,7 +104,7 @@ instance Expr.usesFreeVar
         match hVar with
         | Or.inl isUsed => hL isUsed
         | Or.inr isUsed => hR isUsed)
-  | .condFull body => body.usesFreeVar x
+  | .full body => body.usesFreeVar x
   | .compl expr => expr.usesFreeVar x
   | .arbIr expr => expr.usesFreeVar (x + 1)
 
@@ -151,7 +151,7 @@ instance Expr.freeVarsSat
     | _, .isFalse hR =>
       .isFalse (fun hSat =>
         hR (fun x isUsed => hSat x (Or.inr isUsed)))
-  | .condFull body =>
+  | .full body =>
     match freeVarsSat body P with
     | .isTrue h => .isTrue fun x isUsed => h x isUsed
     | .isFalse h =>

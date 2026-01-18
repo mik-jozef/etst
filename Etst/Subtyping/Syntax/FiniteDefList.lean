@@ -192,7 +192,7 @@ macro_rules
 | `(s3_pair_expr| | $a | $b) => `(s3_pair_expr| $a | $b)
 -- Remove leading "&"
 | `(s3_pair_expr| & $a & $b) => `(s3_pair_expr| $a & $b)
--- Then to condSome
+-- Then to some
 | `(s3_pair_expr| $a then $b) => `(s3_pair_expr| (?some $a) & $b)
 -- Implication (->) to disjunction
 | `(s3_pair_expr| $a -> $b) => `(s3_pair_expr| !$a | $b)
@@ -280,12 +280,12 @@ namespace pair_def_list
     `(s3_pair_expr|
       (?some $body:s3_pair_expr))
     => do
-      `(Expr.condSome $(← makeExpr idents varDepth body))
+      `(Expr.some $(← makeExpr idents varDepth body))
   |
     `(s3_pair_expr|
       (?full $body:s3_pair_expr))
     => do
-      `(Expr.condFull $(← makeExpr idents varDepth body))
+      `(Expr.full $(← makeExpr idents varDepth body))
   |
     `(s3_pair_expr|
       ($a:s3_pair_expr, $b:s3_pair_expr))

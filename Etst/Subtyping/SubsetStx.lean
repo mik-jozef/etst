@@ -52,13 +52,13 @@ namespace Etst
 open Expr
 
 /-
-  TODO: pair negation rule, splitting rule for condFull (un a b)
+  TODO: pair negation rule, splitting rule for full (un a b)
   
   can we prove this?:
   
-  & condFull (un a b)
-  & condFull (impl (ir c a) d)
-  & condFull (impl (ir c b) d)
+  & full (un a b)
+  & full (impl (ir c a) d)
+  & full (impl (ir c b) d)
   -> d
 -/
 
@@ -82,8 +82,8 @@ def Expr.replaceDepthEvenConsts
       ir
         (left.replaceDepthEvenConsts depth ed replacer)
         (rite.replaceDepthEvenConsts depth ed replacer)
-  | condFull body =>
-      condFull (body.replaceDepthEvenConsts depth ed replacer)
+  | full body =>
+      full (body.replaceDepthEvenConsts depth ed replacer)
   | compl body =>
       compl (body.replaceDepthEvenConsts depth (!ed) replacer)
   | arbIr body => arbIr (body.replaceDepthEvenConsts (depth + 1) ed replacer)
@@ -134,7 +134,7 @@ def Expr.isSubsingleton
 :
   Expr E
 :=
-  arbUn (condFull (impl expr.lift (var 0)))
+  arbUn (full (impl expr.lift (var 0)))
 
 /-
   Syntactic entailment. Note the similarities with natural deduction.
@@ -150,8 +150,8 @@ def Expr.isSubsingleton
   Naming conventions:
   - `subX` if subset form
   - just `X` if context form
-  - `fullX` if of form `condFull x ⊆ y`
-  - `isFullX` if of form `x ⊆ condFull y`
+  - `fullX` if of form `full x ⊆ y`
+  - `isFullX` if of form `x ⊆ full y`
   - analogously for `someX` and `isSomeX`
   - context form rules where context is just a variable ought to
     call the context `x`.
@@ -161,13 +161,13 @@ def Expr.isSubsingleton
   
   TODO things to prove/axiomatize after we have quantifiers:
   - reconstruction:  ir e (pair any any)  ⊆  pair (zth e) (fst e)
-  - projection l:  condSome b  ⊆  impl a (zth (pair a b))
-  - projection r:  condSome a  ⊆  impl b (zth (pair a b))
+  - projection l:  some b  ⊆  impl a (zth (pair a b))
+  - projection r:  some a  ⊆  impl b (zth (pair a b))
   - monotonicity of projections
   - distribution of projections over ir, un, arbIr, arbUn
   - induction on pairs.
-  - (condFull a)  ⊆  b  ->  condFull a  ⊆  condFull b
-  - (a  ⊆  b  ->  a  ⊆  condFull b)  ->  condFull (impl a b)  ⊆  impl (condFull a) (condFull b)
+  - (full a)  ⊆  b  ->  full a  ⊆  full b
+  - (a  ⊆  b  ->  a  ⊆  full b)  ->  full (impl a b)  ⊆  impl (full a) (full b)
   
   TODO make this a chapter, make IsFullStx an appendix.
 -/
@@ -182,10 +182,10 @@ inductive DefList.SubsetStx
     dl.SubsetStx (const .defLane x) (const .posLane x)
 |
   pairMono
-    (sl: dl.SubsetStx x (condFull (impl al bl)))
-    (sr: dl.SubsetStx x (condFull (impl ar br)))
+    (sl: dl.SubsetStx x (full (impl al bl)))
+    (sr: dl.SubsetStx x (full (impl ar br)))
   :
-    dl.SubsetStx x (condFull (impl (pair al ar) (pair bl br)))
+    dl.SubsetStx x (full (impl (pair al ar) (pair bl br)))
 |
   subComplPairUn:
     dl.SubsetStx
@@ -218,17 +218,17 @@ inductive DefList.SubsetStx
   isFull
     (subA: dl.SubsetStx any a)
   :
-    dl.SubsetStx x (condFull a)
+    dl.SubsetStx x (full a)
 |
   -- Axiom K in modal logic.
   fullImplElim:
     dl.SubsetStx
-      (condFull (impl a b))
-      (impl (condFull a) (condFull b))
+      (full (impl a b))
+      (impl (full a) (full b))
 |
   -- Axiom T in modal logic.
   fullElim:
-    dl.SubsetStx (condFull a) a
+    dl.SubsetStx (full a) a
 |
   /-
     The contraposition of Axiom 5 in modal logic, up to
@@ -241,7 +241,7 @@ inductive DefList.SubsetStx
     as `someAddFull`.
   -/
   someStripFull:
-    dl.SubsetStx (condSome (condFull a)) (condFull a)
+    dl.SubsetStx (some (full a)) (full a)
 |
   subCompl
     (sub: dl.SubsetStx a b)
@@ -253,7 +253,7 @@ inductive DefList.SubsetStx
 -- implication elimination, which is derived from this.
 | subPe:
     dl.SubsetStx (ir a a.compl) b
--- IsSingleton expr := (condSome expr) & (Ex p, condFull (impl expr p))
+-- IsSingleton expr := (some expr) & (Ex p, full (impl expr p))
 -- TODO these are adapted from logic, but are not general enougn, I think.
 --   Logic has only `true = {*}` and `false = {}`, so it needs not deal
 --   with the general case of non-subsingleton types.
@@ -279,7 +279,7 @@ inductive DefList.SubsetStx
     dl.SubsetStx x (arbIr a)
 |
   univElim
-    (isSome: dl.SubsetStx x (condSome t))
+    (isSome: dl.SubsetStx x (some t))
     (isSubsingle: dl.SubsetStx x t.isSubsingleton)
     (sub: dl.SubsetStx x (arbIr a))
   :
@@ -308,7 +308,7 @@ inductive DefList.SubsetStx
       (i: desc.Index) →
       dl.SubsetStx
         x
-        (condFull
+        (full
           (impl
             (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
             desc[i].expr)))
@@ -316,7 +316,7 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx
       x
-      (condFull (impl (const desc[i].lane desc[i].x) desc[i].expr))
+      (full (impl (const desc[i].lane desc[i].x) desc[i].expr))
 
 
 namespace DefList.SubsetStx
@@ -854,9 +854,9 @@ namespace DefList.SubsetStx
   
   
   def fullElimOfImpl
-    (fullAb: dl.SubsetStx any (condFull (impl a b)))
+    (fullAb: dl.SubsetStx any (full (impl a b)))
   :
-    dl.SubsetStx (condFull a) (condFull b)
+    dl.SubsetStx (full a) (full b)
   :=
     implElimExact
       (trans subAny (trans fullAb fullImplElim))
@@ -864,12 +864,12 @@ namespace DefList.SubsetStx
   def isFullImpl
     (sub: dl.SubsetStx a b)
   :
-    dl.SubsetStx any (condFull (impl a b))
+    dl.SubsetStx any (full (impl a b))
   :=
     isFull (toImpl sub)
   
   def isFullImplElim
-    (sub: dl.SubsetStx any (condFull (impl a b)))
+    (sub: dl.SubsetStx any (full (impl a b)))
   :
     dl.SubsetStx a b
   :=
@@ -878,125 +878,125 @@ namespace DefList.SubsetStx
   def fullMono
     (sub: dl.SubsetStx a b)
   :
-    dl.SubsetStx (condFull a) (condFull b)
+    dl.SubsetStx (full a) (full b)
   :=
     fullElimOfImpl (isFullImpl sub)
   
   def fullDne:
-    dl.SubsetStx (condFull (compl (compl a))) (condFull a)
+    dl.SubsetStx (full (compl (compl a))) (full a)
   :=
     fullMono subDne
   
   def fullDni:
-    dl.SubsetStx (condFull a) (condFull (compl (compl a)))
+    dl.SubsetStx (full a) (full (compl (compl a)))
   :=
     fullMono subDni
   
   def complFullAntimono
     (sub: dl.SubsetStx a b)
   :
-    dl.SubsetStx (compl (condFull b)) (compl (condFull a))
+    dl.SubsetStx (compl (full b)) (compl (full a))
   :=
     subCompl (fullMono sub)
   
   
   def subSome:
-    dl.SubsetStx a (condSome a)
+    dl.SubsetStx a (some a)
   :=
     trans subDni (subCompl fullElim)
   
   def someMono
     (sub: dl.SubsetStx a b)
   :
-    dl.SubsetStx (condSome a) (condSome b)
+    dl.SubsetStx (some a) (some b)
   :=
     complFullAntimono (subCompl sub)
   
   
   def fullSome:
-    dl.SubsetStx (condFull a) (condSome a)
+    dl.SubsetStx (full a) (some a)
   :=
     trans fullElim subSome
   
   def someElimFull
-    (sub: dl.SubsetStx a (condFull b))
+    (sub: dl.SubsetStx a (full b))
   :
-    dl.SubsetStx (condSome a) (condFull b)
+    dl.SubsetStx (some a) (full b)
   :=
     trans (someMono sub) someStripFull
   
   def isFullUpgrade
-    (isSomeA: dl.SubsetStx any (condSome a))
-    (aFullB: dl.SubsetStx a (condFull b))
+    (isSomeA: dl.SubsetStx any (some a))
+    (aFullB: dl.SubsetStx a (full b))
   :
-    dl.SubsetStx any (condFull b)
+    dl.SubsetStx any (full b)
   :=
     trans isSomeA (someElimFull aFullB)
   
   def someAddFull:
-    dl.SubsetStx (condSome a) (condFull (condSome a))
+    dl.SubsetStx (some a) (full (some a))
   :=
     complSwapCtx someStripFull
   
   def fullAddSome:
-    dl.SubsetStx (condFull a) (condSome (condFull a))
+    dl.SubsetStx (full a) (some (full a))
   :=
     subSome
   
   def someAddSome:
-    dl.SubsetStx (condSome a) (condSome (condSome a))
+    dl.SubsetStx (some a) (some (some a))
   :=
     subSome
   
   def subFullSome:
-    dl.SubsetStx a (condFull (condSome a))
+    dl.SubsetStx a (full (some a))
   :=
     trans subSome someAddFull
   
   def fullAddFull:
-    dl.SubsetStx (condFull a) (condFull (condFull a))
+    dl.SubsetStx (full a) (full (full a))
   :=
     trans subFullSome (fullMono someStripFull)
   
   def someElimComplFull
-    (sub: dl.SubsetStx a (compl (condFull b)))
+    (sub: dl.SubsetStx a (compl (full b)))
   :
-    dl.SubsetStx (condSome a) (compl (condFull b))
+    dl.SubsetStx (some a) (compl (full b))
   :=
     subCompl (trans fullAddFull (fullMono (complSwap sub)))
   
   def someStripSome:
-    dl.SubsetStx (condSome (condSome a)) (condSome a)
+    dl.SubsetStx (some (some a)) (some a)
   :=
     subCompl (trans fullAddFull (fullMono subDni))
   
   
-  def condSomeNull:
-    dl.SubsetStx any (condSome null)
+  def someNull:
+    dl.SubsetStx any (some null)
   :=
     sorry
   
-  def condSomePair
-    (sl: dl.SubsetStx any (condSome l))
-    (sr: dl.SubsetStx any (condSome r))
+  def somePair
+    (sl: dl.SubsetStx any (some l))
+    (sr: dl.SubsetStx any (some r))
   :
-    dl.SubsetStx any (condSome (pair l r))
+    dl.SubsetStx any (some (pair l r))
   :=
     sorry
   
   def isSomeMono
     (ab: dl.SubsetStx a b)
-    (sa: dl.SubsetStx any (condSome a))
+    (sa: dl.SubsetStx any (some a))
   :
-    dl.SubsetStx any (condSome b)
+    dl.SubsetStx any (some b)
   :=
     trans sa (someMono ab)
   
   def isSomeUpgrade
-    (isSomeA: dl.SubsetStx any (condSome a))
-    (aSomeB: dl.SubsetStx a (condSome b))
+    (isSomeA: dl.SubsetStx any (some a))
+    (aSomeB: dl.SubsetStx a (some b))
   :
-    dl.SubsetStx any (condSome b)
+    dl.SubsetStx any (some b)
   :=
     trans (isSomeMono aSomeB isSomeA) someStripSome
   
@@ -1034,9 +1034,9 @@ namespace DefList.SubsetStx
     dl.SubsetStx
       any
       (impl
-        (condFull (impl al bl))
+        (full (impl al bl))
         (impl
-          (condFull (impl ar br))
+          (full (impl ar br))
           (impl (pair al ar) (pair bl br))))
   :=
     implIntro
@@ -1216,7 +1216,7 @@ namespace DefList.SubsetStx
   
   
   def subArbUnIntro {a t}
-    (isSome: dl.SubsetStx any (condSome t))
+    (isSome: dl.SubsetStx any (some t))
     (isSubsingle: dl.SubsetStx any t.isSubsingleton)
   :
     dl.SubsetStx (a.instantiateVar t) (arbUn a)
@@ -1235,7 +1235,7 @@ namespace DefList.SubsetStx
     complSwapCtx (univIntro (subCompl sub))
   
   def exIntro {x a t}
-    (isSome: dl.SubsetStx x (condSome t))
+    (isSome: dl.SubsetStx x (some t))
     (isSubsingle: dl.SubsetStx x t.isSubsingleton)
     (sub: dl.SubsetStx x (a.instantiateVar t))
   :

@@ -47,8 +47,8 @@ namespace Expr
         congrArg₂ Expr.ir
           left.clearVars_idempotent
           rite.clearVars_idempotent
-    | .condFull body =>
-        congrArg Expr.condFull body.clearVars_idempotent
+    | .full body =>
+        congrArg Expr.full body.clearVars_idempotent
     | .compl body =>
         congrArg Expr.compl body.clearVars_idempotent
     | .arbIr body =>
@@ -98,8 +98,8 @@ namespace SingleLaneExpr
       eq_intp2_ir_of_eq
         (clearVars_preserves_interp_bv left bv bvRest b c)
         (clearVars_preserves_interp_bv rite bv bvRest b c)
-    | .condFull body =>
-      eq_intp2_condFull_of_eq
+    | .full body =>
+      eq_intp2_full_of_eq
         (clearVars_preserves_interp_bv body bv bvRest b c)
     | .compl body =>
       let ih := clearVars_preserves_interp_bv body bv bvRest c b
@@ -180,9 +180,9 @@ namespace BasicExpr
           SingleLaneExpr.ir
           (clearVars_lane_comm left lane i)
           (clearVars_lane_comm rite lane i)
-    | .condFull body =>
+    | .full body =>
         congrArg
-          SingleLaneExpr.condFull
+          SingleLaneExpr.full
           (clearVars_lane_comm body lane i)
     | .compl body =>
         congrArg
@@ -296,7 +296,7 @@ namespace Expr
         Nat.max (left.freeVarUB depth) (rite.freeVarUB depth)
     | .ir left rite =>
         Nat.max (left.freeVarUB depth) (rite.freeVarUB depth)
-    | .condFull body => body.freeVarUB depth
+    | .full body => body.freeVarUB depth
     | .compl body => body.freeVarUB depth
     | .arbIr body => body.freeVarUB (depth + 1)
   
@@ -512,8 +512,8 @@ namespace Expr
       congrArg₂ Expr.ir
         (clearVars_eq_of_ub (leL h))
         (clearVars_eq_of_ub (leR h))
-    | .condFull _ =>
-      congrArg Expr.condFull (clearVars_eq_of_ub h)
+    | .full _ =>
+      congrArg Expr.full (clearVars_eq_of_ub h)
     | .compl _ =>
       congrArg Expr.compl (clearVars_eq_of_ub h)
     | .arbIr _ =>

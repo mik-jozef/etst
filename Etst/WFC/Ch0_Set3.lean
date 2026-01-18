@@ -95,8 +95,8 @@ namespace Set3
   -/
   def undetermined: Set3 D := ⟨{}, Set.univ, nofun⟩
   
-  -- The full triset contains all elements of `D`.
-  def full: Set3 D := ⟨Set.univ, Set.univ, le_rfl⟩
+  -- The universal triset contains all elements of `D`.
+  def univ: Set3 D := ⟨Set.univ, Set.univ, le_rfl⟩
   
   -- A triset containing a single element.
   def just (d: D): Set3 D := ⟨{d}, {d}, le_rfl⟩

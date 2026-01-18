@@ -77,42 +77,42 @@ namespace SingleLaneExpr
       (intp2_mono_std_ir (le_of_eq eqL.symm) (le_of_eq eqR.symm))
   
   
-  def intp2_mono_std_condSome
+  def intp2_mono_std_some
     (le: intp2 e0 bv0 b0 c0 ≤ intp2 e1 bv1 b1 c1)
   :
-    intp2 (condSome e0) bv0 b0 c0 ⊆ intp2 (condSome e1) bv1 b1 c1
+    intp2 (some e0) bv0 b0 c0 ⊆ intp2 (some e1) bv1 b1 c1
   :=
     fun _ ins =>
-      let ⟨_, insE⟩ := inCondSomeElim ins (d := .null)
-      inCondSome .null (le insE)
+      let ⟨_, insE⟩ := inSomeElim ins (d := .null)
+      inSome .null (le insE)
   
-  def eq_intp2_condSome_of_eq
+  def eq_intp2_some_of_eq
     (eq: intp2 e0 bv0 b0 c0 = intp2 e1 bv1 b1 c1)
   :
-    intp2 (condSome e0) bv0 b0 c0 = intp2 (condSome e1) bv1 b1 c1
+    intp2 (some e0) bv0 b0 c0 = intp2 (some e1) bv1 b1 c1
   :=
     le_antisymm
-      (intp2_mono_std_condSome (le_of_eq eq))
-      (intp2_mono_std_condSome (le_of_eq eq.symm))
+      (intp2_mono_std_some (le_of_eq eq))
+      (intp2_mono_std_some (le_of_eq eq.symm))
   
   
-  def intp2_mono_std_condFull
+  def intp2_mono_std_full
     (le: intp2 e0 bv0 b0 c0 ≤ intp2 e1 bv1 b1 c1)
   :
-    intp2 (condFull e0) bv0 b0 c0 ⊆ intp2 (condFull e1) bv1 b1 c1
+    intp2 (full e0) bv0 b0 c0 ⊆ intp2 (full e1) bv1 b1 c1
   :=
     fun _ ins =>
-      let insE := inCondFullElim ins
-      inCondFull .null (fun d => le (insE d))
+      let insE := inFullElim ins
+      inFull .null (fun d => le (insE d))
   
-  def eq_intp2_condFull_of_eq
+  def eq_intp2_full_of_eq
     (eq: intp2 e0 bv0 b0 c0 = intp2 e1 bv1 b1 c1)
   :
-    intp2 (condFull e0) bv0 b0 c0 = intp2 (condFull e1) bv1 b1 c1
+    intp2 (full e0) bv0 b0 c0 = intp2 (full e1) bv1 b1 c1
   :=
     le_antisymm
-      (intp2_mono_std_condFull (le_of_eq eq))
-      (intp2_mono_std_condFull (le_of_eq eq.symm))
+      (intp2_mono_std_full (le_of_eq eq))
+      (intp2_mono_std_full (le_of_eq eq.symm))
   
   
   def intp2_mono_std_compl
@@ -244,42 +244,42 @@ namespace BasicExpr
       (eq_intp2_ir_of_eq (Set3.pos_eq eqL) (Set3.pos_eq eqR))
   
   
-  def triIntp2_mono_std_condSome
+  def triIntp2_mono_std_some
     (le: triIntp2 e0 bv0 b0 c0 ≤ triIntp2 e1 bv1 b1 c1)
   :
-    triIntp2 (condSome e0) bv0 b0 c0 ≤ triIntp2 (condSome e1) bv1 b1 c1
+    triIntp2 (some e0) bv0 b0 c0 ≤ triIntp2 (some e1) bv1 b1 c1
   := {
-    defLe := intp2_mono_std_condSome le.defLe
-    posLe := intp2_mono_std_condSome le.posLe
+    defLe := intp2_mono_std_some le.defLe
+    posLe := intp2_mono_std_some le.posLe
   }
   
-  def eq_triIntp2_condSome_of_eq
+  def eq_triIntp2_some_of_eq
     (eq: triIntp2 e0 bv0 b0 c0 = triIntp2 e1 bv1 b1 c1)
   :
-    triIntp2 (condSome e0) bv0 b0 c0 = triIntp2 (condSome e1) bv1 b1 c1
+    triIntp2 (some e0) bv0 b0 c0 = triIntp2 (some e1) bv1 b1 c1
   :=
     Set3.eq
-      (eq_intp2_condSome_of_eq (Set3.def_eq eq))
-      (eq_intp2_condSome_of_eq (Set3.pos_eq eq))
+      (eq_intp2_some_of_eq (Set3.def_eq eq))
+      (eq_intp2_some_of_eq (Set3.pos_eq eq))
   
   
-  def triIntp2_mono_std_condFull
+  def triIntp2_mono_std_full
     (le: triIntp2 e0 bv0 b0 c0 ≤ triIntp2 e1 bv1 b1 c1)
   :
-    triIntp2 (condFull e0) bv0 b0 c0 ≤ triIntp2 (condFull e1) bv1 b1 c1
+    triIntp2 (full e0) bv0 b0 c0 ≤ triIntp2 (full e1) bv1 b1 c1
   := {
-    defLe := intp2_mono_std_condFull le.defLe
-    posLe := intp2_mono_std_condFull le.posLe
+    defLe := intp2_mono_std_full le.defLe
+    posLe := intp2_mono_std_full le.posLe
   }
   
-  def eq_triIntp2_condFull_of_eq
+  def eq_triIntp2_full_of_eq
     (eq: triIntp2 e0 bv0 b0 c0 = triIntp2 e1 bv1 b1 c1)
   :
-    triIntp2 (condFull e0) bv0 b0 c0 = triIntp2 (condFull e1) bv1 b1 c1
+    triIntp2 (full e0) bv0 b0 c0 = triIntp2 (full e1) bv1 b1 c1
   :=
     Set3.eq
-      (eq_intp2_condFull_of_eq (Set3.def_eq eq))
-      (eq_intp2_condFull_of_eq (Set3.pos_eq eq))
+      (eq_intp2_full_of_eq (Set3.def_eq eq))
+      (eq_intp2_full_of_eq (Set3.pos_eq eq))
   
   
   def triIntp2_mono_std_compl
