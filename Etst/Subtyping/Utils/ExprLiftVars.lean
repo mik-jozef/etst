@@ -179,13 +179,20 @@ namespace SingleLaneExpr
   :
     Eq
       (expr.intp2 bv b c)
-      (SingleLaneExpr.intp2
-        (expr.lift 0 bvLiftBy.length)
-        (bvLiftBy ++ bv)
-        b
-        c)
+      (intp2 (expr.lift 0 bvLiftBy.length) (bvLiftBy ++ bv) b c)
   :=
     intp2_lift_eq_depth expr bv [] bvLiftBy b c
+  
+  def intp_lift_eq
+    (expr: SingleLaneExpr)
+    (bv bvLiftBy: List Pair)
+    (v: Valuation Pair)
+  :
+    Eq
+      (expr.intp bv v)
+      (intp (expr.lift 0 bvLiftBy.length) (bvLiftBy ++ bv) v)
+  :=
+    intp2_lift_eq expr bv bvLiftBy v v
   
 end SingleLaneExpr
 
@@ -223,8 +230,8 @@ def Expr.replaceVarsNat {E}
   replaceVars (fun x => .var (varMap x))
 
 namespace SingleLaneExpr
-  def intp2_replaceVars_eq2
-    (bvMap: Nat → SingleLaneExpr)
+  def intp2_replaceVars_eq
+    {bvMap: Nat → SingleLaneExpr}
     {expr: SingleLaneExpr}
     {b c: Valuation Pair}
     {bvLeft bvRite}
@@ -245,30 +252,26 @@ namespace SingleLaneExpr
     | .null => rfl
     | .pair _ _ =>
       eq_intp2_pair_of_eq
-        (intp2_replaceVars_eq2
-          bvMap
+        (intp2_replaceVars_eq
           (fun x h => bvEq x (Or.inl h))
           (fun x h => bvEqCpl x (Or.inl h)))
-        (intp2_replaceVars_eq2
-          bvMap
+        (intp2_replaceVars_eq
           (fun x h => bvEq x (Or.inr h))
           (fun x h => bvEqCpl x (Or.inr h)))
     | .ir _ _ =>
       eq_intp2_ir_of_eq
-        (intp2_replaceVars_eq2
-          bvMap
+        (intp2_replaceVars_eq
           (fun x h => bvEq x (Or.inl h))
           (fun x h => bvEqCpl x (Or.inl h)))
-        (intp2_replaceVars_eq2
-          bvMap
+        (intp2_replaceVars_eq
           (fun x h => bvEq x (Or.inr h))
           (fun x h => bvEqCpl x (Or.inr h)))
     | .condFull body =>
       eq_intp2_condFull_of_eq
-        (intp2_replaceVars_eq2 (expr := body) bvMap bvEq bvEqCpl)
+        (intp2_replaceVars_eq (expr := body) bvEq bvEqCpl)
     | .compl body =>
       eq_intp2_compl_of_eq
-        (intp2_replaceVars_eq2 (expr := body) bvMap bvEqCpl bvEq)
+        (intp2_replaceVars_eq (expr := body) bvEqCpl bvEq)
     | .arbIr body =>
       let bvMap': Nat → SingleLaneExpr := liftVarMap bvMap
       let bvEqLifted {b c}
@@ -287,13 +290,12 @@ namespace SingleLaneExpr
           intp2_lift_eq (bvMap x) bvRite [d] b c ▸ hyp x h
       
       eq_intp2_arbIr_of_eq fun d =>
-        intp2_replaceVars_eq2
-          bvMap'
+        intp2_replaceVars_eq
           (bvEqLifted bvEq d)
           (bvEqLifted bvEqCpl d)
   
   def intp_replaceVars_eq
-    (bvMap: Nat → SingleLaneExpr)
+    {bvMap: Nat → SingleLaneExpr}
     {expr: SingleLaneExpr}
     {bvLeft bvRite v}
     (bvEq:
@@ -304,7 +306,7 @@ namespace SingleLaneExpr
       (expr.intp2 bvLeft v v)
       (intp2 (expr.replaceVars bvMap) bvRite v v)
   :=
-    intp2_replaceVars_eq2 bvMap bvEq bvEq
+    intp2_replaceVars_eq bvEq bvEq
   
   def intp2_replaceVarsNat_eq
     (bvMap: Nat → Nat)
@@ -318,10 +320,49 @@ namespace SingleLaneExpr
       (intp2 (expr.replaceVarsNat bvMap) bvRite b c)
   :=
     (fun ab a => ab a a)
-      (intp2_replaceVars_eq2 (fun x => .var (bvMap x)))
+      intp2_replaceVars_eq
       (fun x hx =>
         congrArg
           (fun | none => (∅: Set Pair) | some d => {d})
           (bvEq x hx))
   
 end SingleLaneExpr
+
+def Expr.instantiateVar
+  (expr: Expr E)
+  (t: Expr E)
+:
+  Expr E
+:=
+  expr.replaceVars fun
+  | 0 => t
+  | n + 1 => .var n
+
+def SingleLaneExpr.intp2_instantiateVar_eq
+  (expr: SingleLaneExpr)
+  (t: SingleLaneExpr)
+  {bv b c dB}
+  (t_eq: t.intp2 bv b c = {dB})
+  (t_eq_c: t.intp2 bv c b = {dB})
+:
+  expr.intp2 (dB :: bv) b c = intp2 (expr.instantiateVar t) bv b c
+:=
+  intp2_replaceVars_eq
+    (fun
+      | 0, _ => t_eq ▸ rfl
+      | _ + 1, _ => rfl)
+    (fun
+      | 0, _ => t_eq_c ▸ rfl
+      | _ + 1, _ => rfl)
+
+def SingleLaneExpr.intp_instantiateVar_eq
+  (expr: SingleLaneExpr)
+  (t: SingleLaneExpr)
+  {bv v dB}
+  (t_eq: t.intp bv v = {dB})
+:
+  expr.intp2 (dB :: bv) v v = intp (expr.instantiateVar t) bv v
+:=
+  intp_replaceVars_eq (fun
+    | 0, _ => t_eq ▸ rfl
+    | _ + 1, _ => rfl)

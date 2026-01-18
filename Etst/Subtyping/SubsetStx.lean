@@ -129,6 +129,12 @@ def MutIndDescriptor.hypothesify
   expr.replaceDepthEvenConsts depth true desc.hypothesis
 
 
+def Expr.isSubsingleton
+  (expr: Expr E)
+:
+  Expr E
+:=
+  arbUn (condFull (impl expr.lift (var 0)))
 
 /-
   Syntactic entailment. Note the similarities with natural deduction.
@@ -271,6 +277,13 @@ inductive DefList.SubsetStx
     (sub: dl.SubsetStx x.lift a)
   :
     dl.SubsetStx x (arbIr a)
+|
+  univElim
+    (isSome: dl.SubsetStx x (condSome t))
+    (isSubsingle: dl.SubsetStx x t.isSubsingleton)
+    (sub: dl.SubsetStx x (arbIr a))
+  :
+    dl.SubsetStx x (a.instantiateVar t)
 |
   trans
     (ab: dl.SubsetStx a b)

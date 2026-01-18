@@ -121,6 +121,25 @@ def DefList.SubsetStx.isSound
           sub.isSound
             (dX :: bv)
             (cast eq isIn)
+    | univElim (t:=t) (a:=a) isSome isSubsingle sub =>
+        let ⟨_dt, inT⟩ := inCondSomeElim (isSome.isSound bv isIn)
+        let ⟨dX, inCond⟩ := inArbUnElim (isSubsingle.isSound bv isIn)
+        let inImpl := inCondFullElim inCond
+        
+        let tSub: intp t bv dl.wfm ⊆ {dX} := fun z hz =>
+          let hz_lift: z ∈ intp t.lift (dX :: bv) dl.wfm :=
+            (intp_lift_eq t bv [dX] dl.wfm) ▸ hz
+          inImplElim (inImpl z) hz_lift
+        
+        let tEq: intp t bv dl.wfm = {dX} :=
+          Set.eq_singleton_iff_unique_mem.mpr ⟨
+             by cases tSub inT; exact inT,
+             fun _ hy => tSub hy
+          ⟩
+        
+        intp_instantiateVar_eq a t tEq ▸
+        inArbIrElim (sub.isSound bv isIn) dX
+
     | trans ab bc => bc.isSound bv (ab.isSound bv isIn)
     | subUnfold => SingleLaneExpr.InWfm.in_def isIn
     | subFold => SingleLaneExpr.InWfm.of_in_def isIn

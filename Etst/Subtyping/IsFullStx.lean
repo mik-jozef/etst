@@ -395,6 +395,8 @@ namespace DefList
   | subFold => .fold _ _
   | univIntro sub =>
       sorry
+  | univElim isSome isSubsingle sub =>
+      sorry
   | trans ab bc => .mp2 .trans ab.toIsFullStx bc.toIsFullStx
   | subPe => .subPe
   | mutInduction desc premises i =>
