@@ -181,6 +181,9 @@ inductive DefList.SubsetStx
   subDefPos {x}:
     dl.SubsetStx (const .defLane x) (const .posLane x)
 |
+  -- TODO investigate whether we can prove this from the
+  -- simpler, context-free version (`pairMonoOfSub`).
+  -- This applies to induction as well.
   pairMono
     (sl: dl.SubsetStx x (full (impl al bl)))
     (sr: dl.SubsetStx x (full (impl ar br)))
