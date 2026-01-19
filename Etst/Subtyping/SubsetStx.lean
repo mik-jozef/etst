@@ -298,6 +298,13 @@ inductive DefList.SubsetStx
     dl.SubsetStx
       x
       (full (impl (const desc[i].lane desc[i].x) desc[i].expr))
+|
+  -- TODO: use hypothesify to axiomatize pairInduction,
+  -- or derive from simplePairInduction.
+  simplePairInduction {x p a}
+    (sub: dl.SubsetStx x (full (impl (un null (pair p p)) p)))
+  :
+    dl.SubsetStx x (full (impl a p))
 
 
 namespace DefList.SubsetStx
@@ -1084,6 +1091,20 @@ namespace DefList.SubsetStx
         expandsInto := .rfl
       }
       premise
+  
+  def subSimplePairInduction
+    (sub: dl.SubsetStx (un null (pair p p)) p)
+  :
+    dl.SubsetStx a p
+  :=
+    isFullImplElim (simplePairInduction (isFullImpl sub))
+  
+  def subPairConst
+    (eq: dl.getDef c = un null (pair (const () c) (const () c)))
+  :
+    dl.SubsetStx x (const .defLane c)
+  :=
+    subSimplePairInduction (fold (eq ▸ subId))
   
   
   def implDist:

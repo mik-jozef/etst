@@ -5,7 +5,7 @@ open Expr
 
 open SingleLaneExpr in
 def DefList.SubsetBv.subsetOfFullImpl {dl fv x a b d}
-  (h: SubsetBv dl fv x (SingleLaneExpr.full (SingleLaneExpr.impl a b)))
+  (h: SubsetBv dl fv x (.full (.impl a b)))
   (isIn: d ∈ x.intp fv dl.wfm)
 :
   dl.SubsetBv fv a b
@@ -17,7 +17,7 @@ open SingleLaneExpr in
 def DefList.SubsetBv.fullImplOfSubset {dl fv x a b}
   (h: SubsetBv dl fv a b)
 :
-  SubsetBv dl fv x (SingleLaneExpr.full (SingleLaneExpr.impl a b))
+  SubsetBv dl fv x (.full (.impl a b))
 :=
   fun _ _ =>
     inFull .null fun _ =>
@@ -144,10 +144,18 @@ def DefList.SubsetStx.isSound
     | subUnfold => SingleLaneExpr.InWfm.in_def isIn
     | subFold => SingleLaneExpr.InWfm.of_in_def isIn
     | mutInduction desc premises i =>
-      let isSub :=
-        MutIndDescriptor.isSound
-          desc
-          fv
-          (fun i => ((premises i).isSound fv).subsetOfFullImpl isIn)
-          i
-      isSub.fullImplOfSubset isIn
+        let isSub :=
+          MutIndDescriptor.isSound
+            desc
+            fv
+            (fun i => ((premises i).isSound fv).subsetOfFullImpl isIn)
+            i
+        isSub.fullImplOfSubset isIn
+    | simplePairInduction (p:=prop) sub =>
+        let ind := (sub.isSound fv).subsetOfFullImpl isIn
+        let rec inP: (p: Pair) → intp prop fv dl.wfm p
+        | Pair.null => ind (inUnL inNull)
+        | .pair pa pb => ind (inUnR (inPair (inP pa) (inP pb)))
+        DefList.SubsetBv.fullImplOfSubset
+          (fun a _ => inP a)
+          isIn
