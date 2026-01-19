@@ -297,7 +297,11 @@ inductive DefList.SubsetStx
     dl.SubsetStx
       x
       (full (impl (const desc[i].lane desc[i].x) desc[i].expr))
-
+|
+  subPairInduction
+    (sub: dl.SubsetStx (un null (pair p p)) p)
+  :
+    dl.SubsetStx a p
 
 namespace DefList.SubsetStx
   variable {dl: DefList}
@@ -1286,6 +1290,72 @@ namespace DefList.SubsetStx
       trans (subIr subYArbUn (trans subYArbIr subDni)) subPe
     
     trans (implIntro subNull) (trans subImplCompl subDne)
+  
+  
+  def subCtxIr {c a}:
+    dl.SubsetStx c (impl a (ir c a))
+  :=
+    implIntro subId
+  
+  def subFullCtxIr {k a}:
+    dl.SubsetStx (full k) (full (impl a (ir (full k) a)))
+  :=
+    trans fullAddFull (fullMono subCtxIr)
+  
+  def subFullIrPairDist {k a b}:
+    dl.SubsetStx
+      (ir (full k) (pair a b))
+      (pair (ir (full k) a) (ir (full k) b))
+  :=
+    implAbsorb <|
+    implElim
+      (implElim
+        (trans subAny (implPairMono sorry))
+        subFullCtxIr)
+      subFullCtxIr
+
+  -- Proof of contextual pair induction from the context-free version.
+  def pairInduction {x p a}
+    (sub: dl.SubsetStx x (full (impl (un null (pair p p)) p)))
+  :
+    dl.SubsetStx x (full (impl a p))
+  :=
+    -- K := full (impl (un null (pair p p)) p)
+    -- p' := impl K p
+    
+    -- ir K (un null (pair p' p')) ⊆ un null (pair p p)
+    let indStep :=
+      trans subIrUnDistR <|
+      unCtxLR
+        (trans subIrR subId) -- ir K null ⊆ null
+        (trans subFullIrPairDist <|
+         pairMono
+           (implElim subIrR subIrL) -- ir K p' ⊆ p
+           (implElim subIrR subIrL))
+    
+    -- K ⊆ impl (un null (pair p p)) p ⊆ impl (ir K (un ...)) p
+    -- ir K (un null (pair p' p')) ⊆ p
+    let subIrAndGoal_p :=
+      trans (subIr subIrL indStep) <|
+      implAbsorb fullElim
+    
+    
+    -- un null (pair p' p') ⊆ p' = impl K p
+    let indStepImpl := implIntro (irSymmCtx subIrAndGoal_p)
+    
+    let result := subPairInduction indStepImpl
+    
+    -- x ⊆ K ⊆ impl a p
+    trans sub <|
+    trans fullAddFull <|
+    fullMono (implIntro (irSymmCtx (implAbsorb result)))
+  
+  def subPairConst
+    (eq: dl.getDef c = un null (pair (const () c) (const () c)))
+  :
+    dl.SubsetStx x (const .defLane c)
+  :=
+    subPairInduction (fold (eq ▸ subId))
   
 end DefList.SubsetStx
 
