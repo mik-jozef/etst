@@ -147,12 +147,12 @@ def MutIndDescriptor.isSound
   (fv: List Pair)
   (premisesHold:
     (i: desc.Index) →
-    dl.SubsetBv fv
+    dl.SubsetFv fv
       (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
       desc[i].expr)
   (i: desc.Index)
 :
-  dl.SubsetBv fv (.const desc[i].lane desc[i].x) desc[i].expr
+  dl.SubsetFv fv (.const desc[i].lane desc[i].x) desc[i].expr
 :=
   let := Valuation.ordStdLattice
   let eq: dl.wfm = (operatorC dl dl.wfm).lfp := dl.wfm_eq_lfpC
@@ -186,13 +186,13 @@ def MutIndDescriptor.isSound
         let laneEq := desc[i].expansion.laneEqEven desc[i].lane true
         let lePremise := desc.le_hypothesify fv [] ihPred laneEq predStageLe
         let leExp := desc[i].expandsInto.lfpStage_le_std fv n.pred
-        let isMemBv:
+        let isMemFv:
           ((dl.getDef desc[i].x).triIntp2 fv dl.wfm predStage).getLane desc[i].lane x
         := by
-          rw [←dl.interp_eq_bv desc[i].x [] fv dl.wfm predStage]
+          rw [←dl.interp_eq_fv desc[i].x [] fv dl.wfm predStage]
           exact isMem
         let inExpansion :=
-          desc[i].expansion.triIntp2_getLane_eq ▸ leExp.memLe isMemBv
+          desc[i].expansion.triIntp2_getLane_eq ▸ leExp.memLe isMemFv
         premisesHold i (lePremise inExpansion))
   
   by rw [←eq] at isDefSub; exact isDefSub i

@@ -184,9 +184,9 @@ namespace SingleLaneExpr
     ∃ dBound, InsUnDomElim fv b c x dBound domain body d
   :=
     let ⟨dBound, inIfThen⟩ := inArbUnElim inUnDom
-    let ⟨⟨_dC, inBvDom⟩, inBody⟩ := inIfThenElim inIfThen
-    let ⟨inBv, inDom⟩ := inIrElim inBvDom
-    let fvEq := inVarElim inBv rfl
+    let ⟨⟨_dC, inFvDom⟩, inBody⟩ := inIfThenElim inIfThen
+    let ⟨inFv, inDom⟩ := inIrElim inFvDom
+    let fvEq := inVarElim inFv rfl
     ⟨dBound, { inDomain := fvEq ▸ inDom, inBody }⟩
   
   

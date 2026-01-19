@@ -63,7 +63,7 @@ end Expr
 namespace SingleLaneExpr
   open Expr
   
-  def clearVars_preserves_interp_bv
+  def clearVars_preserves_interp_fv
     (expr: SingleLaneExpr)
     (fv fvRest: List Pair)
     (b c: Valuation Pair)
@@ -91,21 +91,21 @@ namespace SingleLaneExpr
     | .null => rfl
     | .pair left rite =>
       eq_intp2_pair_of_eq
-        (clearVars_preserves_interp_bv left fv fvRest b c)
-        (clearVars_preserves_interp_bv rite fv fvRest b c)
+        (clearVars_preserves_interp_fv left fv fvRest b c)
+        (clearVars_preserves_interp_fv rite fv fvRest b c)
     | .ir left rite =>
       eq_intp2_ir_of_eq
-        (clearVars_preserves_interp_bv left fv fvRest b c)
-        (clearVars_preserves_interp_bv rite fv fvRest b c)
+        (clearVars_preserves_interp_fv left fv fvRest b c)
+        (clearVars_preserves_interp_fv rite fv fvRest b c)
     | .full body =>
       eq_intp2_full_of_eq
-        (clearVars_preserves_interp_bv body fv fvRest b c)
+        (clearVars_preserves_interp_fv body fv fvRest b c)
     | .compl body =>
-      let ih := clearVars_preserves_interp_bv body fv fvRest c b
+      let ih := clearVars_preserves_interp_fv body fv fvRest c b
       eq_intp2_compl_of_eq ih
     | .arbIr body =>
       eq_intp2_arbIr_of_eq (fun dX =>
-        clearVars_preserves_interp_bv (fvRest := fvRest) body (dX :: fv) b c)
+        clearVars_preserves_interp_fv (fvRest := fvRest) body (dX :: fv) b c)
   
   def clearVars_preserves_interp
     (expr: SingleLaneExpr)
@@ -116,7 +116,7 @@ namespace SingleLaneExpr
       (expr.intp2 [] b c)
       (intp2 expr.clearVars fv b c)
   :=
-    clearVars_preserves_interp_bv expr [] fv b c
+    clearVars_preserves_interp_fv expr [] fv b c
   
   namespace IsClean
     def var_independent
@@ -132,7 +132,7 @@ namespace SingleLaneExpr
       clearVars_preserves_interp expr fv1 b c ▸
       rfl
 
-    def changeBv
+    def changeFv
       {expr: SingleLaneExpr}
       (isClean: IsClean expr)
       {fv1: List Pair}
@@ -199,15 +199,15 @@ namespace BasicExpr
   :
     expr.triIntp2 [] b c = triIntp2 expr.clearVars fv b c
   :=
-    let eqBvDef := (expr.toLane .defLane).clearVars_preserves_interp fv b c
-    let eqBvPos := (expr.toLane .posLane).clearVars_preserves_interp fv b c
+    let eqFvDef := (expr.toLane .defLane).clearVars_preserves_interp fv b c
+    let eqFvPos := (expr.toLane .posLane).clearVars_preserves_interp fv b c
     Set3.eq
-      (eqBvDef.trans (clearVars_lane_comm expr .defLane ▸ rfl))
-      (eqBvPos.trans (clearVars_lane_comm expr .posLane ▸ rfl))
+      (eqFvDef.trans (clearVars_lane_comm expr .defLane ▸ rfl))
+      (eqFvPos.trans (clearVars_lane_comm expr .posLane ▸ rfl))
 end BasicExpr
 
 namespace DefList
-  def interp_eq_bv
+  def interp_eq_fv
     (dl: DefList)
     (x: Nat)
     (fv0 fv1: List Pair)
@@ -220,7 +220,7 @@ namespace DefList
     BasicExpr.clearVars_preserves_interp (dl.getDef x) fv1 b c ▸
     rfl
   
-  def interp_eq_bv_def
+  def interp_eq_fv_def
     (dl: DefList)
     (x: Nat)
     (fv0 fv1: List Pair)
@@ -230,9 +230,9 @@ namespace DefList
       (((dl.getDef x).toLane .defLane).intp2 fv0 b c)
       (((dl.getDef x).toLane .defLane).intp2 fv1 b c)
   :=
-    Set3.eq_def (dl.interp_eq_bv x fv0 fv1 b c)
+    Set3.eq_def (dl.interp_eq_fv x fv0 fv1 b c)
   
-  def interp_eq_bv_pos
+  def interp_eq_fv_pos
     (dl: DefList)
     (x: Nat)
     (fv0 fv1: List Pair)
@@ -242,7 +242,7 @@ namespace DefList
       (((dl.getDef x).toLane .posLane).intp2 fv0 b c)
       (((dl.getDef x).toLane .posLane).intp2 fv1 b c)
   :=
-    Set3.eq_pos (dl.interp_eq_bv x fv0 fv1 b c)
+    Set3.eq_pos (dl.interp_eq_fv x fv0 fv1 b c)
   
 end DefList
 
@@ -252,14 +252,14 @@ namespace SingleLaneExpr
   :
     InWfm [] dl (.const lane x) d
   :=
-    of_in_def_no_bv
+    of_in_def_no_fv
       (match lane with
       | .defLane =>
-        let eqDef := dl.interp_eq_bv_def x [] fv dl.wfm dl.wfm
+        let eqDef := dl.interp_eq_fv_def x [] fv dl.wfm dl.wfm
         show intp2 _ _ _ _ _ from
         eqDef ▸ inDef
       | .posLane =>
-        let eqPos := dl.interp_eq_bv_pos x [] fv dl.wfm dl.wfm
+        let eqPos := dl.interp_eq_fv_pos x [] fv dl.wfm dl.wfm
         show intp2 _ _ _ _ _ from
         eqPos ▸ inDef)
   
@@ -271,11 +271,11 @@ namespace SingleLaneExpr
     show intp2 _ _ _ _ _ from
     match lane with
     | .defLane =>
-      dl.interp_eq_bv_def x fv [] dl.wfm dl.wfm ▸
-      in_def_no_bv inVar
+      dl.interp_eq_fv_def x fv [] dl.wfm dl.wfm ▸
+      in_def_no_fv inVar
     | .posLane =>
-      dl.interp_eq_bv_pos x fv [] dl.wfm dl.wfm ▸
-      in_def_no_bv inVar
+      dl.interp_eq_fv_pos x fv [] dl.wfm dl.wfm ▸
+      in_def_no_fv inVar
   
 end SingleLaneExpr
 
@@ -522,7 +522,7 @@ namespace Expr
 end Expr
 
 namespace SingleLaneExpr
-  def intp2_bv_append
+  def intp2_fv_append
     (dl: DefList)
     {expr: SingleLaneExpr}
     {fv: List Pair}
@@ -533,7 +533,7 @@ namespace SingleLaneExpr
     expr.intp fv dl.wfm p ↔ expr.intp (fv ++ rest) dl.wfm p
   := by
     unfold SingleLaneExpr.intp
-    rw [SingleLaneExpr.clearVars_preserves_interp_bv]
+    rw [SingleLaneExpr.clearVars_preserves_interp_fv]
     have: Expr.clearVars fv.length expr = expr :=
       Expr.clearVars_eq_of_ub h
     rw [this]

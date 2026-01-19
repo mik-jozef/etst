@@ -87,8 +87,8 @@ namespace Expr.ExpandsInto
   | .const x expr =>
     let ih := expr.triIntp_eq_wfm (fv := fv)
     let eqDef := dl.wfm_eq_def x
-    let eqBv := dl.interp_eq_bv x [] fv dl.wfm dl.wfm
-    eqDef.trans (eqBv.trans ih)
+    let eqFv := dl.interp_eq_fv x [] fv dl.wfm dl.wfm
+    eqDef.trans (eqFv.trans ih)
   | .pair left rite =>
     eq_triIntp2_pair_of_eq
       (left.triIntp_eq_wfm dl fv)

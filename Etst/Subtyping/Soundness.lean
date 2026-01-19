@@ -4,20 +4,20 @@ namespace Etst
 open Expr
 
 open SingleLaneExpr in
-def DefList.SubsetBv.subsetOfFullImpl {dl fv x a b d}
-  (h: SubsetBv dl fv x (.full (.impl a b)))
+def DefList.SubsetFv.subsetOfFullImpl {dl fv x a b d}
+  (h: SubsetFv dl fv x (.full (.impl a b)))
   (isIn: d ∈ x.intp fv dl.wfm)
 :
-  dl.SubsetBv fv a b
+  dl.SubsetFv fv a b
 :=
   fun d' inA =>
     inImplElim (inFullElim (h isIn) d') inA
 
 open SingleLaneExpr in
-def DefList.SubsetBv.fullImplOfSubset {dl fv x a b}
-  (h: SubsetBv dl fv a b)
+def DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
+  (h: SubsetFv dl fv a b)
 :
-  SubsetBv dl fv x (.full (.impl a b))
+  SubsetFv dl fv x (.full (.impl a b))
 :=
   fun _ _ =>
     inFull .null fun _ =>
@@ -156,6 +156,6 @@ def DefList.SubsetStx.isSound
         let rec inP: (p: Pair) → intp prop fv dl.wfm p
         | Pair.null => ind (inUnL inNull)
         | .pair pa pb => ind (inUnR (inPair (inP pa) (inP pb)))
-        DefList.SubsetBv.fullImplOfSubset
+        DefList.SubsetFv.fullImplOfSubset
           (fun a _ => inP a)
           isIn

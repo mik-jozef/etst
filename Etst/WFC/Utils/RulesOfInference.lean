@@ -307,7 +307,7 @@ namespace SingleLaneExpr
     expr.intp2 fv dl.wfm dl.wfm d
   
   
-  def InWfm.of_in_def_no_bv
+  def InWfm.of_in_def_no_fv
     (inDef: InWfm [] dl ((dl.getDef x).toLane lane) d)
   :
     InWfm [] dl (.const lane x) d
@@ -319,7 +319,7 @@ namespace SingleLaneExpr
     exact inDef
   
   
-  def InWfm.in_def_no_bv
+  def InWfm.in_def_no_fv
     (inConst: InWfm [] dl (.const lane x) d)
   :
     InWfm [] dl ((dl.getDef x).toLane lane) d
