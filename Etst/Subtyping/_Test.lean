@@ -6,6 +6,7 @@ open DefList
 open DefList.SubsetStx
 
 pairDefList TestDl extends FiniteDefList.Prelude
+  s3 Pair := null | (Pair, Pair)
   s3 Nat := null | (Nat, null)
   
   s3 Even := null | ((Even, null), null)

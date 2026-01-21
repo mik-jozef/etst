@@ -17,7 +17,11 @@ namespace Etst
 -/
 inductive Expr (E: Type*) where
 | const (e: E) (x: Nat)
-| var (x: Nat) -- Uses de Bruijn indices
+/-
+  Uses de Bruijn indices. Ie., `var 0` refers to the innermost
+  quantifier, `var 1` to the next outer one, and so on.
+-/
+| var (x: Nat)
 | null
 | pair (left rite: Expr E)
 | ir (left rite: Expr E)
@@ -70,6 +74,21 @@ namespace Expr
         | compl body => body.UsesConst x
         | arbIr body => body.UsesConst x
   
+  def UsesFreeVar (expr: Expr E): Set Nat :=
+    fun x =>
+      match expr with
+        | const _ _ => False
+        | var v => x = v
+        | null => False
+        | pair left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
+        | ir left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
+        | full body => body.UsesFreeVar x
+        | compl body => body.UsesFreeVar x
+        | arbIr body => body.UsesFreeVar (x + 1)
+  
+  abbrev FreeVarsSat (expr: Expr E) (P: Nat → Prop): Prop :=
+    ∀ x ∈ expr.UsesFreeVar, P x
+  
   
   /-
     A positive expression only refers to constants under an even
@@ -94,22 +113,62 @@ namespace Expr
   -- `none` contains no elements, under any valuation.
   def none: Expr E := arbIr (compl (var 0))
   
-  -- Removes all variables with index >= ub.
-  def clearVars (ub := 0): Expr E → Expr E
-    | .const info x => .const info x
-    | .var x => if x < ub then .var x else .none
-    | .null => .null
-    | .pair left rite =>
-        .pair (left.clearVars ub) (rite.clearVars ub)
-    | .ir left rite =>
-        .ir (left.clearVars ub) (rite.clearVars ub)
-    | .full body =>
-        .full (body.clearVars ub)
-    | .compl e => .compl (e.clearVars ub)
-    | .arbIr body => .arbIr (body.clearVars (ub + 1))
   
-  def IsClean (expr: Expr E): Prop :=
-    expr = expr.clearVars
+  /-
+    Increments all free variables by `liftBy`. `depth` represents
+    inside how many quantifiers we are.
+  -/
+  def lift
+    (expr: Expr E)
+    (depth := 0)
+    (liftBy := 1)
+  :=
+    match expr with
+    | const info x => const info x
+    | var x => var (if x < depth then x else x + liftBy)
+    | null => null
+    | pair l r => pair (l.lift depth liftBy) (r.lift depth liftBy)
+    | ir l r => ir (l.lift depth liftBy) (r.lift depth liftBy)
+    | full body => full (body.lift depth liftBy)
+    | compl body => compl (body.lift depth liftBy)
+    | arbIr body => arbIr (body.lift (depth + 1) liftBy)
+  
+  /-
+    Transforms a map of free variables to one that is equivalent
+    inside a single quantifier.
+  -/
+  def liftFvMap
+    (fvMap: Nat → Expr E)
+  :
+    Nat → Expr E
+  | 0 => .var 0
+  | n + 1 => (fvMap n).lift
+  
+  -- Replaces free variables according to a given map.
+  def replaceFreeVars {E}
+    (fvMap: Nat → Expr E)
+  :
+    Expr E → Expr E
+  | .const e x => .const e x
+  | .var x => fvMap x
+  | .null => .null
+  | .pair left rite =>
+    .pair (replaceFreeVars fvMap left) (replaceFreeVars fvMap rite)
+  | .ir left rite =>
+    .ir (replaceFreeVars fvMap left) (replaceFreeVars fvMap rite)
+  | .full body =>
+    .full (replaceFreeVars fvMap body)
+  | .compl body =>
+    .compl (replaceFreeVars fvMap body)
+  | .arbIr body =>
+    .arbIr (replaceFreeVars (liftFvMap fvMap) body)
+  
+  -- Removes all free variables.
+  def clearFreeVars {E}: Expr E → Expr E :=
+    replaceFreeVars fun _ => none
+  
+  abbrev IsClean (expr: Expr E): Prop :=
+    expr.FreeVarsSat fun _ => False
   
 end Expr
 

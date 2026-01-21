@@ -189,7 +189,7 @@ def MutIndDescriptor.isSound
         let isMemFv:
           ((dl.getDef desc[i].x).triIntp2 fv dl.wfm predStage).getLane desc[i].lane x
         := by
-          rw [←dl.interp_eq_fv desc[i].x [] fv dl.wfm predStage]
+          rw [←dl.triIntp2_eq_fv desc[i].x [] fv dl.wfm predStage]
           exact isMem
         let inExpansion :=
           desc[i].expansion.triIntp2_getLane_eq ▸ leExp.memLe isMemFv

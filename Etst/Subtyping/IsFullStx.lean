@@ -67,7 +67,7 @@ namespace DefList
   | fIr: dl.IsFullStx (impl a (impl b (ir a b)))
   | fIrL: dl.IsFullStx (impl (ir l r) l)
   | fIrR: dl.IsFullStx (impl (ir l r) r)
-  | fFull (full: dl.IsFullStx a): dl.IsFullStx (full a)
+  | fFull (f: dl.IsFullStx a): dl.IsFullStx (full a)
   -- Axiom K in modal logic.
   | fFullImplElim:
       dl.IsFullStx
@@ -136,7 +136,7 @@ namespace DefList
     :=
       match fn with
       | .fromHyp => implSelf
-      | .fromFull full => simpl.mp full
+      | .fromFull f => simpl.mp f
       | .mp f_impl f_arg =>
           let ih_impl := toImpl f_impl
           let ih_arg := toImpl f_arg
@@ -286,7 +286,7 @@ namespace DefList
       let step1 := mt.mp (fFullElim (expr := compl (full a)))
       let step2 := trans.mp2 dni step1
       let step3 := someAddFull (a := full a)
-      let step4 := fFull (full := fSomeStripFull (a := a))
+      let step4 := fFull (f := fSomeStripFull (a := a))
       let step5 := mp fFullImplElim step4
       mp2 trans step2 (mp2 trans step3 step5)
     
@@ -401,6 +401,8 @@ namespace DefList
   | subPe => .subPe
   | mutInduction desc premises i =>
       .mutInduction desc (fun j => (premises j).toIsFullStx) i
+  | simplePairInduction sub =>
+      sorry
   
   def IsFullStx.toSubsetStx
     (full: dl.IsFullStx a)

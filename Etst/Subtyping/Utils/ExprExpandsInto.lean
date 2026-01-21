@@ -1,6 +1,6 @@
 import Etst.WFC.Ch5_S1_AProofSystem
 import Etst.WFC.Utils.InterpretationMono
-import Etst.Subtyping.Utils.ExprClearVars
+import Etst.Subtyping.Utils.ExprLiftVars
 
 namespace Etst
 
@@ -87,7 +87,7 @@ namespace Expr.ExpandsInto
   | .const x expr =>
     let ih := expr.triIntp_eq_wfm (fv := fv)
     let eqDef := dl.wfm_eq_def x
-    let eqFv := dl.interp_eq_fv x [] fv dl.wfm dl.wfm
+    let eqFv := dl.triIntp2_eq_fv x [] fv dl.wfm dl.wfm
     eqDef.trans (eqFv.trans ih)
   | .pair left rite =>
     eq_triIntp2_pair_of_eq
@@ -114,14 +114,14 @@ namespace Expr.ExpandsInto
   :
     let _ := Valuation.ordStdLattice
     let op := operatorC dl dl.wfm
-    let intpE e fv := e.triIntp2 fv dl.wfm (op.lfpStage n)
-    let intpO e fv := e.triIntp2 fv (op.lfpStage n) dl.wfm
+    let triIntpE e fv := e.triIntp2 fv dl.wfm (op.lfpStage n)
+    let triIntpO e fv := e.triIntp2 fv (op.lfpStage n) dl.wfm
     
     if ed
-    then intpE l fv ≤ intpE r fv
-    else intpO r fv ≤ intpO l fv
+    then triIntpE l fv ≤ triIntpE r fv
+    else triIntpO r fv ≤ triIntpO l fv
   := by
-    intro _ op intpE intpO
+    intro _ op triIntpE triIntpO
     exact
     let _ := Set3.ordStdLattice
     match expInto with
@@ -133,13 +133,12 @@ namespace Expr.ExpandsInto
       let ih := exp.lfpStage_le_std fv n
       let defX := dl.getDef x
       let leNextStage:
-        intpE (.const x) [] ≤ intpE defX fv
+        triIntpE (.const x) [] ≤ triIntpE defX fv
       :=
-        let eqNext: intpE defX [] = op.lfpStage n.succ x :=
+        let eqNext: triIntpE defX [] = op.lfpStage n.succ x :=
           congr (op.lfpStage_apply_eq_succ n) _root_.rfl
-        let eqClear: intpE defX [] = intpE (dl.getDef x) fv :=
-          dl.isClean x ▸
-          clearVars_preserves_interp _ _ _ _
+        let eqClear: triIntpE defX [] = triIntpE (dl.getDef x) fv :=
+          dl.triIntp2_eq_fv _ _ _ _ _
         
         eqClear ▸ eqNext ▸ op.lfpStage_mono (Order.le_succ n) x
       leNextStage.trans ih

@@ -59,7 +59,7 @@ def FiniteDefList.empty: FiniteDefList := {
   getDef := fun _ => Expr.none
   constNames := []
   constsLt := fun _ => Expr.noneLtSize _
-  isClean := fun _ => rfl
+  isClean := fun _ => by decide
 }
 
 def FiniteDefList.emptySizeZero: empty.size = 0 := rfl
@@ -80,7 +80,7 @@ def FiniteDefList.defsGetNth
     name := "«empty»"
     expr := Expr.none
     constsLt := Expr.noneLtSize ub
-    isClean := rfl
+    isClean := by decide
   }
 
 def FiniteDefList.defsToGetDef
@@ -145,13 +145,13 @@ def FiniteDefList.Prelude: FiniteDefList :=
       name := "Any"
       expr := Expr.arbUn (Expr.var 0)
       constsLt := fun _ h => nomatch h
-      isClean := rfl
+      isClean := by decide
     },
     {
       name := "None"
       expr := Expr.arbIr (Expr.var 0)
       constsLt := fun _ h => nomatch h
-      isClean := rfl
+      isClean := by decide
     }
   ] rfl
 
@@ -442,7 +442,7 @@ namespace pair_def_list
           expr := $expr
           name := $(mkStrLit name.getId.toString)
           constsLt := (by decide: ($expr).ConstsLt $size)
-          isClean := rfl
+          isClean := by decide
         })
       | stx => termStxErr stx "s3 in pairDefList"
     
