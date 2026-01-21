@@ -2,7 +2,9 @@ import Lake
 open Lake DSL
 
 -- (I forgot what it stands for. (Extensional triset theory?))
-package Etst {}
+package Etst {
+  moreLeanArgs := #["-DautoImplicit=false"]
+}
 
 @[default_target]
 lean_lib Etst {

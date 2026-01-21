@@ -8,7 +8,11 @@
 import Mathlib.Tactic.TypeStar
 
 
-noncomputable def Exists.unwrap {P: T → Prop} (ex: ∃ t, P t): { t // P t } :=
+noncomputable def Exists.unwrap
+  {T} {P: T → Prop} (ex: ∃ t, P t)
+:
+  { t // P t }
+:=
   Classical.indefiniteDescription P ex
 
 -- EM go brr
@@ -19,8 +23,8 @@ def byContradiction {P: Prop} := @Classical.byContradiction P
 
 
 -- The square le/lt relation: `x ⊑ y` / `x ⊏ y`.
-class SqLE (T : Type u) where le : T → T → Prop
-class SqLT (T : Type u) where lt : T → T → Prop
+class SqLE.{u} (T : Type u) where le : T → T → Prop
+class SqLT.{u} (T : Type u) where lt : T → T → Prop
 
 infix:50 " ⊑ " => SqLE.le
 infix:50 " ⊏ " => SqLT.lt
@@ -29,7 +33,7 @@ infix:50 " ⊏ " => SqLT.lt
 def Not.dne {P: Prop} (h: ¬¬P): P :=
   (Classical.em P).elim id (absurd · h)
 
-def Not.toAll {P: T → Prop} {ImpliedByNotP: T → Sort*}
+def Not.toAll {T} {P: T → Prop} {ImpliedByNotP: T → Sort*}
   (nEx: ¬(∃ t: T, P t))
   (nptImpl: ∀ t, ¬P t → ImpliedByNotP t)
 :
@@ -37,7 +41,7 @@ def Not.toAll {P: T → Prop} {ImpliedByNotP: T → Sort*}
 :=
   fun t =>  nptImpl t (Classical.byContradiction fun nnpt => nEx ⟨t, nnpt.dne⟩)
 
-def Not.toEx {P ImpliedByNotP: T → Prop}
+def Not.toEx {T} {P ImpliedByNotP: T → Prop}
   (nAll: ¬(∀ t: T, P t))
   (nptImpl: ∀ t, ¬P t → ImpliedByNotP t)
 :
@@ -54,12 +58,12 @@ def Iff.nmpr {P Q: Prop} (h: P ↔ Q) : ¬Q → ¬P :=
   fun qq p => qq (h.mp p)
 
 
-abbrev List.Index (l: List T) := Fin l.length
+abbrev List.Index {T} (l: List T) := Fin l.length
 
 def List.Index.map
-  {list: List A}
+  {A} {list: List A}
   (i: list.Index)
-  (f: A → B)
+  {B} (f: A → B)
 :
   (list.map f).Index
 := ⟨
@@ -68,8 +72,8 @@ def List.Index.map
 ⟩
 
 def List.Index.unmap
-  {list: List A}
-  {f: A → B}
+  {A} {list: List A}
+  {B} {f: A → B}
   (i: (list.map f).Index)
 :
   list.Index
@@ -79,7 +83,7 @@ def List.Index.unmap
 ⟩
 
 noncomputable def List.Mem.index 
-  {l: List T}
+  {T} {l: List T} {t}
 :
   t ∈ l → ∃ i: List.Index l, l[i] = t
 |  .head _ => ⟨⟨0, Nat.succ_pos _⟩, rfl⟩
@@ -88,7 +92,7 @@ noncomputable def List.Mem.index
   ⟨⟨.succ i, Nat.succ_lt_succ i.isLt⟩, eq⟩
 
 def List.Index.indexedTail
-  {P: T → Sort*}
+  {T} {P: T → Sort*} {h t}
   (indexedFn: (i: (h :: t).Index) → P (h :: t)[i])
 :
   (i: t.Index) → P t[i]
@@ -96,7 +100,7 @@ def List.Index.indexedTail
   fun ⟨i, ilt⟩ => indexedFn ⟨i.succ, Nat.succ_lt_succ ilt⟩
 
 def List.Mem.toOr
-  {t head: T}
+  {T} {t head: T} {rest}
   (mem: List.Mem t (head :: rest))
 :
   t = head ∨ t ∈ rest
@@ -106,9 +110,9 @@ def List.Mem.toOr
   | Mem.tail a b => Or.inr b
 
 def List.Mem.elim
-  {t head: T}
+  {T} {t head: T} {rest}
   (mem: List.Mem t (head :: rest))
-  (left: t = head → C)
+  {C} (left: t = head → C)
   (rite: t ∈ rest → C)
 :
   C
@@ -116,7 +120,7 @@ def List.Mem.elim
   mem.toOr.elim left rite
 
 def List.length_le_append_rite
-  (l r: List T)
+  {T} (l r: List T)
 :
   l.length ≤ (l ++ r).length
 :=

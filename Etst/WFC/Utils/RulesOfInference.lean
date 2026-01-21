@@ -4,6 +4,12 @@ import Etst.WFC.Utils.Valuation
 namespace Etst
 
 namespace SingleLaneExpr
+  variable {expr exprL exprR body left rite: SingleLaneExpr}
+  variable {x: Nat}
+  variable {pA pB dE dBound d: Pair}
+  variable {fv: List Pair}
+  variable {b c: Valuation Pair}
+  
   def intp2_var_eq_empty
     (nlt: ¬ x < fv.length)
   :
@@ -288,7 +294,7 @@ namespace SingleLaneExpr
   
   def inAny: intp2 .any fv b c d := inArbUn d (inVar rfl)
   def ninNone: ¬ intp2 .none fv b c d := (· d rfl)
-  def inNoneElim: intp2 .none fv b c d → P := ninNone.elim
+  def inNoneElim {P}: intp2 .none fv b c d → P := ninNone.elim
   
   def intp2_none_eq_empty:
     intp2 .none fv b c = {}
@@ -307,7 +313,7 @@ namespace SingleLaneExpr
     expr.intp2 fv dl.wfm dl.wfm d
   
   
-  def InWfm.of_in_def_no_fv
+  def InWfm.of_in_def_no_fv {dl lane}
     (inDef: InWfm [] dl ((dl.getDef x).toLane lane) d)
   :
     InWfm [] dl (.const lane x) d
@@ -319,7 +325,7 @@ namespace SingleLaneExpr
     exact inDef
   
   
-  def InWfm.in_def_no_fv
+  def InWfm.in_def_no_fv {dl lane}
     (inConst: InWfm [] dl (.const lane x) d)
   :
     InWfm [] dl ((dl.getDef x).toLane lane) d

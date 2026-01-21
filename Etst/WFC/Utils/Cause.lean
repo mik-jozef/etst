@@ -4,6 +4,8 @@ import Etst.WFC.Ch5_S0_AProofSystem
 
 namespace Etst
 
+variable {D: Type*}
+
 
 def Cause.ofValPos
   (b c: Valuation D)
@@ -52,19 +54,19 @@ inductive Cause.IsInapplicable
 :
   Prop
 
-| blockedContextIns
+| blockedContextIns {d x}
   (inContextIns: ⟨d, x⟩ ∈ cause.contextIns)
   (inCycle: ⟨d, x⟩ ∈ outSet)
 :
   IsInapplicable cause outSet b
 
-| blockedBackgroundIns
+| blockedBackgroundIns {d x}
   (inBins: ⟨d, x⟩ ∈ cause.backgroundIns)
   (isOut: ¬(b x).posMem d)
 :
   IsInapplicable cause outSet b
 
-| blockedBackgroundOut
+| blockedBackgroundOut {d x}
   (inBout: ⟨d, x⟩ ∈ cause.backgroundOut)
   (isIns: (b x).defMem d)
 :
@@ -105,7 +107,7 @@ def Cause.IsWeaklySatisfiedBy.Not.toIsInapplicable
     notSat
 
 def Cause.IsWeaklySatisfiedBy.toIsApplicable
-  {b c: Valuation D}
+  {cause b c}
   (isSat: Cause.IsWeaklySatisfiedBy cause b c)
   (outSet: Set (ValConst D))
   (outSetIsEmpty: ∀ {d x}, ⟨d, x⟩ ∈ outSet → ¬ (c x).posMem d)
@@ -132,7 +134,7 @@ def Cause.IsWeaklySatisfiedBy.ofValPos
 }
 
 
-noncomputable def IsWeakCause.ofValPos
+noncomputable def IsWeakCause.ofValPos {expr b c d}
   (isPos: (expr.triIntp2 [] b c).posMem d)
 :
   IsWeakCause (Cause.ofValPos b c) d expr
@@ -149,8 +151,7 @@ noncomputable def IsWeakCause.ofValPos
       isPos
 
 def IsWeakCause.isPosOfIsApplicable
-  {cause: Cause Pair}
-  {d: Pair}
+  {cause d expr}
   (isCause: IsWeakCause cause d expr)
   {b c: Valuation Pair}
   (isApp: ¬ cause.IsInapplicable c.nonmembers b)
@@ -160,8 +161,7 @@ def IsWeakCause.isPosOfIsApplicable
   isCause (Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy isApp)
 
 def IsWeakCause.isInapplicableOfIsNonmember
-  {cause: Cause Pair}
-  {d: Pair}
+  {cause d expr}
   (isCause: IsWeakCause cause d expr)
   {b c: Valuation Pair}
   (notPos: ¬(expr.triIntp2 [] b c).posMem d)

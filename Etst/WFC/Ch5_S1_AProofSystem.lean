@@ -11,7 +11,7 @@ import Etst.WFC.Utils.AProofSystem
 namespace Etst
 
 
-def Ins.isSound
+def Ins.isSound {dl d x}
   (ins: Ins dl d x)
 :
   (dl.wfm x).defMem d
@@ -47,13 +47,13 @@ def Ins.isSound
     (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
       DefList.wfm_isModel dl ▸
       isCause ⟨⟨ihBins, ihBout⟩, ihCins⟩)
-    (fun _ _ _ => blockedContextIns)
+    (fun _ _ _ inCins _ => blockedContextIns inCins)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundIns ihBins ihBout)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundOut ihBins ihBout)
     (fun cycle _ inCycle ih =>
       empty_cycle_is_out dl cycle ih inCycle)
 
-def Out.isSound
+def Out.isSound {dl d x}
   (out: Out dl d x)
 :
   ¬(dl.wfm x).posMem d
@@ -67,27 +67,21 @@ def Out.isSound
     (fun _ _ _ isCause _ _ _ ihCins ihBins ihBout =>
       DefList.wfm_isModel dl ▸
       isCause ⟨⟨ihBins, ihBout⟩, ihCins⟩)
-    (fun _ _ _ => blockedContextIns)
+    (fun _ _ _ inCins _ => blockedContextIns inCins)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundIns ihBins ihBout)
     (fun _ _ _ ihBins _ ihBout => blockedBackgroundOut ihBins ihBout)
     (fun cycle _ inCycle ih =>
       empty_cycle_is_out dl cycle ih inCycle)
 
 
-def Ins.isComplete
-  (dl: DefList)
-  {d: Pair}
-  {x: Nat}
+def Ins.isComplete {dl d x}
   (ins: (dl.wfm x).defMem d)
 :
   Ins dl d x
 :=
   (completenessProofB dl).insIsComplete ins
 
-def Out.isComplete
-  (dl: DefList)
-  {d: Pair}
-  {x: Nat}
+def Out.isComplete {dl d x}
   (out: ¬(dl.wfm x).posMem d)
 :
   Out dl d x
@@ -95,7 +89,7 @@ def Out.isComplete
   (completenessProofB dl).outIsComplete out
 
 
-def Ins.nopeOut
+def Ins.nopeOut {P dl d x}
   (isIns: Ins dl d x)
   (isOut: Out dl d x)
 :
@@ -103,7 +97,7 @@ def Ins.nopeOut
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
 
-def Ins.nopeNotDef
+def Ins.nopeNotDef {P dl d x}
   (isIns: Ins dl d x)
   (notDef: ¬(dl.wfm x).defMem d)
 :
@@ -111,7 +105,7 @@ def Ins.nopeNotDef
 :=
   False.elim (notDef (isIns.isSound))
 
-def Ins.nopeNotPos
+def Ins.nopeNotPos {P dl d x}
   (isIns: Ins dl d x)
   (notPos: ¬(dl.wfm x).posMem d)
 :
@@ -120,7 +114,7 @@ def Ins.nopeNotPos
   False.elim (notPos (isIns.isSound.toPos))
 
 
-def Out.nopeIns
+def Out.nopeIns {P dl d x}
   (isOut: Out dl d x)
   (isIns: Ins dl d x)
 :
@@ -128,7 +122,7 @@ def Out.nopeIns
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
 
-def Out.nopeDef
+def Out.nopeDef {P dl d x}
   (isOut: Out dl d x)
   (isDef: (dl.wfm x).defMem d)
 :
@@ -136,7 +130,7 @@ def Out.nopeDef
 :=
   False.elim (isOut.isSound (isDef.toPos))
 
-def Out.nopePos
+def Out.nopePos {P dl d x}
   (isOut: Out dl d x)
   (isPos: (dl.wfm x).posMem d)
 :

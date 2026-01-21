@@ -17,14 +17,14 @@ def DefList.lfpStage_le_wfm_std
   exact (operatorC dl (dl.wfm)).lfpStage_le_lfp n
 
 
-def InductionDescriptor.Invariant
+def InductionDescriptor.Invariant {dl}
   (desc: InductionDescriptor dl)
   (wfm v: Valuation Pair)
   (fv: List Pair)
 :=
   Set.Subset ((v desc.x).getLane desc.lane) (desc.expr.intp fv wfm)
 
-def MutIndDescriptor.var_le_hypothesify
+def MutIndDescriptor.var_le_hypothesify {dl v x lane}
   (desc: MutIndDescriptor dl)
   -- `fv` represent the bound variables of the induction itself,
   -- `fvDepth` represent the bound variables introduced by the
@@ -73,7 +73,7 @@ def MutIndDescriptor.var_le_hypothesify
       if_neg h ▸
       rest.var_le_hypothesify fv fvDepth invTail v_le
 
-def MutIndDescriptor.le_hypothesify
+def MutIndDescriptor.le_hypothesify {dl v ed lane}
   (desc: MutIndDescriptor dl)
   -- The bound variables of the induction itself.
   (fv: List Pair)
@@ -142,7 +142,7 @@ def MutIndDescriptor.le_hypothesify
       desc.le_hypothesify fv (d :: fvDepth) inv laneEq.elimArbIr v_le
 
 
-def MutIndDescriptor.isSound
+def MutIndDescriptor.isSound {dl}
   (desc: MutIndDescriptor dl)
   (fv: List Pair)
   (premisesHold:
@@ -210,7 +210,7 @@ structure CoinductionDescriptor (dl: DefList) where
   expansion: BasicExpr
   expandsInto: ExpandsInto dl true (dl.getDef rite) expansion
 
-def CoinductionDescriptor.toInduction
+def CoinductionDescriptor.toInduction {dl}
   (desc: CoinductionDescriptor dl)
 :
   InductionDescriptor dl
@@ -224,7 +224,7 @@ def CoinductionDescriptor.toInduction
 
 abbrev MutCoindDescriptor (dl: DefList) := List (CoinductionDescriptor dl)
 
-def CoinductionDescriptor.hypothesis
+def CoinductionDescriptor.hypothesis {dl}
   (depth: Nat)
   (_lane: Set3.Lane)
   (x: Nat)
@@ -237,7 +237,7 @@ def CoinductionDescriptor.hypothesis
   -- how exactly right now.
   if desc.rite = x then .ir (.compl (desc.left.lift 0 depth)) expr else expr
 
-def MutCoindDescriptor.hypothesis
+def MutCoindDescriptor.hypothesis {dl}
   (desc: MutCoindDescriptor dl)
   (depth: Nat)
   (lane: Set3.Lane)
@@ -247,7 +247,7 @@ def MutCoindDescriptor.hypothesis
 :=
   desc.foldr (CoinductionDescriptor.hypothesis depth lane x) (.const lane x)
 
-def MutCoindDescriptor.hypothesify
+def MutCoindDescriptor.hypothesify {dl}
   (desc: MutCoindDescriptor dl)
   (expr: SingleLaneExpr)
 :
@@ -255,7 +255,7 @@ def MutCoindDescriptor.hypothesify
 :=
   .compl (expr.replaceDepthEvenConsts 0 true desc.hypothesis)
 
-def MutCoindDescriptor.sub_hypothesify
+def MutCoindDescriptor.sub_hypothesify {dl expr b}
   (desc: MutCoindDescriptor dl)
   (sub: dl.SubsetStx (Expr.replaceDepthEvenConsts expr 0 true desc.hypothesis) b)
 :
@@ -279,7 +279,7 @@ def MutCoindDescriptor.sub_hypothesify
   | .arbIr body => sorry
 
 -- TODO we should be aiming for mutCoinduction here, not subMutInduction.
-def subMutCoinduction
+def subMutCoinduction {dl}
   (desc: MutCoindDescriptor dl)
   (premises:
     (i: desc.Index) →
@@ -321,7 +321,7 @@ def subMutCoinduction
   exact .subComplElim (.dniCtx ind)
 
 
-  def coinduction
+  def coinduction {dl}
     (desc: CoinductionDescriptor dl)
     (premise:
       dl.SubsetStx
@@ -337,7 +337,7 @@ def subMutCoinduction
       (fun | ⟨0, _⟩ => premise)
       ⟨0, Nat.zero_lt_succ _⟩
   
-  def simpleCoinduction
+  def simpleCoinduction {dl}
     (lane: Set3.Lane)
     (rite: Nat)
     (left: SingleLaneExpr)

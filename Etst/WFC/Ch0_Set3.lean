@@ -46,7 +46,7 @@ namespace Etst
 
 
 -- The definition of trisets / three-valued sets.
-structure Set3 (D: Type u) where
+structure Set3 (D: Type*) where
   defMem: Set D -- The definitive members
   posMem: Set D -- The possible members
   defLePos: defMem ≤ posMem
@@ -54,12 +54,12 @@ structure Set3 (D: Type u) where
 namespace Set3
   -- A convenience function allowing us to use `isDef.toPos` on
   -- instances of `Set3.defMem s d`.
-  def defMem.toPos (isDef: Set3.defMem s d) : s.posMem d :=
+  def defMem.toPos {D} {s: Set3 D} {d} (isDef: Set3.defMem s d) : s.posMem d :=
     s.defLePos isDef
   
   -- If two trisets have the same definitive and possible members,
   -- they are equal.
-  protected def eq:
+  protected def eq {D}:
     {a b: Set3 D} →
     a.defMem = b.defMem →
     a.posMem = b.posMem
@@ -68,10 +68,10 @@ namespace Set3
   -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1747
   | ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl => rfl
   
-  def eq_def {s0 s1: Set3 D} (eq: s0 = s1): s0.defMem = s1.defMem :=
+  def eq_def {D} {s0 s1: Set3 D} (eq: s0 = s1): s0.defMem = s1.defMem :=
     congrArg Set3.defMem eq
   
-  def eq_pos {s0 s1: Set3 D} (eq: s0 = s1): s0.posMem = s1.posMem :=
+  def eq_pos {D} {s0 s1: Set3 D} (eq: s0 = s1): s0.posMem = s1.posMem :=
     congrArg Set3.posMem eq
   
   /-
@@ -79,7 +79,7 @@ namespace Set3
     definitive member.
   -/
   def notDefOfNotPos
-    {s3: Set3 D}
+    {D} {s3: Set3 D} {d}
     (notPos: ¬ s3.posMem d)
   :
     ¬ s3.defMem d
@@ -87,28 +87,28 @@ namespace Set3
     fun isDef => notPos isDef.toPos
   
   -- The empty triset contains no elements.
-  def empty: Set3 D := ⟨{}, {}, le_rfl⟩
+  def empty {D}: Set3 D := ⟨{}, {}, le_rfl⟩
   
   /-
     The wholly undetermined triset possibly contains all
     elements of `D`, but has no definitive members.
   -/
-  def undetermined: Set3 D := ⟨{}, Set.univ, nofun⟩
+  def undetermined {D}: Set3 D := ⟨{}, Set.univ, nofun⟩
   
   -- The universal triset contains all elements of `D`.
-  def univ: Set3 D := ⟨Set.univ, Set.univ, le_rfl⟩
+  def univ {D}: Set3 D := ⟨Set.univ, Set.univ, le_rfl⟩
   
   -- A triset containing a single element.
-  def just (d: D): Set3 D := ⟨{d}, {d}, le_rfl⟩
+  def just {D} (d: D): Set3 D := ⟨{d}, {d}, le_rfl⟩
   
-  def ofSet2 (s: Set D): Set3 D := ⟨s, s, le_rfl⟩
+  def ofSet2 {D} (s: Set D): Set3 D := ⟨s, s, le_rfl⟩
   
   
   /-
     The definition of the "less than or equal to" relation for
     the standard order.
   -/
-  structure LeStd (a b: Set3 D): Prop where
+  structure LeStd {D} (a b: Set3 D): Prop where
     defLe: a.defMem ≤ b.defMem
     posLe: a.posMem ≤ b.posMem
   
@@ -116,7 +116,7 @@ namespace Set3
     The definition of the "less than" relation for the standard
     order.
   -/
-  structure LtStd (a b: Set3 D): Prop where
+  structure LtStd {D} (a b: Set3 D): Prop where
     defLe: a.defMem ≤ b.defMem
     posLe: a.posMem ≤ b.posMem
     neq: a ≠ b
@@ -126,7 +126,7 @@ namespace Set3
     The definition of the "less than or equal to" relation for
     the approximation order.
   -/
-  structure LeApx (a b: Set3 D): Prop where
+  structure LeApx {D} (a b: Set3 D): Prop where
     defLe: a.defMem ≤ b.defMem
     posLe: b.posMem ≤ a.posMem
   
@@ -134,36 +134,36 @@ namespace Set3
     The definition of the "less than" relation for the approximation
     order.
   -/
-  structure LtApx (a b: Set3 D): Prop where
+  structure LtApx {D} (a b: Set3 D): Prop where
     defLe: a.defMem ≤ b.defMem
     posLe: b.posMem ≤ a.posMem
     neq: a ≠ b
   
   
-  def LtStd.toLe (lt: LtStd a b): LeStd a b := {
+  def LtStd.toLe {D} {a b: Set3 D} (lt: LtStd a b): LeStd a b := {
     defLe := lt.defLe
     posLe := lt.posLe
   }
   
-  def LtApx.toLe (lt: LtApx a b): LeApx a b := {
+  def LtApx.toLe {D} {a b: Set3 D} (lt: LtApx a b): LeApx a b := {
     defLe := lt.defLe
     posLe := lt.posLe
   }
   
   -- Support for the `≤` symbol (standard `le`).
-  instance leInst: LE (Set3 D) where
+  instance leInst {D}: LE (Set3 D) where
     le := LeStd
   
   -- Support for the `<` symbol (standard `lt`).
-  instance ltInst: LT (Set3 D) where
+  instance ltInst {D}: LT (Set3 D) where
     lt := LtStd
   
   -- Support for the `⊑` symbol (approximation `le`).
-  instance sqleInst: SqLE (Set3 D) where
+  instance sqleInst {D}: SqLE (Set3 D) where
     le := LeApx
   
   -- Support for the `⊏` symbol (approximation `lt`).
-  instance sqltInst: SqLT (Set3 D) where
+  instance sqltInst {D}: SqLT (Set3 D) where
     lt := LtApx
   
   
@@ -177,7 +177,7 @@ namespace Set3
   | .defLane => .posLane
   
   def getLane
-    (s3: Set3 D)
+    {D} (s3: Set3 D)
     (lane: Lane)
   :
     Set D

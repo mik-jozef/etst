@@ -6,14 +6,14 @@ import Etst.BasicUtils
 namespace Ordinal
   abbrev succ (n: Ordinal) := Order.succ n
   
-  instance _.u: Coe (Ordinal.{u}) (Type (u + 1)) where
+  instance coeToType.{u}: Coe (Ordinal.{u}) (Type (u + 1)) where
     coe n := { nn: Ordinal // nn < n }
   
   abbrev IsSuccPrelimit (n: Ordinal): Prop := Order.IsSuccPrelimit n
   abbrev IsSuccLimit (n: Ordinal): Prop := Order.IsSuccLimit n
   
   def succ_middle_eq
-    {n: Ordinal}
+    {x} {n: Ordinal}
     (nx: n ≤ x)
     (xnSucc: x ≤ n.succ)
   :
@@ -27,7 +27,7 @@ namespace Ordinal
       Or.inr (nSuccLe.antisymm xnSucc).symm
   
   def pred_middle_eq
-    {n: Ordinal}
+    {x} {n: Ordinal}
     (xn: x ≤ n)
     (xnSucc: n.pred ≤ x)
   :
@@ -45,7 +45,7 @@ namespace Ordinal
         (fun eq => Or.inl (eqPredSucc ▸ eq))
   
   def pred_no_middle
-    {n: Ordinal}
+    {x} {n: Ordinal}
     (nx: x < n)
     (xnSucc: n.pred < x)
   :
@@ -77,10 +77,10 @@ namespace Ordinal
   :
     0 < n
   :=
-    (Ordinal.eq_zero_or_pos n).elim (False.elim ∘ ne) id
+    (eq_zero_or_pos n).elim (False.elim ∘ ne) id
   
   def pred_lt
-    (nLim: ¬ IsSuccPrelimit n)
+    {n} (nLim: ¬ IsSuccPrelimit n)
   :
     n.pred < n
   :=

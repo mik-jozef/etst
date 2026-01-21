@@ -16,47 +16,48 @@ inductive Expr.ExpandsInto
 :
   Bool → BasicExpr → BasicExpr → Type
 
-| refl e: ExpandsInto dl ed e e
-| const (x: Nat)
+| refl {ed} e: ExpandsInto dl ed e e
+| const {xExp} (x: Nat)
     (exp: ExpandsInto dl true (dl.getDef x) xExp)
   :
     ExpandsInto dl true (.const x) xExp
-| pair
+| pair {ed l lExp r rExp}
     (left: ExpandsInto dl ed l lExp)
     (rite: ExpandsInto dl ed r rExp)
   :
     ExpandsInto dl ed (.pair l r) (.pair lExp rExp)
-| full
+| full {ed body bodyExp}
     (exp: ExpandsInto dl ed body bodyExp)
   :
     ExpandsInto dl ed (.full body) (.full bodyExp)
-| ir
+| ir {ed l lExp r rExp}
     (left: ExpandsInto dl ed l lExp)
     (rite: ExpandsInto dl ed r rExp)
   :
     ExpandsInto dl ed (.ir l r) (.ir lExp rExp)
-| compl
+| compl {ed body bodyExp}
     (exp: ExpandsInto dl (!ed) body bodyExp)
   :
     ExpandsInto dl ed (.compl body) (.compl bodyExp)
-| arbIr
+| arbIr {ed body bodyExp}
     (exp: ExpandsInto dl ed body bodyExp)
   :
     ExpandsInto dl ed (.arbIr body) (.arbIr bodyExp)
 
 namespace Expr.ExpandsInto
   open Expr
+  variable {dl}
   
   def rfl {dl ed e}: ExpandsInto dl ed e e := .refl e
   
-  def some
+  def some {ed body bodyExp}
     (exp: ExpandsInto dl ed body bodyExp)
   :
     ExpandsInto dl ed (.some body) (.some bodyExp)
   :=
     compl (full (compl (Bool.not_not _ ▸ exp)))
   
-  def un
+  def un {ed l lExp r rExp}
     (left: ExpandsInto dl ed l lExp)
     (rite: ExpandsInto dl ed r rExp)
   :
@@ -67,7 +68,7 @@ namespace Expr.ExpandsInto
         (compl (Bool.not_not _ ▸ left))
         (compl (Bool.not_not _ ▸ rite)))
   
-  def arbUn
+  def arbUn {ed body bodyExp}
     (exp: ExpandsInto dl ed body bodyExp)
   :
     ExpandsInto dl ed (.arbUn body) (.arbUn bodyExp)
@@ -76,7 +77,7 @@ namespace Expr.ExpandsInto
   
   
   open BasicExpr in
-  def triIntp_eq_wfm
+  def triIntp_eq_wfm {ed left rite}
     (dl: DefList)
     (fv: List Pair)
   :
@@ -107,7 +108,7 @@ namespace Expr.ExpandsInto
   
   open BasicExpr in
   open SingleLaneExpr in
-  def lfpStage_le_std
+  def lfpStage_le_std {ed l r}
     (expInto: ExpandsInto dl ed l r)
     (fv: List Pair)
     (n: Ordinal.{0})

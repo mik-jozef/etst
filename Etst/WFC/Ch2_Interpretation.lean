@@ -5,15 +5,18 @@ import Etst.WFC.Utils.Set3
 
 namespace Etst
 
+universe u
+
 
 -- ## Section 0: Valuations
 
 /-
   A valuation is a function from constants to trisets of values.
 -/
-def Valuation D := Nat → Set3 D
+def Valuation (D: Type u) := Nat → Set3 D
 
 namespace Valuation
+  variable {D: Type u}
   /-
     In the empty valuation, every constant represents the empty
     triset.
@@ -105,6 +108,7 @@ namespace Valuation
     standard order.
   -/
   noncomputable def ordStd.sup
+    {ch}
     (isChain: IsChain (ordStd D).le ch)
   :
     Valuation D
@@ -112,6 +116,7 @@ namespace Valuation
     isChain.pointwiseSup (Set3.ordStd.isChainComplete D)
   
   def ordStd.sup_isLUB
+    {ch}
     (isChain: IsChain (ordStd D).le ch)
   :
     IsLUB ch (ordStd.sup isChain)
@@ -124,6 +129,7 @@ namespace Valuation
     approximation order.
   -/
   noncomputable def ordApx.sup
+    {ch}
     (isChain: IsChain (ordApx D).le ch)
   :
     Valuation D
@@ -131,6 +137,7 @@ namespace Valuation
     isChain.pointwiseSup (Set3.ordApx.isChainComplete D)
   
   def ordApx.sup_isLUB
+    {ch}
     (isChain: IsChain (ordApx D).le ch)
   :
     IsLUB ch (ordApx.sup isChain)
@@ -280,6 +287,7 @@ def BasicExpr.triIntp2Pos
 
 -- A proof that definite membership implies possible membership.
 def BasicExpr.triIntp2_defLePos
+  {fv b c d}
   (expr: BasicExpr)
   (isDef: expr.triIntp2Def fv b c d)
 :

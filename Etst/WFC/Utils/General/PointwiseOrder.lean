@@ -7,11 +7,11 @@ import Mathlib.Logic.Function.Basic
 import Etst.BasicUtils
 
 
-def IsChainComplete (ord: PartialOrder T): Prop :=
+def IsChainComplete {T} (ord: PartialOrder T): Prop :=
   ∀ ⦃ch⦄, IsChain ord.le ch → ∃ t: T, IsLUB ch t
 
 noncomputable def IsChainComplete.sup
-  {ord: PartialOrder T}
+  {T} {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   {ch: Set T}
   (isChain: IsChain ord.le ch)
@@ -21,6 +21,7 @@ noncomputable def IsChainComplete.sup
   (isCc isChain).choose
 
 def IsChain.iUnion_of_subset
+  {I T} {Le}
   (s: I → Set T)
   (areChains: ∀ i: I, IsChain Le (s i))
   (isSubset: ∀ i j: I, s i ⊆ s j ∨ s j ⊆ s i)
@@ -42,7 +43,7 @@ def IsChain.iUnion_of_subset
 
 
 def PartialOrder.pointwise
-  (X: Type*)
+  {Y} (X: Type*)
   (_: PartialOrder Y)
 :
   PartialOrder (X → Y)
@@ -56,7 +57,7 @@ where
 
 
 def Set.pointwiseImage
-  {I: Type*}
+  {D} {I: Type*}
   (set: Set (I → D))
   (i: I)
 :
@@ -65,8 +66,7 @@ def Set.pointwiseImage
   set.image fun f => f i
 
 def PartialOrder.isUB_pointwise_isUB
-  {ord: PartialOrder D}
-  {set: Set (I → D)}
+  {D I} {ord: PartialOrder D} {set: Set (I → D)} {ub}
   (isUb: upperBounds set ub)
   (i: I)
 :
@@ -75,8 +75,7 @@ def PartialOrder.isUB_pointwise_isUB
   fun _d ⟨_f, fIn, eq⟩ => eq ▸ isUb fIn i
 
 def PartialOrder.isLUB_pointwise_isLUB
-  {ord: PartialOrder D}
-  {set: Set (I → D)}
+  {D I} {ord: PartialOrder D} {set: Set (I → D)} {lub}
   (isLub: IsLUB set lub)
   (i: I)
 :
@@ -102,7 +101,7 @@ def PartialOrder.isLUB_pointwise_isLUB
 
 
 def IsChain.pointwiseImage
-  {ord: PartialOrder D}
+  {D I} {ord: PartialOrder D} {ch}
   (isChain: IsChain (ord.pointwise I).le ch)
   (i: I)
 :
@@ -115,7 +114,7 @@ def IsChain.pointwiseImage
     | Or.inr ge => Or.inr (ge i)
 
 noncomputable def IsChain.pointwiseSup
-  {ord: PartialOrder D}
+  {D I} {ord: PartialOrder D} {ch}
   (isChain: IsChain (ord.pointwise I).le ch)
   (isCc: IsChainComplete ord)
 :
@@ -124,7 +123,7 @@ noncomputable def IsChain.pointwiseSup
   fun i => (isCc (isChain.pointwiseImage i)).unwrap
 
 def IsChain.pointwiseSup_sup_at_point
-  {ord: PartialOrder D}
+  {D I} {ord: PartialOrder D} {ch}
   (isChain: IsChain (ord.pointwise I).le ch)
   (isCc: IsChainComplete ord)
   (i: I)
@@ -134,7 +133,7 @@ def IsChain.pointwiseSup_sup_at_point
   (isCc (isChain.pointwiseImage i)).unwrap.property
 
 def IsChain.pointwiseSup_isLUB
-  {ord: PartialOrder D}
+  {D I} {ord: PartialOrder D} {ch}
   (isChain: IsChain (ord.pointwise I).le ch)
   (isCc: IsChainComplete ord)
 :
@@ -150,7 +149,7 @@ def IsChain.pointwiseSup_isLUB
 
 
 def CompleteLattice.pointwise
-  (X: Type*)
+  {Y} (X: Type*)
   (cl: CompleteLattice Y)
 :
   CompleteLattice (X → Y)

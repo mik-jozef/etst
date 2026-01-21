@@ -5,11 +5,18 @@ import Etst.WFC.Utils.Cause
 
 namespace Etst
 
+variable
+  {dl: DefList}
+  {cycle cycleA cycleB: Set (ValConst Pair)}
+  {cause causeA causeB: Cause Pair}
 
-def ValConst.eq: d0 = d1 → x0 = x1 → ValConst.mk d0 x0 = ⟨d1, x1⟩
+
+def ValConst.eq {D} {d0 d1: D} {x0 x1}:
+  d0 = d1 → x0 = x1 → ValConst.mk d0 x0 = ⟨d1, x1⟩
 | rfl, rfl => rfl
 
-def ValConst.eqX: @Eq (ValConst D) ⟨d0, x0⟩ ⟨d1, x1⟩ → x0 = x1
+def ValConst.eqX {D} {d0 d1: D} {x0 x1} :
+  @Eq (ValConst D) ⟨d0, x0⟩ ⟨d1, x1⟩ → x0 = x1
 | rfl => rfl
 
 
@@ -81,7 +88,7 @@ where
   outIsComplete:
     ∀ {d x}, ¬(v x).posMem d → Out dl d x
 
-def completenessProofC
+def completenessProofC {dl b}
   (isComplete: InsOutComplete dl b)
 :
   InsOutComplete dl (operatorC.lfp dl b)

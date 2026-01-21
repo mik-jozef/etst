@@ -8,7 +8,7 @@ instance: ToString Set3.Lane where
   | .posLane => "posLane"
   | .defLane => "defLane"
 
-def reportDiff
+def reportDiff {E}
   [DecidableEq E]
   [ToString E]
   (a b: Expr E)

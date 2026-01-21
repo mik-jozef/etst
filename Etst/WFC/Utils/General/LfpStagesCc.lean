@@ -4,9 +4,10 @@ import Etst.WFC.Utils.General.IsLfp
 import Etst.WFC.Utils.General.Ordinal
 import Etst.WFC.Utils.General.PointwiseOrder
 
+universe u
 
 noncomputable def OrderHom.lfpStageCc
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
@@ -26,7 +27,7 @@ noncomputable def OrderHom.lfpStageCc
 termination_by n
 
 noncomputable abbrev OrderHom.lfpStageCcPrevious
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
@@ -37,7 +38,7 @@ noncomputable abbrev OrderHom.lfpStageCcPrevious
   fun ⟨m, _⟩ => f.lfpStageCc isCc m
 
 def OrderHom.lfpStageCcPrevious_eq_iUnion
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
@@ -60,7 +61,7 @@ def OrderHom.lfpStageCcPrevious_eq_iUnion
   ⟩
 
 def OrderHom.lfpStageCc_eq_succ
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
@@ -72,7 +73,7 @@ def OrderHom.lfpStageCc_eq_succ
   rw [lfpStageCc, dif_neg isSucc]
 
 def OrderHom.lfpStageCc_apply_eq_succ
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
@@ -87,7 +88,7 @@ def OrderHom.lfpStageCc_apply_eq_succ
 
 
 def OrderHom.lfpStageCc_isChain_of_mono
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
@@ -107,11 +108,11 @@ def OrderHom.lfpStageCc_isChain_of_mono
         Or.inr (@isMono ⟨m1, m1Lt⟩ ⟨m0, m0Lt⟩ m1Le))
 
 def OrderHom.lfpStageCc_mono
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
-  (ab: a ≤ b)
+  {a b} (ab: a ≤ b)
 :
   f.lfpStageCc isCc a ≤ f.lfpStageCc isCc b
 :=
@@ -154,7 +155,7 @@ def OrderHom.lfpStageCc_mono
 termination_by b
 
 def OrderHom.lfpStageCc_isChain
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
@@ -166,7 +167,7 @@ def OrderHom.lfpStageCc_isChain
 
 
 def OrderHom.lfpStageCc_eq_limit
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
@@ -183,11 +184,11 @@ def OrderHom.lfpStageCc_eq_limit
 
 
 def OrderHom.lfpStageCc_le_fp
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
-  (isFp: fp ∈ (Function.fixedPoints f))
+  {fp} (isFp: fp ∈ (Function.fixedPoints f))
   (n: Ordinal)
 :
   f.lfpStageCc isCc n ≤ fp
@@ -206,7 +207,7 @@ termination_by n
 
 -- I wish Lean had anonymous structures.
 inductive DistinctOrdinalsEqualStageCc
-  [Inhabited T]
+  {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)

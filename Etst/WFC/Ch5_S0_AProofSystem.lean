@@ -16,6 +16,8 @@ import Etst.WFC.Utils.RulesOfInference
 
 namespace Etst
 
+variable {D: Type*}
+
 
 -- See `Cause` below.
 structure BackgroundCause (D: Type*) where
@@ -197,11 +199,11 @@ inductive IsCauseInapplicable
   (cause: Cause Pair)
   {d x}
   (inContextIns: ⟨d, x⟩ ∈ cause.contextIns)
-  (inCycle: ⟨d, x⟩ ∈ cycle)
+  {cycle} (inCycle: ⟨d, x⟩ ∈ cycle)
 :
   IsCauseInapplicable dl cycle cause
 
-| blockedBackgroundIns
+| blockedBackgroundIns {cycle}
   (cause: Cause Pair)
   {d x}
   (inBins: ⟨d, x⟩ ∈ cause.backgroundIns)
@@ -209,7 +211,7 @@ inductive IsCauseInapplicable
 :
   IsCauseInapplicable dl cycle cause
 
-| blockedBackgroundOut
+| blockedBackgroundOut {cycle}
   (cause: Cause Pair)
   {d x}
   (inBout: ⟨d, x⟩ ∈ cause.backgroundOut)
@@ -229,7 +231,7 @@ inductive Out
 :
   Pair → Nat → Prop
 
-| intro:
+| intro {d x}:
   (cycle: Set (ValConst Pair)) →
   (isEmptyCycle:
     ∀ {d x},

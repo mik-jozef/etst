@@ -3,9 +3,11 @@ import Mathlib.Order.FixedPoints
 import Etst.WFC.Utils.General.IsLfp
 import Etst.WFC.Utils.General.Ordinal
 
+universe u
+
 
 noncomputable def OrderHom.lfpStage
-  {ord: CompleteLattice T}
+  {T} {ord: CompleteLattice T}
   (f: T →o T)
   (n: Ordinal)
 :
@@ -20,7 +22,7 @@ noncomputable def OrderHom.lfpStage
 termination_by n
 
 noncomputable abbrev OrderHom.lfpStagePrevious
-  {ord: CompleteLattice T}
+  {T} {ord: CompleteLattice T}
   (f: T →o T)
   (n: Ordinal)
 :
@@ -29,7 +31,7 @@ noncomputable abbrev OrderHom.lfpStagePrevious
   fun ⟨m, _⟩ => f.lfpStage m
 
 def OrderHom.lfpStage_eq_limit
-  {ord: CompleteLattice T}
+  {T} {ord: CompleteLattice T}
   (f: T →o T)
   {n: Ordinal}
   (isLimit: n.IsSuccPrelimit)
@@ -39,7 +41,7 @@ def OrderHom.lfpStage_eq_limit
   rw [lfpStage, dif_pos isLimit]
 
 def OrderHom.lfpStage_eq_succ
-  {ord: CompleteLattice T}
+  {T} {ord: CompleteLattice T}
   (f: T →o T)
   {n: Ordinal}
   (isSucc: ¬ n.IsSuccPrelimit)
@@ -49,7 +51,7 @@ def OrderHom.lfpStage_eq_succ
   rw [lfpStage, dif_neg isSucc]
 
 def OrderHom.lfpStage_apply_eq_succ
-  {ord: CompleteLattice T}
+  {T} {ord: CompleteLattice T}
   (f: T →o T)
   (n: Ordinal)
 :
@@ -62,7 +64,7 @@ def OrderHom.lfpStage_apply_eq_succ
 
 
 def OrderHom.lfpStage_mono
-  {ord: CompleteLattice T}
+  {T} {ord: CompleteLattice T}
   (f: T →o T)
   {a b: Ordinal}
   (ab: a ≤ b)
@@ -99,7 +101,7 @@ def OrderHom.lfpStage_mono
 termination_by b
 
 def OrderHom.lfpStage_le_lfp
-  {ord: CompleteLattice T}
+  {T} {ord: CompleteLattice T}
   (f: T →o T)
   (n: Ordinal)
 :
@@ -118,7 +120,7 @@ termination_by n
 
 -- I wish Lean had anonymous structures.
 inductive DistinctOrdinalsEqualStage
-  {ord: CompleteLattice T}
+  {T} {ord: CompleteLattice T}
   (f: T →o T)
 :
   Prop

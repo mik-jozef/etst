@@ -2,6 +2,8 @@ import Etst.WFC.Ch2_Interpretation
 
 namespace Etst
 
+universe u
+
 
 namespace SingleLaneExpr
   def const (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
@@ -46,30 +48,34 @@ namespace SingleLaneExpr
   | var (x: Nat) (isEvenDepth: Bool):
       LaneEqEven lane isEvenDepth (var x)
   | null (isEvenDepth: Bool): LaneEqEven lane isEvenDepth null
-  | pair
+  | pair {isEvenDepth left rite}
       (leftEq: LaneEqEven lane isEvenDepth left)
       (riteEq: LaneEqEven lane isEvenDepth rite)
     :
       LaneEqEven lane isEvenDepth (pair left rite)
-  | ir
+  | ir {isEvenDepth left rite}
       (leftEq: LaneEqEven lane isEvenDepth left)
       (riteEq: LaneEqEven lane isEvenDepth rite)
     :
       LaneEqEven lane isEvenDepth (ir left rite)
-  | full
+  | full {isEvenDepth body}
       (bodyEq: LaneEqEven lane isEvenDepth body)
     :
       LaneEqEven lane isEvenDepth (full body)
-  | compl
+  | compl {isEvenDepth body}
       (bodyEq: LaneEqEven lane (!isEvenDepth) body)
     :
       LaneEqEven lane isEvenDepth (compl body)
-  | arbIr
+  | arbIr {isEvenDepth body}
       (laneEqBody: LaneEqEven lane isEvenDepth body)
     :
       LaneEqEven lane isEvenDepth (arbIr body)
   
   namespace LaneEqEven
+    variable {lane: Set3.Lane}
+    variable {ed: Bool}
+    variable {left rite body: SingleLaneExpr}
+    
     def elimPairLeft
       (laneEq: LaneEqEven lane ed (Expr.pair left rite))
     :
@@ -176,7 +182,7 @@ def BasicExpr.laneEqEven
   | .arbIr body, false => .arbIr (body.laneEqEven lane false)
 
 
-def Expr.toString (serializeVar: E → Nat → String):
+def Expr.toString {E} (serializeVar: E → Nat → String):
   Expr E → String
 | .un left rite =>
   let left := left.toString serializeVar

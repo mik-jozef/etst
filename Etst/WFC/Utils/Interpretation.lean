@@ -5,7 +5,7 @@ namespace Etst
 
 
 namespace SingleLaneExpr.intp2_mono_std
-  def CtxLe (c0 c1: Valuation D):
+  def CtxLe {D} (c0 c1: Valuation D):
     Option Set3.Lane → Prop
   | .none => ∀ x: Nat, c0 x ≤ c1 x
   | .some .defLane => ∀ x: Nat, (c0 x).defMem ⊆ (c1 x).defMem
@@ -16,9 +16,9 @@ namespace SingleLaneExpr.intp2_mono_std
   | .none => True
   | .some lane => expr.LaneEqEven lane ed
   
-  def LaneEq.map
+  def LaneEq.map {expr edIn premiseType}
     (laneEq: LaneEq expr edIn premiseType)
-    (laneMap:
+    {edOut exprOut} (laneMap:
       {lane: _} →
       expr.LaneEqEven lane edIn →
       exprOut.LaneEqEven lane edOut)
@@ -46,11 +46,10 @@ end SingleLaneExpr.intp2_mono_std
      in the context, or antimonotonicity in the background.
 -/
 open SingleLaneExpr.intp2_mono_std in
-def SingleLaneExpr.intp2_mono_std
-  {c0 c1: Valuation Pair}
+def SingleLaneExpr.intp2_mono_std {fv b}
   (premiseType: Option Set3.Lane)
-  (cLe: CtxLe c0 c1 premiseType)
-  (laneEq: LaneEq expr ed premiseType)
+  {c0 c1} (cLe: CtxLe c0 c1 premiseType)
+  {expr ed} (laneEq: LaneEq expr ed premiseType)
 :
   Set.Subset
     (expr.intp2 fv (ite ed b c1) (ite ed c0 b))
@@ -99,10 +98,10 @@ def SingleLaneExpr.intp2_mono_std
       fun dX => intp2_mono_std premiseType cLe laneEq (dIn dX)
 
 def BasicExpr.triIntp2_mono_std_defMem
-  {c0 c1: Valuation Pair}
-  (cLe: ∀ x, (c0 x).defMem ≤ (c1 x).defMem)
+  {c0 c1} (cLe: ∀ x, (c0 x).defMem ≤ (c1 x).defMem)
   {expr: BasicExpr}
   (ed: Bool)
+  {fv b}
 :
   let lane: Set3.Lane := ite ed .defLane .posLane
   Subset
@@ -121,6 +120,7 @@ def BasicExpr.triIntp2_mono_std_posMem
   (cLe: ∀ x, (c0 x).posMem ≤ (c1 x).posMem)
   {expr: BasicExpr}
   (ed: Bool)
+  {fv b}
 :
   let lane: Set3.Lane := ite ed .posLane .defLane
   Subset
@@ -139,6 +139,7 @@ def BasicExpr.triIntp2_mono_std
   (cLe: c0 ≤ c1)
   {expr: BasicExpr}
   (ed: Bool)
+  {fv b}
 :
   Set3.LeStd
     (expr.triIntp2 fv (ite ed b c1) (ite ed c0 b))
@@ -169,8 +170,7 @@ def DefList.triIntp2_mono_std
 
 def BasicExpr.triIntp2_mono_apx
   {expr: BasicExpr}
-  {fv: List Pair}
-  {b0 b1 c0 c1: Valuation Pair}
+  {fv b0 b1 c0 c1}
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
@@ -226,9 +226,9 @@ def BasicExpr.triIntp2_mono_apx
 
 def BasicExpr.triIntp2_mono_apx_defMem
   {expr: BasicExpr}
-  {b0 b1 c0 c1: Valuation Pair}
-  (bLe: b0 ⊑ b1)
-  (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
+  {b0 b1} (bLe: b0 ⊑ b1)
+  {c0 c1} (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
+  {fv}
 :
   Set.Subset
     (expr.triIntp2 fv b0 c0).defMem
@@ -241,9 +241,9 @@ def BasicExpr.triIntp2_mono_apx_defMem
 
 def BasicExpr.triIntp2_mono_apx_posMem
   {expr: BasicExpr}
-  {b0 b1 c0 c1: Valuation Pair}
-  (bLe: b0 ⊑ b1)
-  (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
+  {b0 b1} (bLe: b0 ⊑ b1)
+  {c0 c1} (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
+  {fv}
 :
   Set.Subset
     (expr.triIntp2 fv b1 c1).posMem

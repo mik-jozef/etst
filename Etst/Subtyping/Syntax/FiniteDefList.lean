@@ -10,7 +10,7 @@ namespace Etst
 open Lean Elab Command Term Meta Syntax
 
 
-def Expr.noneLtSize
+def Expr.noneLtSize {E: Type*}
   (size: Nat)
 :
   (none (E := E)).ConstsLt size
@@ -33,7 +33,7 @@ def FiniteDefList.ConstsLt
 :=
   ∀ x, (getDef x).ConstsLt size
 
-def FiniteDefList.isFinBounded_of_constsLt
+def FiniteDefList.isFinBounded_of_constsLt {getDef size}
   (constsLt: ConstsLt getDef size)
 :
   DefList.IsFinBounded getDef
@@ -70,7 +70,7 @@ structure FiniteDefList.Def (size: Nat) where
   constsLt: expr.ConstsLt size
   isClean: expr.IsClean
 
-def FiniteDefList.defsGetNth
+def FiniteDefList.defsGetNth {ub} 
   (defs: List (Def ub))
   (n: Nat)
 :
@@ -83,14 +83,14 @@ def FiniteDefList.defsGetNth
     isClean := by decide
   }
 
-def FiniteDefList.defsToGetDef
+def FiniteDefList.defsToGetDef {ub}
   (defs: List (Def ub))
 :
   DefList.GetDef
 :=
   fun x => (defsGetNth defs x).expr
 
-def FiniteDefList.extend
+def FiniteDefList.extend {ub}
   (dl: FiniteDefList)
   (defs: List (Def ub))
   (ubEq: ub = dl.size + defs.length)
@@ -129,7 +129,7 @@ def FiniteDefList.extend
         exact (defsGetNth defs (x - dl.size)).isClean
   }
 
-def FiniteDefList.ofDefs
+def FiniteDefList.ofDefs {ub}
   (defs: List (Def ub))
   (ubEq: ub = defs.length)
 :

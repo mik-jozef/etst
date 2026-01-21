@@ -2,12 +2,15 @@ import Mathlib.Order.CompleteLattice.Defs
 
 import Etst.WFC.Ch0_Set3
 
+universe u
+
+
 namespace Etst
 
 
 namespace Set3
   def pos_eq
-    {s0 s1: Set3 D}
+    {D} {s0 s1: Set3 D}
     (eq: s0 = s1)
   :
     s0.posMem = s1.posMem
@@ -15,7 +18,7 @@ namespace Set3
     congr rfl eq
   
   def def_eq
-    {s0 s1: Set3 D}
+    {D} {s0 s1: Set3 D}
     (eq: s0 = s1)
   :
     s0.defMem = s1.defMem
@@ -23,7 +26,7 @@ namespace Set3
     congr rfl eq
   
   def eq4
-    {a b: Set3 D}
+    {D} {a b: Set3 D}
     (abDef: ∀ d ∈ a.defMem, b.defMem d)
     (baDef: ∀ d ∈ b.defMem, a.defMem d)
     (abPos: ∀ d ∈ a.posMem, b.posMem d)
@@ -37,7 +40,7 @@ namespace Set3
   
   
   def just.inDefToEq
-    {a b: D}
+    {D} {a b: D}
     (aIn: a ∈ (just b).defMem)
   :
     a = b
@@ -45,7 +48,7 @@ namespace Set3
     aIn
   
   def just.inDefToEqBin
-    {a b: D}
+    {D} {a b: D}
     (d: D)
     (aIn: a ∈ (just d).defMem)
     (bIn: b ∈ (just d).defMem)
@@ -55,7 +58,7 @@ namespace Set3
     aIn.trans bIn.symm
   
   def just.inPosToEq
-    {a b: D}
+    {D} {a b: D}
     (aIn: a ∈ (just b).posMem)
   :
     a = b
@@ -63,7 +66,7 @@ namespace Set3
     aIn
   
   def just.inPosToEqBin
-    {a b: D}
+    {D} {a b: D}
     (d: D)
     (aIn: a ∈ (just d).posMem)
     (bIn: b ∈ (just d).posMem)
@@ -73,11 +76,11 @@ namespace Set3
     aIn.trans bIn.symm
   
   
-  def empty.nin.def (d: D): d ∉ Set3.empty.defMem := False.elim
-  def empty.nin.pos (d: D): d ∉ Set3.empty.posMem := False.elim
+  def empty.nin.def {D} (d: D): d ∉ (Set3.empty (D := D)).defMem := False.elim
+  def empty.nin.pos {D} (d: D): d ∉ (Set3.empty (D := D)).posMem := False.elim
   
   -- :( def empty.fromNoPos (noPos (d: D): d ∉ s.posMem): ...
-  def empty.fromNoPos (noPos: ∀ d: D, d ∉ s.posMem): s = Set3.empty :=
+  def empty.fromNoPos {D} {s: Set3 D} (noPos: ∀ d: D, d ∉ s.posMem): s = Set3.empty :=
     Set3.eq
       (funext fun d =>
         propext
@@ -90,7 +93,7 @@ namespace Set3
             (fun dInSPos => noPos d dInSPos)
             (fun nope => False.elim nope)))
   
-  def union (s0 s1: Set3 D): Set3 D := ⟨
+  def union {D} (s0 s1: Set3 D): Set3 D := ⟨
     s0.defMem ∪ s1.defMem,
     s0.posMem ∪ s1.posMem,
     fun _d dIn =>
@@ -99,19 +102,19 @@ namespace Set3
         (fun dIn1 => Or.inr dIn1.toPos)
   ⟩
   
-  def memUnion (s0 s1: Set3 D) (d: D):
+  def memUnion {D} (s0 s1: Set3 D) (d: D):
     d ∈ (union s0 s1).defMem ↔ d ∈ s0.defMem ∨ d ∈ s1.defMem
   :=
     Iff.intro id id
   
-  def union.monoLeft (s0 s1: Set3 D):
+  def union.monoLeft {D} (s0 s1: Set3 D):
     s0 ≤ union s0 s1
   :=
     LeStd.mk
       Set.subset_union_left
       Set.subset_union_left
   
-  def union.monoRite (s0 s1: Set3 D):
+  def union.monoRite {D} (s0 s1: Set3 D):
     s1 ≤ union s0 s1
   :=
     LeStd.mk
@@ -119,7 +122,7 @@ namespace Set3
       Set.subset_union_right
   
   def union.union_le
-    {s0 s1 s: Set3 D}
+    {D} {s0 s1 s: Set3 D}
     (le0: s0 ≤ s)
     (le1: s1 ≤ s)
   :
@@ -132,25 +135,25 @@ namespace Set3
   }
   
   
-  def inter (s0 s1: Set3 D): Set3 D := ⟨
+  def inter {D} (s0 s1: Set3 D): Set3 D := ⟨
     s0.defMem ∩ s1.defMem,
     s0.posMem ∩ s1.posMem,
     fun _d dIn => And.intro dIn.left.toPos dIn.right.toPos
   ⟩
   
-  def memInter (s0 s1: Set3 D) (d: D):
+  def memInter {D} (s0 s1: Set3 D) (d: D):
     d ∈ (inter s0 s1).defMem ↔ d ∈ s0.defMem ∧ d ∈ s1.defMem
   :=
     Iff.intro id id
   
-  def inter.monoLeft (s0 s1: Set3 D):
+  def inter.monoLeft {D} (s0 s1: Set3 D):
     inter s0 s1 ≤ s0
   :=
     LeStd.mk
       Set.inter_subset_left
       Set.inter_subset_left
   
-  def inter.monoRite (s0 s1: Set3 D):
+  def inter.monoRite {D} (s0 s1: Set3 D):
     inter s0 s1 ≤ s1
   :=
     LeStd.mk
@@ -158,7 +161,7 @@ namespace Set3
       Set.inter_subset_right
   
   def inter.le_inter
-    {s0 s1 s: Set3 D}
+    {D} {s0 s1 s: Set3 D}
     (le0: s ≤ s0)
     (le1: s ≤ s1)
   :
@@ -169,37 +172,38 @@ namespace Set3
   }
   
   
-  def some (s: Set3 D): Set3 D := {
+  def some {D} (s: Set3 D): Set3 D := {
     defMem := fun _ => ∃ d: D, d ∈ s.defMem
     posMem := fun _ => ∃ d: D, d ∈ s.posMem
     defLePos := fun _ ⟨d, dIn⟩ => ⟨d, dIn.toPos⟩
   }
   
-  def full (s: Set3 D): Set3 D := {
+  def full {D} (s: Set3 D): Set3 D := {
     defMem := fun _ => ∀ d: D, d ∈ s.defMem
     posMem := fun _ => ∀ d: D, d ∈ s.posMem
     defLePos := fun _ dIn d => (dIn d).toPos
   }
   
-  def compl (s: Set3 D): Set3 D := {
+  def compl {D} (s: Set3 D): Set3 D := {
     defMem := fun d => d ∉ s.posMem
     posMem := fun d => d ∉ s.defMem
     defLePos := fun _ => notDefOfNotPos
   }
   
-  def arbUn (f: D → Set3 D): Set3 D := {
+  def arbUn {D} (f: D → Set3 D): Set3 D := {
     defMem := fun d => ∃ dd: D, d ∈ (f dd).defMem
     posMem := fun d => ∃ dd: D, d ∈ (f dd).posMem
     defLePos := fun _d ⟨dd, ddIn⟩ => ⟨dd, ddIn.toPos⟩
   }
   
-  def arbIr (f: D → Set3 D): Set3 D := {
+  def arbIr {D} (f: D → Set3 D): Set3 D := {
     defMem := fun d => ∀ dd: D, d ∈ (f dd).defMem
     posMem := fun d => ∀ dd: D, d ∈ (f dd).posMem
     defLePos := fun _d ddIn dd => (ddIn dd).toPos
   }
   
   def compl_inj_eq
+    {D} {s0 s1: Set3 D}
     (eq: compl s0 = compl s1)
   :
     s0 = s1
@@ -208,7 +212,7 @@ namespace Set3
     let posEq: s0.compl.posMem = s1.compl.posMem := congr rfl eq
     Set3.eq (compl_inj_iff.mp posEq) (compl_inj_iff.mp defEq)
   
-  def compl_inj_neq (neq: s0 ≠ s1): compl s0 ≠ compl s1 :=
+  def compl_inj_neq {D} {s0 s1: Set3 D} (neq: s0 ≠ s1): compl s0 ≠ compl s1 :=
     compl_inj_eq.mt neq
   
   
@@ -219,11 +223,11 @@ namespace Set3
     inter := inter
   
   
-  def ninPos.ninDef {s: Set3 D} (dNin: d ∉ s.posMem): d ∉ s.defMem :=
+  def ninPos.ninDef {D} {s: Set3 D} {d} (dNin: d ∉ s.posMem): d ∉ s.defMem :=
     fun dIn => dNin dIn.toPos
   
   structure without.DefMem
-    (s: Set3 D)
+    {D} (s: Set3 D)
     (dWithout d: D)
   : Prop where
   intro ::
@@ -231,14 +235,14 @@ namespace Set3
     neq: d ≠ dWithout
   
   structure without.PosMem
-    (s: Set3 D)
+    {D} (s: Set3 D)
     (dWithout d: D)
   : Prop where
   intro ::
     dIn: d ∈ s.posMem
     neq: d ≠ dWithout
   
-  def without (s: Set3 D) (d: D): Set3 D := {
+  def without {D} (s: Set3 D) (d: D): Set3 D := {
     defMem := without.DefMem s d
     posMem := without.PosMem s d
     defLePos :=
@@ -248,13 +252,13 @@ namespace Set3
       }
   }
   
-  def without.ninPos (s: Set3 D) (d: D): d ∉ (s.without d).posMem :=
+  def without.ninPos {D} (s: Set3 D) (d: D): d ∉ (s.without d).posMem :=
     fun dIn => dIn.neq rfl
   
-  def without.ninDef (s: Set3 D) (d: D): d ∉ (s.without d).defMem :=
+  def without.ninDef {D} (s: Set3 D) (d: D): d ∉ (s.without d).defMem :=
     fun dIn => dIn.neq rfl
   
-  def without.ltStd {s: Set3 D} (dInS: d ∈ s.posMem):
+  def without.ltStd {D} {s: Set3 D} {d} (dInS: d ∈ s.posMem):
     (s.without d) < s
   :=
     LtStd.mk
@@ -265,7 +269,7 @@ namespace Set3
         let dNinS: d ∉ s.posMem := eq ▸ dNinSWithout
         dNinS dInS)
   
-  def without.leStd (s: Set3 D) (d: D):
+  def without.leStd {D} (s: Set3 D) (d: D):
     (s.without d) ≤ s
   :=
     LeStd.mk
@@ -273,17 +277,17 @@ namespace Set3
       (fun _dd ddInPos => ddInPos.dIn)
   
   
-  def withoutDef (s: Set3 D) (d: D): Set3 D := {
+  def withoutDef {D} (s: Set3 D) (d: D): Set3 D := {
     defMem := fun dd => without.DefMem s d dd
     posMem := fun dd => dd ∈ s.posMem
     defLePos := fun _d dDef => dDef.dIn.toPos
   }
   
-  def withoutDef.ninDef (s: Set3 D) (d: D): d ∉ (s.withoutDef d).defMem :=
+  def withoutDef.ninDef {D} (s: Set3 D) (d: D): d ∉ (s.withoutDef d).defMem :=
     fun dIn => dIn.neq rfl
   
   def withoutDef.preservesPos
-    (s: Set3 D)
+    {D} (s: Set3 D)
     {d: D}
     (dInPos: d ∈ s.posMem)
   :
@@ -291,7 +295,7 @@ namespace Set3
   :=
     dInPos
   
-  def withoutDef.ltStd {s: Set3 D} (dInS: d ∈ s.defMem):
+  def withoutDef.ltStd {D} {s: Set3 D} {d} (dInS: d ∈ s.defMem):
     s.withoutDef d < s
   :=
     LtStd.mk
@@ -303,7 +307,7 @@ namespace Set3
         let dNinS: d ∉ s.defMem := eq ▸ dNinSWithout
         dNinS dInS)
   
-  def withoutDef.ltApx {s: Set3 D} {d: D} (dInS: d ∈ s.defMem):
+  def withoutDef.ltApx {D} {s: Set3 D} {d: D} (dInS: d ∈ s.defMem):
     s.withoutDef d ⊏ s
   :=
     LtApx.mk
@@ -315,14 +319,14 @@ namespace Set3
         let dNinS: d ∉ s.defMem := eq ▸ dNinSWithout
         dNinS dInS)
   
-  def withoutDef.leStd (s: Set3 D) (d: D):
+  def withoutDef.leStd {D} (s: Set3 D) (d: D):
     s.withoutDef d ≤ s
   :=
     LeStd.mk
       (fun _dd ddInDef => ddInDef.dIn)
       (fun _dd ddInPos => ddInPos)
   
-  def withoutDef.leApx (s: Set3 D) (d: D):
+  def withoutDef.leApx {D} (s: Set3 D) (d: D):
     s.withoutDef d ⊑ s
   :=
     LeApx.mk
@@ -330,7 +334,7 @@ namespace Set3
       (fun _dd ddInPos => ddInPos)
   
   
-  def _root_.Etst.Set3.with (s: Set3 D) (d: D): Set3 D := {
+  def _root_.Etst.Set3.with {D} (s: Set3 D) (d: D): Set3 D := {
     defMem := fun dd => dd ∈ s.defMem ∨ dd = d
     posMem := fun dd => dd ∈ s.posMem ∨ dd = d
     defLePos :=
@@ -340,13 +344,13 @@ namespace Set3
           (fun eq => Or.inr eq)
   }
   
-  def with.inPos (s: Set3 D) (d: D): d ∈ (s.with d).posMem :=
+  def with.inPos {D} (s: Set3 D) (d: D): d ∈ (s.with d).posMem :=
     Or.inr rfl
   
-  def with.inDef (s: Set3 D) (d: D): d ∈ (s.with d).defMem :=
+  def with.inDef {D} (s: Set3 D) (d: D): d ∈ (s.with d).defMem :=
     Or.inr rfl
   
-  def with.gtStd (s: Set3 D) (d: D) (dNinS: d ∉ s.posMem):
+  def with.gtStd {D} (s: Set3 D) (d: D) (dNinS: d ∉ s.posMem):
     s < s.with d
   :=
     LtStd.mk
@@ -359,21 +363,21 @@ namespace Set3
         dNinS dInS)
   
   
-  def withPos (s: Set3 D) (d: D): Set3 D := {
+  def withPos {D} (s: Set3 D) (d: D): Set3 D := {
     defMem := fun dd => dd ∈ s.defMem
     posMem := fun dd => dd ∈ s.posMem ∨ dd = d
     defLePos := fun _dd ddDef => Or.inl ddDef.toPos
   }
   
-  def withPos.defMemEq (s: Set3 D) (d: D):
+  def withPos.defMemEq {D} (s: Set3 D) (d: D):
     s.defMem = (s.withPos d).defMem
   :=
     funext (fun _ => (propext (Iff.intro id id)))
   
-  def withPos.inPos (s: Set3 D) (d: D): d ∈ (s.withPos d).posMem :=
+  def withPos.inPos {D} (s: Set3 D) (d: D): d ∈ (s.withPos d).posMem :=
     Or.inr rfl
   
-  def withPos.gtStd {s: Set3 D} (dNinS: d ∉ s.posMem):
+  def withPos.gtStd {D} {s: Set3 D} {d} (dNinS: d ∉ s.posMem):
     s < s.withPos d
   :=
     LtStd.mk
@@ -384,7 +388,7 @@ namespace Set3
         let dInS: d ∈ s.posMem := eq ▸ dInSWith
         dNinS dInS)
   
-  def withPos.ltApx {s: Set3 D} (dNinS: d ∉ s.posMem):
+  def withPos.ltApx {D} {s: Set3 D} {d} (dNinS: d ∉ s.posMem):
      s.withPos d ⊏ s
   :=
     LtApx.mk
@@ -398,7 +402,7 @@ namespace Set3
   
   -- The approximation relation is antisymmetric.
   def ordApx.le_antisymm
-    (a b: Set3 D)
+    {D} (a b: Set3 D)
     (ab: a ⊑ b)
     (ba: b ⊑ a)
   :=
@@ -441,6 +445,7 @@ namespace Set3
             ⟨ab.defLe, ab.posLe, h⟩
   
   def LeApx.notDefLe
+    {D} {a b: Set3 D}
     (ab: LeApx a b)
   :
     b.defMemᶜ ≤ a.defMemᶜ
@@ -448,6 +453,7 @@ namespace Set3
     compl_le_compl (defLe ab)
   
   def LeApx.notPosLe
+    {D} {a b: Set3 D}
     (ab: LeApx a b)
   :
     a.posMemᶜ ≤ b.posMemᶜ
@@ -455,6 +461,7 @@ namespace Set3
     compl_le_compl (posLe ab)
   
   def LeStd.notDefLe
+    {D} {a b: Set3 D}
     (ab: LeStd a b)
   :
     b.defMemᶜ ≤ a.defMemᶜ
@@ -462,19 +469,21 @@ namespace Set3
     compl_le_compl (defLe ab)
   
   def LeStd.notPosLe
+    {D} {a b: Set3 D}
     (ab: LeStd a b)
   :
     b.posMemᶜ ≤ a.posMemᶜ
   :=
     compl_le_compl (posLe ab)
   
-  def LeStd.compl_le_compl (ab: LeStd a b): b.compl ≤ a.compl :=
+  def LeStd.compl_le_compl {D} {a b: Set3 D} (ab: LeStd a b): b.compl ≤ a.compl :=
     LeStd.mk (LeStd.notPosLe ab) (LeStd.notDefLe ab)
   
-  def LtStd.compl_lt_compl (ab: LtStd a b): b.compl < a.compl :=
+  def LtStd.compl_lt_compl {D} {a b: Set3 D} (ab: LtStd a b): b.compl < a.compl :=
     LtStd.mk ab.toLe.notPosLe ab.toLe.notDefLe (compl_inj_neq ab.neq.symm)
   
   def LeStd.memLe
+    {D} {a b: Set3 D} {lane}
     (ab: LeStd a b)
   :
     a.getLane lane ≤ b.getLane lane
@@ -485,7 +494,7 @@ namespace Set3
   
   
   -- The standard order is antisymmetric.
-  def ordStd.le_antisymm (a b: Set3 D) (ab: a ≤ b) (ba: b ≤ a) :=
+  def ordStd.le_antisymm {D} (a b: Set3 D) (ab: a ≤ b) (ba: b ≤ a) :=
     Set3.eq
       (PartialOrder.le_antisymm _ _ ab.defLe ba.defLe)
       (PartialOrder.le_antisymm _ _ ab.posLe ba.posLe)
@@ -526,7 +535,7 @@ namespace Set3
     members of the trisets in the set, and its possible members
     are the union of the possible members.
   -/
-  def ordStd.sSup (s: Set (Set3 D)): Set3 D := {
+  def ordStd.sSup {D} (s: Set (Set3 D)): Set3 D := {
     defMem := fun d => ∃s3: ↑s, d ∈ s3.val.defMem
     posMem := fun d => ∃s3: ↑s, d ∈ s3.val.posMem
     defLePos :=
@@ -537,7 +546,7 @@ namespace Set3
   
   def ordStd.IsLUB {D} := @_root_.IsLUB (Set3 D) (ordStd D).toLE
   
-  def ordStd.sSup_isLUB (s: Set (Set3 D)): IsLUB s (sSup s) :=
+  def ordStd.sSup_isLUB {D} (s: Set (Set3 D)): IsLUB s (sSup s) :=
     And.intro
       (fun s3 s3In => {
         defLe := fun _d dMem => ⟨⟨s3, s3In⟩, dMem⟩
@@ -556,7 +565,7 @@ namespace Set3
     intersection of the possible members.
   -/
   def ordApx.sup
-    (s: Set (Set3 D))
+    {D} (s: Set (Set3 D))
     (defLePos:
       ∀ (a: ↑s) (d: a.val.defMem) (b: ↑s), b.val.posMem d)
   :
@@ -568,6 +577,7 @@ namespace Set3
   }
   
   def ordApx.sup_defLePos_of_chain
+    {D} {ch: Set (Set3 D)}
     (isChain: IsChain (ordApx D).le ch)
     (a: ↑ch)
     (d: a.val.defMem)
@@ -579,7 +589,7 @@ namespace Set3
     | Or.inl ab => (ab.defLe d.property).toPos
     | Or.inr ba => ba.posLe d.property.toPos
   
-  def ordApx.supOfChain (isChain: IsChain (ordApx D).le ch):
+  def ordApx.supOfChain {D} {ch} (isChain: IsChain (ordApx D).le ch):
     Set3 D
   :=
     sup ch (sup_defLePos_of_chain isChain)
@@ -587,7 +597,7 @@ namespace Set3
   def ordApx.IsLUB {D} := @_root_.IsLUB (Set3 D) (ordApx D).toLE
   
   def ordApx.sup_isLUB
-    (s: Set (Set3 D))
+    {D} (s: Set (Set3 D))
     (defLePos:
       ∀ (a: ↑s) (d: a.val.defMem) (b: ↑s), b.val.posMem d)
   :
@@ -606,6 +616,7 @@ namespace Set3
       }
   
   def ordApx.lub_is_sup
+    {D} {s: Set (Set3 D)} {lub}
     (isLub: IsLUB s lub)
   :
     ∃ defLePos, lub = sup s defLePos
@@ -620,6 +631,7 @@ namespace Set3
     ⟩
   
   def ordApx.supOfChain_isLUB
+    {D} {ch}
     (isChain: IsChain (ordApx D).le ch)
   :
     IsLUB ch (supOfChain isChain)
@@ -643,7 +655,7 @@ namespace Set3
     ⟩
   
   
-  def ordStd.sInf (s: Set (Set3 D)): Set3 D := {
+  def ordStd.sInf {D} (s: Set (Set3 D)): Set3 D := {
     defMem := fun d => ∀ s3: ↑s, d ∈ s3.val.defMem
     posMem := fun d => ∀ s3: ↑s, d ∈ s3.val.posMem
     defLePos := fun _d dDef s3 => (dDef s3).toPos
@@ -651,7 +663,7 @@ namespace Set3
   
   def ordStd.IsGLB {D} := @_root_.IsGLB (Set3 D) (ordStd D).toLE
   
-  def ordStd.sInf_isGLB (s: Set (Set3 D)): IsGLB s (sInf s) :=
+  def ordStd.sInf_isGLB {D} (s: Set (Set3 D)): IsGLB s (sInf s) :=
     And.intro
       (fun s3 s3In => {
         defLe := fun _d dMem => dMem ⟨s3, s3In⟩
@@ -662,7 +674,7 @@ namespace Set3
         posLe := fun _d dMem s3 => (lbIsGLB s3.property).posLe dMem
       }
   
-  def ordStdLattice D: CompleteLattice (Set3 D) := {
+  def ordStdLattice (D: Type u): CompleteLattice (Set3 D) := {
     __ := ordStd D
     
     top := Set3.univ
@@ -692,7 +704,7 @@ namespace Set3
   
   
   def ordStd.in_set_in_sup_defMem
-    {set: Set (Set3 D)}
+    {D} {set: Set (Set3 D)} {lub} {d}
     (isLub: IsLUB set lub)
   :
     (∃ s3 ∈ set, d ∈ s3.defMem) ↔ d ∈ lub.defMem
@@ -708,7 +720,7 @@ namespace Set3
         ⟨s3, inSet, dIn⟩)
   
   def ordStd.in_set_in_sup_posMem
-    {set: Set (Set3 D)}
+    {D} {set: Set (Set3 D)} {lub} {d}
     (isLub: IsLUB set lub)
   :
     (∃ s3 ∈ set, d ∈ s3.posMem) ↔ d ∈ lub.posMem
@@ -725,7 +737,7 @@ namespace Set3
   
   
   def ordApx.in_set_in_sup_defMem
-    {set: Set (Set3 D)}
+    {D} {set: Set (Set3 D)} {lub} {d}
     (isLub: IsLUB set lub)
   :
     (∃ s3 ∈ set, d ∈ s3.defMem) ↔ d ∈ lub.defMem
@@ -740,7 +752,7 @@ namespace Set3
         ⟨s3, inSet, dIn⟩)
   
   def ordApx.in_set_in_sup_posMem
-    {set: Set (Set3 D)}
+    {D} {set: Set (Set3 D)} {lub} {d}
     (isLub: IsLUB set lub)
   :
     (∀ s3 ∈ set, d ∈ s3.posMem) ↔ d ∈ lub.posMem
@@ -766,7 +778,8 @@ namespace Set3
     | .defLane, _ => isTrue True.intro
     | .posLane, .posLane => isTrue True.intro
   
-  def Lane.Le.liftMem {laneA laneB D d}
+  def Lane.Le.liftMem
+    {D} {laneA laneB: Lane} {d: D}
     (le: Lane.Le laneA laneB)
     ⦃s: Set3 D⦄
     (inA: s.getLane laneA d)

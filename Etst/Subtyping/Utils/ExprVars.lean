@@ -5,9 +5,11 @@ import Etst.Subtyping.Utils.ExprConstsVarsSat
 
 namespace Etst
 
+variable {E: Type*}
+
 
 namespace Expr
-  def replaceFreeVarsNat {E}
+  def replaceFreeVarsNat
     (fvMap: Nat → Nat)
   :
     Expr E → Expr E
@@ -27,7 +29,7 @@ namespace Expr
   
   def lift_var_lt
     (x: Nat)
-    (lt: x < depth)
+    {depth} (lt: x < depth)
     (liftBy: Nat)
   :
     (var (E := E) x).lift depth liftBy = var x
@@ -36,7 +38,7 @@ namespace Expr
   
   def lift_var_ge
     (x: Nat)
-    (ge: x >= depth)
+    {depth} (ge: x >= depth)
     (liftBy: Nat)
   :
     (var (E := E) x).lift depth liftBy = var (x + liftBy)
@@ -440,7 +442,7 @@ namespace BasicExpr
 end BasicExpr
 
 open SingleLaneExpr in
-def Expr.IsClean.intp2_eq
+def Expr.IsClean.intp2_eq {fvL fvR b c}
   {expr: SingleLaneExpr}
   (h: Expr.IsClean expr)
 :
@@ -505,7 +507,7 @@ namespace DefList
 end DefList
 
 namespace SingleLaneExpr
-  def InWfm.of_in_def
+  def InWfm.of_in_def {dl fv x lane d}
     (inDef: InWfm fv dl ((dl.getDef x).toLane lane) d)
   :
     InWfm [] dl (.const lane x) d
@@ -521,7 +523,7 @@ namespace SingleLaneExpr
         show intp2 _ _ _ _ _ from
         eqPos ▸ inDef)
   
-  def InWfm.in_def
+  def InWfm.in_def {dl fv x lane d}
     (inVar: InWfm [] dl (.const lane x) d)
   :
     InWfm fv dl ((dl.getDef x).toLane lane) d

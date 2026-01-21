@@ -8,8 +8,13 @@ import Etst.WFC.Utils.PairExpr
 
 namespace Etst
 
+variable {b0 b1 c0 c1: Valuation Pair}
+variable {fv0 fv1: List Pair}
+
+
 namespace SingleLaneExpr
   open Expr
+  variable {l0 l1 r0 r1 e0 e1: SingleLaneExpr}
   
   def intp2_mono_std_pair
     {l0 l1 r0 r1: SingleLaneExpr}
@@ -178,8 +183,8 @@ namespace SingleLaneExpr
 end SingleLaneExpr
 
 namespace BasicExpr
-  open Expr
   open SingleLaneExpr
+  variable {l0 l1 r0 r1 e0 e1: BasicExpr}
   
   def triIntp2_mono_std_pair
     (leL: triIntp2 l0 fv0 b0 c0 ≤ triIntp2 l1 fv1 b1 c1)

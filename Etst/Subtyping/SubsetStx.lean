@@ -61,7 +61,7 @@ open Expr
   -> d
 -/
 
-def Expr.replaceDepthEvenConsts
+def Expr.replaceDepthEvenConsts {E}
   (e: Expr E)
   (depth: Nat) -- number of quantifiers crossed so far
   (ed: Bool) -- "even depth", number of complements crossed so far
@@ -99,7 +99,7 @@ def InductionDescriptor.hypothesis
   (depth: Nat)
   (lane: Set3.Lane)
   (x: Nat)
-  (desc: InductionDescriptor dl)
+  {dl} (desc: InductionDescriptor dl)
   (expr: SingleLaneExpr)
 :
   SingleLaneExpr
@@ -109,7 +109,7 @@ def InductionDescriptor.hypothesis
 abbrev MutIndDescriptor (dl: DefList) := List (InductionDescriptor dl)
 
 def MutIndDescriptor.hypothesis
-  (desc: MutIndDescriptor dl)
+  {dl} (desc: MutIndDescriptor dl)
   (depth: Nat)
   (lane: Set3.Lane)
   (x: Nat)
@@ -119,7 +119,7 @@ def MutIndDescriptor.hypothesis
   desc.foldr (InductionDescriptor.hypothesis depth lane x) (const lane x)
 
 def MutIndDescriptor.hypothesify
-  (desc: MutIndDescriptor dl)
+  {dl} (desc: MutIndDescriptor dl)
   (depth := 0)
   (expr: SingleLaneExpr)
 :
@@ -128,7 +128,7 @@ def MutIndDescriptor.hypothesify
   expr.replaceDepthEvenConsts depth true desc.hypothesis
 
 
-def Expr.isSubsingleton
+def Expr.isSubsingleton {E}
   (expr: Expr E)
 :
   Expr E
@@ -183,53 +183,53 @@ inductive DefList.SubsetStx
   -- TODO investigate whether we can prove this from the
   -- simpler, context-free version (`pairMonoOfSub`).
   -- This applies to induction as well.
-  pairMono
+  pairMono {x al bl ar br}
     (sl: dl.SubsetStx x (full (impl al bl)))
     (sr: dl.SubsetStx x (full (impl ar br)))
   :
     dl.SubsetStx x (full (impl (pair al ar) (pair bl br)))
 |
-  subComplPairUn:
+  subComplPairUn {a b}:
     dl.SubsetStx
       (compl (pair a b))
       (un null (un (pair (compl a) any) (pair any (compl b))))
 |
-  subUnComplPair:
+  subUnComplPair {a b}:
     dl.SubsetStx
       (un null (un (pair (compl a) any) (pair any (compl b))))
       (compl (pair a b))
 -- TODO is this one necessary?
-| subPairIrDistL:
+| subPairIrDistL {a b c}:
     dl.SubsetStx (ir (pair a c) (pair b c)) (pair (ir a b) c)
 -- TODO is this one necessary?
-| subPairIrDistR:
+| subPairIrDistR {a b c}:
     dl.SubsetStx (ir (pair a b) (pair a c)) (pair a (ir b c))
-| subIrL:
+| subIrL {a r}:
     dl.SubsetStx (ir a r) a
-| subIrR:
+| subIrR {l a}:
     dl.SubsetStx (ir l a) a
-| subIr
+| subIr {x l r}
     (ac: dl.SubsetStx x l)
     (bc: dl.SubsetStx x r)
   :
     dl.SubsetStx x (ir l r)
 |
-  subIrUnDistL:
+  subIrUnDistL {a b c}:
     dl.SubsetStx (ir (un a b) c) (un (ir a c) (ir b c))
 |
-  isFull
+  isFull {x a}
     (subA: dl.SubsetStx any a)
   :
     dl.SubsetStx x (full a)
 |
   -- Axiom K in modal logic.
-  fullImplElim:
+  fullImplElim {a b}:
     dl.SubsetStx
       (full (impl a b))
       (impl (full a) (full b))
 |
   -- Axiom T in modal logic.
-  fullElim:
+  fullElim {a}:
     dl.SubsetStx (full a) a
 |
   /-
@@ -242,50 +242,50 @@ inductive DefList.SubsetStx
     of the desired expression. The axiom five is proven below
     as `someAddFull`.
   -/
-  someStripFull:
+  someStripFull {a}:
     dl.SubsetStx (some (full a)) (full a)
 |
-  subCompl
+  subCompl {a b}
     (sub: dl.SubsetStx a b)
   :
     dl.SubsetStx b.compl a.compl
-| subDne: dl.SubsetStx a.compl.compl a
-| subDni: dl.SubsetStx a a.compl.compl
+| subDne {a}: dl.SubsetStx a.compl.compl a
+| subDni {a}: dl.SubsetStx a a.compl.compl
 -- Principle of explosion. Used as a basic rule instead of
 -- implication elimination, which is derived from this.
-| subPe:
+| subPe {a b}:
     dl.SubsetStx (ir a a.compl) b
 |
-  univIntro
+  univIntro {x a}
     (sub: dl.SubsetStx x.lift a)
   :
     dl.SubsetStx x (arbIr a)
 |
-  univElim
+  univElim {x t a}
     (isSome: dl.SubsetStx x (some t))
     (isSubsingle: dl.SubsetStx x t.isSubsingleton)
     (sub: dl.SubsetStx x (arbIr a))
   :
     dl.SubsetStx x (a.instantiateVar t)
 |
-  trans
+  trans {a b c}
     (ab: dl.SubsetStx a b)
     (bc: dl.SubsetStx b c)
   :
     dl.SubsetStx a c
 | -- TODO should be provable with induction.
-  subUnfold:
+  subUnfold {a lane}:
     dl.SubsetStx
       (const lane a)
       ((dl.getDef a).toLane lane)
 |
   -- TODO is this provable with induction?
-  subFold:
+  subFold {a lane}:
     dl.SubsetStx
       ((dl.getDef a).toLane lane)
       (const lane a)
 |
-  mutInduction
+  mutInduction {x}
     (desc: MutIndDescriptor dl)
     (premises:
       (i: desc.Index) →
@@ -310,7 +310,9 @@ inductive DefList.SubsetStx
 
 
 namespace DefList.SubsetStx
-  variable {dl: DefList}
+  variable
+    {dl: DefList}
+    {x a b l r al ar: SingleLaneExpr}
   
   def subId {expr}:
     dl.SubsetStx expr expr
@@ -346,7 +348,7 @@ namespace DefList.SubsetStx
   :=
     trans subIrR sub
   
-  def irCtxLR
+  def irCtxLR {bl br}
     (subL: dl.SubsetStx al bl)
     (subR: dl.SubsetStx ar br)
   :
@@ -493,7 +495,7 @@ namespace DefList.SubsetStx
   :=
     sub.trans (unCtx subL subR)
   
-  def unMonoSubL
+  def unMonoSubL {la lb}
     (sub: dl.SubsetStx x (un la r))
     (subL: dl.SubsetStx la lb)
   :
@@ -501,7 +503,7 @@ namespace DefList.SubsetStx
   :=
     unElimSub sub (unL subL) subUnR
   
-  def unMonoSubR
+  def unMonoSubR {ra rb}
     (sub: dl.SubsetStx x (un l ra))
     (subR: dl.SubsetStx ra rb)
   :
@@ -702,7 +704,7 @@ namespace DefList.SubsetStx
         (trans subIrSymm (implAbsorb subL))
         (trans subIrSymm (implAbsorb subR)))
   
-  def unMonoL
+  def unMonoL {la lb}
     (sub: dl.SubsetStx x (un la r))
     (subL: dl.SubsetStx x (impl la lb))
   :
@@ -713,7 +715,7 @@ namespace DefList.SubsetStx
       (implIntro (trans (implAbsorb subL) subUnL))
       (toImpl subUnR)
   
-  def unMonoR
+  def unMonoR {ra rb}
     (sub: dl.SubsetStx x (un l ra))
     (subR: dl.SubsetStx x (impl ra rb))
   :
@@ -990,36 +992,36 @@ namespace DefList.SubsetStx
     trans (isSomeMono aSomeB isSomeA) someStripSome
   
   
-  def unfoldCtx
-      (sub: dl.SubsetStx (const lane a) b)
+  def unfoldCtx {lane c}
+      (sub: dl.SubsetStx (const lane c) b)
     :
-      dl.SubsetStx ((dl.getDef a).toLane lane) b
+      dl.SubsetStx ((dl.getDef c).toLane lane) b
   :=
     trans subFold sub
   
-  def unfold
-      (sub: dl.SubsetStx x (const lane a))
+  def unfold {lane c}
+      (sub: dl.SubsetStx x (const lane c))
     :
-      dl.SubsetStx x ((dl.getDef a).toLane lane)
+      dl.SubsetStx x ((dl.getDef c).toLane lane)
   :=
     trans sub subUnfold
   
-  def foldCtx
-      (sub: dl.SubsetStx ((dl.getDef a).toLane lane) b)
+  def foldCtx {lane c}
+      (sub: dl.SubsetStx ((dl.getDef c).toLane lane) b)
     :
-      dl.SubsetStx (const lane a) b
+      dl.SubsetStx (const lane c) b
   :=
     trans subUnfold sub
   
-  def fold
-      (sub: dl.SubsetStx x ((dl.getDef a).toLane lane))
+  def fold {lane c}
+      (sub: dl.SubsetStx x ((dl.getDef c).toLane lane))
     :
-      dl.SubsetStx x (const lane a)
+      dl.SubsetStx x (const lane c)
     :=
       trans sub subFold
   
   
-  def implPairMono:
+  def implPairMono {bl br}:
     dl.SubsetStx
       any
       (impl
@@ -1034,7 +1036,7 @@ namespace DefList.SubsetStx
           (pairMono (irCtxL subIrR) subIrR)
           fullElim))
   
-  def pairMonoOfSub
+  def pairMonoOfSub {bl br}
     (sl: dl.SubsetStx al bl)
     (sr: dl.SubsetStx ar br)
   :
@@ -1094,14 +1096,14 @@ namespace DefList.SubsetStx
       }
       premise
   
-  def subSimplePairInduction
+  def subSimplePairInduction {p}
     (sub: dl.SubsetStx (un null (pair p p)) p)
   :
     dl.SubsetStx a p
   :=
     isFullImplElim (simplePairInduction (isFullImpl sub))
   
-  def subPairConst
+  def subPairConst {c}
     (eq: dl.getDef c = un null (pair (const () c) (const () c)))
   :
     dl.SubsetStx x (const .defLane c)
@@ -1109,7 +1111,7 @@ namespace DefList.SubsetStx
     subSimplePairInduction (fold (eq ▸ subId))
   
   
-  def implDist:
+  def implDist {c}:
     dl.SubsetStx (impl a (impl b c)) (impl (impl a b) (impl a c))
   :=
     .implIntro

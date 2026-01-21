@@ -4,8 +4,17 @@ import Etst.WFC.Utils.RulesOfInference
 
 namespace Etst
 
+variable {E: Type*}
+variable {x: Nat}
+variable {pA pB dE dBound d dB dC fst zth: Pair}
+variable {fv: List Pair}
+variable {b c: Valuation Pair}
+variable {lane: Set3.Lane}
+
 
 namespace Expr
+  variable {expr body left rite: Expr E}
+  
   def impl (left rite: Expr E) := un left.compl rite
   
   def ifThen (cond body: Expr E): Expr E :=
@@ -103,6 +112,7 @@ end Expr
 
 namespace SingleLaneExpr
   open Expr
+  variable {expr exprA exprB domain body: SingleLaneExpr}
   
   def inImpl
     -- Note the swapped valuations in the domain.
@@ -193,9 +203,9 @@ namespace SingleLaneExpr
   def inFinUn
     {list: List SingleLaneExpr}
     (exprIn: expr ∈ list)
-    (inExpr: intp2 expr fv b c p)
+    (inExpr: intp2 expr fv b c d)
   :
-    intp2 (finUn list) fv b c p
+    intp2 (finUn list) fv b c d
   :=
     match list with
     | List.cons _e0 _rest =>
@@ -214,7 +224,7 @@ namespace SingleLaneExpr
   | List.cons head tail =>
     (intp2 head fv b c d → P) → InFinUnElim fv b c d P tail
   
-  def inFinUnElim
+  def inFinUnElim {P list}
     (inFinUn: intp2 (finUn list) fv b c d)
   :
     InFinUnElim fv b c d P list
@@ -305,7 +315,7 @@ namespace SingleLaneExpr
     eqR ▸ inZthB
   
   
-  def inCall
+  def inCall {fn arg}
     (inFn: intp2 fn (pB :: fv) b c (Pair.pair pA pB))
     (inArg: intp2 arg (pB :: fv) b c pA)
   :
@@ -314,7 +324,7 @@ namespace SingleLaneExpr
     inFstMember (inIr inFn (inPair inArg inAny))
   
   
-  def inCallElim
+  def inCallElim {fn arg}
     (inCall: intp2 (call fn arg) fv b c pB)
   :
     ∃ pA,
@@ -327,7 +337,7 @@ namespace SingleLaneExpr
     
     ⟨zth, And.intro inFn (inPairElim inP).left⟩
   
-  def inCallElimBound
+  def inCallElimBound {fn arg}
     (inCall: intp2 (call fn (Expr.const lane arg)) fv b c pB)
     (isUnit: c arg = Set3.just pA)
   :
@@ -349,7 +359,7 @@ namespace SingleLaneExpr
     | Nat.zero => inNull
     | Nat.succ pred => inPair (inNat b c pred) inNull
   
-  def inNatElim
+  def inNatElim {n p}
     (inNatExpr: intp2 (nat n) fv b c p)
   :
     p = Pair.fromNat n
@@ -361,7 +371,7 @@ namespace SingleLaneExpr
       let ⟨l, r⟩ := inPairElim inNatExpr
       (inNatElim l) ▸ (inNullElim r) ▸ rfl
   
-  def inNatElimNope
+  def inNatElimNope {P n m}
     (inNat: intp2 (nat n) fv b c (.fromNat m))
     (neq: n ≠ m)
   :
@@ -369,14 +379,14 @@ namespace SingleLaneExpr
   :=
     (neq (Pair.fromNat_inj_eq (Eq.symm (inNatElim inNat)))).elim
   
-  def inNatElimDepth
+  def inNatElimDepth {n p}
     (inNat: intp2 (nat n) fv b c p)
   :
     p.depth = n
   :=
     (inNatElim inNat) ▸ (Pair.fromNat_depth_eq n)
   
-  def inNatElimDecode
+  def inNatElimDecode {n p}
     (inNatExpr: intp2 (nat n) fv b c p)
   :
     p.depth = n

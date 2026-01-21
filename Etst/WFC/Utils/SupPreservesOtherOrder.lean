@@ -2,6 +2,8 @@ import Etst.WFC.Utils.Valuation
 
 namespace Etst
 
+variable {T: Type*}
+
 
 def LubPreservesOtherOrder
   (ord: PartialOrder T)

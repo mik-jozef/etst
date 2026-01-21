@@ -3,6 +3,12 @@ import Etst.WFC.Utils.Set3
 
 namespace Etst
 
+universe u
+variable {D: Type u}
+variable {lub: Valuation D}
+variable {d: D}
+variable {x: Nat}
+
 
 namespace Valuation
   instance: Inhabited (Valuation D) := ⟨Valuation.undetermined⟩

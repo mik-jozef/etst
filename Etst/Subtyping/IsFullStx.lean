@@ -6,25 +6,25 @@ open Expr
 
 namespace DefList
   inductive IsFullStx (dl: DefList): SingleLaneExpr → Type
-  | defPos: dl.IsFullStx (impl (const .defLane x) (const .posLane x))
+  | defPos {x}: dl.IsFullStx (impl (const .defLane x) (const .posLane x))
     -- TODO should be provable using induction.
-  | unfold (lane: Set3.Lane) (x: Nat):
+  | unfold {lane x}:
       dl.IsFullStx (impl (const lane x) ((dl.getDef x).toLane lane))
-  | fold (lane: Set3.Lane) (x: Nat):
+  | fold {lane x}:
       dl.IsFullStx (impl ((dl.getDef x).toLane lane) (const lane x))
-  | mp
+  | mp {a b}
       (impl: dl.IsFullStx (impl a b))
       (arg: dl.IsFullStx a)
     :
       dl.IsFullStx b
-  | simpl: dl.IsFullStx (impl a (impl b a))
-  | distImpl:
+  | simpl {a b}: dl.IsFullStx (impl a (impl b a))
+  | distImpl {a b c}:
       dl.IsFullStx
         (impl
           (impl a (impl b c))
           (impl (impl a b) (impl a c)))
-  | contra: dl.IsFullStx (impl (impl a.compl b.compl) (impl b a))
-  | fPairMono:
+  | contra {a b}: dl.IsFullStx (impl (impl a.compl b.compl) (impl b a))
+  | fPairMono {al bl ar br}:
       dl.IsFullStx
         (impl
           (full (impl al bl))
@@ -32,50 +32,50 @@ namespace DefList
             (full (impl ar br))
             (impl (pair al ar) (pair bl br))))
   -- TODO is this one necessary?
-  | fPairUnDistL:
+  | fPairUnDistL {a b c}:
       dl.IsFullStx
         (impl
           (pair (un a b) c)
           (un (pair a c) (pair b c)))
   -- TODO is this one necessary?
-  | fPairUnDistR:
+  | fPairUnDistR {a b c}:
       dl.IsFullStx
         (impl
           (pair a (un b c))
           (un (pair a b) (pair a c)))
   -- TODO is this one necessary?
-  | fPairIrDistL:
+  | fPairIrDistL {a b c}:
       dl.IsFullStx
         (impl
           (ir (pair a c) (pair b c))
           (pair (ir a b) c))
   -- TODO is this one necessary?
-  | fPairIrDistR:
+  | fPairIrDistR {a b c}:
       dl.IsFullStx
         (impl
           (ir (pair a b) (pair a c))
           (pair a (ir b c)))
   -- TODO is this one necessary?
-  | fPairNoneL:
+  | fPairNoneL {a x}:
       dl.IsFullStx (impl (pair .none a) x)
   -- TODO is this one necessary?
-  | fPairNoneR:
+  | fPairNoneR {a x}:
       dl.IsFullStx (impl (pair a .none) x)
-  | fPairNullDisjoint:
+  | fPairNullDisjoint {a b x}:
       dl.IsFullStx (impl (ir .null (pair a b)) x)
   | fNullPair: dl.IsFullStx (un null (pair any any))
-  | fIr: dl.IsFullStx (impl a (impl b (ir a b)))
-  | fIrL: dl.IsFullStx (impl (ir l r) l)
-  | fIrR: dl.IsFullStx (impl (ir l r) r)
-  | fFull (f: dl.IsFullStx a): dl.IsFullStx (full a)
+  | fIr {a b}: dl.IsFullStx (impl a (impl b (ir a b)))
+  | fIrL {l r}: dl.IsFullStx (impl (ir l r) l)
+  | fIrR {l r}: dl.IsFullStx (impl (ir l r) r)
+  | fFull {a} (f: dl.IsFullStx a): dl.IsFullStx (full a)
   -- Axiom K in modal logic.
-  | fFullImplElim:
+  | fFullImplElim {a b}:
       dl.IsFullStx
         (impl
           (full (impl a b))
           (impl (full a) (full b)))
   -- Axiom T in modal logic.
-  | fFullElim:
+  | fFullElim {expr}:
       dl.IsFullStx (impl (full expr) expr)
   -- Contraposition of Axiom 5 (up to removal of negation from `a`)
   | fSomeStripFull {a}:
@@ -97,7 +97,9 @@ namespace DefList
         (impl x (full (impl (const desc[i].lane desc[i].x) desc[i].expr)))
   
   namespace IsFullStx
-    variable {dl: DefList}
+    variable
+      {dl: DefList}
+      {a b c left rite: SingleLaneExpr}
     
     def mp2
       (abc: dl.IsFullStx (impl a (impl b c)))
@@ -108,7 +110,7 @@ namespace DefList
     :=
       mp (mp abc a) b
     
-    def mp3
+    def mp3 {d}
       (abcd: dl.IsFullStx (impl a (impl b (impl c d))))
       (a: dl.IsFullStx a)
       (b: dl.IsFullStx b)
@@ -126,10 +128,10 @@ namespace DefList
     -- we can prove `expr` then we can prove `hyp -> expr`.
     inductive IsFullStxFrom (dl: DefList) (hyp: SingleLaneExpr): SingleLaneExpr → Type
     | fromHyp: IsFullStxFrom dl hyp hyp
-    | fromFull (full: dl.IsFullStx expr): IsFullStxFrom dl hyp expr
-    | mp (impl: IsFullStxFrom dl hyp (impl a b)) (arg: IsFullStxFrom dl hyp a): IsFullStxFrom dl hyp b
+    | fromFull {expr} (full: dl.IsFullStx expr): IsFullStxFrom dl hyp expr
+    | mp {a b} (impl: IsFullStxFrom dl hyp (impl a b)) (arg: IsFullStxFrom dl hyp a): IsFullStxFrom dl hyp b
 
-    def IsFullStxFrom.toImpl
+    def IsFullStxFrom.toImpl {a b}
       (fn: IsFullStxFrom dl a b)
     :
       dl.IsFullStx (impl a b)
@@ -253,7 +255,7 @@ namespace DefList
     def unComm: dl.IsFullStx (impl (un a b) (un b a)) :=
       fUn.mp2 fUnR fUnL
     
-    def distrib:
+    def distrib {al ar}:
       dl.IsFullStx (impl (un al ar) (impl b (un (ir al b) (ir ar b))))
     :=
       let left := mp2 trans fIr (mp liftImpl fUnL)
@@ -290,7 +292,7 @@ namespace DefList
       let step5 := mp fFullImplElim step4
       mp2 trans step2 (mp2 trans step3 step5)
     
-    def fPairMonoFull:
+    def fPairMonoFull {al bl ar br}:
       dl.IsFullStx
         (impl
           (full (impl al bl))
@@ -363,7 +365,7 @@ namespace DefList
     
   end IsFullStx
   
-  def SubsetStx.toIsFullStx:
+  def SubsetStx.toIsFullStx {dl a b}:
     SubsetStx dl a b →
     dl.IsFullStx (un a.compl b)
   | subDefPos => .defPos
@@ -391,8 +393,8 @@ namespace DefList
   | fullImplElim => .fFullImplElim
   | fullElim => .fFullElim
   | someStripFull => .fSomeStripFull
-  | subUnfold => .unfold _ _
-  | subFold => .fold _ _
+  | subUnfold => .unfold
+  | subFold => .fold
   | univIntro sub =>
       sorry
   | univElim isSome isSubsingle sub =>
@@ -404,15 +406,15 @@ namespace DefList
   | simplePairInduction sub =>
       sorry
   
-  def IsFullStx.toSubsetStx
+  def IsFullStx.toSubsetStx {dl a}
     (full: dl.IsFullStx a)
   :
     SubsetStx dl Expr.any a
   :=
     match full with
     | .defPos => .toImpl .subDefPos
-    | .unfold lane x => .toImpl .subUnfold
-    | .fold lane x => .toImpl .subFold
+    | .unfold => .toImpl .subUnfold
+    | .fold => .toImpl .subFold
     | .mp impl arg => .implElim impl.toSubsetStx arg.toSubsetStx
     | .simpl => .implIntro (.implIntro (.irCtxL .subIrR))
     | .distImpl => .toImpl .implDist
@@ -454,7 +456,7 @@ namespace DefList
   
   
   open SingleLaneExpr in
-  def IsFullStx.isSound
+  def IsFullStx.isSound {dl expr}
     (full: dl.IsFullStx expr)
   :
     IsFull dl expr

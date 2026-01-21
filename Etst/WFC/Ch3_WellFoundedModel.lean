@@ -119,10 +119,10 @@ namespace Etst
 
 
 -- Fuck type classes.
-abbrev IsMonotonic (ordA: PartialOrder A) (ordB: PartialOrder B) :=
+abbrev IsMonotonic {A B} (ordA: PartialOrder A) (ordB: PartialOrder B) :=
   @Monotone _ _ ordA.toPreorder ordB.toPreorder
 
-abbrev OrderHomWrt (ordA: PartialOrder A) (ordB: PartialOrder B) :=
+abbrev OrderHomWrt {A B} (ordA: PartialOrder A) (ordB: PartialOrder B) :=
   @OrderHom A B ordA.toPreorder ordB.toPreorder
 
 def isCcStd {T} := Valuation.ordStd.isChainComplete T

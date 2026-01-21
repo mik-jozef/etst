@@ -7,6 +7,8 @@ import Etst.WFC.Ch0_Set3
 
 namespace Etst
 
+universe u
+
 
 /-
   An expression is an inductive structure that (as we later define)
@@ -15,7 +17,7 @@ namespace Etst
   `E` (extra info) is for storing arbitrary extra information in each
   constant.
 -/
-inductive Expr (E: Type*) where
+inductive Expr (E: Type u) where
 | const (e: E) (x: Nat)
 /-
   Uses de Bruijn indices. Ie., `var 0` refers to the innermost
@@ -30,11 +32,11 @@ inductive Expr (E: Type*) where
 | arbIr (body: Expr E)
 deriving DecidableEq
 
-def Expr.un (left rite: Expr E): Expr E :=
+def Expr.un {E} (left rite: Expr E): Expr E :=
   compl (ir (compl left) (compl rite))
-def Expr.some (body: Expr E): Expr E :=
+def Expr.some {E} (body: Expr E): Expr E :=
   compl (full (compl body))
-def Expr.arbUn (body: Expr E): Expr E :=
+def Expr.arbUn {E} (body: Expr E): Expr E :=
   compl (arbIr (compl body))
 
 
@@ -62,7 +64,7 @@ def BasicExpr.arbIr (body: BasicExpr): BasicExpr :=
   Expr.arbIr body
 
 namespace Expr
-  def UsesConst (expr: Expr E): Set Nat :=
+  def UsesConst {E} (expr: Expr E): Set Nat :=
     fun x =>
       match expr with
         | const _ v => x = v
@@ -74,7 +76,7 @@ namespace Expr
         | compl body => body.UsesConst x
         | arbIr body => body.UsesConst x
   
-  def UsesFreeVar (expr: Expr E): Set Nat :=
+  def UsesFreeVar {E} (expr: Expr E): Set Nat :=
     fun x =>
       match expr with
         | const _ _ => False
@@ -86,7 +88,7 @@ namespace Expr
         | compl body => body.UsesFreeVar x
         | arbIr body => body.UsesFreeVar (x + 1)
   
-  abbrev FreeVarsSat (expr: Expr E) (P: Nat → Prop): Prop :=
+  abbrev FreeVarsSat {E} (expr: Expr E) (P: Nat → Prop): Prop :=
     ∀ x ∈ expr.UsesFreeVar, P x
   
   
@@ -94,7 +96,7 @@ namespace Expr
     A positive expression only refers to constants under an even
     number of complements.
   -/
-  def IsPositive (expr: Expr E) (isEvenD := true): Prop :=
+  def IsPositive {E} (expr: Expr E) (isEvenD := true): Prop :=
     match expr with
     | const _ _ => isEvenD
     | var _ => True
@@ -109,16 +111,16 @@ namespace Expr
 
   
   -- `any` contains all elements, under any valuation.
-  def any: Expr E := arbUn (var 0)
+  def any {E}: Expr E := arbUn (var 0)
   -- `none` contains no elements, under any valuation.
-  def none: Expr E := arbIr (compl (var 0))
+  def none {E}: Expr E := arbIr (compl (var 0))
   
   
   /-
     Increments all free variables by `liftBy`. `depth` represents
     inside how many quantifiers we are.
   -/
-  def lift
+  def lift {E}
     (expr: Expr E)
     (depth := 0)
     (liftBy := 1)
@@ -137,7 +139,7 @@ namespace Expr
     Transforms a map of free variables to one that is equivalent
     inside a single quantifier.
   -/
-  def liftFvMap
+  def liftFvMap {E}
     (fvMap: Nat → Expr E)
   :
     Nat → Expr E
@@ -167,7 +169,7 @@ namespace Expr
   def clearFreeVars {E}: Expr E → Expr E :=
     replaceFreeVars fun _ => none
   
-  abbrev IsClean (expr: Expr E): Prop :=
+  abbrev IsClean {E} (expr: Expr E): Prop :=
     expr.FreeVarsSat fun _ => False
   
 end Expr
@@ -190,13 +192,13 @@ inductive DefList.DependsOn
 :
   Nat → Nat → Prop
 where
-| Base
-  (aUsesB: (getDef a).UsesConst b)
+| Base {a b}
+    (aUsesB: (getDef a).UsesConst b)
   :
     DependsOn getDef a b
-| Rec
-  (aUsesB: (getDef a).UsesConst b)
-  (bUsesC: DependsOn getDef b c)
+| Rec {a b c}
+    (aUsesB: (getDef a).UsesConst b)
+    (bUsesC: DependsOn getDef b c)
   :
     DependsOn getDef a c
 
@@ -205,7 +207,7 @@ where
   also depends on `c`.
 -/
 def DefList.DependsOn.push
-  {getDef: GetDef}
+  {getDef: GetDef} {a b c}
   (dependsOn: DependsOn getDef a b)
   (isFree: (getDef b).UsesConst c)
 :

@@ -4,7 +4,8 @@ namespace Etst
 
 
 namespace Pair
-  protected def eq: l0 = l1 → r0 = r1 → pair l0 r0 = pair l1 r1
+  protected def eq {l0 l1 r0 r1}:
+    l0 = l1 → r0 = r1 → pair l0 r0 = pair l1 r1
   | rfl, rfl => rfl
   
   /-
@@ -63,7 +64,7 @@ namespace Pair
       pair head (tailHead.arrayUpToLast tailTail)
   
   
-  def fromNat_inj_eq
+  def fromNat_inj_eq {n m}
     (eq: fromNat n = fromNat m)
   :
     n = m
@@ -75,10 +76,9 @@ namespace Pair
     | Nat.succ _nPred, Nat.succ _mPred =>
       let eqFromPred :=
         Pair.noConfusion eq fun predEq _ => predEq
-      
       congrArg Nat.succ (fromNat_inj_eq eqFromPred)
   
-  def fromNat_inj_neq:
+  def fromNat_inj_neq {n m}:
     n ≠ m → fromNat n ≠ fromNat m
   :=
     not_imp_not.mpr fromNat_inj_eq

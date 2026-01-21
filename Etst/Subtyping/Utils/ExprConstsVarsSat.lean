@@ -7,6 +7,10 @@ import Etst.WFC.Ch1_ExprDefList
 
 namespace Etst
 
+universe u
+variable {E: Type u}
+
+
 namespace Expr
   abbrev ConstsSat (expr: Expr E) (P: Nat → Prop): Prop :=
     ∀ x ∈ expr.UsesConst, P x
