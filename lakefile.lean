@@ -4,7 +4,10 @@ open Lake DSL
 -- (I forgot what it stands for. (Extensional triset theory?))
 package Etst {}
 
-lean_lib Etst {}
+@[default_target]
+lean_lib Etst {
+  globs := #[.submodules `Etst]
+}
 
 lean_lib old {}
 
