@@ -1,4 +1,4 @@
-import Etst.WFC.Ch5_S1_AProofSystem
+import Etst.WFC.Ch4_S1_AProofSystem
 import Etst.WFC.Utils.InterpretationMono
 import Etst.Subtyping.Utils.ExprVars
 

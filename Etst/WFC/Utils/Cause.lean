@@ -1,6 +1,6 @@
 import Mathlib.Logic.Basic
 
-import Etst.WFC.Ch5_S0_AProofSystem
+import Etst.WFC.Ch4_S0_AProofSystem
 
 namespace Etst
 

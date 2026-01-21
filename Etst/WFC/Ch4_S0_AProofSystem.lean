@@ -244,5 +244,5 @@ inductive Out
 end
 
 /-
-  The chapter continues in the file `Ch5_S1_AProofSystem.lean`.
+  The chapter continues in the file `Ch4_S1_AProofSystem.lean`.
 -/
