@@ -44,7 +44,6 @@
 -/
 
 import Etst.Subtyping.Utils.ExprExpandsInto
-import Etst.Subtyping.Utils.ExprLiftVars
 import Etst.WFC.Ch5_S1_AProofSystem
 import Etst.WFC.Utils.InterpretationMono
 
