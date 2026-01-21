@@ -50,21 +50,21 @@
   This sequence does not converge to a fixed point. In fact, no
   classical (ie. two-valued) fixed point exists. One way to guarantee
   the existence of a fixed point is to show the operator is monotonic
-  with respect to a chain-complete order.
+  with respect to a chain-complete partial order.
 
   Recall that our interpretation function from Chapter 3 takes two
   valuations (background and context, or `b` and `c`), and background
   is used to interpret complements. If background is constant, then
-  the interpretation of complements is constant as well.
+  the interpretation of (odd-depth) complements is constant as well.
   
   This allows us to define a monotonic family of operators C
   indexed by the background valuation like this:
   
       C_b(c) = interpretation(b, c)
   
-  Since the interpretation of complements is constant, the inter-
-  pretation of C_b is monotonic (with respect to the standard
-  order).
+  Since the interpretation of odd-depth complements is constant,
+  the interpretation of C_b is monotonic (with respect to the
+  standard order).
   
   We also define the operator B as follows:
   
