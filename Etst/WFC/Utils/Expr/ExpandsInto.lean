@@ -1,6 +1,6 @@
 import Etst.WFC.Ch4_S1_AProofSystem
+import Etst.WFC.Utils.Expr.FreeVars
 import Etst.WFC.Utils.InterpretationMono
-import Etst.Subtyping.Utils.ExprVars
 
 namespace Etst
 

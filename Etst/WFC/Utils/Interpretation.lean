@@ -1,4 +1,4 @@
-import Etst.WFC.Utils.Expr
+import Etst.WFC.Utils.Expr.Basic
 import Etst.WFC.Utils.Valuation
 
 namespace Etst

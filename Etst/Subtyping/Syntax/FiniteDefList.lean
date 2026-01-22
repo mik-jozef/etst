@@ -2,9 +2,9 @@ import Lean
 import Lean.Elab
 import Lean.Parser.Term
 
-import Etst.Subtyping.Utils.ExprConstsVarsSat
 import Etst.WFC.Ch4_S1_AProofSystem
 import Etst.WFC.Utils.PairExpr
+import Etst.WFC.Utils.Expr.ConstsVarsSat
 
 namespace Etst
 open Lean Elab Command Term Meta Syntax

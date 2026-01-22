@@ -1,7 +1,7 @@
 import Etst.WFC.Ch2_Interpretation
 import Etst.WFC.Utils.RulesOfInference
 import Etst.WFC.Utils.InterpretationMono
-import Etst.Subtyping.Utils.ExprConstsVarsSat
+import Etst.WFC.Utils.Expr.ConstsVarsSat
 
 namespace Etst
 
