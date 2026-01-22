@@ -43,7 +43,7 @@
   only one.
 -/
 
-import Etst.WFC.Ch4_S1_AProofSystem
+import Etst.WFC.Ch4_S1_MembershipPS
 import Etst.WFC.Utils.Expr.ExpandsInto
 import Etst.WFC.Utils.InterpretationMono
 

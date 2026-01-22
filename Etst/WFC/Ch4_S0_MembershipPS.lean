@@ -1,8 +1,9 @@
 /-
-  # Chapter 5: A Proof System for Well-Founded Collections
+  # Chapter 4: A Proof System for Membership in Well-Founded Collections
   
-  In this chapter, we define a proof system for well-founded
-  collections, and prove its soundness and completeness.
+  In this chapter, we define a proof system for showing membership
+  of individual elements in particular well-founded collections,
+  and prove its soundness and completeness.
   
   To hide the tedious details of the proofs, we split the chapter
   into two sections/files, with the latter importing additional
@@ -244,5 +245,5 @@ inductive Out
 end
 
 /-
-  The chapter continues in the file `Ch4_S1_AProofSystem.lean`.
+  The chapter continues in the file `Ch4_S1_MembershipPS.lean`.
 -/

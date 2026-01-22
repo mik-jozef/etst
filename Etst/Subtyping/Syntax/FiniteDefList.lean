@@ -2,7 +2,7 @@ import Lean
 import Lean.Elab
 import Lean.Parser.Term
 
-import Etst.WFC.Ch4_S1_AProofSystem
+import Etst.WFC.Ch4_S1_MembershipPS
 import Etst.WFC.Utils.PairExpr
 import Etst.WFC.Utils.Expr.ConstsVarsSat
 

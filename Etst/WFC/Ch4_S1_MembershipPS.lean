@@ -1,12 +1,13 @@
 /-
-  This is the section 1 of chapter 6. It contains the very last
+  This is the section 1 of chapter 4. It contains the very last
   part of the proofs of soundness and completeness of the proof
   system.
   
-  For the full proofs, see the file `/Etst/WFC/Utils/AProofSystem.lean`.
+  For the full proofs, see the file
+  `/Etst/WFC/Utils/MembershipPSHelpers.lean`.
 -/
 
-import Etst.WFC.Utils.AProofSystem
+import Etst.WFC.Utils.MembershipPSHelpers
 
 namespace Etst
 
