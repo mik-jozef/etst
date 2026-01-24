@@ -93,7 +93,7 @@ structure InductionDescriptor (dl: DefList) where
   x: Nat
   expr: SingleLaneExpr
   expansion: BasicExpr
-  expandsInto: ExpandsInto dl true (dl.getDef x) expansion
+  expandsInto: dl.ExpandsInto true (dl.getDef x) expansion
 
 def InductionDescriptor.hypothesis
   (depth: Nat)
@@ -843,6 +843,7 @@ namespace DefList.SubsetStx
   :=
     irElimR (complUn sub)
   
+  -- TODO migrate the rest
   
   def fullElimOfImpl
     (fullAb: dl.SubsetStx any (full (impl a b)))

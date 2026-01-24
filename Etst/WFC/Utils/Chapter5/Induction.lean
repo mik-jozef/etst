@@ -1,8 +1,76 @@
-import Etst.Subtyping.SubsetStx
+import Etst.WFC.Ch2_Interpretation
+import Etst.WFC.Utils.Expr.ExpandsInto
 
 namespace Etst
-open Expr
-open SingleLaneExpr
+
+
+def Expr.replaceDepthEvenConsts {E}
+  (e: Expr E)
+  (depth: Nat) -- number of quantifiers crossed so far
+  (ed: Bool) -- "even depth", number of complements crossed so far
+  (replacer: (depth: Nat) → E → Nat → Expr E)
+:
+  Expr E
+:=
+  match e with
+  | const i x => if ed then replacer depth i x else .const i x
+  | var x => .var x
+  | null => null
+  | pair left rite =>
+      pair
+        (left.replaceDepthEvenConsts depth ed replacer)
+        (rite.replaceDepthEvenConsts depth ed replacer)
+  | ir left rite =>
+      ir
+        (left.replaceDepthEvenConsts depth ed replacer)
+        (rite.replaceDepthEvenConsts depth ed replacer)
+  | full body =>
+      full (body.replaceDepthEvenConsts depth ed replacer)
+  | compl body =>
+      compl (body.replaceDepthEvenConsts depth (!ed) replacer)
+  | arbIr body => arbIr (body.replaceDepthEvenConsts (depth + 1) ed replacer)
+
+-- Represents an inductive proof of `const lane x ⊆ expr`
+structure InductionDescriptor (dl: DefList) where
+  lane: Set3.Lane
+  x: Nat
+  expr: SingleLaneExpr
+  expansion: BasicExpr
+  expandsInto: dl.ExpandsInto true (dl.getDef x) expansion
+
+def InductionDescriptor.hypothesis
+  (depth: Nat)
+  (lane: Set3.Lane)
+  (x: Nat)
+  {dl} (desc: InductionDescriptor dl)
+  (expr: SingleLaneExpr)
+:
+  SingleLaneExpr
+:=
+  if lane.Le desc.lane && desc.x = x then .ir (desc.expr.lift 0 depth) expr else expr
+
+abbrev MutIndDescriptor (dl: DefList) := List (InductionDescriptor dl)
+
+def MutIndDescriptor.hypothesis
+  {dl} (desc: MutIndDescriptor dl)
+  (depth: Nat)
+  (lane: Set3.Lane)
+  (x: Nat)
+:
+  SingleLaneExpr
+:=
+  desc.foldr
+    (InductionDescriptor.hypothesis depth lane x)
+    (.const lane x)
+
+def MutIndDescriptor.hypothesify
+  {dl} (desc: MutIndDescriptor dl)
+  (depth := 0)
+  (expr: SingleLaneExpr)
+:
+  SingleLaneExpr
+:=
+  expr.replaceDepthEvenConsts depth true desc.hypothesis
 
 
 def DefList.lfpStage_le_wfm_std
@@ -16,7 +84,6 @@ def DefList.lfpStage_le_wfm_std
   conv => rhs; rw [dl.wfm_eq_lfpC]
   exact (operatorC dl (dl.wfm)).lfpStage_le_lfp n
 
-
 def InductionDescriptor.Invariant {dl}
   (desc: InductionDescriptor dl)
   (wfm v: Valuation Pair)
@@ -24,6 +91,7 @@ def InductionDescriptor.Invariant {dl}
 :=
   Set.Subset ((v desc.x).getLane desc.lane) (desc.expr.intp fv wfm)
 
+open SingleLaneExpr in
 def MutIndDescriptor.var_le_hypothesify {dl v x lane}
   (desc: MutIndDescriptor dl)
   -- `fv` represent the bound variables of the induction itself,
@@ -73,6 +141,7 @@ def MutIndDescriptor.var_le_hypothesify {dl v x lane}
       if_neg h ▸
       rest.var_le_hypothesify fv fvDepth invTail v_le
 
+open SingleLaneExpr in
 def MutIndDescriptor.le_hypothesify {dl v ed lane}
   (desc: MutIndDescriptor dl)
   -- The bound variables of the induction itself.
@@ -141,18 +210,21 @@ def MutIndDescriptor.le_hypothesify {dl v ed lane}
     intp2_mono_std_arbIr fun d =>
       desc.le_hypothesify fv (d :: fvDepth) inv laneEq.elimArbIr v_le
 
-
+open SingleLaneExpr in
 def MutIndDescriptor.isSound {dl}
   (desc: MutIndDescriptor dl)
   (fv: List Pair)
   (premisesHold:
     (i: desc.Index) →
-    dl.SubsetFv fv
-      (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
-      desc[i].expr)
+    let expansion := desc[i].expansion.toLane desc[i].lane
+    Set.Subset
+      (intp (desc.hypothesify 0 expansion) fv dl.wfm)
+      (intp desc[i].expr fv dl.wfm))
   (i: desc.Index)
 :
-  dl.SubsetFv fv (.const desc[i].lane desc[i].x) desc[i].expr
+  Set.Subset
+    (intp (.const desc[i].lane desc[i].x) fv dl.wfm)
+    (intp desc[i].expr fv dl.wfm)
 :=
   let := Valuation.ordStdLattice
   let eq: dl.wfm = (operatorC dl dl.wfm).lfp := dl.wfm_eq_lfpC
@@ -196,167 +268,3 @@ def MutIndDescriptor.isSound {dl}
         premisesHold i (lePremise inExpansion))
   
   by rw [←eq] at isDefSub; exact isDefSub i
-
-
--- ## Coinduction section (TBD)
--- note: before fixing this, generalize induction to arbitrary
--- variables, not just positive lanes.
-
--- Represents a coinductive proof of `left ⊆ const .defLane rite`
-structure CoinductionDescriptor (dl: DefList) where
-  lane: Set3.Lane
-  rite: Nat -- TODO rename to `x`
-  left: SingleLaneExpr -- TODO rename to `expr`
-  expansion: BasicExpr
-  expandsInto: dl.ExpandsInto true (dl.getDef rite) expansion
-
-def CoinductionDescriptor.toInduction {dl}
-  (desc: CoinductionDescriptor dl)
-:
-  InductionDescriptor dl
-:= {
-  x := desc.rite
-  lane := desc.lane
-  expr := .compl desc.left
-  expansion := desc.expansion
-  expandsInto := desc.expandsInto
-}
-
-abbrev MutCoindDescriptor (dl: DefList) := List (CoinductionDescriptor dl)
-
-def CoinductionDescriptor.hypothesis {dl}
-  (depth: Nat)
-  (_lane: Set3.Lane)
-  (x: Nat)
-  (desc: CoinductionDescriptor dl)
-  (expr: SingleLaneExpr)
-:
-  SingleLaneExpr
-:=
-  -- TODO: lane should be used, but I'm not spending time on figuring
-  -- how exactly right now.
-  if desc.rite = x then .ir (.compl (desc.left.lift 0 depth)) expr else expr
-
-def MutCoindDescriptor.hypothesis {dl}
-  (desc: MutCoindDescriptor dl)
-  (depth: Nat)
-  (lane: Set3.Lane)
-  (x: Nat)
-:
-  SingleLaneExpr
-:=
-  desc.foldr (CoinductionDescriptor.hypothesis depth lane x) (.const lane x)
-
-def MutCoindDescriptor.hypothesify {dl}
-  (desc: MutCoindDescriptor dl)
-  (expr: SingleLaneExpr)
-:
-  SingleLaneExpr
-:=
-  .compl (expr.replaceDepthEvenConsts 0 true desc.hypothesis)
-
-def MutCoindDescriptor.sub_hypothesify {dl expr b}
-  (desc: MutCoindDescriptor dl)
-  (sub: dl.SubsetStx (Expr.replaceDepthEvenConsts expr 0 true desc.hypothesis) b)
-:
-  let descMap: MutIndDescriptor dl :=
-    desc.map CoinductionDescriptor.toInduction
-  
-  dl.SubsetStx (Expr.replaceDepthEvenConsts expr 0 true descMap.hypothesis) b
-:=
-  let rec helper := 4
-  match expr with
-  | .const _ x => sorry
-  | .var x => sub
-  | .null => sub
-  | .pair l r => sorry
-  | .ir l r =>
-      -- let subL := sub_hypothesify desc sub.subIrSwapL
-      -- let subR := sub_hypothesify desc sub.subIrSwapR
-      sorry
-  | .full body => sorry
-  | .compl body => sorry
-  | .arbIr body => sorry
-
--- TODO we should be aiming for mutCoinduction here, not subMutInduction.
-def subMutCoinduction {dl}
-  (desc: MutCoindDescriptor dl)
-  (premises:
-    (i: desc.Index) →
-    dl.SubsetStx
-      desc[i].left
-      (desc.hypothesify (desc[i].expansion.toLane desc[i].lane)))
-  (i: desc.Index)
-:
-  dl.SubsetStx desc[i].left (.compl (.const desc[i].lane desc[i].rite))
-:=
-  let descMap := desc.map CoinductionDescriptor.toInduction
-  let iMap := i.map CoinductionDescriptor.toInduction
-  let listEq i: List.get _ _ = _ :=
-    desc.getElem_map CoinductionDescriptor.toInduction
-  let eqMap: descMap[iMap] = desc[i].toInduction := by
-    show descMap.get iMap = (desc.get i).toInduction
-    rw [listEq]
-    rfl
-  let ind :=
-    DefList.SubsetStx.subMutInduction
-      descMap
-      (fun i =>
-        let eqMap: descMap[i] = desc[i.unmap].toInduction := by
-          show descMap.get i = (desc.get i.unmap).toInduction
-          rw [listEq]
-          rfl
-        eqMap ▸
-        .subComplElim
-          (.dniCtx
-            (.complSwap
-              (MutCoindDescriptor.sub_hypothesify
-                desc
-                (.complSwap
-                  (premises
-                    i.unmap))))))
-      iMap
-  by
-  rw [eqMap] at ind
-  exact .subComplElim (.dniCtx ind)
-
-
-  def coinduction {dl}
-    (desc: CoinductionDescriptor dl)
-    (premise:
-      dl.SubsetStx
-        desc.left
-        (.compl
-          ((desc.expansion.toLane desc.lane).replaceDepthEvenConsts 0 true fun depth lane x =>
-            desc.hypothesis depth lane x (.const lane x))))
-  :
-    dl.SubsetStx desc.left (.compl (.const desc.lane desc.rite))
-  :=
-    subMutCoinduction
-      [desc]
-      (fun | ⟨0, _⟩ => premise)
-      ⟨0, Nat.zero_lt_succ _⟩
-  
-  def simpleCoinduction {dl}
-    (lane: Set3.Lane)
-    (rite: Nat)
-    (left: SingleLaneExpr)
-    (premise:
-      DefList.SubsetStx
-        dl
-        left
-        (.compl
-          (((dl.getDef rite).toLane lane).replaceDepthEvenConsts 0 true fun depth l x =>
-            if rite = x then .ir (.compl (left.lift 0 depth)) (.const l x) else (.const l x))))
-  :
-    dl.SubsetStx left (.compl (.const lane rite))
-  :=
-    coinduction
-      {
-        lane,
-        left,
-        rite,
-        expansion := dl.getDef rite,
-        expandsInto := .rfl
-      }
-      premise

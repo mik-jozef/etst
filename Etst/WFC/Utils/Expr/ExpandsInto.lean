@@ -11,7 +11,7 @@ namespace Etst
   Eg. if `dl` contains `Nat = 0 | succ Nat`, then `Nat` can expand into
   `0 | succ (0 | succ Nat)`.
 -/
-inductive Expr.ExpandsInto
+inductive DefList.ExpandsInto
   (dl: DefList)
 :
   Bool → BasicExpr → BasicExpr → Type
@@ -44,7 +44,7 @@ inductive Expr.ExpandsInto
   :
     ExpandsInto dl ed (.arbIr body) (.arbIr bodyExp)
 
-namespace Expr.ExpandsInto
+namespace DefList.ExpandsInto
   open Expr
   variable {dl}
   
@@ -179,4 +179,4 @@ namespace Expr.ExpandsInto
       | false =>
         triIntp2_mono_std_arbIr (fun dB =>
           exp.lfpStage_le_std (dB :: fv) n)
-end Expr.ExpandsInto
+end DefList.ExpandsInto

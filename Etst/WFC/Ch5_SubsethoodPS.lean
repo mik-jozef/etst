@@ -1,0 +1,228 @@
+/-
+  TODO chapter description.
+-/
+
+import Etst.WFC.Ch4_S1_MembershipPS
+import Etst.WFC.Utils.RulesOfInference
+import Etst.WFC.Utils.Chapter5.Induction
+
+namespace Etst
+open Expr
+
+
+-- Semantic entailment for a given assignment of variables.
+abbrev DefList.SubsetFv
+  (dl: DefList)
+  (fv: List Pair)
+  (a b: SingleLaneExpr)
+:=
+  Set.Subset (a.intp fv dl.wfm) (b.intp fv dl.wfm)
+
+-- Semantic entailment.
+abbrev DefList.Subset
+  (dl: DefList)
+  (a b: SingleLaneExpr)
+:=
+  ∀ fv, dl.SubsetFv fv a b
+
+
+inductive DefList.SubsetStx
+  (dl: DefList)
+:
+  SingleLaneExpr →
+  SingleLaneExpr →
+  Type
+|
+  subId {a}:
+    dl.SubsetStx a a
+|
+  defPos {x c} -- TODO is this provable with induction?
+    (sub: dl.SubsetStx x (const .defLane c))
+  :
+    dl.SubsetStx x (const .posLane c)
+|
+  irL {x l r}
+    (sub: dl.SubsetStx x (ir l r))
+  :
+    dl.SubsetStx x l
+|
+  irR {x l r}
+    (sub: dl.SubsetStx x (ir l r))
+  :
+    dl.SubsetStx x r
+|
+  irI {x l r}
+    (ac: dl.SubsetStx x l)
+    (bc: dl.SubsetStx x r)
+  :
+    dl.SubsetStx x (ir l r)
+|
+  complI {x a b}
+    (sub: dl.SubsetStx (ir x a) b)
+    (subCpl: dl.SubsetStx (ir x a) b.compl)
+  :
+    dl.SubsetStx x a.compl
+|
+  complElim {x a b}
+    (sub: dl.SubsetStx (ir x a.compl) b)
+    (subCpl: dl.SubsetStx (ir x a.compl) b.compl)
+  :
+    dl.SubsetStx x a
+|
+  isFull {x a} -- TODO is this provable?
+    (subA: dl.SubsetStx any a)
+  :
+    dl.SubsetStx x (full a)
+|
+  -- Axiom K in modal logic.
+  fullImplElim {x a b}
+    (sub: dl.SubsetStx x (full (impl a b)))
+  :
+    dl.SubsetStx x (impl (full a) (full b))
+|
+  -- Axiom T in modal logic.
+  fullElim {x a}
+    (sub: dl.SubsetStx x (full a))
+  :
+    dl.SubsetStx x a
+|
+  /-
+    (Almost) the contraposition of Axiom 5 in modal logic.
+  -/
+  someStripFull {x a}
+    (sub: dl.SubsetStx x (some (full a)))
+  :
+    dl.SubsetStx x (full a)
+|
+  univIntro {x a}
+    (sub: dl.SubsetStx x.lift a)
+  :
+    dl.SubsetStx x (arbIr a)
+-- |
+--   univElim {x t a}
+--     (isSome: dl.SubsetStx x (some t))
+--     (isSubsingle: dl.SubsetStx x t.isSubsingleton)
+--     (sub: dl.SubsetStx x (arbIr a))
+--   :
+--     dl.SubsetStx x (a.instantiateVar t)
+|
+  unfold {x lane c} -- TODO should be provable with induction.
+    (sub: dl.SubsetStx x (const lane c))
+  :
+    dl.SubsetStx x ((dl.getDef c).toLane lane)
+|
+  fold {x lane c} -- TODO is this provable with induction?
+    (sub: dl.SubsetStx x ((dl.getDef c).toLane lane))
+  :
+    dl.SubsetStx x (const lane c)
+|
+  trans {a b c}
+    (ab: dl.SubsetStx a b)
+    (bc: dl.SubsetStx b c)
+  :
+    dl.SubsetStx a c
+|
+  mutInduction {x}
+    (desc: MutIndDescriptor dl)
+    (premises:
+      (i: desc.Index) →
+      dl.SubsetStx
+        x
+        (full
+          (impl
+            (desc.hypothesify 0 (desc[i].expansion.toLane desc[i].lane))
+            desc[i].expr)))
+    (i: desc.Index)
+  :
+    dl.SubsetStx
+      x
+      (full (impl (const desc[i].lane desc[i].x) desc[i].expr))
+|
+  -- TODO: should this be replaced with general (fixed-depth) pair induction?
+  simplePairInduction {x p a}
+    (sub: dl.SubsetStx x (full (impl (un null (pair p p)) p)))
+  :
+    dl.SubsetStx x (full (impl a p))
+
+
+open SingleLaneExpr in
+def DefList.SubsetFv.subsetOfFullImpl {dl fv x a b d}
+  (h: SubsetFv dl fv x (.full (.impl a b)))
+  (isIn: d ∈ x.intp fv dl.wfm)
+:
+  dl.SubsetFv fv a b
+:=
+  fun d' inA => inImplElim (inFullElim (h isIn) d') inA
+
+open SingleLaneExpr in
+def DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
+  (h: SubsetFv dl fv a b)
+:
+  SubsetFv dl fv x (.full (.impl a b))
+:=
+  fun _ _ => inFull .null fun _ => inImpl fun inA => h inA
+
+namespace DefList.SubsetStx
+  variable {dl: DefList}
+  
+  open SingleLaneExpr in
+  def isSound {a b}
+    (sub: dl.SubsetStx a b)
+  :
+    dl.Subset a b
+  :=
+    fun fv p isIn =>
+      match sub with
+      | subId => isIn
+      | defPos sub => Set3.defLePos _ (sub.isSound fv isIn)
+      | irL sub => inIrElimL (sub.isSound fv isIn)
+      | irR sub => inIrElimR (sub.isSound fv isIn)
+      | irI ac bc => inIr (ac.isSound fv isIn) (bc.isSound fv isIn)
+      | complI sub subCpl => fun isInA =>
+        let inB := sub.isSound fv (inIr isIn isInA)
+        let inBCpl := subCpl.isSound fv (inIr isIn isInA)
+        inBCpl inB
+      | complElim sub subCpl =>
+          byContradiction fun ninA =>
+            let inB := sub.isSound fv (inIr isIn ninA)
+            let inBCpl := subCpl.isSound fv (inIr isIn ninA)
+            inBCpl inB
+      | isFull subA =>
+          inFull p fun _ => subA.isSound fv inAny
+      | fullImplElim sub =>
+          inImpl fun inFullA =>
+            inFull _ (fun dB =>
+              inImplElim
+                (inFullElim (sub.isSound fv isIn) dB)
+                (inFullElim inFullA dB))
+      | fullElim sub => inFullElim (sub.isSound fv isIn) p
+      | someStripFull sub =>
+          (inSomeElim (sub.isSound fv isIn)).choose_spec
+      | univIntro sub =>
+        fun dX =>
+          sub.isSound
+            (dX :: fv)
+            (intp_lift_eq a fv [dX] dl.wfm ▸ isIn)
+      | unfold sub =>
+          SingleLaneExpr.InWfm.in_def (sub.isSound fv isIn)
+      | fold sub =>
+          SingleLaneExpr.InWfm.of_in_def (sub.isSound fv isIn)
+      | trans ab bc =>
+          bc.isSound fv (ab.isSound fv isIn)
+      | mutInduction desc premises i =>
+        let isSub :=
+          MutIndDescriptor.isSound
+            desc
+            fv
+            (fun i => ((premises i).isSound fv).subsetOfFullImpl isIn)
+            i
+        DefList.SubsetFv.fullImplOfSubset isSub isIn
+      | simplePairInduction (p:=prop) sub =>
+          let ind := (sub.isSound fv).subsetOfFullImpl isIn
+          let rec inP: (p: Pair) → intp prop fv dl.wfm p
+          | Pair.null => ind (inUnL inNull)
+          | .pair pa pb => ind (inUnR (inPair (inP pa) (inP pb)))
+          DefList.SubsetFv.fullImplOfSubset
+            (fun a _ => inP a)
+            isIn
+end DefList.SubsetStx
