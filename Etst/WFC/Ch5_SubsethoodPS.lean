@@ -4,7 +4,7 @@
 
 import Etst.WFC.Ch4_S1_MembershipPS
 import Etst.WFC.Utils.RulesOfInference
-import Etst.WFC.Utils.Chapter5.Induction
+import Etst.WFC.Utils.SubsetStx.Induction
 
 namespace Etst
 open Expr
@@ -69,7 +69,7 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x a
 |
-  isFull {x a} -- TODO is this provable?
+  isFull {x a}
     (subA: dl.SubsetStx any a)
   :
     dl.SubsetStx x (full a)
