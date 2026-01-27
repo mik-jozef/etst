@@ -485,18 +485,27 @@ namespace SingleLaneExpr
   
   def intp2_bv_append
     {expr: SingleLaneExpr}
-    {fv v} (ubLe: expr.freeVarUb ≤ fv.length)
+    {fv b c} (ubLe: expr.freeVarUb ≤ fv.length)
     (rest: List Pair)
   :
-    expr.intp fv v = expr.intp (fv ++ rest) v
+    expr.intp2 fv b c = expr.intp2 (fv ++ rest) b c
   :=
-    let eq: expr.intp fv v = intp expr.replaceId (fv ++ rest) v :=
+    let eq: expr.intp2 fv b c = intp2 expr.replaceId (fv ++ rest) b c :=
       intp2_replaceFreeVarsNat_eq
         (fun x xUsed =>
           let ltUb := expr.freeVarUb_freeVarLt xUsed 0
           let ltFv: x < fv.length := ltUb.trans_le ubLe
           (List.getElem?_append_left ltFv).symm)
     by rw [expr.replaceId_eq] at eq; exact eq
+  
+  def intp_bv_append
+    {expr: SingleLaneExpr}
+    {fv v} (ubLe: expr.freeVarUb ≤ fv.length)
+    (rest: List Pair)
+  :
+    expr.intp fv v = expr.intp (fv ++ rest) v
+  :=
+    intp2_bv_append ubLe rest
   
 end SingleLaneExpr
 
