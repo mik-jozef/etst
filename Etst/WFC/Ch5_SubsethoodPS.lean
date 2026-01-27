@@ -23,7 +23,10 @@ abbrev DefList.Subset
   (dl: DefList)
   (a b: SingleLaneExpr)
 :=
-  ∀ fv, dl.SubsetFv fv a b
+  ∀ fv,
+    a.freeVarUb ≤ fv.length →
+    b.freeVarUb ≤ fv.length →
+    dl.SubsetFv fv a b
 
 
 inductive DefList.SubsetStx
@@ -165,60 +168,85 @@ def DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
 namespace DefList.SubsetStx
   variable {dl: DefList}
   
-  open SingleLaneExpr in
   def isSound {a b}
     (sub: dl.SubsetStx a b)
   :
     dl.Subset a b
   :=
-    fun fv p isIn =>
+    open List in
+    open SingleLaneExpr in
+    fun fv leA leB p isIn =>
       match sub with
       | subId => isIn
-      | defPos sub => Set3.defLePos _ (sub.isSound fv isIn)
-      | irL sub => inIrElimL (sub.isSound fv isIn)
-      | irR sub => inIrElimR (sub.isSound fv isIn)
-      | irI ac bc => inIr (ac.isSound fv isIn) (bc.isSound fv isIn)
+      | defPos sub => Set3.defLePos _ (sub.isSound fv leA leB isIn)
+      | irL sub (r:=r) =>
+        let bUB := freeVarUb (.ir b r)
+        let fvPad := fv ++ List.replicate bUB Pair.null
+        let padLen: fvPad.length = fv.length + bUB :=
+          length_replicate (n := bUB) ▸ length_append
+        let lePadA := padLen ▸ Nat.le_add_right_of_le leA
+        let lePadIr := padLen ▸ Nat.le_add_left _ _
+        let isInPad := a.intp2_bv_append leA _ ▸ isIn
+        let isInIr := sub.isSound fvPad lePadA lePadIr isInPad
+        intp2_bv_append leB _ ▸ (inIrElimL isInIr)
+      | irR sub (l:=l) =>
+        let bUB := freeVarUb (.ir l b)
+        let fvPad := fv ++ List.replicate bUB Pair.null
+        let padLen: fvPad.length = fv.length + bUB :=
+          length_replicate (n := bUB) ▸ length_append
+        let lePadA := padLen ▸ Nat.le_add_right_of_le leA
+        let lePadIr := padLen ▸ Nat.le_add_left _ _
+        let isInPad := a.intp2_bv_append leA _ ▸ isIn
+        let isInIr := sub.isSound fvPad lePadA lePadIr isInPad
+        intp2_bv_append leB _ ▸ (inIrElimR isInIr)
+      | irI ac bc =>
+        let ⟨leL, leR⟩ := freeVarUb_bin_le_elim leB
+        inIr
+          (ac.isSound fv leA leL isIn)
+          (bc.isSound fv leA leR isIn)
       | complI sub subCpl => fun isInA =>
-        let inB := sub.isSound fv (inIr isIn isInA)
-        let inBCpl := subCpl.isSound fv (inIr isIn isInA)
+        let inB := sub.isSound fv sorry sorry (inIr isIn isInA)
+        let inBCpl := subCpl.isSound fv sorry sorry (inIr isIn isInA)
         inBCpl inB
       | complElim sub subCpl =>
           byContradiction fun ninA =>
-            let inB := sub.isSound fv (inIr isIn ninA)
-            let inBCpl := subCpl.isSound fv (inIr isIn ninA)
+            let inB := sub.isSound fv sorry sorry (inIr isIn ninA)
+            let inBCpl := subCpl.isSound fv sorry sorry (inIr isIn ninA)
             inBCpl inB
       | isFull subA =>
-          inFull p fun _ => subA.isSound fv inAny
+          inFull p fun _ => subA.isSound fv sorry sorry inAny
       | fullImplElim sub =>
           inImpl fun inFullA =>
             inFull _ (fun dB =>
               inImplElim
-                (inFullElim (sub.isSound fv isIn) dB)
+                (inFullElim (sub.isSound fv sorry sorry isIn) dB)
                 (inFullElim inFullA dB))
-      | fullElim sub => inFullElim (sub.isSound fv isIn) p
+      | fullElim sub => inFullElim (sub.isSound fv sorry sorry isIn) p
       | someStripFull sub =>
-          (inSomeElim (sub.isSound fv isIn)).choose_spec
+          (inSomeElim (sub.isSound fv sorry sorry isIn)).choose_spec
       | univIntro sub =>
         fun dX =>
           sub.isSound
             (dX :: fv)
+            sorry
+            sorry
             (intp_lift_eq a fv [dX] dl.wfm ▸ isIn)
       | unfold sub =>
-          SingleLaneExpr.InWfm.in_def (sub.isSound fv isIn)
+          SingleLaneExpr.InWfm.in_def (sub.isSound fv sorry sorry isIn)
       | fold sub =>
-          SingleLaneExpr.InWfm.of_in_def (sub.isSound fv isIn)
+          SingleLaneExpr.InWfm.of_in_def (sub.isSound fv sorry sorry isIn)
       | trans ab bc =>
-          bc.isSound fv (ab.isSound fv isIn)
+          bc.isSound fv sorry sorry (ab.isSound fv sorry sorry isIn)
       | mutInduction desc premises i =>
         let isSub :=
           MutIndDescriptor.isSound
             desc
             fv
-            (fun i => ((premises i).isSound fv).subsetOfFullImpl isIn)
+            (fun i => ((premises i).isSound fv sorry sorry).subsetOfFullImpl isIn)
             i
         DefList.SubsetFv.fullImplOfSubset isSub isIn
       | simplePairInduction (p:=prop) sub =>
-          let ind := (sub.isSound fv).subsetOfFullImpl isIn
+          let ind := (sub.isSound fv sorry sorry).subsetOfFullImpl isIn
           let rec inP: (p: Pair) → intp prop fv dl.wfm p
           | Pair.null => ind (inUnL inNull)
           | .pair pa pb => ind (inUnR (inPair (inP pa) (inP pb)))

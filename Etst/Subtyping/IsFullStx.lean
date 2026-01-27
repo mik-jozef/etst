@@ -451,7 +451,7 @@ namespace DefList
   :=
     ∀ fv: List Pair,
     ∀ p: Pair,
-      expr.freeVarUB ≤ fv.length →
+      expr.freeVarUb ≤ fv.length →
       expr.intp fv dl.wfm p
   
   
