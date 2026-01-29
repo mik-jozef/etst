@@ -180,35 +180,35 @@ namespace DefList.SubsetStx
       | subId => isIn
       | defPos sub => Set3.defLePos _ (sub.isSound fv leX leE isIn)
       | irL sub (r:=r) =>
-        let bUB := freeVarUb (.ir e r)
-        let fvPad := fv ++ List.replicate bUB Pair.null
-        let padLen: fvPad.length = fv.length + bUB :=
-          length_replicate (n := bUB) ▸ length_append
-        let lePadA := padLen ▸ Nat.le_add_right_of_le leX
-        let lePadIr := padLen ▸ Nat.le_add_left _ _
-        let isInPad := x.intp_bv_append leX _ ▸ isIn
-        let isInIr := sub.isSound fvPad lePadA lePadIr isInPad
-        intp_bv_append leE _ ▸ (inIrElimL isInIr)
+        let bUb := freeVarUb (.ir e r)
+        let fvPad := fv ++ List.replicate bUb Pair.null
+        let padLen: fvPad.length = fv.length + bUb :=
+          length_replicate (n := bUb) ▸ length_append
+        let lePadX := padLen ▸ Nat.le_add_right_of_le leX
+        let lePadE := padLen ▸ Nat.le_add_left _ _
+        let isInPad := intp_bv_append leX _ ▸ isIn
+        let isInE := sub.isSound fvPad lePadX lePadE isInPad
+        intp_bv_append leE _ ▸ (inIrElimL isInE)
       | irR sub (l:=l) =>
-        let bUB := freeVarUb (.ir l e)
-        let fvPad := fv ++ List.replicate bUB Pair.null
-        let padLen: fvPad.length = fv.length + bUB :=
-          length_replicate (n := bUB) ▸ length_append
-        let lePadA := padLen ▸ Nat.le_add_right_of_le leX
-        let lePadIr := padLen ▸ Nat.le_add_left _ _
+        let bUb := freeVarUb (.ir l e)
+        let fvPad := fv ++ List.replicate bUb Pair.null
+        let padLen: fvPad.length = fv.length + bUb :=
+          length_replicate (n := bUb) ▸ length_append
+        let lePadX := padLen ▸ Nat.le_add_right_of_le leX
+        let lePadE := padLen ▸ Nat.le_add_left _ _
         let isInPad := x.intp_bv_append leX _ ▸ isIn
-        let isInIr := sub.isSound fvPad lePadA lePadIr isInPad
-        intp_bv_append leE _ ▸ (inIrElimR isInIr)
+        let isInE := sub.isSound fvPad lePadX lePadE isInPad
+        intp_bv_append leE _ ▸ (inIrElimR isInE)
       | irI ac bc =>
         let ⟨leL, leR⟩ := freeVarUb_bin_le_elim leE
         inIr
           (ac.isSound fv leX leL isIn)
           (bc.isSound fv leX leR isIn)
       | complI sub subCpl (a:=a) (b:=b) => fun isInA =>
-        let bUB := freeVarUb b
-        let fvPad := fv ++ replicate bUB Pair.null
-        let padLen: fvPad.length = fv.length + bUB :=
-          length_replicate (n := bUB) ▸ length_append
+        let bUb := freeVarUb b
+        let fvPad := fv ++ replicate bUb Pair.null
+        let padLen: fvPad.length = fv.length + bUb :=
+          length_replicate (n := bUb) ▸ length_append
         let leIrXA: freeVarUb (.ir x a) ≤ fv.length :=
           Nat.max_le.mpr ⟨leX, leE⟩
         let leIrXA_Pad: freeVarUb (.ir x a) ≤ fvPad.length :=
@@ -218,7 +218,7 @@ namespace DefList.SubsetStx
         let leBCpl_Pad: freeVarUb b.compl ≤ fvPad.length := leB_Pad
         let isInIr := inIr isIn isInA
         let isInIrPad :=
-          intp2_bv_append leIrXA (replicate bUB Pair.null) ▸ isInIr
+          intp2_bv_append leIrXA (replicate bUb Pair.null) ▸ isInIr
         let inB := sub.isSound fvPad leIrXA_Pad leB_Pad isInIrPad
         let inBCpl := subCpl.isSound fvPad leIrXA_Pad leBCpl_Pad isInIrPad
         inBCpl inB
@@ -262,18 +262,51 @@ namespace DefList.SubsetStx
       | unfold sub =>
         SingleLaneExpr.InWfm.in_def
           (sub.isSound fv leX (Nat.zero_le _) isIn)
-      | fold sub =>
+      | fold (c:=c) (lane:=lane) sub =>
+        let bUb := freeVarUb ((dl.getDef c).toLane lane)
+        let fvPad := fv ++ List.replicate bUb Pair.null
+        let padLen: fvPad.length = fv.length + bUb :=
+          length_replicate (n := bUb) ▸ length_append
+        let lePadX := padLen ▸ Nat.le_add_right_of_le leX
+        let lePadE := padLen ▸ Nat.le_add_left _ _
+        let isInPad := intp_bv_append leX _ ▸ isIn
         SingleLaneExpr.InWfm.of_in_def
-          (sub.isSound fv leX sorry isIn)
-      | trans ab bc =>
-        let inB := ab.isSound fv leX sorry isIn
-        bc.isSound fv sorry leE inB
+          (sub.isSound fvPad lePadX lePadE isInPad)
+      | trans (b:=b) ab bc =>
+        let bUb := freeVarUb b
+        let fvPad := fv ++ List.replicate bUb Pair.null
+        let padLen: fvPad.length = fv.length + bUb :=
+          length_replicate (n := bUb) ▸ length_append
+        let lePadX := padLen ▸ Nat.le_add_right_of_le leX
+        let lePadB := padLen ▸ Nat.le_add_left _ _
+        let lePadE := padLen ▸ Nat.le_add_right_of_le leE
+        let isInPad := intp_bv_append leX _ ▸ isIn
+        let inB := ab.isSound fvPad lePadX lePadB isInPad
+        let inC := bc.isSound fvPad lePadB lePadE inB
+        intp_bv_append leE _ ▸ inC
       | mutInduction desc premises i =>
         let isSub :=
           MutIndDescriptor.isSound
             desc
             fv
-            (fun i => ((premises i).isSound fv sorry sorry).subsetOfFullImpl isIn)
+            (fun i =>
+              let getUb {expr: SingleLaneExpr}
+                (sub: dl.SubsetStx x expr)
+              :=
+                freeVarUb expr
+              let bUb := getUb (premises i)
+              let fvPad := fv ++ List.replicate bUb Pair.null
+              let padLen: fvPad.length = fv.length + bUb :=
+                length_replicate (n := bUb) ▸ length_append
+              let lePadX := padLen ▸ Nat.le_add_right_of_le leX
+              let lePadE := padLen ▸ Nat.le_add_left _ _
+              let isInPad := intp_bv_append leX _ ▸ isIn
+              let premise :=
+               (premises i).isSound fvPad lePadX lePadE
+              let lk := premise.subsetOfFullImpl isInPad
+              fun p0 inHyp =>
+                -- let lkj := lk inHyp
+                sorry)
             i
         DefList.SubsetFv.fullImplOfSubset isSub isIn
       | simplePairInduction (p:=prop) sub =>
