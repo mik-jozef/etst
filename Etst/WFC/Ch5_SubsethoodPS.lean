@@ -256,8 +256,8 @@ namespace DefList.SubsetStx
         fun dX =>
           sub.isSound
             (dX :: fv)
-            sorry
-            sorry
+            (freeVarUb_le_lift leX)
+            (Nat.le_add_of_sub_le leE)
             (intp_lift_eq x fv [dX] dl.wfm ▸ isIn)
       | unfold sub =>
           SingleLaneExpr.InWfm.in_def

@@ -39,7 +39,7 @@ namespace Expr
   
   def lift_var_ge
     (x: Nat)
-    {depth} (ge: x >= depth)
+    {depth} (ge: depth ≤ x)
     (liftBy: Nat)
   :
     (var (E := E) x).lift depth liftBy = var (x + liftBy)
@@ -119,121 +119,131 @@ namespace Expr
   
   def freeVarUb
     (expr: Expr E)
-    (depth: Nat := 0)
   :
     Nat
   :=
     match expr with
     | .const _ _ => 0
-    | .var x => x + 1 - depth
+    | .var x => x + 1
     | .null => 0
     | .pair left rite =>
-        Nat.max (left.freeVarUb depth) (rite.freeVarUb depth)
+        Nat.max left.freeVarUb rite.freeVarUb
     | .ir left rite =>
-        Nat.max (left.freeVarUb depth) (rite.freeVarUb depth)
-    | .full body => body.freeVarUb depth
-    | .compl body => body.freeVarUb depth
-    | .arbIr body => body.freeVarUb (depth + 1)
+        Nat.max left.freeVarUb rite.freeVarUb
+    | .full body => body.freeVarUb
+    | .compl body => body.freeVarUb
+    | .arbIr body => body.freeVarUb - 1
   
   def freeVarUb_lift_eq_depth
-    (expr: Expr E)
-    (liftBy depth liftDepth: Nat)
-  :
-    Eq
-      ((expr.lift liftDepth liftBy).freeVarUb
-        (liftBy + depth + liftDepth))
-      (expr.freeVarUb (depth + liftDepth))
-  :=
-    match expr with
-    | .const _ _ => rfl
-    | .var x => by
-        unfold lift freeVarUb
-        split_ifs <;> omega
-    | .null => rfl
-    | .pair l r => by
-        unfold lift freeVarUb
-        rw [freeVarUb_lift_eq_depth l, freeVarUb_lift_eq_depth r]
-    | .ir l r => by
-        unfold lift freeVarUb
-        rw [freeVarUb_lift_eq_depth l, freeVarUb_lift_eq_depth r]
-    | .full body => by
-        unfold lift freeVarUb
-        rw [freeVarUb_lift_eq_depth body]
-    | .compl body => by
-        unfold lift freeVarUb
-        rw [freeVarUb_lift_eq_depth body]
-    | .arbIr body => by
-        unfold lift freeVarUb
-        rw [Nat.add_assoc (liftBy + depth), Nat.add_assoc depth]
-        exact freeVarUb_lift_eq_depth body liftBy depth (liftDepth + 1)
-
-  def freeVarUb_lift_eq
     (expr: Expr E)
     (liftBy depth: Nat)
   :
     Eq
-      ((expr.lift 0 liftBy).freeVarUb (liftBy + depth))
-      (expr.freeVarUb depth)
+      ((expr.lift depth liftBy).freeVarUb - liftBy - depth)
+      (expr.freeVarUb - depth)
   :=
-    freeVarUb_lift_eq_depth expr liftBy depth 0
+    let max_eq {ml mr a b}:
+      Nat.max ml mr - a - b = Nat.max (ml - a - b) (mr - a - b)
+    := by
+      rw [Nat.sub_sub, Nat.sub_sub, Nat.sub_sub]
+      rw [←Nat.sub_max_sub_right]
+      
+    match expr with
+    | .const _ _ => Nat.zero_sub _ ▸ rfl
+    | .var x => by
+      unfold lift freeVarUb
+      split_ifs <;> omega
+    | .null => Nat.zero_sub _ ▸ rfl
+    | .pair l r => by
+      show (Nat.max _ _) - _ - _ = _
+      rw [max_eq]
+      rw [freeVarUb_lift_eq_depth l liftBy depth]
+      rw [freeVarUb_lift_eq_depth r liftBy depth]
+      show _ = (Nat.max _ _) - _
+      rw [←Nat.sub_max_sub_right]
+    | .ir l r => by
+      show (Nat.max _ _) - _ - _ = _
+      rw [max_eq]
+      rw [freeVarUb_lift_eq_depth l liftBy depth]
+      rw [freeVarUb_lift_eq_depth r liftBy depth]
+      show _ = (Nat.max _ _) - _
+      rw [←Nat.sub_max_sub_right]
+    | .full body =>
+      freeVarUb_lift_eq_depth body liftBy depth
+    | .compl body =>
+      freeVarUb_lift_eq_depth body liftBy depth
+    | .arbIr body => by
+      let ih :=
+        freeVarUb_lift_eq_depth body liftBy (depth + 1)
+      show (body.lift (depth + 1) liftBy).freeVarUb - 1 - liftBy - depth =
+        body.freeVarUb - 1 - depth
+      omega
+  
+  def freeVarUb_le_lift
+    {expr: Expr E} {liftBy ub}
+    (le: expr.freeVarUb ≤ ub)
+  :
+    (expr.lift 0 liftBy).freeVarUb ≤ ub + liftBy
+  :=
+    let eq := freeVarUb_lift_eq_depth expr liftBy 0
+    Nat.le_add_of_sub_le (eq ▸ le)
   
   def freeVarUb_freeVarLt {x}
     {expr: Expr E}
     (uses: expr.UsesFreeVar x)
-    (depth: Nat)
   :
-    x < (expr.freeVarUb depth) + depth
+    x < expr.freeVarUb
   :=
     match expr with
-    | var _ => by unfold freeVarUb; rw [uses]; omega
-    | pair left rite =>
+    | var _ => uses ▸ Nat.lt_succ_self _
+    | pair _ _ =>
       match uses with
       | .inl h =>
-        let ih := freeVarUb_freeVarLt h depth
-        ih.trans_le (Nat.add_le_add_right (Nat.le_max_left _ _) _)
+        let ih := freeVarUb_freeVarLt h
+        ih.trans_le (Nat.le_max_left _ _)
       | .inr h =>
-        let ih := freeVarUb_freeVarLt h depth
-        ih.trans_le (Nat.add_le_add_right (Nat.le_max_right _ _) _)
-    | ir left rite =>
+        let ih := freeVarUb_freeVarLt h
+        ih.trans_le (Nat.le_max_right _ _)
+    | ir _ _ =>
       match uses with
       | .inl h =>
-        let ih := freeVarUb_freeVarLt h depth
-        ih.trans_le (Nat.add_le_add_right (Nat.le_max_left _ _) _)
+        let ih := freeVarUb_freeVarLt h
+        ih.trans_le (Nat.le_max_left _ _)
       | .inr h =>
-        let ih := freeVarUb_freeVarLt h depth
-        ih.trans_le (Nat.add_le_add_right (Nat.le_max_right _ _) _)
+        let ih := freeVarUb_freeVarLt h
+        ih.trans_le (Nat.le_max_right _ _)
     | full body =>
       let uses: body.UsesFreeVar x := uses
-      freeVarUb_freeVarLt uses depth
+      freeVarUb_freeVarLt (expr:=body) uses
     | compl body =>
       let uses: body.UsesFreeVar x := uses
-      freeVarUb_freeVarLt uses depth
+      freeVarUb_freeVarLt (expr:=body) uses
     | arbIr body =>
       let uses: body.UsesFreeVar (x+1) := uses
-      let ih := freeVarUb_freeVarLt uses (depth + 1)
-      Nat.lt_of_add_lt_add_right (Nat.add_assoc _ _ _ ▸ ih)
+      let ih := freeVarUb_freeVarLt (expr:=body) uses
+      Nat.le_sub_of_add_le ih
   
   def freeVarUb_bin_le_elim
-    {a b: Expr E} {depth n}
-    (le: Nat.max (a.freeVarUb depth) (b.freeVarUb depth) ≤ n)
+    {a b: Expr E} {n}
+    (le: Nat.max a.freeVarUb b.freeVarUb ≤ n)
   :
-    a.freeVarUb depth ≤ n ∧ b.freeVarUb depth ≤ n
+    a.freeVarUb ≤ n ∧ b.freeVarUb ≤ n
   :=
     Nat.max_le.mp le
   
   def freeVarUb_bin_le_elimL
-    {a b: Expr E} {depth n}
-    (le: Nat.max (a.freeVarUb depth) (b.freeVarUb depth) ≤ n)
+    {a b: Expr E} {n}
+    (le: Nat.max a.freeVarUb b.freeVarUb ≤ n)
   :
-    a.freeVarUb depth ≤ n
+    a.freeVarUb ≤ n
   :=
     (freeVarUb_bin_le_elim le).left
   
   def freeVarUb_bin_le_elimR
-    {a b: Expr E} {depth n}
-    (le: Nat.max (a.freeVarUb depth) (b.freeVarUb depth) ≤ n)
+    {a b: Expr E} {n}
+    (le: Nat.max a.freeVarUb b.freeVarUb ≤ n)
   :
-    b.freeVarUb depth ≤ n
+    b.freeVarUb ≤ n
   :=
     (freeVarUb_bin_le_elim le).right
   
@@ -493,7 +503,7 @@ namespace SingleLaneExpr
     let eq: expr.intp2 fv b c = intp2 expr.replaceId (fv ++ rest) b c :=
       intp2_replaceFreeVarsNat_eq
         (fun x xUsed =>
-          let ltUb := expr.freeVarUb_freeVarLt xUsed 0
+          let ltUb := expr.freeVarUb_freeVarLt xUsed
           let ltFv: x < fv.length := ltUb.trans_le ubLe
           (List.getElem?_append_left ltFv).symm)
     by rw [expr.replaceId_eq] at eq; exact eq
