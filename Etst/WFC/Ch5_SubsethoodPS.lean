@@ -2,6 +2,8 @@
   TODO chapter description.
 -/
 
+import Mathlib.Algebra.Order.BigOperators.Group.List
+
 import Etst.WFC.Ch4_S1_MembershipPS
 import Etst.WFC.Utils.RulesOfInference
 import Etst.WFC.Utils.SubsetStx.Induction
@@ -147,7 +149,6 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (full (impl a p))
 
-
 open SingleLaneExpr in
 def DefList.SubsetFv.subsetOfFullImpl {dl fv x a b d}
   (h: SubsetFv dl fv x (.full (.impl a b)))
@@ -167,6 +168,9 @@ def DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
 
 namespace DefList.SubsetStx
   variable {dl: DefList}
+  
+  def context {x e} (_: SubsetStx dl x e) := x
+  def conclusion {x e} (_: SubsetStx dl x e) := e
   
   def isSound {x e}
     (sub: dl.SubsetStx x e)
@@ -285,32 +289,38 @@ namespace DefList.SubsetStx
         let inC := bc.isSound fvPad lePadB lePadE inB
         intp_bv_append leE _ ▸ inC
       | mutInduction desc premises i =>
-        let isSub :=
+        let ubAt i _ isI := freeVarUb (premises ⟨i, isI⟩).conclusion
+        let ub := (desc.mapFinIdx ubAt).sum
+        let ubAtLe (i: desc.Index): ubAt i desc[i] i.isLt ≤ ub :=
+          List.le_sum_of_mem (List.mem_mapFinIdx.mpr ⟨i, i.isLt, rfl⟩)
+        let fvPad := fv ++ List.replicate ub Pair.null
+        let padLen: fvPad.length = fv.length + ub :=
+          length_replicate (n := ub) ▸ length_append
+        let lePadX := padLen ▸ Nat.le_add_right_of_le leX
+        let isInPad := intp_bv_append leX _ ▸ isIn
+        let isSub: dl.SubsetFv _ _ _ :=
           MutIndDescriptor.isSound
             desc
-            fv
+            fvPad
             (fun i =>
-              let getUb {expr: SingleLaneExpr}
-                (sub: dl.SubsetStx x expr)
-              :=
-                freeVarUb expr
-              let bUb := getUb (premises i)
-              let fvPad := fv ++ List.replicate bUb Pair.null
-              let padLen: fvPad.length = fv.length + bUb :=
-                length_replicate (n := bUb) ▸ length_append
-              let lePadX := padLen ▸ Nat.le_add_right_of_le leX
-              let lePadE := padLen ▸ Nat.le_add_left _ _
-              let isInPad := intp_bv_append leX _ ▸ isIn
+              let lePadE :=
+                padLen ▸ Nat.le_add_left_of_le (ubAtLe i)
               let premise :=
                (premises i).isSound fvPad lePadX lePadE
-              let lk := premise.subsetOfFullImpl isInPad
-              fun p0 inHyp =>
-                -- let lkj := lk inHyp
-                sorry)
+              premise.subsetOfFullImpl isInPad)
             i
-        DefList.SubsetFv.fullImplOfSubset isSub isIn
-      | simplePairInduction (p:=prop) sub =>
-        let ind := (sub.isSound fv sorry sorry).subsetOfFullImpl isIn
+        let isInPad := intp_bv_append leX _ ▸ isIn
+        intp_bv_append leE _ ▸ isSub.fullImplOfSubset isInPad
+      | simplePairInduction (a:=a) (p:=prop) sub =>
+        let leE: prop.freeVarUb ≤ fv.length :=
+          freeVarUb_bin_le_elimR leE
+        let leE :=
+          freeVarUb_bin_le
+            (freeVarUb_bin_le
+              (Nat.zero_le _)
+              (freeVarUb_bin_le leE leE))
+            leE
+        let ind := (sub.isSound fv leX leE).subsetOfFullImpl isIn
         let rec inP: (p: Pair) → intp prop fv dl.wfm p
         | Pair.null => ind (inUnL inNull)
         | .pair pa pb => ind (inUnR (inPair (inP pa) (inP pb)))

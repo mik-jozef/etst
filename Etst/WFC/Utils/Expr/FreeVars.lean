@@ -247,6 +247,14 @@ namespace Expr
   :=
     (freeVarUb_bin_le_elim le).right
   
+  def freeVarUb_bin_le
+    {a b: Expr E} {n}
+    (leA: a.freeVarUb ≤ n)
+    (leB: b.freeVarUb ≤ n)
+  :
+    Nat.max a.freeVarUb b.freeVarUb ≤ n
+  :=
+    Nat.max_le.mpr ⟨leA, leB⟩
   
   def replaceId_eq
     (expr: Expr E)
