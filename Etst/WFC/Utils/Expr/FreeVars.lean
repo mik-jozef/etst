@@ -483,7 +483,7 @@ namespace SingleLaneExpr
     {fv v dB}
     (t_eq: t.intp fv v = {dB})
   :
-    expr.intp2 (dB :: fv) v v = intp (expr.instantiateVar t) fv v
+    expr.intp (dB :: fv) v = intp (expr.instantiateVar t) fv v
   :=
     intp_replaceFreeVars_eq (fun
       | 0, _ => t_eq ▸ rfl
