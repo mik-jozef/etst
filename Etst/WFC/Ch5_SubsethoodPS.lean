@@ -91,9 +91,7 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x a
 |
-  /-
-    (Almost) the contraposition of Axiom 5 in modal logic.
-  -/
+  -- (Almost) the contraposition of Axiom 5 in modal logic.
   someStripFull {x a}
     (sub: dl.SubsetStx x (some (full a)))
   :
@@ -110,6 +108,16 @@ inductive DefList.SubsetStx
 --     (sub: dl.SubsetStx x (arbIr a))
 --   :
 --     dl.SubsetStx x (a.instantiateVar t)
+|
+  varSomeFull {x i a}
+    (sub: dl.SubsetStx x (some (ir (var i) a)))
+  :
+    dl.SubsetStx x (full (impl (var i) a))
+|
+  varFullSome {x i a}
+    (sub: dl.SubsetStx x (full (impl (var i) a)))
+  :
+    dl.SubsetStx x (some (ir (var i) a))
 |
   unfold {x lane c} -- TODO should be provable with induction.
     (sub: dl.SubsetStx x (const lane c))
@@ -177,8 +185,7 @@ namespace DefList.SubsetStx
   :
     dl.Subset x e
   :=
-    open List in
-    open SingleLaneExpr in
+    open List SingleLaneExpr in
     fun fv leX leE p isIn =>
       match sub with
       | subId => isIn
@@ -263,6 +270,24 @@ namespace DefList.SubsetStx
             (freeVarUb_le_lift leX)
             (Nat.le_add_of_sub_le leE)
             (intp_lift_eq x fv [dX] dl.wfm ▸ isIn)
+      | varSomeFull (i:=i) (a:=a) sub =>
+        let leVar := freeVarUb_bin_le_elimL leE
+        let ltI: i < fv.length := Nat.lt_of_succ_le leVar
+        let eqI := List.getElem?_eq_getElem ltI
+        let ⟨d, inIr⟩ := inSomeElim (sub.isSound fv leX leE isIn)
+        let ⟨inVarI, inA⟩ := inIrElim inIr
+        let eqD := inVarElim inVarI eqI
+        inFull p fun d2 =>
+          inImpl fun inVar2 =>
+            let eqD2 := inVarElim inVar2 eqI
+            (eqD.trans eqD2.symm) ▸ inA
+      | varFullSome (i:=i) (a:=a) sub =>
+        let leVar := freeVarUb_bin_le_elimL leE
+        let ltI: i < fv.length := Nat.lt_of_succ_le leVar
+        let eqI := List.getElem?_eq_getElem ltI
+        let inFull := sub.isSound fv leX leE isIn
+        let inDI_A := inImplElim (inFullElim inFull fv[i]) (inVar eqI)
+        inSome p (inIr (inVar eqI) inDI_A)
       | unfold sub =>
         SingleLaneExpr.InWfm.in_def
           (sub.isSound fv leX (Nat.zero_le _) isIn)
