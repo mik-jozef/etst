@@ -82,13 +82,13 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x a
 |
-  isFull {x a}
-    (subA: dl.SubsetStx any a)
+  isFullImpl {x a b}
+    (subA: dl.SubsetStx a b)
   :
-    dl.SubsetStx x (full a)
+    dl.SubsetStx x (full (impl a b))
 |
   -- Axiom K in modal logic.
-  fullImplElim {x a b}
+  fullImplDist {x a b}
     (sub: dl.SubsetStx x (full (impl a b)))
   :
     dl.SubsetStx x (impl (full a) (full b))
@@ -272,9 +272,12 @@ namespace DefList.SubsetStx
           let inB := sub.isSound.call fv leIr p inIr
           let inBCpl := subCpl.isSound.call fv leIr p inIr
           inBCpl inB
-      | isFull subA =>
-        inFull p fun _ => subA.isSound fv (Nat.zero_le _) leE inAny
-      | fullImplElim (a:=a) (b:=b) sub =>
+      | isFullImpl (a:=a) (b:=b) subA =>
+        inFull p fun _ =>
+          inImpl fun inA =>
+            let ⟨leA, leB⟩ := freeVarUb_bin_le_elim leE
+            subA.isSound fv leA leB inA
+      | fullImplDist (a:=a) (b:=b) sub =>
         inImpl fun inFullA =>
           inFull _ (fun dB =>
             inImplElim

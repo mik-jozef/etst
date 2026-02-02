@@ -843,8 +843,6 @@ namespace DefList.SubsetStx
   :=
     irElimR (complUn sub)
   
-  -- TODO migrate the rest
-  
   def fullElimOfImpl
     (fullAb: dl.SubsetStx any (full (impl a b)))
   :
@@ -962,20 +960,6 @@ namespace DefList.SubsetStx
   :=
     subCompl (trans fullAddFull (fullMono subDni))
   
-  
-  def someNull:
-    dl.SubsetStx any (some null)
-  :=
-    sorry
-  
-  def somePair
-    (sl: dl.SubsetStx any (some l))
-    (sr: dl.SubsetStx any (some r))
-  :
-    dl.SubsetStx any (some (pair l r))
-  :=
-    sorry
-  
   def isSomeMono
     (ab: dl.SubsetStx a b)
     (sa: dl.SubsetStx any (some a))
@@ -1020,6 +1004,22 @@ namespace DefList.SubsetStx
       dl.SubsetStx x (const lane c)
     :=
       trans sub subFold
+  
+  -- TODO migrate the rest
+  
+  def someNull:
+    dl.SubsetStx any (some null)
+  :=
+    sorry
+  
+  def somePair
+    (sl: dl.SubsetStx any (some l))
+    (sr: dl.SubsetStx any (some r))
+  :
+    dl.SubsetStx any (some (pair l r))
+  :=
+    sorry
+  
   
   
   def implPairMono {bl br}:

@@ -191,7 +191,7 @@ namespace DefList.SubsetStx
     let nbnc := dni (irI (dni (irCtxL xa)) (irCtxR subId))
     complElim (irCtxL xab) nbnc
   
-  def mpIr {x a b}
+  def implAbsorb {x a b}
     (xab: dl.SubsetStx x (impl a b))
   :
     dl.SubsetStx (ir x a) b
@@ -329,10 +329,10 @@ namespace DefList.SubsetStx
     complElim
       (irI
         (complI
-          (trans (irLR subIrL subId) (mpIr subL))
+          (trans (irLR subIrL subId) (implAbsorb subL))
           (irCtxL subIrR))
         (complI
-          (trans (irLR subIrL subId) (mpIr subR))
+          (trans (irLR subIrL subId) (implAbsorb subR))
           (irCtxL subIrR)))
       (irCtxL sub)
   
@@ -448,17 +448,6 @@ namespace DefList.SubsetStx
   :=
     implElim subA subId
   
-  def implAbsorb {x a b}
-    (subImpl: dl.SubsetStx x (impl a b))
-  :
-    dl.SubsetStx (ir x a) b
-  :=
-    irMonoCtxL
-      subImpl
-      (trans
-        (irUnDistL subId)
-        (unCtx (trans subIrSymm subPe) subIrL))
-  
   def toImpl {x a b}
     (sub: dl.SubsetStx a b)
   :
@@ -558,6 +547,164 @@ namespace DefList.SubsetStx
     irR (complUn sub)
   
   
+  def fullImplElim {a b}
+    (fullAb: dl.SubsetStx (full a) (full (impl a b)))
+  :
+    dl.SubsetStx (full a) (full b)
+  :=
+    implElimExact (trans fullAb (fullImplDist subId))
+  
+  def fullMp {x a b}
+    (fullAb: dl.SubsetStx x (full (impl a b)))
+    (fullA: dl.SubsetStx x (full a))
+  :
+    dl.SubsetStx x (full b)
+  :=
+    mp (fullImplDist fullAb) fullA
+  
+  def fullMono {x a b}
+    (sub: dl.SubsetStx a b)
+    (fa: dl.SubsetStx x (full a))
+  :
+    dl.SubsetStx x (full b)
+  :=
+    fullMp (isFullImpl sub) fa
+  
+  def fullDne {x a}
+    (sub: dl.SubsetStx x (full (compl (compl a))))
+  :
+    dl.SubsetStx x (full a)
+  :=
+    fullMono subDne sub
+  
+  def fullDni {x a}
+    (sub: dl.SubsetStx x (full a))
+  :
+    dl.SubsetStx x (full (compl (compl a)))
+  :=
+    fullMono subDni sub
+  
+  def complFullAntimono {a b}
+    (sub: dl.SubsetStx a b)
+  :
+    dl.SubsetStx (compl (full b)) (compl (full a))
+  :=
+    subCompl (fullMono sub subId)
+  
+  def subSome {a}:
+    dl.SubsetStx a (some a)
+  :=
+    trans subDni (subCompl (fullElim subId))
+  
+  def someIntro {x a}
+    (sub: dl.SubsetStx x a)
+  :
+    dl.SubsetStx x (some a)
+  :=
+    trans sub subSome
+  
+  def subSomeMono {a b}
+    (sub: dl.SubsetStx a b)
+  :
+    dl.SubsetStx (some a) (some b)
+  :=
+    complFullAntimono (subCompl sub)
+  
+  def someMono {x a b}
+    (sub: dl.SubsetStx a b)
+    (sa: dl.SubsetStx x (some a))
+  :
+    dl.SubsetStx x (some b)
+  :=
+    trans sa (subSomeMono sub)
+  
+  def fullSome {x a}
+    (sub: dl.SubsetStx x (full a))
+  :
+    dl.SubsetStx x (some a)
+  :=
+    trans sub (fullElim (fullMono subSome subId))
+  
+  def subSomeAddFull {a}:
+    dl.SubsetStx (some a) (full (some a))
+  :=
+    complSwapCtx (someStripFull subId)
+  
+  def someAddFull {x a}
+    (sub: dl.SubsetStx x (some a))
+  :
+    dl.SubsetStx x (full (some a))
+  :=
+    trans sub subSomeAddFull
+  
+  def fullAddSome {x a}
+    (sub: dl.SubsetStx x (full a))
+  :
+    dl.SubsetStx x (some (full a))
+  :=
+    someIntro sub
+  
+  def someAddSome {x a}
+    (sub: dl.SubsetStx x (some a))
+  :
+    dl.SubsetStx x (some (some a))
+  :=
+    someIntro sub
+  
+  def fullSomeIntro {x a}
+    (sub: dl.SubsetStx x a)
+  :
+    dl.SubsetStx x (full (some a))
+  :=
+    someAddFull (someIntro sub)
+  
+  def fullAddFull {x a}
+    (sub: dl.SubsetStx x (full a))
+  :
+    dl.SubsetStx x (full (full a))
+  :=
+    fullMono (someStripFull subId) (fullSomeIntro sub)
+  
+  def someStripSome {x a}
+    (sub: dl.SubsetStx x (some (some a)))
+  :
+    dl.SubsetStx x (some a)
+  :=
+    sub.trans (subCompl (fullMono subDni (fullAddFull subId)))
+  
+  
+  def unfoldCtx {lane c b}
+      (sub: dl.SubsetStx (const lane c) b)
+    :
+      dl.SubsetStx ((dl.getDef c).toLane lane) b
+  :=
+    trans (fold subId) sub
+  
+  def foldCtx {lane c b}
+      (sub: dl.SubsetStx ((dl.getDef c).toLane lane) b)
+    :
+      dl.SubsetStx (const lane c) b
+  :=
+    trans (unfold subId) sub
+  
+  
+  def someVar {x i}:
+    dl.SubsetStx x (some (var i))
+  :=
+    someMono (irL subId) (varFullSome (isFullImpl subId))
+  
+  def varSubsingleton {x i}:
+    dl.SubsetStx x (var i).isSubsingleton
+  :=
+    implIntro (varSomeFull (irR subId))
+  
+  def univElimVar {x a}
+    (i: Nat)
+    (sub: dl.SubsetStx x (arbIr a))
+  :
+    dl.SubsetStx x (a.instantiateVar (var i))
+  :=
+    univElim someVar varSubsingleton sub
   
   
   -- Rules using none/any, ignore for now.
@@ -577,5 +724,19 @@ namespace DefList.SubsetStx
   --   dl.SubsetStx x a
   -- :=
   --   implElimExact (trans subAny sub)
+  
+  -- def isFullOfAny {x a}
+  --   (subA: dl.SubsetStx any a)
+  -- :
+  --   dl.SubsetStx x (full a)
+  -- :=
+  --   sorry
+  
+  -- def isFullImplElim {a b}
+  --   (sub: dl.SubsetStx any (full (impl a b)))
+  -- :
+  --   dl.SubsetStx a b
+  -- :=
+  --   sorry
   
 end DefList.SubsetStx
