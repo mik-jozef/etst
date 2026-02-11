@@ -147,7 +147,7 @@ namespace Expr
   | n + 1 => (fvMap n).lift
   
   -- Replaces free variables according to a given map.
-  def replaceFreeVars {E}
+  def subst {E}
     (fvMap: Nat → Expr E)
   :
     Expr E → Expr E
@@ -155,19 +155,19 @@ namespace Expr
   | .var x => fvMap x
   | .null => .null
   | .pair left rite =>
-    .pair (replaceFreeVars fvMap left) (replaceFreeVars fvMap rite)
+    .pair (subst fvMap left) (subst fvMap rite)
   | .ir left rite =>
-    .ir (replaceFreeVars fvMap left) (replaceFreeVars fvMap rite)
+    .ir (subst fvMap left) (subst fvMap rite)
   | .full body =>
-    .full (replaceFreeVars fvMap body)
+    .full (subst fvMap body)
   | .compl body =>
-    .compl (replaceFreeVars fvMap body)
+    .compl (subst fvMap body)
   | .arbIr body =>
-    .arbIr (replaceFreeVars (liftFvMap fvMap) body)
+    .arbIr (subst (liftFvMap fvMap) body)
   
   -- Removes all free variables.
   def clearFreeVars {E}: Expr E → Expr E :=
-    replaceFreeVars fun _ => none
+    subst fun _ => none
   
   abbrev IsClean {E} (expr: Expr E): Prop :=
     expr.FreeVarsSat fun _ => False

@@ -9,12 +9,12 @@ variable {E: Type*}
 
 
 namespace Expr
-  def replaceFreeVarsNat
+  def substVar
     (fvMap: Nat → Nat)
   :
     Expr E → Expr E
   :=
-    replaceFreeVars (var ∘ fvMap)
+    subst (var ∘ fvMap)
   
   def instantiateVar
     (expr: Expr E)
@@ -22,11 +22,11 @@ namespace Expr
   :
     Expr E
   :=
-    expr.replaceFreeVars fun
+    expr.subst fun
     | 0 => t
     | n + 1 => var n
   
-  def replaceId {E}: Expr E → Expr E := replaceFreeVarsNat id  
+  def replaceId {E}: Expr E → Expr E := substVar id  
   
   def lift_var_lt
     (x: Nat)
@@ -364,7 +364,7 @@ namespace SingleLaneExpr
     intp2_lift_eq expr fv fvLiftBy v v
   
   
-  def intp2_replaceFreeVars_eq
+  def intp2_subst_eq
     {fvMap: Nat → SingleLaneExpr}
     {expr: SingleLaneExpr}
     {b c: Valuation Pair}
@@ -378,7 +378,7 @@ namespace SingleLaneExpr
   :
     Eq
       (expr.intp2 fvLeft b c)
-      (intp2 (expr.replaceFreeVars fvMap) fvRite b c)
+      (intp2 (expr.subst fvMap) fvRite b c)
   :=
     match expr with
     | .const _ _ => rfl
@@ -386,26 +386,26 @@ namespace SingleLaneExpr
     | .null => rfl
     | .pair _ _ =>
       eq_intp2_pair_of_eq
-        (intp2_replaceFreeVars_eq
+        (intp2_subst_eq
           (fun x h => fvEq x (Or.inl h))
           (fun x h => fvEqCpl x (Or.inl h)))
-        (intp2_replaceFreeVars_eq
+        (intp2_subst_eq
           (fun x h => fvEq x (Or.inr h))
           (fun x h => fvEqCpl x (Or.inr h)))
     | .ir _ _ =>
       eq_intp2_ir_of_eq
-        (intp2_replaceFreeVars_eq
+        (intp2_subst_eq
           (fun x h => fvEq x (Or.inl h))
           (fun x h => fvEqCpl x (Or.inl h)))
-        (intp2_replaceFreeVars_eq
+        (intp2_subst_eq
           (fun x h => fvEq x (Or.inr h))
           (fun x h => fvEqCpl x (Or.inr h)))
     | .full body =>
       eq_intp2_full_of_eq
-        (intp2_replaceFreeVars_eq (expr := body) fvEq fvEqCpl)
+        (intp2_subst_eq (expr := body) fvEq fvEqCpl)
     | .compl body =>
       eq_intp2_compl_of_eq
-        (intp2_replaceFreeVars_eq (expr := body) fvEqCpl fvEq)
+        (intp2_subst_eq (expr := body) fvEqCpl fvEq)
     | .arbIr body =>
       let fvMap': Nat → SingleLaneExpr := Expr.liftFvMap fvMap
       let fvEqLifted {b c}
@@ -424,11 +424,11 @@ namespace SingleLaneExpr
           intp2_lift_eq (fvMap x) fvRite [d] b c ▸ hyp x h
       
       eq_intp2_arbIr_of_eq fun d =>
-        intp2_replaceFreeVars_eq
+        intp2_subst_eq
           (fvEqLifted fvEq d)
           (fvEqLifted fvEqCpl d)
   
-  def intp_replaceFreeVars_eq
+  def intp_subst_eq
     {fvMap: Nat → SingleLaneExpr}
     {expr: SingleLaneExpr}
     {fvLeft fvRite v}
@@ -438,11 +438,11 @@ namespace SingleLaneExpr
   :
     Eq
       (expr.intp2 fvLeft v v)
-      (intp2 (expr.replaceFreeVars fvMap) fvRite v v)
+      (intp2 (expr.subst fvMap) fvRite v v)
   :=
-    intp2_replaceFreeVars_eq fvEq fvEq
+    intp2_subst_eq fvEq fvEq
   
-  def intp2_replaceFreeVarsNat_eq
+  def intp2_substVar_eq
     {fvMap: Nat → Nat}
     {expr: SingleLaneExpr}
     {b c: Valuation Pair}
@@ -451,10 +451,10 @@ namespace SingleLaneExpr
   :
     Eq
       (expr.intp2 fvLeft b c)
-      (intp2 (expr.replaceFreeVarsNat fvMap) fvRite b c)
+      (intp2 (expr.substVar fvMap) fvRite b c)
   :=
     (fun ab a => ab a a)
-      intp2_replaceFreeVars_eq
+      intp2_subst_eq
       (fun x hx =>
         congrArg
           (fun | .none => (∅: Set Pair) | .some d => {d})
@@ -470,7 +470,7 @@ namespace SingleLaneExpr
   :
     expr.intp2 (dB :: fv) b c = intp2 (expr.instantiateVar t) fv b c
   :=
-    intp2_replaceFreeVars_eq
+    intp2_subst_eq
       (fun
         | 0, _ => t_eq ▸ rfl
         | _ + 1, _ => rfl)
@@ -486,7 +486,7 @@ namespace SingleLaneExpr
   :
     expr.intp (dB :: fv) v = intp (expr.instantiateVar t) fv v
   :=
-    intp_replaceFreeVars_eq (fun
+    intp_subst_eq (fun
       | 0, _ => t_eq ▸ rfl
       | _ + 1, _ => rfl)
   
@@ -497,7 +497,7 @@ namespace SingleLaneExpr
   :
     expr.intp2 [] b c = intp2 (expr.clearFreeVars) fv b c
   :=
-    intp2_replaceFreeVars_eq
+    intp2_subst_eq
       (fun _ _ => intp2_none_eq_empty ▸ rfl)
       (fun _ _ => intp2_none_eq_empty ▸ rfl)
   
@@ -510,7 +510,7 @@ namespace SingleLaneExpr
     expr.intp2 fv b c = expr.intp2 (fv ++ rest) b c
   :=
     let eq: expr.intp2 fv b c = intp2 expr.replaceId (fv ++ rest) b c :=
-      intp2_replaceFreeVarsNat_eq
+      intp2_substVar_eq
         (fun x xUsed =>
           let ltUb := expr.freeVarUb_freeVarLt xUsed
           let ltFv: x < fv.length := ltUb.trans_le ubLe
@@ -580,9 +580,9 @@ def Expr.IsClean.intp2_eq {fvL fvR b c}
   let nope {P: Nat → Prop}: ∀ x ∈ expr.UsesFreeVar, P x :=
     fun x hx => (h x hx).elim
   let eqL: expr.intp2 fvL b c = intp2 expr.clearFreeVars [] b c :=
-    intp2_replaceFreeVars_eq nope nope
+    intp2_subst_eq nope nope
   let eqR: expr.intp2 fvR b c = intp2 expr.clearFreeVars [] b c :=
-    intp2_replaceFreeVars_eq nope nope
+    intp2_subst_eq nope nope
   eqL.trans eqR.symm
 
 def Expr.IsClean.toLane
