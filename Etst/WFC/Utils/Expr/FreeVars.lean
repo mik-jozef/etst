@@ -117,6 +117,59 @@ namespace Expr
           (Nat.succ_add _ _ ▸ Nat.succ_le_succ le1)
           b)
   
+  def lift_inj
+    {a b: Expr E} {depth liftBy}
+    (eq: a.lift depth liftBy = b.lift depth liftBy)
+  :
+    a = b
+  :=
+    match a, b with
+    | const _ _, const _ _ => eq
+    | var x, var y => by
+      let hX := Classical.em (x < depth)
+      let hY := Classical.em (y < depth)
+      match hX, hY with
+      | .inl ltX, .inl ltY =>
+        rw [lift_var_lt x ltX liftBy] at eq
+        rw [lift_var_lt y ltY liftBy] at eq
+        exact eq
+      | .inl ltX, .inr geY =>
+        rw [lift_var_lt x ltX liftBy] at eq
+        rw [lift_var_ge y (le_of_not_gt geY) liftBy] at eq
+        let iEq: x = y + liftBy :=
+          Expr.noConfusion rfl (heq_of_eq eq) id
+        let ltY: y + liftBy < depth := iEq ▸ ltX
+        exact absurd (Nat.lt_of_add_right_lt ltY) geY
+      | .inr geX, .inl ltY =>
+        rw [lift_var_ge x (le_of_not_gt geX) liftBy] at eq
+        rw [lift_var_lt y ltY liftBy] at eq
+        let iEq: x + liftBy = y :=
+          Expr.noConfusion rfl (heq_of_eq eq) id
+        let ltX: x + liftBy < depth := iEq.symm ▸ ltY
+        exact absurd (Nat.lt_of_add_right_lt ltX) geX
+      | .inr geX, .inr geY =>
+        rw [lift_var_ge x (le_of_not_gt geX) liftBy] at eq
+        rw [lift_var_ge y (le_of_not_gt geY) liftBy] at eq
+        let iEq: x + liftBy = y + liftBy :=
+          Expr.noConfusion rfl (heq_of_eq eq) id
+        exact congr rfl (Nat.add_right_cancel iEq)
+    | null, null => rfl
+    | pair al ar, pair bl br => by
+      injection eq with eql eqr
+      exact congrArg₂ pair (lift_inj eql) (lift_inj eqr)
+    | ir al ar, ir bl br => by
+      injection eq with eql eqr
+      exact congrArg₂ ir (lift_inj eql) (lift_inj eqr)
+    | full a, full b => by
+      injection eq with eqf
+      exact congrArg full (lift_inj eqf)
+    | compl a, compl b => by
+      injection eq with eqc
+      exact congrArg compl (lift_inj eqc)
+    | arbIr a, arbIr b => by
+      injection eq with eqa
+      exact congrArg arbIr (lift_inj eqa)
+  
   
   def freeVarUb
     (expr: Expr E)
