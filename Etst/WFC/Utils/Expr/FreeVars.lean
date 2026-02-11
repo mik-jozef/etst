@@ -26,7 +26,7 @@ namespace Expr
     | 0 => t
     | n + 1 => var n
   
-  def replaceId {E}: Expr E → Expr E := substVar id  
+  def substId {E}: Expr E → Expr E := substVar id  
   
   def lift_var_lt
     (x: Nat)
@@ -310,27 +310,27 @@ namespace Expr
   :=
     Nat.max_le.mpr ⟨leA, leB⟩
   
-  def replaceId_eq
+  def substId_eq
     (expr: Expr E)
   :
-    expr.replaceId = expr
+    expr.substId = expr
   :=
     match expr with
     | const _ _ => rfl
     | var _ => rfl
     | null => rfl
     | pair l r =>
-      congrArg₂ pair (l.replaceId_eq) (r.replaceId_eq)
+      congrArg₂ pair (l.substId_eq) (r.substId_eq)
     | ir l r =>
-      congrArg₂ ir (l.replaceId_eq) (r.replaceId_eq)
-    | full body => congrArg full (body.replaceId_eq)
-    | compl body => congrArg compl (body.replaceId_eq)
+      congrArg₂ ir (l.substId_eq) (r.substId_eq)
+    | full body => congrArg full (body.substId_eq)
+    | compl body => congrArg compl (body.substId_eq)
     | arbIr body =>
       let liftEq:
         (liftFvMap fun x => var (E := E) x) = (fun x => var x)
       :=
         funext fun | 0 => rfl | _+1 => rfl
-      congrArg arbIr (liftEq.symm ▸ body.replaceId_eq)
+      congrArg arbIr (liftEq.symm ▸ body.substId_eq)
   
 end Expr
 
@@ -562,13 +562,13 @@ namespace SingleLaneExpr
   :
     expr.intp2 fv b c = expr.intp2 (fv ++ rest) b c
   :=
-    let eq: expr.intp2 fv b c = intp2 expr.replaceId (fv ++ rest) b c :=
+    let eq: expr.intp2 fv b c = intp2 expr.substId (fv ++ rest) b c :=
       intp2_substVar_eq
         (fun x xUsed =>
           let ltUb := expr.freeVarUb_freeVarLt xUsed
           let ltFv: x < fv.length := ltUb.trans_le ubLe
           (List.getElem?_append_left ltFv).symm)
-    by rw [expr.replaceId_eq] at eq; exact eq
+    by rw [expr.substId_eq] at eq; exact eq
   
   def intp_bv_append
     {expr: SingleLaneExpr}
