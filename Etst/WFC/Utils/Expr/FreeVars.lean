@@ -76,45 +76,46 @@ namespace Expr
   
   def lift_add_eq
     (expr: Expr E)
-    (depth a b: Nat)
+    {d0 d1} (le0: d0 ≤ d1)
+    {a} (le1: d1 ≤ d0 + a)
+    (b: Nat)
   :
-    expr.lift depth (a + b) = (expr.lift depth a).lift depth b
+    expr.lift d0 (a + b) = (expr.lift d0 a).lift d1 b
   :=
     match expr with
     | const _ _ => rfl
     | var x => by
-      if h: x < depth then
+      if h: x < d0 then
         rw [lift_var_lt x h]
         rw [lift_var_lt x h]
-        rw [lift_var_lt x h]
+        rw [lift_var_lt x (h.trans_le le0)]
       else
-        have ge : x >= depth := not_lt.mp h
+        let ge: x >= d0 := not_lt.mp h
         rw [lift_var_ge x ge]
         rw [lift_var_ge x ge]
-        rw [lift_var_ge (x + a) (Nat.le_trans ge (Nat.le_add_right _ _))]
+        let le1X := le1.trans (Nat.add_le_add_right ge a)
+        rw [lift_var_ge (x + a) le1X]
         rw [Nat.add_assoc]
     | null => rfl
     | pair l r =>
       congrArg₂
         pair
-        (l.lift_add_eq depth a b)
-        (r.lift_add_eq depth a b)
+        (l.lift_add_eq le0 le1 b)
+        (r.lift_add_eq le0 le1 b)
     | ir l r =>
       congrArg₂
         ir
-        (l.lift_add_eq depth a b)
-        (r.lift_add_eq depth a b)
-    | full body => congrArg full (body.lift_add_eq depth a b)
-    | compl body => congrArg compl (body.lift_add_eq depth a b)
-    | arbIr body => congrArg arbIr (body.lift_add_eq depth.succ a b)
-
-  def lift_succ_eq
-    (expr: Expr E)
-    (depth n: Nat)
-  :
-    expr.lift depth (n + 1) = (expr.lift depth n).lift depth 1
-  :=
-    lift_add_eq expr depth n 1
+        (l.lift_add_eq le0 le1 b)
+        (r.lift_add_eq le0 le1 b)
+    | full body => congrArg full (body.lift_add_eq le0 le1 b)
+    | compl body => congrArg compl (body.lift_add_eq le0 le1 b)
+    | arbIr body =>
+      congrArg
+        arbIr
+        (body.lift_add_eq
+          (Nat.succ_le_succ le0)
+          (Nat.succ_add _ _ ▸ Nat.succ_le_succ le1)
+          b)
   
   
   def freeVarUb
