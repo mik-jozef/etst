@@ -688,6 +688,103 @@ namespace DefList.SubsetStx
     trans (unfold subId) sub
   
   
+  def mapFv
+    {x a: SingleLaneExpr}
+    (sub: dl.SubsetStx x a)
+    (map: Nat → Nat)
+    (map_inj: ∀ i j, map i = map j → i = j) -- TODO is this necessary?
+  :
+    dl.SubsetStx (x.substVar map) (a.substVar map)
+  :=
+    match sub with
+    | subId =>
+      subId
+    | defPos sub => defPos (mapFv sub map map_inj)
+    | irL sub => irL (mapFv sub map map_inj)
+    | irR sub => irR (mapFv sub map map_inj)
+    | irI subL subR => irI (mapFv subL map map_inj) (mapFv subR map map_inj)
+    | complI subL subR =>
+      complI (mapFv subL map map_inj) (mapFv subR map map_inj)
+    | complElim subL subR =>
+      complElim (mapFv subL map map_inj) (mapFv subR map map_inj)
+    | isFullImpl sub => isFullImpl (mapFv sub map map_inj)
+    | fullImplDist sub => fullImplDist (mapFv sub map map_inj)
+    | fullElim sub => fullElim (mapFv sub map map_inj)
+    | someStripFull sub => someStripFull (mapFv sub map map_inj)
+    | arbIrI (a:=a) sub =>
+      let ih :=
+        substVar_liftFvMapVar_subst a map ▸
+        lift_substVar_eq x map ▸
+        mapFv sub (liftFvMapVar map) sorry
+      arbIrI ih
+    | arbIrElim (t:=t) (a:=a) someSub subsingle sub =>
+      let ihSub := mapFv someSub map map_inj
+      let ihSingle := mapFv subsingle map map_inj
+      let ih := mapFv sub map sorry
+      let lk:
+        dl.SubsetStx
+          (substVar map x)
+          (subst
+            (instantiateVar.fn (t.substVar map) ∘ (liftFvMapVar map))
+            a)
+      :=
+        subst_comp_var _ _ _ ▸
+        substVar_liftFvMapVar_subst a map ▸
+        arbIrElim ihSub sorry ih
+      sorry
+    | varSomeFull sub => varSomeFull (mapFv sub map map_inj)
+    | varFullSome sub => varFullSome (mapFv sub map map_inj)
+    | unfold sub => sorry
+    | fold sub => fold sorry
+    | trans subAb subBc =>
+      trans (mapFv subAb map map_inj) (mapFv subBc map map_inj)
+    | mutInduction desc premises i => sorry
+    | simplePairInduction sub =>
+      simplePairInduction (mapFv sub map map_inj)
+  
+  def ofLift {x a d l}
+    (sub: dl.SubsetStx (x.lift d l) (a.lift d l))
+  :
+    dl.SubsetStx x a
+  :=
+    sorry
+  
+  -- TODO special case of `mapFv`.
+  def toLift
+    {x a: SingleLaneExpr}
+    (sub: dl.SubsetStx x a)
+    (d l: Nat)
+  :
+    dl.SubsetStx (x.lift d l) (a.lift d l)
+  :=
+    match sub with
+    | subId => subId
+    | defPos sub => defPos (toLift sub d l)
+    | irL sub => irL (toLift sub d l)
+    | irR sub => irR (toLift sub d l)
+    | irI subL subR => irI (toLift subL d l) (toLift subR d l)
+    | complI subL subR =>
+      complI (toLift subL d l) (toLift subR d l)
+    | complElim subL subR => complElim (toLift subL d l) (toLift subR d l)
+    | isFullImpl sub => isFullImpl (toLift sub d l)
+    | fullImplDist sub => fullImplDist (toLift sub d l)
+    | fullElim sub => fullElim (toLift sub d l)
+    | someStripFull sub => someStripFull (toLift sub d l)
+    | arbIrI sub =>
+      -- let ih := toLift sub (d + 1) l
+      -- arbIrI ih
+      sorry
+    | arbIrElim someSub subsingle sub =>
+      sorry
+    | varSomeFull sub => varSomeFull (toLift sub d l)
+    | varFullSome sub => varFullSome (toLift sub d l)
+    | unfold sub => sorry
+    | fold sub => fold sorry
+    | trans subAb subBc => trans (toLift subAb d l) (toLift subBc d l)
+    | mutInduction desc premises i => sorry
+    | simplePairInduction sub => simplePairInduction (toLift sub d l)
+  
+  
   def someVar {x i}:
     dl.SubsetStx x (some (var i))
   :=
@@ -698,13 +795,13 @@ namespace DefList.SubsetStx
   :=
     implIntro (varSomeFull (irR subId))
   
-  def univElimVar {x a}
+  def arbIrElimVar {x a}
     (i: Nat)
     (sub: dl.SubsetStx x (arbIr a))
   :
     dl.SubsetStx x (a.instantiateVar (var i))
   :=
-    univElim someVar varSubsingleton sub
+    arbIrElim someVar varSubsingleton sub
   
   
   -- Rules using none/any, ignore for now.

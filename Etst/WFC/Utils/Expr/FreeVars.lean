@@ -16,17 +16,41 @@ namespace Expr
   :=
     subst (var ∘ fvMap)
   
+  def instantiateVar.fn (t: Expr E): Nat → Expr E
+  | 0 => t
+  | n + 1 => var n
+  
   def instantiateVar
     (expr: Expr E)
     (t: Expr E)
   :
     Expr E
   :=
-    expr.subst fun
-    | 0 => t
-    | n + 1 => var n
+    expr.subst (instantiateVar.fn t)
   
   def substId {E}: Expr E → Expr E := substVar id  
+  
+  def substLift.fn (depth liftBy: Nat) :=
+    fun x => if x < depth then x else x + liftBy
+  
+  -- Redefining `lift` using `substVar`, so we can use composition
+  -- properties of `substVar` to prove properties of `lift`.
+  def substLift
+    (expr: Expr E)
+    (depth: Nat)
+    (liftBy: Nat)
+  :
+    Expr E
+  :=
+    expr.substVar (substLift.fn depth liftBy)
+  
+  
+  def liftFvMapVar
+    (fvMap: Nat → Nat)
+  :
+    Nat → Nat
+  | 0 => 0
+  | n + 1 => (fvMap n) + 1
   
   def lift_var_lt
     (x: Nat)
@@ -170,6 +194,202 @@ namespace Expr
       injection eq with eqa
       exact congrArg arbIr (lift_inj eqa)
   
+  
+  def liftFvMapVar_comp
+    (f g: Nat → Nat)
+  :
+    liftFvMapVar (f ∘ g) = (liftFvMapVar f) ∘ (liftFvMapVar g)
+  :=
+    funext fun
+    | 0 => rfl
+    | _ + 1 => rfl
+  
+  def liftFvMap_comp_var
+    (f: Nat → Expr E)
+    (g: Nat → Nat)
+  :
+    liftFvMap (f ∘ g) = (liftFvMap f) ∘ (liftFvMapVar g)
+  :=
+    funext fun
+    | 0 => rfl
+    | _ + 1 => rfl
+  
+  def substVar_liftFvMapVar_subst
+    (expr: Expr E)
+    (map: Nat → Nat)
+  :
+    Eq
+      (substVar (liftFvMapVar map) expr)
+      (subst (liftFvMap (var ∘ map)) expr)
+  :=
+    let mapEq: var ∘ (liftFvMapVar map) = liftFvMap (var ∘ map) :=
+      funext fun
+      | 0 => rfl
+      | n + 1 => by
+        show var (map n + 1) = var _
+        rw [if_neg (not_lt.mpr (Nat.zero_le _))]
+    congrArg (subst · expr) mapEq
+  
+  def subst_comp_var
+    (f: Nat → Expr E)
+    (g: Nat → Nat)
+    (expr: Expr E)
+  :
+    subst (f ∘ g) expr = subst f (substVar g expr)
+  :=
+    match expr with
+    | const _ _ => rfl
+    | var x => rfl
+    | null => rfl
+    | pair l r =>
+      congrArg₂ pair (subst_comp_var f g l) (subst_comp_var f g r)
+    | ir l r =>
+      congrArg₂ ir (subst_comp_var f g l) (subst_comp_var f g r)
+    | full body => congrArg full (subst_comp_var f g body)
+    | compl body => congrArg compl (subst_comp_var f g body)
+    | arbIr body =>
+      congrArg
+        arbIr
+        (by
+          rw [
+            ←substVar_liftFvMapVar_subst body g,
+            liftFvMap_comp_var,
+            subst_comp_var (liftFvMap f) (liftFvMapVar g) body
+          ])
+  
+  def substVar_comp
+    (f g: Nat → Nat)
+    (expr: Expr E)
+  :
+    substVar (f ∘ g) expr = substVar f (substVar g expr)
+  :=
+    subst_comp_var (var ∘ f) g expr
+  
+  def liftFvMapVar_substLiftFun {depth liftBy}:
+    Eq
+      (liftFvMapVar (substLift.fn depth liftBy))
+      (substLift.fn (depth + 1) liftBy)
+  :=
+    funext fun
+    | 0 => rfl
+    | n + 1 => by
+      dsimp [liftFvMapVar, substLift.fn]
+      if h : n < depth then
+        rw [if_pos h]
+        rw [if_pos (Nat.succ_lt_succ h)]
+      else
+        rw [if_neg h]
+        rw [if_neg (not_lt.mpr (Nat.succ_le_succ (not_lt.mp h)))]
+        rw [Nat.add_right_comm]
+  
+  def lift_eq_substLift
+    (expr: Expr E)
+    (depth: Nat)
+    (liftBy: Nat)
+  :
+    expr.lift depth liftBy = substLift expr depth liftBy
+  :=
+    match expr with
+    | const _ _ => rfl
+    | var _ => rfl
+    | null => rfl
+    | pair l r =>
+      congrArg₂ pair (lift_eq_substLift l ..) (lift_eq_substLift r ..)
+    | ir l r =>
+      congrArg₂ ir (lift_eq_substLift l ..) (lift_eq_substLift r ..)
+    | full body =>
+      congrArg full (lift_eq_substLift body ..)
+    | compl body =>
+      congrArg compl (lift_eq_substLift body ..)
+    | arbIr body =>
+      congrArg
+        arbIr
+        (substVar_liftFvMapVar_subst body _ ▸
+        liftFvMapVar_substLiftFun ▸
+        lift_eq_substLift body (depth + 1) liftBy)
+  
+  def lift_substVar_eq
+    (expr: Expr E)
+    (map: Nat → Nat)
+  :
+    Eq
+      (substVar (liftFvMapVar map) (lift expr))
+      (substVar map expr).lift
+  := by
+    rw [expr.lift_eq_substLift 0 1, lift_eq_substLift _ 0 1]
+    rw [substLift, substLift]
+    rw [←substVar_comp, ←substVar_comp]
+    rfl
+  
+  
+  def instantiateVar_lift_eq_depth
+    (expr: Expr E)
+    (f: Nat → Expr E)
+    (depth: Nat)
+    (eq_lt: ∀ x, x < depth → f x = var x)
+    (eq_ge: ∀ x, depth ≤ x → f x.succ = var x)
+  :
+    (expr.lift depth 1).subst f = expr
+  :=
+    match expr with
+    | const _ _ => rfl
+    | var x =>
+      if h: depth ≤ x then
+        lift_var_ge x h 1 ▸ eq_ge x h
+      else
+        let lt := not_le.mp h
+        (lift_var_lt x lt 1).symm ▸ eq_lt x lt
+    | null => rfl
+    | pair l r =>
+      congrArg₂
+        pair
+        (l.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
+        (r.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
+    | ir l r =>
+      congrArg₂
+        ir
+        (l.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
+        (r.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
+    | full body =>
+      congrArg
+        full
+        (body.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
+    | compl body =>
+      congrArg
+        compl
+        (body.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
+    | arbIr body =>
+      congrArg
+        arbIr
+        (body.instantiateVar_lift_eq_depth
+          (liftFvMap f)
+          depth.succ
+          (fun x hx =>
+            match x with
+            | 0 => rfl
+            | x + 1 => by
+              show (f x).lift = var (x + 1)
+              rw [eq_lt x (Nat.lt_of_succ_lt_succ hx)]
+              exact lift_var_ge x (Nat.zero_le _) 1)
+          (fun x hx => by
+            match x with
+            | 0 => exact (Nat.not_succ_le_zero depth hx).elim
+            | x + 1 =>
+              show (f (x + 1)).lift = var (x + 1)
+              rw [eq_ge x (Nat.le_of_succ_le_succ hx)]
+              exact lift_var_ge x (Nat.zero_le _) 1))
+  
+  def instantiateVar_lift_eq
+    (expr: Expr E)
+    (t: Expr E)
+  :
+    expr.lift.instantiateVar t = expr
+  :=
+    expr.instantiateVar_lift_eq_depth
+      (fun | 0 => t | x + 1 => var x)
+      0
+      nofun
+      (fun _ _ => rfl)
   
   def freeVarUb
     (expr: Expr E)

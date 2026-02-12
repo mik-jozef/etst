@@ -105,18 +105,6 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (full a)
 |
-  univIntro {x a}
-    (sub: dl.SubsetStx x.lift a)
-  :
-    dl.SubsetStx x (arbIr a)
-|
-  univElim {x t a}
-    (isSome: dl.SubsetStx x (some t))
-    (isSubsingle: dl.SubsetStx x.lift t.isSubsingleton)
-    (sub: dl.SubsetStx x (arbIr a))
-  :
-    dl.SubsetStx x (a.instantiateVar t)
-|
   varSomeFull {x i a}
     (sub: dl.SubsetStx x (some (ir (var i) a)))
   :
@@ -126,6 +114,18 @@ inductive DefList.SubsetStx
     (sub: dl.SubsetStx x (full (impl (var i) a)))
   :
     dl.SubsetStx x (some (ir (var i) a))
+|
+  arbIrI {x a}
+    (sub: dl.SubsetStx x.lift a)
+  :
+    dl.SubsetStx x (arbIr a)
+|
+  arbIrElim {x t a}
+    (isSome: dl.SubsetStx x (some t))
+    (isSubsingle: dl.SubsetStx x.lift t.isSubsingleton)
+    (sub: dl.SubsetStx x (arbIr a))
+  :
+    dl.SubsetStx x (a.instantiateVar t)
 |
   unfold {x lane c} -- TODO should be provable with induction.
     (sub: dl.SubsetStx x (const lane c))
@@ -286,14 +286,14 @@ namespace DefList.SubsetStx
       | fullElim sub => inFullElim (sub.isSound fv leX leE isIn) p
       | someStripFull (a:=a) sub =>
         (inSomeElim (sub.isSound fv leX leE isIn)).choose_spec
-      | univIntro sub =>
+      | arbIrI sub =>
         fun dX =>
           sub.isSound
             (dX :: fv)
             (freeVarUb_le_lift leX)
             (Nat.le_add_of_sub_le leE)
             (intp_lift_eq x fv [dX] dl.wfm ▸ isIn)
-      | univElim (x:=x) (t:=t) (a:=a) isSome isSubsin sub =>
+      | arbIrElim (x:=x) (t:=t) (a:=a) isSome isSubsin sub =>
         let bUb :=
           Nat.max
             a.arbIr.freeVarUb
@@ -330,8 +330,8 @@ namespace DefList.SubsetStx
             (fun d => List.cons_append ▸ ⟨p, tIsSub d⟩)
             inT
         
-        let inUnivA := sub.isSound fvPad lePadX lePadA isInPad
-        let inA := inArbIrElim inUnivA dBound
+        let inArbIrA := sub.isSound fvPad lePadX lePadA isInPad
+        let inA := inArbIrElim inArbIrA dBound
         let inInst := intp_instantiateVar_eq a t tIntpEq ▸ inA
         
         intp_bv_append leE (List.replicate bUb Pair.null) ▸
