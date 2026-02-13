@@ -688,39 +688,140 @@ namespace DefList.SubsetStx
     trans (unfold subId) sub
   
   
+  private lemma substVar_eq_of_freeVarLt
+    {expr: SingleLaneExpr}
+    (bound: Nat)
+    (freeVarLt: ∀ x ∈ expr.UsesFreeVar, x < bound)
+    (map: Nat → Nat)
+    (map_id_lt: ∀ x, x < bound → map x = x)
+  :
+    substVar map expr = expr
+  := by
+    induction expr generalizing bound map with
+    | const _ _ =>
+      rfl
+    | var x =>
+      let ltBound := freeVarLt x rfl
+      show var (map x) = var x
+      rw [map_id_lt x ltBound]
+    | null =>
+      rfl
+    | pair l r ihL ihR =>
+      let varLtL := fun x h => freeVarLt x (Or.inl h)
+      let varLtR := fun x h => freeVarLt x (Or.inr h)
+      exact congrArg₂ pair
+        (ihL bound varLtL map map_id_lt)
+        (ihR bound varLtR map map_id_lt)
+    | ir l r ihL ihR =>
+      let varLtL := fun x h => freeVarLt x (Or.inl h)
+      let varLtR := fun x h => freeVarLt x (Or.inr h)
+      exact congrArg₂ ir
+        (ihL bound varLtL map map_id_lt)
+        (ihR bound varLtR map map_id_lt)
+    | full body ih =>
+      exact congrArg full
+        (ih bound (fun x h => freeVarLt x h) map map_id_lt)
+    | compl body ih =>
+      exact congrArg Expr.compl
+        (ih bound (fun x h => freeVarLt x h) map map_id_lt)
+    | arbIr body ih =>
+      let ihBody:
+        substVar (liftFvMapVar map) body = body
+      :=
+        ih
+          (bound + 1)
+          (fun
+            | 0, _ => Nat.zero_lt_succ _
+            | x + 1, h =>
+              Nat.succ_lt_succ (freeVarLt x h))
+          (liftFvMapVar map)
+          (fun
+            | 0, _ => rfl
+            | x + 1, lt =>
+              congrArg Nat.succ (map_id_lt x (Nat.lt_of_succ_lt_succ lt)))
+      let ihBodySubst:
+        subst (liftFvMap (var ∘ map)) body = body
+      :=
+        (substVar_liftFvMapVar_subst body map).symm.trans ihBody
+      exact congrArg arbIr ihBodySubst
+  
+  private lemma substVar_eq_of_isClean
+    {expr: SingleLaneExpr}
+    (isClean: Expr.IsClean expr)
+    (map: Nat → Nat)
+  :
+    substVar map expr = expr
+  :=
+    substVar_eq_of_freeVarLt
+      0
+      (fun x hx => (isClean x hx).elim)
+      map
+      (fun x h => (Nat.not_lt_zero x h).elim)
+  
+  private lemma subsingle_subst
+    (t: SingleLaneExpr)
+    (map: Nat → Nat)
+  :
+    substVar (liftFvMapVar map) t.isSubsingleton
+      =
+    (substVar map t).isSubsingleton
+  := by
+    show
+      impl
+        (some (ir (substVar (liftFvMapVar map) t.lift) (var 0)))
+        (full (impl (substVar (liftFvMapVar map) t.lift) (var 0)))
+        =
+      impl
+        (some (ir ((substVar map t).lift) (var 0)))
+        (full (impl ((substVar map t).lift) (var 0)))
+    rw [lift_substVar_eq t map]
+
   def mapFv
     {x a: SingleLaneExpr}
     (sub: dl.SubsetStx x a)
     (map: Nat → Nat)
-    (map_inj: ∀ i j, map i = map j → i = j) -- TODO is this necessary?
   :
     dl.SubsetStx (x.substVar map) (a.substVar map)
   :=
     match sub with
     | subId =>
       subId
-    | defPos sub => defPos (mapFv sub map map_inj)
-    | irL sub => irL (mapFv sub map map_inj)
-    | irR sub => irR (mapFv sub map map_inj)
-    | irI subL subR => irI (mapFv subL map map_inj) (mapFv subR map map_inj)
+    | defPos sub => defPos (mapFv sub map)
+    | irL sub => irL (mapFv sub map)
+    | irR sub => irR (mapFv sub map)
+    | irI subL subR => irI (mapFv subL map) (mapFv subR map)
     | complI subL subR =>
-      complI (mapFv subL map map_inj) (mapFv subR map map_inj)
+      complI (mapFv subL map) (mapFv subR map)
     | complElim subL subR =>
-      complElim (mapFv subL map map_inj) (mapFv subR map map_inj)
-    | isFullImpl sub => isFullImpl (mapFv sub map map_inj)
-    | fullImplDist sub => fullImplDist (mapFv sub map map_inj)
-    | fullElim sub => fullElim (mapFv sub map map_inj)
-    | someStripFull sub => someStripFull (mapFv sub map map_inj)
+      complElim (mapFv subL map) (mapFv subR map)
+    | isFullImpl sub => isFullImpl (mapFv sub map)
+    | fullImplDist sub => fullImplDist (mapFv sub map)
+    | fullElim sub => fullElim (mapFv sub map)
+    | someStripFull sub => someStripFull (mapFv sub map)
     | arbIrI (a:=a) sub =>
       let ih :=
         substVar_liftFvMapVar_subst a map ▸
         lift_substVar_eq x map ▸
-        mapFv sub (liftFvMapVar map) sorry
+        mapFv sub (liftFvMapVar map)
       arbIrI ih
     | arbIrElim (t:=t) (a:=a) someSub subsingle sub =>
-      let ihSome := mapFv someSub map map_inj
-      let ihSubsingle := mapFv subsingle map map_inj
-      let ih := mapFv sub map sorry
+      let ihSome := mapFv someSub map
+      let ih := mapFv sub map
+      
+      let ihSubsingle:
+        dl.SubsetStx
+          (substVar (liftFvMapVar map) (lift x))
+          (substVar (liftFvMapVar map) t.isSubsingleton)
+      :=
+        mapFv subsingle (liftFvMapVar map)
+      
+      let isSubsingle:
+        dl.SubsetStx
+          (substVar map x).lift
+          (substVar map t).isSubsingleton
+      :=
+        subsingle_subst t map ▸ (lift_substVar_eq x map ▸ ihSubsingle)
+      
       let subInst:
         dl.SubsetStx
           (substVar map x)
@@ -730,24 +831,33 @@ namespace DefList.SubsetStx
       :=
         subst_comp_var _ _ _ ▸
         substVar_liftFvMapVar_subst a map ▸
-        arbIrElim ihSome sorry ih
+        arbIrElim ihSome isSubsingle ih
       let eq:
         (instantiateVar.fn (substVar map t) ∘ liftFvMapVar map)
           =
         (fun x => subst (var ∘ map) (instantiateVar.fn t x))
       :=
-        funext fun | 0 => rfl | n + 1 => rfl
+        funext fun | 0 => rfl | _ + 1 => rfl
       show dl.SubsetStx _ (subst _ (subst _ _)) from
       subst_subst _ _ _ ▸ eq ▸ subInst
-    | varSomeFull sub => varSomeFull (mapFv sub map map_inj)
-    | varFullSome sub => varFullSome (mapFv sub map map_inj)
-    | unfold sub => sorry
-    | fold sub => fold sorry
+    | varSomeFull sub => varSomeFull (mapFv sub map)
+    | varFullSome sub => varFullSome (mapFv sub map)
+    | unfold (lane:=lane) (c:=c) sub =>
+      let ih := mapFv sub map
+      let hClean :=
+        substVar_eq_of_isClean ((dl.isClean c).toLane lane) map
+      hClean.symm ▸ unfold ih
+    | fold (lane:=lane) (c:=c) sub =>
+      let ih := mapFv sub map
+      let hClean :=
+        substVar_eq_of_isClean ((dl.isClean c).toLane lane) map
+      fold (hClean ▸ ih)
     | trans subAb subBc =>
-      trans (mapFv subAb map map_inj) (mapFv subBc map map_inj)
-    | mutInduction desc premises i => sorry
+      trans (mapFv subAb map) (mapFv subBc map)
+    | mutInduction desc premises i =>
+      sorry
     | simplePairInduction sub =>
-      simplePairInduction (mapFv sub map map_inj)
+      simplePairInduction (mapFv sub map)
   
   def ofLift {x a d l}
     (sub: dl.SubsetStx (x.lift d l) (a.lift d l))
