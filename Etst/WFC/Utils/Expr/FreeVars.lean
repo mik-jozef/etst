@@ -194,6 +194,54 @@ namespace Expr
       injection eq with eqa
       exact congrArg arbIr (lift_inj eqa)
   
+  -- Intuition: if one lift at `depth` already lands where a lift at
+  -- `k + depth` would land, then after lifting once more we keep that
+  -- alignment one level up (`depth` ↦ `k + depth + 1`).
+  def lift_inv_step {expr: Expr E} {k depth}
+    (eq: expr.lift depth 1 = expr.lift (k + depth) 1)
+  :
+    Eq
+      ((expr.lift depth 1).lift depth 1)
+      ((expr.lift depth 1).lift (k + depth + 1) 1)
+  :=
+    match expr with
+    | const _ _ => rfl
+    | var x => by
+      if h: x < depth then
+        rw [lift_var_lt x h 1]
+        have hx: x < k + depth + 1 := by omega
+        rw [lift_var_lt x hx 1]
+        exact lift_var_lt x h 1
+      else
+        let ge := not_lt.mp h
+        rw [lift_var_ge x ge 1]
+        rw [lift_var_ge _ (Nat.le_trans ge (Nat.le_succ _)) 1]
+        have x_ge: x >= k + depth := by
+          by_contra h_ge
+          have h_lt: x < k + depth := Nat.lt_of_not_ge h_ge
+          rw [lift_var_ge x ge 1] at eq
+          rw [lift_var_lt x h_lt 1] at eq
+          injection eq with eq
+          omega
+        rw [lift_var_ge _ (Nat.succ_le_succ x_ge) 1]
+    | null => rfl
+    | pair l r =>
+      congrArg₂
+        pair
+        (lift_inv_step (by injection eq))
+        (lift_inv_step (by injection eq))
+    | ir l r =>
+      congrArg₂
+        ir
+        (lift_inv_step (by injection eq))
+        (lift_inv_step (by injection eq))
+    | full body =>
+      congrArg full (lift_inv_step (by injection eq))
+    | compl body =>
+      congrArg compl (lift_inv_step (by injection eq))
+    | arbIr body =>
+      congrArg arbIr (lift_inv_step (depth:=depth+1) (by injection eq))
+
   
   def liftFvMapVar_comp
     (f g: Nat → Nat)
@@ -316,10 +364,111 @@ namespace Expr
       (substVar (liftFvMapVar map) (lift expr))
       (substVar map expr).lift
   := by
-    rw [expr.lift_eq_substLift 0 1, lift_eq_substLift _ 0 1]
+    rw [expr.lift_eq_substLift, lift_eq_substLift]
     rw [substLift, substLift]
     rw [←substVar_comp, ←substVar_comp]
     rfl
+  
+  def subst_liftFvMap_lift_general
+    (k: Nat)
+    (f: Nat → Expr E)
+    (expr: Expr E)
+    (h_safe: ∀ x, k ≤ x → (f x).lift 0 1 = (f x).lift k 1)
+    (h_id: ∀ x, x < k → f x = var x)
+  :
+    subst (liftFvMap f) (expr.lift k 1) = (subst f expr).lift k 1
+  :=
+    match expr with
+    | const _ _ => rfl
+    | var x => by
+      if h: x < k then
+        rw [lift_var_lt x h 1]
+        simp only [subst, liftFvMap]
+        split
+        next =>
+          rw [h_id 0 h]
+          rw [lift_var_lt 0 h 1]
+        next y =>
+          rw [h_id y (Nat.lt_trans (Nat.lt_succ_self y) h)]
+          rw [lift_var_ge y (Nat.zero_le _) 1]
+          rw [h_id (y + 1) h]
+          rw [lift_var_lt (y + 1) h 1]
+      else
+        let ge := not_lt.mp h
+        rw [lift_var_ge x ge 1]
+        dsimp [subst, liftFvMap]
+        exact h_safe x ge
+    | null => rfl
+    | pair l r =>
+      congrArg₂
+        pair
+        (subst_liftFvMap_lift_general k f l h_safe h_id)
+        (subst_liftFvMap_lift_general k f r h_safe h_id)
+    | ir l r =>
+      congrArg₂
+        ir
+        (subst_liftFvMap_lift_general k f l h_safe h_id)
+        (subst_liftFvMap_lift_general k f r h_safe h_id)
+    | full body =>
+      congrArg full (subst_liftFvMap_lift_general k f body h_safe h_id)
+    | compl body =>
+      congrArg compl (subst_liftFvMap_lift_general k f body h_safe h_id)
+    | arbIr body =>
+      congrArg
+        arbIr
+        (subst_liftFvMap_lift_general (k + 1) (liftFvMap f) body
+          (fun x hx =>
+            match x with
+            | 0 => (Nat.not_succ_le_zero k hx).elim
+            | y + 1 =>
+              lift_inv_step
+                (k:=k)
+                (depth:=0)
+                (h_safe y (Nat.le_of_succ_le_succ hx)))
+          (fun x hx =>
+            match x with
+            | 0 => rfl
+            | y + 1 => by
+              dsimp [liftFvMap]
+              rw [h_id y (Nat.lt_of_succ_lt_succ hx)]
+              exact lift_var_ge y (Nat.zero_le _) 1))
+
+  def lift_subst_eq
+    (f: Nat → Expr E)
+    (expr: Expr E)
+  :
+    subst (liftFvMap f) expr.lift = (subst f expr).lift
+  :=
+    subst_liftFvMap_lift_general
+      0
+      f
+      expr
+      (fun _ _ => rfl)
+      (fun x h => (Nat.not_lt_zero x h).elim)
+  
+  def subst_subst
+    (f g: Nat → Expr E)
+    (expr: Expr E)
+  :
+    subst f (subst g expr) = subst (fun x => subst f (g x)) expr
+  :=
+    match expr with
+    | const _ _ => rfl
+    | var x => rfl
+    | null => rfl
+    | pair l r =>
+      congrArg₂ pair (subst_subst f g l) (subst_subst f g r)
+    | ir l r =>
+      congrArg₂ ir (subst_subst f g l) (subst_subst f g r)
+    | full body => congrArg full (subst_subst f g body)
+    | compl body => congrArg compl (subst_subst f g body)
+    | arbIr body =>
+      congrArg arbIr (by
+        rw [subst_subst (liftFvMap f) (liftFvMap g) body]
+        apply congrArg (subst · body)
+        exact funext fun
+        | 0 => rfl
+        | n + 1 => lift_subst_eq f (g n))
   
   
   def instantiateVar_lift_eq_depth

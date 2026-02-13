@@ -718,10 +718,10 @@ namespace DefList.SubsetStx
         mapFv sub (liftFvMapVar map) sorry
       arbIrI ih
     | arbIrElim (t:=t) (a:=a) someSub subsingle sub =>
-      let ihSub := mapFv someSub map map_inj
-      let ihSingle := mapFv subsingle map map_inj
+      let ihSome := mapFv someSub map map_inj
+      let ihSubsingle := mapFv subsingle map map_inj
       let ih := mapFv sub map sorry
-      let lk:
+      let subInst:
         dl.SubsetStx
           (substVar map x)
           (subst
@@ -730,8 +730,15 @@ namespace DefList.SubsetStx
       :=
         subst_comp_var _ _ _ ▸
         substVar_liftFvMapVar_subst a map ▸
-        arbIrElim ihSub sorry ih
-      sorry
+        arbIrElim ihSome sorry ih
+      let eq:
+        (instantiateVar.fn (substVar map t) ∘ liftFvMapVar map)
+          =
+        (fun x => subst (var ∘ map) (instantiateVar.fn t x))
+      :=
+        funext fun | 0 => rfl | n + 1 => rfl
+      show dl.SubsetStx _ (subst _ (subst _ _)) from
+      subst_subst _ _ _ ▸ eq ▸ subInst
     | varSomeFull sub => varSomeFull (mapFv sub map map_inj)
     | varFullSome sub => varFullSome (mapFv sub map map_inj)
     | unfold sub => sorry
