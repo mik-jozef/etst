@@ -52,6 +52,14 @@ namespace Expr
   | 0 => 0
   | n + 1 => (fvMap n) + 1
   
+  def liftFvMapVarDepth
+    (depth: Nat)
+    (map: Nat → Nat)
+  :
+    Nat → Nat
+  :=
+    Nat.rec map (fun _ ih => liftFvMapVar ih) depth
+  
   def lift_var_lt
     (x: Nat)
     {depth} (lt: x < depth)

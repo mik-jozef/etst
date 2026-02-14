@@ -11,55 +11,146 @@ namespace DefList.SubsetStx
     (t: SingleLaneExpr)
     (map: Nat → Nat)
   :
-    substVar (liftFvMapVar map) t.isSubsingleton
-      =
-    (substVar map t).isSubsingleton
+    Eq
+      (substVar (liftFvMapVar map) t.isSubsingleton)
+      ((substVar map t).isSubsingleton)
   := by
     show
-      impl
-        (some (ir (substVar (liftFvMapVar map) t.lift) (var 0)))
-        (full (impl (substVar (liftFvMapVar map) t.lift) (var 0)))
-        =
-      impl
-        (some (ir ((substVar map t).lift) (var 0)))
-        (full (impl ((substVar map t).lift) (var 0)))
+      Eq
+        (impl
+          (some (ir (substVar (liftFvMapVar map) t.lift) (var 0)))
+          (full (impl (substVar (liftFvMapVar map) t.lift) (var 0))))
+        (impl
+          (some (ir ((substVar map t).lift) (var 0)))
+          (full (impl ((substVar map t).lift) (var 0))))
     rw [lift_substVar_eq t map]
-
-  -- TODO unify with liftFvMapVarDepth?
-  private def mapAtDepth
-    (map: Nat → Nat)
-    (depth: Nat)
-  :
-    Nat → Nat
-  :=
-    Nat.rec map (fun _ ih => liftFvMapVar ih) depth
-
-  private lemma substVar_hypothesify_map
+  
+  private def substVar_hypothesify_map
     (desc: MutIndDescriptor dl)
     (map: Nat → Nat)
-    (mapDesc: InductionDescriptor dl → InductionDescriptor dl)
-    (descMap: MutIndDescriptor dl)
-    (hMapDesc:
-      mapDesc
-        =
-      fun d => {
-        lane := d.lane
-        x := d.x
-        expr := substVar map d.expr
-        expansion := d.expansion
-        expandsInto := d.expandsInto
-      })
-    (hDescMap: descMap = desc.map mapDesc)
     (depth: Nat)
+    (ed: Bool)
     (expr: SingleLaneExpr)
-    (exprVarLt: ∀ x ∈ expr.UsesFreeVar, x < depth)
+    (varLt: ∀ x ∈ expr.UsesFreeVar, x < depth)
   :
-    substVar (mapAtDepth map depth) (desc.hypothesify depth expr)
-      =
-    descMap.hypothesify depth expr
-  :=
-    sorry
+    let mapDesc d: InductionDescriptor dl := {
+      lane := d.lane
+      x := d.x
+      expr := substVar map d.expr
+      expansion := d.expansion
+      expandsInto := d.expandsInto
+    }
+    Eq
+      (substVar
+        (liftFvMapVarDepth depth map)
+        (replaceDepthEvenConsts expr depth ed desc.hypothesis))
+      (replaceDepthEvenConsts
+        expr
+        depth
+        ed
+        (MutIndDescriptor.hypothesis (desc.map mapDesc)))
+  := by
+    intro mapDesc; exact
+    let rec map_var_lt {d y} (lt: y < d):
+      liftFvMapVarDepth d map y = y
+    :=
+      match d with
+      | 0 => (Nat.not_lt_zero y lt).elim
+      | dPred + 1 =>
+        match y with
+        | 0 => rfl
+        | yPred + 1 =>
+          congrArg Nat.succ (map_var_lt (Nat.lt_of_succ_lt_succ lt))
 
+    let rec map_var_ge {d y}:
+      liftFvMapVarDepth d map (y + d) = map y + d
+    :=
+      match d with
+      | 0 => rfl
+      | dPred + 1 => congrArg Nat.succ (map_var_ge)
+
+    let substVar_lift_depth_eq
+      (body: SingleLaneExpr)
+    :
+      Eq
+        (substVar (liftFvMapVarDepth depth map) (body.lift 0 depth))
+        ((substVar map body).lift 0 depth)
+    := by
+      let compEq:
+        Eq
+          ((liftFvMapVarDepth depth map) ∘ (substLift.fn 0 depth))
+          ((substLift.fn 0 depth) ∘ map)
+      :=
+        funext fun _ => map_var_ge
+      rw [body.lift_eq_substLift, substLift]
+      rw [←substVar_comp]
+      rw [compEq]
+      rw [substVar_comp]
+      rw [lift_eq_substLift, substLift]
+
+    match expr with
+    | .const lane x =>
+      match ed with
+      | true =>
+        let rec hypo_map desc:
+          Eq
+            (substVar
+              (liftFvMapVarDepth depth map)
+              (MutIndDescriptor.hypothesis desc depth lane x))
+            (MutIndDescriptor.hypothesis (desc.map mapDesc) depth lane x)
+        :=
+          match desc with
+          | [] => rfl
+          | head :: tail => by
+            let ih := hypo_map tail
+            dsimp [MutIndDescriptor.hypothesis, InductionDescriptor.hypothesis]
+            split_ifs with h
+            · exact congrArg₂ Expr.ir (substVar_lift_depth_eq head.expr) ih
+            · exact ih
+        hypo_map desc
+      | false => rfl
+    | .var x =>
+      congrArg Expr.var (map_var_lt (varLt x rfl))
+    | .null => rfl
+    | .pair l r =>
+      let varLtL x h := varLt x (Or.inl h)
+      let varLtR x h := varLt x (Or.inr h)
+      congrArg₂
+        pair
+          (substVar_hypothesify_map desc map depth ed l varLtL)
+          (substVar_hypothesify_map desc map depth ed r varLtR)
+    | .ir l r =>
+      let varLtL x h := varLt x (Or.inl h)
+      let varLtR x h := varLt x (Or.inr h)
+      congrArg₂
+        ir
+          (substVar_hypothesify_map desc map depth ed l varLtL)
+          (substVar_hypothesify_map desc map depth ed r varLtR)
+    | .full body =>
+      congrArg
+        full
+        (substVar_hypothesify_map desc map depth ed body varLt)
+    | .compl body =>
+      congrArg
+        Expr.compl
+        (substVar_hypothesify_map desc map depth (!ed) body varLt)
+    | .arbIr body =>
+      let varLtB x (h: body.UsesFreeVar x): x < depth + 1 :=
+        match x with
+        | 0 => Nat.zero_lt_succ depth
+        | xp + 1 => Nat.succ_lt_succ (varLt xp h)
+      let ih:
+        Eq
+          (substVar
+            (liftFvMapVarDepth (depth + 1) map)
+            (replaceDepthEvenConsts body (depth + 1) ed desc.hypothesis))
+          _
+      :=
+        substVar_hypothesify_map desc map (depth + 1) ed body varLtB
+      congrArg
+        arbIr
+        (substVar_liftFvMapVar_subst _ _ ▸ ih)
+  
   def mapFv
     {x a: SingleLaneExpr}
     (sub: dl.SubsetStx x a)
@@ -67,23 +158,6 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx (x.substVar map) (a.substVar map)
   :=
-    /-
-      Status (2026-02-14): all `mapFv` branches are routine except
-      `mutInduction`.
-
-      In that branch, descriptor/index bookkeeping (`mapDesc`, `descMap`,
-      `iMap`, `eqMap`) is already in place, and the final return cast is solved.
-
-      The only remaining proof work is `mappedPremises`: transport the codomain
-      of `mapFv (premises j.unmap) map` from
-        `substVar map (desc.hypothesify 0 Ej)`
-      to
-        `descMap.hypothesify 0 Ej`
-      (with the expected depth-sensitive behavior under binders).
-
-      So the current target is a dedicated compatibility lemma between
-      `substVar` and `MutIndDescriptor.hypothesify`.
-    -/
     match sub with
     | subId =>
       subId
@@ -134,9 +208,9 @@ namespace DefList.SubsetStx
         substVar_liftFvMapVar_subst a map ▸
         arbIrElim ihSome isSubsingle ih
       let eq:
-        (instantiateVar.fn (substVar map t) ∘ liftFvMapVar map)
-          =
-        (fun x => subst (var ∘ map) (instantiateVar.fn t x))
+        Eq
+          (instantiateVar.fn (substVar map t) ∘ liftFvMapVar map)
+          (fun x => subst (var ∘ map) (instantiateVar.fn t x))
       :=
         funext fun | 0 => rfl | _ + 1 => rfl
       show dl.SubsetStx _ (subst _ (subst _ _)) from
@@ -156,14 +230,14 @@ namespace DefList.SubsetStx
     | trans subAb subBc =>
       trans (mapFv subAb map) (mapFv subBc map)
     | mutInduction desc premises i =>
-      let mapDesc: InductionDescriptor dl → InductionDescriptor dl :=
-        fun d => {
-          lane := d.lane
-          x := d.x
-          expr := substVar map d.expr
-          expansion := d.expansion
-          expandsInto := d.expandsInto
-        }
+      let mapDesc (d: InductionDescriptor dl): InductionDescriptor dl := {
+        lane := d.lane
+        x := d.x
+        expr := substVar map d.expr
+        expansion := d.expansion
+        expandsInto := d.expandsInto
+      }
+      
       let descMap: MutIndDescriptor dl := desc.map mapDesc
       let iMap := i.map mapDesc
       let listEq j: List.get _ _ = _ := desc.getElem_map mapDesc
@@ -174,6 +248,25 @@ namespace DefList.SubsetStx
         rw [listEq]
         rfl
       
+      let substHypoEq (j: descMap.Index):
+        Eq
+        (substVar
+          map
+          (desc.hypothesify 0 (desc[j.unmap].expansion.toLane desc[j.unmap].lane)))
+          (descMap.hypothesify 0 (desc[j.unmap].expansion.toLane desc[j.unmap].lane))
+      :=
+        let d := desc[j.unmap]
+        let expr := d.expansion.toLane d.lane
+        let expClean: d.expansion.IsClean :=
+          d.expandsInto.isClean_expands
+            0
+            (fun x h => (dl.isClean d.x) (x + 0) h)
+        let varLt: ∀ x ∈ UsesFreeVar expr, x < 0 :=
+          fun x h =>
+            let iff := BasicExpr.toLane_UsesFreeVar d.expansion d.lane x
+            False.elim (expClean x (iff.mp h))
+        substVar_hypothesify_map desc map 0 true expr varLt
+      
       let mappedPremises (j: descMap.Index):
         dl.SubsetStx
           (substVar map x)
@@ -183,51 +276,11 @@ namespace DefList.SubsetStx
               descMap[j].expr))
       :=
         let premMapped := mapFv (premises j.unmap) map
-        let hHyp:
-          substVar map
-            (desc.hypothesify 0 (desc[j.unmap].expansion.toLane desc[j.unmap].lane))
-            =
-          descMap.hypothesify 0 (desc[j.unmap].expansion.toLane desc[j.unmap].lane)
-        :=
-          by
-            simpa [mapAtDepth] using
-              (substVar_hypothesify_map
-                desc
-                map
-                mapDesc
-                descMap
-                rfl
-                rfl
-                0
-                (desc[j.unmap].expansion.toLane desc[j.unmap].lane)
-                (by
-                  /-
-                    Expected source: cleanliness of descriptor expansions
-                    (`desc[j].expansion`) coming from the underlying definition
-                    list invariants.
-                  -/
-                  sorry))
-        /-
-          Remaining obligation in this branch:
-          rewrite the `hypothesify` part in `premMapped` via the pending
-          `substVar`-`hypothesify` compatibility lemma.
-        -/
-        eqMap j ▸
-        hHyp ▸
-        premMapped
+        eqMap j ▸ substHypoEq j ▸ premMapped
 
-      let ih:
-        dl.SubsetStx
-          (substVar map x)
-          (full
-            (impl
-              (const descMap[iMap].lane descMap[iMap].x)
-              descMap[iMap].expr))
-      :=
-        mutInduction descMap mappedPremises iMap
-
-      show dl.SubsetStx _ (substVar map ((const desc[i.val].lane desc[i.val].x).impl desc[i.val].expr).full) from
-      by simpa [descMap, iMap, mapDesc] using ih
+      let ih := mutInduction descMap mappedPremises iMap
+      
+      by rw [eqMap] at ih; exact ih
     | simplePairInduction sub =>
       simplePairInduction (mapFv sub map)
   

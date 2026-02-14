@@ -75,6 +75,38 @@ namespace DefList.ExpandsInto
   :=
     compl (arbIr (compl (Bool.not_not _ ▸ exp)))
   
+  def isClean_expands
+    {ed a b}
+    (exp: ExpandsInto dl ed a b)
+    (shift: Nat)
+    {P: Nat → Prop}
+    (h: ∀ x, a.UsesFreeVar (x + shift) → P x)
+  :
+    ∀ x, b.UsesFreeVar (x + shift) → P x
+  :=
+    match exp with
+    | .refl _ => h
+    | .const x exp =>
+      isClean_expands
+        exp
+        shift
+        (fun y hy => False.elim ((dl.isClean x) (y + shift) hy))
+    | .pair left rite =>
+      let hL := isClean_expands left shift (fun x hx => h x (Or.inl hx))
+      let hR := isClean_expands rite shift (fun x hx => h x (Or.inr hx))
+      fun x hx => Or.elim hx (hL x) (hR x)
+    | .full exp =>
+      let hExp := isClean_expands exp shift (fun x hx => h x hx)
+      fun x hx => hExp x hx
+    | .ir left rite =>
+      let hL := isClean_expands left shift (fun x hx => h x (Or.inl hx))
+      let hR := isClean_expands rite shift (fun x hx => h x (Or.inr hx))
+      fun x hx => Or.elim hx (hL x) (hR x)
+    | .compl exp =>
+      fun x hx => isClean_expands exp shift (fun x hx => h x hx) x hx
+    | .arbIr exp =>
+      fun x hx => isClean_expands exp (shift + 1) (fun x hx => h x hx) x hx
+  
   
   open BasicExpr in
   def triIntp_eq_wfm {ed left rite}
