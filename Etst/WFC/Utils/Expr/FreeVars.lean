@@ -501,76 +501,6 @@ namespace Expr
         | 0 => rfl
         | n + 1 => lift_subst_eq f (g n))
   
-  
-  def instantiateVar_lift_eq_depth
-    (expr: Expr E)
-    (f: Nat → Expr E)
-    (depth: Nat)
-    (eq_lt: ∀ x, x < depth → f x = var x)
-    (eq_ge: ∀ x, depth ≤ x → f x.succ = var x)
-  :
-    (expr.lift depth 1).subst f = expr
-  :=
-    match expr with
-    | const _ _ => rfl
-    | var x =>
-      if h: depth ≤ x then
-        lift_var_ge x h 1 ▸ eq_ge x h
-      else
-        let lt := not_le.mp h
-        (lift_var_lt x lt 1).symm ▸ eq_lt x lt
-    | null => rfl
-    | pair l r =>
-      congrArg₂
-        pair
-        (l.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
-        (r.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
-    | ir l r =>
-      congrArg₂
-        ir
-        (l.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
-        (r.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
-    | full body =>
-      congrArg
-        full
-        (body.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
-    | compl body =>
-      congrArg
-        compl
-        (body.instantiateVar_lift_eq_depth f depth eq_lt eq_ge)
-    | arbIr body =>
-      congrArg
-        arbIr
-        (body.instantiateVar_lift_eq_depth
-          (liftFvMap f)
-          depth.succ
-          (fun x hx =>
-            match x with
-            | 0 => rfl
-            | x + 1 => by
-              show (f x).lift = var (x + 1)
-              rw [eq_lt x (Nat.lt_of_succ_lt_succ hx)]
-              exact lift_var_ge x (Nat.zero_le _) 1)
-          (fun x hx => by
-            match x with
-            | 0 => exact (Nat.not_succ_le_zero depth hx).elim
-            | x + 1 =>
-              show (f (x + 1)).lift = var (x + 1)
-              rw [eq_ge x (Nat.le_of_succ_le_succ hx)]
-              exact lift_var_ge x (Nat.zero_le _) 1))
-  
-  def instantiateVar_lift_eq
-    (expr: Expr E)
-    (t: Expr E)
-  :
-    expr.lift.instantiateVar t = expr
-  :=
-    expr.instantiateVar_lift_eq_depth
-      (fun | 0 => t | x + 1 => var x)
-      0
-      nofun
-      (fun _ _ => rfl)
-  
   def freeVarUb
     (expr: Expr E)
   :
@@ -733,6 +663,18 @@ namespace Expr
       :=
         funext fun | 0 => rfl | _+1 => rfl
       congrArg arbIr (liftEq.symm ▸ body.substId_eq)
+  
+  def instantiateVar_lift_eq
+    (expr: Expr E)
+    (t: Expr E)
+  :
+    expr.lift.instantiateVar t = expr
+  := by
+    let succEq: substLift.fn 0 1 = Nat.succ := funext fun _ => rfl
+    rw [instantiateVar]
+    rw [lift_eq_substLift expr 0 1, substLift, succEq]
+    rw [←subst_comp_var (instantiateVar.fn t) Nat.succ expr]
+    exact substId_eq expr
   
   def substVar_substUnlift_substLift_eq
     (expr: Expr E)

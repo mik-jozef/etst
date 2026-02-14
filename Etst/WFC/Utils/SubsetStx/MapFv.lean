@@ -293,10 +293,10 @@ namespace DefList.SubsetStx
     let aEq := substVar_substUnlift_lift_eq a d l
     xEq ▸ aEq ▸ mapFv sub (substUnlift.fn d l)
   
-  def toLift
-    {x a: SingleLaneExpr}
+  def toLift {x a}
     (sub: dl.SubsetStx x a)
-    (d l: Nat)
+    (d: Nat := 0)
+    (l: Nat := 1)
   :
     dl.SubsetStx (x.lift d l) (a.lift d l)
   :=
