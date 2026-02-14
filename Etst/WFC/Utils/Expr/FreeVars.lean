@@ -33,6 +33,9 @@ namespace Expr
   def substLift.fn (depth liftBy: Nat) :=
     fun x => if x < depth then x else x + liftBy
   
+  def substUnlift.fn (depth unliftBy: Nat) :=
+    fun x => if x < depth then x else x - unliftBy
+  
   -- Redefining `lift` using `substVar`, so we can use composition
   -- properties of `substVar` to prove properties of `lift`.
   def substLift
@@ -321,6 +324,26 @@ namespace Expr
   :=
     subst_comp_var (var ∘ f) g expr
   
+  def substUnlift_comp_substLift
+    (depth liftBy: Nat)
+  :
+    Eq
+      ((substUnlift.fn depth liftBy) ∘ (substLift.fn depth liftBy))
+      id
+  :=
+    funext fun y =>
+      if h: y < depth then
+        by
+          dsimp [substUnlift.fn, substLift.fn]
+          rw [if_pos h, if_pos h]
+      else
+        by
+          let ge: depth ≤ y := Nat.le_of_not_lt h
+          dsimp [substUnlift.fn, substLift.fn]
+          rw [if_neg h]
+          rw [if_neg (not_lt.mpr (Nat.le_trans ge (Nat.le_add_right _ _)))]
+          exact Nat.add_sub_cancel y liftBy
+  
   def liftFvMapVar_substLiftFun {depth liftBy}:
     Eq
       (liftFvMapVar (substLift.fn depth liftBy))
@@ -606,8 +629,10 @@ namespace Expr
     | .arbIr body => by
       let ih :=
         freeVarUb_lift_eq_depth body liftBy (depth + 1)
-      show (body.lift (depth + 1) liftBy).freeVarUb - 1 - liftBy - depth =
-        body.freeVarUb - 1 - depth
+      show
+        Eq
+          ((body.lift (depth + 1) liftBy).freeVarUb - 1 - liftBy - depth)
+          (body.freeVarUb - 1 - depth)
       omega
   
   def freeVarUb_le_lift
@@ -708,6 +733,33 @@ namespace Expr
       :=
         funext fun | 0 => rfl | _+1 => rfl
       congrArg arbIr (liftEq.symm ▸ body.substId_eq)
+  
+  def substVar_substUnlift_substLift_eq
+    (expr: Expr E)
+    (depth liftBy: Nat)
+  :
+    Eq
+      (substVar
+        (substUnlift.fn depth liftBy)
+        (substVar (substLift.fn depth liftBy) expr))
+      expr
+  := by
+    rw [←substVar_comp]
+    rw [substUnlift_comp_substLift]
+    exact substId_eq expr
+
+  def substVar_substUnlift_lift_eq
+    (expr: Expr E)
+    (depth liftBy: Nat)
+  :
+    Eq
+      (substVar
+        (substUnlift.fn depth liftBy)
+        (expr.lift depth liftBy))
+      expr
+  := by
+    rw [lift_eq_substLift expr depth liftBy, substLift]
+    exact substVar_substUnlift_substLift_eq expr depth liftBy
   
   
   def subst_eq_of_freeVarLt {E}

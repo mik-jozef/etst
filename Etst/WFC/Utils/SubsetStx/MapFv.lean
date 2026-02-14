@@ -289,9 +289,10 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x a
   :=
-    sorry
+    let xEq := substVar_substUnlift_lift_eq x d l
+    let aEq := substVar_substUnlift_lift_eq a d l
+    xEq ▸ aEq ▸ mapFv sub (substUnlift.fn d l)
   
-  -- TODO special case of `mapFv`.
   def toLift
     {x a: SingleLaneExpr}
     (sub: dl.SubsetStx x a)
@@ -299,31 +300,8 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx (x.lift d l) (a.lift d l)
   :=
-    match sub with
-    | subId => subId
-    | defPos sub => defPos (toLift sub d l)
-    | irL sub => irL (toLift sub d l)
-    | irR sub => irR (toLift sub d l)
-    | irI subL subR => irI (toLift subL d l) (toLift subR d l)
-    | complI subL subR =>
-      complI (toLift subL d l) (toLift subR d l)
-    | complElim subL subR => complElim (toLift subL d l) (toLift subR d l)
-    | isFullImpl sub => isFullImpl (toLift sub d l)
-    | fullImplDist sub => fullImplDist (toLift sub d l)
-    | fullElim sub => fullElim (toLift sub d l)
-    | someStripFull sub => someStripFull (toLift sub d l)
-    | arbIrI sub =>
-      -- let ih := toLift sub (d + 1) l
-      -- arbIrI ih
-      sorry
-    | arbIrElim someSub subsingle sub =>
-      sorry
-    | varSomeFull sub => varSomeFull (toLift sub d l)
-    | varFullSome sub => varFullSome (toLift sub d l)
-    | unfold sub => sorry
-    | fold sub => fold sorry
-    | trans subAb subBc => trans (toLift subAb d l) (toLift subBc d l)
-    | mutInduction desc premises i => sorry
-    | simplePairInduction sub => simplePairInduction (toLift sub d l)
+    lift_eq_substLift x d l ▸
+    lift_eq_substLift a d l ▸
+    mapFv sub (substLift.fn d l)
   
 end DefList.SubsetStx
