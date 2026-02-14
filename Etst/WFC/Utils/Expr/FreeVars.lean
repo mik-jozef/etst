@@ -701,6 +701,75 @@ namespace Expr
         funext fun | 0 => rfl | _+1 => rfl
       congrArg arbIr (liftEq.symm ▸ body.substId_eq)
   
+  
+  def subst_eq_of_freeVarLt {E}
+    {expr: Expr E}
+    (bound: Nat)
+    (freeVarLt: ∀ x ∈ expr.UsesFreeVar, x < bound)
+    (map: Nat → Expr E)
+    (map_id_lt: ∀ x, x < bound → map x = var x)
+  :
+    subst map expr = expr
+  := by
+    induction expr generalizing bound map with
+    | const _ _ =>
+      rfl
+    | var x =>
+      let ltBound := freeVarLt x rfl
+      show (map x) = var x
+      rw [map_id_lt x ltBound]
+    | null =>
+      rfl
+    | pair l r ihL ihR =>
+      let varLtL := fun x h => freeVarLt x (Or.inl h)
+      let varLtR := fun x h => freeVarLt x (Or.inr h)
+      exact congrArg₂ pair
+        (ihL bound varLtL map map_id_lt)
+        (ihR bound varLtR map map_id_lt)
+    | ir l r ihL ihR =>
+      let varLtL := fun x h => freeVarLt x (Or.inl h)
+      let varLtR := fun x h => freeVarLt x (Or.inr h)
+      exact congrArg₂ ir
+        (ihL bound varLtL map map_id_lt)
+        (ihR bound varLtR map map_id_lt)
+    | full body ih =>
+      exact congrArg full
+        (ih bound (fun x h => freeVarLt x h) map map_id_lt)
+    | compl body ih =>
+      exact congrArg Expr.compl
+        (ih bound (fun x h => freeVarLt x h) map map_id_lt)
+    | arbIr body ih =>
+      let ihBody:
+        subst (liftFvMap map) body = body
+      :=
+        ih
+          (bound + 1)
+          (fun
+            | 0, _ => Nat.zero_lt_succ _
+            | x + 1, h =>
+              Nat.succ_lt_succ (freeVarLt x h))
+          (liftFvMap map)
+          (fun
+            | 0, _ => rfl
+            | x + 1, lt =>
+              let mapId := map_id_lt x (Nat.lt_of_succ_lt_succ lt)
+              show lift _ = _ from
+              mapId ▸ rfl)
+      exact congrArg arbIr ihBody
+  
+  def substVar_eq_of_isClean
+    {expr: SingleLaneExpr}
+    (isClean: Expr.IsClean expr)
+    (map: Nat → Nat)
+  :
+    substVar map expr = expr
+  :=
+    subst_eq_of_freeVarLt
+      0
+      (fun x hx => (isClean x hx).elim)
+      (var ∘ map)
+      (fun x h => (Nat.not_lt_zero x h).elim)
+  
 end Expr
 
 namespace SingleLaneExpr
