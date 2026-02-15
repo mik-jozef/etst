@@ -204,7 +204,7 @@ namespace DefList.SubsetStx
     dl.SubsetStx a (un a b)
   :=
     complI subIrL (trans subIrR subIrL)
-
+  
   def subUnR {a b}:
     dl.SubsetStx b (un a b)
   :=
@@ -231,7 +231,7 @@ namespace DefList.SubsetStx
     dl.SubsetStx (un l r) b
   :=
     (subCompl (irI (subCompl ac) (subCompl bc))).trans subDne
-
+  
   def em {x a}:
     dl.SubsetStx x (un a a.compl)
   :=
@@ -364,7 +364,7 @@ namespace DefList.SubsetStx
     unCtx
       (irI (irCtxL subUnL) subIrR)
       (irI (irCtxL subUnR) subIrR)
-
+  
   def subIrUnDistElimR {a b c}:
     dl.SubsetStx
       (un (ir a b) (ir a c))
@@ -373,7 +373,7 @@ namespace DefList.SubsetStx
     unCtx
       (irI subIrL (irCtxR subUnL))
       (irI subIrL (irCtxR subUnR))
-
+  
   def subUnIrDistL {a b c}:
     dl.SubsetStx
       (un (ir a b) c)
@@ -382,7 +382,7 @@ namespace DefList.SubsetStx
     unCtx
       (irLR subUnL subUnL)
       (irI subUnR subUnR)
-
+  
   def subUnIrDistR {a b c}:
     dl.SubsetStx
       (un a (ir b c))
@@ -391,7 +391,7 @@ namespace DefList.SubsetStx
     unCtx
       (irI subUnL subUnL)
       (irLR subUnR subUnR)
-
+  
   def subUnIrDistElimL {a b c}:
     dl.SubsetStx
       (ir (un a c) (un b c))
@@ -402,7 +402,7 @@ namespace DefList.SubsetStx
         ((irUnDistR subId).trans
           (unCtx subUnL (irCtxR subUnR)))
         (irCtxL subUnR))
-
+  
   def subUnIrDistElimR {a b c}:
     dl.SubsetStx
       (ir (un a b) (un a c))
@@ -522,7 +522,7 @@ namespace DefList.SubsetStx
     em.unElimImpl
       (implIntro (unR subIrR))
       (implIntro (unL (implElim subIrL subIrR)))
-
+  
   def contra {x a b}
     (sub: dl.SubsetStx x (impl a b))
   :
@@ -787,7 +787,7 @@ namespace DefList.SubsetStx
       irI subYa subYnotA
     
     trans (implIntro subYNope) (unCtx subId subPe)
-
+  
   def arbUnElim {x a b}
     (sub: dl.SubsetStx x (arbUn a))
     (impl: dl.SubsetStx x.lift (impl a b.lift))
@@ -807,12 +807,12 @@ namespace DefList.SubsetStx
   --   dl.SubsetStx (impl a none) (compl a)
   -- :=
   --   unCtx subId subNone
-
+  
   -- def subComplImpl {a}:
   --   dl.SubsetStx (compl a) (impl a none)
   -- :=
   --   subUnL
-
+  
   -- def ofImpl {x a}
   --   (sub: dl.SubsetStx any (impl x a))
   -- :
