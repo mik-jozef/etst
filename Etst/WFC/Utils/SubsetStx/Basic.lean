@@ -758,6 +758,50 @@ namespace DefList.SubsetStx
     unIntroCtxR (arbIrI (unAbsorbCtxR (arbIrPop sub)))
   
   
+  def subArbUnCtx {a b}
+    (sub: dl.SubsetStx a b.lift)
+  :
+    dl.SubsetStx (arbUn a) b
+  :=
+    complSwapCtx (arbIrI (subCompl sub))
+  
+  def arbUnI {x a t}
+    (isSome: dl.SubsetStx x (some t))
+    (isSubsingle: dl.SubsetStx x.lift t.isSubsingleton)
+    (sub: dl.SubsetStx x (a.instantiateVar t))
+  :
+    dl.SubsetStx x (arbUn a)
+  :=
+    let y := ir x (arbIr (compl a))
+    let aInst := a.instantiateVar t
+    
+    let subYa: dl.SubsetStx y aInst :=
+      trans subIrL sub
+    let subYnotA: dl.SubsetStx y (compl aInst) :=
+      arbIrElim
+        (trans subIrL isSome)
+        (irCtxL isSubsingle)
+        subIrR
+    
+    let subYNope: dl.SubsetStx y (ir aInst (compl aInst)) :=
+      irI subYa subYnotA
+    
+    trans (implIntro subYNope) (unCtx subId subPe)
+
+  def arbUnElim {x a b}
+    (sub: dl.SubsetStx x (arbUn a))
+    (impl: dl.SubsetStx x.lift (impl a b.lift))
+  :
+    dl.SubsetStx x b
+  :=
+    let subYComplA :=
+      trans
+        (irUnDistL (irLR impl subId))
+        (unCtx subIrL subPe)
+    
+    complElim (arbIrI subYComplA) (trans subIrL sub)
+  
+  
   -- Rules using none/any, ignore for now.
   -- def subImplCompl {a}:
   --   dl.SubsetStx (impl a none) (compl a)
