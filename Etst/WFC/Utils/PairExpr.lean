@@ -6,7 +6,7 @@ namespace Etst
 
 variable {E: Type*}
 variable {x: Nat}
-variable {pA pB dE dBound d dB dC fst zth: Pair}
+variable {pA pB dE dBound d dB dC: Pair}
 variable {fv: List Pair}
 variable {b c: Valuation Pair}
 variable {lane: Set3.Lane}
@@ -60,25 +60,25 @@ namespace Expr
   /-
     Let `expr` be an expression that represets a triset of
     pairs `s3` (under some valuation). The expression
-    `zthMember expr` then represents the set of all
+    `zth expr` then represents the set of all
     `a` such that `(a, _) ∈ s3`.
     
-    `zthMember` introduces an existential quantifier, the
+    `zth` introduces an existential quantifier, the
     variables of `expr` need to be incremented.
   -/
-  def zthMember (expr: Expr E): Expr E :=
+  def zth (expr: Expr E): Expr E :=
     arbUn (ifThen (ir (pair (.var 0) any) expr) (.var 0))
   
   /-
     Let `expr` be an expression that represets a set of
     pairs `s3` (under some valuation). The expression
-    `fstMember n expr` then represents the set of all
+    `fst expr` then represents the set of all
     `b` such that `(_, b) ∈ s3`.
     
-    `fstMember` introduces an existential quantifier, the
+    `fst` introduces an existential quantifier, the
     variables of `expr` need to be incremented.
   -/
-  def fstMember (expr: Expr E): Expr E :=
+  def fst (expr: Expr E): Expr E :=
     arbUn (ifThen (ir (pair any (.var 0)) expr) (.var 0))
   
   /-
@@ -95,7 +95,7 @@ namespace Expr
     variables of `fn` and `arg` need to be incremented.
   -/
   def call (fn arg: Expr E): Expr E :=
-    fstMember (ir fn (pair arg any))
+    fst (ir fn (pair arg any))
   
   /-
     For an encoding `nEnc` of a natural number `n`,
@@ -244,28 +244,28 @@ namespace SingleLaneExpr
   
   
   
-  def inZthMember
+  def inZth
     (inExpr: intp2 expr (pA :: fv) b c (Pair.pair pA pB))
   :
-    intp2 (zthMember expr) fv b c pA
+    intp2 (zth expr) fv b c pA
   :=
     inArbUn pA (inIfThen (inIr (inPair rfl inAny) inExpr) rfl)
   
   
-  def inFstMember
+  def inFst
     (inExpr: intp2 expr (pB :: fv) b c (Pair.pair pA pB))
   :
-    intp2 (fstMember expr) fv b c pB
+    intp2 (fst expr) fv b c pB
   :=
     inArbUn pB (inIfThen (inIr (inPair inAny rfl) inExpr) rfl)
   
   
-  def inZthMemberElim
-    (inZthMember: intp2 (zthMember expr) fv b c zth)
+  def inZthElim {p0}
+    (inZth: intp2 (zth expr) fv b c p0)
   :
-    ∃ fst, intp2 expr (zth :: fv) b c (Pair.pair zth fst)
+    ∃ p1, intp2 expr (p0 :: fv) b c (Pair.pair p0 p1)
   :=
-    let ⟨pZth, ⟨inCond, inBody⟩⟩ := inArbUnElim inZthMember
+    let ⟨pZth, ⟨inCond, inBody⟩⟩ := inArbUnElim inZth
     let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inSomeElim inCond
     
     match pCond with
@@ -273,15 +273,15 @@ namespace SingleLaneExpr
     | Pair.pair pCondZth pCondFst =>
       let ⟨inL, _insR⟩ := inPairElim inPair
       let eqPCondZth: pCondZth = pZth := inVarElim inL rfl
-      let eqPZth: zth = pZth := inVarElim inBody rfl
+      let eqPZth: p0 = pZth := inVarElim inBody rfl
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInExpr⟩
   
-  def inFstMemberElim
-    (inFstMember: intp2 (fstMember expr) fv b c fst)
+  def inFstElim {p1}
+    (inFst: intp2 (fst expr) fv b c p1)
   :
-    ∃ zth, intp2 expr (fst :: fv) b c (Pair.pair zth fst)
+    ∃ p0, intp2 expr (p1 :: fv) b c (Pair.pair p0 p1)
   :=
-    let ⟨pFst, ⟨inCond, inBody⟩⟩ := inArbUnElim inFstMember
+    let ⟨pFst, ⟨inCond, inBody⟩⟩ := inArbUnElim inFst
     let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inSomeElim inCond
     
     match pCond with
@@ -289,28 +289,28 @@ namespace SingleLaneExpr
     | Pair.pair pCondZth pCondFst =>
       let ⟨_insL, inR⟩ := inPairElim inPair
       let eqPCondFst: pCondFst = pFst := inVarElim inR rfl
-      let eqPFst: fst = pFst := inVarElim inBody rfl
+      let eqPFst: p1 = pFst := inVarElim inBody rfl
       ⟨pCondZth, eqPFst ▸ eqPCondFst ▸ pCondInExpr⟩
   
-  def inZthFstElim
-    (inZth: intp2 (zthMember (Expr.const lane x)) fv b c zth)
-    (inFst: intp2 (fstMember (Expr.const lane x)) fv b c fst)
+  def inZthFstElim {p0 p1}
+    (inZth: intp2 (zth (const lane x)) fv b c p0)
+    (inFst: intp2 (fst (const lane x)) fv b c p1)
     (isUnit: c x = Set3.just d)
   :
-    intp2 (Expr.const lane x) fv b c (Pair.pair zth fst)
+    intp2 (Expr.const lane x) fv b c (.pair p0 p1)
   :=
-    let ⟨fstB, inFstB⟩ := inZthMemberElim inZth
-    let ⟨zthB, inZthB⟩ := inFstMemberElim inFst
+    let ⟨fstB, inFstB⟩ := inZthElim inZth
+    let ⟨zthB, inZthB⟩ := inFstElim inFst
     
     let eq:
-      Pair.pair zth fstB = Pair.pair zthB fst
+      Pair.pair p0 fstB = Pair.pair zthB p1
     :=
       open Set3.just in
       match lane with
       | .defLane => inDefToEqBin d (isUnit ▸ inFstB) (isUnit ▸ inZthB)
       | .posLane => inPosToEqBin d (isUnit ▸ inFstB) (isUnit ▸ inZthB)
     
-    let eqR: zth = zthB := Pair.noConfusion eq fun eq _ => eq
+    let eqR: p0 = zthB := Pair.noConfusion eq fun eq _ => eq
     
     eqR ▸ inZthB
   
@@ -321,7 +321,7 @@ namespace SingleLaneExpr
   :
     intp2 (call fn arg) fv b c pB
   :=
-    inFstMember (inIr inFn (inPair inArg inAny))
+    inFst (inIr inFn (inPair inArg inAny))
   
   
   def inCallElim {fn arg}
@@ -332,7 +332,7 @@ namespace SingleLaneExpr
         (intp2 fn (pB :: fv) b c (Pair.pair pA pB))
         (intp2 arg (pB :: fv) b c pA)
   :=
-    let ⟨zth, inIr⟩ := inFstMemberElim inCall
+    let ⟨zth, inIr⟩ := inFstElim inCall
     let ⟨inFn, inP⟩ := inIrElim inIr
     
     ⟨zth, And.intro inFn (inPairElim inP).left⟩

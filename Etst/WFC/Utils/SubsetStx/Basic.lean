@@ -717,6 +717,287 @@ namespace DefList.SubsetStx
     trans (unfold subId) sub
   
   
+  def pairMono {x al bl ar br}
+    (sl: dl.SubsetStx x (full (impl al bl)))
+    (sr: dl.SubsetStx x (full (impl ar br)))
+  :
+    dl.SubsetStx x (full (impl (pair al ar) (pair bl br)))
+  :=
+    sorry
+  
+  def subPairMono {al ar bl br}
+    (sl: dl.SubsetStx al bl)
+    (sr: dl.SubsetStx ar br)
+  :
+    dl.SubsetStx (pair al ar) (pair bl br)
+  :=
+    implElimExact
+      (fullElim (pairMono (isFullImpl sl) (isFullImpl sr)))
+  
+  /-
+    TODO: this and reverse should be derivable from
+    
+        any ⊆ null | (~a, any) | (any, ~b) | (a, b).
+    
+    The question is, can we also derive that?
+  -/
+  def nullPairCompl {x a b}
+    (sub: dl.SubsetStx x (compl (pair a b)))
+  :
+    dl.SubsetStx
+      x
+      (un null (un (pair (compl a) any) (pair any (compl b))))
+  :=
+    sorry
+  
+  def complPair {x a b}
+    (sub:
+      dl.SubsetStx
+        x
+        (un null (un (pair (compl a) any) (pair any (compl b)))))
+  :
+    dl.SubsetStx x (compl (pair a b))
+  :=
+    sorry
+  
+  def nullPair {x}:
+    dl.SubsetStx x (un null (pair any any))
+  :=
+    sorry
+  
+  def subSimplePairInduction {a p}
+    (sub: dl.SubsetStx (un null (pair p p)) p)
+  :
+    dl.SubsetStx a p
+  :=
+    sorry
+  
+  def pairIrL {x a b c}
+    (sub: dl.SubsetStx x (ir (pair a c) (pair b c)))
+  :
+    dl.SubsetStx x (pair (ir a b) c)
+  :=
+    sorry
+  
+  def pairIrR {x a b c}
+    (sub: dl.SubsetStx x (ir (pair a b) (pair a c)))
+  :
+    dl.SubsetStx x (pair a (ir b c))
+  :=
+    sorry
+  
+  def irPairL {x a b c}
+    (sub: dl.SubsetStx x (pair (ir a b) c))
+  :
+    dl.SubsetStx x (ir (pair a c) (pair b c))
+  :=
+    sorry
+  
+  def irPairR {x a b c}
+    (sub: dl.SubsetStx x (pair a (ir b c)))
+  :
+    dl.SubsetStx x (ir (pair a b) (pair a c))
+  :=
+    sorry
+  
+  def somePair {x l r}
+    (sl: dl.SubsetStx x (some l))
+    (sr: dl.SubsetStx x (some r))
+  :
+    dl.SubsetStx x (some (pair l r))
+  :=
+    sorry
+  
+  def pairComplUnL {x a b c}
+    (sub: dl.SubsetStx x (ir (pair (compl a) c) (pair (compl b) c)))
+  :
+    dl.SubsetStx x (pair (compl (un a b)) c)
+  :=
+    sorry
+  
+  def pairComplUnR {x a b c}
+    (sub: dl.SubsetStx x (ir (pair a (compl b)) (pair a (compl c))))
+  :
+    dl.SubsetStx x (pair a (compl (un b c)))
+  :=
+    sorry
+  
+  def unPairL {x a b c}
+    (sub: dl.SubsetStx x (pair (un a b) c))
+  :
+    dl.SubsetStx x (un (pair a c) (pair b c))
+  :=
+    sorry
+  
+  def unPairR {x a b c}
+    (sub: dl.SubsetStx x (pair a (un b c)))
+  :
+    dl.SubsetStx x (un (pair a b) (pair a c))
+  :=
+    sorry
+  
+  def pairUnL {x a b c}
+    (sub: dl.SubsetStx x (un (pair a c) (pair b c)))
+  :
+    dl.SubsetStx x (pair (un a b) c)
+  :=
+    sorry
+  
+  def pairUnR {x a b c}
+    (sub: dl.SubsetStx x (un (pair a b) (pair a c)))
+  :
+    dl.SubsetStx x (pair a (un b c))
+  :=
+    sorry
+  
+  def pairNoneElimL {x a b}
+    (sub: dl.SubsetStx x (pair none a))
+  :
+    dl.SubsetStx x b
+  :=
+    sorry
+  
+  def pairNoneElimR {x a b}
+    (sub: dl.SubsetStx x (pair a none))
+  :
+    dl.SubsetStx x b
+  :=
+    sorry
+  
+  def irNullPairElim {x a b}
+    (sub: dl.SubsetStx x (ir null (pair a b)))
+  :
+    dl.SubsetStx x b
+  :=
+    sorry
+  
+  def pairZthFst {x e}
+    (subE: dl.SubsetStx x e)
+    (subPair: dl.SubsetStx x (pair any any))
+  :
+    dl.SubsetStx x (pair (zth e) (fst e))
+  :=
+    sorry
+  
+  def nullPairZthFst {x e}
+    (subE: dl.SubsetStx x e)
+  :
+    dl.SubsetStx x (un null (pair (zth e) (fst e)))
+  :=
+    sorry
+  
+  def zthPair {x a b}
+    (subB: dl.SubsetStx x (some b))
+    (sub: dl.SubsetStx x a)
+  :
+    dl.SubsetStx x (zth (pair a b))
+  :=
+    sorry
+  
+  def fstPair {x a b}
+    (subA: dl.SubsetStx x (some a))
+    (sub: dl.SubsetStx x b)
+  :
+    dl.SubsetStx x (fst (pair a b))
+  :=
+    sorry
+  
+  def subZthPair {a b}:
+    dl.SubsetStx a (zth (pair a b))
+  :=
+    sorry
+  
+  def subFstPair {a b}:
+    dl.SubsetStx b (fst (pair a b))
+  :=
+    sorry
+  
+  def pairArbIrL {x a b}
+    (sub: dl.SubsetStx x (arbIr (pair a b.lift)))
+  :
+    dl.SubsetStx x (pair (arbIr a) b)
+  :=
+    sorry
+  
+  def pairArbIrR {x a b}
+    (sub: dl.SubsetStx x (arbIr (pair a.lift b)))
+  :
+    dl.SubsetStx x (pair a (arbIr b))
+  :=
+    sorry
+  
+  def arbIrPairL {x a b}
+    (sub: dl.SubsetStx x (pair (arbIr a) b))
+  :
+    dl.SubsetStx x (arbIr (pair a b.lift))
+  :=
+    sorry
+  
+  def arbIrPairR {x a b}
+    (sub: dl.SubsetStx x (pair a (arbIr b)))
+  :
+    dl.SubsetStx x (arbIr (pair a.lift b))
+  :=
+    sorry
+  
+  def arbUnPairL {x a b}
+    (sub: dl.SubsetStx x (pair (arbUn a) b))
+  :
+    dl.SubsetStx x (arbUn (pair a b.lift))
+  :=
+    sorry
+  
+  def arbUnPairR {x a b}
+    (sub: dl.SubsetStx x (pair a (arbUn b)))
+  :
+    dl.SubsetStx x (arbUn (pair a.lift b))
+  :=
+    sorry
+  
+  def pairArbUnL {x a b}
+    (sub: dl.SubsetStx x (arbUn (pair a b.lift)))
+  :
+    dl.SubsetStx x (pair (arbUn a) b)
+  :=
+    sorry
+  
+  def pairArbUnR {x a b}
+    (sub: dl.SubsetStx x (arbUn (pair a.lift b)))
+  :
+    dl.SubsetStx x (pair a (arbUn b))
+  :=
+    sorry
+  
+  def pairUnfoldL {x lane c b}
+    (sub: dl.SubsetStx x (pair (const lane c) b))
+  :
+    dl.SubsetStx x (pair ((dl.getDef c).toLane lane) b)
+  :=
+    sorry
+  
+  def pairUnfoldR {x lane c a}
+    (sub: dl.SubsetStx x (pair a (const lane c)))
+  :
+    dl.SubsetStx x (pair a ((dl.getDef c).toLane lane))
+  :=
+    sorry
+  
+  def pairFoldL {x lane c b}
+    (sub: dl.SubsetStx x (pair ((dl.getDef c).toLane lane) b))
+  :
+    dl.SubsetStx x (pair (const lane c) b)
+  :=
+    sorry
+  
+  def pairFoldR {x lane c a}
+    (sub: dl.SubsetStx x (pair a ((dl.getDef c).toLane lane)))
+  :
+    dl.SubsetStx x (pair a (const lane c))
+  :=
+    sorry
+  
+  
+  
   
   def someVar {x i}:
     dl.SubsetStx x (some (var i))
@@ -833,5 +1114,19 @@ namespace DefList.SubsetStx
   --   dl.SubsetStx a b
   -- :=
   --   sorry
+  
+  def pointwise {x a}
+    (sub: dl.SubsetStx (ir (var 0) x.lift) (ir (var 0) a.lift))
+  :
+    dl.SubsetStx x a
+  :=
+    sorry
+  
+  def noneElim {x a}
+    (sub: dl.SubsetStx x none)
+  :
+    dl.SubsetStx x a
+  :=
+    sorry
   
 end DefList.SubsetStx
