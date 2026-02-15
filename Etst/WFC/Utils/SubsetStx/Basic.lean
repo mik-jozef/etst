@@ -1,4 +1,5 @@
 import Etst.WFC.Ch5_SubsethoodPS
+import Etst.WFC.Utils.SubsetStx.MapFv
 
 namespace Etst
 open Expr
@@ -479,6 +480,34 @@ namespace DefList.SubsetStx
       (irI bCompl ab)
       (trans (irUnDistR subId) (unCtx subIrR subPe.irSymmCtx))
   
+  def unAbsorbCtxL {x a b}
+    (sub: dl.SubsetStx x (un a b))
+  :
+    dl.SubsetStx (ir x a.compl) b
+  :=
+    unElimComplL (irCtxL sub) subIrR
+  
+  def unAbsorbCtxR {x a b}
+    (sub: dl.SubsetStx x (un a b))
+  :
+    dl.SubsetStx (ir x b.compl) a
+  :=
+    unElimComplR (irCtxL sub) subIrR
+  
+  def unIntroCtxL {x a b}
+    (sub: dl.SubsetStx (ir x a.compl) b)
+  :
+    dl.SubsetStx x (un a b)
+  :=
+    unMonoSubL (implIntro sub) subDne
+  
+  def unIntroCtxR {x a b}
+    (sub: dl.SubsetStx (ir x b.compl) a)
+  :
+    dl.SubsetStx x (un a b)
+  :=
+    unSymm (unIntroCtxL sub)
+  
   
   def subContra {a b}:
     dl.SubsetStx (impl a b) (impl (compl b) (compl a))
@@ -706,6 +735,27 @@ namespace DefList.SubsetStx
     dl.SubsetStx x (a.instantiateVar (var i))
   :=
     arbIrElim someVar varSubsingleton sub
+  
+  def arbIrPop {x a}
+    (sub: dl.SubsetStx x (arbIr a))
+  :
+    dl.SubsetStx x.lift a
+  :=
+    lift_d0_instantiateVar_eq a ▸ arbIrElimVar 0 sub.toLift
+  
+  def arbIrUnLiftDistL {x a b}
+    (sub: dl.SubsetStx x (arbIr (un a.lift b)))
+  :
+    dl.SubsetStx x (un a (arbIr b))
+  :=
+    unIntroCtxL (arbIrI (unAbsorbCtxL (arbIrPop sub)))
+  
+  def arbIrUnLiftDistR {x a b}
+    (sub: dl.SubsetStx x (arbIr (un a b.lift)))
+  :
+    dl.SubsetStx x (un (arbIr a) b)
+  :=
+    unIntroCtxR (arbIrI (unAbsorbCtxR (arbIrPop sub)))
   
   
   -- Rules using none/any, ignore for now.

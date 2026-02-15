@@ -664,7 +664,7 @@ namespace Expr
         funext fun | 0 => rfl | _+1 => rfl
       congrArg arbIr (liftEq.symm ▸ body.substId_eq)
   
-  def instantiateVar_lift_eq
+  def lift_instantiateVar_eq
     (expr: Expr E)
     (t: Expr E)
   :
@@ -674,6 +674,27 @@ namespace Expr
     rw [instantiateVar]
     rw [lift_eq_substLift expr 0 1, substLift, succEq]
     rw [←subst_comp_var (instantiateVar.fn t) Nat.succ expr]
+    exact substId_eq expr
+  
+  def lift_d0_instantiateVar_eq
+    (expr: Expr E)
+  :
+    (expr.lift 1).instantiateVar (var 0) = expr
+  := by
+    let fnEq:
+      instantiateVar.fn (var (E := E) 0) = var ∘ (substUnlift.fn 1 1)
+    :=
+      funext fun x =>
+      match x with
+      | 0 => rfl
+      | n + 1 =>
+        show var n = var (n + 1 - 1) by
+        rw [Nat.succ_sub_one]
+    rw [instantiateVar, fnEq]
+    rw [lift_eq_substLift expr 1 1, substLift]
+    show substVar (substUnlift.fn 1 1) (substVar (substLift.fn 1 1) expr) = expr
+    rw [←substVar_comp]
+    rw [substUnlift_comp_substLift]
     exact substId_eq expr
   
   def substVar_substUnlift_substLift_eq
