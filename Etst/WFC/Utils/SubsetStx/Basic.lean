@@ -32,6 +32,16 @@ namespace DefList.SubsetStx
   :=
     trans subIrR sub
   
+  def subIrCtxL {a b}:
+    dl.SubsetStx (ir a b) a
+  :=
+    irCtxL subId
+  
+  def subIrCtxR {a b}:
+    dl.SubsetStx (ir a b) b
+  :=
+    irCtxR subId
+  
   def irLR {al ar bl br}
     (subL: dl.SubsetStx al bl)
     (subR: dl.SubsetStx ar br)
@@ -189,7 +199,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x b
   :=
-    let nbnc := dni (irI (dni (irCtxL xa)) (irCtxR subId))
+    let nbnc := dni (irI (dni (irCtxL xa)) subIrCtxR)
     complElim (irCtxL xab) nbnc
   
   def implAbsorb {x a b}
@@ -319,6 +329,24 @@ namespace DefList.SubsetStx
           (trans (irLR subIrL subId) subR)
           (irCtxL subIrR)))
       (irCtxL sub)
+  
+  /-
+    Useful for unions of more than two expressions. Usage:
+    
+    ```
+      unElim abc aElim (unElimCont bElim cElim)
+    ```
+  -/
+  def unElimCont {x l r a}
+    (subL: dl.SubsetStx (ir x l) a)
+    (subR: dl.SubsetStx (ir x r) a)
+  :
+    dl.SubsetStx (ir x (un l r)) a
+  :=
+    unElim
+      subIrCtxR
+      (trans (irLR subIrCtxL subId) subL)
+      (trans (irLR subIrCtxL subId) subR)
   
   def unElimImpl {x l r a}
     (sub: dl.SubsetStx x (un l r))
@@ -717,14 +745,6 @@ namespace DefList.SubsetStx
     trans (unfold subId) sub
   
   
-  def pairMono {x al bl ar br}
-    (sl: dl.SubsetStx x (full (impl al bl)))
-    (sr: dl.SubsetStx x (full (impl ar br)))
-  :
-    dl.SubsetStx x (full (impl (pair al ar) (pair bl br)))
-  :=
-    sorry
-  
   def subPairMono {al ar bl br}
     (sl: dl.SubsetStx al bl)
     (sr: dl.SubsetStx ar br)
@@ -734,31 +754,22 @@ namespace DefList.SubsetStx
     implElimExact
       (fullElim (pairMono (isFullImpl sl) (isFullImpl sr)))
   
-  /-
-    TODO: this and reverse should be derivable from
-    
-        any ⊆ null | (~a, any) | (any, ~b) | (a, b).
-    
-    The question is, can we also derive that?
-  -/
-  def nullPairCompl {x a b}
-    (sub: dl.SubsetStx x (compl (pair a b)))
-  :
+  def nullPairComplPair {x a b}:
     dl.SubsetStx
       x
-      (un null (un (pair (compl a) any) (pair any (compl b))))
+      (finUn [
+        null,
+        pair (compl a) any,
+        pair any (compl b),
+        pair a b
+      ])
   :=
-    sorry
-  
-  def complPair {x a b}
-    (sub:
-      dl.SubsetStx
-        x
-        (un null (un (pair (compl a) any) (pair any (compl b)))))
-  :
-    dl.SubsetStx x (compl (pair a b))
-  :=
-    sorry
+    unElimSub
+      em
+      (unR (unR subUnR))
+      (trans
+        (complPairElim subId)
+        (unCtxLR subId (unCtxLR subId subUnL)))
   
   def nullPair {x}:
     dl.SubsetStx x (un null (pair any any))
@@ -770,7 +781,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx a p
   :=
-    sorry
+    implElimExact (fullElim (simplePairInduction (isFullImpl sub)))
   
   def pairIrL {x a b c}
     (sub: dl.SubsetStx x (ir (pair a c) (pair b c)))
@@ -1081,6 +1092,37 @@ namespace DefList.SubsetStx
         (unCtx subIrL subPe)
     
     complElim (arbIrI subYComplA) (trans subIrL sub)
+  
+  
+  def complArbIrElim {x a}
+    (sub: dl.SubsetStx x (compl (arbIr a)))
+  :
+    dl.SubsetStx x (arbUn (compl a))
+  :=
+    trans sub <|
+    subCompl <|
+    arbIrI (trans (arbIrPop subId) subDne)
+  
+  def complArbUnElim {x a}
+    (sub: dl.SubsetStx x (compl (arbUn a)))
+  :
+    dl.SubsetStx x (arbIr (compl a))
+  :=
+    dne sub
+  
+  def complArbIrComplElim {x a}
+    (sub: dl.SubsetStx x (compl (arbIr (compl a))))
+  :
+    dl.SubsetStx x (arbUn a)
+  :=
+    sub
+  
+  def complArbUnComplElim {x a}
+    (sub: dl.SubsetStx x (compl (arbUn (compl a))))
+  :
+    dl.SubsetStx x (arbIr a)
+  :=
+    arbIrI (trans (arbIrPop (dne sub)) subDne)
   
   
   -- Rules using none/any, ignore for now.

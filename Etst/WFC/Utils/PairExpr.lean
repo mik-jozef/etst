@@ -53,9 +53,10 @@ namespace Expr
   
   -- A union of finitely many expressions.
   def finUn: List (Expr E) → Expr E
-  | List.nil => none
-  | List.cons expr tail =>
-    un expr (finUn (tail))
+  | [] => none
+  | [expr] => expr
+  | expr :: tail =>
+    un expr (finUn tail)
   
   /-
     Let `expr` be an expression that represets a triset of
@@ -208,11 +209,19 @@ namespace SingleLaneExpr
     intp2 (finUn list) fv b c d
   :=
     match list with
-    | List.cons _e0 _rest =>
+    | [_e0] =>
+      exprIn.elim
+        (fun eq => eq ▸ inExpr)
+        (fun inRest => (List.not_mem_nil inRest).elim)
+    | List.cons _e0 (_e1 :: _rest) =>
       exprIn.elim
         (fun eq => eq ▸ inUnL inExpr)
         (fun inRest => inUnR (inFinUn inRest inExpr))
   
+  /-
+    The return type of `inFinUnElim`.
+    Like the type of `Or.elim p`, but n-ary instead of binary.
+  -/
   def InFinUnElim
     (fv: List Pair)
     (b c: Valuation Pair)
@@ -231,7 +240,9 @@ namespace SingleLaneExpr
   :=
     match list with
     | List.nil => False.elim (ninNone inFinUn)
-    | List.cons _head tail =>
+    | [_head] =>
+      fun inHeadToP => inHeadToP inFinUn
+    | List.cons _head (_e1 :: _tail) =>
       (inUnElim inFinUn).elim
         (fun inHead inHeadToP =>
           let rec ofP (p: P) l: InFinUnElim fv b c d P l :=
@@ -239,7 +250,7 @@ namespace SingleLaneExpr
             | List.nil => p
             | List.cons _head tail => fun _ => ofP p tail
           
-          ofP (inHeadToP inHead) tail)
+          ofP (inHeadToP inHead) _)
         (fun inTail _ => inFinUnElim inTail)
   
   

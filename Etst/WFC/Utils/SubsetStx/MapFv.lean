@@ -162,6 +162,10 @@ namespace DefList.SubsetStx
     | subId =>
       subId
     | defPos sub => defPos (mapFv sub map)
+    | pairMono subL subR =>
+      pairMono (mapFv subL map) (mapFv subR map)
+    | complPair sub => complPair (mapFv sub map)
+    | complPairElim sub => complPairElim (mapFv sub map)
     | irL sub => irL (mapFv sub map)
     | irR sub => irR (mapFv sub map)
     | irI subL subR => irI (mapFv subL map) (mapFv subR map)

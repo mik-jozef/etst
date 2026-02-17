@@ -54,6 +54,27 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (const .posLane c)
 |
+  pairMono {x al bl ar br}
+    (sl: dl.SubsetStx x (full (impl al bl)))
+    (sr: dl.SubsetStx x (full (impl ar br)))
+  :
+    dl.SubsetStx x (full (impl (pair al ar) (pair bl br)))
+|
+  complPair {x a b}
+    (sub:
+      dl.SubsetStx
+        x
+        (un null (un (pair (compl a) any) (pair any (compl b)))))
+  :
+    dl.SubsetStx x (compl (pair a b))
+|
+  complPairElim {x a b}
+    (sub: dl.SubsetStx x (compl (pair a b)))
+  :
+    dl.SubsetStx
+      x
+      (un null (un (pair (compl a) any) (pair any (compl b))))
+|
   irL {x l r}
     (sub: dl.SubsetStx x (ir l r))
   :
@@ -246,6 +267,54 @@ namespace DefList.SubsetStx
       match sub with
       | subId => isIn
       | defPos sub => Set3.defLePos _ (sub.isSound fv leX leE isIn)
+      | pairMono subL subR =>
+        let ⟨leAlAr, leBlBr⟩ := freeVarUb_bin_le_elim leE
+        let ⟨leAl, leAr⟩ := freeVarUb_bin_le_elim leAlAr
+        let ⟨leBl, leBr⟩ := freeVarUb_bin_le_elim leBlBr
+        let leL := freeVarUb_bin_le leAl leBl
+        let leR := freeVarUb_bin_le leAr leBr
+        inFull p fun d =>
+          inImpl fun inPairAlAr =>
+            let ⟨pA, pB, eq, inAl, inAr⟩ := inPairElimEx inPairAlAr
+            eq ▸ inPair
+              (inImplElim
+                (inFullElim (subL.isSound fv leX leL isIn) pA) inAl)
+              (inImplElim
+                (inFullElim (subR.isSound fv leX leR isIn) pB) inAr)
+      | complPair sub (a:=a) (b:=b) => fun inPairAB =>
+        let ⟨pA, pB, eq, inA, inB⟩ := inPairElimEx inPairAB
+        let ⟨leA, leB⟩ := freeVarUb_bin_le_elim leE
+        let inPrem := sub.isSound.call fv leX p isIn
+        (inUnElim inPrem).elim
+          (fun inNull =>
+            Pair.noConfusion ((inNullElim inNull).symm.trans eq))
+          (fun inInner => (inUnElim inInner).elim
+            (fun inPairL =>
+              let ⟨_, _, eq', inCplA, _⟩ := inPairElimEx inPairL
+              let ⟨eqA, _⟩ :=
+                Pair.noConfusion (eq.symm.trans eq') And.intro
+              (inComplElim inCplA)
+                (eqA ▸ intp2_bv_append leA _ ▸ inA))
+            (fun inPairR =>
+              let ⟨_, _, eq', _, inCplB⟩ := inPairElimEx inPairR
+              let ⟨_, eqB⟩ :=
+                Pair.noConfusion (eq.symm.trans eq') And.intro
+              (inComplElim inCplB)
+                (eqB ▸ intp2_bv_append leB _ ▸ inB)))
+      | complPairElim sub (a:=a) (b:=b) =>
+        let leInner := freeVarUb_bin_le_elimR leE
+        let ⟨lePairCA, lePairAC⟩ := freeVarUb_bin_le_elim leInner
+        let leA := freeVarUb_bin_le_elimL lePairCA
+        let leB := freeVarUb_bin_le_elimR lePairAC
+        let leSub := freeVarUb_bin_le leA leB
+        match p with
+        | .null => inUnL inNull
+        | .pair pA pB =>
+          (ninPairElim (sub.isSound fv leX leSub isIn)).elim
+            (fun ninA =>
+              inUnR (inUnL (inPair (inCompl ninA) inAny)))
+            (fun ninB =>
+              inUnR (inUnR (inPair inAny (inCompl ninB))))
       | irL sub (r:=r) =>
         let inIr := sub.isSound.call fv leX p isIn
         intp_bv_append leE _ ▸ inIrElimL inIr
