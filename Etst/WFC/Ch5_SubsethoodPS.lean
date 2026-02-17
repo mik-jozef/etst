@@ -64,6 +64,16 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (some (ir (var i) a))
 |
+  nullSomeFull {x a}
+    (sub: dl.SubsetStx x (some (ir null a)))
+  :
+    dl.SubsetStx x (full (impl null a))
+|
+  nullFullSome {x a}
+    (sub: dl.SubsetStx x (full (impl null a)))
+  :
+    dl.SubsetStx x (some (ir null a))
+|
   pairMono {x al bl ar br}
     (sl: dl.SubsetStx x (full (impl al bl)))
     (sr: dl.SubsetStx x (full (impl ar br)))
@@ -285,6 +295,18 @@ namespace DefList.SubsetStx
         let inFull := sub.isSound fv leX leE isIn
         let inDI_A := inImplElim (inFullElim inFull fv[i]) (inVar eqI)
         inSome p (inIr (inVar eqI) inDI_A)
+      | nullSomeFull (a:=a) sub =>
+        let ⟨d, inIr⟩ := inSomeElim (sub.isSound fv leX leE isIn)
+        let ⟨inNullD, inA⟩ := inIrElim inIr
+        let eqD := inNullElim inNullD
+        inFull p fun d2 =>
+          inImpl fun inNull2 =>
+            let eqD2 := inNullElim inNull2
+            (eqD.trans eqD2.symm) ▸ inA
+      | nullFullSome (a:=a) sub =>
+        let inFullImplNullA := sub.isSound fv leX leE isIn
+        let inNull_A := inImplElim (inFullElim inFullImplNullA .null) inNull
+        inSome p (inIr inNull inNull_A)
       | pairMono subL subR =>
         let ⟨leAlAr, leBlBr⟩ := freeVarUb_bin_le_elim leE
         let ⟨leAl, leAr⟩ := freeVarUb_bin_le_elim leAlAr
