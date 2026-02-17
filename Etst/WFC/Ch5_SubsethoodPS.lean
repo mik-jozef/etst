@@ -54,6 +54,16 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (const .posLane c)
 |
+  varSomeFull {x i a}
+    (sub: dl.SubsetStx x (some (ir (var i) a)))
+  :
+    dl.SubsetStx x (full (impl (var i) a))
+|
+  varFullSome {x i a}
+    (sub: dl.SubsetStx x (full (impl (var i) a)))
+  :
+    dl.SubsetStx x (some (ir (var i) a))
+|
   pairMono {x al bl ar br}
     (sl: dl.SubsetStx x (full (impl al bl)))
     (sr: dl.SubsetStx x (full (impl ar br)))
@@ -125,16 +135,6 @@ inductive DefList.SubsetStx
     (sub: dl.SubsetStx x (some (full a)))
   :
     dl.SubsetStx x (full a)
-|
-  varSomeFull {x i a}
-    (sub: dl.SubsetStx x (some (ir (var i) a)))
-  :
-    dl.SubsetStx x (full (impl (var i) a))
-|
-  varFullSome {x i a}
-    (sub: dl.SubsetStx x (full (impl (var i) a)))
-  :
-    dl.SubsetStx x (some (ir (var i) a))
 |
   arbIrI {x a}
     (sub: dl.SubsetStx x.lift a)
@@ -267,6 +267,24 @@ namespace DefList.SubsetStx
       match sub with
       | subId => isIn
       | defPos sub => Set3.defLePos _ (sub.isSound fv leX leE isIn)
+      | varSomeFull (i:=i) (a:=a) sub =>
+        let leVar := freeVarUb_bin_le_elimL leE
+        let ltI: i < fv.length := Nat.lt_of_succ_le leVar
+        let eqI := List.getElem?_eq_getElem ltI
+        let ⟨d, inIr⟩ := inSomeElim (sub.isSound fv leX leE isIn)
+        let ⟨inVarI, inA⟩ := inIrElim inIr
+        let eqD := inVarElim inVarI eqI
+        inFull p fun d2 =>
+          inImpl fun inVar2 =>
+            let eqD2 := inVarElim inVar2 eqI
+            (eqD.trans eqD2.symm) ▸ inA
+      | varFullSome (i:=i) (a:=a) sub =>
+        let leVar := freeVarUb_bin_le_elimL leE
+        let ltI: i < fv.length := Nat.lt_of_succ_le leVar
+        let eqI := List.getElem?_eq_getElem ltI
+        let inFull := sub.isSound fv leX leE isIn
+        let inDI_A := inImplElim (inFullElim inFull fv[i]) (inVar eqI)
+        inSome p (inIr (inVar eqI) inDI_A)
       | pairMono subL subR =>
         let ⟨leAlAr, leBlBr⟩ := freeVarUb_bin_le_elim leE
         let ⟨leAl, leAr⟩ := freeVarUb_bin_le_elim leAlAr
@@ -406,24 +424,6 @@ namespace DefList.SubsetStx
         intp_bv_append leE (List.replicate bUb Pair.null) ▸
         inInst
 
-      | varSomeFull (i:=i) (a:=a) sub =>
-        let leVar := freeVarUb_bin_le_elimL leE
-        let ltI: i < fv.length := Nat.lt_of_succ_le leVar
-        let eqI := List.getElem?_eq_getElem ltI
-        let ⟨d, inIr⟩ := inSomeElim (sub.isSound fv leX leE isIn)
-        let ⟨inVarI, inA⟩ := inIrElim inIr
-        let eqD := inVarElim inVarI eqI
-        inFull p fun d2 =>
-          inImpl fun inVar2 =>
-            let eqD2 := inVarElim inVar2 eqI
-            (eqD.trans eqD2.symm) ▸ inA
-      | varFullSome (i:=i) (a:=a) sub =>
-        let leVar := freeVarUb_bin_le_elimL leE
-        let ltI: i < fv.length := Nat.lt_of_succ_le leVar
-        let eqI := List.getElem?_eq_getElem ltI
-        let inFull := sub.isSound fv leX leE isIn
-        let inDI_A := inImplElim (inFullElim inFull fv[i]) (inVar eqI)
-        inSome p (inIr (inVar eqI) inDI_A)
       | unfold sub =>
         SingleLaneExpr.InWfm.in_def
           (sub.isSound fv leX (Nat.zero_le _) isIn)

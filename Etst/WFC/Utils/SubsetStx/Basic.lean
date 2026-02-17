@@ -880,7 +880,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x b
   :=
-    sorry
+    pe (irI (irR sub) (complPair (unL (irL sub))))
   
   def pairZthFst {x e}
     (subE: dl.SubsetStx x e)
