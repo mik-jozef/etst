@@ -574,6 +574,17 @@ namespace Expr
     let eq := freeVarUb_lift_eq_depth expr liftBy 0
     Nat.le_add_of_sub_le (eq ▸ le)
   
+  def freeVarUb_le_of_lift
+    {expr: Expr E} {liftBy ub}
+    (le: (expr.lift 0 liftBy).freeVarUb ≤ ub + liftBy)
+  :
+    expr.freeVarUb ≤ ub
+  := by
+    let eq := freeVarUb_lift_eq_depth expr liftBy 0
+    rw [Nat.sub_zero, Nat.sub_zero] at eq;
+    rw [←eq];
+    exact Nat.sub_le_of_le_add le
+  
   def freeVarUb_freeVarLt {x}
     {expr: Expr E}
     (uses: expr.UsesFreeVar x)
@@ -876,6 +887,27 @@ namespace SingleLaneExpr
       (intp (expr.lift 0 fvLiftBy.length) (fvLiftBy ++ fv) v)
   :=
     intp2_lift_eq expr fv fvLiftBy v v
+  
+  def intp2_lift_head_eq
+    (expr: SingleLaneExpr)
+    (dA dB: Pair)
+    (fv: List Pair)
+    (b c: Valuation Pair)
+  :
+    intp2 expr.lift (dA :: fv) b c = intp2 expr.lift (dB :: fv) b c
+  :=
+    (intp2_lift_eq expr fv [dA] b c).symm.trans
+      (intp2_lift_eq expr fv [dB] b c)
+  
+  def intp_lift_head_eq
+    (expr: SingleLaneExpr)
+    (dA dB: Pair)
+    (fv: List Pair)
+    (v: Valuation Pair)
+  :
+    intp expr.lift (dA :: fv) v = intp expr.lift (dB :: fv) v
+  :=
+    intp2_lift_head_eq expr dA dB fv v v
   
   
   def intp2_subst_eq

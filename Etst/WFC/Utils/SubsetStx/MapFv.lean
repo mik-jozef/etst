@@ -7,23 +7,27 @@ open Expr
 namespace DefList.SubsetStx
   variable {dl: DefList}
   
-  private def subsingle_subst
+  private def subsingle_body_subst
     (t: SingleLaneExpr)
     (map: Nat → Nat)
   :
     Eq
-      (substVar (liftFvMapVar map) t.isSubsingleton)
-      ((substVar map t).isSubsingleton)
+      (substVar (liftFvMapVar map) t.isSubsingleton_body)
+      ((substVar map t).isSubsingleton_body)
+  :=
+    congrArg
+      (fun e => impl (some (ir e (var 0))) (full (impl e (var 0))))
+      (lift_substVar_eq t map)
+  
+  private def subsingle_subst
+    (t: SingleLaneExpr)
+    (map: Nat → Nat)
+  :
+    substVar map t.isSubsingleton = (substVar map t).isSubsingleton
   := by
-    show
-      Eq
-        (impl
-          (some (ir (substVar (liftFvMapVar map) t.lift) (var 0)))
-          (full (impl (substVar (liftFvMapVar map) t.lift) (var 0))))
-        (impl
-          (some (ir ((substVar map t).lift) (var 0)))
-          (full (impl ((substVar map t).lift) (var 0))))
-    rw [lift_substVar_eq t map]
+    apply congrArg Expr.arbIr
+    rw [←substVar_liftFvMapVar_subst t.isSubsingleton_body map]
+    exact subsingle_body_subst t map
   
   private def substVar_hypothesify_map
     (desc: MutIndDescriptor dl)
@@ -162,6 +166,17 @@ namespace DefList.SubsetStx
     | subId =>
       subId
     | defPos sub => defPos (mapFv sub map)
+    | varSomeFull sub => varSomeFull (mapFv sub map)
+    | varFullSome sub => varFullSome (mapFv sub map)
+    | nullSomeFull sub => nullSomeFull (mapFv sub map)
+    | nullFullSome sub => nullFullSome (mapFv sub map)
+    | pairSome subL subR =>
+      pairSome (mapFv subL map) (mapFv subR map)
+    | pairSubsingle (x:=x) (a:=a) (b:=b) subL subR =>
+      let ihL := subsingle_subst a map ▸ mapFv subL map
+      let ihR := subsingle_subst b map ▸ mapFv subR map
+      subsingle_subst (a.pair b) map ▸
+      pairSubsingle ihL ihR
     | pairMono subL subR =>
       pairMono (mapFv subL map) (mapFv subR map)
     | complPair sub => complPair (mapFv sub map)
@@ -187,19 +202,12 @@ namespace DefList.SubsetStx
       let ihSome := mapFv someSub map
       let ih := mapFv sub map
       
-      let ihSubsingle:
-        dl.SubsetStx
-          (substVar (liftFvMapVar map) (lift x))
-          (substVar (liftFvMapVar map) t.isSubsingleton)
-      :=
-        mapFv subsingle (liftFvMapVar map)
-      
       let isSubsingle:
         dl.SubsetStx
-          (substVar map x).lift
+          (substVar map x)
           (substVar map t).isSubsingleton
       :=
-        subsingle_subst t map ▸ (lift_substVar_eq x map ▸ ihSubsingle)
+        subsingle_subst t map ▸ mapFv subsingle map
       
       let subInst:
         dl.SubsetStx
@@ -211,16 +219,16 @@ namespace DefList.SubsetStx
         subst_comp_var _ _ _ ▸
         substVar_liftFvMapVar_subst a map ▸
         arbIrElim ihSome isSubsingle ih
+      
       let eq:
         Eq
           (instantiateVar.fn (substVar map t) ∘ liftFvMapVar map)
           (fun x => subst (var ∘ map) (instantiateVar.fn t x))
       :=
         funext fun | 0 => rfl | _ + 1 => rfl
+      
       show dl.SubsetStx _ (subst _ (subst _ _)) from
       subst_subst _ _ _ ▸ eq ▸ subInst
-    | varSomeFull sub => varSomeFull (mapFv sub map)
-    | varFullSome sub => varFullSome (mapFv sub map)
     | unfold (lane:=lane) (c:=c) sub =>
       let ih := mapFv sub map
       let hClean :=

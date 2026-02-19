@@ -1018,7 +1018,7 @@ namespace DefList.SubsetStx
   def varSubsingleton {x i}:
     dl.SubsetStx x (var i).isSubsingleton
   :=
-    implIntro (varSomeFull (irR subId))
+    arbIrI (implIntro (varSomeFull (irR subId)))
   
   def arbIrElimVar {x a}
     (i: Nat)
@@ -1059,7 +1059,7 @@ namespace DefList.SubsetStx
   
   def arbUnI {x a t}
     (isSome: dl.SubsetStx x (some t))
-    (isSubsingle: dl.SubsetStx x.lift t.isSubsingleton)
+    (isSubsingle: dl.SubsetStx x t.isSubsingleton)
     (sub: dl.SubsetStx x (a.instantiateVar t))
   :
     dl.SubsetStx x (arbUn a)
