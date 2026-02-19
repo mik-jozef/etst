@@ -1037,7 +1037,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (a.instantiateVar (var i))
   :=
-    arbIrElim someVar varSubsingleton sub
+    arbIrElim sub someVar varSubsingleton
   
   def arbIrPop {x a}
     (sub: dl.SubsetStx x (arbIr a))
@@ -1081,10 +1081,9 @@ namespace DefList.SubsetStx
     let subYa: dl.SubsetStx y aInst :=
       trans subIrL sub
     let subYnotA: dl.SubsetStx y (compl aInst) :=
-      arbIrElim
+      subIrR.arbIrElim
         (trans subIrL isSome)
         (irCtxL isSubsingle)
-        subIrR
     
     let subYNope: dl.SubsetStx y (ir aInst (compl aInst)) :=
       irI subYa subYnotA

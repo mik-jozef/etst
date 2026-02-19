@@ -174,9 +174,9 @@ inductive DefList.SubsetStx
     dl.SubsetStx x (arbIr a)
 |
   arbIrElim {x t a}
+    (sub: dl.SubsetStx x (arbIr a))
     (isSome: dl.SubsetStx x (some t))
     (isSubsingle: dl.SubsetStx x t.isSubsingleton)
-    (sub: dl.SubsetStx x (arbIr a))
   :
     dl.SubsetStx x (a.instantiateVar t)
 |
@@ -495,7 +495,7 @@ namespace DefList.SubsetStx
             (freeVarUb_le_lift leX)
             (Nat.le_add_of_sub_le leE)
             (intp_lift_eq x fv [dX] dl.wfm ▸ isIn)
-      | arbIrElim (x:=x) (t:=t) (a:=a) isSome isSubsin sub =>
+      | arbIrElim (x:=x) (t:=t) (a:=a) sub isSome isSubsin =>
         let bUb :=
           Nat.max
             a.arbIr.freeVarUb

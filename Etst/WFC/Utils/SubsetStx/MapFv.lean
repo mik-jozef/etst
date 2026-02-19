@@ -198,7 +198,7 @@ namespace DefList.SubsetStx
         lift_substVar_eq x map ▸
         mapFv sub (liftFvMapVar map)
       arbIrI ih
-    | arbIrElim (t:=t) (a:=a) someSub subsingle sub =>
+    | arbIrElim (t:=t) (a:=a) sub someSub subsingle =>
       let ihSome := mapFv someSub map
       let ih := mapFv sub map
       
@@ -218,7 +218,7 @@ namespace DefList.SubsetStx
       :=
         subst_comp_var _ _ _ ▸
         substVar_liftFvMapVar_subst a map ▸
-        arbIrElim ihSome isSubsingle ih
+        arbIrElim ih ihSome isSubsingle
       
       let eq:
         Eq
