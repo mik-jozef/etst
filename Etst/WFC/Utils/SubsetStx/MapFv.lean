@@ -172,11 +172,11 @@ namespace DefList.SubsetStx
     | nullFullSome sub => nullFullSome (mapFv sub map)
     | somePair subL subR =>
       somePair (mapFv subL map) (mapFv subR map)
-    | pairSubsingle (x:=x) (a:=a) (b:=b) subL subR =>
+    | pairSubsingleton (x:=x) (a:=a) (b:=b) subL subR =>
       let ihL := subsingle_subst a map ▸ mapFv subL map
       let ihR := subsingle_subst b map ▸ mapFv subR map
       subsingle_subst (a.pair b) map ▸
-      pairSubsingle ihL ihR
+      pairSubsingleton ihL ihR
     | pairMono subL subR =>
       pairMono (mapFv subL map) (mapFv subR map)
     | complPair sub => complPair (mapFv sub map)
@@ -229,16 +229,16 @@ namespace DefList.SubsetStx
       
       show dl.SubsetStx _ (subst _ (subst _ _)) from
       subst_subst _ _ _ ▸ eq ▸ subInst
+    
+    | noneElim sub => noneElim (mapFv sub map)
     | unfold (lane:=lane) (c:=c) sub =>
-      let ih := mapFv sub map
       let hClean :=
         substVar_eq_of_isClean ((dl.isClean c).toLane lane) map
-      hClean.symm ▸ unfold ih
+      hClean.symm ▸ unfold (mapFv sub map)
     | fold (lane:=lane) (c:=c) sub =>
-      let ih := mapFv sub map
       let hClean :=
         substVar_eq_of_isClean ((dl.isClean c).toLane lane) map
-      fold (hClean ▸ ih)
+      fold (hClean ▸ mapFv sub map)
     | trans subAb subBc =>
       trans (mapFv subAb map) (mapFv subBc map)
     | mutInduction desc premises i =>

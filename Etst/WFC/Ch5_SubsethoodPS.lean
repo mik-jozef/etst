@@ -90,7 +90,7 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (some (pair a b))
 |
-  pairSubsingle {x a b}
+  pairSubsingleton {x a b}
     (subA: dl.SubsetStx x a.isSubsingleton)
     (subB: dl.SubsetStx x b.isSubsingleton)
   :
@@ -179,6 +179,11 @@ inductive DefList.SubsetStx
     (isSubsingle: dl.SubsetStx x t.isSubsingleton)
   :
     dl.SubsetStx x (a.instantiateVar t)
+|
+  noneElim {x a}
+    (sub: dl.SubsetStx x none)
+  :
+    dl.SubsetStx x a
 |
   unfold {x lane c} -- TODO should be provable with induction.
     (sub: dl.SubsetStx x (const lane c))
@@ -335,7 +340,7 @@ namespace DefList.SubsetStx
         let ⟨dA, inA⟩ := inSomeElim inSubA
         let ⟨dB, inB⟩ := inSomeElim inSubB
         inSome p (inPair inA inB)
-      | pairSubsingle (x:=x) (a:=a) (b:=b) subA subB =>
+      | pairSubsingleton (x:=x) (a:=a) (b:=b) subA subB =>
         let bUb :=
           Nat.max
             a.isSubsingleton.freeVarUb
@@ -532,7 +537,9 @@ namespace DefList.SubsetStx
         
         intp_bv_append leE (List.replicate bUb Pair.null) ▸
         inInst
-
+      
+      | noneElim sub =>
+        inNoneElim (sub.isSound fv leX (Nat.zero_le _) isIn)
       | unfold sub =>
         SingleLaneExpr.InWfm.in_def
           (sub.isSound fv leX (Nat.zero_le _) isIn)
