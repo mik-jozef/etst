@@ -802,22 +802,19 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (ir (pair a c) (pair b c))
   :=
-    sorry
+    sub.trans
+      (irI (subPairMono subIrL subId)
+      (subPairMono subIrR subId))
   
   def irPairR {x a b c}
     (sub: dl.SubsetStx x (pair a (ir b c)))
   :
     dl.SubsetStx x (ir (pair a b) (pair a c))
   :=
-    sorry
-  
-  def somePair {x l r}
-    (sl: dl.SubsetStx x (some l))
-    (sr: dl.SubsetStx x (some r))
-  :
-    dl.SubsetStx x (some (pair l r))
-  :=
-    sorry
+    sub.trans
+      (irI
+        (subPairMono subId subIrL)
+        (subPairMono subId subIrR))
   
   def pairComplUnL {x a b c}
     (sub: dl.SubsetStx x (ir (pair (compl a) c) (pair (compl b) c)))
@@ -852,14 +849,20 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair (un a b) c)
   :=
-    sorry
+    sub.trans
+      (unCtx
+        (subPairMono subUnL subId)
+        (subPairMono subUnR subId))
   
   def pairUnR {x a b c}
     (sub: dl.SubsetStx x (un (pair a b) (pair a c)))
   :
     dl.SubsetStx x (pair a (un b c))
   :=
-    sorry
+    sub.trans
+      (unCtx
+        (subPairMono subId subUnL)
+        (subPairMono subId subUnR))
   
   def pairNoneElimL {x a b}
     (sub: dl.SubsetStx x (pair none a))
@@ -984,30 +987,28 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair ((dl.getDef c).toLane lane) b)
   :=
-    sorry
+    trans sub (subPairMono (unfold subId) subId)
   
   def pairUnfoldR {x lane c a}
     (sub: dl.SubsetStx x (pair a (const lane c)))
   :
     dl.SubsetStx x (pair a ((dl.getDef c).toLane lane))
   :=
-    sorry
+    trans sub (subPairMono subId (unfold subId))
   
   def pairFoldL {x lane c b}
     (sub: dl.SubsetStx x (pair ((dl.getDef c).toLane lane) b))
   :
     dl.SubsetStx x (pair (const lane c) b)
   :=
-    sorry
+    trans sub (subPairMono (fold subId) subId)
   
   def pairFoldR {x lane c a}
     (sub: dl.SubsetStx x (pair a ((dl.getDef c).toLane lane)))
   :
     dl.SubsetStx x (pair a (const lane c))
   :=
-    sorry
-  
-  
+    trans sub (subPairMono subId (fold subId))
   
   
   def someVar {x i}:
@@ -1019,6 +1020,16 @@ namespace DefList.SubsetStx
     dl.SubsetStx x (var i).isSubsingleton
   :=
     arbIrI (implIntro (varSomeFull (irR subId)))
+  
+  def someNull {x}:
+    dl.SubsetStx x (some null)
+  :=
+    someMono (irL subId) (nullFullSome (isFullImpl subId))
+  
+  def nullSubsingleton {x}:
+    dl.SubsetStx x null.isSubsingleton
+  :=
+    arbIrI (implIntro (nullSomeFull subIrR))
   
   def arbIrElimVar {x a}
     (i: Nat)

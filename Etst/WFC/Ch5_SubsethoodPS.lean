@@ -84,7 +84,7 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (some (ir null a))
 |
-  pairSome {x a b}
+  somePair {x a b}
     (subA: dl.SubsetStx x (some a))
     (subB: dl.SubsetStx x (some b))
   :
@@ -327,7 +327,7 @@ namespace DefList.SubsetStx
         let inFullImplNullA := sub.isSound fv leX leE isIn
         let inNull_A := inImplElim (inFullElim inFullImplNullA .null) inNull
         inSome p (inIr inNull inNull_A)
-      | pairSome subA subB =>
+      | somePair subA subB =>
         let inSubA :=
           subA.isSound fv leX (freeVarUb_bin_le_elimL leE) isIn
         let inSubB :=
