@@ -194,6 +194,17 @@ namespace DefList.SubsetStx
     subDni.trans (subCompl sub)
   
   
+  def subNoneElim {a}:
+    dl.SubsetStx none a
+  :=
+    noneElim subId
+  
+  def subAny {x}:
+    dl.SubsetStx x any
+  :=
+    complI (b := null) (noneElim subIrR) (noneElim subIrR)
+  
+  
   def mp {x a b}
     (xab: dl.SubsetStx x (impl a b))
     (xa: dl.SubsetStx x a)
@@ -557,6 +568,27 @@ namespace DefList.SubsetStx
         (irMonoCtxR subIrCtxL (implAbsorb sub))
         (irCtxR subIrCtxR))
   
+  def implCompl {x a}
+    (sub: dl.SubsetStx x (impl a none))
+  :
+    dl.SubsetStx x (compl a)
+  :=
+    sub.unElim subIrR (irCtxR subNoneElim)
+  
+  def complImpl {x a}
+    (sub: dl.SubsetStx x (compl a))
+  :
+    dl.SubsetStx x (impl a none)
+  :=
+    unL sub
+  
+  def ofImpl {x a}
+    (sub: dl.SubsetStx any (impl x a))
+  :
+    dl.SubsetStx x a
+  :=
+    implElimExact (trans subAny sub)
+  
   
   def subContra {a b}:
     dl.SubsetStx (impl a b) (impl (compl b) (compl a))
@@ -669,6 +701,25 @@ namespace DefList.SubsetStx
   :=
     subCompl (fullMono subId sub)
   
+  def isFullAny {x}:
+    dl.SubsetStx x (full any)
+  :=
+    fullMono (isFullImpl (subId (a := x))) subAny
+  
+  def isFullOfAny {x a}
+    (sub: dl.SubsetStx any a)
+  :
+    dl.SubsetStx x (full a)
+  :=
+    implElim (fullImplDist (isFullImpl (x:=x) sub)) isFullAny
+  
+  def isFullImplElim {a b}
+    (sub: dl.SubsetStx any (full (impl a b)))
+  :
+    dl.SubsetStx a b
+  :=
+    (trans (irI subAny subId) (implAbsorb (fullElim sub)))
+  
   def subSome {a}:
     dl.SubsetStx a (some a)
   :=
@@ -766,11 +817,6 @@ namespace DefList.SubsetStx
     trans (unfold subId) sub
   
   
-  def anyI {x}:
-    dl.SubsetStx x any
-  :=
-    complI (b := null) (noneElim subIrR) (noneElim subIrR)
-  
   def subPairMono {al ar bl br}
     (sl: dl.SubsetStx al bl)
     (sr: dl.SubsetStx ar br)
@@ -834,7 +880,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x b
   :=
-    let subPair := sub.trans (subPairMono anyI anyI)
+    let subPair := sub.trans (subPairMono subAny subAny)
     pe sub (complPair (unR (unL subPair)))
   
   def pairNoneElimR {x a b}
@@ -842,7 +888,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x b
   :=
-    let subPair := sub.trans (subPairMono anyI anyI)
+    let subPair := sub.trans (subPairMono subAny subAny)
     pe sub (complPair (unR (unR subPair)))
   
   def nullPair {x}:
@@ -851,9 +897,9 @@ namespace DefList.SubsetStx
     (nullPairComplPair (a := none)).unElim
       (irCtxR subUnL)
       (unElimCont
-        (irCtxR ((pairL (fun _ => anyI) subId).unR))
+        (irCtxR ((pairL (fun _ => subAny) subId).unR))
         (unElimCont
-          (irCtxR ((pairR (fun _ => anyI) subId).unR))
+          (irCtxR ((pairR (fun _ => subAny) subId).unR))
           (irCtxR (pairNoneElimR subId))))
   
   def subSimplePairInduction {a p}
@@ -1336,38 +1382,5 @@ namespace DefList.SubsetStx
     dl.SubsetStx x (pair a (arbUn b))
   :=
     sorry
-  
-  
-  -- Rules using none/any, ignore for now.
-  -- def subImplCompl {a}:
-  --   dl.SubsetStx (impl a none) (compl a)
-  -- :=
-  --   unCtx subId subNone
-  
-  -- def subComplImpl {a}:
-  --   dl.SubsetStx (compl a) (impl a none)
-  -- :=
-  --   subUnL
-  
-  -- def ofImpl {x a}
-  --   (sub: dl.SubsetStx any (impl x a))
-  -- :
-  --   dl.SubsetStx x a
-  -- :=
-  --   implElimExact (trans subAny sub)
-  
-  -- def isFullOfAny {x a}
-  --   (subA: dl.SubsetStx any a)
-  -- :
-  --   dl.SubsetStx x (full a)
-  -- :=
-  --   sorry
-  
-  -- def isFullImplElim {a b}
-  --   (sub: dl.SubsetStx any (full (impl a b)))
-  -- :
-  --   dl.SubsetStx a b
-  -- :=
-  --   sorry
   
 end DefList.SubsetStx
