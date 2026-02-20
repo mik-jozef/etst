@@ -904,6 +904,66 @@ namespace DefList.SubsetStx
   :=
     sorry
   
+  def pairFullL {x a b f}
+    (subF: dl.SubsetStx x (full f))
+    (subP: dl.SubsetStx x (pair a b))
+  :
+    dl.SubsetStx x (pair (full f) b)
+  :=
+    sorry
+  
+  def pairFullR {x a b f}
+    (subF: dl.SubsetStx x (full f))
+    (subP: dl.SubsetStx x (pair a b))
+  :
+    dl.SubsetStx x (pair a (full f))
+  :=
+    sorry
+  
+  def fullPairL {x a b}
+    (sub: dl.SubsetStx x (pair (full a) b))
+  :
+    dl.SubsetStx x (ir (full a) (pair any b))
+  :=
+    sorry
+  
+  def fullPairR {x a b}
+    (sub: dl.SubsetStx x (pair a (full b)))
+  :
+    dl.SubsetStx x (ir (full b) (pair a any))
+  :=
+    sorry
+  
+  def pairSomeL {x a b s}
+    (subS: dl.SubsetStx x (some s))
+    (subP: dl.SubsetStx x (pair a b))
+  :
+    dl.SubsetStx x (pair (some s) b)
+  :=
+    sorry
+  
+  def pairSomeR {x a b s}
+    (subS: dl.SubsetStx x (some s))
+    (subP: dl.SubsetStx x (pair a b))
+  :
+    dl.SubsetStx x (pair a (some s))
+  :=
+    sorry
+  
+  def somePairL {x a b}
+    (sub: dl.SubsetStx x (pair (some a) b))
+  :
+    dl.SubsetStx x (ir (some a) (pair any b))
+  :=
+    sorry
+  
+  def somePairR {x a b}
+    (sub: dl.SubsetStx x (pair a (some b)))
+  :
+    dl.SubsetStx x (ir (some b) (pair a any))
+  :=
+    sorry
+  
   def pairUnL {x a b c}
     (sub: dl.SubsetStx x (un (pair a c) (pair b c)))
   :
@@ -1088,14 +1148,14 @@ namespace DefList.SubsetStx
     (subE: dl.SubsetStx x e)
     (subPair: dl.SubsetStx x (pair any any))
   :
-    dl.SubsetStx x (pair (zth e) (fst e))
+    dl.SubsetStx x (pair (zth e.lift) (fst e.lift))
   :=
     sorry
   
   def nullPairZthFst {x e}
     (subE: dl.SubsetStx x e)
   :
-    dl.SubsetStx x (un null (pair (zth e) (fst e)))
+    dl.SubsetStx x (un null (pair (zth e.lift) (fst e.lift)))
   :=
     sorry
   
@@ -1114,6 +1174,35 @@ namespace DefList.SubsetStx
     dl.SubsetStx x (fst (pair a.lift b.lift))
   :=
     sorry
+  
+  def zthMono {x a}
+    (sub: dl.SubsetStx x a)
+  :
+    dl.SubsetStx (zth x.lift) (zth a.lift)
+  :=
+    sorry
+  
+  def projZth {x a b}
+    (sub: dl.SubsetStx x (pair a b))
+  :
+    dl.SubsetStx (zth x.lift) a
+  :=
+    sorry
+  
+  def fstMono {x a}
+    (sub: dl.SubsetStx x a)
+  :
+    dl.SubsetStx (fst x.lift) (fst a.lift)
+  :=
+    sorry
+  
+  def projFst {x a b}
+    (sub: dl.SubsetStx x (pair a b))
+  :
+    dl.SubsetStx (fst x.lift) a
+  :=
+    sorry
+  
   
   def pairArbIrL {x a b}
     (sub: dl.SubsetStx x (arbIr (pair a b.lift)))
