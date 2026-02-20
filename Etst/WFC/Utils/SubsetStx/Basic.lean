@@ -1105,6 +1105,17 @@ namespace DefList.SubsetStx
   :=
     arbIrMono sub impl.toImpl
   
+  def pointwise {x a}
+    (sub: dl.SubsetStx (ir (var 0) x.lift) (ir (var 0) a.lift))
+  :
+    dl.SubsetStx x a
+  :=
+    let subImpl: dl.SubsetStx x.lift (impl (var 0) a.lift) :=
+      implIntro (irR (irSymmCtx sub))
+    let subUnNone: dl.SubsetStx x (un none a) :=
+      arbIrUnLiftDistR (arbIrI subImpl)
+    unElimSub subUnNone (noneElim subId) subId
+  
   
   def arbUnCtxI {a b}
     (sub: dl.SubsetStx a b.lift)
@@ -1358,12 +1369,5 @@ namespace DefList.SubsetStx
   --   dl.SubsetStx a b
   -- :=
   --   sorry
-  
-  def pointwise {x a}
-    (sub: dl.SubsetStx (ir (var 0) x.lift) (ir (var 0) a.lift))
-  :
-    dl.SubsetStx x a
-  :=
-    sorry
   
 end DefList.SubsetStx
