@@ -252,7 +252,28 @@ namespace Expr
       congrArg compl (lift_inv_step (by injection eq))
     | arbIr body =>
       congrArg arbIr (lift_inv_step (depth:=depth+1) (by injection eq))
-
+  
+  def lift_lift_eq_one
+    (expr: Expr E)
+  :
+    expr.lift.lift = expr.lift.lift 1
+  :=
+    lift_inv_step rfl
+  
+  def lift_zth
+    (expr: Expr E)
+  :
+    expr.lift.zth.lift = expr.lift.lift.zth
+  :=
+    congrArg zth (lift_lift_eq_one expr).symm
+  
+  def lift_fst
+    (expr: Expr E)
+  :
+    expr.lift.fst.lift = expr.lift.lift.fst
+  :=
+    congrArg fst (lift_lift_eq_one expr).symm
+  
   
   def liftFvMapVar_comp
     (f g: Nat → Nat)
@@ -686,6 +707,18 @@ namespace Expr
     rw [lift_eq_substLift expr 0 1, substLift, succEq]
     rw [←subst_comp_var (instantiateVar.fn t) Nat.succ expr]
     exact substId_eq expr
+  
+  def lift_pos_instantiateVar_eq
+    (expr: Expr E)
+    (t: Expr E)
+    (n: Nat)
+  :
+    (expr.lift 0 n.succ).instantiateVar t = expr.lift 0 n
+  := by
+    rw [instantiateVar, lift_eq_substLift expr 0 n.succ]
+    rw [substLift, ←subst_comp_var]
+    rw [lift_eq_substLift expr 0 n]
+    rfl
   
   def lift_d0_instantiateVar_eq
     (expr: Expr E)

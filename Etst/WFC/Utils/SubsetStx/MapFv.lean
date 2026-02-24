@@ -179,6 +179,8 @@ namespace DefList.SubsetStx
       pairSubsingleton ihL ihR
     | pairMono subL subR =>
       pairMono (mapFv subL map) (mapFv subR map)
+    | pairIr subL subR =>
+      pairIr (mapFv subL map) (mapFv subR map)
     | complPair sub => complPair (mapFv sub map)
     | complPairElim sub => complPairElim (mapFv sub map)
     | irL sub => irL (mapFv sub map)

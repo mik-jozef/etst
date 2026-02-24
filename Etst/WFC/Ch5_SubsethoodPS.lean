@@ -102,6 +102,12 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (full (impl (pair al ar) (pair bl br)))
 |
+  pairIr {x al bl ar br}
+    (subA: dl.SubsetStx x (pair al ar))
+    (subB: dl.SubsetStx x (pair bl br))
+  :
+    dl.SubsetStx x (pair (ir al bl) (ir ar br))
+|
   complPair {x a b}
     (sub:
       dl.SubsetStx
@@ -419,6 +425,17 @@ namespace DefList.SubsetStx
                 (inFullElim (subL.isSound fv leX leL isIn) pA) inAl)
               (inImplElim
                 (inFullElim (subR.isSound fv leX leR isIn) pB) inAr)
+      | pairIr subA subB =>
+        let ⟨leL, leR⟩ := freeVarUb_bin_le_elim leE
+        let ⟨leAl, leBl⟩ := freeVarUb_bin_le_elim leL
+        let ⟨leAr, leBr⟩ := freeVarUb_bin_le_elim leR
+        let inPairAlAr :=
+          subA.isSound fv leX (freeVarUb_bin_le leAl leAr) isIn
+        let inPairBlBr :=
+          subB.isSound fv leX (freeVarUb_bin_le leBl leBr) isIn
+        let ⟨pA, pB, eq, inAl, inAr⟩ := inPairElimEx inPairAlAr
+        let ⟨inBl, inBr⟩ := inPairElim (eq ▸ inPairBlBr)
+        eq ▸ inPair (inIr inAl inBl) (inIr inAr inBr)
       | complPair sub (a:=a) (b:=b) => fun inPairAB =>
         let ⟨pA, pB, eq, inA, inB⟩ := inPairElimEx inPairAB
         let ⟨leA, leB⟩ := freeVarUb_bin_le_elim leE
