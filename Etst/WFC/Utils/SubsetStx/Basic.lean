@@ -1538,6 +1538,81 @@ namespace DefList.SubsetStx
     arbIrI (trans (arbIrPop (dne sub)) subDne)
   
   
+  def pairArbIrL {x a b}
+    (sub: dl.SubsetStx x (arbIr (pair a b.lift)))
+  :
+    dl.SubsetStx x (pair (arbIr a) b)
+  :=
+    sorry
+  
+  def pairArbIrR {x a b}
+    (sub: dl.SubsetStx x (arbIr (pair a.lift b)))
+  :
+    dl.SubsetStx x (pair a (arbIr b))
+  :=
+    sorry
+  
+  def arbIrPairL {x a b}
+    (sub: dl.SubsetStx x (pair (arbIr a) b))
+  :
+    dl.SubsetStx x (arbIr (pair a b.lift))
+  :=
+    arbIrI (pairMonoSub sub.toLift (arbIrPop subId) subId)
+  
+  def arbIrPairR {x a b}
+    (sub: dl.SubsetStx x (pair a (arbIr b)))
+  :
+    dl.SubsetStx x (arbIr (pair a.lift b))
+  :=
+    arbIrI (pairMonoSub sub.toLift subId (arbIrPop subId))
+  
+  def arbUnPairL {x a b}
+    (sub: dl.SubsetStx x (pair (arbUn a) b))
+  :
+    dl.SubsetStx x (arbUn (pair a b.lift))
+  :=
+    let main := trans (pairArbIrL subId) (subPairMono subDni subId)
+    sub.trans <| complSwap <| complPair <|
+    (arbIrMonoSub subId (complPairElim subId))
+    |>.trans (arbIrUnLiftDistL subId)
+    |>.trans (subId.unCtxLR (arbIrUnLiftDistR subId))
+    |>.unElim
+      (irCtxR subUnL)
+      (unElimCont
+        (irCtxR (unR (unL main)))
+        (irCtxR (unR subUnR)))
+  
+  def arbUnPairR {x a b}
+    (sub: dl.SubsetStx x (pair a (arbUn b)))
+  :
+    dl.SubsetStx x (arbUn (pair a.lift b))
+  :=
+    let main := trans (pairArbIrR subId) (subPairMono subId subDni)
+    sub.trans <| complSwap <| complPair <|
+    (arbIrMonoSub subId (complPairElim subId))
+    |>.trans (arbIrUnLiftDistL subId)
+    |>.trans (subId.unCtxLR (arbIrUnLiftDistL subId))
+    |>.unElim
+      (irCtxR subUnL)
+      (unElimCont
+        (irCtxR (unR subUnL))
+        (irCtxR (unR (unR main))))
+  
+  def pairArbUnL {x a b}
+    (sub: dl.SubsetStx x (arbUn (pair a b.lift)))
+  :
+    dl.SubsetStx x (pair (arbUn a) b)
+  :=
+    trans sub (arbUnCtxI (subPairMono (arbUnPopCtx subId) subId))
+  
+  def pairArbUnR {x a b}
+    (sub: dl.SubsetStx x (arbUn (pair a.lift b)))
+  :
+    dl.SubsetStx x (pair a (arbUn b))
+  :=
+    trans sub (arbUnCtxI (subPairMono subId (arbUnPopCtx subId)))
+  
+  
   def pairZthFst {x e}
     (subE: dl.SubsetStx x e)
     (subPair: dl.SubsetStx x (pair any any))
@@ -1667,63 +1742,6 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx (fst x.lift) b
   :=
-    trans (fstMono sub) sorry
-  
-  
-  def pairArbIrL {x a b}
-    (sub: dl.SubsetStx x (arbIr (pair a b.lift)))
-  :
-    dl.SubsetStx x (pair (arbIr a) b)
-  :=
-    sorry
-  
-  def pairArbIrR {x a b}
-    (sub: dl.SubsetStx x (arbIr (pair a.lift b)))
-  :
-    dl.SubsetStx x (pair a (arbIr b))
-  :=
-    sorry
-  
-  def arbIrPairL {x a b}
-    (sub: dl.SubsetStx x (pair (arbIr a) b))
-  :
-    dl.SubsetStx x (arbIr (pair a b.lift))
-  :=
-    arbIrI (pairMonoSub sub.toLift (arbIrPop subId) subId)
-  
-  def arbIrPairR {x a b}
-    (sub: dl.SubsetStx x (pair a (arbIr b)))
-  :
-    dl.SubsetStx x (arbIr (pair a.lift b))
-  :=
-    arbIrI (pairMonoSub sub.toLift subId (arbIrPop subId))
-  
-  def arbUnPairL {x a b}
-    (sub: dl.SubsetStx x (pair (arbUn a) b))
-  :
-    dl.SubsetStx x (arbUn (pair a b.lift))
-  :=
-    sorry
-  
-  def arbUnPairR {x a b}
-    (sub: dl.SubsetStx x (pair a (arbUn b)))
-  :
-    dl.SubsetStx x (arbUn (pair a.lift b))
-  :=
-    sorry
-  
-  def pairArbUnL {x a b}
-    (sub: dl.SubsetStx x (arbUn (pair a b.lift)))
-  :
-    dl.SubsetStx x (pair (arbUn a) b)
-  :=
-    trans sub (arbUnCtxI (subPairMono (arbUnPopCtx subId) subId))
-  
-  def pairArbUnR {x a b}
-    (sub: dl.SubsetStx x (arbUn (pair a.lift b)))
-  :
-    dl.SubsetStx x (pair a (arbUn b))
-  :=
-    sorry
+    trans (fstMono sub) (fstPairElim subId)
   
 end DefList.SubsetStx
