@@ -1717,7 +1717,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair (arbUn a) b)
   :=
-    sorry
+    trans sub (arbUnCtxI (subPairMono (arbUnPopCtx subId) subId))
   
   def pairArbUnR {x a b}
     (sub: dl.SubsetStx x (arbUn (pair a.lift b)))
