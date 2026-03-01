@@ -88,16 +88,16 @@ namespace DefList.SubsetStx
     trans (irLR subId subA) sub
   
   def irCtxElimL {x a b}
-    (bc: dl.SubsetStx (ir x a) b)
     (ab: dl.SubsetStx x a)
+    (bc: dl.SubsetStx (ir x a) b)
   :
     dl.SubsetStx x b
   :=
     trans (irI subId ab) bc
   
   def irCtxElimR {x a b}
-    (bc: dl.SubsetStx (ir a x) b)
     (ab: dl.SubsetStx x a)
+    (bc: dl.SubsetStx (ir a x) b)
   :
     dl.SubsetStx x b
   :=
@@ -334,12 +334,8 @@ namespace DefList.SubsetStx
   :=
     complElim
       (irI
-        (complI
-          (trans (irLR subIrL subId) subL)
-          (irCtxL subIrR))
-        (complI
-          (trans (irLR subIrL subId) subR)
-          (irCtxL subIrR)))
+        (complI (irMonoCtxL subIrL subL) (irCtxL subIrR))
+        (complI (irMonoCtxL subIrL subR) (irCtxL subIrR)))
       (irCtxL sub)
   
   /-
@@ -355,10 +351,9 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx (ir x (un l r)) a
   :=
-    unElim
-      subIrCtxR
-      (trans (irLR subIrCtxL subId) subL)
-      (trans (irLR subIrCtxL subId) subR)
+    subIrCtxR.unElim
+      (irMonoCtxL subIrCtxL subL)
+      (irMonoCtxL subIrCtxL subR)
   
   def unElimImpl {x l r a}
     (sub: dl.SubsetStx x (un l r))
@@ -370,10 +365,10 @@ namespace DefList.SubsetStx
     complElim
       (irI
         (complI
-          (trans (irLR subIrL subId) (implAbsorb subL))
+          (irMonoCtxL subIrL (implAbsorb subL))
           (irCtxL subIrR))
         (complI
-          (trans (irLR subIrL subId) (implAbsorb subR))
+          (irMonoCtxL subIrL (implAbsorb subR))
           (irCtxL subIrR)))
       (irCtxL sub)
   
@@ -460,7 +455,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (un (ir al b) (ir ar b))
   :=
-    trans (irI subA subB) (irUnDistL subId)
+    irUnDistL (irI subA subB)
   
   
   def implIntro {x a b}
@@ -478,9 +473,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x b
   :=
-    trans
-      (irI subA subImpl)
-      (trans (irUnDistR subId) (unCtx subPe subIrR))
+    trans (irUnDistR (irI subA subImpl)) (unCtx subPe subIrR)
   
   def implElimExact {x a}
     (subA: dl.SubsetStx x (impl x a))
@@ -507,8 +500,8 @@ namespace DefList.SubsetStx
     dl.SubsetStx x b
   :=
     trans
-      (irI aCompl ab)
-      (trans (irUnDistR subId) (unCtx subPe.irSymmCtx subIrR))
+      (irUnDistR (irI aCompl ab))
+      (unCtx subPe.irSymmCtx subIrR)
   
   def unElimComplR {x a b}
     (ab: dl.SubsetStx x (un a b))
@@ -517,8 +510,8 @@ namespace DefList.SubsetStx
     dl.SubsetStx x a
   :=
     trans
-      (irI bCompl ab)
-      (trans (irUnDistR subId) (unCtx subIrR subPe.irSymmCtx))
+      (irUnDistR (irI bCompl ab))
+      (unCtx subIrR subPe.irSymmCtx)
   
   def unAbsorbCtxL {x a b}
     (sub: dl.SubsetStx x (un a b))
@@ -669,7 +662,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx (full a) (full b)
   :=
-    implElimExact (trans fullAb (fullImplDist subId))
+    implElimExact (fullImplDist fullAb)
   
   def fullMp {x a b}
     (fullAb: dl.SubsetStx x (full (impl a b)))
@@ -803,7 +796,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (some a)
   :=
-    trans sub (fullElim (fullMono subId subSome))
+    fullElim (fullMono sub subSome)
   
   def subSomeAddFull {a}:
     dl.SubsetStx (some a) (full (some a))
@@ -1599,6 +1592,13 @@ namespace DefList.SubsetStx
     trans sub (arbUnCtxI (subPairMono subId (arbUnPopCtx subId)))
   
   
+  def pairAnyArbUnElim {x}
+    (sub: dl.SubsetStx x (pair any any))
+  :
+    dl.SubsetStx x (arbUn (arbUn (pair (var 1) (var 0))))
+  :=
+    arbUnMonoSub (arbUnPairL sub) (arbUnPairR subId)
+  
   def pairZthFst {x e}
     (subE: dl.SubsetStx x e)
     (subPair: dl.SubsetStx x (pair any any))
@@ -1713,7 +1713,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx (zth x.lift) a
   :=
-    trans (zthMono sub) (zthPairElim subId)
+    zthPairElim (zthMono sub)
   
   def fstMono {x a}
     (sub: dl.SubsetStx x a)
@@ -1728,6 +1728,6 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx (fst x.lift) b
   :=
-    trans (fstMono sub) (fstPairElim subId)
+    fstPairElim (fstMono sub)
   
 end DefList.SubsetStx
