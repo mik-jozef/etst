@@ -109,6 +109,16 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (pair (ir al bl) (ir ar br))
 |
+  pairArbIrL {x a b}
+    (sub: dl.SubsetStx x (arbIr (pair a b.lift)))
+  :
+    dl.SubsetStx x (pair (arbIr a) b)
+|
+  pairArbIrR {x a b}
+    (sub: dl.SubsetStx x (arbIr (pair a.lift b)))
+  :
+    dl.SubsetStx x (pair a (arbIr b))
+|
   complPair {x a b}
     (sub:
       dl.SubsetStx
@@ -437,6 +447,30 @@ namespace DefList.SubsetStx
         let ⟨pA, pB, eq, inAl, inAr⟩ := inPairElimEx inPairAlAr
         let ⟨inBl, inBr⟩ := inPairElim (eq ▸ inPairBlBr)
         eq ▸ inPair (inIr inAl inBl) (inIr inAr inBr)
+      | pairArbIrL (a:=a) (b:=b) sub =>
+        let ⟨leArbIrA, leB⟩ := freeVarUb_bin_le_elim leE
+        let leA := Nat.le_add_of_sub_le leArbIrA
+        let leBLift := freeVarUb_le_lift leB
+        let leInner := freeVarUb_bin_le leA leBLift
+        let leArbIrInner := Nat.sub_le_of_le_add leInner
+        let inArbIrArg := sub.isSound fv leX leArbIrInner isIn
+        let ⟨pA, pB, eq, _, inBLift0⟩ := inPairElimEx (inArbIrElim inArbIrArg .null)
+        eq ▸ inPair
+          (inArbIr fun d =>
+            (inPairElim (eq ▸ inArbIrElim inArbIrArg d)).left)
+          ((intp2_lift_eq b fv [.null] dl.wfm dl.wfm).symm ▸ inBLift0)
+      | pairArbIrR (a:=a) (b:=b) sub =>
+        let ⟨leA, leArbIrB⟩ := freeVarUb_bin_le_elim leE
+        let leB := Nat.le_add_of_sub_le leArbIrB
+        let leALift := freeVarUb_le_lift leA
+        let leInner := freeVarUb_bin_le leALift leB
+        let leArbIrInner := Nat.sub_le_of_le_add leInner
+        let inArbIrArg := sub.isSound fv leX leArbIrInner isIn
+        let ⟨pA, pB, eq, inALift0, _⟩ := inPairElimEx (inArbIrElim inArbIrArg .null)
+        eq ▸ inPair
+          ((intp2_lift_eq a fv [.null] dl.wfm dl.wfm).symm ▸ inALift0)
+          (inArbIr fun d =>
+            (inPairElim (eq ▸ inArbIrElim inArbIrArg d)).right)
       | complPair sub (a:=a) (b:=b) => fun inPairAB =>
         let ⟨pA, pB, eq, inA, inB⟩ := inPairElimEx inPairAB
         let ⟨leA, leB⟩ := freeVarUb_bin_le_elim leE

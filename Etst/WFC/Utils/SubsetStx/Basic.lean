@@ -1538,20 +1538,6 @@ namespace DefList.SubsetStx
     arbIrI (trans (arbIrPop (dne sub)) subDne)
   
   
-  def pairArbIrL {x a b}
-    (sub: dl.SubsetStx x (arbIr (pair a b.lift)))
-  :
-    dl.SubsetStx x (pair (arbIr a) b)
-  :=
-    sorry
-  
-  def pairArbIrR {x a b}
-    (sub: dl.SubsetStx x (arbIr (pair a.lift b)))
-  :
-    dl.SubsetStx x (pair a (arbIr b))
-  :=
-    sorry
-  
   def arbIrPairL {x a b}
     (sub: dl.SubsetStx x (pair (arbIr a) b))
   :

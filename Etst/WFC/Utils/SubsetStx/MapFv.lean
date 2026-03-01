@@ -181,6 +181,18 @@ namespace DefList.SubsetStx
       pairMonoFullImpl (mapFv subL map) (mapFv subR map)
     | pairIr subL subR =>
       pairIr (mapFv subL map) (mapFv subR map)
+    | pairArbIrL (a:=a) (b:=b) sub =>
+      let mapped :=
+        lift_substVar_eq b map ▸
+        substVar_liftFvMapVar_subst b.lift map ▸
+        mapFv sub map
+      pairArbIrL mapped
+    | pairArbIrR (a:=a) (b:=b) sub =>
+      let mapped :=
+        lift_substVar_eq a map ▸
+        substVar_liftFvMapVar_subst a.lift map ▸
+        mapFv sub map
+      pairArbIrR mapped
     | complPair sub => complPair (mapFv sub map)
     | complPairElim sub => complPairElim (mapFv sub map)
     | irL sub => irL (mapFv sub map)
