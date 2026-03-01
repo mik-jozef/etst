@@ -177,8 +177,8 @@ namespace DefList.SubsetStx
       let ihR := subsingle_subst b map ▸ mapFv subR map
       subsingle_subst (a.pair b) map ▸
       pairSubsingleton ihL ihR
-    | pairMono subL subR =>
-      pairMono (mapFv subL map) (mapFv subR map)
+    | pairMonoFullImpl subL subR =>
+      pairMonoFullImpl (mapFv subL map) (mapFv subR map)
     | pairIr subL subR =>
       pairIr (mapFv subL map) (mapFv subR map)
     | complPair sub => complPair (mapFv sub map)

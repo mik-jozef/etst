@@ -889,14 +889,31 @@ namespace DefList.SubsetStx
     trans (unfold subId) sub
   
   
+  def pairMono {x al bl ar br}
+    (sub: dl.SubsetStx x (pair al ar))
+    (sl: dl.SubsetStx x (full (impl al bl)))
+    (sr: dl.SubsetStx x (full (impl ar br)))
+  :
+    dl.SubsetStx x (pair bl br)
+  :=
+    (pairMonoFullImpl sl sr).fullElim.implElim sub
+  
+  def pairMonoSub {x al ar bl br}
+    (sub: dl.SubsetStx x (pair al ar))
+    (sl: dl.SubsetStx al bl)
+    (sr: dl.SubsetStx ar br)
+  :
+    dl.SubsetStx x (pair bl br)
+  :=
+    pairMono sub (isFullImpl sl) (isFullImpl sr)
+  
   def subPairMono {al ar bl br}
     (sl: dl.SubsetStx al bl)
     (sr: dl.SubsetStx ar br)
   :
     dl.SubsetStx (pair al ar) (pair bl br)
   :=
-    implElimExact
-      (fullElim (pairMono (isFullImpl sl) (isFullImpl sr)))
+    pairMonoSub subId sl sr
   
   def pairMonoSubL {x a c b}
     (sub: dl.SubsetStx x (pair a b))
@@ -904,7 +921,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair c b)
   :=
-    sub.trans (subPairMono ac subId)
+    pairMonoSub sub ac subId
   
   def pairMonoSubR {x a b c}
     (sub: dl.SubsetStx x (pair a b))
@@ -912,7 +929,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair a c)
   :=
-    sub.trans (subPairMono subId bc)
+    pairMonoSub sub subId bc
   
   def pairMonoCtxSubL {x a c b}
     (sub: dl.SubsetStx (pair a b) x)
@@ -920,7 +937,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx (pair c b) x
   :=
-    (subPairMono ca subId).trans sub
+    trans (subPairMono ca subId) sub
   
   def pairMonoCtxSubR {x a b c}
     (sub: dl.SubsetStx (pair a b) x)
@@ -928,7 +945,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx (pair a c) x
   :=
-    (subPairMono subId cb).trans sub
+    trans (subPairMono subId cb) sub
   
   def nullPairComplPair {x a b}:
     dl.SubsetStx
@@ -952,7 +969,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x b
   :=
-    let subPair := sub.trans (subPairMono subAny subAny)
+    let subPair := pairMonoSub sub subAny subAny
     pe sub (complPair (unR (unL subPair)))
   
   def pairNoneElimR {x a b}
@@ -960,7 +977,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x b
   :=
-    let subPair := sub.trans (subPairMono subAny subAny)
+    let subPair := pairMonoSub sub subAny subAny
     pe sub (complPair (unR (unR subPair)))
   
   def nullPair {x}:
@@ -1010,8 +1027,9 @@ namespace DefList.SubsetStx
     dl.SubsetStx x (ir (pair a c) (pair b c))
   :=
     sub.trans
-      (irI (subPairMono subIrL subId)
-      (subPairMono subIrR subId))
+      (irI
+        (subPairMono subIrL subId)
+        (subPairMono subIrR subId))
   
   def irPairR {x a b c}
     (sub: dl.SubsetStx x (pair a (ir b c)))
@@ -1029,8 +1047,8 @@ namespace DefList.SubsetStx
     dl.SubsetStx x (ir (pair al bl) (pair ar br))
   :=
     irI
-      (sub.trans (subPairMono subIrL subIrL))
-      (sub.trans (subPairMono subIrR subIrR))
+      (pairMonoSub sub subIrL subIrL)
+      (pairMonoSub sub subIrR subIrR)
   
   def pairComplUnL {x a b c}
     (subA: dl.SubsetStx x (pair (compl a) c))
@@ -1090,9 +1108,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair (full f) b)
   :=
-    let ff := subF.fullAddFull.fullUnR
-    let pImpl := pairMono ff (isFullImpl subId)
-    pImpl.fullElim.implElim subP
+    pairMono subP subF.fullAddFull.fullUnR (isFullImpl subId)
   
   def pairFullR {x a b f}
     (subF: dl.SubsetStx x (full f))
@@ -1100,9 +1116,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair a (full f))
   :=
-    let ff := subF.fullAddFull.fullUnR
-    let pImpl := pairMono (isFullImpl subId) ff
-    pImpl.fullElim.implElim subP
+    pairMono subP (isFullImpl subId) subF.fullAddFull.fullUnR
   
   
   def pairSomeL {x a b s}
@@ -1111,9 +1125,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair (some s) b)
   :=
-    let sf := subS.someAddFull.fullUnR
-    let pImpl := pairMono sf (isFullImpl subId)
-    pImpl.fullElim.implElim subP
+    pairMono subP subS.someAddFull.fullUnR (isFullImpl subId)
   
   def pairSomeR {x a b s}
     (subS: dl.SubsetStx x (some s))
@@ -1121,9 +1133,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair a (some s))
   :=
-    let sf := subS.someAddFull.fullUnR
-    let pImpl := pairMono (isFullImpl subId) sf
-    pImpl.fullElim.implElim subP
+    pairMono subP (isFullImpl subId) subS.someAddFull.fullUnR
   
   def pairSomeElimSomeL {x a b}
     (sub: dl.SubsetStx x (pair (some a) b))
@@ -1217,7 +1227,7 @@ namespace DefList.SubsetStx
         (someMonoSub
           (someMono
             (irCtxL sub)
-            (pairMono
+            (pairMonoFullImpl
               (fullMono (dne subIrR) subUnL)
               (isFullImpl subId)))
           (pairNoneElimL subId)))
@@ -1232,7 +1242,7 @@ namespace DefList.SubsetStx
         (someMonoSub
           (someMono
             (irCtxL sub)
-            (pairMono
+            (pairMonoFullImpl
               (isFullImpl subId)
               (fullMono (dne subIrR) subUnL)))
           (pairNoneElimR subId)))
@@ -1301,12 +1311,12 @@ namespace DefList.SubsetStx
     arbIrI (implIntro (varSomeFull (irR subId)))
   
   def replaceVar {x i a}
-    (subVar: dl.SubsetStx x (var i))
-    (subSome: dl.SubsetStx x (some (ir (var i) a)))
+    (sub: dl.SubsetStx x (var i))
+    (isSome: dl.SubsetStx x (some (ir (var i) a)))
   :
     dl.SubsetStx x a
   :=
-    mp subSome.varSomeFull.fullElim subVar
+    mp isSome.varSomeFull.fullElim sub
   
   
   def nullSubsingleton {x}:
@@ -1385,6 +1395,23 @@ namespace DefList.SubsetStx
     pointwise (irI subIrCtxL sub)
   
   
+  def replaceSingleton {x a b}
+    (subExpr: dl.SubsetStx x a)
+    (isSome: dl.SubsetStx x (some (ir a b)))
+    (isSubsingle: dl.SubsetStx x a.isSubsingleton)
+  :
+    dl.SubsetStx x b
+  :=
+    pointwiseCtx <|
+    let isSub := irCtxR (arbIrPop isSubsingle)
+    let someAV := someI (irI (irCtxR subExpr.toLift) subIrL)
+    let fullAV := mp isSub someAV
+    let someAB := irCtxR isSome.toLift
+    let someVB :=
+      someMono someAB (fullMono fullAV (implAddIrR subId))
+    replaceVar subIrL someVB
+  
+  
   def arbUnCtxI {a b}
     (sub: dl.SubsetStx a b.lift)
   :
@@ -1393,9 +1420,9 @@ namespace DefList.SubsetStx
     complSwapCtx (arbIrI (subCompl sub))
   
   def arbUnPopCtx {x a}
-    (sub: dl.SubsetStx (arbUn a) x)
+    (sub: dl.SubsetStx (arbUn x) a)
   :
-    dl.SubsetStx a x.lift
+    dl.SubsetStx x a.lift
   :=
     subComplElim (arbIrPop (dne (subCompl sub)))
   
@@ -1662,14 +1689,14 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (arbIr (pair a b.lift))
   :=
-    arbIrI (sub.toLift.trans (subPairMono (arbIrPop subId) subId))
+    arbIrI (pairMonoSub sub.toLift (arbIrPop subId) subId)
   
   def arbIrPairR {x a b}
     (sub: dl.SubsetStx x (pair a (arbIr b)))
   :
     dl.SubsetStx x (arbIr (pair a.lift b))
   :=
-    arbIrI (sub.toLift.trans (subPairMono subId (arbIrPop subId)))
+    arbIrI (pairMonoSub sub.toLift subId (arbIrPop subId))
   
   def arbUnPairL {x a b}
     (sub: dl.SubsetStx x (pair (arbUn a) b))

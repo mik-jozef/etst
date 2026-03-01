@@ -96,7 +96,8 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (pair a b).isSubsingleton
 |
-  pairMono {x al bl ar br}
+  -- TODO replace with pairMono and derive?
+  pairMonoFullImpl {x al bl ar br}
     (sl: dl.SubsetStx x (full (impl al bl)))
     (sr: dl.SubsetStx x (full (impl ar br)))
   :
@@ -411,7 +412,7 @@ namespace DefList.SubsetStx
                     let inB0 := by rw [eqB1] at inB0; exact inB0.symm
                     eqDb ▸
                     congr (congr rfl inA0) inB0
-      | pairMono subL subR =>
+      | pairMonoFullImpl subL subR =>
         let ⟨leAlAr, leBlBr⟩ := freeVarUb_bin_le_elim leE
         let ⟨leAl, leAr⟩ := freeVarUb_bin_le_elim leAlAr
         let ⟨leBl, leBr⟩ := freeVarUb_bin_le_elim leBlBr
