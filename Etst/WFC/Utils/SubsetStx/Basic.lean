@@ -561,6 +561,24 @@ namespace DefList.SubsetStx
         (irMonoCtxR subIrCtxL (implAbsorb sub))
         (irCtxR subIrCtxR))
   
+  def curry {x a b c}
+    (sub: dl.SubsetStx x (impl (ir a b) c))
+  :
+    dl.SubsetStx x (impl a (impl b c))
+  :=
+    implIntro (implIntro (implElim
+      (irCtxL (irCtxL sub))
+      (irI (irCtxL subIrCtxR) subIrCtxR)))
+  
+  def uncurry {x a b c}
+    (sub: dl.SubsetStx x (impl a (impl b c)))
+  :
+    dl.SubsetStx x (impl (ir a b) c)
+  :=
+    implIntro (implElim
+      (implElim (irCtxL sub) (irCtxR subIrCtxL))
+      (irCtxR subIrCtxR))
+  
   def implCompl {x a}
     (sub: dl.SubsetStx x (impl a none))
   :
@@ -865,6 +883,22 @@ namespace DefList.SubsetStx
     dl.SubsetStx x a
   :=
     noneElim (sub.trans (arbIrI (subCompl isFullAny)))
+  
+  def fullMpSome {x f s}
+    (sub: dl.SubsetStx x (full (impl (some s) f)))
+    (subS: dl.SubsetStx x (some s))
+  :
+    dl.SubsetStx x (full f)
+  :=
+    fullMp sub (someAddFull subS)
+  
+  def fullImplOfSome {x s a b}
+    (sub: dl.SubsetStx x (full (impl (ir (some s) a) b)))
+    (subS: dl.SubsetStx x (some s))
+  :
+    dl.SubsetStx x (full (impl a b))
+  :=
+    fullMpSome (fullMono sub (curry subId)) subS
   
   
   def unfoldCtx {lane c b}
@@ -1405,10 +1439,10 @@ namespace DefList.SubsetStx
     replaceVar subIrL someVB
   
   
-  def arbUnCtxI {a b}
-    (sub: dl.SubsetStx a b.lift)
+  def arbUnCtxI {x a}
+    (sub: dl.SubsetStx x a.lift)
   :
-    dl.SubsetStx (arbUn a) b
+    dl.SubsetStx (arbUn x) a
   :=
     complSwapCtx (arbIrI (subCompl sub))
   
@@ -1468,6 +1502,16 @@ namespace DefList.SubsetStx
     dl.SubsetStx x b
   :=
     arbUnElimImpl sub (implIntro impl)
+  
+  def arbUnArbUnElim {x a b}
+    (sub: dl.SubsetStx x (arbUn (arbUn a)))
+    (impl: dl.SubsetStx (ir x.lift.lift a) b.lift.lift)
+  :
+    dl.SubsetStx x b
+  :=
+    arbUnElim sub
+      (arbUnElim subIrR
+        (irMonoCtxL subIrCtxL impl))
   
   def arbUnMono {x a b}
     (sub: dl.SubsetStx x (arbUn a))
