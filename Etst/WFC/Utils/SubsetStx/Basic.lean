@@ -1497,52 +1497,6 @@ namespace DefList.SubsetStx
   :=
     arbUnMonoSub (arbUnPairL sub) (arbUnPairR subId)
   
-  def pairZthFst {x e}
-    (sub: dl.SubsetStx x e)
-    (subPair: dl.SubsetStx x (pair any any))
-  :
-    dl.SubsetStx x (pair (zth e.lift) (fst e.lift))
-  :=
-    let subInst i:
-      dl.SubsetStx
-        e.lift.lift
-        (instantiateVar ((e.lift.lift 1).lift 1) (var i))
-    :=
-      lift_lift_eq_one e ▸
-      lift_lift_eq_one e.lift ▸
-      liftInst subId
-    (pairAnyArbUnElim subPair).arbUnArbUnElim
-      (subIrR.pairMono
-        (fullImplOfSome
-          (isFullImpl
-            (arbUnVarI
-              (irLR
-                (someMonoSub
-                  subId
-                  (irI
-                    (irCtxR (pairMonoSub subId subId anyI))
-                    (irCtxL (subInst 1))))
-                subId)))
-          (someI (irLR sub.toLift.toLift subId)))
-        (fullImplOfSome
-          (isFullImpl
-            (arbUnVarI
-              (irLR
-                (someMonoSub
-                  subId
-                  (irI
-                    (irCtxR (pairMonoSub subId anyI subId))
-                    (irCtxL (subInst 0))))
-                subId)))
-          (someI (irLR sub.toLift.toLift subId))))
-  
-  def nullPairZthFst {x e}
-    (subE: dl.SubsetStx x e)
-  :
-    dl.SubsetStx x (un null (pair (zth e.lift) (fst e.lift)))
-  :=
-    sorry
-  
   def zthPair {x a b}
     (subB: dl.SubsetStx x (some b))
     (sub: dl.SubsetStx x a)
@@ -1691,5 +1645,93 @@ namespace DefList.SubsetStx
               (irCtxR subPair))
             (sub.arbUnPopCtx.toLift)
             subId)))
+  
+  def projFstCtxElimNull {x b}
+    (sub: dl.SubsetStx (fst x.lift) b)
+  :
+    dl.SubsetStx x (un null (pair any b))
+  :=
+    let subPair := pairMonoSub subId anyI subId
+    arbUnNullPair.arbUnArbUnElim
+      (subIrR.unElim
+        (irCtxR subUnL)
+        (unR
+          (pairMonoSub
+            (pairIrR
+              (pairSomeR
+                (someI (irI (irCtxR subPair) (irCtxL subIrL)))
+                (irCtxR subPair))
+              (irCtxR subPair))
+            subId
+            ((lift_lift_eq_one b).symm ▸
+              (lift_lift_eq_one x).symm ▸
+              sub.arbUnPopCtx.toLift (d := 1)))))
+  
+  def projZthCtxElim {x a b}
+    (sub: dl.SubsetStx (zth x.lift) a)
+    (subPair: dl.SubsetStx x (pair any b))
+  :
+    dl.SubsetStx x (pair a b)
+  :=
+    (projZthCtxElimNull sub).unElim
+      (pe (irCtxL subPair) (complPair (unL subIrR)))
+      (pairMonoSub
+        (pairIrOfIr (irI subIrR (irCtxL subPair)))
+        subIrL subIrR)
+  
+  def projFstCtxElim {x a b}
+    (sub: dl.SubsetStx (fst x.lift) b)
+    (subPair: dl.SubsetStx x (pair a any))
+  :
+    dl.SubsetStx x (pair a b)
+  :=
+    (projFstCtxElimNull sub).unElim
+      (pe (irCtxL subPair) (complPair (unL subIrR)))
+      (pairMonoSub
+        (pairIrOfIr (irI (irCtxL subPair) subIrR))
+        subIrL subIrR)
+  
+  def pairOfZthFstNull {x a b}
+    (subZth: dl.SubsetStx (zth x.lift) a)
+    (subFst: dl.SubsetStx (fst x.lift) b)
+  :
+    dl.SubsetStx x (un null (pair a b))
+  :=
+    (projZthCtxElimNull subZth).unElim
+      (irCtxR subUnL)
+      ((irCtxL (projFstCtxElimNull subFst)).unElim
+        (irCtxR subUnL)
+        (unR (pairMonoSub
+          (pairIrOfIr (irI (irCtxL subIrR) subIrR))
+          subIrL subIrR)))
+  
+  def pairOfZthFst {x a b}
+    (subZth: dl.SubsetStx (zth x.lift) a)
+    (subFst: dl.SubsetStx (fst x.lift) b)
+    (subPair: dl.SubsetStx x (pair any any))
+  :
+    dl.SubsetStx x (pair a b)
+  :=
+    projZthCtxElim subZth (projFstCtxElim subFst subPair)
+  
+  def pairZthFst {x e}
+    (sub: dl.SubsetStx x e)
+    (subPair: dl.SubsetStx x (pair any any))
+  :
+    dl.SubsetStx x (pair (zth e.lift) (fst e.lift))
+  :=
+    pairOfZthFst
+      (zthMono subId (isFullImpl sub))
+      (fstMono subId (isFullImpl sub))
+      subPair
+  
+  def nullPairZthFst {x e}
+    (subE: dl.SubsetStx x e)
+  :
+    dl.SubsetStx x (un null (pair (zth e.lift) (fst e.lift)))
+  :=
+    pairOfZthFstNull
+      (zthMono subId (isFullImpl subE))
+      (fstMono subId (isFullImpl subE))
   
 end DefList.SubsetStx
