@@ -720,7 +720,7 @@ namespace Expr
     rw [lift_eq_substLift expr 0 n]
     rfl
   
-  def lift_d0_instantiateVar_eq
+  def lift_d1_instantiateVar_eq
     (expr: Expr E)
   :
     (expr.lift 1).instantiateVar (var 0) = expr
