@@ -385,7 +385,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (impl a b)
   :=
-    (unIrDistElimR (irI subUnR em.unSymm)).unMonoSubR sub
+    unMonoSubR (unIrDistElimR (irI subUnR em.unSymm)) sub
   
   def toImpl {x a b}
     (sub: dl.SubsetStx a b)
@@ -1211,19 +1211,19 @@ namespace DefList.SubsetStx
   
   def arbIrMono {x a b}
     (sub: dl.SubsetStx x (arbIr a))
-    (impl: dl.SubsetStx x.lift (impl a b))
+    (subAb: dl.SubsetStx (ir x.lift a) b)
   :
     dl.SubsetStx x (arbIr b)
   :=
-    arbIrI (mp impl (arbIrPop sub))
+    arbIrI (mpIr (arbIrPop sub) subAb)
   
   def arbIrMonoSub {x a b}
     (sub: dl.SubsetStx x (arbIr a))
-    (impl: dl.SubsetStx a b)
+    (subAb: dl.SubsetStx a b)
   :
     dl.SubsetStx x (arbIr b)
   :=
-    arbIrMono sub impl.toImpl
+    arbIrMono sub (irCtxR subAb)
   
   def pointwise {x a}
     (sub: dl.SubsetStx (ir (var 0) x.lift) a.lift)
@@ -1330,26 +1330,22 @@ namespace DefList.SubsetStx
   
   def arbUnMono {x a b}
     (sub: dl.SubsetStx x (arbUn a))
-    (subImpl: dl.SubsetStx x.lift (impl a b))
+    (subAb: dl.SubsetStx (ir x.lift a) b)
   :
     dl.SubsetStx x (arbUn b)
   :=
-    let y := ir x (arbIr (compl b))
-    let subYArbUna: dl.SubsetStx y (arbUn a) := irCtxL sub
-    let subYComplB: dl.SubsetStx y.lift (compl b) := arbIrPop subIrR
-    let subYImplANone: dl.SubsetStx y.lift (impl a none) :=
-      (unElimComplR (irCtxL subImpl) subYComplB).unL
-    let subYNone: dl.SubsetStx y none :=
-      arbUnElimImpl subYArbUna subYImplANone
-    complI subIrR (noneElim subYNone)
+    complI
+      (subIrR.arbIrMono
+        (mpIrCompl subIrR (irMonoCtxL subAb (irCtxL subIrL))))
+      (irCtxL sub)
   
   def arbUnMonoSub {x a b}
     (sub: dl.SubsetStx x (arbUn a))
-    (impl: dl.SubsetStx a b)
+    (subAb: dl.SubsetStx a b)
   :
     dl.SubsetStx x (arbUn b)
   :=
-    arbUnMono sub impl.toImpl
+    arbUnMono sub (irCtxR subAb)
   
   def arbUnConstI {x a}
     (sub: dl.SubsetStx x a)
@@ -1584,10 +1580,10 @@ namespace DefList.SubsetStx
       dl.SubsetStx x (zth b.lift)
     :=
       sub.arbUnMono
-        (implAddIrR
-          (implIntro
-            (someMono subIrR
-              (fullMono (irCtxL subAb.toLift) (implAddIrL subId)))))
+        (irI
+          ((irCtxR subIrL).someMono
+            (fullMono (irCtxL subAb.toLift) (implAddIrL subId)))
+          (irCtxR subIrR))
   
   def projZth {x a b}
     (sub: dl.SubsetStx x (pair a b))
@@ -1603,10 +1599,10 @@ namespace DefList.SubsetStx
       dl.SubsetStx x (fst b.lift)
     :=
       sub.arbUnMono
-        (implAddIrR
-          (implIntro
-            (someMono subIrR
-              (fullMono (irCtxL subAb.toLift) (implAddIrL subId)))))
+        (irI
+          ((irCtxR subIrL).someMono
+            (fullMono (irCtxL subAb.toLift) (implAddIrL subId)))
+          (irCtxR subIrR))
   
   def projFst {x a b}
     (sub: dl.SubsetStx x (pair a b))
