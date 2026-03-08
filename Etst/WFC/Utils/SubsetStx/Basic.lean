@@ -1320,6 +1320,28 @@ namespace DefList.SubsetStx
   :=
     unIntroCtxR (arbIrI (unAbsorbCtxR (arbIrPop sub)))
   
+  def unArbIrDistL {x a b}
+    (sub: dl.SubsetStx x (un (arbIr a) b))
+  :
+    dl.SubsetStx x (arbIr (un a b.lift))
+  :=
+    arbIrI
+      (unElim
+        sub.toLift
+        (irCtxR (unL (arbIrPop subId)))
+        (irCtxR subUnR))
+  
+  def unArbIrDistR {x a b}
+    (sub: dl.SubsetStx x (un a (arbIr b)))
+  :
+    dl.SubsetStx x (arbIr (un a.lift b))
+  :=
+    arbIrI
+      (unElim
+        sub.toLift
+        (irCtxR subUnL)
+        (irCtxR (unR (arbIrPop subId))))
+  
   def arbIrMono {x a b}
     (sub: dl.SubsetStx x (arbIr a))
     (subAb: dl.SubsetStx (ir x.lift a) b)
@@ -1463,6 +1485,34 @@ namespace DefList.SubsetStx
     dl.SubsetStx x (arbUn a).lift
   :=
     arbUnPopCtx (arbUnMonoSub subId sub)
+  
+  def irArbUnDistL {x a b}
+    (sub: dl.SubsetStx x (ir (arbUn a) b))
+  :
+    dl.SubsetStx x (arbUn (ir a b.lift))
+  :=
+    arbUnMono (irL sub) (irI subIrR (irCtxL (irR sub).toLift))
+  
+  def irArbUnDistR {x a b}
+    (sub: dl.SubsetStx x (ir a (arbUn b)))
+  :
+    dl.SubsetStx x (arbUn (ir a.lift b))
+  :=
+    arbUnMono (irR sub) (irMonoCtxL subId (irL sub).toLift)
+  
+  def irArbUnLiftDistR {x a b}
+    (sub: dl.SubsetStx x (arbUn (ir a b.lift)))
+  :
+    dl.SubsetStx x (ir (arbUn a) b)
+  :=
+    irI (arbUnMonoSub sub subIrL) (arbUnElim sub (irCtxR subIrR))
+  
+  def irArbUnLiftDistL {x a b}
+    (sub: dl.SubsetStx x (arbUn (ir a.lift b)))
+  :
+    dl.SubsetStx x (ir a (arbUn b))
+  :=
+    irI (arbUnElim sub (irCtxR subIrL)) (arbUnMonoSub sub subIrR)
   
   
   def complArbIrElim {x a}
@@ -1613,6 +1663,38 @@ namespace DefList.SubsetStx
         (fullElim
           (someStripFull
             (someMonoSub subId (arbIrPop subId)))))
+  
+  def arbUnFullDist {x a}
+    (sub: dl.SubsetStx x (arbUn (full a)))
+  :
+    dl.SubsetStx x (full (arbUn a))
+  :=
+    arbUnElim sub (fullMono subIrR (arbUnConstI subId))
+  
+  def someArbIrDist {x a}
+    (sub: dl.SubsetStx x (some (arbIr a)))
+  :
+    dl.SubsetStx x (arbIr (some a))
+  :=
+    arbIrI (someMonoSub sub.toLift (arbIrPop subId))
+  
+  def someArbUnDist {x a}
+    (sub: dl.SubsetStx x (some (arbUn a)))
+  :
+    dl.SubsetStx x (arbUn (some a))
+  :=
+    sub.trans
+      (subCompl
+        (fullMono
+          (arbIrFullDist (arbIrMonoSub subId (dne subId)))
+          (dni subId)))
+  
+  def arbUnSomeDist {x a}
+    (sub: dl.SubsetStx x (arbUn (some a)))
+  :
+    dl.SubsetStx x (some (arbUn a))
+  :=
+    arbUnElim sub (someMonoSub subIrR (arbUnConstI subId))
   
   
   def pairAnyArbUnElim {x}
@@ -1858,5 +1940,39 @@ namespace DefList.SubsetStx
     pairOfZthFstNull
       (zthMono subId (isFullImpl subE))
       (fstMono subId (isFullImpl subE))
+  
+  
+  def someDecomp {x a}
+    (sub: dl.SubsetStx x (some a))
+  :
+    dl.SubsetStx
+      x
+      (un
+        (some (ir a null))
+        (arbUn
+          (arbUn
+            (some (ir a.lift.lift (pair (var 1) (var 0)))))))
+  :=
+    unMonoSubR
+      (someUnDist
+        (someMonoSub
+          (someMonoSub sub (irI subId nullArbUnPair))
+          (irUnDistR subId)))
+      (arbUnMonoSub
+        (someArbUnDist
+          (someMonoSub subId
+            (arbUnMonoSub (irArbUnDistR subId) (irArbUnDistR subId))))
+        (someArbUnDist subId))
+  
+  def varDecomp {x i}:
+    dl.SubsetStx
+      x
+      (un
+        (some (ir (var i) null))
+        (arbUn
+          (arbUn
+            (some (ir (var i).lift.lift (pair (var 1) (var 0)))))))
+  :=
+    someDecomp someVar
   
 end DefList.SubsetStx
