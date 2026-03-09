@@ -172,11 +172,7 @@ namespace DefList.SubsetStx
     | nullFullSome sub => nullFullSome (mapFv sub map)
     | somePair subL subR =>
       somePair (mapFv subL map) (mapFv subR map)
-    | pairSubsingleton (x:=x) (a:=a) (b:=b) subL subR =>
-      let ihL := subsingle_subst a map ▸ mapFv subL map
-      let ihR := subsingle_subst b map ▸ mapFv subR map
-      subsingle_subst (a.pair b) map ▸
-      pairSubsingleton ihL ihR
+    | pairVarSomeFull sub => pairVarSomeFull (mapFv sub map)
     | pairMonoFullImpl subL subR =>
       pairMonoFullImpl (mapFv subL map) (mapFv subR map)
     | pairIr subL subR =>

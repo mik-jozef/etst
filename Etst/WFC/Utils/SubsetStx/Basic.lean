@@ -564,6 +564,24 @@ namespace DefList.SubsetStx
   :=
     implIntro (mp (irCtxL bc) (irCtxR ab))
   
+  def implImplConst {x a b c}
+    (sub: dl.SubsetStx x (impl a c))
+  :
+    dl.SubsetStx x (impl a (impl b c))
+  :=
+    implIntro (unR (implAbsorb sub))
+  
+  def irImplDist {x a0 a1 b0 b1}
+    (sub0: dl.SubsetStx x (impl a0 b0))
+    (sub1: dl.SubsetStx x (impl a1 b1))
+  :
+    dl.SubsetStx x (impl (ir a0 a1) (ir b0 b1))
+  :=
+    implIntro
+      (irI
+        (mp (irCtxL sub0) (irCtxR subIrL))
+        (mp (irCtxL sub1) (irCtxR subIrR)))
+  
   
   def contra {x a b}
     (sub: dl.SubsetStx x (impl a b))
@@ -864,6 +882,31 @@ namespace DefList.SubsetStx
           (dni subId)))
       (irCtxL sub)
   
+  def fullUnElim {x l r a}
+    (sub: dl.SubsetStx x (full (un l r)))
+    (subL: dl.SubsetStx x (full (impl l a)))
+    (subR: dl.SubsetStx x (full (impl r a)))
+  :
+    dl.SubsetStx x (full a)
+  :=
+    fullMp
+      (fullMono
+        (fullIr subL subR)
+        (implIntro (unElimImpl subIrR (irL subIrL) (irR subIrL))))
+      sub
+  
+  def someIrMono {x a0 a1 b0 b1}
+    (sub: dl.SubsetStx x (some (ir a0 b0)))
+    (sub0: dl.SubsetStx x (full (impl a0 a1)))
+    (sub1: dl.SubsetStx x (full (impl b0 b1)))
+  :
+    dl.SubsetStx x (some (ir a1 b1))
+  :=
+    sub.someMono
+      (fullMono
+        (fullIr sub0 sub1)
+        (irImplDist subIrL subIrR))
+  
   
   def pairMono {x al bl ar br}
     (sub: dl.SubsetStx x (pair al ar))
@@ -1146,10 +1189,10 @@ namespace DefList.SubsetStx
       (pairMonoSub subIrR subId subUnL)
       (pairMonoSub subIrR subId subUnR)
   
-  def irNullPairElim {x a b}
+  def irNullPairElim {x a b c}
     (sub: dl.SubsetStx x (ir null (pair a b)))
   :
-    dl.SubsetStx x b
+    dl.SubsetStx x c
   :=
     pe (irR sub) (complPair (unL (irL sub)))
   
@@ -1974,5 +2017,97 @@ namespace DefList.SubsetStx
             (some (ir (var i).lift.lift (pair (var 1) (var 0)))))))
   :=
     someDecomp someVar
+  
+  
+  def varNullPairPe {x i l r a}
+    (someNull: dl.SubsetStx x (some (ir (var i) null)))
+    (somePair: dl.SubsetStx x (some (ir (var i) (pair l r))))
+  :
+    dl.SubsetStx x a
+  :=
+    someNoneElim
+      (someMonoSub
+        (someMono
+          somePair
+          (fullMono someNull.varSomeFull (implAddIrR subId)))
+        (irNullPairElim subId))
+  
+  def pairVarFullSome {x i j a}
+    (sub: dl.SubsetStx x (full (impl (pair (var i) (var j)) a)))
+  :
+    dl.SubsetStx x (some (ir (pair (var i) (var j)) a))
+  :=
+    someMono
+      (somePair someVar someVar)
+      (fullMono sub (implIntro (irI subIrR (mp subIrL subIrR))))
+  
+  def pairSubsingleton {x a b}
+    (subA: dl.SubsetStx x a.isSubsingleton)
+    (subB: dl.SubsetStx x b.isSubsingleton)
+  :
+    dl.SubsetStx x (pair a b).isSubsingleton
+  :=
+    let l3 (e: SingleLaneExpr) := e.lift.lift.lift
+    let subPairSome:
+      dl.SubsetStx
+        (some (ir (l3 (pair a b)) (pair (var 1) (var 0))))
+        (some (pair (ir (l3 a) (var 1)) (ir (l3 b) (var 0))))
+    :=
+      someMonoSub subId (pairIr subIrL subIrR)
+    
+    let main:
+      dl.SubsetStx
+        (l3 x)
+        (impl
+          (some (ir (l3 (pair a b)) (pair (var 1) (var 0))))
+          (full (impl (l3 (pair a b)) (pair (var 1) (var 0)))))
+    :=
+      implIntro
+        (pairMonoFullImpl
+          (mp
+            (irCtxL (by
+              unfold l3
+              rw [lift_lift_eq_one a]
+              exact subA.toLift.arbIrPop.toLift))
+            (irCtxR (somePairElimL subPairSome)))
+          (mp
+            (irCtxL (by
+              unfold l3
+              rw [lift_lift_eq_one b.lift]
+              rw [lift_lift_eq_one b]
+              exact subB.toLift.toLift.arbIrPop))
+            (irCtxR (somePairElimR subPairSome))))
+    
+    let adapter:
+      dl.SubsetStx
+        (ir (ir (l3 x) _) (some (ir (var 2) (pair (var 1) (var 0)))))
+        (impl
+          (some (ir (l3 (pair a b)) (var 2)))
+          (full (impl (l3 (pair a b)) (var 2))))
+    :=
+      let fwd := varSomeFull (irR subIrL)
+      let bwd :=
+        pairVarSomeFull (someMonoSub (irR subIrL) (irSymm subId))
+      implIntro
+        (fullImplTrans
+           (mp (irCtxL (irCtxL (irCtxL main)))
+             (someIrMono subIrR (isFullImpl subId) fwd))
+           bwd)
+    
+    let mainWithVar:
+      dl.SubsetStx
+        x.lift
+        (impl
+          (some (ir (pair a b).lift (var 0)))
+          (full (impl (pair a b).lift (var 0))))
+    :=
+      unElim
+        varDecomp
+        (implIntro
+          (varNullPairPe
+            (irCtxL subIrR)
+            (irCtxR (someMonoSub subId (irSymm subId)))))
+        (subIrR.arbUnArbUnElim adapter)
+    arbIrI (mainWithVar)
   
 end DefList.SubsetStx
