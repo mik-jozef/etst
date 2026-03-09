@@ -161,7 +161,7 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x a
 |
-  isFullImpl {x a b}
+  fullImpl {x a b}
     (subA: dl.SubsetStx a b)
   :
     dl.SubsetStx x (full (impl a b))
@@ -487,7 +487,7 @@ namespace DefList.SubsetStx
           let inB := sub.isSound.call fv leIr p inIr
           let inBCpl := subCpl.isSound.call fv leIr p inIr
           inBCpl inB
-      | isFullImpl (a:=a) (b:=b) subA =>
+      | fullImpl (a:=a) (b:=b) subA =>
         inFull p fun _ =>
           inImpl fun inA =>
             let ⟨leA, leB⟩ := freeVarUb_bin_le_elim leE

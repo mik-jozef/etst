@@ -198,7 +198,7 @@ namespace DefList.SubsetStx
       complI (mapFv subL map) (mapFv subR map)
     | complElim subL subR =>
       complElim (mapFv subL map) (mapFv subR map)
-    | isFullImpl sub => isFullImpl (mapFv sub map)
+    | fullImpl sub => fullImpl (mapFv sub map)
     | fullImplDist sub => fullImplDist (mapFv sub map)
     | fullElim sub => fullElim (mapFv sub map)
     | someStripFull sub => someStripFull (mapFv sub map)
