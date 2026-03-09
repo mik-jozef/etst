@@ -1,9 +1,12 @@
-import Etst.Subtyping.Syntax.FiniteDefList
-import Etst.Subtyping.SubsetStx
+import Etst.WFC.Syntax.FiniteDefList
+import Etst.WFC.Utils.SubsetStx.Basic
 
 namespace Etst
 open DefList
 open DefList.SubsetStx
+
+
+-- TODO fix and move to an appropriate place.
 
 pairDefList TestDl extends FiniteDefList.Prelude
   s3 Pair := null | (Pair, Pair)
