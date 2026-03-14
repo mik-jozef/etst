@@ -1,5 +1,27 @@
 /-
-  TODO chapter description.
+  # Chapter 5: A Proof System for Subsethood in Well-Founded Collections
+  
+  In this chapter, we define a natural-deduction-style proof system
+  `SubsetStx`, with `dl.SubsetStx a b` interpretable in two equivalent
+  ways:
+  
+  0. A proof that `a` represents a subset of `b`.
+  1. A proof that, given an assumption `a`, we can derive `b`.
+-/
+
+/-
+  Historical note: initially, I had hoped to avoid explicitly
+  distinguishing between possible and definite membership; with
+  `SubsetStx` using `BasicExpr` instead of `SingleLaneExpr`, and
+  an expression `a ⊆ b` implicitly having the meaning "every
+  possible member of `a` is a definite member of `b`". However,
+  this kind of subsethood turned out not to be closed under
+  induction -- the induction hypothesis needs to refer to definite
+  members, since those are supposed to be already known to be
+  definite members of `b`.
+  
+  However, I am still a little uneasy about this. Hopefully, this
+  was the right choice.
 -/
 
 import Mathlib.Algebra.Order.BigOperators.Group.List
