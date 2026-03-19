@@ -19,11 +19,11 @@ namespace Pair
   def NatEncoding := { p // IsNatEncoding p }
   
   
-  def fromNat: Nat → Pair
+  def nat: Nat → Pair
   | Nat.zero => Pair.null
-  | Nat.succ n => Pair.pair (fromNat n) null
+  | Nat.succ n => Pair.pair (nat n) null
   
-  instance fromNat.inst: Coe Nat Pair := ⟨fromNat⟩
+  instance nat.inst: Coe Nat Pair := ⟨nat⟩
   
   def depth: Pair → Nat
   | null => 0
@@ -64,8 +64,8 @@ namespace Pair
       pair head (tailHead.arrayUpToLast tailTail)
   
   
-  def fromNat_inj_eq {n m}
-    (eq: fromNat n = fromNat m)
+  def nat_inj_eq {n m}
+    (eq: nat n = nat m)
   :
     n = m
   :=
@@ -76,12 +76,12 @@ namespace Pair
     | Nat.succ _nPred, Nat.succ _mPred =>
       let eqFromPred :=
         Pair.noConfusion eq fun predEq _ => predEq
-      congrArg Nat.succ (fromNat_inj_eq eqFromPred)
+      congrArg Nat.succ (nat_inj_eq eqFromPred)
   
-  def fromNat_inj_neq {n m}:
-    n ≠ m → fromNat n ≠ fromNat m
+  def nat_inj_neq {n m}:
+    n ≠ m → nat n ≠ nat m
   :=
-    not_imp_not.mpr fromNat_inj_eq
+    not_imp_not.mpr nat_inj_eq
   
   
   def depth_cases_eq (a b: Pair):
@@ -97,12 +97,12 @@ namespace Pair
       (fun ⟨eq, le⟩ => Or.inl (And.intro (congr rfl eq) le))
       (fun ⟨eq, lt⟩ => Or.inr (And.intro (congr rfl eq) lt))
   
-  def fromNat_depth_eq: (n: Nat) → (Pair.fromNat n).depth = n
+  def nat_depth_eq: (n: Nat) → (Pair.nat n).depth = n
   | Nat.zero => rfl
   | Nat.succ pred =>
-    (depth_cases_eq (fromNat pred) null).elim
+    (depth_cases_eq (nat pred) null).elim
       (fun ⟨eq, _⟩ =>
-        eq ▸ congr rfl (fromNat_depth_eq pred))
+        eq ▸ congr rfl (nat_depth_eq pred))
       (fun ⟨_, ltZero⟩ =>
         False.elim (Nat.not_lt_zero _ ltZero))
   

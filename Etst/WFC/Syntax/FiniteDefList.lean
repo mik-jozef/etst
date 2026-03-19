@@ -163,6 +163,7 @@ declare_syntax_cat s3_pair_expr
 syntax:70 ident : s3_pair_expr
 syntax:70 "."ident : s3_pair_expr
 syntax:70 ":"ident : s3_pair_expr
+syntax:70 num : s3_pair_expr
 syntax:70 "(?some " s3_pair_expr ")" : s3_pair_expr
 syntax:70 "(?full " s3_pair_expr ")" : s3_pair_expr
 syntax:70 "(" s3_pair_expr ")" : s3_pair_expr
@@ -275,6 +276,8 @@ namespace pair_def_list
       | some (.var _) =>
         throwErrorAt name (s!"Bound variable cannot have a lane selector.")
   |
+    `(s3_pair_expr| $num:num) => `(Expr.nat $(num))
+  |
     `(s3_pair_expr| null) => `(Expr.null)
   |
     `(s3_pair_expr|
@@ -363,7 +366,7 @@ namespace pair_def_list
     
     ```
       def dl.consts.foo := [foo's index]
-      def dl.vals.foo := dl.getDef [foo's index]
+      def dl.vals.foo := dl.wfm [foo's index]
       ...
     ```
   -/
@@ -382,7 +385,7 @@ namespace pair_def_list
       let dlIdent := mkIdent dlName
       
       cmds := cmds.push (← `(def $defName := $num))
-      cmds := cmds.push (← `(def $valName := ($dlIdent).getDef $num))
+      cmds := cmds.push (← `(noncomputable def $valName := ($dlIdent).wfm $num))
       i := i + 1
     return cmds
       

@@ -353,6 +353,6 @@ def DefList.IsDefinable
     (x: Nat),
     set = dl.wfm x
 
--- The type of trisets definable in aebra.
+-- The type of definable trisets.
 def DefList.Definable: Type :=
   { set: Set3 Pair // IsDefinable set }

@@ -205,6 +205,15 @@ def SingleLaneExpr.intpVar
   with respect to context (assuming a fixed background).
   When background and context are the same valuation, this
   definition reduces to the usual one with a single valuation.
+  
+  (Historical note: originally, expressions were defined relative
+  to a signature, and the interpretation function took an algebra
+  acting monotonically on sets of elements. The pair algebra with
+  `null` and `pair _ _` was later baked into expressions because
+  unfortunately, it made it a pain to recurse on them.
+  See also: [ref][ref])
+  
+  [ref][https://leanprover.zulipchat.com/#narrow/channel/270676-lean4/topic/RFC.3A.20pattern.20matching.20on.20.28syntactically.20equal.29.20functions]
 -/
 def SingleLaneExpr.intp2
   (expr: SingleLaneExpr)

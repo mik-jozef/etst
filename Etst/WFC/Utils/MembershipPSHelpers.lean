@@ -84,10 +84,11 @@ structure InsOutComplete
   Prop
 where
   insIsComplete:
-    ∀ {d x}, (v x).defMem d → Ins dl d x
+    ∀ {d x}, (v x).defMem d → DefList.Ins dl d x
   outIsComplete:
-    ∀ {d x}, ¬(v x).posMem d → Out dl d x
+    ∀ {d x}, ¬(v x).posMem d → DefList.Out dl d x
 
+open DefList in
 def completenessProofC {dl b}
   (isComplete: InsOutComplete dl b)
 :
@@ -180,7 +181,7 @@ def completenessProofB
       completenessProofC (ih ⟨n.pred, predLt⟩))
 
 
-def IsCauseInapplicable.toSuperCause
+def DefList.IsCauseInapplicable.toSuperCause
   (isInapp: IsCauseInapplicable dl cycle causeA)
   (isSuper: causeA ⊆ causeB)
 :
@@ -194,7 +195,7 @@ def IsCauseInapplicable.toSuperCause
   | blockedBackgroundOut _ inBout isIns =>
     blockedBackgroundOut _ (isSuper.boutLe inBout) isIns
 
-def IsCauseInapplicable.toSuperCycle
+def DefList.IsCauseInapplicable.toSuperCycle
   (isInapp: IsCauseInapplicable dl cycleA cause)
   (isSuper: cycleA ⊆ cycleB)
 :
@@ -208,7 +209,7 @@ def IsCauseInapplicable.toSuperCycle
   | blockedBackgroundOut _ inBout isIns =>
     blockedBackgroundOut _ inBout isIns
 
-def IsCauseInapplicable.toSuper
+def DefList.IsCauseInapplicable.toSuper
   (isInapp: IsCauseInapplicable dl cycleA causeA)
   (isSuper: cycleA ⊆ cycleB)
   (isSuperCause: causeA ⊆ causeB)

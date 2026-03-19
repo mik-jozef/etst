@@ -156,7 +156,7 @@ mutual
   
   then `d` is provably a member of `x`.
 -/
-inductive Ins
+inductive DefList.Ins
   (dl: DefList)
 :
   Pair → Nat → Prop
@@ -189,7 +189,7 @@ inductive Ins
   
   that do not contain any elements in the well-founded model.
 -/
-inductive IsCauseInapplicable
+inductive DefList.IsCauseInapplicable
   (dl: DefList)
 :
   Set (ValConst Pair) →
@@ -227,7 +227,7 @@ inductive IsCauseInapplicable
   A `d` is provably a non-member of `x` if there exists an empty
   cycle containing the pair `(d, x)`.
 -/
-inductive Out
+inductive DefList.Out
   (dl: DefList)
 :
   Pair → Nat → Prop

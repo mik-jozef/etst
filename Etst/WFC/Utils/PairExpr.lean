@@ -364,7 +364,7 @@ namespace SingleLaneExpr
   
   def inNat b c n
   :
-    intp2 (nat n) fv b c (Pair.fromNat n)
+    intp2 (nat n) fv b c (Pair.nat n)
   :=
     match n with
     | Nat.zero => inNull
@@ -373,7 +373,7 @@ namespace SingleLaneExpr
   def inNatElim {n p}
     (inNatExpr: intp2 (nat n) fv b c p)
   :
-    p = Pair.fromNat n
+    p = Pair.nat n
   :=
     match n, p with
     | Nat.zero, _ => inNullElim inNatExpr ▸ rfl
@@ -383,19 +383,19 @@ namespace SingleLaneExpr
       (inNatElim l) ▸ (inNullElim r) ▸ rfl
   
   def inNatElimNope {P n m}
-    (inNat: intp2 (nat n) fv b c (.fromNat m))
+    (inNat: intp2 (nat n) fv b c (.nat m))
     (neq: n ≠ m)
   :
     P
   :=
-    (neq (Pair.fromNat_inj_eq (Eq.symm (inNatElim inNat)))).elim
+    (neq (Pair.nat_inj_eq (Eq.symm (inNatElim inNat)))).elim
   
   def inNatElimDepth {n p}
     (inNat: intp2 (nat n) fv b c p)
   :
     p.depth = n
   :=
-    (inNatElim inNat) ▸ (Pair.fromNat_depth_eq n)
+    (inNatElim inNat) ▸ (Pair.nat_depth_eq n)
   
   def inNatElimDecode {n p}
     (inNatExpr: intp2 (nat n) fv b c p)
