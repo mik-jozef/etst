@@ -16,8 +16,8 @@ namespace Etst
     | null           => (2, null)
     | pair left rite => (3, (left, rite))
     | ir left rite   => (4, (left, rite))
-    | full cond      => (5, cond)
-    | compl expr     => (6, expr)
+    | full body      => (5, body)
+    | compl body     => (6, body)
     | arbIr body     => (7, body)
   ```
   
@@ -79,17 +79,17 @@ def exprEncIr: BasicExpr :=
 def exprEncFull: BasicExpr :=
   s3(
     null; dl, fv, expr;
-    Ex cond,
-    & (?some (5, cond) & expr)
-    & (?full [uniSetMapConst] (dl, (fv, cond)))
+    Ex body,
+    & (?some (5, body) & expr)
+    & (?full [uniSetMapConst] (dl, (fv, body)))
   )
 
 def exprEncCompl: BasicExpr :=
   s3(
     null; dl, fv, expr;
-    Ex subExpr,
-    & (?some (6, subExpr) & expr)
-    & (! [uniSetMapConst] (dl, (fv, subExpr)))
+    Ex body,
+    & (?some (6, body) & expr)
+    & (! [uniSetMapConst] (dl, (fv, body)))
   )
 
 def exprEncArbIr: BasicExpr :=
@@ -154,8 +154,8 @@ def BasicExpr.encoding: BasicExpr → Pair
   .pair (.nat 3) (.pair left.encoding rite.encoding)
 | .ir left rite =>
   .pair (.nat 4) (.pair left.encoding rite.encoding)
-| .full cond => .pair (.nat 5) cond.encoding
-| .compl expr => .pair (.nat 6) expr.encoding
+| .full body => .pair (.nat 5) body.encoding
+| .compl body => .pair (.nat 6) body.encoding
 | .arbIr body => .pair (.nat 7) body.encoding
 
 def DefList.prefix
