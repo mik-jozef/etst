@@ -3,6 +3,19 @@ import Etst.WFC.Utils.Valuation
 
 namespace Etst
 
+
+/-
+  Note: In proofs that consume an assertion that a pair belongs
+  to a large expression, one often needs lots of variables to
+  hold the intermediate results for pairs belonging to subexpressions.
+  
+  Recommended variable naming: `inX` for a pair being in a specific
+  `X`, `inw` for an intermediate result that is weakly in (possible
+  membership), `ins` for strongly in (definite membership), and `ine`
+  for either lane/membership. (`in` is a Lean keyword, not usable
+  as a variable name.)
+-/
+
 namespace SingleLaneExpr
   variable {expr exprL exprR body left rite: SingleLaneExpr}
   variable {x: Nat}
@@ -78,7 +91,7 @@ namespace SingleLaneExpr
   :=
     fun eq => Pair.noConfusion (inNull.symm.trans eq)
   
-  def inNullElimPair
+  def inNullElimNope
     (inNull: null.intp2 fv b c (Pair.pair pA pB))
     {P: Prop}
   :

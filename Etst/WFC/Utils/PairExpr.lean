@@ -13,8 +13,6 @@ variable {lane: Set3.Lane}
 
 
 namespace Expr
-  variable {expr body left rite: Expr E}
-  
   def impl (left rite: Expr E) := un left.compl rite
   
   def ifThen (cond body: Expr E): Expr E :=
@@ -68,7 +66,7 @@ namespace Expr
     variables of `expr` need to be incremented.
   -/
   def zth (expr: Expr E): Expr E :=
-    arbUn (ifThen (ir (pair (.var 0) any) expr) (.var 0))
+    arbUn (ifThen (ir (pair (var 0) any) expr) (var 0))
   
   /-
     Let `expr` be an expression that represets a set of
@@ -80,7 +78,7 @@ namespace Expr
     variables of `expr` need to be incremented.
   -/
   def fst (expr: Expr E): Expr E :=
-    arbUn (ifThen (ir (pair any (.var 0)) expr) (.var 0))
+    arbUn (ifThen (ir (pair any (var 0)) expr) (var 0))
   
   /-
     Let `fn` and `arg` be expressions that represent
@@ -96,7 +94,7 @@ namespace Expr
     variables of `fn` and `arg` need to be incremented.
   -/
   def call (fn arg: Expr E): Expr E :=
-    fst (ir fn (pair arg any))
+    arbUn (ifThen (ir fn (pair arg (var 0))) (var 0))
   
   /-
     For an encoding `nEnc` of a natural number `n`,
@@ -332,7 +330,11 @@ namespace SingleLaneExpr
   :
     intp2 (call fn arg) fv b c pB
   :=
-    inFst (inIr inFn (inPair inArg inAny))
+    inArbUn
+      pB
+      (inIfThen
+        (inIr inFn (inPair inArg (inVar rfl)))
+        (inVar rfl))
   
   
   def inCallElim {fn arg}
@@ -343,22 +345,25 @@ namespace SingleLaneExpr
         (intp2 fn (pB :: fv) b c (Pair.pair pA pB))
         (intp2 arg (pB :: fv) b c pA)
   :=
-    let ⟨zth, inIr⟩ := inFstElim inCall
-    let ⟨inFn, inP⟩ := inIrElim inIr
-    
-    ⟨zth, And.intro inFn (inPairElim inP).left⟩
+    let ⟨_res, inIfThen⟩ := inArbUnElim inCall
+    let ⟨⟨fnP, inFn, inPair⟩, inVarRes⟩ := inIfThenElim inIfThen
+    let pbEq := inVarElim inVarRes rfl
+    match fnP with
+    | .null => inPairElimNope inPair
+    | .pair _fnArg _fnRes =>
+      let ⟨inFnArg, inFnRes⟩ := inPairElim inPair
+      let fnResEq := inVarElim inFnRes rfl
+      ⟨_, And.intro (pbEq ▸ fnResEq ▸ inFn) (pbEq ▸ inFnArg)⟩
   
-  def inCallElimBound {fn arg}
-    (inCall: intp2 (call fn (Expr.const lane arg)) fv b c pB)
-    (isUnit: c arg = Set3.just pA)
+  def inCallElimSingle {fn arg}
+    (inCall: intp2 (call fn arg) fv b c pB)
+    (isSingleton: intp2 arg (pB :: fv) b c = {pA})
   :
     intp2 fn (pB :: fv) b c (Pair.pair pA pB)
   :=
     let ⟨aAlias, ⟨inFn, inArg⟩⟩ := inCallElim inCall
     let eq: aAlias = pA :=
-      match lane with
-      | .defLane => Set3.just.inDefToEq (isUnit ▸ inArg)
-      | .posLane => Set3.just.inPosToEq (isUnit ▸ inArg)
+      by rw [isSingleton] at inArg; exact inArg
     eq ▸ inFn
   
   

@@ -171,10 +171,10 @@ syntax:70 "null" : s3_pair_expr
 syntax:70 "(" s3_pair_expr ", " s3_pair_expr ")" : s3_pair_expr
 syntax:60 s3_pair_expr:60 s3_pair_expr:61 : s3_pair_expr
 syntax:50 "!" s3_pair_expr:50 : s3_pair_expr
-syntax:40 s3_pair_expr:40 "|" s3_pair_expr:41 : s3_pair_expr
-syntax:40 "|" s3_pair_expr:41 "|" s3_pair_expr:41 : s3_pair_expr
-syntax:30 s3_pair_expr:30 "&" s3_pair_expr:31 : s3_pair_expr
-syntax:30 "&" s3_pair_expr:31 "&" s3_pair_expr:31 : s3_pair_expr
+syntax:40 s3_pair_expr:41 "|" s3_pair_expr:40 : s3_pair_expr
+syntax:40 "|" s3_pair_expr:41 "|" s3_pair_expr:40 : s3_pair_expr
+syntax:30 s3_pair_expr:31 "&" s3_pair_expr:30 : s3_pair_expr
+syntax:30 "&" s3_pair_expr:31 "&" s3_pair_expr:30 : s3_pair_expr
 syntax:20 s3_pair_expr:20 "then" s3_pair_expr:21 : s3_pair_expr
 syntax:10 s3_pair_expr:11 "->" s3_pair_expr:10 : s3_pair_expr
 syntax:9 s3_pair_expr:10 "<->" s3_pair_expr:10 : s3_pair_expr
@@ -245,10 +245,24 @@ namespace pair_def_list
   | var (x: Nat)
   deriving DecidableEq
   
+  def identsPushVar
+    (idents: String → Option Ident)
+    (name: String)
+  :
+    String → Option Ident
+  :=
+    fun n =>
+      if name == n
+      then some (.var 0)
+      else
+        match idents n with
+        | .none => .none
+        | .some (.const n) => .some (.const n)
+        | .some (.var n) => .some (.var (n + 1))
+  
   -- Convert `s3_pair_expr` syntax to a Lean term representing `Expr`
   partial def makeExpr
     (idents: String → Option Ident)
-    (varDepth: Nat := 0) -- how many quantifiers we've gone under
   :
     Syntax →
     TermElabM (TSyntax `term)
@@ -283,59 +297,57 @@ namespace pair_def_list
     `(s3_pair_expr|
       (?some $body:s3_pair_expr))
     => do
-      `(Expr.some $(← makeExpr idents varDepth body))
+      `(Expr.some $(← makeExpr idents body))
   |
     `(s3_pair_expr|
       (?full $body:s3_pair_expr))
     => do
-      `(Expr.full $(← makeExpr idents varDepth body))
+      `(Expr.full $(← makeExpr idents body))
   |
     `(s3_pair_expr|
       ($a:s3_pair_expr, $b:s3_pair_expr))
     => do
       `(Expr.pair
-        $(← makeExpr idents varDepth a)
-        $(← makeExpr idents varDepth b))
+        $(← makeExpr idents a)
+        $(← makeExpr idents b))
   |
     `(s3_pair_expr| ! $a:s3_pair_expr)
-    => do `(Expr.compl $(← makeExpr idents varDepth a))
+    => do `(Expr.compl $(← makeExpr idents a))
   |
     `(s3_pair_expr|
       $a:s3_pair_expr | $b:s3_pair_expr)
     => do
       `(Expr.un
-        $(← makeExpr idents varDepth a)
-        $(← makeExpr idents varDepth b))
+        $(← makeExpr idents a)
+        $(← makeExpr idents b))
   |
     `(s3_pair_expr|
       $a:s3_pair_expr & $b:s3_pair_expr)
     => do
       `(Expr.ir
-        $(← makeExpr idents varDepth a)
-        $(← makeExpr idents varDepth b))
+        $(← makeExpr idents a)
+        $(← makeExpr idents b))
   |
     `(s3_pair_expr| $a:s3_pair_expr then $b:s3_pair_expr)
     => do
       `(Expr.ifThen
-        $(← makeExpr idents varDepth a)
-        $(← makeExpr idents varDepth b))
+        $(← makeExpr idents a)
+        $(← makeExpr idents b))
   |
     `(s3_pair_expr| Ex $x:ident, $body:s3_pair_expr)
     => do
-      let ident := some (.var varDepth)
-      let idents := Function.update idents x.getId.toString ident
-      `(Expr.arbUn $(← makeExpr idents varDepth.succ body))
+      let identsUpdated := identsPushVar idents x.getId.toString
+      `(Expr.arbUn $(← makeExpr identsUpdated body))
   |
     `(s3_pair_expr| All $x:ident, $body:s3_pair_expr)
     => do
-      let ident := some (.var varDepth)
-      let idents := Function.update idents x.getId.toString ident
-      `(Expr.arbIr $(← makeExpr idents varDepth.succ body))
+      let identsUpdated := identsPushVar idents x.getId.toString
+      `(Expr.arbIr $(← makeExpr identsUpdated body))
   |
     stx => do
     match ← liftMacroM (Macro.expandMacro? stx) with
     | some stxNew => do
-      makeExpr idents varDepth stxNew
+      makeExpr idents stxNew
     | none => termStxErr stx "s3_pair_expr"
   
   
@@ -439,7 +451,7 @@ namespace pair_def_list
     let defTerms ← defs.mapM fun df => do
       match df with
       | `(s3_pair_def| s3 $name := $expr) =>
-        let expr ← makeExpr names.enc 0 expr
+        let expr ← makeExpr names.enc expr
         let size := mkNumLit names.length.repr
         `({
           expr := $expr
@@ -462,7 +474,7 @@ namespace pair_def_list
     | some parentName => `($parentName)
   
   @[command_elab pair_def_list]
-  def pairDefListImpl : CommandElab :=
+  def pairDefListImpl: CommandElab :=
     Command.adaptExpander fun stx => do
       match stx with
       | `(pairDefList $name $[extends $parentName]?
@@ -513,7 +525,7 @@ end pair_def_list
 open pair_def_list in
 elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
   let names ← getFinDlDefNames (some dl)
-  let result ← makeExpr names.enc 0 expr
+  let result ← makeExpr names.enc expr
   elabTerm result none
 
 -- Test the new s3 syntax

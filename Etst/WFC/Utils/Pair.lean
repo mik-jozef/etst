@@ -97,6 +97,16 @@ namespace Pair
       (fun ⟨eq, le⟩ => Or.inl (And.intro (congr rfl eq) le))
       (fun ⟨eq, lt⟩ => Or.inr (And.intro (congr rfl eq) lt))
   
+  def depth_null_left (a: Pair):
+    depth (pair null a) = a.depth.succ
+  :=
+    Nat.succ_inj.mpr (Nat.zero_max a.depth)
+  
+  def depth_null_rite (a: Pair):
+    depth (pair a null) = a.depth.succ
+  :=
+    Nat.succ_inj.mpr (Nat.max_zero a.depth)
+  
   def nat_depth_eq: (n: Nat) → (Pair.nat n).depth = n
   | Nat.zero => rfl
   | Nat.succ pred =>
