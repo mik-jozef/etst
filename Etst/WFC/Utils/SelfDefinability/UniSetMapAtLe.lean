@@ -5,59 +5,33 @@ open SingleLaneExpr
 
 
 def InUniSetMapDefAt (dl n fv b c expr p) :=
-  (uniSetMapDl.getDef uniSetMapDl.consts.uniSetMap).triIntp2Def
-    []
-    b
-    c
-    (.pair (uniSetMapIndex dl n fv expr) p)
+  let vars := [
+    BasicExpr.encoding expr,
+    Pair.listEncoding fv,
+    DefList.prefixEncoding dl n,
+  ]
+  intp2 (exprEncList.toLane .defLane) vars b c p
 
-def insEncElim {b c dl n fv expr exprEnc fvEnc dlEnc}
-  (ins:
-    (pair (var 2) (pair (var 1) (var 0))).intp2
-      [exprEnc, fvEnc, dlEnc]
-      b
-      c
-      (uniSetMapIndex dl n fv expr))
-:
-  dl.prefixEncoding n = dlEnc ∧
-  Pair.listEncoding fv = fvEnc ∧
-  expr.encoding = exprEnc
-:=
-  let ⟨insDl, ins⟩ := inPairElim ins
-  let ⟨insFv, insExpr⟩ := inPairElim ins
-  And.intro
-    (inVarElim insDl rfl)
-    (And.intro
-      (inVarElim insFv rfl)
-      (inVarElim insExpr rfl))
-
-
-def isAtConst {dl n fv b c x p}
+def isAtElimConst {dl n fv b c x p}
   (ins: InUniSetMapDefAt dl n fv b c (.const x) p)
   (inCins: (∀ {d x}, d ∈ (c x).defMem → uniSetMapDl.Ins d x))
 :
   (c uniSetMapDl.consts.uniSetMap).defMem
     (.pair (uniSetMapIndex dl n [] ((dl.prefix n).getDef x)) p)
 :=
-  let ⟨dlEnc, ins⟩ := inArbUnElim ins
-  let ⟨fvEnc, ins⟩ := inArbUnElim ins
-  let ⟨exprEnc, ins⟩ := inArbUnElim ins
-  let ⟨insEnc, ins⟩ := inPairElim ins
-  let ⟨dlEncEq, fvEncEq, exprEncEq⟩ := insEncElim insEnc
   let main ins :=
     let ⟨xEnc, ins⟩ := inArbUnElim ins
     let ⟨insExprGuard, ins⟩ := inIrElim ins
     let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
     let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
-    let exprEncEqPair: exprEnc = .pair (.nat 0) xEnc :=
+    let xEncEq: .nat x = xEnc :=
       match exprGuard with
       | .null => inPairElimNope insGuardL
       | .pair _ _ =>
         let ⟨insNat, insVar⟩ := inPairElim insGuardL
-        inVarElim insGuardR rfl ▸
-        Pair.eq (inNatElim insNat) (inVarElim insVar rfl)
-    let xEncEq: .nat x = xEnc :=
-      Pair.noConfusion (exprEncEq.trans exprEncEqPair) fun _ => id
+        let eqNatX :=
+          Pair.noConfusion (inVarElim insGuardR rfl) fun _ => id
+        eqNatX.symm.trans (inVarElim insVar rfl)
     let ⟨pArg, inMap, inArg⟩ := inCallElim ins
     match pArg with
     | .null => inPairElimNope inArg
@@ -72,21 +46,40 @@ def isAtConst {dl n fv b c x p}
       let insDefX := inCallElimSingle insDefX rfl
       let insGetDef := (inCins insDefX).isSound
       let someExprAliasEq :=
-        uniSetMapDl.getDefElim (show
-          intp (const .defLane 0) _ _ _
-        from
-          dlEncEq ▸ xEncEq ▸ insGetDef)
+        uniSetMapDl.getDefElim
+          (show intp (const .defLane 0) _ _ _
+          from xEncEq ▸ insGetDef)
       let exprAliasEq := dl.prefixList_at_eq someExprAliasEq
       by
       unfold uniSetMapIndex
-      exact
-      exprAliasEq ▸ eqFvAlias ▸ dlEncEq ▸ eqDlAlias ▸ inMap
+      exact exprAliasEq ▸ eqFvAlias ▸ eqDlAlias ▸ inMap
   (inUnElim ins).elim
     main
     (fun ins =>
       (inUnElim ins).elim
-        sorry
+        (fun ins =>
+          let ⟨xEnc, ins⟩ := inArbUnElim ins
+          let ⟨insExprGuard, _⟩ := inIrElim ins
+          let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
+          let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
+          let xEncEq: .nat x = xEnc :=
+            match exprGuard with
+            | .null => inPairElimNope insGuardL
+            | .pair _ _ =>
+              let ⟨insNat, insVar⟩ := inPairElim insGuardL
+              let eqNatX :=
+                Pair.noConfusion (inVarElim insGuardR rfl) fun _ => id
+              eqNatX.symm.trans (inVarElim insVar rfl)
+          sorry)
         sorry)
+
+def isAtElimVar {dl n fv b c v p}
+  (ins: InUniSetMapDefAt dl n fv b c (.var v) p)
+  (inCins: (∀ {d x}, d ∈ (c x).defMem → uniSetMapDl.Ins d x))
+:
+  sorry
+:=
+  sorry
 
 
 /-
@@ -115,13 +108,43 @@ def uniSetMapAt_le_ins_helper {dl n fv index cst expr p}
         backgroundInsHold := DefList.Ins.isSound ∘ binsSat
         backgroundOutHold := DefList.Out.isSound ∘ boutSat
       }
-    let inUniSetMapDef := isCause isConsistent.leastValsApxAreSat
+    let ins := isCause isConsistent.leastValsApxAreSat
+    let ⟨dlEnc, ins⟩ := inArbUnElim (indexEq ▸ cstEq ▸ ins)
+    let ⟨fvEnc, ins⟩ := inArbUnElim ins
+    let ⟨exprEnc, ins⟩ := inArbUnElim ins
+    let ⟨insEnc, insLB⟩ := inPairElim ins
+    let ⟨dlEncEq, fvEncEq, exprEncEq⟩ :=
+      let ⟨insDl, ins⟩ := inPairElim insEnc
+      let ⟨insFv, insExpr⟩ := inPairElim ins
+      And.intro
+        (inVarElim insDl rfl)
+        (And.intro
+          (inVarElim insFv rfl)
+          (inVarElim insExpr rfl))
+    
     match expr with
     | .const x =>
-      let inCins := isAtConst (indexEq ▸ cstEq ▸ inUniSetMapDef) cinsSat
+      let inCins :=
+        isAtElimConst (dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insLB) cinsSat
       let ih := uniSetMapAt_le_ins_helper (cinsSat inCins) rfl rfl
       InWfm.of_in_def_no_fv (lane := .defLane) ih
-    | _ => sorry
+    | .var _ => sorry
+    | .null => sorry
+    | .pair _ _ => sorry
+    | .ir _ _ => sorry
+    | .full _ => sorry
+    | .compl _ =>
+      sorry
+    | .arbIr _ => sorry
+
+def uniSetMapAt_le_out_helper {dl n fv index cst expr p}
+  (out: uniSetMapDl.Out index cst)
+  (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
+  (whyDoINeedThisEq: cst = uniSetMapDl.consts.uniSetMap)
+:
+  ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
+:=
+  sorry
 
 
 def uniSetMapAt_le_out {dl n fv expr p}
@@ -132,7 +155,7 @@ def uniSetMapAt_le_out {dl n fv expr p}
 :
   ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
 :=
-  sorry
+  uniSetMapAt_le_out_helper out rfl rfl
 
 def uniSetMapAt_le_ins {dl n fv expr p}
   (ins:

@@ -169,6 +169,7 @@ syntax:70 "(?full " s3_pair_expr ")" : s3_pair_expr
 syntax:70 "(" s3_pair_expr ")" : s3_pair_expr
 syntax:70 "null" : s3_pair_expr
 syntax:70 "(" s3_pair_expr ", " s3_pair_expr ")" : s3_pair_expr
+syntax:70 "[" term "]" : s3_pair_expr
 syntax:60 s3_pair_expr:60 s3_pair_expr:61 : s3_pair_expr
 syntax:50 "!" s3_pair_expr:50 : s3_pair_expr
 syntax:40 s3_pair_expr:41 "|" s3_pair_expr:40 : s3_pair_expr
@@ -293,6 +294,8 @@ namespace pair_def_list
     `(s3_pair_expr| $num:num) => `(Expr.nat $(num))
   |
     `(s3_pair_expr| null) => `(Expr.null)
+  |
+    `(s3_pair_expr| [$t:term]) => pure t
   |
     `(s3_pair_expr|
       (?some $body:s3_pair_expr))
@@ -516,23 +519,54 @@ namespace pair_def_list
     s3 C := A | B
   pairDefList.
   
-  -- #print ExampleDL
+  -- You can display the entire thing with `#print ExampleDL`.
   
   example: ExampleDL2.consts.C = 5 := rfl
   
 end pair_def_list
 
+
+declare_syntax_cat s3_expr_base
+syntax "null" : s3_expr_base
+syntax ident  : s3_expr_base
+
+declare_syntax_cat s3_expr_vars
+syntax "," : s3_expr_vars
+syntax ";" ident,* ";" : s3_expr_vars
+
 open pair_def_list in
-elab "s3(" dl:ident ", " expr:s3_pair_expr ")" : term => do
-  let names ← getFinDlDefNames (some dl)
-  let result ← makeExpr names.enc expr
-  elabTerm result none
+elab
+  "s3("
+  base:s3_expr_base
+  vars:s3_expr_vars
+  expr:s3_pair_expr
+  ")"
+:
+  term
+=> do
+  -- Resolve definition list names
+  let names ← match base with
+    | `(s3_expr_base| null)      => pure DefNames.empty
+    | `(s3_expr_base| $dl:ident) => getFinDlDefNames (some dl)
+    | _                          => Lean.Elab.throwUnsupportedSyntax
+    
+  let mut idents := names.enc
+  
+  -- Add bound variables.
+  match vars with
+  | `(s3_expr_vars| ; $[$vs:ident],* ;) => 
+    for v in vs do
+      idents := identsPushVar idents v.getId.toString
+  | `(s3_expr_vars| ,) => pure ()
+  | _ => Lean.Elab.throwUnsupportedSyntax
+    
+  elabTerm (← makeExpr idents expr) none
 
 -- Test the new s3 syntax
 example:
   Eq
-    s3(Etst.pair_def_list.ExampleDL, X | Y)
-    (.un (.const () 0) (.const () 1))
+    s3(pair_def_list.ExampleDL; A, B, C; X | A)
+    (.un (.const () 0) (.var 2))
 :=
   rfl
 

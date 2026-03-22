@@ -27,6 +27,92 @@ namespace Etst
   A definition list (with all but finitely many definitions at the
   start being empty) is encoded as a list of expression encodings.
 -/
+
+def getNthConst: BasicExpr := .const 0
+def uniSetMapConst: BasicExpr := .const 1
+
+def exprEncConst: BasicExpr :=
+  s3(
+    null; dl, fv, expr;
+    Ex x,
+    & (?some (0, x) & expr)
+    & [uniSetMapConst] (dl, (null, [getNthConst] dl x))
+  )
+
+def exprEncVar: BasicExpr :=
+  s3(
+    null; dl, fv, expr;
+    Ex x,
+    & (?some (1, x) & expr)
+    & [getNthConst] fv x
+  )
+
+def exprEncNull: BasicExpr :=
+  s3(
+    null; dl, fv, expr;
+    & (?some (2, null) & expr)
+    & null
+  )
+
+def exprEncPair: BasicExpr :=
+  s3(
+    null; dl, fv, expr;
+    Ex left,
+    Ex rite,
+    & (?some (3, (left, rite)) & expr)
+    & (
+      [uniSetMapConst] (dl, (fv, left)),
+      [uniSetMapConst] (dl, (fv, rite))
+    )
+  )
+
+def exprEncIr: BasicExpr :=
+  s3(
+    null; dl, fv, expr;
+    Ex left,
+    Ex rite,
+    & (?some (4, (left, rite)) & expr)
+    & [uniSetMapConst] (dl, (fv, left))
+    & [uniSetMapConst] (dl, (fv, rite))
+  )
+
+def exprEncFull: BasicExpr :=
+  s3(
+    null; dl, fv, expr;
+    Ex cond,
+    & (?some (5, cond) & expr)
+    & (?full [uniSetMapConst] (dl, (fv, cond)))
+  )
+
+def exprEncCompl: BasicExpr :=
+  s3(
+    null; dl, fv, expr;
+    Ex subExpr,
+    & (?some (6, subExpr) & expr)
+    & (! [uniSetMapConst] (dl, (fv, subExpr)))
+  )
+
+def exprEncArbIr: BasicExpr :=
+  s3(
+    null; dl, fv, expr;
+    Ex body,
+    & (?some (7, body) & expr)
+    & (All p, [uniSetMapConst] (dl, ((p, fv), body)))
+  )
+
+def exprEncList: BasicExpr :=
+  s3(
+    null,
+    | [exprEncConst]
+    | [exprEncVar]
+    | [exprEncNull]
+    | [exprEncPair]
+    | [exprEncIr]
+    | [exprEncFull]
+    | [exprEncCompl]
+    | [exprEncArbIr]
+  )
+
 pairDefList uniSetMapDl
   s3 getNth :=
     Ex head,
@@ -47,52 +133,12 @@ pairDefList uniSetMapDl
     that serves as an index for it in `uniSetMap`.
   -/
   s3 uniSetMap :=
-    Ex dl,
-    Ex fv,
-    Ex expr, (
-      (dl, (fv, expr)),
-      | (
-        Ex x,
-        & (?some (0, x) & expr)
-        & uniSetMap (dl, (null, getNth dl x))
-      )
-      | (
-        Ex x,
-        & (?some (1, x) & expr)
-        & getNth fv x
-      )
-      | (
-        & (?some (2, null) & expr)
-        & null
-      )
-      | (
-        Ex left,
-        Ex rite,
-        & (?some (3, (left, rite)) & expr)
-        & (
-          uniSetMap (dl, (fv, left)),
-          uniSetMap (dl, (fv, rite))
-        )
-      )
-      | (
-        Ex left,
-        Ex rite,
-        & (?some (4, (left, rite)) & expr)
-        & uniSetMap (dl, (fv, left))
-        & uniSetMap (dl, (fv, rite))
-      )
-      | (
-        Ex cond,
-        & (?some (5, cond) & expr)
-        & (?full uniSetMap (dl, (fv, cond)))
-      )
-      | (
-        Ex body,
-        & (?some (7, body) & expr)
-        & (All p, uniSetMap (dl, ((p, fv), body)))
-      )
-    )
+    Ex dl, Ex fv, Ex expr, ((dl, (fv, expr)), [exprEncList])
 pairDefList.
+
+-- Assert the correctness of the consts.
+example: .const (uniSetMapDl.consts.getNth) = getNthConst := rfl
+example: .const (uniSetMapDl.consts.uniSetMap) = uniSetMapConst := rfl
 
 
 def Pair.listEncoding: List Pair → Pair
