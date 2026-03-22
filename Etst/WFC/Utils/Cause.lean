@@ -95,17 +95,6 @@ def Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
           isApplicable (blockedBackgroundOut inBout isDef.dne)
   }
 
-def Cause.IsWeaklySatisfiedBy.Not.toIsInapplicable
-  {cause: Cause D}
-  {b c: Valuation D}
-  (notSat: ¬ Cause.IsWeaklySatisfiedBy cause b c)
-:
-  Cause.IsInapplicable cause c.nonmembers b
-:=
-  not_imp_comm.mp
-    Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
-    notSat
-
 def Cause.IsWeaklySatisfiedBy.toIsApplicable
   {cause b c}
   (isSat: Cause.IsWeaklySatisfiedBy cause b c)
@@ -169,3 +158,93 @@ def IsWeakCause.isInapplicableOfIsNonmember
   cause.IsInapplicable c.nonmembers b
 :=
   (not_imp_not.mpr (isPosOfIsApplicable isCause) notPos).dne
+
+
+/-
+  A cause is (strongly) consistent if there exists a valuation
+  that strongly satisfies it. Note that every cause is weakly
+  consistent.
+-/
+def Cause.IsConsistent
+  (cause: Cause D)
+:
+  Prop
+:=
+  ∀ vv, vv ∉ cause.backgroundIns ∨ vv ∉ cause.backgroundOut
+
+/-
+  The least valuation in the approximation order that strongly
+  satisfies the background part of a cause.
+-/
+def Cause.IsConsistent.leastBackgroundApx
+  {cause: Cause D}
+  (isConsistent: cause.IsConsistent)
+:
+  Valuation D
+:=
+  fun x => {
+    defMem := fun d => ⟨d, x⟩ ∈ cause.backgroundIns
+    posMem := fun d => ⟨d, x⟩ ∉ cause.backgroundOut
+    defLePos :=
+      -- weird that this type annotation is necessary
+      fun d (isDef: _ ∈ cause.backgroundIns) =>
+        (isConsistent ⟨d, x⟩).elim
+          (fun ninBins => (ninBins isDef).elim)
+          id
+  }
+
+/-
+  The least valuation in the approximation order that strongly
+  satisfies the context part of a cause.
+-/
+def Cause.leastContextApx
+  (cause: Cause D)
+:
+  Valuation D
+:=
+  fun x => {
+    defMem := fun d => ⟨d, x⟩ ∈ cause.contextIns
+    posMem := Set.univ
+    defLePos := fun _ _ => trivial
+  }
+
+def Cause.IsConsistent.leastBackgroundApxIsSat
+  {cause: Cause D}
+  (isConsistent: cause.IsConsistent)
+:
+  cause.IsStronglySatisfiedByBackground
+    (isConsistent.leastBackgroundApx)
+:= {
+  backgroundInsHold := id
+  backgroundOutHold :=
+    fun {dd xx} inBout =>
+      (isConsistent ⟨dd, xx⟩).elim
+        (fun _ => (· inBout))
+        (fun ninbout => False.elim (ninbout inBout))
+}
+
+def Cause.IsConsistent.leastValsApxAreSat
+  {cause: Cause D}
+  (isConsistent: cause.IsConsistent)
+:
+  cause.IsStronglySatisfiedBy
+    (isConsistent.leastBackgroundApx)
+    (leastContextApx cause)
+:= {
+  contextInsHold := id
+  backgroundInsHold := id
+  backgroundOutHold :=
+    (leastBackgroundApxIsSat isConsistent).backgroundOutHold
+}
+
+def Cause.IsStronglySatisfiedByBackground.toIsConsistent {D b}
+  {cause: Cause D}
+  (isSat: IsStronglySatisfiedByBackground cause b)
+:
+  IsConsistent cause
+:=
+  fun _ =>
+    Classical.or_iff_not_imp_left.mpr fun inBinsDn inBout =>
+      isSat.backgroundOutHold
+        inBout
+        (isSat.backgroundInsHold inBinsDn.dne).toPos
