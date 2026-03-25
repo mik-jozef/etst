@@ -367,13 +367,14 @@ namespace SingleLaneExpr
     eq ▸ inFn
   
   
-  def inNat b c n
+  def inNat {b c}
+    (n: Nat)
   :
     intp2 (nat n) fv b c (Pair.nat n)
   :=
     match n with
     | Nat.zero => inNull
-    | Nat.succ pred => inPair (inNat b c pred) inNull
+    | Nat.succ pred => inPair (inNat pred) inNull
   
   def inNatElim {n p}
     (inNatExpr: intp2 (nat n) fv b c p)

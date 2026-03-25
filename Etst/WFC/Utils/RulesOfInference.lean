@@ -4,18 +4,6 @@ import Etst.WFC.Utils.Valuation
 namespace Etst
 
 
-/-
-  Note: In proofs that consume an assertion that a pair belongs
-  to a large expression, one often needs lots of variables to
-  hold the intermediate results for pairs belonging to subexpressions.
-  
-  Recommended variable naming: `inX` for a pair being in a specific
-  `X`, `inw` for an intermediate result that is weakly in (possible
-  membership), `ins` for strongly in (definite membership), and `ine`
-  for either lane/membership. (`in` is a Lean keyword, not usable
-  as a variable name.)
--/
-
 namespace SingleLaneExpr
   variable {expr exprL exprR body left rite: SingleLaneExpr}
   variable {x: Nat}
@@ -351,5 +339,45 @@ namespace SingleLaneExpr
     match lane with
     | .defLane => show (dl.triIntp2 v v x).defMem d from eqAtN ▸ inConst
     | .posLane => show (dl.triIntp2 v v x).posMem d from eqAtN ▸ inConst
+  
+  
+  def toggle2N (lane: Set3.Lane): Nat → Set3.Lane
+  | 0 => lane
+  | n+1 => Set3.Lane.toggle (Set3.Lane.toggle (toggle2N lane n))
+  
+  def inToggle2
+    (n: Nat)
+    {expr: BasicExpr}
+    {lane}
+    (inToggle: intp2 (BasicExpr.toLane expr lane) fv b c d)
+  :
+    intp2 (BasicExpr.toLane expr (toggle2N lane n)) fv b c d
+  :=
+    match n with
+    | 0 => inToggle
+    | n+1 => by
+      let ih := inToggle2 n inToggle
+      rw [←Set3.Lane.toggle_toggle_eq (toggle2N lane n)] at ih
+      exact ih
+  
+  def inToggle2Elim
+    (n: Nat)
+    {expr: BasicExpr}
+    {lane}
+    (inToggle:
+      intp2 (BasicExpr.toLane expr (toggle2N lane n)) fv b c d)
+  :
+    intp2 (BasicExpr.toLane expr lane) fv b c d
+  :=
+    match n with
+    | 0 => inToggle
+    | n+1 =>
+      let inToggle:
+        (expr.toLane (toggle2N lane n).toggle.toggle).intp2 fv b c d
+      :=
+        inToggle
+      inToggle2Elim n (by
+        rw [Set3.Lane.toggle_toggle_eq] at inToggle
+        exact inToggle)
   
 end SingleLaneExpr
