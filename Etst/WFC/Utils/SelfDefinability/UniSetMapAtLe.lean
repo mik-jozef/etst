@@ -3,6 +3,8 @@ import Etst.WFC.Utils.SelfDefinability.UniSetMapDl
 namespace Etst
 open SingleLaneExpr
 
+set_option pp.fieldNotation false
+
 
 def InUniSetMapDefAt (dl n fv b c expr lane p) :=
   let vars := [
@@ -327,6 +329,99 @@ def isAtElimCompl {dl n fv b c body lane p}
 
 
 /-
+  ## Section: Expression encoding constructors
+-/
+
+def isInMap {dl n fv b c expr lane p}
+  (isAt: InUniSetMapDefAt dl n fv b c expr lane p)
+:
+  intp2
+    (BasicExpr.toLane
+      (uniSetMapDl.getDef uniSetMapDl.consts.uniSetMap)
+      lane)
+    fv
+    b
+    c
+    (.pair (uniSetMapIndex dl n fv expr) p)
+:=
+  inArbUn
+    (dl.prefixEncoding n)
+    (inArbUn
+      (.listEncoding fv)
+      (inArbUn
+        expr.encoding
+        (inPair
+          (inPair rfl (inPair rfl rfl))
+          (inToggle2 3 isAt))))
+
+def isAtConst {dl n fv b c x lane p}
+  (ins:
+    (c uniSetMapDl.consts.uniSetMap).getLane
+      lane
+      (.pair (uniSetMapIndex dl n [] ((dl.prefix n).getDef x)) p))
+  (insGetNth:
+    (c uniSetMapDl.consts.getNth).getLane
+      lane
+      (uniSetMapDl.getNthEnc dl n x))
+:
+  InUniSetMapDefAt dl n fv b c (.const x) lane p
+:=
+  inUnL
+    (inArbUn
+      (.nat x)
+      (inIr
+        (inSome _ (inIr (inPair (inNat 0) rfl) rfl))
+        (inCall
+          (inToggle2 4 ins)
+          (inPair
+            rfl
+            (inPair
+              inNull
+              (inCall
+                (inCall
+                  (inToggle2 8 insGetNth)
+                  rfl)
+                rfl))))))
+
+
+/-
+  ## Section: Cause building
+-/
+
+def causeConst
+  (dl: DefList)
+  (n: Nat)
+  (x: Nat)
+  (p: Pair)
+:
+  Cause Pair
+:= {
+  contextIns dx :=
+    let expr := (dl.prefix n).getDef x
+    Or
+      (And
+        (dx.x = uniSetMapDl.consts.getNth)
+        (dx.d = uniSetMapDl.getNthEnc dl n x))
+      (And
+        (dx.x = uniSetMapDl.consts.uniSetMap)
+        (dx.d = .pair (uniSetMapIndex dl n [] expr) p))
+  backgroundIns := {}
+  backgroundOut := {}
+}
+
+def isWeakCauseConst {dl n fv x p}:
+  IsWeakCause
+    (causeConst dl n x p)
+    (.pair (uniSetMapIndex dl n fv (.const x)) p)
+    (uniSetMapDl.getDef uniSetMapDl.consts.uniSetMap)
+:=
+  fun isSat =>
+    let insGetNth := isSat.contextInsHold (Or.inl ⟨rfl, rfl⟩)
+    let ins := isSat.contextInsHold (Or.inr ⟨rfl, rfl⟩)
+    isInMap (isAtConst ins insGetNth)
+
+
+/-
   ## Section: The main recursive proof
   
   Has to use the weird equality trick :( else we get:
@@ -392,7 +487,47 @@ def uniSetMapAt_le_out_helper {dl n fv index cst expr p}
 :
   ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
 :=
-  sorry
+  match out with
+  | .intro cycle isEmpty inCycle =>
+    match expr with
+    | .const x =>
+      if h: x < n then
+        let everyCauseInapp := isEmpty (indexEq ▸ cstEq ▸ inCycle)
+        let isInapp := everyCauseInapp _ isWeakCauseConst
+        match isInapp with
+        | .blockedContextIns (d:=dd) (x:=xx) _ inCins inCycle =>
+          let out := DefList.Out.intro cycle isEmpty inCycle
+          match inCins with
+          | Or.inl ⟨xEq, dEq⟩ =>
+            let xEq: xx = _ := xEq
+            let dEq: dd = _ := dEq
+            let insGetNth :=
+              uniSetMapDl.getNthDl (lane:=.posLane) (fv:=[]) h
+            False.elim (out.isSound (xEq ▸ dEq ▸ insGetNth))
+          | Or.inr ⟨xEq, dEq⟩ =>
+            let xEq: xx = _ := xEq
+            let dEq: dd = _ := dEq
+            -- This is not the right approach. I would need to
+            -- "recurse" on the cycle, but the cycle is, ehm,
+            -- circular, so such recursion would not be terminating.
+            -- What I need to do is to transform `out` into another
+            -- `Out` instance and call isSound on that.
+            -- 
+            -- The main reason for this comment:
+            -- I wonder if this approach would work if Out was
+            -- a coinductive type. In fact, `Out` does look like
+            -- it's "naturally coinductive" to my eyes. But it's
+            -- also mutually defined with `Ins`, which is decidedly
+            -- inductive, wonder if that causes any issues. Do
+            -- investigate this some time.
+            sorry
+      else show
+        Not
+          ((((dl.prefix n).wfm) x).posMem p)
+      from
+        -- dl.prefix_none_at h ▸
+        sorry
+    | _ => sorry
 end
 
 

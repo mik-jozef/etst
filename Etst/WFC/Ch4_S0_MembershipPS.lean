@@ -226,6 +226,9 @@ inductive DefList.IsCauseInapplicable
   
   A `d` is provably a non-member of `x` if there exists an empty
   cycle containing the pair `(d, x)`.
+  
+  TODO: Could `Out` be defined coinductively?
+    Also see the commit that added this todo for more info.
 -/
 inductive DefList.Out
   (dl: DefList)
