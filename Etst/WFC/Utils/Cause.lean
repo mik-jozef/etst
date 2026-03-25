@@ -1,6 +1,6 @@
 import Mathlib.Logic.Basic
 
-import Etst.WFC.Ch4_S0_MembershipPS
+import Etst.WFC.Ch4_S0_MembershipPs
 
 namespace Etst
 

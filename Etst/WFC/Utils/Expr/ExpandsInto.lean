@@ -1,4 +1,4 @@
-import Etst.WFC.Ch4_S1_MembershipPS
+import Etst.WFC.Ch4_S1_MembershipPs
 import Etst.WFC.Utils.Expr.FreeVars
 import Etst.WFC.Utils.InterpretationMono
 

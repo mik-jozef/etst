@@ -248,5 +248,5 @@ inductive DefList.Out
 end
 
 /-
-  The chapter continues in the file `Ch4_S1_MembershipPS.lean`.
+  The chapter continues in the file `Ch4_S1_MembershipPs.lean`.
 -/

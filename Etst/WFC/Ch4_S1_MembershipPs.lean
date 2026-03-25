@@ -4,10 +4,10 @@
   system.
   
   For the full proofs, see the file
-  `/Etst/WFC/Utils/MembershipPSHelpers.lean`.
+  `/Etst/WFC/Utils/MembershipPsHelpers.lean`.
 -/
 
-import Etst.WFC.Utils.MembershipPSHelpers
+import Etst.WFC.Utils.MembershipPsHelpers
 
 namespace Etst
 

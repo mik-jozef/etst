@@ -26,7 +26,7 @@
 
 import Mathlib.Algebra.Order.BigOperators.Group.List
 
-import Etst.WFC.Ch4_S1_MembershipPS
+import Etst.WFC.Ch4_S1_MembershipPs
 import Etst.WFC.Utils.RulesOfInference
 import Etst.WFC.Utils.SubsetStx.Induction
 
