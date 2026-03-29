@@ -17,18 +17,19 @@ def Expr.replaceDepthEvenConsts {E}
   | var x => .var x
   | null => null
   | pair left rite =>
-      pair
-        (left.replaceDepthEvenConsts depth ed replacer)
-        (rite.replaceDepthEvenConsts depth ed replacer)
+    pair
+      (left.replaceDepthEvenConsts depth ed replacer)
+      (rite.replaceDepthEvenConsts depth ed replacer)
   | ir left rite =>
-      ir
-        (left.replaceDepthEvenConsts depth ed replacer)
-        (rite.replaceDepthEvenConsts depth ed replacer)
+    ir
+      (left.replaceDepthEvenConsts depth ed replacer)
+      (rite.replaceDepthEvenConsts depth ed replacer)
   | full body =>
-      full (body.replaceDepthEvenConsts depth ed replacer)
+    full (body.replaceDepthEvenConsts depth ed replacer)
   | compl body =>
-      compl (body.replaceDepthEvenConsts depth (!ed) replacer)
-  | arbIr body => arbIr (body.replaceDepthEvenConsts (depth + 1) ed replacer)
+    compl (body.replaceDepthEvenConsts depth (!ed) replacer)
+  | arbIr body =>
+    arbIr (body.replaceDepthEvenConsts (depth + 1) ed replacer)
 
 -- Represents an inductive proof of `const lane x ⊆ expr`
 structure InductionDescriptor (dl: DefList) where
@@ -47,7 +48,9 @@ def InductionDescriptor.hypothesis
 :
   SingleLaneExpr
 :=
-  if lane.Le desc.lane && desc.x = x then .ir (desc.expr.lift 0 depth) expr else expr
+  if lane.Le desc.lane && desc.x = x
+  then .ir (desc.expr.lift 0 depth) expr
+  else expr
 
 abbrev MutIndDescriptor (dl: DefList) := List (InductionDescriptor dl)
 
@@ -236,16 +239,18 @@ def MutIndDescriptor.isSound {dl}
         ∀ (i: desc.Index), desc[i].Invariant dl.wfm v fv)
       (fun n isLim ih i p inSup =>
         let ⟨m, isMem⟩:
-          ∃ m: ↑n, ((operatorC dl dl.wfm).lfpStage m desc[i].x).getLane desc[i].lane p
+          ∃ m: ↑n,
+            ((operatorC dl dl.wfm).lfpStage m desc[i].x).getLane
+              desc[i].lane p
         :=
           match h: desc[i].lane with
           | .posLane =>
-            let ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, (isMem: s3.posMem p)⟩ := h ▸ inSup
+            let ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, isMem⟩ := h ▸ inSup
             let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
             let s3Eq: v _ = s3 := s3Eq
             ⟨m, h ▸ vEq ▸ s3Eq ▸ isMem⟩
           | .defLane =>
-            let ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, (isMem: s3.defMem p)⟩ := h ▸ inSup
+            let ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, isMem⟩ := h ▸ inSup
             let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
             let s3Eq: v _ = s3 := s3Eq
             ⟨m, h ▸ vEq ▸ s3Eq ▸ isMem⟩
@@ -256,10 +261,11 @@ def MutIndDescriptor.isSound {dl}
         let predStage := op.lfpStage n.pred
         let predStageLe := dl.lfpStage_le_wfm_std n.pred
         let laneEq := desc[i].expansion.laneEqEven desc[i].lane true
-        let lePremise := desc.le_hypothesify fv [] ihPred laneEq predStageLe
+        let lePremise :=
+          desc.le_hypothesify fv [] ihPred laneEq predStageLe
         let leExp := desc[i].expandsInto.lfpStage_le_std fv n.pred
         let isMemFv:
-          ((dl.getDef desc[i].x).triIntp2 fv dl.wfm predStage).getLane desc[i].lane x
+          ((dl.getDef desc[i].x).triIntp2 _ _ _).getLane _ x
         := by
           rw [←dl.triIntp2_eq_fv desc[i].x [] fv dl.wfm predStage]
           exact isMem

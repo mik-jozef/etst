@@ -1,4 +1,4 @@
-import Etst.WFC.Ch5_SubsethoodPS
+import Etst.WFC.Ch5_SubsethoodPs
 
 namespace Etst
 open Expr

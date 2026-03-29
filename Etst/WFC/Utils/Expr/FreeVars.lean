@@ -20,12 +20,7 @@ namespace Expr
   | 0 => t
   | n + 1 => var n
   
-  def instantiateVar
-    (expr: Expr E)
-    (t: Expr E)
-  :
-    Expr E
-  :=
+  def instantiateVar (expr: Expr E) (t: Expr E): Expr E :=
     expr.subst (instantiateVar.fn t)
   
   def substId {E}: Expr E → Expr E := substVar id  

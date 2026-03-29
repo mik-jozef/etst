@@ -211,6 +211,7 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (arbIr a)
 |
+  -- TODO can this be replaced with arbIrElimVar, and derived?
   arbIrElim {x t a}
     (sub: dl.SubsetStx x (arbIr a))
     (isSome: dl.SubsetStx x (some t))
