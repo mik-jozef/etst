@@ -1,4 +1,3 @@
-import Etst.WFC.Ch5_SubsethoodPS
 import Etst.WFC.Utils.SubsetStx.MapFv
 
 namespace Etst

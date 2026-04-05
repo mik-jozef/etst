@@ -101,27 +101,47 @@ where
   (with `b` and `c` serving as background and context valuations,
   respectively).
 -/
-def IsStrongCause
+def Cause.IsStrongCauseFv
   (cause: Cause Pair)
+  (fv: List Pair)
   (d: Pair)
   (expr: BasicExpr)
 :
   Prop
 :=
-  {b c: Valuation Pair} →
+  ⦃b c: Valuation Pair⦄ →
   cause.IsStronglySatisfiedBy b c →
-  expr.triIntp2Def [] b c d
+  expr.triIntp2Def fv b c d
 
-def IsWeakCause
+def Cause.IsWeakCauseFv
+  (cause: Cause Pair)
+  (fv: List Pair)
+  (d: Pair)
+  (expr: BasicExpr)
+:
+  Prop
+:=
+  ⦃b c: Valuation Pair⦄ →
+  cause.IsWeaklySatisfiedBy b c →
+  expr.triIntp2Pos fv b c d
+
+abbrev Cause.IsStrongCause
   (cause: Cause Pair)
   (d: Pair)
   (expr: BasicExpr)
 :
   Prop
 :=
-  {b c: Valuation Pair} →
-  cause.IsWeaklySatisfiedBy b c →
-  expr.triIntp2Pos [] b c d
+  IsStrongCauseFv cause [] d expr
+
+abbrev Cause.IsWeakCause
+  (cause: Cause Pair)
+  (d: Pair)
+  (expr: BasicExpr)
+:
+  Prop
+:=
+  IsWeakCauseFv cause [] d expr
 
 
 mutual
@@ -150,7 +170,7 @@ inductive DefList.Ins
   (d: Pair) →
   (x: Nat) →
   (cause: Cause Pair) →
-  IsStrongCause cause d (dl.getDef x) →
+  cause.IsStrongCause d (dl.getDef x) →
   (∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → Ins dl d x) →
   (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → Ins dl d x) →
   (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundOut → Out dl d x) →
@@ -226,7 +246,7 @@ inductive DefList.Out
     ∀ {d x},
     ⟨d, x⟩ ∈ cycle →
     (cause: Cause Pair) →
-    IsWeakCause cause d (dl.getDef x) →
+    cause.IsWeakCause d (dl.getDef x) →
     IsCauseInapplicable dl cycle cause) →
   ⟨d, x⟩ ∈ cycle →
   Out dl d x

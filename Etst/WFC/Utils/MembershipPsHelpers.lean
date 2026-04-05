@@ -27,7 +27,7 @@ def every_cause_inapplicable_preserves_definitive_nonmember
   (outSet: Set (ValConst Pair))
   (isEveryCauseInapplicable:
     {cause: Cause Pair} →
-    IsWeakCause cause d expr →
+    cause.IsWeakCause d expr →
     cause.IsInapplicable outSet b)
   (outSetIsEmpty:
     ∀ {d x}, ⟨d, x⟩ ∈ outSet → ¬ (c x).posMem d)
@@ -37,7 +37,7 @@ def every_cause_inapplicable_preserves_definitive_nonmember
   let isSat := Cause.IsWeaklySatisfiedBy.ofValPos b c
   let isApp := isSat.toIsApplicable outSet outSetIsEmpty
   
-  isApp ∘ isEveryCauseInapplicable ∘ IsWeakCause.ofValPos
+  isApp ∘ isEveryCauseInapplicable ∘ Cause.IsWeakCauseFv.ofValPos
 
 def empty_cycle_is_out
   (dl: DefList)
@@ -46,7 +46,7 @@ def empty_cycle_is_out
     ∀ {d x},
     ⟨d, x⟩ ∈ cycle →
     (cause: Cause Pair) →
-    IsWeakCause cause d (dl.getDef x) →  
+    cause.IsWeakCause d (dl.getDef x) →  
     cause.IsInapplicable cycle (dl.wfm))
   {d x}
   (inCycle: ⟨d, x⟩ ∈ cycle)
@@ -113,7 +113,7 @@ def completenessProofC {dl b}
             backgroundOut := fun ⟨d, x⟩ => ¬(b x).posMem d
           }
           
-          let isCause: IsStrongCause cause d (dl.getDef x) :=
+          let isCause: cause.IsStrongCause d (dl.getDef x) :=
             fun {b1 _c1} isSat =>
               let isLe: b ⊑ b1 := fun _ => {
                 defLe := fun _ => isSat.backgroundInsHold

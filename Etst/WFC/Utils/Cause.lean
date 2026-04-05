@@ -123,12 +123,12 @@ def Cause.IsWeaklySatisfiedBy.ofValPos
 }
 
 
-noncomputable def IsWeakCause.ofValPos {expr b c d}
-  (isPos: (expr.triIntp2 [] b c).posMem d)
+noncomputable def Cause.IsWeakCauseFv.ofValPos {expr fv b c d}
+  (isPos: (expr.triIntp2 fv b c).posMem d)
 :
-  IsWeakCause (Cause.ofValPos b c) d expr
+  (Cause.ofValPos b c).IsWeakCauseFv fv d expr
 :=
-  fun isSat =>
+  fun _ _ isSat =>
     BasicExpr.triIntp2_mono_apx_posMem
       (fun _ => {
         defLe :=
@@ -139,21 +139,21 @@ noncomputable def IsWeakCause.ofValPos {expr b c d}
       (fun _ _ => isSat.contextInsHold)
       isPos
 
-def IsWeakCause.isPosOfIsApplicable
-  {cause d expr}
-  (isCause: IsWeakCause cause d expr)
-  {b c: Valuation Pair}
+def Cause.IsWeakCauseFv.isPosOfIsApplicable {fv d expr}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv d expr)
+  {b c}
   (isApp: ¬ cause.IsInapplicable c.nonmembers b)
 :
-  (expr.triIntp2 [] b c).posMem d
+  (expr.triIntp2 fv b c).posMem d
 :=
   isCause (Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy isApp)
 
-def IsWeakCause.isInapplicableOfIsNonmember
-  {cause d expr}
-  (isCause: IsWeakCause cause d expr)
+def Cause.IsWeakCauseFv.isInapplicableOfIsNonmember {fv d expr}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv d expr)
   {b c: Valuation Pair}
-  (notPos: ¬(expr.triIntp2 [] b c).posMem d)
+  (notPos: ¬(expr.triIntp2 fv b c).posMem d)
 :
   cause.IsInapplicable c.nonmembers b
 :=
