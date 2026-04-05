@@ -20,11 +20,6 @@ namespace Etst
 variable {D: Type*}
 
 
--- See `Cause` below.
-structure BackgroundCause (D: Type*) where
-  backgroundIns: Set (ValConst D)
-  backgroundOut: Set (ValConst D)
-
 /-
   If (under some valuation) expressions `a` and `c` contain an
   element `d`, then the expression `a ∩ (b ∪ c)` also contains
@@ -40,20 +35,10 @@ structure BackgroundCause (D: Type*) where
   Note that it never happens that a value would need to be absent
   from context in order to cause something.
 -/
-structure Cause (D: Type*) extends BackgroundCause D where
+structure Cause (D: Type*) where
   contextIns: Set (ValConst D)
-
-def BackgroundCause.toCause
-  (cause: BackgroundCause D)
-:
-  Cause D
-:= {
-  contextIns := {}
-  backgroundIns := cause.backgroundIns
-  backgroundOut := cause.backgroundOut
-}
-
-instance: Coe (BackgroundCause D) (Cause D) := ⟨BackgroundCause.toCause⟩
+  backgroundIns: Set (ValConst D)
+  backgroundOut: Set (ValConst D)
 
 
 structure Cause.IsStronglySatisfiedByBackground

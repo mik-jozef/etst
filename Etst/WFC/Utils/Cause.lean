@@ -30,7 +30,7 @@ def Cause.eq:
   a.backgroundOut = b.backgroundOut →
   a = b
 
-| ⟨⟨_, _⟩, _⟩, ⟨⟨_, _⟩, _⟩, rfl, rfl, rfl => rfl
+| ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl, rfl => rfl
 
 structure Cause.IsSubset
   (a b: Cause D)
