@@ -13,6 +13,11 @@ variable {x: Nat}
 namespace Valuation
   instance: Inhabited (Valuation D) := ⟨Valuation.undetermined⟩
   
+  def LaneLe (v0 v1: Valuation D): Option Set3.Lane → Prop
+  | .none => v0 ≤ v1
+  | .some .defLane => ∀ x: Nat, (v0 x).defMem ⊆ (v1 x).defMem
+  | .some .posLane => ∀ x: Nat, (v0 x).posMem ⊆ (v1 x).posMem
+  
   
   def ordStdLattice D: CompleteLattice (Valuation D) :=
     CompleteLattice.pointwise Nat (Set3.ordStdLattice D)

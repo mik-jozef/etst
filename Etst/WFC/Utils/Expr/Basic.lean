@@ -32,154 +32,139 @@ namespace SingleLaneExpr
   
   
   /-
-    This proposition asserts that all variables under an
-    even number of complements refer to the given lane.
+    `LaneEq even odd expr` constrains the lanes of constants in
+    `expr` by parity. At even depth, constants must use `even`
+    when that option is present. At odd depth, the constraint is
+    given by `odd`.
   -/
-  inductive LaneEqEven
-    (lane: Set3.Lane)
-  :
-    (isEvenDepth: Bool) →
+  inductive LaneEq:
+    (even odd: Option Set3.Lane) →
     SingleLaneExpr →
     Prop
-  | constEven (x: Nat):
-      LaneEqEven lane true (const lane x)
-  | constOdd (varLane: Set3.Lane) (x: Nat):
-      LaneEqEven lane false (const varLane x)
-  | var (x: Nat) (isEvenDepth: Bool):
-      LaneEqEven lane isEvenDepth (var x)
-  | null (isEvenDepth: Bool): LaneEqEven lane isEvenDepth null
-  | pair {isEvenDepth left rite}
-      (leftEq: LaneEqEven lane isEvenDepth left)
-      (riteEq: LaneEqEven lane isEvenDepth rite)
+  | constNone {odd lane x}:
+      LaneEq .none odd (const lane x)
+  | constSome {odd lane x}:
+      LaneEq (.some lane) odd (const lane x)
+  | var {even odd x}:
+      LaneEq even odd (var x)
+  | null {even odd}:
+      LaneEq even odd null
+  | pair {even odd left rite}
+      (leftEq: LaneEq even odd left)
+      (riteEq: LaneEq even odd rite)
     :
-      LaneEqEven lane isEvenDepth (pair left rite)
-  | ir {isEvenDepth left rite}
-      (leftEq: LaneEqEven lane isEvenDepth left)
-      (riteEq: LaneEqEven lane isEvenDepth rite)
+      LaneEq even odd (pair left rite)
+  | ir {even odd left rite}
+      (leftEq: LaneEq even odd left)
+      (riteEq: LaneEq even odd rite)
     :
-      LaneEqEven lane isEvenDepth (ir left rite)
-  | full {isEvenDepth body}
-      (bodyEq: LaneEqEven lane isEvenDepth body)
+      LaneEq even odd (ir left rite)
+  | full {even odd body}
+      (bodyEq: LaneEq even odd body)
     :
-      LaneEqEven lane isEvenDepth (full body)
-  | compl {isEvenDepth body}
-      (bodyEq: LaneEqEven lane (!isEvenDepth) body)
+      LaneEq even odd (full body)
+  | compl {even odd body}
+      (bodyEq: LaneEq odd even body)
     :
-      LaneEqEven lane isEvenDepth (compl body)
-  | arbIr {isEvenDepth body}
-      (laneEqBody: LaneEqEven lane isEvenDepth body)
+      LaneEq even odd (compl body)
+  | arbIr {even odd body}
+      (bodyEq: LaneEq even odd body)
     :
-      LaneEqEven lane isEvenDepth (arbIr body)
+      LaneEq even odd (arbIr body)
   
-  namespace LaneEqEven
-    variable {lane: Set3.Lane}
-    variable {ed: Bool}
-    variable {left rite body: SingleLaneExpr}
+  namespace LaneEq
+    variable
+      {even odd: Option Set3.Lane}
+      {left rite body: SingleLaneExpr}
     
     def elimPairLeft
-      (laneEq: LaneEqEven lane ed (Expr.pair left rite))
+      (laneEq: LaneEq even odd (Expr.pair left rite))
     :
-      LaneEqEven lane ed left
+      LaneEq even odd left
     :=
       match laneEq with
       | .pair leftEq _ => leftEq
     
     def elimPairRite
-      (laneEq: LaneEqEven lane ed (Expr.pair left rite))
+      (laneEq: LaneEq even odd (Expr.pair left rite))
     :
-      LaneEqEven lane ed rite
+      LaneEq even odd rite
     :=
       match laneEq with
       | .pair _ riteEq => riteEq
     
     def elimIrLeft
-      (laneEq: LaneEqEven lane ed (Expr.ir left rite))
+      (laneEq: LaneEq even odd (Expr.ir left rite))
     :
-      LaneEqEven lane ed left
+      LaneEq even odd left
     :=
       match laneEq with
       | .ir leftEq _ => leftEq
     
     def elimIrRite
-      (laneEq: LaneEqEven lane ed (Expr.ir left rite))
+      (laneEq: LaneEq even odd (Expr.ir left rite))
     :
-      LaneEqEven lane ed rite
+      LaneEq even odd rite
     :=
       match laneEq with
       | .ir _ riteEq => riteEq
     
     def elimFull
-      (laneEq: LaneEqEven lane ed (Expr.full body))
+      (laneEq: LaneEq even odd (Expr.full body))
     :
-      LaneEqEven lane ed body
+      LaneEq even odd body
     :=
       match laneEq with
       | .full bodyEq => bodyEq
     
     def elimCompl
-      (laneEq: LaneEqEven lane ed (Expr.compl body))
+      (laneEq: LaneEq even odd (Expr.compl body))
     :
-      LaneEqEven lane (!ed) body
+      LaneEq odd even body
     :=
       match laneEq with
       | .compl bodyEq => bodyEq
     
     def elimArbIr
-      (laneEq: LaneEqEven lane ed (Expr.arbIr body))
+      (laneEq: LaneEq even odd (Expr.arbIr body))
     :
-      LaneEqEven lane ed body
+      LaneEq even odd body
     :=
       match laneEq with
-      | .arbIr laneEqBody => laneEqBody
-  end LaneEqEven
+      | .arbIr bodyEq => bodyEq
+  end LaneEq
 end SingleLaneExpr
 
-
-def BasicExpr.laneEqEven
+def BasicExpr.laneEq
   (expr: BasicExpr)
   (lane: Set3.Lane)
-  (isEvenDepth: Bool)
 :
-  SingleLaneExpr.LaneEqEven
-    lane
-    isEvenDepth
-    (expr.toLane (ite isEvenDepth lane lane.toggle))
+  SingleLaneExpr.LaneEq
+    (.some lane)
+    (.some lane.toggle)
+    (expr.toLane lane)
 :=
-  match expr, isEvenDepth with
-  | .const x, true => .constEven x
-  | .const x, false => .constOdd lane.toggle x
-  | .var x, true => .var x true
-  | .var x, false => .var x false
-  | .null, true => .null true
-  | .null, false => .null false
-  | .pair left rite, true =>
-      .pair
-        (left.laneEqEven lane true)
-        (rite.laneEqEven lane true)
-  | .pair left rite, false =>
-      .pair
-        (left.laneEqEven lane false)
-        (rite.laneEqEven lane false)
-  | .ir left rite, true =>
-      .ir
-        (left.laneEqEven lane true)
-        (rite.laneEqEven lane true)
-  | .ir left rite, false =>
-      .ir
-        (left.laneEqEven lane false)
-        (rite.laneEqEven lane false)
-  | .full body, true =>
-      .full (body.laneEqEven lane true)
-  | .full body, false =>
-      .full (body.laneEqEven lane false)
-  | .compl body, true =>
-      .compl (body.laneEqEven lane false)
-  | .compl body, false =>
-      match lane with
-      | .posLane => .compl (body.laneEqEven .posLane true)
-      | .defLane => .compl (body.laneEqEven .defLane true)
-  | .arbIr body, true => .arbIr (body.laneEqEven lane true)
-  | .arbIr body, false => .arbIr (body.laneEqEven lane false)
+  match expr, lane with
+  | .const _, .defLane => .constSome
+  | .const _, .posLane => .constSome
+  | .var _, .defLane => .var
+  | .var _, .posLane => .var
+  | .null, .defLane => .null
+  | .null, .posLane => .null
+  | .pair left rite, .defLane =>
+    .pair (left.laneEq .defLane) (rite.laneEq .defLane)
+  | .pair left rite, .posLane =>
+    .pair (left.laneEq .posLane) (rite.laneEq .posLane)
+  | .ir left rite, .defLane =>
+    .ir (left.laneEq .defLane) (rite.laneEq .defLane)
+  | .ir left rite, .posLane =>
+    .ir (left.laneEq .posLane) (rite.laneEq .posLane)
+  | .full body, .defLane => .full (body.laneEq .defLane)
+  | .full body, .posLane => .full (body.laneEq .posLane)
+  | .compl body, .defLane => .compl (body.laneEq .posLane)
+  | .compl body, .posLane => .compl (body.laneEq .defLane)
+  | .arbIr body, .defLane => .arbIr (body.laneEq .defLane)
+  | .arbIr body, .posLane => .arbIr (body.laneEq .posLane)
 
 
 def Expr.toString {E} (serializeVar: E → Nat → String):

@@ -141,7 +141,7 @@ def operatorC
   let _ := Valuation.ordStd Pair
   {
     toFun := dl.triIntp2 b
-    monotone' := fun _ _ => dl.triIntp2_mono_std
+    monotone' _ _ := dl.triIntp2_mono_std (le_refl _)
   }
 
 -- The least fixed point of the operator C.

@@ -4,168 +4,113 @@ import Etst.WFC.Utils.Valuation
 namespace Etst
 
 
-namespace SingleLaneExpr.intp2_mono_std
-  def CtxLe {D} (c0 c1: Valuation D):
-    Option Set3.Lane → Prop
-  | .none => ∀ x: Nat, c0 x ≤ c1 x
-  | .some .defLane => ∀ x: Nat, (c0 x).defMem ⊆ (c1 x).defMem
-  | .some .posLane => ∀ x: Nat, (c0 x).posMem ⊆ (c1 x).posMem
-  
-  def LaneEq (expr: SingleLaneExpr) (ed: Bool):
-    Option Set3.Lane → Prop
-  | .none => True
-  | .some lane => expr.LaneEqEven lane ed
-  
-  def LaneEq.map {expr edIn premiseType}
-    (laneEq: LaneEq expr edIn premiseType)
-    {edOut exprOut} (laneMap:
-      {lane: _} →
-      expr.LaneEqEven lane edIn →
-      exprOut.LaneEqEven lane edOut)
-  :
-    LaneEq exprOut edOut premiseType
-  :=
-    match premiseType with
-    | .none => trivial
-    | .some _ => laneMap laneEq
-  
-end SingleLaneExpr.intp2_mono_std
-
-
 /-
   The interpretation function is monotonic in the context and
   antimonotonic in the background with respect to the standard
   ordering.
-  
-  The boolean `ed`, short for `isEvenDepth`, can be understood
-  in two equivalent ways:
-  0. it represents whether the expression is thought of as
-     being under an even number of complements in a larger
-     expression;
-  1. it is a flag indicating whether we're proving monotonicity
-     in the context, or antimonotonicity in the background.
+
+  The parameters `even` and `odd` constrain which lanes may occur
+  at even and odd complement depth, respectively. When one of them
+  is `.none`, that parity is left unconstrained.
 -/
-open SingleLaneExpr.intp2_mono_std in
-def SingleLaneExpr.intp2_mono_std {fv b}
-  (premiseType: Option Set3.Lane)
-  {c0 c1} (cLe: CtxLe c0 c1 premiseType)
-  {expr ed} (laneEq: LaneEq expr ed premiseType)
+def SingleLaneExpr.intp2_mono_std {fv}
+  {even odd: Option Set3.Lane}
+  {b0 b1 c0 c1}
+  (bLe: Valuation.LaneLe b1 b0 odd)
+  (cLe: Valuation.LaneLe c0 c1 even)
+  {expr: SingleLaneExpr} (laneEq: expr.LaneEq even odd)
 :
-  Set.Subset
-    (expr.intp2 fv (ite ed b c1) (ite ed c0 b))
-    (expr.intp2 fv (ite ed b c0) (ite ed c1 b))
+  expr.intp2 fv b0 c0 ⊆ expr.intp2 fv b1 c1
 :=
   fun _ dIn =>
     match expr with
     | .const lane x =>
-      match lane, ed, premiseType with
-      | _, false, _ => dIn
-      | .defLane, true, .none => (cLe x).defLe dIn
-      | .posLane, true, .none => (cLe x).posLe dIn
-      | .defLane, true, .some .defLane => cLe x dIn
-      | .posLane, true, .some .posLane => cLe x dIn
+      match lane, even, laneEq with
+      | .defLane, .none, .constNone => (cLe x).defLe dIn
+      | .posLane, .none, .constNone => (cLe x).posLe dIn
+      | .defLane, .some .defLane, .constSome => cLe x dIn
+      | .posLane, .some .posLane, .constSome => cLe x dIn
     | .var _ => dIn
     | .null => dIn
     | .pair _ _ =>
       let ⟨dL, dR, eq, dLIn, dRIn⟩ := dIn
-      let ihL := intp2_mono_std
-        premiseType cLe (laneEq.map .elimPairLeft) dLIn
-      let ihR := intp2_mono_std
-        premiseType cLe (laneEq.map .elimPairRite) dRIn
+      let ihL := intp2_mono_std bLe cLe laneEq.elimPairLeft dLIn
+      let ihR := intp2_mono_std bLe cLe laneEq.elimPairRite dRIn
       ⟨dL, dR, eq, ihL, ihR⟩
     | .ir _ _ =>
       let ⟨dLIn, dRIn⟩ := dIn
-      let ihL := intp2_mono_std
-        premiseType cLe (laneEq.map .elimIrLeft) dLIn
-      let ihR := intp2_mono_std
-        premiseType cLe (laneEq.map .elimIrRite) dRIn
+      let ihL := intp2_mono_std bLe cLe laneEq.elimIrLeft dLIn
+      let ihR := intp2_mono_std bLe cLe laneEq.elimIrRite dRIn
       ⟨ihL, ihR⟩
     | .full _ =>
-      fun dB => intp2_mono_std
-        premiseType cLe (laneEq.map .elimFull) (dIn dB)
+      fun dB => intp2_mono_std bLe cLe laneEq.elimFull (dIn dB)
     | .compl _ =>
-      match ed with
-      | true =>
-        let ih := intp2_mono_std
-          premiseType cLe (laneEq.map .elimCompl)
-        (Set.compl_subset_compl.mpr ih) dIn
-      | false =>
-        let ih := intp2_mono_std
-          premiseType cLe (laneEq.map .elimCompl)
-        (Set.compl_subset_compl.mpr ih) dIn
+      let ih := intp2_mono_std cLe bLe laneEq.elimCompl
+      (Set.compl_subset_compl.mpr ih) dIn
     | .arbIr _ =>
-      let laneEq := laneEq.map .elimArbIr
-      fun dX => intp2_mono_std premiseType cLe laneEq (dIn dX)
+      fun dX => intp2_mono_std bLe cLe laneEq.elimArbIr (dIn dX)
 
 def BasicExpr.triIntp2_mono_std_defMem
-  {c0 c1} (cLe: ∀ x, (c0 x).defMem ≤ (c1 x).defMem)
+  {b0 b1} (bLePos: ∀ x, (b1 x).posMem ≤ (b0 x).posMem)
+  {c0 c1} (cLeDef: ∀ x, (c0 x).defMem ≤ (c1 x).defMem)
   {expr: BasicExpr}
-  (ed: Bool)
-  {fv b}
+  {fv}
 :
-  let lane: Set3.Lane := ite ed .defLane .posLane
-  Subset
-    ((expr.triIntp2 fv (ite ed b c1) (ite ed c0 b)).getLane lane)
-    ((expr.triIntp2 fv (ite ed b c0) (ite ed c1 b)).getLane lane)
-:= by
-  cases ed <;>
-  exact
-    SingleLaneExpr.intp2_mono_std
-      (.some .defLane)
-      cLe
-      (expr.laneEqEven .defLane _)
+  Set.Subset
+    (expr.triIntp2 fv b0 c0).defMem
+    (expr.triIntp2 fv b1 c1).defMem
+:=
+  SingleLaneExpr.intp2_mono_std
+    (even := .some .defLane)
+    (odd := .some .posLane)
+    bLePos
+    cLeDef
+    (expr.laneEq .defLane)
 
 def BasicExpr.triIntp2_mono_std_posMem
-  {c0 c1: Valuation Pair}
-  (cLe: ∀ x, (c0 x).posMem ≤ (c1 x).posMem)
+  {b0 b1} (bLeDef: ∀ x, (b1 x).defMem ≤ (b0 x).defMem)
+  {c0 c1} (cLePos: ∀ x, (c0 x).posMem ≤ (c1 x).posMem)
   {expr: BasicExpr}
-  (ed: Bool)
-  {fv b}
+  {fv}
 :
-  let lane: Set3.Lane := ite ed .posLane .defLane
-  Subset
-    ((expr.triIntp2 fv (ite ed b c1) (ite ed c0 b)).getLane lane)
-    ((expr.triIntp2 fv (ite ed b c0) (ite ed c1 b)).getLane lane)
-:= by
-  cases ed <;>
-  exact
-    SingleLaneExpr.intp2_mono_std
-      (.some .posLane)
-      cLe
-      (expr.laneEqEven .posLane _)
+  Set.Subset
+    (expr.triIntp2 fv b0 c0).posMem
+    (expr.triIntp2 fv b1 c1).posMem
+:=
+  SingleLaneExpr.intp2_mono_std
+    (even := .some .posLane)
+    (odd := .some .defLane)
+    bLeDef
+    cLePos
+    (expr.laneEq .posLane)
 
 def BasicExpr.triIntp2_mono_std
-  {c0 c1: Valuation Pair}
-  (cLe: c0 ≤ c1)
+  {b0 b1} (bLe: b1 ≤ b0)
+  {c0 c1} (cLe: c0 ≤ c1)
   {expr: BasicExpr}
-  (ed: Bool)
-  {fv b}
+  {fv}
 :
-  Set3.LeStd
-    (expr.triIntp2 fv (ite ed b c1) (ite ed c0 b))
-    (expr.triIntp2 fv (ite ed b c0) (ite ed c1 b))
+  expr.triIntp2 fv b0 c0 ≤ expr.triIntp2 fv b1 c1
 :=
-  match ed with
-  | true =>
-    {
-      defLe := SingleLaneExpr.intp2_mono_std .none cLe trivial
-      posLe := SingleLaneExpr.intp2_mono_std .none cLe trivial
-    }
-  | false =>
-    {
-      defLe := SingleLaneExpr.intp2_mono_std .none cLe trivial
-      posLe := SingleLaneExpr.intp2_mono_std .none cLe trivial
-    }
+  {
+    defLe :=
+      triIntp2_mono_std_defMem
+        (fun x => (bLe x).posLe)
+        (fun x => (cLe x).defLe)
+    posLe :=
+      triIntp2_mono_std_posMem
+        (fun x => (bLe x).defLe)
+        (fun x => (cLe x).posLe)
+  }
 
 def DefList.triIntp2_mono_std
   {dl: DefList}
-  {b: Valuation Pair}
-  {c0 c1: Valuation Pair}
-  (cLe: c0 ≤ c1)
+  {b0 b1} (bLe: b1 ≤ b0)
+  {c0 c1} (cLe: c0 ≤ c1)
 :
-  dl.triIntp2 b c0 ≤ dl.triIntp2 b c1
+  dl.triIntp2 b0 c0 ≤ dl.triIntp2 b1 c1
 :=
-  fun _ => BasicExpr.triIntp2_mono_std cLe (ed := true)
+  fun _ => BasicExpr.triIntp2_mono_std bLe cLe
 
 
 def BasicExpr.triIntp2_mono_apx
@@ -236,7 +181,9 @@ def BasicExpr.triIntp2_mono_apx_defMem
 :=
   let c0LeSelf := (Valuation.ordApx Pair).le_refl c0
   let isMonoB := triIntp2_mono_apx bLe c0LeSelf
-  let isMonoC := triIntp2_mono_std_defMem cLeDef true
+  let isMonoC := triIntp2_mono_std_defMem
+    (fun _ => le_refl _)
+    cLeDef
   isMonoB.defLe.trans isMonoC
 
 def BasicExpr.triIntp2_mono_apx_posMem
@@ -251,7 +198,9 @@ def BasicExpr.triIntp2_mono_apx_posMem
 :=
   let c0LeSelf := (Valuation.ordApx Pair).le_refl c1
   let isMonoB := triIntp2_mono_apx bLe c0LeSelf
-  let isMonoC := triIntp2_mono_std_posMem cLePos true
+  let isMonoC := triIntp2_mono_std_posMem
+    (fun _ => le_refl _)
+    cLePos
   isMonoB.posLe.trans isMonoC
 
 def DefList.triIntp2_mono_apx
