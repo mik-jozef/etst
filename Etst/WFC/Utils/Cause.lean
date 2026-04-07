@@ -50,13 +50,13 @@ inductive Cause.IsInapplicable
 :
   Prop
 |
-  blockedContext {x d}
+  blockedCins {x d}
   (inCins: cause.cins x d)
   (inCycle: outSet x d)
 :
   IsInapplicable cause outSet b
 |
-  blockedBackground {x d}
+  blockedBout {x d}
   (inBout: cause.bout x d)
   (isIns: (b x).defMem d)
 :
@@ -75,11 +75,11 @@ def Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
     cinsSat :=
       fun inCins =>
         byContradiction fun notPos =>
-          isApplicable (blockedContext inCins notPos)
+          isApplicable (blockedCins inCins notPos)
     boutSat :=
       fun inBout =>
         byContradiction fun isDef =>
-          isApplicable (blockedBackground inBout isDef.dne)
+          isApplicable (blockedBout inBout isDef.dne)
   }
 
 def Cause.IsWeaklySatisfiedBy.toIsApplicable
@@ -90,10 +90,10 @@ def Cause.IsWeaklySatisfiedBy.toIsApplicable
 :
   ¬ Cause.IsInapplicable cause outSet b
 |
-  .blockedContext inCins inOutSet =>
+  .blockedCins inCins inOutSet =>
     outSetIsEmpty inOutSet (isSat.cinsSat inCins)
 |
-  .blockedBackground inBout isDef =>
+  .blockedBout inBout isDef =>
     isSat.boutSat inBout isDef
 
 def Cause.IsWeaklySatisfiedBy.ofValPos
@@ -174,6 +174,48 @@ def Cause.leastValsApxAreSat
   cause.IsStronglySatisfiedBy
     (cause.leastBackgroundApx)
     (cause.leastContextApx)
+:= {
+  cinsSat := id
+  boutSat := Function.eval
+}
+
+
+/-
+  A maximal valuation in the approximation order that weakly
+  satisfies the background part of a cause.
+-/
+def Cause.maximalBackgroundApx
+  (cause: Cause D)
+:
+  Valuation D
+:=
+  fun x => {
+    defMem := compl ∘ cause.bout x
+    posMem := compl ∘ cause.bout x
+    defLePos _ := id
+  }
+
+/-
+  A maximal valuation in the approximation order that weakly
+  satisfies the context part of a cause.
+-/
+def Cause.maximalContextApx
+  (cause: Cause D)
+:
+  Valuation D
+:=
+  fun x => {
+    defMem := cause.cins x
+    posMem := cause.cins x
+    defLePos _ := id
+  }
+
+def Cause.maximalValsApxAreSat
+  (cause: Cause D)
+:
+  cause.IsWeaklySatisfiedBy
+    (cause.maximalBackgroundApx)
+    (cause.maximalContextApx)
 := {
   cinsSat := id
   boutSat := Function.eval

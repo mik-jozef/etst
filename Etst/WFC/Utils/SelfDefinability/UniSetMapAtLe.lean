@@ -14,7 +14,7 @@ def InUniSetMapDefAt (dl n fv b c expr lane p) :=
   ]
   intp2 (exprEncList.toLane lane) vars b c p
 
-def exprGuardElimGuardUnary {i iEnc encRest fv0 fvRest b c p}
+def exprGuardElimUnary {i iEnc encRest fv0 fvRest b c p}
   (ins:
     intp2
       (some (ir (pair i (var 0)) (var 1)))
@@ -222,7 +222,7 @@ def isAtElimArbIrNope {fv b c lane i enc p}
 
 def isAtElimConst {dl n fv b c lane x p}
   (ins: InUniSetMapDefAt dl n fv b c (.const x) lane p)
-  (cinsSat: (∀ {d x}, d ∈ (c x).getLane lane → uniSetMapDl.Ins d x))
+  (cinsSat: (∀ {x d}, d ∈ (c x).getLane lane → uniSetMapDl.Ins x d))
 :
   (c uniSetMapDl.consts.uniSetMap).getLane
     lane
@@ -231,7 +231,7 @@ def isAtElimConst {dl n fv b c lane x p}
   let main ins :=
     let ⟨xEnc, ins⟩ := inArbUnElim ins
     let ⟨insExprGuard, ins⟩ := inIrElim ins
-    let xEncEq := exprGuardElimGuardUnary insExprGuard
+    let xEncEq := exprGuardElimUnary insExprGuard
     let ⟨pArg, inMap, inArg⟩ := inCallElim ins
     match pArg with
     | .null => inPairElimNope inArg
@@ -279,7 +279,7 @@ def isAtElimConst {dl n fv b c lane x p}
 
 def isAtElimVar {dl n fv b c i lane p}
   (ins: InUniSetMapDefAt dl n fv b c (.var i) lane p)
-  (cinsSat: (∀ {d x}, d ∈ (c x).getLane lane → uniSetMapDl.Ins d x))
+  (cinsSat: (∀ {x d}, d ∈ (c x).getLane lane → uniSetMapDl.Ins x d))
 :
   sorry
 :=
@@ -301,7 +301,7 @@ def isAtElimCompl {dl n fv b c body lane p}
   let main insCompl insBody :=
     let ⟨bodyEnc, ins⟩ := inArbUnElim insCompl
     let ⟨insExprGuard, ins⟩ := inIrElim ins
-    let bodyEncEq := exprGuardElimGuardUnary insExprGuard
+    let bodyEncEq := exprGuardElimUnary insExprGuard
     let insArg :=
       inPair (inVar rfl) (inPair (inVar rfl) (bodyEncEq ▸ rfl))
     inComplElim ins (inCall (inToggle2 10 insBody) insArg)
@@ -391,34 +391,52 @@ def isAtConst {dl n fv b c x lane p}
 def causeConst
   (dl: DefList)
   (n: Nat)
-  (x: Nat)
-  (p: Pair)
+  (xInt: Nat)
+  (dInt: Pair)
 :
   Cause Pair
 := {
-  contextIns dx :=
-    let expr := (dl.prefix n).getDef x
+  cins xExt dExt :=
+    let expr := (dl.prefix n).getDef xInt
     Or
       (And
-        (dx.x = uniSetMapDl.consts.getNth)
-        (dx.d = uniSetMapDl.getNthEnc dl n x))
+        (xExt = uniSetMapDl.consts.getNth)
+        (dExt = uniSetMapDl.getNthEnc dl n xInt))
       (And
-        (dx.x = uniSetMapDl.consts.uniSetMap)
-        (dx.d = .pair (uniSetMapIndex dl n [] expr) p))
-  backgroundIns := {}
-  backgroundOut := {}
+        (xExt = uniSetMapDl.consts.uniSetMap)
+        (dExt = .pair (uniSetMapIndex dl n [] expr) dInt))
+  bout _ := {}
 }
 
-def isWeakCauseConst {dl n fv x p}:
-  IsWeakCause
-    (causeConst dl n x p)
-    (.pair (uniSetMapIndex dl n fv (.const x)) p)
+def isWeakCauseConst {dl n fv x d}:
+  (causeConst dl n x d).IsWeakCause
     (uniSetMapDl.getDef uniSetMapDl.consts.uniSetMap)
+    (.pair (uniSetMapIndex dl n fv (.const x)) d)
 :=
-  fun isSat =>
-    let insGetNth := isSat.contextInsHold (Or.inl ⟨rfl, rfl⟩)
-    let ins := isSat.contextInsHold (Or.inr ⟨rfl, rfl⟩)
+  fun _ _ isSat =>
+    let insGetNth := isSat.cinsSat (Or.inl ⟨rfl, rfl⟩)
+    let ins := isSat.cinsSat (Or.inr ⟨rfl, rfl⟩)
     isInMap (isAtConst ins insGetNth)
+
+
+def Cause.IsWeakCauseFv.constElim {x d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCause (.const x) d)
+:
+  cause.cins x d
+:=
+  byContradiction fun notInCins =>
+    let isSat := cause.maximalValsApxAreSat
+    notInCins (isCause isSat)
+
+def Cause.IsWeakCauseFv.noneElim {d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCause (.none) d)
+  {P: Prop}
+:
+  P
+:=
+  inNoneElim (isCause cause.maximalValsApxAreSat)
 
 
 /-
@@ -434,23 +452,123 @@ def isWeakCauseConst {dl n fv x p}:
       indices are not variables
   ```
 -/
+inductive uniSetMapAt_le.IsInappIh
+(dl: DefList)
+:
+  (Nat → Set Pair) →
+  Cause Pair →
+  Prop
+|
+  blockedCins
+  (cause: Cause Pair)
+  {x d} (inContextIns: cause.cins x d)
+  {cycle} (inCycle: cycle x d)
+:
+  IsInappIh dl cycle cause
+|
+  blockedBout {cycle}
+  (cause: Cause Pair)
+  {x d} (inBout: cause.bout x d)
+  (isDef:
+    {n i: Nat} →
+    d = .pair (uniSetMapIndex dl n [] (.const i)) d →
+    x = uniSetMapDl.consts.uniSetMap →
+    ((dl.prefix n).wfm i).defMem d)
+:
+  IsInappIh dl cycle cause
+
+def uniSetMapAt_le.intOfExtCycle
+  (dl: DefList)
+  (n: Nat)
+  (extCycle: Nat → Set Pair)
+  (x: Nat)
+  (d: Pair)
+:
+  Prop
+:=
+  Or
+    (extCycle
+      uniSetMapDl.consts.uniSetMap
+      (.pair
+        (uniSetMapIndex dl n [] ((dl.prefix n).getDef x))
+        d))
+    (¬ x < n)
+
+def uniSetMapAt_le.allInternalInapp {dl n fv d expr}
+  {extCycle: Nat → Set Pair}
+  (extIsEmpty:
+    ∀ {x d},
+      extCycle x d →
+      (cause: Cause Pair) →
+      cause.IsWeakCause (uniSetMapDl.getDef x) d →
+      uniSetMapDl.IsCauseInapplicable extCycle cause)
+  (everyCauseInapp:
+    ∀ {x d},
+      extCycle x d →
+      (cause: Cause Pair) →
+      cause.IsWeakCause (uniSetMapDl.getDef x) d →
+      uniSetMapAt_le.IsInappIh dl extCycle cause)
+  (inExtCycle:
+    extCycle
+      uniSetMapDl.consts.uniSetMap
+      (.pair (uniSetMapIndex dl n fv expr) d))
+  (cause : Cause Pair)
+  (isCause: cause.IsWeakCauseFv fv expr d)
+:
+  (dl.prefix n).IsCauseInapplicable
+    (intOfExtCycle dl n extCycle)
+    cause
+:=
+  match expr with
+  | .const x =>
+    if h: x < n then
+      let isExtInapp := everyCauseInapp inExtCycle _ isWeakCauseConst
+      match isExtInapp with
+      | .blockedCins (d:=dd) (x:=xx) _ (Or.inl ⟨xEq, dEq⟩) inCycle =>
+        let out := DefList.Out.intro extCycle extIsEmpty inCycle
+        -- let xEq: xx = _ := xEq
+        -- let dEq: dd = _ := dEq
+        let insGetNth :=
+          uniSetMapDl.getNthDl (lane:=.posLane) (fv:=[]) h
+        False.elim (out.isSound (xEq ▸ dEq ▸ insGetNth))
+      | .blockedCins (d:=dd) (x:=xx) _ (Or.inr ⟨xEq, dEq⟩) inCycle =>
+        -- let xEq: xx = _ := xEq
+        -- let dEq: dd = _ := dEq
+        let inCycle:
+          extCycle
+            uniSetMapDl.consts.uniSetMap
+            (.pair
+              (uniSetMapIndex dl n [] ((dl.prefix n).getDef x))
+              d)
+        :=
+          xEq ▸ dEq ▸ inCycle
+        let intCycle x d :=
+          extCycle
+            uniSetMapDl.consts.uniSetMap
+            (.pair (uniSetMapIndex dl n fv (.const x)) d)
+        .blockedCins _ isCause.constElim (Or.inl inCycle)
+    else
+      .blockedCins _ isCause.constElim (Or.inr h)
+  | .var _ => sorry
+  | .null => sorry
+  | .pair _ _ => sorry
+  | .ir _ _ => sorry
+  | .full _ => sorry
+  | .compl _ => sorry
+  | .arbIr _ => sorry
+
 mutual
 def uniSetMapAt_le_ins_helper {dl n fv index cst expr p}
-  (ins: uniSetMapDl.Ins index cst)
+  (ins: uniSetMapDl.Ins cst index)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
   (cstEq: cst = uniSetMapDl.consts.uniSetMap)
 :
-  (expr.triIntp fv (dl.prefix n).wfm).defMem p
+(expr.triIntp fv (dl.prefix n).wfm).defMem p
 :=
   match ins with
-  | .intro _ _ cause isCause cinsSat binsSat boutSat =>
-    let isConsistent :=
-      Cause.IsStronglySatisfiedByBackground.toIsConsistent {
-        backgroundInsHold := DefList.Ins.isSound ∘ binsSat
-        backgroundOutHold := DefList.Out.isSound ∘ boutSat
-      }
-    let ins := isCause isConsistent.leastValsApxAreSat
-    let ⟨dlEnc, ins⟩ := inArbUnElim (indexEq ▸ cstEq ▸ ins)
+  | .intro _ _ cause isCause cinsSat boutSat =>
+    let ins := isCause cause.leastValsApxAreSat
+    let ⟨dlEnc, ins⟩ := inArbUnElim (cstEq ▸ indexEq ▸ ins)
     let ⟨fvEnc, ins⟩ := inArbUnElim ins
     let ⟨exprEnc, ins⟩ := inArbUnElim ins
     let ⟨insEnc, insList⟩ := inPairElim ins
@@ -481,77 +599,80 @@ def uniSetMapAt_le_ins_helper {dl n fv index cst expr p}
     | .arbIr _ => sorry
 
 def uniSetMapAt_le_out_helper {dl n fv index cst expr p}
-  (out: uniSetMapDl.Out index cst)
+  (out: uniSetMapDl.Out cst index)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
   (cstEq: cst = uniSetMapDl.consts.uniSetMap)
 :
   ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
 :=
+  open uniSetMapAt_le in
   match out with
-  | .intro cycle isEmpty inCycle =>
-    match expr with
-    | .const x =>
-      if h: x < n then
-        let everyCauseInapp := isEmpty (indexEq ▸ cstEq ▸ inCycle)
-        let isInapp := everyCauseInapp _ isWeakCauseConst
-        match isInapp with
-        | .blockedContextIns (d:=dd) (x:=xx) _ inCins inCycle =>
-          let out := DefList.Out.intro cycle isEmpty inCycle
-          match inCins with
-          | Or.inl ⟨xEq, dEq⟩ =>
-            let xEq: xx = _ := xEq
-            let dEq: dd = _ := dEq
-            let insGetNth :=
-              uniSetMapDl.getNthDl (lane:=.posLane) (fv:=[]) h
-            False.elim (out.isSound (xEq ▸ dEq ▸ insGetNth))
-          | Or.inr ⟨xEq, dEq⟩ =>
-            let xEq: xx = _ := xEq
-            let dEq: dd = _ := dEq
-            -- This is not the right approach. I would need to
-            -- "recurse" on the cycle, but the cycle is, ehm,
-            -- circular, so such recursion would not be terminating.
-            -- What I need to do is to transform `out` into another
-            -- `Out` instance and call isSound on that.
-            -- 
-            -- The main reason for this comment:
-            -- I wonder if this approach would work if Out was
-            -- a coinductive type. In fact, `Out` does look like
-            -- it's "naturally coinductive" to my eyes. But it's
-            -- also mutually defined with `Ins`, which is decidedly
-            -- inductive, wonder if that causes any issues. Do
-            -- investigate this some time.
-            sorry
-      else show
-        Not
-          ((((dl.prefix n).wfm) x).posMem p)
-      from
-        -- dl.prefix_none_at h ▸
-        sorry
-    | _ => sorry
+  | .intro extCycle extIsEmpty inExtCycle =>
+    let everyCauseInapp {x d}
+      (inCycle: extCycle x d)
+      {cause}
+      (isCause: cause.IsWeakCause (uniSetMapDl.getDef x) d)
+    :
+      IsInappIh dl extCycle cause
+    :=
+      match extIsEmpty inCycle cause isCause with
+      | .blockedCins _ inCins inCycle =>
+        .blockedCins cause inCins inCycle
+      | .blockedBout _ inBout ins =>
+        .blockedBout cause inBout fun dEq xEq =>
+          uniSetMapAt_le_ins_helper ins dEq xEq
+    
+    fun isPos =>
+      let isCause: Cause.IsWeakCauseFv _ fv expr p :=
+        Cause.IsWeakCauseFv.ofValPos isPos
+      let isInapplicable :=
+        allInternalInapp
+          extIsEmpty
+          everyCauseInapp
+          (cstEq ▸ indexEq ▸ inExtCycle)
+          _
+          isCause
+      match isInapplicable with
+      | .blockedCins _ inCins inCycle =>
+        let out :=
+          DefList.Out.intro
+            (intOfExtCycle dl n extCycle)
+            (fun
+            | Or.inl inCycle =>
+              allInternalInapp extIsEmpty everyCauseInapp inCycle
+            | Or.inr xNotLt =>
+              fun cause isCause =>
+                let isCause :=
+                  DefList.prefix_none_at xNotLt ▸ isCause
+                isCause.noneElim)
+            inCycle
+        out.nopePos inCins
+      | .blockedBout _ inBout ins =>
+        ins.nopeNotDef inBout
 end
 
 
--- ## Section: Putting it all together
-
-def uniSetMapAt_le_out {dl n fv expr p}
-  (out:
-    uniSetMapDl.Out
-      (.pair (uniSetMapIndex dl n fv expr) p)
-      uniSetMapDl.consts.uniSetMap)
-:
-  ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
-:=
-  uniSetMapAt_le_out_helper out rfl rfl
+-- ## Section: The main result of the file
 
 def uniSetMapAt_le_ins {dl n fv expr p}
   (ins:
     uniSetMapDl.Ins
-      (.pair (uniSetMapIndex dl n fv expr) p)
-      uniSetMapDl.consts.uniSetMap)
+      uniSetMapDl.consts.uniSetMap
+      (.pair (uniSetMapIndex dl n fv expr) p))
 :
   (expr.triIntp fv (dl.prefix n).wfm).defMem p
 :=
   uniSetMapAt_le_ins_helper ins rfl rfl
+
+def uniSetMapAt_le_out {dl n fv expr p}
+  (out:
+    uniSetMapDl.Out
+      uniSetMapDl.consts.uniSetMap
+      (.pair (uniSetMapIndex dl n fv expr) p))
+:
+  ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
+:=
+  uniSetMapAt_le_out_helper out rfl rfl
 
 def uniSetMapAt_le
   (dl: DefList)

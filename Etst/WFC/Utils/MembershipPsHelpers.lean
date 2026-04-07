@@ -125,11 +125,10 @@ def completenessProofC {dl b}
           let notPos: ¬((opC lfp) xx).posMem dd := isFp ▸ notPos
           
           match isCause.isInapplicableOfIsNonmember notPos with
-          | .blockedContext inCins inCycle =>
-            .blockedContext _ inCins inCycle
-          | .blockedBackground inBout isDef =>
-            let isIns := isComplete.insIsComplete isDef
-            .blockedBackground _ inBout isIns)
+          | .blockedCins inCins inCycle =>
+            .blockedCins _ inCins inCycle
+          | .blockedBout inBout isDef =>
+            .blockedBout _ inBout (isComplete.insIsComplete isDef))
   }
 
 def completenessProofB

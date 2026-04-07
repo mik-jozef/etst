@@ -36,10 +36,10 @@ def DefList.Out.isSound {dl x d}
     empty_cycle_is_out dl cycle
       (fun inCycle cause isWeak =>
         match isEmptyCycle inCycle cause isWeak with
-        | .blockedContext _ inCins inCycle =>
-          .blockedContext inCins inCycle
-        | .blockedBackground _ inBout isIns =>
-          .blockedBackground inBout isIns.isSound
+        | .blockedCins _ inCins inCycle =>
+          .blockedCins inCins inCycle
+        | .blockedBout _ inBout isIns =>
+          .blockedBout inBout isIns.isSound
         )
       inCycle
 end

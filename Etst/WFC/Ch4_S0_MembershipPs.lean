@@ -158,14 +158,14 @@ inductive DefList.IsCauseInapplicable
   Cause Pair →
   Prop
 |
-  blockedContext
+  blockedCins
   (cause: Cause Pair)
   {x d} (inContext: cause.cins x d)
   {cycle} (inCycle: cycle x d)
 :
   IsCauseInapplicable dl cycle cause
 |
-  blockedBackground {cycle}
+  blockedBout {cycle}
   (cause: Cause Pair)
   {x d} (inBackground: cause.bout x d)
   (isIns: Ins dl x d)
