@@ -339,7 +339,7 @@ abbrev BasicExpr.triIntp
   expr.triIntp2 fv v v
 
 -- Interpretation on definition lists is defined pointwise.
-def DefList.triIntp2
+def DefList.intpDefs2
   (dl: DefList)
   (b c: Valuation Pair)
 :
@@ -347,8 +347,8 @@ def DefList.triIntp2
 :=
   fun x => (dl.getDef x).triIntp2 [] b c
 
-abbrev DefList.triIntp
+abbrev DefList.intpDefs
   (dl: DefList)
   (v: Valuation Pair)
 :=
-  dl.triIntp2 v v
+  dl.intpDefs2 v v

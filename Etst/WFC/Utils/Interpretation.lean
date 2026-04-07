@@ -103,12 +103,12 @@ def BasicExpr.triIntp2_mono_std
         (fun x => (cLe x).posLe)
   }
 
-def DefList.triIntp2_mono_std
+def DefList.intpDefs2_mono_std
   {dl: DefList}
   {b0 b1} (bLe: b1 ≤ b0)
   {c0 c1} (cLe: c0 ≤ c1)
 :
-  dl.triIntp2 b0 c0 ≤ dl.triIntp2 b1 c1
+  dl.intpDefs2 b0 c0 ≤ dl.intpDefs2 b1 c1
 :=
   fun _ => BasicExpr.triIntp2_mono_std bLe cLe
 
@@ -203,13 +203,13 @@ def BasicExpr.triIntp2_mono_apx_posMem
     cLePos
   isMonoB.posLe.trans isMonoC
 
-def DefList.triIntp2_mono_apx
+def DefList.intpDefs2_mono_apx
   {dl: DefList}
   {b0 b1 c0 c1: Valuation Pair}
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
-  dl.triIntp2 b0 c0 ⊑ dl.triIntp2 b1 c1
+  dl.intpDefs2 b0 c0 ⊑ dl.intpDefs2 b1 c1
 :=
   fun _ => BasicExpr.triIntp2_mono_apx bLe cLe
 

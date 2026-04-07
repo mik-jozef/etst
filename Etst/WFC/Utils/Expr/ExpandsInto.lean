@@ -120,7 +120,7 @@ namespace DefList.ExpandsInto
   | .const x expr =>
     let ih := expr.triIntp_eq_wfm (fv := fv)
     let eqDef := dl.wfm_eq_def x
-    let eqFv := dl.triIntp2_eq_fv x [] fv dl.wfm dl.wfm
+    let eqFv := dl.intpDefs2_eq_fv x [] fv dl.wfm dl.wfm
     eqDef.trans (eqFv.trans ih)
   | .pair left rite =>
     eq_triIntp2_pair_of_eq
@@ -171,7 +171,7 @@ namespace DefList.ExpandsInto
         let eqNext: triIntpE defX [] = op.lfpStage n.succ x :=
           congr (op.lfpStage_apply_eq_succ n) _root_.rfl
         let eqClear: triIntpE defX [] = triIntpE (dl.getDef x) fv :=
-          dl.triIntp2_eq_fv _ _ _ _ _
+          dl.intpDefs2_eq_fv _ _ _ _ _
         
         eqClear ▸ eqNext ▸ op.lfpStage_mono (Order.le_succ n) x
       leNextStage.trans ih

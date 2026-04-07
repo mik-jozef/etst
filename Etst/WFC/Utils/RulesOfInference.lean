@@ -333,12 +333,12 @@ namespace SingleLaneExpr
   :=
     let v := dl.wfm
     
-    let eqAtN: v x = dl.triIntp2 v v x :=
+    let eqAtN: v x = dl.intpDefs v x :=
       congr (DefList.wfm_isModel dl) rfl
     
     match lane with
-    | .defLane => show (dl.triIntp2 v v x).defMem d from eqAtN ▸ inConst
-    | .posLane => show (dl.triIntp2 v v x).posMem d from eqAtN ▸ inConst
+    | .defLane => show (dl.intpDefs v x).defMem d from eqAtN ▸ inConst
+    | .posLane => show (dl.intpDefs v x).posMem d from eqAtN ▸ inConst
   
   
   def toggle2N (lane: Set3.Lane): Nat → Set3.Lane

@@ -1171,7 +1171,7 @@ def Expr.IsClean.toLane
     isClean x (iff.mp isCleanLane)
 
 namespace DefList
-  def triIntp2_eq_fv_def
+  def intpDefs2_eq_fv_def
     (dl: DefList)
     (x: Nat)
     (fv0 fv1: List Pair)
@@ -1183,7 +1183,7 @@ namespace DefList
   :=
     ((dl.isClean x).toLane .defLane).intp2_eq
   
-  def triIntp2_eq_fv_pos
+  def intpDefs2_eq_fv_pos
     (dl: DefList)
     (x: Nat)
     (fv0 fv1: List Pair)
@@ -1195,7 +1195,7 @@ namespace DefList
   :=
     ((dl.isClean x).toLane .posLane).intp2_eq
   
-  def triIntp2_eq_fv
+  def intpDefs2_eq_fv
     (dl: DefList)
     (x: Nat)
     (fv0 fv1: List Pair)
@@ -1204,8 +1204,8 @@ namespace DefList
     (dl.getDef x).triIntp2 fv0 b c = (dl.getDef x).triIntp2 fv1 b c
   :=
     Set3.eq
-      (dl.triIntp2_eq_fv_def x fv0 fv1 b c)
-      (dl.triIntp2_eq_fv_pos x fv0 fv1 b c)
+      (dl.intpDefs2_eq_fv_def x fv0 fv1 b c)
+      (dl.intpDefs2_eq_fv_pos x fv0 fv1 b c)
   
 end DefList
 
@@ -1218,11 +1218,11 @@ namespace SingleLaneExpr
     of_in_def_no_fv
       (match lane with
       | .defLane =>
-        let eqDef := dl.triIntp2_eq_fv_def x [] fv dl.wfm dl.wfm
+        let eqDef := dl.intpDefs2_eq_fv_def x [] fv dl.wfm dl.wfm
         show intp2 _ _ _ _ _ from
         eqDef ▸ inDef
       | .posLane =>
-        let eqPos := dl.triIntp2_eq_fv_pos x [] fv dl.wfm dl.wfm
+        let eqPos := dl.intpDefs2_eq_fv_pos x [] fv dl.wfm dl.wfm
         show intp2 _ _ _ _ _ from
         eqPos ▸ inDef)
   
@@ -1234,10 +1234,10 @@ namespace SingleLaneExpr
     show intp2 _ _ _ _ _ from
     match lane with
     | .defLane =>
-      dl.triIntp2_eq_fv_def x fv [] dl.wfm dl.wfm ▸
+      dl.intpDefs2_eq_fv_def x fv [] dl.wfm dl.wfm ▸
       in_def_no_fv inVar
     | .posLane =>
-      dl.triIntp2_eq_fv_pos x fv [] dl.wfm dl.wfm ▸
+      dl.intpDefs2_eq_fv_pos x fv [] dl.wfm dl.wfm ▸
       in_def_no_fv inVar
   
 end SingleLaneExpr

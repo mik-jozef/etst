@@ -140,8 +140,8 @@ def operatorC
   -- https://github.com/leanprover/lean4/issues/952
   let _ := Valuation.ordStd Pair
   {
-    toFun := dl.triIntp2 b
-    monotone' _ _ := dl.triIntp2_mono_std (le_refl _)
+    toFun := dl.intpDefs2 b
+    monotone' _ _ := dl.intpDefs2_mono_std (le_refl _)
   }
 
 -- The least fixed point of the operator C.
@@ -178,7 +178,7 @@ def operatorC.mono_apx
 :
   operatorC dl b0 c0 ⊑ operatorC dl b1 c1
 :=
-  dl.triIntp2_mono_apx bLe cLe
+  dl.intpDefs2_mono_apx bLe cLe
 
 
 def operatorB.monotone'
@@ -239,7 +239,7 @@ def Valuation.IsModel
 :
   Set (Valuation Pair)
 :=
-  fun v => v = dl.triIntp v
+  fun v => v = dl.intpDefs v
 
 /-
   The well-founded model of a definition list `dl` defines the
@@ -260,7 +260,7 @@ def DefList.wfm_is_fp_operatorB
 :=
   ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
 
-noncomputable def DefList.exprIntp
+noncomputable def DefList.triIntp
   (dl: DefList)
   (expr: BasicExpr)
 :
@@ -332,7 +332,7 @@ def DefList.wfm_eq_def
   (dl: DefList)
   (x: Nat)
 :
-  dl.wfm x = dl.triIntp dl.wfm x
+  dl.wfm x = dl.intpDefs dl.wfm x
 :=
   congr dl.wfm_isModel rfl
 
