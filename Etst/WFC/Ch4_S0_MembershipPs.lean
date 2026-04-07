@@ -21,79 +21,41 @@ variable {D: Type*}
 
 
 /-
-  If (under some valuation) expressions `a` and `c` contain an
-  element `d`, then the expression `a ∩ (b ∪ c)` also contains
+  If (under some valuation) the constants `a` and `c` contain an
+  element `d`, then the expression `a & (b | c)` also contains
   that element. For this reason, we may call `d ∈ a ∧ d ∈ c`
-  a cause of `d ∈ a ∪ (b ∪ c)`.
+  a cause of `d ∈ a & (b | c)`.
   
-  We encode the causes as sets of `ValConst` instances. A cause
-  consists of three such sets:
-  - those that need to be present in the context,
-  - those that need to be present in the background, and
-  - those that need to be *absent* from the background.
-  
-  Note that it never happens that a value would need to be absent
-  from context in order to cause something.
+  We encode the causes as sets of elements that need to exist in
+  the respective constants. There are two kinds of such sets:
+  - those that need to be present in the context, and
+  - those that need to be absent in the background.
 -/
 structure Cause (D: Type*) where
-  contextIns: Set (ValConst D)
-  backgroundIns: Set (ValConst D)
-  backgroundOut: Set (ValConst D)
+  cins: Nat → Set D
+  bout: Nat → Set D
 
-
-structure Cause.IsStronglySatisfiedByBackground
-  (cause: Cause D)
-  (b: Valuation D)
-:
-  Prop
-where
-  backgroundInsHold:
-    ∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → (b x).defMem d
-  backgroundOutHold:
-    ∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundOut → ¬(b x).posMem d
-
-/-
-  Defines when a cause is strongly satisfied by a context-background
-  pair of valuations.
--/
 structure Cause.IsStronglySatisfiedBy
   (cause: Cause D)
   (b c: Valuation D)
 :
   Prop
-extends
-  Cause.IsStronglySatisfiedByBackground cause b
 where
-  contextInsHold:
-    ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).defMem d
+  cinsSat:
+    ∀ {x d}, cause.cins x d → (c x).defMem d
+  boutSat:
+    ∀ {x d}, cause.bout x d → ¬(b x).posMem d
 
-
-structure Cause.IsWeaklySatisfiedByBackground
-  (cause: Cause D)
-  (b: Valuation D)
-:
-  Prop
-where
-  backgroundInsHold:
-    ∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → (b x).posMem d
-  backgroundOutHold:
-    ∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundOut → ¬(b x).defMem d
-
-/-
-  Defines when a cause is weakly satisfied by a context-background
-  pair of valuations. The properties are all inherited from the
-  above two structures.
--/
 structure Cause.IsWeaklySatisfiedBy
   (cause: Cause D)
   (b c: Valuation D)
 :
   Prop
-extends
-  Cause.IsWeaklySatisfiedByBackground cause b
 where
-  contextInsHold:
-    ∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → (c x).posMem d
+  cinsSat:
+    ∀ {x d}, cause.cins x d → (c x).posMem d
+  boutSat:
+    ∀ {x d}, cause.bout x d → ¬(b x).defMem d
 
 /-
   `Is[X]Cause cause d expr` means that for every pair of
@@ -104,8 +66,8 @@ where
 def Cause.IsStrongCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
-  (d: Pair)
   (expr: BasicExpr)
+  (d: Pair)
 :
   Prop
 :=
@@ -116,8 +78,8 @@ def Cause.IsStrongCauseFv
 def Cause.IsWeakCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
-  (d: Pair)
   (expr: BasicExpr)
+  (d: Pair)
 :
   Prop
 :=
@@ -127,65 +89,60 @@ def Cause.IsWeakCauseFv
 
 abbrev Cause.IsStrongCause
   (cause: Cause Pair)
-  (d: Pair)
   (expr: BasicExpr)
+  (d: Pair)
 :
   Prop
 :=
-  IsStrongCauseFv cause [] d expr
+  IsStrongCauseFv cause [] expr d
 
 abbrev Cause.IsWeakCause
   (cause: Cause Pair)
-  (d: Pair)
   (expr: BasicExpr)
+  (d: Pair)
 :
   Prop
 :=
-  IsWeakCauseFv cause [] d expr
+  IsWeakCauseFv cause [] expr d
 
 
 mutual
 /-
-  `Ins dl d x` means that `d` is (provably) a member of `x`
+  `Ins dl x d` means that `d` is (provably) a member of `x`
   (in the well-founded model of `dl`).
   
   If there exists a strong cause of `d ∈ dl.getDef x` such that
   for every value–variable pair `(d, x)`:
   
-  0. `(d, x) ∈ cause.contextIns` implies `d` is provably a member
-     of `x`,
-  1. `(d, x) ∈ cause.backgroundIns` also implies `d` is provably
-     a member of `x`, and
-  2. `(d, x) ∈ cause.backgroundOut` implies `d` is provably a
-     non-member of `x`,
+  0. `cause.cins x d` implies `d` is provably a member of `x`, and
+  1. `cause.bout x d` implies `d` is provably a non-member
+    of `x`,
   
   then `d` is provably a member of `x`.
 -/
 inductive DefList.Ins
   (dl: DefList)
 :
-  Pair → Nat → Prop
+  Nat → Pair → Prop
 
 | intro:
-  (d: Pair) →
   (x: Nat) →
+  (d: Pair) →
   (cause: Cause Pair) →
-  cause.IsStrongCause d (dl.getDef x) →
-  (∀ {d x}, ⟨d, x⟩ ∈ cause.contextIns → Ins dl d x) →
-  (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundIns → Ins dl d x) →
-  (∀ {d x}, ⟨d, x⟩ ∈ cause.backgroundOut → Out dl d x) →
-  Ins dl d x
+  cause.IsStrongCause (dl.getDef x) d →
+  (∀ {x d}, cause.cins x d → Ins dl x d) →
+  (∀ {x d}, cause.bout x d → Out dl x d) →
+  Ins dl x d
 
 
 /-
-  A cause is *provably* inapplicable for a given set S of value–
-  constant pairs if for some element (d, x) of S, either:
+  A cause is *provably* inapplicable for a given set S of constant-
+  value pairs if for some `x` and `d`, either
   
-  0. (d, x) is in the contextIns of the cause,
-  1. (d, x) is in backgroundIns, and provably `d ∉ x`, or
-  2. (d, x) is in backgroundOut, and provably `d ∈ x`.
+  0. `cause.cins x d` and `d` is in S, or
+  1. `cause.bout x d` and `d` is provably a member of `x`.
   
-  A set of value–constant pairs is called an empty cycle if all
+  A set of constant-value pairs is called an empty cycle if all
   its elements have only inapplicable causes. Empty cycles formalize
   cyclic definitions like
   
@@ -197,36 +154,26 @@ inductive DefList.Ins
 inductive DefList.IsCauseInapplicable
   (dl: DefList)
 :
-  Set (ValConst Pair) →
+  (Nat → Set Pair) →
   Cause Pair →
   Prop
-
-| blockedContextIns
+|
+  blockedContext
   (cause: Cause Pair)
-  {d x}
-  (inContextIns: ⟨d, x⟩ ∈ cause.contextIns)
-  {cycle} (inCycle: ⟨d, x⟩ ∈ cycle)
+  {x d} (inContext: cause.cins x d)
+  {cycle} (inCycle: cycle x d)
 :
   IsCauseInapplicable dl cycle cause
-
-| blockedBackgroundIns {cycle}
+|
+  blockedBackground {cycle}
   (cause: Cause Pair)
-  {d x}
-  (inBins: ⟨d, x⟩ ∈ cause.backgroundIns)
-  (isOut: Out dl d x)
-:
-  IsCauseInapplicable dl cycle cause
-
-| blockedBackgroundOut {cycle}
-  (cause: Cause Pair)
-  {d x}
-  (inBout: ⟨d, x⟩ ∈ cause.backgroundOut)
-  (isIns: Ins dl d x)
+  {x d} (inBackground: cause.bout x d)
+  (isIns: Ins dl x d)
 :
   IsCauseInapplicable dl cycle cause
 
 /-
-  `Out dl d x` means that `d` is a definitive non-member of
+  `Out dl x d` means that `d` is a definitive non-member of
   `x` in the well-founded model of `dl`.
   
   A `d` is provably a non-member of `x` if there exists an empty
@@ -238,18 +185,19 @@ inductive DefList.IsCauseInapplicable
 inductive DefList.Out
   (dl: DefList)
 :
-  Pair → Nat → Prop
-
-| intro {d x}:
-  (cycle: Set (ValConst Pair)) →
+  Nat → Pair → Prop
+|
+  intro {x d}
+  (cycle: Nat → Set Pair)
   (isEmptyCycle:
-    ∀ {d x},
-    ⟨d, x⟩ ∈ cycle →
+    ∀ {x d},
+    cycle x d →
     (cause: Cause Pair) →
-    cause.IsWeakCause d (dl.getDef x) →
-    IsCauseInapplicable dl cycle cause) →
-  ⟨d, x⟩ ∈ cycle →
-  Out dl d x
+    cause.IsWeakCause (dl.getDef x) d →
+    IsCauseInapplicable dl cycle cause)
+  (incycle: cycle x d)
+:
+  Out dl x d
 end
 
 /-

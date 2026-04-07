@@ -100,36 +100,36 @@ namespace Valuation
         inAllSets (v x) ⟨v, vIn, rfl⟩)
   
   
-  -- The (definite) nonmembers of a valuation.
-  def nonmembers
+  -- The definite nonmembers of a valuation.
+  def defNonMembers
     (v: Valuation D)
   :
-    Set (ValConst D)
+    Nat → Set D
   :=
-    fun ⟨d, x⟩ => ¬ (v x).posMem d
+    compl ∘ Set3.posMem ∘ v
   
   -- The possible nonmembers of a valuation.
-  def posNonmembers
+  def posNonMembers
     (v: Valuation D)
   :
-    Set (ValConst D)
+    Nat → Set D
   :=
-    fun ⟨d, x⟩ => ¬ (v x).defMem d
+    compl ∘ Set3.defMem ∘ v
   
-  -- The (definite) members of a valuation.
-  def members
+  -- The definite members of a valuation.
+  def defMembers
     (v: Valuation D)
   :
-    Set (ValConst D)
+    Nat → Set D
   :=
-    fun ⟨d, x⟩ => (v x).defMem d
+    Set3.defMem ∘ v
   
   -- The possible members of a valuation.
   def posMembers
     (v: Valuation D)
   :
-    Set (ValConst D)
+    Nat → Set D
   :=
-    fun ⟨d, x⟩ => (v x).posMem d
+    Set3.posMem ∘ v
   
 end Valuation

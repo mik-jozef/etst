@@ -7,30 +7,21 @@ namespace Etst
 
 variable
   {dl: DefList}
-  {cycle cycleA cycleB: Set (ValConst Pair)}
+  {cycle cycleA cycleB: Nat → Set Pair}
   {cause causeA causeB: Cause Pair}
-
-
-def ValConst.eq {D} {d0 d1: D} {x0 x1}:
-  d0 = d1 → x0 = x1 → ValConst.mk d0 x0 = ⟨d1, x1⟩
-| rfl, rfl => rfl
-
-def ValConst.eqX {D} {d0 d1: D} {x0 x1} :
-  @Eq (ValConst D) ⟨d0, x0⟩ ⟨d1, x1⟩ → x0 = x1
-| rfl => rfl
 
 
 def every_cause_inapplicable_preserves_definitive_nonmember
   (b c: Valuation Pair)
-  (d: Pair)
   (expr: BasicExpr)
-  (outSet: Set (ValConst Pair))
+  (d: Pair)
+  (outSet: Nat → Set Pair)
   (isEveryCauseInapplicable:
     {cause: Cause Pair} →
-    cause.IsWeakCause d expr →
+    cause.IsWeakCause expr d →
     cause.IsInapplicable outSet b)
   (outSetIsEmpty:
-    ∀ {d x}, ⟨d, x⟩ ∈ outSet → ¬ (c x).posMem d)
+    ∀ {x d}, outSet x d → ¬ (c x).posMem d)
 :
   ¬(expr.triIntp2 [] b c).posMem d
 :=
@@ -41,15 +32,14 @@ def every_cause_inapplicable_preserves_definitive_nonmember
 
 def empty_cycle_is_out
   (dl: DefList)
-  (cycle: Set (ValConst Pair))
+  (cycle: Nat → Set Pair)
   (isEmptyCycle:
-    ∀ {d x},
-    ⟨d, x⟩ ∈ cycle →
+    ∀ {x d},
+    cycle x d →
     (cause: Cause Pair) →
-    cause.IsWeakCause d (dl.getDef x) →  
+    cause.IsWeakCause (dl.getDef x) d →  
     cause.IsInapplicable cycle (dl.wfm))
-  {d x}
-  (inCycle: ⟨d, x⟩ ∈ cycle)
+  {x d} (inCycle: cycle x d)
 :
   ¬(dl.wfm x).posMem d
 :=
@@ -60,20 +50,21 @@ def empty_cycle_is_out
   isFp ▸
   OrderHom.lfpStage_induction
     (operatorC dl wfm)
-    (fun v => ∀ vv ∈ cycle, ¬(v vv.x).posMem vv.d)
-    (fun _n _isLim ih ⟨d, x⟩ inCycle =>
+    (fun v => ∀ {x d}, cycle x d → ¬(v x).posMem d)
+    (fun _n _isLim ih _ _ inCycle =>
       (Valuation.ordStd.in_set_in_sup_posMem isLUB_iSup).nmp
         fun ⟨prev, ⟨⟨i, eqAtI⟩, dInPrev⟩⟩ =>
           let eq: (operatorC dl wfm).lfpStage i = prev := eqAtI
-          ih i ⟨d, x⟩ inCycle (eq ▸ dInPrev))
-    (fun n _notLim predLt ih ⟨d, x⟩ inCycle =>
+          ih i inCycle (eq ▸ dInPrev))
+    (fun n _notLim predLt ih x d inCycle =>
       every_cause_inapplicable_preserves_definitive_nonmember
-        wfm _ d
+        wfm
+        _
         (dl.getDef x)
+        d
         cycle
         (isEmptyCycle inCycle _)
-        (ih ⟨n.pred, predLt⟩ _))
-    ⟨d, x⟩
+        (ih ⟨n.pred, predLt⟩))
     inCycle
 
 
@@ -84,9 +75,9 @@ structure InsOutComplete
   Prop
 where
   insIsComplete:
-    ∀ {d x}, (v x).defMem d → DefList.Ins dl d x
+    ∀ {x d}, (v x).defMem d → DefList.Ins dl x d
   outIsComplete:
-    ∀ {d x}, ¬(v x).posMem d → DefList.Out dl d x
+    ∀ {x d}, ¬(v x).posMem d → DefList.Out dl x d
 
 open DefList in
 def completenessProofC {dl b}
@@ -99,41 +90,34 @@ def completenessProofC {dl b}
   {
     insIsComplete :=
       opC.lfpStage_induction
-        (fun v => ∀ {d x}, (v x).defMem d → Ins dl d x)
-        (fun _n _isLim ih _d _x isDefN =>
+        (fun v => ∀ {x d}, (v x).defMem d → Ins dl x d)
+        (fun _n _isLim ih _x _d isDefN =>
           let ⟨_v, ⟨m, (vEq: opC.lfpStage _ = _)⟩, inDefV⟩ :=
             (Valuation.ordStd.in_set_in_sup_defMem isLUB_iSup).mpr isDefN
           ih m (vEq ▸ inDefV))
-        (fun n _notLim predLt ih d x isDefN =>
+        (fun n _notLim predLt ih x d isDefN =>
           let c := opC.lfpStage n.pred
           
           let cause: Cause Pair := {
-            contextIns := fun ⟨d, x⟩ => (c x).defMem d
-            backgroundIns := fun ⟨d, x⟩ => (b x).defMem d
-            backgroundOut := fun ⟨d, x⟩ => ¬(b x).posMem d
+            cins x d := (c x).defMem d
+            bout x d := ¬(b x).posMem d
           }
           
-          let isCause: cause.IsStrongCause d (dl.getDef x) :=
-            fun {b1 _c1} isSat =>
-              let isLe: b ⊑ b1 := fun _ => {
-                defLe := fun _ => isSat.backgroundInsHold
-                posLe := fun _ isPos =>
-                  byContradiction (isSat.backgroundOutHold · isPos)
-              }
-              
-              BasicExpr.triIntp2_mono_apx_defMem
-                isLe
-                (fun _ _ => isSat.contextInsHold)
+          let isCause: cause.IsStrongCause (dl.getDef x) d :=
+            fun _ _ isSat =>
+              BasicExpr.triIntp2_mono_std_defMem
+                (fun _ _ isDef =>
+                  byContradiction (isSat.boutSat · isDef))
+                (fun _ _ => isSat.cinsSat)
                 isDefN
           
-          Ins.intro d x cause isCause
+          Ins.intro x d cause isCause
             (ih ⟨n.pred, predLt⟩)
-            isComplete.insIsComplete
             isComplete.outIsComplete)
     outIsComplete :=
       Out.intro
-        (fun ⟨d, x⟩ => ¬(operatorC.lfp dl b x).posMem d)
-        (fun {dd xx} notPos _cause isCause =>
+        (fun x d => ¬(operatorC.lfp dl b x).posMem d)
+        (fun {xx dd} notPos _cause isCause =>
           let opC := operatorC dl b
           let lfp := operatorC.lfp dl b
           let isFp: _ = _ := (operatorC dl b).isFixedPt_lfp
@@ -141,14 +125,11 @@ def completenessProofC {dl b}
           let notPos: ¬((opC lfp) xx).posMem dd := isFp ▸ notPos
           
           match isCause.isInapplicableOfIsNonmember notPos with
-          | Cause.IsInapplicable.blockedContextIns inCins inCycle =>
-            IsCauseInapplicable.blockedContextIns _ inCins inCycle
-          | Cause.IsInapplicable.blockedBackgroundIns inBins notPos =>
-            let isOut := isComplete.outIsComplete notPos
-            IsCauseInapplicable.blockedBackgroundIns _ inBins isOut
-          | Cause.IsInapplicable.blockedBackgroundOut inBout isIns =>
-            let isIns := isComplete.insIsComplete isIns
-            IsCauseInapplicable.blockedBackgroundOut _ inBout isIns)
+          | .blockedContext inCins inCycle =>
+            .blockedContext _ inCins inCycle
+          | .blockedBackground inBout isDef =>
+            let isIns := isComplete.insIsComplete isDef
+            .blockedBackground _ inBout isIns)
   }
 
 def completenessProofB
@@ -179,42 +160,3 @@ def completenessProofB
     })
     (fun n _notLim predLt ih =>
       completenessProofC (ih ⟨n.pred, predLt⟩))
-
-
-def DefList.IsCauseInapplicable.toSuperCause
-  (isInapp: IsCauseInapplicable dl cycle causeA)
-  (isSuper: causeA ⊆ causeB)
-:
-  IsCauseInapplicable dl cycle causeB
-:=
-  match isInapp with
-  | blockedContextIns _ inCins inCycle =>
-    blockedContextIns _ (isSuper.cinsLe inCins) inCycle
-  | blockedBackgroundIns _ inBins isOut =>
-    blockedBackgroundIns _ (isSuper.binsLe inBins) isOut
-  | blockedBackgroundOut _ inBout isIns =>
-    blockedBackgroundOut _ (isSuper.boutLe inBout) isIns
-
-def DefList.IsCauseInapplicable.toSuperCycle
-  (isInapp: IsCauseInapplicable dl cycleA cause)
-  (isSuper: cycleA ⊆ cycleB)
-:
-  IsCauseInapplicable dl cycleB cause
-:=
-  match isInapp with
-  | blockedContextIns _ inCins inCycle =>
-    blockedContextIns _ inCins (isSuper inCycle)
-  | blockedBackgroundIns _ inBins isOut =>
-    blockedBackgroundIns _ inBins isOut
-  | blockedBackgroundOut _ inBout isIns =>
-    blockedBackgroundOut _ inBout isIns
-
-def DefList.IsCauseInapplicable.toSuper
-  (isInapp: IsCauseInapplicable dl cycleA causeA)
-  (isSuper: cycleA ⊆ cycleB)
-  (isSuperCause: causeA ⊆ causeB)
-:
-  IsCauseInapplicable dl cycleB causeB
-:=
-  let isInapp := isInapp.toSuperCause isSuperCause
-  isInapp.toSuperCycle isSuper

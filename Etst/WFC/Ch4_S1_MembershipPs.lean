@@ -13,22 +13,21 @@ namespace Etst
 
 
 mutual
-def DefList.Ins.isSound {dl d x}
-  (ins: Ins dl d x)
+def DefList.Ins.isSound {dl x d}
+  (ins: Ins dl x d)
 :
   (dl.wfm x).defMem d
 :=
   match ins with
-  | Ins.intro _ _ _ isCause insCins insBins outBout =>
+  | Ins.intro _ _ _ isCause insCins outBout =>
     DefList.wfm_isModel dl ▸
     isCause {
-      contextInsHold := fun h => Ins.isSound (insCins h)
-      backgroundInsHold := fun h => Ins.isSound (insBins h)
-      backgroundOutHold := fun h => Out.isSound (outBout h)
+      cinsSat := fun h => Ins.isSound (insCins h)
+      boutSat := fun h => Out.isSound (outBout h)
     }
 
-def DefList.Out.isSound {dl d x}
-  (out: Out dl d x)
+def DefList.Out.isSound {dl x d}
+  (out: Out dl x d)
 :
   ¬(dl.wfm x).posMem d
 :=
@@ -37,50 +36,48 @@ def DefList.Out.isSound {dl d x}
     empty_cycle_is_out dl cycle
       (fun inCycle cause isWeak =>
         match isEmptyCycle inCycle cause isWeak with
-        | .blockedContextIns _ inCins inCycle =>
-          .blockedContextIns inCins inCycle
-        | .blockedBackgroundIns _ inBins isOut =>
-          .blockedBackgroundIns inBins isOut.isSound
-        | .blockedBackgroundOut _ inBout isIns =>
-          .blockedBackgroundOut inBout isIns.isSound
+        | .blockedContext _ inCins inCycle =>
+          .blockedContext inCins inCycle
+        | .blockedBackground _ inBout isIns =>
+          .blockedBackground inBout isIns.isSound
         )
       inCycle
 end
 
 
-def DefList.Ins.isComplete {dl d x}
+def DefList.Ins.isComplete {dl x d}
   (ins: (dl.wfm x).defMem d)
 :
-  Ins dl d x
+  Ins dl x d
 :=
   (completenessProofB dl).insIsComplete ins
 
-def DefList.Out.isComplete {dl d x}
+def DefList.Out.isComplete {dl x d}
   (out: ¬(dl.wfm x).posMem d)
 :
-  Out dl d x
+  Out dl x d
 :=
   (completenessProofB dl).outIsComplete out
 
 
-def DefList.Ins.nopeOut {P dl d x}
-  (isIns: Ins dl d x)
-  (isOut: Out dl d x)
+def DefList.Ins.nopeOut {P dl x d}
+  (isIns: Ins dl x d)
+  (isOut: Out dl x d)
 :
   P
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
 
-def DefList.Ins.nopeNotDef {P dl d x}
-  (isIns: Ins dl d x)
+def DefList.Ins.nopeNotDef {P dl x d}
+  (isIns: Ins dl x d)
   (notDef: ¬(dl.wfm x).defMem d)
 :
   P
 :=
   False.elim (notDef (isIns.isSound))
 
-def DefList.Ins.nopeNotPos {P dl d x}
-  (isIns: Ins dl d x)
+def DefList.Ins.nopeNotPos {P dl x d}
+  (isIns: Ins dl x d)
   (notPos: ¬(dl.wfm x).posMem d)
 :
   P
@@ -88,24 +85,24 @@ def DefList.Ins.nopeNotPos {P dl d x}
   False.elim (notPos (isIns.isSound.toPos))
 
 
-def DefList.Out.nopeIns {P dl d x}
-  (isOut: Out dl d x)
-  (isIns: Ins dl d x)
+def DefList.Out.nopeIns {P dl x d}
+  (isOut: Out dl x d)
+  (isIns: Ins dl x d)
 :
   P
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
 
-def DefList.Out.nopeDef {P dl d x}
-  (isOut: Out dl d x)
+def DefList.Out.nopeDef {P dl x d}
+  (isOut: Out dl x d)
   (isDef: (dl.wfm x).defMem d)
 :
   P
 :=
   False.elim (isOut.isSound (isDef.toPos))
 
-def DefList.Out.nopePos {P dl d x}
-  (isOut: Out dl d x)
+def DefList.Out.nopePos {P dl x d}
+  (isOut: Out dl x d)
   (isPos: (dl.wfm x).posMem d)
 :
   P

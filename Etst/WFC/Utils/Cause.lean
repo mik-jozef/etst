@@ -12,34 +12,30 @@ def Cause.ofValPos
 :
   Cause D
 := {
-  contextIns := c.posMembers
-  backgroundIns := b.posMembers
-  backgroundOut := b.posNonmembers
+  cins := c.posMembers
+  bout := b.posNonMembers
 }
 
 def Cause.empty: Cause D := {
-  contextIns := ∅
-  backgroundIns := ∅
-  backgroundOut := ∅
+  cins _ := ∅
+  bout _ := ∅
 }
 
 def Cause.eq:
   {a b: Cause D} →
-  a.contextIns = b.contextIns →
-  a.backgroundIns = b.backgroundIns →
-  a.backgroundOut = b.backgroundOut →
+  a.cins = b.cins →
+  a.bout = b.bout →
   a = b
 
-| ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl, rfl => rfl
+| ⟨_, _⟩, ⟨_, _⟩, rfl, rfl => rfl
 
 structure Cause.IsSubset
   (a b: Cause D)
 :
   Prop
 where
-  cinsLe: a.contextIns ⊆ b.contextIns
-  binsLe: a.backgroundIns ⊆ b.backgroundIns
-  boutLe: a.backgroundOut ⊆ b.backgroundOut
+  cinsLe: a.cins ≤ b.cins
+  boutLe: a.bout ≤ b.bout
 
 instance (D: Type*): HasSubset (Cause D) := ⟨Cause.IsSubset⟩
 
@@ -49,25 +45,19 @@ instance (D: Type*): HasSubset (Cause D) := ⟨Cause.IsSubset⟩
 -/
 inductive Cause.IsInapplicable
   (cause: Cause D)
-  (outSet: Set (ValConst D))
+  (outSet: Nat → Set D)
   (b: Valuation D)
 :
   Prop
-
-| blockedContextIns {d x}
-  (inContextIns: ⟨d, x⟩ ∈ cause.contextIns)
-  (inCycle: ⟨d, x⟩ ∈ outSet)
+|
+  blockedContext {x d}
+  (inCins: cause.cins x d)
+  (inCycle: outSet x d)
 :
   IsInapplicable cause outSet b
-
-| blockedBackgroundIns {d x}
-  (inBins: ⟨d, x⟩ ∈ cause.backgroundIns)
-  (isOut: ¬(b x).posMem d)
-:
-  IsInapplicable cause outSet b
-
-| blockedBackgroundOut {d x}
-  (inBout: ⟨d, x⟩ ∈ cause.backgroundOut)
+|
+  blockedBackground {x d}
+  (inBout: cause.bout x d)
   (isIns: (b x).defMem d)
 :
   IsInapplicable cause outSet b
@@ -75,75 +65,63 @@ inductive Cause.IsInapplicable
 def Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
   {cause: Cause D}
   {b c: Valuation D}
-  (isApplicable: ¬ Cause.IsInapplicable cause c.nonmembers b)
+  (isApplicable:
+    ¬ Cause.IsInapplicable cause c.defNonMembers b)
 :
   Cause.IsWeaklySatisfiedBy cause b c
 :=
   open Cause.IsWeaklySatisfiedBy in
   {
-    contextInsHold :=
+    cinsSat :=
       fun inCins =>
         byContradiction fun notPos =>
-          isApplicable (blockedContextIns inCins notPos)
-    backgroundInsHold :=
-      fun inBins =>
-        byContradiction fun notPos =>
-          isApplicable (blockedBackgroundIns inBins notPos)
-    backgroundOutHold :=
+          isApplicable (blockedContext inCins notPos)
+    boutSat :=
       fun inBout =>
         byContradiction fun isDef =>
-          isApplicable (blockedBackgroundOut inBout isDef.dne)
+          isApplicable (blockedBackground inBout isDef.dne)
   }
 
 def Cause.IsWeaklySatisfiedBy.toIsApplicable
   {cause b c}
   (isSat: Cause.IsWeaklySatisfiedBy cause b c)
-  (outSet: Set (ValConst D))
-  (outSetIsEmpty: ∀ {d x}, ⟨d, x⟩ ∈ outSet → ¬ (c x).posMem d)
+  (outSet: Nat → Set D)
+  (outSetIsEmpty: ∀ {x d}, outSet x d → ¬ (c x).posMem d)
 :
   ¬ Cause.IsInapplicable cause outSet b
-
-| IsInapplicable.blockedContextIns inCins inOutSet =>
-  outSetIsEmpty inOutSet (isSat.contextInsHold inCins)
-
-| IsInapplicable.blockedBackgroundIns inBins notPos =>
-  notPos (isSat.backgroundInsHold inBins)
-
-| IsInapplicable.blockedBackgroundOut inBout isDef =>
-  isSat.backgroundOutHold inBout isDef
+|
+  .blockedContext inCins inOutSet =>
+    outSetIsEmpty inOutSet (isSat.cinsSat inCins)
+|
+  .blockedBackground inBout isDef =>
+    isSat.boutSat inBout isDef
 
 def Cause.IsWeaklySatisfiedBy.ofValPos
   (b c: Valuation D)
 :
   (Cause.ofValPos b c).IsWeaklySatisfiedBy b c
 := {
-  contextInsHold := id
-  backgroundInsHold := id
-  backgroundOutHold := id
+  cinsSat := id
+  boutSat := id
 }
 
 
 noncomputable def Cause.IsWeakCauseFv.ofValPos {expr fv b c d}
   (isPos: (expr.triIntp2 fv b c).posMem d)
 :
-  (Cause.ofValPos b c).IsWeakCauseFv fv d expr
+  (Cause.ofValPos b c).IsWeakCauseFv fv expr d
 :=
   fun _ _ isSat =>
-    BasicExpr.triIntp2_mono_apx_posMem
-      (fun _ => {
-        defLe :=
-          fun _ isDef =>
-            byContradiction (isSat.backgroundOutHold · isDef)
-        posLe := fun _ => isSat.backgroundInsHold
-      })
-      (fun _ _ => isSat.contextInsHold)
+    BasicExpr.triIntp2_mono_std_posMem
+      (fun _ _ isDef => byContradiction (isSat.boutSat · isDef))
+      (fun _ _ => isSat.cinsSat)
       isPos
 
 def Cause.IsWeakCauseFv.isPosOfIsApplicable {fv d expr}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv d expr)
+  (isCause: cause.IsWeakCauseFv fv expr d)
   {b c}
-  (isApp: ¬ cause.IsInapplicable c.nonmembers b)
+  (isApp: ¬ cause.IsInapplicable c.defNonMembers b)
 :
   (expr.triIntp2 fv b c).posMem d
 :=
@@ -151,46 +129,28 @@ def Cause.IsWeakCauseFv.isPosOfIsApplicable {fv d expr}
 
 def Cause.IsWeakCauseFv.isInapplicableOfIsNonmember {fv d expr}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv d expr)
+  (isCause: cause.IsWeakCauseFv fv expr d)
   {b c: Valuation Pair}
   (notPos: ¬(expr.triIntp2 fv b c).posMem d)
 :
-  cause.IsInapplicable c.nonmembers b
+  cause.IsInapplicable c.defNonMembers b
 :=
   (not_imp_not.mpr (isPosOfIsApplicable isCause) notPos).dne
 
 
 /-
-  A cause is (strongly) consistent if there exists a valuation
-  that strongly satisfies it. Note that every cause is weakly
-  consistent.
--/
-def Cause.IsConsistent
-  (cause: Cause D)
-:
-  Prop
-:=
-  ∀ vv, vv ∉ cause.backgroundIns ∨ vv ∉ cause.backgroundOut
-
-/-
   The least valuation in the approximation order that strongly
   satisfies the background part of a cause.
 -/
-def Cause.IsConsistent.leastBackgroundApx
-  {cause: Cause D}
-  (isConsistent: cause.IsConsistent)
+def Cause.leastBackgroundApx
+  (cause: Cause D)
 :
   Valuation D
 :=
   fun x => {
-    defMem := fun d => ⟨d, x⟩ ∈ cause.backgroundIns
-    posMem := fun d => ⟨d, x⟩ ∉ cause.backgroundOut
-    defLePos :=
-      -- weird that this type annotation is necessary
-      fun d (isDef: _ ∈ cause.backgroundIns) =>
-        (isConsistent ⟨d, x⟩).elim
-          (fun ninBins => (ninBins isDef).elim)
-          id
+    defMem := ∅
+    posMem := compl ∘ cause.bout x
+    defLePos := nofun
   }
 
 /-
@@ -203,48 +163,18 @@ def Cause.leastContextApx
   Valuation D
 :=
   fun x => {
-    defMem := fun d => ⟨d, x⟩ ∈ cause.contextIns
+    defMem := cause.cins x
     posMem := Set.univ
-    defLePos := fun _ _ => trivial
+    defLePos _ _ := trivial
   }
 
-def Cause.IsConsistent.leastBackgroundApxIsSat
-  {cause: Cause D}
-  (isConsistent: cause.IsConsistent)
-:
-  cause.IsStronglySatisfiedByBackground
-    (isConsistent.leastBackgroundApx)
-:= {
-  backgroundInsHold := id
-  backgroundOutHold :=
-    fun {dd xx} inBout =>
-      (isConsistent ⟨dd, xx⟩).elim
-        (fun _ => (· inBout))
-        (fun ninbout => False.elim (ninbout inBout))
-}
-
-def Cause.IsConsistent.leastValsApxAreSat
-  {cause: Cause D}
-  (isConsistent: cause.IsConsistent)
+def Cause.leastValsApxAreSat
+  (cause: Cause D)
 :
   cause.IsStronglySatisfiedBy
-    (isConsistent.leastBackgroundApx)
-    (leastContextApx cause)
+    (cause.leastBackgroundApx)
+    (cause.leastContextApx)
 := {
-  contextInsHold := id
-  backgroundInsHold := id
-  backgroundOutHold :=
-    (leastBackgroundApxIsSat isConsistent).backgroundOutHold
+  cinsSat := id
+  boutSat := Function.eval
 }
-
-def Cause.IsStronglySatisfiedByBackground.toIsConsistent {D b}
-  {cause: Cause D}
-  (isSat: IsStronglySatisfiedByBackground cause b)
-:
-  IsConsistent cause
-:=
-  fun _ =>
-    Classical.or_iff_not_imp_left.mpr fun inBinsDn inBout =>
-      isSat.backgroundOutHold
-        inBout
-        (isSat.backgroundInsHold inBinsDn.dne).toPos

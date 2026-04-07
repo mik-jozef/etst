@@ -161,19 +161,6 @@ namespace Valuation
   
 end Valuation
 
-/-
-  `ValConst` encodes some (usage-specific) relation between a constant
-  and an element. For example, it may be used to represent the
-  assertion that a certain constant contains a certain element in
-  some valuation.
-  
-  That the constant `x` contains the element `d` may be denoted
-  as `d ∈ x`.
--/
-structure ValConst (D: Type*) where
-  d: D
-  x: Nat
-
 
 -- ## Section 3: The Interpretation Function
 
