@@ -220,3 +220,24 @@ def Cause.maximalValsApxAreSat
   cinsSat := id
   boutSat := Function.eval
 }
+
+
+def Cause.IsWeakCauseFv.constElim {x d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCause (.const x) d)
+:
+  cause.cins x d
+:=
+  byContradiction fun notInCins =>
+    let isSat := cause.maximalValsApxAreSat
+    notInCins (isCause isSat)
+
+def Cause.IsWeakCauseFv.noneElim {d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCause (.none) d)
+  {P: Prop}
+:
+  P
+:=
+  SingleLaneExpr.inNoneElim
+    (isCause cause.maximalValsApxAreSat)

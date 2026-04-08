@@ -29,91 +29,94 @@ open SingleLaneExpr
   start being empty) is encoded as a list of expression encodings.
 -/
 
-def getNthConst: BasicExpr := .const 0
-def uniSetMapConst: BasicExpr := .const 1
-
-def exprEncConst: BasicExpr :=
-  s3(
-    null; dl, fv, expr;
-    Ex x,
-    & (?some (0, x) & expr)
-    & [uniSetMapConst] (dl, (null, [getNthConst] dl x))
-  )
-
-def exprEncVar: BasicExpr :=
-  s3(
-    null; dl, fv, expr;
-    Ex x,
-    & (?some (1, x) & expr)
-    & [getNthConst] fv x
-  )
-
-def exprEncNull: BasicExpr :=
-  s3(
-    null; dl, fv, expr;
-    & (?some (2, null) & expr)
-    & null
-  )
-
-def exprEncPair: BasicExpr :=
-  s3(
-    null; dl, fv, expr;
-    Ex left,
-    Ex rite,
-    & (?some (3, (left, rite)) & expr)
-    & (
-      [uniSetMapConst] (dl, (fv, left)),
-      [uniSetMapConst] (dl, (fv, rite))
+namespace uniSetMapDl
+  def getNthConst: BasicExpr := .const 0
+  def uniSetMapConst: BasicExpr := .const 1
+  
+  def exprEncConst: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex x,
+      & (?some (0, x) & expr)
+      & [uniSetMapConst] (dl, (null, [getNthConst] dl x))
     )
-  )
+  
+  def exprEncVar: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex x,
+      & (?some (1, x) & expr)
+      & [getNthConst] fv x
+    )
+  
+  def exprEncNull: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      & (?some (2, null) & expr)
+      & null
+    )
+  
+  def exprEncPair: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex left,
+      Ex rite,
+      & (?some (3, (left, rite)) & expr)
+      & (
+        [uniSetMapConst] (dl, (fv, left)),
+        [uniSetMapConst] (dl, (fv, rite))
+      )
+    )
+  
+  def exprEncIr: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex left,
+      Ex rite,
+      & (?some (4, (left, rite)) & expr)
+      & [uniSetMapConst] (dl, (fv, left))
+      & [uniSetMapConst] (dl, (fv, rite))
+    )
+  
+  def exprEncFull: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex body,
+      & (?some (5, body) & expr)
+      & (?full [uniSetMapConst] (dl, (fv, body)))
+    )
+  
+  def exprEncCompl: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex body,
+      & (?some (6, body) & expr)
+      & (! [uniSetMapConst] (dl, (fv, body)))
+    )
+  
+  def exprEncArbIr: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex body,
+      & (?some (7, body) & expr)
+      & (All p, [uniSetMapConst] (dl, ((p, fv), body)))
+    )
+  
+  def exprEncList: BasicExpr :=
+    s3(
+      null,
+      | [exprEncConst]
+      | [exprEncVar]
+      | [exprEncNull]
+      | [exprEncPair]
+      | [exprEncIr]
+      | [exprEncFull]
+      | [exprEncCompl]
+      | [exprEncArbIr]
+    )
+end uniSetMapDl
 
-def exprEncIr: BasicExpr :=
-  s3(
-    null; dl, fv, expr;
-    Ex left,
-    Ex rite,
-    & (?some (4, (left, rite)) & expr)
-    & [uniSetMapConst] (dl, (fv, left))
-    & [uniSetMapConst] (dl, (fv, rite))
-  )
-
-def exprEncFull: BasicExpr :=
-  s3(
-    null; dl, fv, expr;
-    Ex body,
-    & (?some (5, body) & expr)
-    & (?full [uniSetMapConst] (dl, (fv, body)))
-  )
-
-def exprEncCompl: BasicExpr :=
-  s3(
-    null; dl, fv, expr;
-    Ex body,
-    & (?some (6, body) & expr)
-    & (! [uniSetMapConst] (dl, (fv, body)))
-  )
-
-def exprEncArbIr: BasicExpr :=
-  s3(
-    null; dl, fv, expr;
-    Ex body,
-    & (?some (7, body) & expr)
-    & (All p, [uniSetMapConst] (dl, ((p, fv), body)))
-  )
-
-def exprEncList: BasicExpr :=
-  s3(
-    null,
-    | [exprEncConst]
-    | [exprEncVar]
-    | [exprEncNull]
-    | [exprEncPair]
-    | [exprEncIr]
-    | [exprEncFull]
-    | [exprEncCompl]
-    | [exprEncArbIr]
-  )
-
+open uniSetMapDl in
 pairDefList uniSetMapDl
   s3 getNth :=
     Ex head,
@@ -137,14 +140,11 @@ pairDefList uniSetMapDl
     Ex dl, Ex fv, Ex expr, ((dl, (fv, expr)), [exprEncList])
 pairDefList.
 
--- Assert the correctness of the consts.
-example: .const (uniSetMapDl.consts.getNth) = getNthConst := rfl
-example: .const (uniSetMapDl.consts.uniSetMap) = uniSetMapConst := rfl
-
-
-def Pair.listEncoding: List Pair → Pair
-| [] => .null
-| p :: ps => .pair p (listEncoding ps)
+namespace uniSetMapDl
+  -- Assert the correctness of the consts.
+  example: .const (consts.getNth) = getNthConst := rfl
+  example: .const (consts.uniSetMap) = uniSetMapConst := rfl
+end uniSetMapDl
 
 -- Any pair not in the codomain encodes `none`.
 def BasicExpr.encoding: BasicExpr → Pair
@@ -279,111 +279,112 @@ def uniSetMapAt
   uniSetMap.pairCallJust (uniSetMapIndex dl n fv expr)
 
 
-def uniSetMapDl.getNth {list fv x lane}
-  (lt: x < list.length)
-:
-  intp
-    (const lane uniSetMapDl.consts.getNth)
-    fv
-    uniSetMapDl.wfm
-    (.pair (.listEncoding list) (.pair (.nat x) list[x]))
-:=
-  match list with
-  | listH :: listT =>
-    let ins :=
-      match x with
-      | 0 => inUnL (inPair (inPair rfl rfl) (inPair (inNat 0) rfl))
-      | xPred + 1 =>
-        let ih := getNth (Nat.lt_of_succ_lt_succ lt)
-        inUnR
-          (inArbUn
-            xPred
-            (inPair
-              (inPair rfl rfl)
+namespace uniSetMapDl
+  def getNth {list fv x lane}
+    (lt: x < list.length)
+  :
+    intp
+      (const lane consts.getNth)
+      fv
+      uniSetMapDl.wfm
+      (.pair (.listEncoding list) (.pair (.nat x) list[x]))
+  :=
+    match list with
+    | listH :: listT =>
+      let ins :=
+        match x with
+        | 0 => inUnL (inPair (inPair rfl rfl) (inPair (inNat 0) rfl))
+        | xPred + 1 =>
+          let ih := getNth (Nat.lt_of_succ_lt_succ lt)
+          inUnR
+            (inArbUn
+              xPred
               (inPair
-                (inPair rfl inNull)
-                (inCall (inCall (inToggle2 8 ih) rfl) rfl))))
-    InWfm.of_in_def_no_fv
-      (inArbUn
-        listH
+                (inPair rfl rfl)
+                (inPair
+                  (inPair rfl inNull)
+                  (inCall (inCall (inToggle2 8 ih) rfl) rfl))))
+      InWfm.of_in_def_no_fv
         (inArbUn
-          (.listEncoding listT)
-          ins))
-
-def uniSetMapDl.getNthEnc
-  (dl: DefList)
-  (n x: Nat)
-:
-  Pair
-:=
-  .pair
-    (dl.prefixEncoding n)
-    (.pair (.nat x) ((dl.prefix n).getDef x).encoding)
-
-def uniSetMapDl.getNthDl {dl n fv x lane}
-  (lt: x < n)
-:
-  intp
-    (const lane uniSetMapDl.consts.getNth)
-    fv
-    uniSetMapDl.wfm
-    (getNthEnc dl n x)
-:= by
-  let lt := (dl.prefixList_length_eq 0 n).symm ▸ lt
-  unfold getNthEnc
-  rw [←dl.prefixList_at_eq n x]
-  rw [(List.getElem?_eq_some_getElem_iff lt).mpr trivial]
-  exact uniSetMapDl.getNth (x:=x) lt
-
-def uniSetMapDl.getNthElim {list i valEnc lane}
-  (inGetDef:
-    intp
-      (const lane 0)
-      []
+          listH
+          (inArbUn
+            (.listEncoding listT)
+            ins))
+  
+  def getNthEnc
+    (dl: DefList)
+    (n x: Nat)
+  :
+    Pair
+  :=
+    .pair
+      (dl.prefixEncoding n)
+      (.pair (.nat x) ((dl.prefix n).getDef x).encoding)
+  
+  def getNthDl {dl n fv x lane}
+    (lt: x < n)
+  :
+    (const lane consts.getNth).intp
+      fv
       uniSetMapDl.wfm
-      (.pair (.listEncoding list) (.pair (.nat i) valEnc)))
-:
-  list[i]? = valEnc
-:=
-  let ins := InWfm.in_def_no_fv inGetDef
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨_, ins⟩ := inArbUnElim ins
-  (inUnElim ins).elim
-    (fun ins =>
-      let ⟨inList, ins⟩ := inPairElim ins
-      let ⟨_, _, listEq, inHead, _⟩ := inPairElimEx inList
-      let headEq := inVarElim inHead rfl
-      let ⟨inI, ins⟩ := inPairElim ins
-      let iEq := Pair.nat_inj_eq (inNatElim (n:=0) inI)
-      let valEncEq := inVarElim ins rfl
-      match list with
-      | _h :: _t =>
-        let hEq := Pair.noConfusion listEq fun eq _ => eq
-        iEq ▸ hEq ▸ headEq ▸ valEncEq ▸ rfl)
-    (fun ins =>
-      let ⟨_iPredEnc, ins⟩ := inArbUnElim ins
-      let ⟨inList, ins⟩ := inPairElim ins
-      let ⟨inI, insLB⟩ := inPairElim ins
-        match list, i with
-      | _h :: t, iPred+1 =>
-        let ⟨_, inTail⟩ := inPairElim inList
-        let tailEq := inVarElim inTail rfl
-        let ⟨inIPred, _⟩ := inPairElim inI
-        let iPredEq := inVarElim inIPred rfl
-        let ins := inCallElimSingle insLB rfl
-        let ins := inCallElimSingle ins rfl
-        let ih: t[iPred]? = valEnc :=
-          getNthElim (tailEq ▸ iPredEq ▸ ins)
-        ih)
-
-def uniSetMapDl.getNthElimD {list i valEnc lane df}
-  (inGetDef:
-    intp
-      (const lane 0)
-      []
-      uniSetMapDl.wfm
-      (.pair (.listEncoding list) (.pair (.nat i) valEnc)))
-:
-  list[i]?.getD df = valEnc
-:=
-  uniSetMapDl.getNthElim inGetDef ▸ rfl
+      (getNthEnc dl n x)
+  := by
+    let lt := (dl.prefixList_length_eq 0 n).symm ▸ lt
+    unfold getNthEnc
+    rw [←dl.prefixList_at_eq n x]
+    rw [(List.getElem?_eq_some_getElem_iff lt).mpr trivial]
+    exact getNth (x:=x) lt
+  
+  def getNthElim {list i valEnc lane}
+    (inGetDef:
+      intp
+        (const lane consts.getNth)
+        []
+        uniSetMapDl.wfm
+        (.pair (.listEncoding list) (.pair (.nat i) valEnc)))
+  :
+    list[i]? = valEnc
+  :=
+    let ins := InWfm.in_def_no_fv inGetDef
+    let ⟨_, ins⟩ := inArbUnElim ins
+    let ⟨_, ins⟩ := inArbUnElim ins
+    (inUnElim ins).elim
+      (fun ins =>
+        let ⟨inList, ins⟩ := inPairElim ins
+        let ⟨_, _, listEq, inHead, _⟩ := inPairElimEx inList
+        let headEq := inVarElim inHead rfl
+        let ⟨inI, ins⟩ := inPairElim ins
+        let iEq := Pair.nat_inj_eq (inNatElim (n:=0) inI)
+        let valEncEq := inVarElim ins rfl
+        match list with
+        | _h :: _t =>
+          let hEq := Pair.noConfusion listEq fun eq _ => eq
+          iEq ▸ hEq ▸ headEq ▸ valEncEq ▸ rfl)
+      (fun ins =>
+        let ⟨_iPredEnc, ins⟩ := inArbUnElim ins
+        let ⟨inList, ins⟩ := inPairElim ins
+        let ⟨inI, insLB⟩ := inPairElim ins
+          match list, i with
+        | _h :: t, iPred+1 =>
+          let ⟨_, inTail⟩ := inPairElim inList
+          let tailEq := inVarElim inTail rfl
+          let ⟨inIPred, _⟩ := inPairElim inI
+          let iPredEq := inVarElim inIPred rfl
+          let ins := inCallElimSingle insLB rfl
+          let ins := inCallElimSingle ins rfl
+          let ih: t[iPred]? = valEnc :=
+            getNthElim (tailEq ▸ iPredEq ▸ ins)
+          ih)
+  
+  def getNthElimD {list i valEnc lane df}
+    (inGetDef:
+      intp
+        (const lane consts.getNth)
+        []
+        uniSetMapDl.wfm
+        (.pair (.listEncoding list) (.pair (.nat i) valEnc)))
+  :
+    list[i]?.getD df = valEnc
+  :=
+    getNthElim inGetDef ▸ rfl
+end uniSetMapDl

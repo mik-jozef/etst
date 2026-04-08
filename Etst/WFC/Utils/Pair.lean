@@ -41,27 +41,9 @@ namespace Pair
     
     where `tail` is the list encoded by `tailEncoding`.
   -/
-  def arrayLength: Pair → Nat
-  | null => 0
-  | pair _ b => Nat.succ b.arrayLength
-  
-  def arrayAt (p: Pair) (n: Nat): Option Pair :=
-    match p, n with
-    | null, _ => none
-    | pair head _tail, Nat.zero => head
-    | pair _head tail, Nat.succ pred => tail.arrayAt pred
-  
-  
-  def arrayLast (head tail: Pair): Pair :=
-    match tail with
-    | null => head
-    | pair tailHead tailTail => tailHead.arrayLast tailTail
-  
-  def arrayUpToLast (head tail: Pair): Pair :=
-    match tail with
-    | null => null
-    | pair tailHead tailTail =>
-      pair head (tailHead.arrayUpToLast tailTail)
+  def listEncoding: List Pair → Pair
+  | [] => .null
+  | p :: ps => .pair p (listEncoding ps)
   
   
   def nat_inj_eq {n m}

@@ -1,7 +1,7 @@
 import Etst.WFC.Utils.MembershipPs.OutIntro3
 import Etst.WFC.Utils.SelfDefinability.UniSetMapDl
 
-namespace Etst
+namespace Etst.uniSetMapDl
 open SingleLaneExpr
 
 
@@ -276,13 +276,42 @@ def isAtElimConst {dl n fv b c lane x p}
                             (isAtElimComplNope · (by decide))
                             (isAtElimArbIrNope · (by decide))))))))
 
-def isAtElimVar {dl n fv b c i lane p}
-  (ins: InUniSetMapDefAt dl n fv b c (.var i) lane p)
+def isAtElimVar {dl n fv b c lane x p}
+  (ins: InUniSetMapDefAt dl n fv b c (.var x) lane p)
   (cinsSat: (∀ {x d}, d ∈ (c x).getLane lane → uniSetMapDl.Ins x d))
 :
-  sorry
+  (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm p
 :=
-  sorry
+  let main ins :=
+    let ⟨xEnc, ins⟩ := inArbUnElim ins
+    let ⟨insExprGuard, ins⟩ := inIrElim ins
+    let xEncEq := exprGuardElimUnary insExprGuard
+    let ins := inCallElimSingle ins rfl
+    let ins := inCallElimSingle ins rfl
+    let ins := xEncEq ▸ inToggle2Elim 7 ins
+    let ins := (cinsSat ins).isSound
+    inVar (uniSetMapDl.getNthElim (lane:=.defLane) ins)
+  (inUnElim ins).elim
+    (isAtElimConstNope · (by decide))
+    (fun ins =>
+      (inUnElim ins).elim
+        main
+        (fun ins =>
+          (inUnElim ins).elim
+            (isAtElimNullNope · (by decide))
+            (fun ins =>
+              (inUnElim ins).elim
+                (isAtElimPairNope · (by decide))
+                (fun ins =>
+                  (inUnElim ins).elim
+                    (isAtElimIrNope · (by decide))
+                    (fun ins =>
+                      (inUnElim ins).elim
+                        (isAtElimFullNope · (by decide))
+                        (fun ins =>
+                          (inUnElim ins).elim
+                            (isAtElimComplNope · (by decide))
+                            (isAtElimArbIrNope · (by decide))))))))
 
 def isAtElimNull := 42 -- TODO
 def isAtElimPair := 42 -- TODO
@@ -325,6 +354,71 @@ def isAtElimCompl {dl n fv b c body lane p}
                           (inUnElim ins).elim
                             main
                             (isAtElimArbIrNope · (by decide))))))))
+
+def isAtElimArbIr {dl n fv b c body lane p}
+  (ins: InUniSetMapDefAt dl n fv b c (.arbIr body) lane p)
+:
+  ∀ dX,
+    (c uniSetMapDl.consts.uniSetMap).getLane
+      lane
+      (.pair (uniSetMapIndex dl n (dX :: fv) body) p)
+:=
+  let main ins dX :=
+    let ⟨bodyEnc, ins⟩ := inArbUnElim ins
+    let ⟨insExprGuard, ins⟩ := inIrElim ins
+    let bodyEncEq := exprGuardElimUnary insExprGuard
+    let ⟨pArg, inMap, inArg⟩ := inCallElim (inArbIrElim ins dX)
+    match pArg with
+    | .null => inPairElimNope inArg
+    | .pair _ .null => inPairElimNope (inPairElim inArg).right
+    | .pair dlEncAlias (.pair fvAlias exprAlias) =>
+      let ⟨insDlAlias, ins⟩ := inPairElim inArg
+      let ⟨insFvAlias, insBodyAlias⟩ := inPairElim ins
+      let eqDlAlias := inVarElim insDlAlias rfl
+      let eqBodyAlias := inVarElim insBodyAlias rfl
+      match fvAlias with
+      | .null => inPairElimNope insFvAlias
+      | .pair dXAlias fvTailAlias =>
+        let ⟨insDXAlias, insFvTailAlias⟩ := inPairElim insFvAlias
+        let eqDXAlias := inVarElim insDXAlias rfl
+        let eqFvTailAlias := inVarElim insFvTailAlias rfl
+        let fvEq:
+          Eq
+            (Pair.listEncoding (dX :: fv))
+            (.pair dX (Pair.listEncoding fv))
+          :=
+            rfl
+        by
+        unfold uniSetMapIndex
+        exact
+          bodyEncEq ▸
+          eqBodyAlias ▸
+          fvEq ▸
+          eqFvTailAlias ▸
+          eqDXAlias ▸
+          eqDlAlias ▸
+          inToggle2Elim 10 inMap
+  (inUnElim ins).elim
+    (isAtElimConstNope · (by decide))
+    (fun ins =>
+      (inUnElim ins).elim
+        (isAtElimVarNope · (by decide))
+        (fun ins =>
+          (inUnElim ins).elim
+            (isAtElimNullNope · (by decide))
+            (fun ins =>
+              (inUnElim ins).elim
+                (isAtElimPairNope · (by decide))
+                (fun ins =>
+                  (inUnElim ins).elim
+                    (isAtElimIrNope · (by decide))
+                    (fun ins =>
+                      (inUnElim ins).elim
+                        (isAtElimFullNope · (by decide))
+                        (fun ins =>
+                          (inUnElim ins).elim
+                            (isAtElimComplNope · (by decide))
+                            main))))))
 
 
 /-
@@ -481,26 +575,6 @@ def isWeakCauseCompl {dl n fv body d}:
     isInMap (isAtCompl out)
 
 
-def Cause.IsWeakCauseFv.constElim {x d}
-  {cause: Cause Pair}
-  (isCause: cause.IsWeakCause (.const x) d)
-:
-  cause.cins x d
-:=
-  byContradiction fun notInCins =>
-    let isSat := cause.maximalValsApxAreSat
-    notInCins (isCause isSat)
-
-def Cause.IsWeakCauseFv.noneElim {d}
-  {cause: Cause Pair}
-  (isCause: cause.IsWeakCause (.none) d)
-  {P: Prop}
-:
-  P
-:=
-  inNoneElim (isCause cause.maximalValsApxAreSat)
-
-
 /-
   ## Section: The main recursive proof
   
@@ -514,7 +588,7 @@ def Cause.IsWeakCauseFv.noneElim {d}
       indices are not variables
   ```
 -/
-inductive uniSetMapAt_le.IsInappIh
+inductive IsInappIh
 (dl: DefList)
 :
   (Nat → Set Pair) →
@@ -539,7 +613,7 @@ inductive uniSetMapAt_le.IsInappIh
 :
   IsInappIh dl cycle cause
 
-def uniSetMapAt_le.intOfExtCycle
+def intOfExtCycle
   (dl: DefList)
   (n: Nat)
   (extCycle: Nat → Set Pair)
@@ -556,7 +630,7 @@ def uniSetMapAt_le.intOfExtCycle
         d))
     (¬ x < n)
 
-def uniSetMapAt_le.allInternalInapp {dl n fv d expr}
+def allInternalInapp {dl n fv d expr}
   {extCycle: Nat → Set Pair}
   (extIsEmpty:
     ∀ {x d},
@@ -569,7 +643,7 @@ def uniSetMapAt_le.allInternalInapp {dl n fv d expr}
       extCycle x d →
       (cause: Cause Pair) →
       cause.IsWeakCause (uniSetMapDl.getDef x) d →
-      uniSetMapAt_le.IsInappIh dl extCycle cause)
+      IsInappIh dl extCycle cause)
   (inExtCycle:
     extCycle
       uniSetMapDl.consts.uniSetMap
@@ -630,7 +704,7 @@ def uniSetMapAt_le.allInternalInapp {dl n fv d expr}
   | .arbIr _ => sorry
 
 mutual
-def uniSetMapAt_le_ins_helper {dl n fv index cst expr p}
+def externalInsElimHelper {dl n fv index cst expr p}
   (ins: uniSetMapDl.Ins cst index)
   (cstEq: cst = uniSetMapDl.consts.uniSetMap)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
@@ -657,9 +731,11 @@ def uniSetMapAt_le_ins_helper {dl n fv index cst expr p}
     | .const x =>
       let insList := dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insList
       let inCins := isAtElimConst insList cinsSat
-      let ih := uniSetMapAt_le_ins_helper (cinsSat inCins) rfl rfl
+      let ih := externalInsElimHelper (cinsSat inCins) rfl rfl
       InWfm.of_in_def_no_fv (lane := .defLane) ih
-    | .var _ => sorry
+    | .var x =>
+      let insList := dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insList
+      isAtElimVar insList cinsSat
     | .null => sorry
     | .pair _ _ => sorry
     | .ir _ _ => sorry
@@ -667,17 +743,16 @@ def uniSetMapAt_le_ins_helper {dl n fv index cst expr p}
     | .compl _ =>
       let insList := dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insList
       let inBout := boutSat (isAtElimCompl insList).dne
-      uniSetMapAt_le_out_helper inBout rfl rfl
+      externalOutElimHelper inBout rfl rfl
     | .arbIr _ => sorry
 
-def uniSetMapAt_le_out_helper {dl n fv index cst expr p}
+def externalOutElimHelper {dl n fv index cst expr p}
   (out: uniSetMapDl.Out cst index)
   (cstEq: cst = uniSetMapDl.consts.uniSetMap)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
 :
   ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
 :=
-  open uniSetMapAt_le in
   match out with
   | .intro extCycle extIsEmpty inExtCycle =>
     let everyCauseInapp {x d}
@@ -692,7 +767,7 @@ def uniSetMapAt_le_out_helper {dl n fv index cst expr p}
         .blockedCins cause inCins inCycle
       | .blockedBout _ inBout ins =>
         .blockedBout cause inBout fun xEq dEq =>
-          uniSetMapAt_le_ins_helper ins xEq dEq
+          externalInsElimHelper ins xEq dEq
     
     fun isPos =>
       let isCause: Cause.IsWeakCauseFv _ fv expr p :=
@@ -726,7 +801,7 @@ end
 
 -- ## Section: The main result of the file
 
-def uniSetMapAt_le_ins {dl n fv expr p}
+def externalInsElim {dl n fv expr p}
   (ins:
     uniSetMapDl.Ins
       uniSetMapDl.consts.uniSetMap
@@ -734,9 +809,9 @@ def uniSetMapAt_le_ins {dl n fv expr p}
 :
   (expr.triIntp fv (dl.prefix n).wfm).defMem p
 :=
-  uniSetMapAt_le_ins_helper ins rfl rfl
+  externalInsElimHelper ins rfl rfl
 
-def uniSetMapAt_le_out {dl n fv expr p}
+def externalOutElim {dl n fv expr p}
   (out:
     uniSetMapDl.Out
       uniSetMapDl.consts.uniSetMap
@@ -744,7 +819,7 @@ def uniSetMapAt_le_out {dl n fv expr p}
 :
   ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
 :=
-  uniSetMapAt_le_out_helper out rfl rfl
+  externalOutElimHelper out rfl rfl
 
 def uniSetMapAt_le
   (dl: DefList)
@@ -754,7 +829,7 @@ def uniSetMapAt_le
 :
   uniSetMapAt dl n fv expr ⊑ expr.triIntp fv (dl.prefix n).wfm
 := {
-  defLe _ := uniSetMapAt_le_ins ∘ DefList.Ins.isComplete
+  defLe _ := externalInsElim ∘ DefList.Ins.isComplete
   posLe _ :=
-    Function.mtr (uniSetMapAt_le_out ∘ DefList.Out.isComplete)
+    Function.mtr (externalOutElim ∘ DefList.Out.isComplete)
 }
