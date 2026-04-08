@@ -194,7 +194,7 @@ inductive DefList.Out
     cycle x d →
     (cause: Cause Pair) →
     cause.IsWeakCause (dl.getDef x) d →
-    IsCauseInapplicable dl cycle cause)
+    dl.IsCauseInapplicable cycle cause)
   (incycle: cycle x d)
 :
   Out dl x d
