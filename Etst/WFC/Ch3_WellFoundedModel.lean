@@ -262,11 +262,12 @@ def DefList.wfm_is_fp_operatorB
 
 noncomputable def DefList.triIntp
   (dl: DefList)
+  (fv: List Pair)
   (expr: BasicExpr)
 :
   Set3 Pair
 :=
-  expr.triIntp [] dl.wfm
+  expr.triIntp fv dl.wfm
 
 
 /-
