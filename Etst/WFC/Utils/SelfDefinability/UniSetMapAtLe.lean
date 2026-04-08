@@ -5,13 +5,13 @@ namespace Etst.uniSetMapDl
 open SingleLaneExpr
 
 
-def InUniSetMapDefAt (dl n fv b c expr lane p) :=
+def InUniSetMapAt (dl n fv b c expr lane p) :=
   let vars := [
     BasicExpr.encoding expr,
     Pair.listEncoding fv,
     DefList.prefixEncoding dl n,
   ]
-  intp2 (exprEncList.toLane lane) vars b c p
+  (exprEncList.toLane lane).intp2 vars b c p
 
 def exprGuardElimUnary {i iEnc encRest fv0 fvRest b c p}
   (ins:
@@ -220,7 +220,7 @@ def isAtElimArbIrNope {fv b c lane i enc p}
 -------------------------------------------------------
 
 def isAtElimConst {dl n fv b c lane x p}
-  (ins: InUniSetMapDefAt dl n fv b c (.const x) lane p)
+  (ins: InUniSetMapAt dl n fv b c (.const x) lane p)
   (cinsSat: (∀ {x d}, d ∈ (c x).getLane lane → uniSetMapDl.Ins x d))
 :
   (c uniSetMapDl.consts.uniSetMap).getLane
@@ -277,7 +277,7 @@ def isAtElimConst {dl n fv b c lane x p}
                             (isAtElimArbIrNope · (by decide))))))))
 
 def isAtElimVar {dl n fv b c lane x p}
-  (ins: InUniSetMapDefAt dl n fv b c (.var x) lane p)
+  (ins: InUniSetMapAt dl n fv b c (.var x) lane p)
   (cinsSat: (∀ {x d}, d ∈ (c x).getLane lane → uniSetMapDl.Ins x d))
 :
   (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm p
@@ -319,7 +319,7 @@ def isAtElimIr := 42 -- TODO
 def isAtElimFull := 42 -- TODO
 
 def isAtElimCompl {dl n fv b c body lane p}
-  (ins: InUniSetMapDefAt dl n fv b c (.compl body) lane p)
+  (ins: InUniSetMapAt dl n fv b c (.compl body) lane p)
 :
   Not
     ((b uniSetMapDl.consts.uniSetMap).getLane
@@ -356,7 +356,7 @@ def isAtElimCompl {dl n fv b c body lane p}
                             (isAtElimArbIrNope · (by decide))))))))
 
 def isAtElimArbIr {dl n fv b c body lane p}
-  (ins: InUniSetMapDefAt dl n fv b c (.arbIr body) lane p)
+  (ins: InUniSetMapAt dl n fv b c (.arbIr body) lane p)
 :
   ∀ dX,
     (c uniSetMapDl.consts.uniSetMap).getLane
@@ -426,7 +426,7 @@ def isAtElimArbIr {dl n fv b c body lane p}
 -/
 
 def isInMap {dl n fv b c expr lane p}
-  (isAt: InUniSetMapDefAt dl n fv b c expr lane p)
+  (isAt: InUniSetMapAt dl n fv b c expr lane p)
 :
   intp2
     (BasicExpr.toLane
@@ -457,7 +457,7 @@ def isAtConst {dl n fv b c x lane p}
       lane
       (uniSetMapDl.getNthEnc dl n x))
 :
-  InUniSetMapDefAt dl n fv b c (.const x) lane p
+  InUniSetMapAt dl n fv b c (.const x) lane p
 :=
   inUnL
     (inArbUn
@@ -483,7 +483,7 @@ def isAtCompl {dl n fv b c body lane p}
         lane.toggle
         (.pair (uniSetMapIndex dl n fv body) p)))
 :
-  InUniSetMapDefAt dl n fv b c (.compl body) lane p
+  InUniSetMapAt dl n fv b c (.compl body) lane p
 :=
   let ninsCall insCall :=
     let ⟨arg, inMap, inArg⟩ := inCallElim insCall
@@ -744,7 +744,11 @@ def externalInsElimHelper {dl n fv index cst expr p}
       let insList := dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insList
       let inBout := boutSat (isAtElimCompl insList).dne
       externalOutElimHelper inBout rfl rfl
-    | .arbIr _ => sorry
+    | .arbIr _ =>
+      let insList := dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insList
+      inArbIr fun dX =>
+        let insBody := cinsSat (isAtElimArbIr insList dX)
+        externalInsElimHelper insBody rfl rfl
 
 def externalOutElimHelper {dl n fv index cst expr p}
   (out: uniSetMapDl.Out cst index)
