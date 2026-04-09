@@ -45,8 +45,7 @@ instance (D: Type*): HasSubset (Cause D) := ⟨Cause.IsSubset⟩
 -/
 inductive Cause.IsInapplicable
   (cause: Cause D)
-  (outSet: Nat → Set D)
-  (b: Valuation D)
+  (outSet inSet: Nat → Set D)
 :
   Prop
 |
@@ -54,19 +53,19 @@ inductive Cause.IsInapplicable
   (inCins: cause.cins x d)
   (inCycle: outSet x d)
 :
-  IsInapplicable cause outSet b
+  IsInapplicable cause outSet inSet
 |
   blockedBout {x d}
   (inBout: cause.bout x d)
-  (isIns: (b x).defMem d)
+  (isIns: inSet x d)
 :
-  IsInapplicable cause outSet b
+  IsInapplicable cause outSet inSet
 
 def Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
   {cause: Cause D}
   {b c: Valuation D}
   (isApplicable:
-    ¬ Cause.IsInapplicable cause c.defNonMembers b)
+    ¬ Cause.IsInapplicable cause c.defNonMembers b.defMembers)
 :
   Cause.IsWeaklySatisfiedBy cause b c
 :=
@@ -88,7 +87,7 @@ def Cause.IsWeaklySatisfiedBy.toIsApplicable
   (outSet: Nat → Set D)
   (outSetIsEmpty: ∀ {x d}, outSet x d → ¬ (c x).posMem d)
 :
-  ¬ Cause.IsInapplicable cause outSet b
+  ¬ Cause.IsInapplicable cause outSet b.defMembers
 |
   .blockedCins inCins inOutSet =>
     outSetIsEmpty inOutSet (isSat.cinsSat inCins)
@@ -121,7 +120,7 @@ def Cause.IsWeakCauseFv.isPosOfIsApplicable {fv d expr}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv expr d)
   {b c}
-  (isApp: ¬ cause.IsInapplicable c.defNonMembers b)
+  (isApp: ¬ cause.IsInapplicable c.defNonMembers b.defMembers)
 :
   (expr.triIntp2 fv b c).posMem d
 :=
@@ -133,7 +132,7 @@ def Cause.IsWeakCauseFv.isInapplicableOfIsNonmember {fv d expr}
   {b c: Valuation Pair}
   (notPos: ¬(expr.triIntp2 fv b c).posMem d)
 :
-  cause.IsInapplicable c.defNonMembers b
+  cause.IsInapplicable c.defNonMembers b.defMembers
 :=
   (not_imp_not.mpr (isPosOfIsApplicable isCause) notPos).dne
 

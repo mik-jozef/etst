@@ -19,7 +19,7 @@ def every_cause_inapplicable_preserves_definitive_nonmember
   (isEveryCauseInapplicable:
     {cause: Cause Pair} →
     cause.IsWeakCause expr d →
-    cause.IsInapplicable outSet b)
+    cause.IsInapplicable outSet b.defMembers)
   (outSetIsEmpty:
     ∀ {x d}, outSet x d → ¬ (c x).posMem d)
 :
@@ -38,7 +38,7 @@ def empty_cycle_is_out
     cycle x d →
     (cause: Cause Pair) →
     cause.IsWeakCause (dl.getDef x) d →  
-    cause.IsInapplicable cycle (dl.wfm))
+    cause.IsInapplicable cycle (dl.wfm).defMembers)
   {x d} (inCycle: cycle x d)
 :
   ¬(dl.wfm x).posMem d

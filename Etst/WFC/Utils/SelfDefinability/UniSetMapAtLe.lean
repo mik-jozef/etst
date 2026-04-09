@@ -577,41 +577,19 @@ def isWeakCauseCompl {dl n fv body d}:
 
 /-
   ## Section: The main recursive proof
-  
-  Has to use the weird equality trick :( else we get:
-  
-  ```
-    fail to show termination for
-    [...]
-    Not considering parameter ins of Etst.uniSetMapAt_le_ins:
-      its type Etst.DefList.Ins is an inductive family and
-      indices are not variables
-  ```
 -/
-inductive IsInappIh
-(dl: DefList)
+def IsInappExtIh
+  (dl: DefList)
+  (outSet: Nat → Set Pair)
+  (cause: Cause Pair)
 :
-  (Nat → Set Pair) →
-  Cause Pair →
   Prop
-|
-  blockedCins
-  (cause: Cause Pair)
-  {x d} (inContextIns: cause.cins x d)
-  {cycle} (inCycle: cycle x d)
-:
-  IsInappIh dl cycle cause
-|
-  blockedBout {cycle}
-  (cause: Cause Pair)
-  {x d} (inBout: cause.bout x d)
-  (isDef:
+:=
+  cause.IsInapplicable outSet fun x d =>
     {n fv expr dInt: _} →
     x = uniSetMapDl.consts.uniSetMap →
     d = .pair (uniSetMapIndex dl n fv expr) dInt →
-    ((dl.prefix n).triIntp fv expr).defMem dInt)
-:
-  IsInappIh dl cycle cause
+    ((dl.prefix n).triIntp fv expr).defMem dInt
 
 def intOfExtCycle
   (dl: DefList)
@@ -643,7 +621,7 @@ def allInternalInapp {dl n fv d expr}
       extCycle x d →
       (cause: Cause Pair) →
       cause.IsWeakCause (uniSetMapDl.getDef x) d →
-      IsInappIh dl extCycle cause)
+      IsInappExtIh dl extCycle cause)
   (inExtCycle:
     extCycle
       uniSetMapDl.consts.uniSetMap
@@ -660,14 +638,14 @@ def allInternalInapp {dl n fv d expr}
     if h: x < n then
       let isExtInapp := everyCauseInapp inExtCycle _ isWeakCauseConst
       match isExtInapp with
-      | .blockedCins (d:=dd) (x:=xx) _ (Or.inl ⟨xEq, dEq⟩) inCycle =>
+      | .blockedCins (d:=dd) (x:=xx) (Or.inl ⟨xEq, dEq⟩) inCycle =>
         let out := DefList.Out.intro extCycle extIsEmpty inCycle
         -- let xEq: xx = _ := xEq
         -- let dEq: dd = _ := dEq
         let insGetNth :=
           uniSetMapDl.getNthDl (lane:=.posLane) (fv:=[]) h
         False.elim (out.isSound (xEq ▸ dEq ▸ insGetNth))
-      | .blockedCins (d:=dd) (x:=xx) _ (Or.inr ⟨xEq, dEq⟩) inCycle =>
+      | .blockedCins (d:=dd) (x:=xx) (Or.inr ⟨xEq, dEq⟩) inCycle =>
         -- let xEq: xx = _ := xEq
         -- let dEq: dd = _ := dEq
         let inCycle:
@@ -693,7 +671,7 @@ def allInternalInapp {dl n fv d expr}
   | .compl _ =>
     let isExtInapp := everyCauseInapp inExtCycle _ isWeakCauseCompl
     match isExtInapp with
-    | .blockedBout (d:=dd) (x:=xx) _ ⟨xEq, dEq⟩ isDefFn =>
+    | .blockedBout (d:=dd) (x:=xx) ⟨xEq, dEq⟩ isDefFn =>
       let isDef := not_not_intro (isDefFn xEq dEq)
       let isInapp := isCause.isInapplicableOfIsNonmember isDef
       match isInapp with
@@ -703,6 +681,17 @@ def allInternalInapp {dl n fv d expr}
         .blockedBout inBout (DefList.Ins.isComplete isDef)
   | .arbIr _ => sorry
 
+/-
+  Has to use the weird equality trick :( else we get:
+  
+  ```
+    fail to show termination for
+    [...]
+    Not considering parameter ins of Etst.externalInsElimHelper:
+      its type Etst.DefList.Ins is an inductive family and
+      indices are not variables
+  ```
+-/
 mutual
 def externalInsElimHelper {dl n fv index cst expr p}
   (ins: uniSetMapDl.Ins cst index)
@@ -764,13 +753,13 @@ def externalOutElimHelper {dl n fv index cst expr p}
       {cause}
       (isCause: cause.IsWeakCause (uniSetMapDl.getDef x) d)
     :
-      IsInappIh dl extCycle cause
+      IsInappExtIh dl extCycle cause
     :=
       match extIsEmpty inCycle cause isCause with
       | .blockedCins _ inCins inCycle =>
-        .blockedCins cause inCins inCycle
+        .blockedCins inCins inCycle
       | .blockedBout _ inBout ins =>
-        .blockedBout cause inBout fun xEq dEq =>
+        .blockedBout inBout fun xEq dEq =>
           externalInsElimHelper ins xEq dEq
     
     fun isPos =>
