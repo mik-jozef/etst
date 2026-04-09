@@ -7,6 +7,28 @@ namespace Etst
 variable {D: Type*}
 
 
+def Cause.eq:
+  {a b: Cause D} →
+  a.cins = b.cins →
+  a.bout = b.bout →
+  a = b
+
+| ⟨_, _⟩, ⟨_, _⟩, rfl, rfl => rfl
+
+def Cause.empty: Cause D := {
+  cins _ := ∅
+  bout _ := ∅
+}
+
+def Cause.ofValDef
+  (b c: Valuation D)
+:
+  Cause D
+:= {
+  cins := c.defMembers
+  bout := b.defNonMembers
+}
+
 def Cause.ofValPos
   (b c: Valuation D)
 :
@@ -15,19 +37,6 @@ def Cause.ofValPos
   cins := c.posMembers
   bout := b.posNonMembers
 }
-
-def Cause.empty: Cause D := {
-  cins _ := ∅
-  bout _ := ∅
-}
-
-def Cause.eq:
-  {a b: Cause D} →
-  a.cins = b.cins →
-  a.bout = b.bout →
-  a = b
-
-| ⟨_, _⟩, ⟨_, _⟩, rfl, rfl => rfl
 
 structure Cause.IsSubset
   (a b: Cause D)
@@ -105,7 +114,7 @@ def Cause.IsWeaklySatisfiedBy.ofValPos
 }
 
 
-noncomputable def Cause.IsWeakCauseFv.ofValPos {expr fv b c d}
+def Cause.IsWeakCauseFv.ofValPos {expr fv b c d}
   (isPos: (expr.triIntp2 fv b c).posMem d)
 :
   (Cause.ofValPos b c).IsWeakCauseFv fv expr d
@@ -115,6 +124,18 @@ noncomputable def Cause.IsWeakCauseFv.ofValPos {expr fv b c d}
       (fun _ _ isDef => byContradiction (isSat.boutSat · isDef))
       (fun _ _ => isSat.cinsSat)
       isPos
+
+def Cause.IsStrongCauseFv.ofValDef {expr fv b c d}
+  (isDef: (expr.triIntp2 fv b c).defMem d)
+:
+  (Cause.ofValDef b c).IsStrongCauseFv fv expr d
+:=
+  fun _ _ isSat =>
+    BasicExpr.triIntp2_mono_std_defMem
+      (fun _ _ isDef => byContradiction (isSat.boutSat · isDef))
+      (fun _ _ => isSat.cinsSat)
+      isDef
+
 
 def Cause.IsWeakCauseFv.isPosOfIsApplicable {fv d expr}
   {cause: Cause Pair}

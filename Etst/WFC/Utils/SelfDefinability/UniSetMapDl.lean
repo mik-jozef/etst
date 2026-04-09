@@ -265,6 +265,8 @@ def uniSetMapIndex
   (n: Nat)
   (fv: List Pair)
   (expr: BasicExpr)
+:
+  Pair
 :=
   Pair.pair
     (dl.prefixEncoding n)
@@ -275,8 +277,17 @@ def uniSetMapAt
   (n: Nat)
   (fv: List Pair)
   (expr: BasicExpr)
+:
+  Set3 Pair
 :=
   uniSetMap.pairCallJust (uniSetMapIndex dl n fv expr)
+
+def uniSetMapIndexDef
+  (dl: DefList)
+  (n: Nat)
+  (x: Nat)
+:=
+  uniSetMapIndex dl n [] ((dl.prefix n).getDef x)
 
 
 namespace uniSetMapDl

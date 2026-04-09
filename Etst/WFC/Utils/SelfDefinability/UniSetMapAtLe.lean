@@ -225,7 +225,7 @@ def isAtElimConst {dl n fv b c lane x p}
 :
   (c uniSetMapDl.consts.uniSetMap).getLane
     lane
-    (.pair (uniSetMapIndex dl n [] ((dl.prefix n).getDef x)) p)
+    (.pair (uniSetMapIndexDef dl n x) p)
 :=
   let main ins :=
     let ⟨xEnc, ins⟩ := inArbUnElim ins
@@ -251,7 +251,7 @@ def isAtElimConst {dl n fv b c lane x p}
           (show intp (const .defLane 0) _ _ _
           from xEncEq ▸ insGetDef)
       by
-      unfold uniSetMapIndex
+      unfold uniSetMapIndexDef uniSetMapIndex
       exact
         exprAliasEq ▸ eqFvAlias ▸ eqDlAlias ▸ inToggle2Elim 4 inMap
   (inUnElim ins).elim
@@ -451,7 +451,7 @@ def isAtConst {dl n fv b c x lane p}
   (ins:
     (c uniSetMapDl.consts.uniSetMap).getLane
       lane
-      (.pair (uniSetMapIndex dl n [] ((dl.prefix n).getDef x)) p))
+      (.pair (uniSetMapIndexDef dl n x) p))
   (insGetNth:
     (c uniSetMapDl.consts.getNth).getLane
       lane
@@ -581,11 +581,11 @@ def isWeakCauseCompl {dl n fv body d}:
 def IsInappExtIh
   (dl: DefList)
   (outSet: Nat → Set Pair)
-  (cause: Cause Pair)
+  (externalCause: Cause Pair)
 :
   Prop
 :=
-  cause.IsInapplicable outSet fun x d =>
+  externalCause.IsInapplicable outSet fun x d =>
     {n fv expr dInt: _} →
     x = uniSetMapDl.consts.uniSetMap →
     d = .pair (uniSetMapIndex dl n fv expr) dInt →
@@ -603,9 +603,7 @@ def intOfExtCycle
   Or
     (extCycle
       uniSetMapDl.consts.uniSetMap
-      (.pair
-        (uniSetMapIndex dl n [] ((dl.prefix n).getDef x))
-        d))
+      (.pair (uniSetMapIndexDef dl n x) d))
     (¬ x < n)
 
 def allInternalInapp {dl n fv d expr}
@@ -640,20 +638,14 @@ def allInternalInapp {dl n fv d expr}
       match isExtInapp with
       | .blockedCins (d:=dd) (x:=xx) (Or.inl ⟨xEq, dEq⟩) inCycle =>
         let out := DefList.Out.intro extCycle extIsEmpty inCycle
-        -- let xEq: xx = _ := xEq
-        -- let dEq: dd = _ := dEq
         let insGetNth :=
           uniSetMapDl.getNthDl (lane:=.posLane) (fv:=[]) h
         False.elim (out.isSound (xEq ▸ dEq ▸ insGetNth))
       | .blockedCins (d:=dd) (x:=xx) (Or.inr ⟨xEq, dEq⟩) inCycle =>
-        -- let xEq: xx = _ := xEq
-        -- let dEq: dd = _ := dEq
         let inCycle:
           extCycle
             uniSetMapDl.consts.uniSetMap
-            (.pair
-              (uniSetMapIndex dl n [] ((dl.prefix n).getDef x))
-              d)
+            (.pair (uniSetMapIndexDef dl n x) d)
         :=
           xEq ▸ dEq ▸ inCycle
         let intCycle x d :=
