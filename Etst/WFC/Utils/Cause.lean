@@ -20,6 +20,16 @@ def Cause.empty: Cause D := {
   bout _ := ∅
 }
 
+def Cause.const
+  (x: Nat)
+  (d: D)
+:
+  Cause D
+:= {
+  cins xx dd := xx = x ∧ dd = d
+  bout _ := ∅
+}
+
 def Cause.ofValDef
   (b c: Valuation D)
 :
@@ -242,9 +252,14 @@ def Cause.maximalValsApxAreSat
 }
 
 
-def Cause.IsWeakCauseFv.constElim {x d}
+def Cause.IsWeakCauseFv.const {fv x d}:
+  IsWeakCauseFv (Cause.const x d) fv (.const x) d
+:=
+  fun _ _ isSat => isSat.cinsSat ⟨rfl, rfl⟩
+
+def Cause.IsWeakCauseFv.constElim {fv x d}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCause (.const x) d)
+  (isCause: cause.IsWeakCauseFv fv (.const x) d)
 :
   cause.cins x d
 :=
@@ -252,12 +267,38 @@ def Cause.IsWeakCauseFv.constElim {x d}
     let isSat := cause.maximalValsApxAreSat
     notInCins (isCause isSat)
 
-def Cause.IsWeakCauseFv.noneElim {d}
+def Cause.IsStrongCauseFv.const {fv x d}:
+  IsStrongCauseFv (Cause.const x d) fv (.const x) d
+:=
+  fun _ _ isSat => isSat.cinsSat ⟨rfl, rfl⟩
+
+def Cause.IsStrongCauseFv.constElim {fv x d}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCause (.none) d)
+  (isCause: cause.IsStrongCauseFv fv (.const x) d)
+:
+  cause.cins x d
+:=
+  byContradiction fun notInCins =>
+    let isSat := cause.leastValsApxAreSat
+    notInCins (isCause isSat)
+
+
+def Cause.IsWeakCauseFv.noneElim {fv d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv (.none) d)
   {P: Prop}
 :
   P
 :=
   SingleLaneExpr.inNoneElim
     (isCause cause.maximalValsApxAreSat)
+
+def Cause.IsStrongCauseFv.noneElim {fv d}
+  {cause: Cause Pair}
+  (isCause: cause.IsStrongCauseFv fv (.none) d)
+  {P: Prop}
+:
+  P
+:=
+  SingleLaneExpr.inNoneElim
+    (isCause cause.leastValsApxAreSat)

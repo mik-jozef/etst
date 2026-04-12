@@ -7,56 +7,56 @@ open SingleLaneExpr
 
 def IsInappExtIh
   (dl: DefList)
-  (outSet: Nat → Set Pair)
+  (extCycle: Nat → Set Pair)
   (externalCause: Cause Pair)
 :
   Prop
 :=
-  externalCause.IsInapplicable outSet fun x d =>
+  externalCause.IsInapplicable extCycle fun xExt dExt =>
     {n fv expr dInt: _} →
-    x = uniSetMapDl.consts.uniSetMap →
-    d = .pair (uniSetMapIndex dl n fv expr) dInt →
+    xExt = consts.uniSetMap →
+    dExt = .pair (uniSetMapIndex dl n fv expr) dInt →
     ((dl.prefix n).triIntp fv expr).defMem dInt
 
 def intOfExtCycle
   (dl: DefList)
   (n: Nat)
   (extCycle: Nat → Set Pair)
-  (x: Nat)
-  (d: Pair)
+  (xInt: Nat)
+  (dInt: Pair)
 :
   Prop
 :=
   Or
     (extCycle
-      uniSetMapDl.consts.uniSetMap
-      (.pair (uniSetMapIndexDef dl n x) d))
-    (¬ x < n)
+      consts.uniSetMap
+      (.pair (uniSetMapIndexDef dl n xInt) dInt))
+    (¬ xInt < n)
 
 def allInternalInapp {dl n fv d expr}
   {extCycle: Nat → Set Pair}
   (extIsEmpty:
     ∀ {x d},
       extCycle x d →
-      (cause: Cause Pair) →
-      cause.IsWeakCause (uniSetMapDl.getDef x) d →
-      uniSetMapDl.IsCauseInapplicable extCycle cause)
+      (extCause: Cause Pair) →
+      extCause.IsWeakCause (uniSetMapDl.getDef x) d →
+      uniSetMapDl.IsCauseInapplicable extCycle extCause)
   (everyCauseInapp:
     ∀ {x d},
       extCycle x d →
-      (cause: Cause Pair) →
-      cause.IsWeakCause (uniSetMapDl.getDef x) d →
-      IsInappExtIh dl extCycle cause)
+      (extCause: Cause Pair) →
+      extCause.IsWeakCause (uniSetMapDl.getDef x) d →
+      IsInappExtIh dl extCycle extCause)
   (inExtCycle:
     extCycle
-      uniSetMapDl.consts.uniSetMap
+      consts.uniSetMap
       (.pair (uniSetMapIndex dl n fv expr) d))
-  (cause : Cause Pair)
-  (isCause: cause.IsWeakCauseFv fv expr d)
+  (intCause : Cause Pair)
+  (intIsCause: intCause.IsWeakCauseFv fv expr d)
 :
   (dl.prefix n).IsCauseInapplicableExtended
     (intOfExtCycle dl n extCycle)
-    cause
+    intCause
 :=
   match expr with
   | .const x =>
@@ -71,17 +71,17 @@ def allInternalInapp {dl n fv d expr}
       | .blockedCins (d:=dd) (x:=xx) (Or.inr ⟨xEq, dEq⟩) inCycle =>
         let inCycle:
           extCycle
-            uniSetMapDl.consts.uniSetMap
+            consts.uniSetMap
             (.pair (uniSetMapIndexDef dl n x) d)
         :=
           xEq ▸ dEq ▸ inCycle
         let intCycle x d :=
           extCycle
-            uniSetMapDl.consts.uniSetMap
+            consts.uniSetMap
             (.pair (uniSetMapIndex dl n fv (.const x)) d)
-        .blockedCinsCycle isCause.constElim (Or.inl inCycle)
+        .blockedCinsCycle intIsCause.constElim (Or.inl inCycle)
     else
-      .blockedCinsCycle isCause.constElim (Or.inr h)
+      .blockedCinsCycle intIsCause.constElim (Or.inr h)
   | .var _ => sorry
   | .null => sorry
   | .pair _ _ => sorry
@@ -92,7 +92,7 @@ def allInternalInapp {dl n fv d expr}
     match isExtInapp with
     | .blockedBout (d:=dd) (x:=xx) ⟨xEq, dEq⟩ isDefFn =>
       let isDef := not_not_intro (isDefFn xEq dEq)
-      let isInapp := isCause.isInapplicableOfIsNonmember isDef
+      let isInapp := intIsCause.isInapplicableOfIsNonmember isDef
       match isInapp with
       | .blockedCins inCins notPos =>
         .blockedCinsOut inCins (DefList.Out.isComplete notPos)
@@ -114,7 +114,7 @@ def allInternalInapp {dl n fv d expr}
 mutual
 def externalInsElimHelper {dl n fv index cst expr p}
   (ins: uniSetMapDl.Ins cst index)
-  (cstEq: cst = uniSetMapDl.consts.uniSetMap)
+  (cstEq: cst = consts.uniSetMap)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
 :
 (expr.triIntp fv (dl.prefix n).wfm).defMem p
@@ -122,45 +122,39 @@ def externalInsElimHelper {dl n fv index cst expr p}
   match ins with
   | .intro _ _ cause isCause cinsSat boutSat =>
     let ins := isCause cause.leastValsApxAreSat
-    let ⟨dlEnc, ins⟩ := inArbUnElim (cstEq ▸ indexEq ▸ ins)
-    let ⟨fvEnc, ins⟩ := inArbUnElim ins
-    let ⟨exprEnc, ins⟩ := inArbUnElim ins
-    let ⟨insEnc, insList⟩ := inPairElim ins
-    let ⟨dlEncEq, fvEncEq, exprEncEq⟩ :=
-      let ⟨insDl, ins⟩ := inPairElim insEnc
-      let ⟨insFv, insExpr⟩ := inPairElim ins
-      And.intro
-        (inVarElim insDl rfl)
-        (And.intro
-          (inVarElim insFv rfl)
-          (inVarElim insExpr rfl))
-    
+    -- TODO Lean, why can't I call `isAtOfInsDef` once before the match?
+    let IsAt :=
+      InUniSetMapAt dl n fv cause.leastBackgroundApx cause.leastContextApx
     match expr with
     | .const x =>
-      let insList := dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insList
+      let insList: IsAt _ .defLane p :=
+        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let inCins := isAtElimConst insList cinsSat
       let ih := externalInsElimHelper (cinsSat inCins) rfl rfl
       InWfm.of_in_def_no_fv (lane := .defLane) ih
     | .var x =>
-      let insList := dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insList
+      let insList: IsAt _ .defLane p :=
+        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       isAtElimVar insList cinsSat
     | .null => sorry
     | .pair _ _ => sorry
     | .ir _ _ => sorry
     | .full _ => sorry
     | .compl _ =>
-      let insList := dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insList
+      let insList: IsAt _ .defLane p :=
+        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let inBout := boutSat (isAtElimCompl insList).dne
       externalOutElimHelper inBout rfl rfl
     | .arbIr _ =>
-      let insList := dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ insList
+      let insList: IsAt _ .defLane p :=
+        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       inArbIr fun dX =>
         let insBody := cinsSat (isAtElimArbIr insList dX)
         externalInsElimHelper insBody rfl rfl
 
 def externalOutElimHelper {dl n fv index cst expr p}
   (out: uniSetMapDl.Out cst index)
-  (cstEq: cst = uniSetMapDl.consts.uniSetMap)
+  (cstEq: cst = consts.uniSetMap)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
 :
   ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
@@ -214,7 +208,7 @@ end
 def externalInsElim {dl n fv expr p}
   (ins:
     uniSetMapDl.Ins
-      uniSetMapDl.consts.uniSetMap
+      consts.uniSetMap
       (.pair (uniSetMapIndex dl n fv expr) p))
 :
   (expr.triIntp fv (dl.prefix n).wfm).defMem p
@@ -224,7 +218,7 @@ def externalInsElim {dl n fv expr p}
 def externalOutElim {dl n fv expr p}
   (out:
     uniSetMapDl.Out
-      uniSetMapDl.consts.uniSetMap
+      consts.uniSetMap
       (.pair (uniSetMapIndex dl n fv expr) p))
 :
   ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p

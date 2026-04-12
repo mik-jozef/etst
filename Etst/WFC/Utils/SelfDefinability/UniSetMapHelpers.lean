@@ -34,6 +34,32 @@ def exprGuardElimUnary {i iEnc encRest fv0 fvRest b c p}
     eqRest.symm.trans (inVarElim insVar rfl)
 
 
+def isAtOfInsDef {dl n fv b c lane expr p}
+  (ins:
+    ((uniSetMapDl.getDef consts.uniSetMap).toLane lane).intp2
+      []
+      b
+      c
+      (.pair (uniSetMapIndex dl n fv expr) p))
+:
+  InUniSetMapAt dl n fv b c expr lane p
+:=
+  let ⟨dlEnc, ins⟩ := inArbUnElim ins
+  let ⟨fvEnc, ins⟩ := inArbUnElim ins
+  let ⟨exprEnc, ins⟩ := inArbUnElim ins
+  let ⟨insEnc, insAt⟩ := inPairElim ins
+  let ⟨dlEncEq, fvEncEq, exprEncEq⟩ :=
+    let ⟨insDl, ins⟩ := inPairElim insEnc
+    let ⟨insFv, insExpr⟩ := inPairElim ins
+    And.intro
+      (inVarElim insDl rfl)
+      (And.intro
+        (inVarElim insFv rfl)
+        (inVarElim insExpr rfl))
+  by
+  unfold InUniSetMapAt
+  exact dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ inToggle2Elim 3 insAt
+
 -- ## Section: Non-matching expression encoding eliminators
 -----------------------------------------------------------
 
@@ -222,7 +248,7 @@ def isAtElimConst {dl n fv b c lane x p}
   (ins: InUniSetMapAt dl n fv b c (.const x) lane p)
   (cinsSat: (∀ {x d}, d ∈ (c x).getLane lane → uniSetMapDl.Ins x d))
 :
-  (c uniSetMapDl.consts.uniSetMap).getLane
+  (c consts.uniSetMap).getLane
     lane
     (.pair (uniSetMapIndexDef dl n x) p)
 :=
@@ -246,7 +272,7 @@ def isAtElimConst {dl n fv b c lane x p}
         (cinsSat (inToggle2Elim 8 insDefX)).isSound
       let exprAliasEq :=
         dl.prefixList_at_eq n x ▸
-        uniSetMapDl.getNthElimD
+        getNthElimD
           (show intp (const .defLane 0) _ _ _
           from xEncEq ▸ insGetDef)
       by
@@ -289,7 +315,7 @@ def isAtElimVar {dl n fv b c lane x p}
     let ins := inCallElimSingle ins rfl
     let ins := xEncEq ▸ inToggle2Elim 7 ins
     let ins := (cinsSat ins).isSound
-    inVar (uniSetMapDl.getNthElim (lane:=.defLane) ins)
+    inVar (getNthElim (lane:=.defLane) ins)
   (inUnElim ins).elim
     (isAtElimConstNope · (by decide))
     (fun ins =>
@@ -321,7 +347,7 @@ def isAtElimCompl {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.compl body) lane p)
 :
   Not
-    ((b uniSetMapDl.consts.uniSetMap).getLane
+    ((b consts.uniSetMap).getLane
       lane.toggle
       (.pair (uniSetMapIndex dl n fv body) p))
 :=
@@ -358,7 +384,7 @@ def isAtElimArbIr {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.arbIr body) lane p)
 :
   ∀ dX,
-    (c uniSetMapDl.consts.uniSetMap).getLane
+    (c consts.uniSetMap).getLane
       lane
       (.pair (uniSetMapIndex dl n (dX :: fv) body) p)
 :=
@@ -428,9 +454,7 @@ def isInMap {dl n fv b c expr lane p}
   (isAt: InUniSetMapAt dl n fv b c expr lane p)
 :
   intp2
-    (BasicExpr.toLane
-      (uniSetMapDl.getDef uniSetMapDl.consts.uniSetMap)
-      lane)
+    ((uniSetMapDl.getDef consts.uniSetMap).toLane lane)
     fv
     b
     c
@@ -448,13 +472,11 @@ def isInMap {dl n fv b c expr lane p}
 
 def isAtConst {dl n fv b c x lane p}
   (ins:
-    (c uniSetMapDl.consts.uniSetMap).getLane
+    (c consts.uniSetMap).getLane
       lane
       (.pair (uniSetMapIndexDef dl n x) p))
   (insGetNth:
-    (c uniSetMapDl.consts.getNth).getLane
-      lane
-      (uniSetMapDl.getNthEnc dl n x))
+    (c consts.getNth).getLane lane (getNthEnc dl n x))
 :
   InUniSetMapAt dl n fv b c (.const x) lane p
 :=
@@ -478,7 +500,7 @@ def isAtConst {dl n fv b c x lane p}
 def isAtCompl {dl n fv b c body lane p}
   (out:
     Not
-      ((b uniSetMapDl.consts.uniSetMap).getLane
+      ((b consts.uniSetMap).getLane
         lane.toggle
         (.pair (uniSetMapIndex dl n fv body) p)))
 :
@@ -530,10 +552,10 @@ def causeConst
     let expr := (dl.prefix n).getDef xInt
     Or
       (And
-        (xExt = uniSetMapDl.consts.getNth)
-        (dExt = uniSetMapDl.getNthEnc dl n xInt))
+        (xExt = consts.getNth)
+        (dExt = getNthEnc dl n xInt))
       (And
-        (xExt = uniSetMapDl.consts.uniSetMap)
+        (xExt = consts.uniSetMap)
         (dExt = .pair (uniSetMapIndex dl n [] expr) dInt))
   bout _ := {}
 }
@@ -550,13 +572,14 @@ def causeCompl
   cins _ := {}
   bout xExt dExt:=
     And
-      (xExt = uniSetMapDl.consts.uniSetMap)
+      (xExt = consts.uniSetMap)
       (dExt = .pair (uniSetMapIndex dl n fv body) dInt)
 }
 
+
 def isWeakCauseConst {dl n fv x d}:
   (causeConst dl n x d).IsWeakCause
-    (uniSetMapDl.getDef uniSetMapDl.consts.uniSetMap)
+    (uniSetMapDl.getDef consts.uniSetMap)
     (.pair (uniSetMapIndex dl n fv (.const x)) d)
 :=
   fun _ _ isSat =>
@@ -566,7 +589,7 @@ def isWeakCauseConst {dl n fv x d}:
 
 def isWeakCauseCompl {dl n fv body d}:
   (causeCompl dl n fv body d).IsWeakCause
-    (uniSetMapDl.getDef uniSetMapDl.consts.uniSetMap)
+    (uniSetMapDl.getDef consts.uniSetMap)
     (.pair (uniSetMapIndex dl n fv (.compl body)) d)
 :=
   fun _ _ isSat =>
