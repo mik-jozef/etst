@@ -246,7 +246,10 @@ def isAtArbIrNope {fv b c lane i enc p}
 
 def isAtConstElim {dl n fv b c lane x p}
   (ins: InUniSetMapAt dl n fv b c (.const x) lane p)
-  (cinsSat: (∀ {x d}, d ∈ (c x).getLane lane → uniSetMapDl.Ins x d))
+  (getNthSat:
+    ∀ {list i valEnc},
+      (c consts.getNth).getLane lane (getNthEnc list i valEnc) →
+      (uniSetMapDl.wfm consts.getNth).defMem (getNthEnc list i valEnc))
 :
   (c consts.uniSetMap).getLane
     lane
@@ -268,13 +271,12 @@ def isAtConstElim {dl n fv b c lane x p}
         inNullElim insFvAlias
       let insDefX := inCallElimSingle insDefX rfl
       let insDefX := inCallElimSingle insDefX rfl
-      let insGetDef :=
-        (cinsSat (inToggle2Elim 8 insDefX)).isSound
+      let insDefX: (getNthConst.toLane lane).intp2 _ _ _ _ :=
+        inToggle2Elim 8 (xEncEq ▸ insDefX)
+      let insGetDef := getNthSat insDefX
       let exprAliasEq :=
         dl.prefixList_at_eq n x ▸
-        getNthElimD
-          (show intp (const .defLane 0) _ _ _
-          from xEncEq ▸ insGetDef)
+        getNthElimD (lane := .defLane) insGetDef
       by
       unfold uniSetMapIndexDef uniSetMapIndex
       exact
@@ -313,8 +315,9 @@ def isAtVarElim {dl n fv b c lane x p}
     let xEncEq := exprGuardElimUnary insExprGuard
     let ins := inCallElimSingle ins rfl
     let ins := inCallElimSingle ins rfl
-    let ins := xEncEq ▸ inToggle2Elim 7 ins
+    let ins := inToggle2Elim 7 ins
     let ins := (cinsSat ins).isSound
+    let ins := by rw [← xEncEq] at ins; exact ins
     inVar (getNthElim (lane:=.defLane) ins)
   (inUnElim ins).elim
     (isAtConstNope · (by decide))
@@ -476,7 +479,7 @@ def isAtConst {dl n fv b c x lane p}
       lane
       (.pair (uniSetMapIndexDef dl n x) p))
   (insGetNth:
-    (c consts.getNth).getLane lane (getNthEnc dl n x))
+    (c consts.getNth).getLane lane (getDefNthEnc dl n x))
 :
   InUniSetMapAt dl n fv b c (.const x) lane p
 :=
@@ -553,7 +556,7 @@ def causeConst
     Or
       (And
         (xExt = consts.getNth)
-        (dExt = getNthEnc dl n xInt))
+        (dExt = getDefNthEnc dl n xInt))
       (And
         (xExt = consts.uniSetMap)
         (dExt = .pair (uniSetMapIndex dl n [] expr) dInt))

@@ -66,7 +66,7 @@ def allInternalInapp {dl n fv d expr}
       | .blockedCins (d:=dd) (x:=xx) (Or.inl ⟨xEq, dEq⟩) inCycle =>
         let out := DefList.Out.intro extCycle extIsEmpty inCycle
         let insGetNth :=
-          uniSetMapDl.getNthDl (lane:=.posLane) (fv:=[]) h
+          uniSetMapDl.getNthDl (lane:=.posLane) h
         False.elim (out.isSound (xEq ▸ dEq ▸ insGetNth))
       | .blockedCins (d:=dd) (x:=xx) (Or.inr ⟨xEq, dEq⟩) inCycle =>
         let inCycle:
@@ -129,7 +129,7 @@ def externalInsElimHelper {dl n fv index cst expr p}
     | .const x =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      let inCins := isAtConstElim insList cinsSat
+      let inCins := isAtConstElim insList (DefList.Ins.isSound ∘ cinsSat)
       let ih := externalInsElimHelper (cinsSat inCins) rfl rfl
       InWfm.of_in_def_no_fv (lane := .defLane) ih
     | .var x =>

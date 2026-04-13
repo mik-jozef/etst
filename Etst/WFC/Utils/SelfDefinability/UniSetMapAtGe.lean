@@ -92,7 +92,7 @@ def internalCauseElim {dl n fv expr p}
       -- whitespace sensitive parsing would still be unambiguous.
       byContradiction fun nLt =>
       ninNone (dl.prefix_none_at nLt ▸ inIntDef)
-    let insGetNth := getNthDl (fv:=[]) xLt
+    let insGetNth := getNthDl xLt
     let isAt := isAtConst (lane := .defLane) inDefExt insGetNth
     InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
   | .var x => sorry
@@ -123,13 +123,28 @@ def allCausesInappElim {dl n fv intCycle expr p}
 :=
   match expr with
   | .const x =>
+    byContradiction fun isApplicable =>
     let isAt := isAtOfInsDef (isCause (extCause.maximalValsApxAreSat))
-    let isAtDef := isAtConstElim (lane := .defLane) isAt sorry
+    let isAtDef :=
+      isAtConstElim
+        (lane := .defLane)
+        isAt
+        (fun inCins =>
+          byContradiction fun notDef =>
+          let out :=
+            DefList.Out.isComplete
+              (Function.comp
+                notDef
+                (getNthLaneSwap
+                  (laneA := .posLane)
+                  (laneB := .defLane)))
+          isApplicable (.blockedCinsOut inCins out))
     match allInapp Cause.IsWeakCauseFv.const with
     | .blockedCins ⟨xEq, dEq⟩ inCycle =>
       let allInapp intCause :=
         intCauseInappIh (xEq ▸ dEq ▸ inCycle) (intCause := intCause)
-      .blockedCinsCycle isAtDef ⟨rfl, ⟨_, _, _, allInapp _, rfl⟩⟩
+      let isInExtCycle := ⟨rfl, ⟨_, _, _, allInapp _, rfl⟩⟩
+      isApplicable (.blockedCinsCycle isAtDef isInExtCycle)
   | .var x => sorry
   | .null => sorry
   | .pair _ _ => sorry

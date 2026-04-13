@@ -293,25 +293,43 @@ def uniSetMapAt
 
 
 namespace uniSetMapDl
-  def getNth {list fv x lane}
-    (lt: x < list.length)
+  def getNthEnc
+    (list: List Pair)
+    (i: Nat)
+    (valEnc: Pair)
   :
-    intp
-      (const lane consts.getNth)
-      fv
-      uniSetMapDl.wfm
-      (.pair (.listEncoding list) (.pair (.nat x) list[x]))
+    Pair
+  :=
+    .pair (.listEncoding list) (.pair (.nat i) valEnc)
+  
+  def getDefNthEnc
+    (dl: DefList)
+    (n i: Nat)
+  :
+    Pair
+  :=
+    getNthEnc
+      (dl.prefixList 0 n)
+      i
+      ((dl.prefix n).getDef i).encoding
+  
+  def getNth {list i lane}
+    (lt: i < list.length)
+  :
+    (uniSetMapDl.wfm consts.getNth).getLane
+      lane
+      (getNthEnc list i list[i])
   :=
     match list with
     | listH :: listT =>
       let ins :=
-        match x with
+        match i with
         | 0 => inUnL (inPair (inPair rfl rfl) (inPair (inNat 0) rfl))
-        | xPred + 1 =>
+        | iPred + 1 =>
           let ih := getNth (Nat.lt_of_succ_lt_succ lt)
           inUnR
             (inArbUn
-              xPred
+              iPred
               (inPair
                 (inPair rfl rfl)
                 (inPair
@@ -324,37 +342,24 @@ namespace uniSetMapDl
             (.listEncoding listT)
             ins))
   
-  def getNthEnc
-    (dl: DefList)
-    (n x: Nat)
+  def getNthDl {dl n i lane}
+    (lt: i < n)
   :
-    Pair
-  :=
-    .pair
-      (dl.prefixEncoding n)
-      (.pair (.nat x) ((dl.prefix n).getDef x).encoding)
-  
-  def getNthDl {dl n fv x lane}
-    (lt: x < n)
-  :
-    (const lane consts.getNth).intp
-      fv
-      uniSetMapDl.wfm
-      (getNthEnc dl n x)
+    (uniSetMapDl.wfm consts.getNth).getLane
+      lane
+      (getDefNthEnc dl n i)
   := by
     let lt := (dl.prefixList_length_eq 0 n).symm ▸ lt
-    unfold getNthEnc
-    rw [←dl.prefixList_at_eq n x]
+    unfold getDefNthEnc
+    rw [←dl.prefixList_at_eq n i]
     rw [(List.getElem?_eq_some_getElem_iff lt).mpr trivial]
-    exact getNth (x:=x) lt
+    exact getNth (i:=i) lt
   
   def getNthElim {list i valEnc lane}
     (inGetDef:
-      intp
-        (const lane consts.getNth)
-        []
-        uniSetMapDl.wfm
-        (.pair (.listEncoding list) (.pair (.nat i) valEnc)))
+      (uniSetMapDl.wfm consts.getNth).getLane
+        lane
+        (getNthEnc list i valEnc))
   :
     list[i]? = valEnc
   :=
@@ -389,13 +394,40 @@ namespace uniSetMapDl
             getNthElim (tailEq ▸ iPredEq ▸ ins)
           ih)
   
+  def getNthElimLt {list i valEnc lane}
+    (inGetDef:
+      (uniSetMapDl.wfm consts.getNth).getLane
+        lane
+        (getNthEnc list i valEnc))
+  :
+    i < list.length
+  :=
+    let eqSome := getNthElim inGetDef
+    (List.getElem?_eq_some_iff.mp eqSome).choose
+  
+  def getNthLaneSwap {list i valEnc laneA laneB}
+    (inGetDef:
+      (uniSetMapDl.wfm consts.getNth).getLane
+        laneA
+        (getNthEnc list i valEnc))
+  :
+    (uniSetMapDl.wfm consts.getNth).getLane
+      laneB
+      (getNthEnc list i valEnc)
+  :=
+    let lt := getNthElimLt inGetDef
+    let valEq := getNthElim inGetDef
+    let eq := (List.getElem?_eq_some_getElem_iff lt).mpr trivial
+    have valEq: list[i] = valEnc := Option.some.inj (eq ▸ valEq)
+    valEq ▸ getNth lt
+  
   def getNthElimD {list i valEnc lane df}
     (inGetDef:
       intp
         (const lane consts.getNth)
         []
         uniSetMapDl.wfm
-        (.pair (.listEncoding list) (.pair (.nat i) valEnc)))
+        (getNthEnc list i valEnc))
   :
     list[i]?.getD df = valEnc
   :=
