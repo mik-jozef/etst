@@ -129,13 +129,13 @@ def externalInsElimHelper {dl n fv index cst expr p}
     | .const x =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      let inCins := isAtElimConst insList cinsSat
+      let inCins := isAtConstElim insList cinsSat
       let ih := externalInsElimHelper (cinsSat inCins) rfl rfl
       InWfm.of_in_def_no_fv (lane := .defLane) ih
     | .var x =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      isAtElimVar insList cinsSat
+      isAtVarElim insList cinsSat
     | .null => sorry
     | .pair _ _ => sorry
     | .ir _ _ => sorry
@@ -143,13 +143,13 @@ def externalInsElimHelper {dl n fv index cst expr p}
     | .compl _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      let inBout := boutSat (isAtElimCompl insList).dne
+      let inBout := boutSat (isAtComplElim insList).dne
       externalOutElimHelper inBout rfl rfl
     | .arbIr _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       inArbIr fun dX =>
-        let insBody := cinsSat (isAtElimArbIr insList dX)
+        let insBody := cinsSat (isAtArbIrElim insList dX)
         externalInsElimHelper insBody rfl rfl
 
 def externalOutElimHelper {dl n fv index cst expr p}
