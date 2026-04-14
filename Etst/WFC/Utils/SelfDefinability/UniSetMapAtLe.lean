@@ -126,20 +126,39 @@ def externalInsElimHelper {dl n fv index cst expr p}
     let IsAt :=
       InUniSetMapAt dl n fv cause.leastBackgroundApx cause.leastContextApx
     match expr with
-    | .const x =>
+    | .const _x =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let inCins := isAtConstElim insList (DefList.Ins.isSound ∘ cinsSat)
       let ih := externalInsElimHelper (cinsSat inCins) rfl rfl
       InWfm.of_in_def_no_fv (lane := .defLane) ih
-    | .var x =>
+    | .var _x =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       isAtVarElim insList cinsSat
-    | .null => sorry
-    | .pair _ _ => sorry
-    | .ir _ _ => sorry
-    | .full _ => sorry
+    | .null =>
+      let insList: IsAt _ .defLane p :=
+        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
+      isAtNullElim insList
+    | .pair _left _rite =>
+      let insList: IsAt _ .defLane p :=
+        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
+      let ⟨_pL, _pR, eqP, inLeft, inRite⟩ := isAtPairElim insList
+      let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl
+      let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl
+      eqP ▸ inPair ihL ihR
+    | .ir _left _rite =>
+      let insList: IsAt _ .defLane p :=
+        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
+      let ⟨inLeft, inRite⟩ := isAtIrElim insList
+      let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl
+      let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl
+      And.intro ihL ihR
+    | .full _body =>
+      let insList: IsAt _ .defLane p :=
+        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
+      fun dB =>
+        externalInsElimHelper (cinsSat (isAtFullElim insList dB)) rfl rfl
     | .compl _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
@@ -194,7 +213,7 @@ def externalOutElimHelper {dl n fv index cst expr p}
             | Or.inl inCycle =>
               allInternalInapp extIsEmpty everyCauseInapp inCycle
             | Or.inr xNotLt =>
-              fun cause isCause =>
+              fun _ isCause =>
                 let isCause :=
                   DefList.prefix_none_at xNotLt ▸ isCause
                 isCause.noneElim)
