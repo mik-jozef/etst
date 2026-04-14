@@ -174,6 +174,42 @@ def isAtArbIrNope {fv b c lane i enc p}
   let ⟨insExprGuard, _⟩ := inIrElim ins
   isAtIndexNope insExprGuard rfl (inNatElim (n := 7)) indexNeq
 
+def exprEncListElim {fv b c lane p}
+  {P: Prop}
+  (ins: (exprEncList.toLane lane).intp2 fv b c p)
+  (onConst: (exprEncConst.toLane (toggle2N lane 1)).intp2 fv b c p → P)
+  (onVar: (exprEncVar.toLane (toggle2N lane 2)).intp2 fv b c p → P)
+  (onNull: (exprEncNull.toLane (toggle2N lane 3)).intp2 fv b c p → P)
+  (onPair: (exprEncPair.toLane (toggle2N lane 4)).intp2 fv b c p → P)
+  (onIr: (exprEncIr.toLane (toggle2N lane 5)).intp2 fv b c p → P)
+  (onFull: (exprEncFull.toLane (toggle2N lane 6)).intp2 fv b c p → P)
+  (onCompl: (exprEncCompl.toLane (toggle2N lane 7)).intp2 fv b c p → P)
+  (onArbIr: (exprEncArbIr.toLane (toggle2N lane 7)).intp2 fv b c p → P)
+:
+  P
+:=
+  match inUnElim ins with
+  | Or.inl ins => onConst ins
+  | Or.inr ins =>
+  match inUnElim ins with
+  | Or.inl ins => onVar ins
+  | Or.inr ins =>
+  match inUnElim ins with
+  | Or.inl ins => onNull ins
+  | Or.inr ins =>
+  match inUnElim ins with
+  | Or.inl ins => onPair ins
+  | Or.inr ins =>
+  match inUnElim ins with
+  | Or.inl ins => onIr ins
+  | Or.inr ins =>
+  match inUnElim ins with
+  | Or.inl ins => onFull ins
+  | Or.inr ins =>
+  match inUnElim ins with
+  | Or.inl ins => onCompl ins
+  | Or.inr ins => onArbIr ins
+
 
 /-
   ## Section: Matching expression encoding eliminators
@@ -297,27 +333,16 @@ def isAtConstElim {dl n fv b c lane x p}
       unfold uniSetMapIndexDef uniSetMapIndex
       exact
         exprAliasEq ▸ eqFvAlias ▸ eqDlAlias ▸ inToggle2Elim 4 inMap
-  (inUnElim ins).elim
+  exprEncListElim
+    ins
     main
-    (fun ins =>
-      (inUnElim ins).elim
-        (isAtVarNope · (by decide))
-        (fun ins =>
-          (inUnElim ins).elim
-            (isAtNullNope · (by decide))
-            (fun ins =>
-              (inUnElim ins).elim
-                (isAtPairNope · (by decide))
-                (fun ins =>
-                  (inUnElim ins).elim
-                    (isAtIrNope · (by decide))
-                    (fun ins =>
-                      (inUnElim ins).elim
-                        (isAtFullNope · (by decide))
-                        (fun ins =>
-                          (inUnElim ins).elim
-                            (isAtComplNope · (by decide))
-                            (isAtArbIrNope · (by decide))))))))
+    (isAtVarNope · (by decide))
+    (isAtNullNope · (by decide))
+    (isAtPairNope · (by decide))
+    (isAtIrNope · (by decide))
+    (isAtFullNope · (by decide))
+    (isAtComplNope · (by decide))
+    (isAtArbIrNope · (by decide))
 
 def isAtVarElim {dl n fv b c lane x p}
   (ins: InUniSetMapAt dl n fv b c (.var x) lane p)
@@ -335,27 +360,16 @@ def isAtVarElim {dl n fv b c lane x p}
     let ins := (cinsSat ins).isSound
     let ins := by rw [← xEncEq] at ins; exact ins
     inVar (getNthElim (lane:=.defLane) ins)
-  (inUnElim ins).elim
+  exprEncListElim
+    ins
     (isAtConstNope · (by decide))
-    (fun ins =>
-      (inUnElim ins).elim
-        main
-        (fun ins =>
-          (inUnElim ins).elim
-            (isAtNullNope · (by decide))
-            (fun ins =>
-              (inUnElim ins).elim
-                (isAtPairNope · (by decide))
-                (fun ins =>
-                  (inUnElim ins).elim
-                    (isAtIrNope · (by decide))
-                    (fun ins =>
-                      (inUnElim ins).elim
-                        (isAtFullNope · (by decide))
-                        (fun ins =>
-                          (inUnElim ins).elim
-                            (isAtComplNope · (by decide))
-                            (isAtArbIrNope · (by decide))))))))
+    main
+    (isAtNullNope · (by decide))
+    (isAtPairNope · (by decide))
+    (isAtIrNope · (by decide))
+    (isAtFullNope · (by decide))
+    (isAtComplNope · (by decide))
+    (isAtArbIrNope · (by decide))
 
 def isAtNullElim {dl n fv b c lane p}
   (ins: InUniSetMapAt dl n fv b c .null lane p)
@@ -366,27 +380,16 @@ def isAtNullElim {dl n fv b c lane p}
     let ⟨_insExprGuard, insBody⟩ := inIrElim ins
     let eqP := inNullElim insBody
     eqP ▸ inNull
-  (inUnElim ins).elim
+  exprEncListElim
+    ins
     (isAtConstNope · (by decide))
-    (fun ins =>
-      (inUnElim ins).elim
-        (isAtVarNope · (by decide))
-        (fun ins =>
-          (inUnElim ins).elim
-            main
-            (fun ins =>
-              (inUnElim ins).elim
-                (isAtPairNope · (by decide))
-                (fun ins =>
-                  (inUnElim ins).elim
-                    (isAtIrNope · (by decide))
-                    (fun ins =>
-                      (inUnElim ins).elim
-                        (isAtFullNope · (by decide))
-                        (fun ins =>
-                          (inUnElim ins).elim
-                            (isAtComplNope · (by decide))
-                            (isAtArbIrNope · (by decide))))))))
+    (isAtVarNope · (by decide))
+    main
+    (isAtPairNope · (by decide))
+    (isAtIrNope · (by decide))
+    (isAtFullNope · (by decide))
+    (isAtComplNope · (by decide))
+    (isAtArbIrNope · (by decide))
 
 def isAtPairElim {dl n fv b c left rite lane p}
   (ins: InUniSetMapAt dl n fv b c (.pair left rite) lane p)
@@ -416,27 +419,16 @@ def isAtPairElim {dl n fv b c left rite lane p}
       (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
     
     ⟨pL, pR, eqP, insLeftAlias, insRiteAlias⟩
-  (inUnElim ins).elim
+  exprEncListElim
+    ins
     (isAtConstNope · (by decide))
-    (fun ins =>
-      (inUnElim ins).elim
-        (isAtVarNope · (by decide))
-        (fun ins =>
-          (inUnElim ins).elim
-            (isAtNullNope · (by decide))
-            (fun ins =>
-              (inUnElim ins).elim
-                main
-                (fun ins =>
-                  (inUnElim ins).elim
-                    (isAtIrNope · (by decide))
-                    (fun ins =>
-                      (inUnElim ins).elim
-                        (isAtFullNope · (by decide))
-                        (fun ins =>
-                          (inUnElim ins).elim
-                            (isAtComplNope · (by decide))
-                            (isAtArbIrNope · (by decide))))))))
+    (isAtVarNope · (by decide))
+    (isAtNullNope · (by decide))
+    main
+    (isAtIrNope · (by decide))
+    (isAtFullNope · (by decide))
+    (isAtComplNope · (by decide))
+    (isAtArbIrNope · (by decide))
 
 def isAtIrElim {dl n fv b c left rite lane p}
   (ins: InUniSetMapAt dl n fv b c (.ir left rite) lane p)
@@ -461,27 +453,16 @@ def isAtIrElim {dl n fv b c left rite lane p}
       (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
 
     ⟨insLeftAlias, insRiteAlias⟩
-  (inUnElim ins).elim
+  exprEncListElim
+    ins
     (isAtConstNope · (by decide))
-    (fun ins =>
-      (inUnElim ins).elim
-        (isAtVarNope · (by decide))
-        (fun ins =>
-          (inUnElim ins).elim
-            (isAtNullNope · (by decide))
-            (fun ins =>
-              (inUnElim ins).elim
-                (isAtPairNope · (by decide))
-                (fun ins =>
-                  (inUnElim ins).elim
-                    main
-                    (fun ins =>
-                      (inUnElim ins).elim
-                        (isAtFullNope · (by decide))
-                        (fun ins =>
-                          (inUnElim ins).elim
-                            (isAtComplNope · (by decide))
-                            (isAtArbIrNope · (by decide))))))))
+    (isAtVarNope · (by decide))
+    (isAtNullNope · (by decide))
+    (isAtPairNope · (by decide))
+    main
+    (isAtFullNope · (by decide))
+    (isAtComplNope · (by decide))
+    (isAtArbIrNope · (by decide))
 def isAtFullElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.full body) lane p)
 :
@@ -499,28 +480,16 @@ def isAtFullElim {dl n fv b c body lane p}
     let ⟨pArg, inMap, inArg⟩ := inCallElim insArg
     singleCallElim 9 inMap inArg bodyEncEq
       (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
-  
-  (inUnElim ins).elim
+  exprEncListElim
+    ins
     (isAtConstNope · (by decide))
-    (fun ins =>
-      (inUnElim ins).elim
-        (isAtVarNope · (by decide))
-        (fun ins =>
-          (inUnElim ins).elim
-            (isAtNullNope · (by decide))
-            (fun ins =>
-              (inUnElim ins).elim
-                (isAtPairNope · (by decide))
-                (fun ins =>
-                  (inUnElim ins).elim
-                    (isAtIrNope · (by decide))
-                    (fun ins =>
-                      (inUnElim ins).elim
-                        main
-                        (fun ins =>
-                          (inUnElim ins).elim
-                            (isAtComplNope · (by decide))
-                            (isAtArbIrNope · (by decide))))))))
+    (isAtVarNope · (by decide))
+    (isAtNullNope · (by decide))
+    (isAtPairNope · (by decide))
+    (isAtIrNope · (by decide))
+    main
+    (isAtComplNope · (by decide))
+    (isAtArbIrNope · (by decide))
 
 def isAtComplElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.compl body) lane p)
@@ -537,27 +506,16 @@ def isAtComplElim {dl n fv b c body lane p}
     let insArg :=
       inPair (inVar rfl) (inPair (inVar rfl) (bodyEncEq ▸ rfl))
     inComplElim ins (inCall (inToggle2 10 insBody) insArg)
-  (inUnElim ins).elim
+  exprEncListElim
+    ins
     (isAtConstNope · (by decide))
-    (fun ins =>
-      (inUnElim ins).elim
-        (isAtVarNope · (by decide))
-        (fun ins =>
-          (inUnElim ins).elim
-            (isAtNullNope · (by decide))
-            (fun ins =>
-              (inUnElim ins).elim
-                (isAtPairNope · (by decide))
-                (fun ins =>
-                  (inUnElim ins).elim
-                    (isAtIrNope · (by decide))
-                    (fun ins =>
-                      (inUnElim ins).elim
-                        (isAtFullNope · (by decide))
-                        (fun ins =>
-                          (inUnElim ins).elim
-                            main
-                            (isAtArbIrNope · (by decide))))))))
+    (isAtVarNope · (by decide))
+    (isAtNullNope · (by decide))
+    (isAtPairNope · (by decide))
+    (isAtIrNope · (by decide))
+    (isAtFullNope · (by decide))
+    main
+    (isAtArbIrNope · (by decide))
 
 def isAtArbIrElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.arbIr body) lane p)
@@ -580,27 +538,16 @@ def isAtArbIrElim {dl n fv b c body lane p}
         let eqR := inVarElim hR rfl
         by rw [hEq, eqL, eqR]; rfl)
       (fun h => inVarElim h rfl)
-  (inUnElim ins).elim
+  exprEncListElim
+    ins
     (isAtConstNope · (by decide))
-    (fun ins =>
-      (inUnElim ins).elim
-        (isAtVarNope · (by decide))
-        (fun ins =>
-          (inUnElim ins).elim
-            (isAtNullNope · (by decide))
-            (fun ins =>
-              (inUnElim ins).elim
-                (isAtPairNope · (by decide))
-                (fun ins =>
-                  (inUnElim ins).elim
-                    (isAtIrNope · (by decide))
-                    (fun ins =>
-                      (inUnElim ins).elim
-                        (isAtFullNope · (by decide))
-                        (fun ins =>
-                          (inUnElim ins).elim
-                            (isAtComplNope · (by decide))
-                            main))))))
+    (isAtVarNope · (by decide))
+    (isAtNullNope · (by decide))
+    (isAtPairNope · (by decide))
+    (isAtIrNope · (by decide))
+    (isAtFullNope · (by decide))
+    (isAtComplNope · (by decide))
+    main
 
 
 /-
