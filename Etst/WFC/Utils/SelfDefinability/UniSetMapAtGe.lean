@@ -1,4 +1,5 @@
 import Etst.WFC.Utils.MembershipPs.OutIntro3
+import Etst.WFC.Utils.SelfDefinability.UniSetMapAtLe
 import Etst.WFC.Utils.SelfDefinability.UniSetMapHelpers
 
 namespace Etst.uniSetMapDl
@@ -74,7 +75,6 @@ mutual
 def internalCauseElim {dl n fv expr p}
   {intCause: Cause Pair}
   (intIsCause: intCause.IsStrongCauseFv fv expr p)
-  (cinsIns: ∀ {x d}, intCause.cins x d → ((dl.prefix n).wfm x).defMem d)
   (cinsIh: CinsIh dl n intCause)
   (boutIh: BoutIh dl n intCause)
 :
@@ -84,14 +84,13 @@ def internalCauseElim {dl n fv expr p}
   match expr with
   | .const x =>
     let inDefExt := cinsIh intIsCause.constElim
-    let inInt := cinsIns intIsCause.constElim
-    let inIntDef := InWfm.in_def_no_fv (lane := .defLane) inInt
     let xLt: x < n :=
       -- Indentation note: if you ever make your own linter, then not
-      -- indenting the `ninNone ...` is good actually, because even
+      -- indenting the function body is good actually, because even
       -- whitespace sensitive parsing would still be unambiguous.
       byContradiction fun nLt =>
-      ninNone (dl.prefix_none_at nLt ▸ inIntDef)
+      let inInt := externalInsElim (DefList.Ins.isComplete inDefExt)
+      ninNone (dl.prefix_none_at nLt ▸ inInt)
     let insGetNth := getNthDl xLt
     let isAt := isAtConst (lane := .defLane) inDefExt insGetNth
     InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
@@ -164,7 +163,6 @@ def internalInsElim {dl n x p}
   | .intro _ _ _ isCause cinsIns boutOut =>
     internalCauseElim
       isCause
-      (DefList.Ins.isSound ∘ cinsIns)
       (fun inCins => internalInsElim (cinsIns inCins))
       (fun inBout => internalOutElim (boutOut inBout))
 
@@ -216,7 +214,6 @@ def uniSetMapAt_ge
   defLe _ isDef :=
     internalCauseElim
       (Cause.IsStrongCauseFv.ofValDef isDef)
-      id
       (internalInsElim ∘ DefList.Ins.isComplete)
       (internalOutElim ∘ DefList.Out.isComplete)
   posLe _ isPos :=
