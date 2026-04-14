@@ -12,6 +12,173 @@ def InUniSetMapAt (dl n fv b c expr lane p) :=
   ]
   (exprEncList.toLane lane).intp2 vars b c p
 
+def isAtOfInsDef {dl n fv b c lane expr p}
+  (ins:
+    ((uniSetMapDl.getDef consts.uniSetMap).toLane lane).intp2
+      []
+      b
+      c
+      (.pair (uniSetMapIndex dl n fv expr) p))
+:
+  InUniSetMapAt dl n fv b c expr lane p
+:=
+  let ⟨dlEnc, ins⟩ := inArbUnElim ins
+  let ⟨fvEnc, ins⟩ := inArbUnElim ins
+  let ⟨exprEnc, ins⟩ := inArbUnElim ins
+  let ⟨insEnc, insAt⟩ := inPairElim ins
+  let ⟨dlEncEq, fvEncEq, exprEncEq⟩ :=
+    let ⟨insDl, ins⟩ := inPairElim insEnc
+    let ⟨insFv, insExpr⟩ := inPairElim ins
+    And.intro
+      (inVarElim insDl rfl)
+      (And.intro
+        (inVarElim insFv rfl)
+        (inVarElim insExpr rfl))
+  by
+  unfold InUniSetMapAt
+  exact dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ inToggle2Elim 3 insAt
+
+
+/-
+  ## Section: Non-matching expression encoding eliminators
+-/
+
+def isAtIndexNope
+  {actual expected enc fv b c p indexExpr restExpr aliasVar}
+  (insExprGuard:
+    let expr := .some (ir (pair indexExpr restExpr) (var aliasVar))
+    intp2 expr fv b c p)
+  (evalActual: fv[aliasVar]? = .some (.pair (.nat actual) enc))
+  (evalIndex:
+    ∀ {d},
+      indexExpr.intp2 fv b c d →
+      d = Pair.nat expected)
+  (indexNeq: actual ≠ expected)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
+  let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
+  match exprGuard with
+  | .null => inPairElimNope insGuardL
+  | .pair _ _ =>
+    let ⟨insNat, _⟩ := inPairElim insGuardL
+    let eqActual: _ = Pair.nat actual :=
+      Pair.noConfusion (inVarElim insGuardR evalActual) fun eq _ => eq
+    let eqExpected := evalIndex insNat
+    False.elim (indexNeq (Pair.nat_inj_eq (eqActual.symm.trans eqExpected)))
+
+def isAtConstNope {fv b c lane i enc p}
+  (ins:
+    (exprEncConst.toLane lane).intp2
+      (.pair (.nat i) enc :: fv) b c p)
+  (indexNeq: i ≠ 0)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 0)) indexNeq
+
+def isAtVarNope {fv b c lane i enc p}
+  (ins:
+    (exprEncVar.toLane lane).intp2
+      (.pair (.nat i) enc :: fv) b c p)
+  (indexNeq: i ≠ 1)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 1)) indexNeq
+
+def isAtNullNope {fv b c lane i enc p}
+  (ins:
+    (exprEncNull.toLane lane).intp2
+      (.pair (.nat i) enc :: fv) b c p)
+  (indexNeq: i ≠ 2)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 2)) indexNeq
+
+def isAtPairNope {fv b c lane i enc p}
+  (ins:
+    (exprEncPair.toLane lane).intp2
+      (.pair (.nat i) enc :: fv) b c p)
+  (indexNeq: i ≠ 3)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 3)) indexNeq
+
+def isAtIrNope {fv b c lane i enc p}
+  (ins:
+    (exprEncIr.toLane lane).intp2
+      (.pair (.nat i) enc :: fv) b c p)
+  (indexNeq: i ≠ 4)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 4)) indexNeq
+
+def isAtFullNope {fv b c lane i enc p}
+  (ins:
+    (exprEncFull.toLane lane).intp2
+      (.pair (.nat i) enc :: fv) b c p)
+  (indexNeq: i ≠ 5)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 5)) indexNeq
+
+def isAtComplNope {fv b c lane i enc p}
+  (ins:
+    (exprEncCompl.toLane lane).intp2
+      (.pair (.nat i) enc :: fv) b c p)
+  (indexNeq: i ≠ 6)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 6)) indexNeq
+
+def isAtArbIrNope {fv b c lane i enc p}
+  (ins:
+    (exprEncArbIr.toLane lane).intp2
+      (.pair (.nat i) enc :: fv) b c p)
+  (indexNeq: i ≠ 7)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 7)) indexNeq
+
+
+/-
+  ## Section: Matching expression encoding eliminators
+-/
+
 def exprGuardElimUnary {i iEnc encRest fv0 fvRest b c p}
   (ins:
     intp2
@@ -62,7 +229,6 @@ def exprGuardElimBinary {i iEnc encL encR fvRite fvLeft fvRest b c p}
         (eqL.symm.trans (inVarElim insLeft rfl))
         (eqR.symm.trans (inVarElim insRite rfl))
 
--- A helper for reducing repetition in the isAtXElim lemmas below.
 def singleCallElim
   {dl n fv b c expr lane p pArg fvRest eDl eFv eExpr exprEnc}
   (toggleCount)
@@ -93,219 +259,6 @@ def singleCallElim
     rw [←eqDlAlias, ←eqFvAlias, exprEncEq, ←eqExprAlias]
     exact inToggle2Elim toggleCount inMap
 
-
-def isAtOfInsDef {dl n fv b c lane expr p}
-  (ins:
-    ((uniSetMapDl.getDef consts.uniSetMap).toLane lane).intp2
-      []
-      b
-      c
-      (.pair (uniSetMapIndex dl n fv expr) p))
-:
-  InUniSetMapAt dl n fv b c expr lane p
-:=
-  let ⟨dlEnc, ins⟩ := inArbUnElim ins
-  let ⟨fvEnc, ins⟩ := inArbUnElim ins
-  let ⟨exprEnc, ins⟩ := inArbUnElim ins
-  let ⟨insEnc, insAt⟩ := inPairElim ins
-  let ⟨dlEncEq, fvEncEq, exprEncEq⟩ :=
-    let ⟨insDl, ins⟩ := inPairElim insEnc
-    let ⟨insFv, insExpr⟩ := inPairElim ins
-    And.intro
-      (inVarElim insDl rfl)
-      (And.intro
-        (inVarElim insFv rfl)
-        (inVarElim insExpr rfl))
-  by
-  unfold InUniSetMapAt
-  exact dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ inToggle2Elim 3 insAt
-
-
-/-
-  ## Section: Non-matching expression encoding eliminators
--/
-
-def isAtConstNope {fv b c lane i enc p}
-  (ins:
-    (exprEncConst.toLane lane).intp2
-      (.pair (.nat i) enc :: fv) b c p)
-  (indexNeq: i ≠ 0)
-  {P: Prop}
-:
-  P
-:=
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨insExprGuard, _⟩ := inIrElim ins
-  let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
-  let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
-  match exprGuard with
-  | .null => inPairElimNope insGuardL
-  | .pair _ _ =>
-    let ⟨insNat, _⟩ := inPairElim insGuardL
-    let eqI :=
-      Pair.noConfusion (inVarElim insGuardR rfl) fun eq _ => eq
-    let eqZero := inNatElim (n := 0) insNat
-    False.elim (indexNeq (Pair.nat_inj_eq (eqI.symm.trans eqZero)))
-
-def isAtVarNope {fv b c lane i enc p}
-  (ins:
-    (exprEncVar.toLane lane).intp2
-      (.pair (.nat i) enc :: fv) b c p)
-  (indexNeq: i ≠ 1)
-  {P: Prop}
-:
-  P
-:=
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨insExprGuard, _⟩ := inIrElim ins
-  let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
-  let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
-  match exprGuard with
-  | .null => inPairElimNope insGuardL
-  | .pair _ _ =>
-    let ⟨insNat, _⟩ := inPairElim insGuardL
-    let eqI :=
-      Pair.noConfusion (inVarElim insGuardR rfl) fun eq _ => eq
-    let eqOne := inNatElim (n := 1) insNat
-    False.elim (indexNeq (Pair.nat_inj_eq (eqI.symm.trans eqOne)))
-
-def isAtNullNope {fv b c lane i enc p}
-  (ins:
-    (exprEncNull.toLane lane).intp2
-      (.pair (.nat i) enc :: fv) b c p)
-  (indexNeq: i ≠ 2)
-  {P: Prop}
-:
-  P
-:=
-  let ⟨insExprGuard, _⟩ := inIrElim ins
-  let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
-  let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
-  match exprGuard with
-  | .null => inPairElimNope insGuardL
-  | .pair _ _ =>
-    let ⟨insNat, _⟩ := inPairElim insGuardL
-    let eqI :=
-      Pair.noConfusion (inVarElim insGuardR rfl) fun eq _ => eq
-    let eqTwo := inNatElim (n := 2) insNat
-    False.elim (indexNeq (Pair.nat_inj_eq (eqI.symm.trans eqTwo)))
-
-def isAtPairNope {fv b c lane i enc p}
-  (ins:
-    (exprEncPair.toLane lane).intp2
-      (.pair (.nat i) enc :: fv) b c p)
-  (indexNeq: i ≠ 3)
-  {P: Prop}
-:
-  P
-:=
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨insExprGuard, _⟩ := inIrElim ins
-  let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
-  let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
-  match exprGuard with
-  | .null => inPairElimNope insGuardL
-  | .pair _ _ =>
-    let ⟨insNat, _⟩ := inPairElim insGuardL
-    let eqI :=
-      Pair.noConfusion (inVarElim insGuardR rfl) fun eq _ => eq
-    let eqThree := inNatElim (n := 3) insNat
-    False.elim (indexNeq (Pair.nat_inj_eq (eqI.symm.trans eqThree)))
-
-def isAtIrNope {fv b c lane i enc p}
-  (ins:
-    (exprEncIr.toLane lane).intp2
-      (.pair (.nat i) enc :: fv) b c p)
-  (indexNeq: i ≠ 4)
-  {P: Prop}
-:
-  P
-:=
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨insExprGuard, _⟩ := inIrElim ins
-  let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
-  let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
-  match exprGuard with
-  | .null => inPairElimNope insGuardL
-  | .pair _ _ =>
-    let ⟨insNat, _⟩ := inPairElim insGuardL
-    let eqI :=
-      Pair.noConfusion (inVarElim insGuardR rfl) fun eq _ => eq
-    let eqFour := inNatElim (n := 4) insNat
-    False.elim (indexNeq (Pair.nat_inj_eq (eqI.symm.trans eqFour)))
-
-def isAtFullNope {fv b c lane i enc p}
-  (ins:
-    (exprEncFull.toLane lane).intp2
-      (.pair (.nat i) enc :: fv) b c p)
-  (indexNeq: i ≠ 5)
-  {P: Prop}
-:
-  P
-:=
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨insExprGuard, _⟩ := inIrElim ins
-  let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
-  let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
-  match exprGuard with
-  | .null => inPairElimNope insGuardL
-  | .pair _ _ =>
-    let ⟨insNat, _⟩ := inPairElim insGuardL
-    let eqI :=
-      Pair.noConfusion (inVarElim insGuardR rfl) fun eq _ => eq
-    let eqFive := inNatElim (n := 5) insNat
-    False.elim (indexNeq (Pair.nat_inj_eq (eqI.symm.trans eqFive)))
-
-def isAtComplNope {fv b c lane i enc p}
-  (ins:
-    (exprEncCompl.toLane lane).intp2
-      (.pair (.nat i) enc :: fv) b c p)
-  (indexNeq: i ≠ 6)
-  {P: Prop}
-:
-  P
-:=
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨insExprGuard, _⟩ := inIrElim ins
-  let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
-  let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
-  match exprGuard with
-  | .null => inPairElimNope insGuardL
-  | .pair _ _ =>
-    let ⟨insNat, _⟩ := inPairElim insGuardL
-    let eqI :=
-      Pair.noConfusion (inVarElim insGuardR rfl) fun eq _ => eq
-    let eqSix := inNatElim (n := 6) insNat
-    False.elim (indexNeq (Pair.nat_inj_eq (eqI.symm.trans eqSix)))
-
-def isAtArbIrNope {fv b c lane i enc p}
-  (ins:
-    (exprEncArbIr.toLane lane).intp2
-      (.pair (.nat i) enc :: fv) b c p)
-  (indexNeq: i ≠ 7)
-  {P: Prop}
-:
-  P
-:=
-  let ⟨_, ins⟩ := inArbUnElim ins
-  let ⟨insExprGuard, _⟩ := inIrElim ins
-  let ⟨exprGuard, insGuardIr⟩ := inSomeElim insExprGuard
-  let ⟨insGuardL, insGuardR⟩ := inIrElim insGuardIr
-  match exprGuard with
-  | .null => inPairElimNope insGuardL
-  | .pair _ _ =>
-    let ⟨insNat, _⟩ := inPairElim insGuardL
-    let eqI :=
-      Pair.noConfusion (inVarElim insGuardR rfl) fun eq _ => eq
-    let eqSeven := inNatElim (n := 7) insNat
-    False.elim (indexNeq (Pair.nat_inj_eq (eqI.symm.trans eqSeven)))
-
-
-/-
-  ## Section: Matching expression encoding eliminators
--/
 
 def isAtConstElim {dl n fv b c lane x p}
   (ins: InUniSetMapAt dl n fv b c (.const x) lane p)
@@ -799,3 +752,12 @@ def isWeakCauseCompl {dl n fv body d}:
   fun _ _ isSat =>
     let out := isSat.boutSat (And.intro rfl rfl)
     isInMap (isAtCompl out)
+
+/-
+  ## Section: Not beyond prefix
+  
+  TODO:
+  - this section
+  - replace un elim towers
+  - single helper for non-matching eliminators
+-/
