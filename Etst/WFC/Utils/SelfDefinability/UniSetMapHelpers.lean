@@ -601,6 +601,128 @@ def isAtConst {dl n fv b c x lane p}
                   rfl)
                 rfl))))))
 
+def isAtNull {dl n fv b c lane}:
+  InUniSetMapAt dl n fv b c .null lane .null
+:=
+  inUnR
+    (inUnR
+      (inUnL
+        (inIr
+          (inSome _ (inIr (inPair (inNat 2) inNull) rfl))
+          inNull)))
+
+def isAtVar {dl n fv b c x lane p}
+  (insGetNth:
+    (c consts.getNth).getLane lane (getNthEnc fv x p))
+:
+  InUniSetMapAt dl n fv b c (.var x) lane p
+:=
+  inUnR
+    (inUnL
+      (inArbUn
+        (.nat x)
+        (inIr
+          (inSome _ (inIr (inPair (inNat 1) rfl) rfl))
+          (inCall
+            (inCall
+              (inToggle2 7 insGetNth)
+              rfl)
+            rfl))))
+
+def isAtPair {dl n fv b c left rite lane pL pR}
+  (insLeft:
+    (c consts.uniSetMap).getLane
+      lane
+      (.pair (uniSetMapIndex dl n fv left) pL))
+  (insRite:
+    (c consts.uniSetMap).getLane
+      lane
+      (.pair (uniSetMapIndex dl n fv rite) pR))
+:
+  InUniSetMapAt dl n fv b c (.pair left rite) lane (.pair pL pR)
+:=
+  inUnR
+    (inUnR
+      (inUnR
+        (inUnL
+          (inArbUn
+            left.encoding
+            (inArbUn
+              rite.encoding
+              (inIr
+                (inSome _
+                  (inIr
+                    (inPair
+                      (inNat 3)
+                      (inPair (inVar rfl) (inVar rfl)))
+                    rfl))
+                (inPair
+                  (inCall
+                    (inToggle2 8 insLeft)
+                    (inPair rfl (inPair rfl (inVar rfl))))
+                  (inCall
+                    (inToggle2 8 insRite)
+                    (inPair rfl (inPair rfl (inVar rfl)))))))))))
+
+def isAtIr {dl n fv b c left rite lane p}
+  (insLeft:
+    (c consts.uniSetMap).getLane
+      lane
+      (.pair (uniSetMapIndex dl n fv left) p))
+  (insRite:
+    (c consts.uniSetMap).getLane
+      lane
+      (.pair (uniSetMapIndex dl n fv rite) p))
+:
+  InUniSetMapAt dl n fv b c (.ir left rite) lane p
+:=
+  inUnR
+    (inUnR
+      (inUnR
+        (inUnR
+          (inUnL
+            (inArbUn
+              left.encoding
+              (inArbUn
+                rite.encoding
+                (inIr
+                  (inSome _
+                    (inIr
+                      (inPair
+                        (inNat 4)
+                        (inPair (inVar rfl) (inVar rfl))) rfl))
+                  (inIr
+                    (inCall
+                      (inToggle2 9 insLeft)
+                      (inPair rfl (inPair rfl (inVar rfl))))
+                    (inCall
+                      (inToggle2 9 insRite)
+                      (inPair rfl (inPair rfl (inVar rfl))))))))))))
+
+def isAtFull {dl n fv b c body lane p}
+  (insBody:
+    ∀ dB,
+      (c consts.uniSetMap).getLane
+        lane
+        (.pair (uniSetMapIndex dl n fv body) dB))
+:
+  InUniSetMapAt dl n fv b c (.full body) lane p
+:=
+  inUnR
+    (inUnR
+      (inUnR
+        (inUnR
+          (inUnR
+            (inUnL
+              (inArbUn
+                body.encoding
+                (inIr
+                  (inSome _ (inIr (inPair (inNat 5) rfl) rfl))
+                  (inFull p fun dB =>
+                    inCall
+                      (inToggle2 9 (insBody dB))
+                      (inPair rfl (inPair rfl (inVar rfl)))))))))))
+
 def isAtCompl {dl n fv b c body lane p}
   (out:
     Not
@@ -639,6 +761,35 @@ def isAtCompl {dl n fv b c body lane p}
                     (inSome _ (inIr (inPair (inNat 6) rfl) rfl))
                     (inCompl ninsCall)))))))))
 
+  def isAtArbIr {dl n fv b c body lane p}
+    (insBody:
+      ∀ dX,
+        (c consts.uniSetMap).getLane
+          lane
+          (.pair (uniSetMapIndex dl n (dX :: fv) body) p))
+  :
+    InUniSetMapAt dl n fv b c (.arbIr body) lane p
+  :=
+    inUnR
+      (inUnR
+        (inUnR
+          (inUnR
+            (inUnR
+              (inUnR
+                (inUnR
+                  (inArbUn
+                    body.encoding
+                    (inIr
+                      (inSome _ (inIr (inPair (inNat 7) rfl) rfl))
+                      (inArbIr fun dX =>
+                        inCall
+                          (inToggle2 10 (insBody dX))
+                          (inPair
+                            rfl
+                            (inPair
+                              (inPair (inVar rfl) rfl)
+                              (inVar rfl))))))))))))
+
 
 /-
   ## Section: Cause building
@@ -664,6 +815,76 @@ def causeConst
   bout _ := {}
 }
 
+def causeVar
+  (fv: List Pair)
+  (xInt: Nat)
+  (dInt: Pair)
+:
+  Cause Pair
+:= {
+  cins xExt dExt :=
+    xExt = consts.getNth ∧
+    dExt = getNthEnc fv xInt dInt
+  bout _ := {}
+}
+
+abbrev causeNull: Cause Pair := Cause.empty
+
+def causePair
+  (dl: DefList)
+  (n: Nat)
+  (fv: List Pair)
+  (left rite: BasicExpr)
+  (pL pR: Pair)
+:
+  Cause Pair
+:= {
+  cins xExt dExt :=
+    Or
+      (And
+        (xExt = consts.uniSetMap)
+        (dExt = .pair (uniSetMapIndex dl n fv left) pL))
+      (And
+        (xExt = consts.uniSetMap)
+        (dExt = .pair (uniSetMapIndex dl n fv rite) pR))
+  bout _ := {}
+}
+
+def causeIr
+  (dl: DefList)
+  (n: Nat)
+  (fv: List Pair)
+  (left rite: BasicExpr)
+  (p: Pair)
+:
+  Cause Pair
+:= {
+  cins xExt dExt :=
+    Or
+      (And
+        (xExt = consts.uniSetMap)
+        (dExt = .pair (uniSetMapIndex dl n fv left) p))
+      (And
+        (xExt = consts.uniSetMap)
+        (dExt = .pair (uniSetMapIndex dl n fv rite) p))
+  bout _ := {}
+}
+
+def causeFull
+  (dl: DefList)
+  (n: Nat)
+  (fv: List Pair)
+  (body: BasicExpr)
+:
+  Cause Pair
+:= {
+  cins xExt dExt :=
+    ∃ dB,
+      xExt = consts.uniSetMap ∧
+      dExt = .pair (uniSetMapIndex dl n fv body) dB
+  bout _ := {}
+}
+
 def causeCompl
   (dl: DefList)
   (n: Nat)
@@ -680,6 +901,22 @@ def causeCompl
       (dExt = .pair (uniSetMapIndex dl n fv body) dInt)
 }
 
+def causeArbIr
+  (dl: DefList)
+  (n: Nat)
+  (fv: List Pair)
+  (body: BasicExpr)
+  (dInt: Pair)
+:
+  Cause Pair
+:= {
+  cins xExt dExt :=
+    ∃ dX,
+      xExt = consts.uniSetMap ∧
+      dExt = .pair (uniSetMapIndex dl n (dX :: fv) body) dInt
+  bout _ := {}
+}
+
 
 def isWeakCauseConst {dl n fv x d}:
   (causeConst dl n x d).IsWeakCause
@@ -691,6 +928,50 @@ def isWeakCauseConst {dl n fv x d}:
     let ins := isSat.cinsSat (Or.inr ⟨rfl, rfl⟩)
     isInMap (isAtConst ins insGetNth)
 
+def isWeakCauseVar {dl n fv x d}:
+  (causeVar fv x d).IsWeakCause
+    (uniSetMapDl.getDef consts.uniSetMap)
+    (.pair (uniSetMapIndex dl n fv (.var x)) d)
+:=
+  fun _ _ isSat =>
+    let inGetNth := isSat.cinsSat ⟨rfl, rfl⟩
+    isInMap (isAtVar inGetNth)
+
+def isWeakCauseNull {dl n fv}:
+  causeNull.IsWeakCause
+    (uniSetMapDl.getDef consts.uniSetMap)
+    (.pair (uniSetMapIndex dl n fv .null) .null)
+:=
+  fun _ _ _ => isInMap isAtNull
+
+def isWeakCausePair {dl n fv left rite pL pR}:
+  (causePair dl n fv left rite pL pR).IsWeakCause
+    (uniSetMapDl.getDef consts.uniSetMap)
+    (.pair (uniSetMapIndex dl n fv (.pair left rite)) (.pair pL pR))
+:=
+  fun _ _ isSat =>
+    let inLeft := isSat.cinsSat (Or.inl ⟨rfl, rfl⟩)
+    let inRite := isSat.cinsSat (Or.inr ⟨rfl, rfl⟩)
+    isInMap (isAtPair inLeft inRite)
+
+def isWeakCauseIr {dl n fv left rite p}:
+  (causeIr dl n fv left rite p).IsWeakCause
+    (uniSetMapDl.getDef consts.uniSetMap)
+    (.pair (uniSetMapIndex dl n fv (.ir left rite)) p)
+:=
+  fun _ _ isSat =>
+    let inLeft := isSat.cinsSat (Or.inl ⟨rfl, rfl⟩)
+    let inRite := isSat.cinsSat (Or.inr ⟨rfl, rfl⟩)
+    isInMap (isAtIr inLeft inRite)
+
+def isWeakCauseFull {dl n fv body p}:
+  (causeFull dl n fv body).IsWeakCause
+    (uniSetMapDl.getDef consts.uniSetMap)
+    (.pair (uniSetMapIndex dl n fv (.full body)) p)
+:=
+  fun _ _ isSat =>
+    isInMap (isAtFull fun dB => isSat.cinsSat ⟨dB, rfl, rfl⟩)
+
 def isWeakCauseCompl {dl n fv body d}:
   (causeCompl dl n fv body d).IsWeakCause
     (uniSetMapDl.getDef consts.uniSetMap)
@@ -699,6 +980,14 @@ def isWeakCauseCompl {dl n fv body d}:
   fun _ _ isSat =>
     let out := isSat.boutSat (And.intro rfl rfl)
     isInMap (isAtCompl out)
+
+def isWeakCauseArbIr {dl n fv body d}:
+  (causeArbIr dl n fv body d).IsWeakCause
+    (uniSetMapDl.getDef consts.uniSetMap)
+    (.pair (uniSetMapIndex dl n fv (.arbIr body)) d)
+:=
+  fun _ _ isSat =>
+    isInMap (isAtArbIr fun dX => isSat.cinsSat ⟨dX, rfl, rfl⟩)
 
 /-
   ## Section: Not beyond prefix
