@@ -118,8 +118,7 @@ def FiniteDefList.extend {ub}
           unfold size at ubEq
           rw [List.length_map, ←ubEq]
           exact (defsGetNth defs (x - dl.size)).constsLt _ usesVar
-    isClean := by
-      intro x
+    isClean x := by
       unfold getDef
       if h: x < dl.size then
         rw [if_pos h]

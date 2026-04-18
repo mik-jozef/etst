@@ -133,6 +133,20 @@ namespace SingleLaneExpr
     fun _ ins =>
       inCompl (fun isPos => inComplElim ins (le isPos))
   
+  def intp2_mono_std_compl_elim
+    (le:
+      Set.Subset
+        ((compl e0).intp2 fv0 b0 c0)
+        ((compl e1).intp2 fv1 b1 c1))
+  :
+    Set.Subset
+      (e1.intp2 fv1 c1 b1)
+      (e0.intp2 fv0 c0 b0)
+  :=
+    fun _ ins =>
+      byContradiction
+        (fun nin => inComplElim (le (inCompl nin)) ins)
+  
   def eq_intp2_compl_of_eq
     (eq:
       Eq
@@ -146,6 +160,29 @@ namespace SingleLaneExpr
     le_antisymm
       (intp2_mono_std_compl (le_of_eq eq.symm))
       (intp2_mono_std_compl (le_of_eq eq))
+  
+  def eq_intp2_of_eq_compl
+    (eq:
+      Eq
+        ((compl e0).intp2 fv0 b0 c0)
+        ((compl e1).intp2 fv1 b1 c1))
+  :
+    Eq
+      (e0.intp2 fv0 c0 b0)
+      (e1.intp2 fv1 c1 b1)
+  :=
+    le_antisymm
+      (intp2_mono_std_compl_elim (le_of_eq eq.symm))
+      (intp2_mono_std_compl_elim (le_of_eq eq))
+  
+  def intp2_compl_compl_eq
+    (expr: SingleLaneExpr)
+    (fv: List Pair)
+    (b c: Valuation Pair)
+  :
+    intp2 (.compl (.compl expr)) fv b c = intp2 expr fv b c
+  :=
+    funext fun _ => propext ⟨Not.dne, not_not_intro⟩
   
   
   def intp2_mono_std_arbIr

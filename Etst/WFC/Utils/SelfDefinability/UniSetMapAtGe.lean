@@ -110,6 +110,12 @@ def allCausesInappElim {dl n fv intCycle expr p}
     {intCause: _} →
     intCause.IsWeakCauseFv [] ((dl.prefix n).getDef x) p →
     IntCauseIsInappIh dl n intCycle intCause)
+  (intCycleIsEmpty:
+    ∀ {x p},
+      intCycle x p →
+      (intCause: Cause Pair) →
+      intCause.IsWeakCause ((dl.prefix n).getDef x) p →
+      (dl.prefix n).IsCauseInapplicable intCycle intCause)
   {extCause: Cause Pair}
   (isCause:
     extCause.IsWeakCause
@@ -149,7 +155,46 @@ def allCausesInappElim {dl n fv intCycle expr p}
   | .pair _ _ => sorry
   | .ir _ _ => sorry
   | .full _ => sorry
-  | .compl _ => sorry
+  | .compl body =>
+    let isAt := isAtOfInsDef (isCause (extCause.maximalValsApxAreSat))
+    let inBout := (isAtComplElim isAt).dne
+    let cause: Cause Pair := {
+      cins x d :=
+        uniSetMapDl.Ins
+          consts.uniSetMap
+          (.pair (uniSetMapIndexDef dl n x) d)
+      bout x d :=
+        uniSetMapDl.Out
+          consts.uniSetMap
+          (.pair (uniSetMapIndexDef dl n x) d)
+    }
+    byContradiction fun isApplicable =>
+    let isCauseBody: cause.IsStrongCauseFv fv body p :=
+      fun b c isSat =>
+      byContradiction fun notDef =>
+        let isWeakCauseCompl :=
+          Cause.IsWeakCauseFv.ofValPos (expr := body.compl) notDef
+        match allInapp isWeakCauseCompl with
+        | .blockedCins inCins inIntCycle =>
+          let out :=
+            DefList.Out.intro intCycle intCycleIsEmpty inIntCycle
+          let lkj: (b _).posMem _ := inCins
+          /-
+            Houston, we have a problem: `let a = !!a` is equivalent to
+            `let a = a`, but `uniSetMap` effectively splits that into
+            `let a := ~b; let b := ~a`, which has different semantics.
+            We need to convert our expressions to negation normal form.
+          -/
+          sorry
+        | .blockedBout inBout ins =>
+          inBout (isSat.cinsSat (DefList.Ins.isComplete ins))
+    let ins :=
+      internalCauseElim
+        isCauseBody
+        DefList.Ins.isSound
+        DefList.Out.isSound
+    isApplicable (.blockedBout inBout (DefList.Ins.isComplete ins))
+    -- .blockedBout inBout (DefList.Ins.isComplete ins)
   | .arbIr _ => sorry
 end
 
@@ -197,6 +242,7 @@ def internalOutElim {dl n x p}
           allCausesInappElim
             allInapp
             intCauseInapp
+            intCycleIsEmpty
             (xEq ▸ dEq ▸ isExtCause))
         ⟨rfl, ⟨_, _, _, ⟨intCauseInapp inIntCycle, rfl⟩⟩⟩
     out.isSound
@@ -219,5 +265,6 @@ def uniSetMapAt_ge
   posLe _ isPos :=
     -- Function.mtr (internalOutElim ∘ DefList.Out.isComplete)
     -- allCausesInappElim sorry
-    byContradiction fun notPos => sorry
+    byContradiction fun notPos =>
+      sorry
 }

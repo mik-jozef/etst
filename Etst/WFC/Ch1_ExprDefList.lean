@@ -16,13 +16,12 @@ universe u
   
   `E` (extra info) is for storing arbitrary extra information in each
   constant.
+  
+  The variables use de Bruijn indices, ie. `var 0` refers to the
+  innermost quantifier, `var 1` to the next outer one, and so on.
 -/
 inductive Expr (E: Type u) where
 | const (e: E) (x: Nat)
-/-
-  Uses de Bruijn indices. Ie., `var 0` refers to the innermost
-  quantifier, `var 1` to the next outer one, and so on.
--/
 | var (x: Nat)
 | null
 | pair (left rite: Expr E)

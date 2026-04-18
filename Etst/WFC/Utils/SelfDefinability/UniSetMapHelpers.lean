@@ -359,7 +359,7 @@ def isAtVarElim {dl n fv b c lane x p}
     let ins := inToggle2Elim 7 ins
     let ins := (cinsSat ins).isSound
     let ins := by rw [← xEncEq] at ins; exact ins
-    inVar (getNthElim (lane:=.defLane) ins)
+    inVar (getNthElim (lane := .defLane) ins)
   exprEncListElim
     ins
     (isAtConstNope · (by decide))
