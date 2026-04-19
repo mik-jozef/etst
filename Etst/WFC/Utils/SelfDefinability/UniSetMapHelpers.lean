@@ -334,22 +334,25 @@ def exprGuardElimBinary {i iEnc encL encR fvRite fvLeft fvRest b c p}
         (eqL.symm.trans (inVarElim insLeft rfl))
         (eqR.symm.trans (inVarElim insRite rfl))
 
-def singleCallElim
-  {dl n fv b c expr lane p pArg fvRest eDl eFv eExpr exprEnc}
+def inMapCallElim
+  {dl n fv b c expr lane p fvMeta eDl eFv eExpr exprEnc}
   (toggleCount)
-  (inMap:
-    (uniSetMapConst.toLane (toggle2N lane toggleCount)).intp2
-      fvRest b c (.pair pArg p))
-  (inArg: (pair eDl (pair eFv eExpr)).intp2 fvRest b c pArg)
+  (inCall:
+    intp2
+      (.call
+        (uniSetMapConst.toLane (toggle2N lane toggleCount))
+        (.pair eDl (.pair eFv eExpr)))
+      fvMeta b c p)
   (exprEncEq: expr.encoding = exprEnc)
-  (evalDl: ∀ {v}, eDl.intp2 fvRest b c v → v = dl.prefixEncoding n)
-  (evalFv: ∀ {v}, eFv.intp2 fvRest b c v → v = Pair.listEncoding fv)
-  (evalExpr: ∀ {v}, eExpr.intp2 fvRest b c v → v = exprEnc)
+  (evalDl: ∀ {v fvH}, intp2 eDl (fvH::fvMeta) b c v → v = dl.prefixEncoding n)
+  (evalFv: ∀ {v fvH}, intp2 eFv (fvH::fvMeta) b c v → v = Pair.listEncoding fv)
+  (evalExpr: ∀ {v fvH}, intp2 eExpr (fvH::fvMeta) b c v → v = exprEnc)
 :
   (c consts.uniSetMap).getLane
     lane
     (.pair (uniSetMapIndex dl n fv expr) p)
 :=
+  let ⟨pArg, inMap, inArg⟩ := inCallElim inCall
   match pArg with
   | .null => inPairElimNope inArg
   | .pair _ .null => inPairElimNope (inPairElim inArg).right
@@ -420,13 +423,16 @@ def isAtConstElim {dl n fv b c lane x p}
 def isAtComplConstElim {dl n fv b c lane x p}
   (ins: InUniSetMapAt dl n fv b c (.compl (.const x)) lane p)
 :
-  (b consts.getNth).getLane lane.toggle (getDefNthEnc dl n x) →
-  Not
-    ((b consts.uniSetMap).getLane
-      lane.toggle
-      (.pair (uniSetMapIndexDef dl n x) p))
+  Or
+    (Not ((b consts.getNth).getLane lane.toggle (getDefNthEnc dl n x)))
+    (Not
+      ((b consts.uniSetMap).getLane
+        lane.toggle
+        (.pair (uniSetMapIndexDef dl n x) p)))
 :=
-  let main insCompl insGetNth insBody :=
+  let main insCompl :=
+    not_and_or.mp fun insBoth =>
+    let ⟨insGetNth, insBody⟩ := insBoth
     let ⟨xEnc, ins⟩ := inArbUnElim insCompl
     let ⟨insExprGuard, ins⟩ := inIrElim ins
     let xEncEq := exprGuardElimUnary (i := .nat 1) insExprGuard
@@ -437,7 +443,7 @@ def isAtComplConstElim {dl n fv b c lane x p}
           inNull
           (inCall
             (inCall
-              (inToggle2 9 sorry)
+              (inToggle2 9 (xEncEq ▸ insGetNth))
               (inVar rfl))
             (inVar rfl)))
     inComplElim ins (inCall (inToggle2 5 insBody) insArg)
@@ -561,12 +567,10 @@ def isAtPairElim {dl n fv b c left rite lane p}
     let ⟨leftEncEq, riteEncEq⟩ := exprGuardElimBinary insExprGuard
     let ⟨pL, pR, eqP, insCallLeft, insCallRite⟩ := inPairElimEx insPair
     
-    let ⟨pArgLeft, inMapLeft, inArgLeft⟩ := inCallElim insCallLeft
-    let insLeftAlias := singleCallElim 10 inMapLeft inArgLeft leftEncEq
+    let insLeftAlias := inMapCallElim 10 insCallLeft leftEncEq
       (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
     
-    let ⟨pArgRite, inMapRite, inArgRite⟩ := inCallElim insCallRite
-    let insRiteAlias := singleCallElim 10 inMapRite inArgRite riteEncEq
+    let insRiteAlias := inMapCallElim 10 insCallRite riteEncEq
       (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
     
     ⟨pL, pR, eqP, insLeftAlias, insRiteAlias⟩
@@ -599,12 +603,10 @@ def isAtIrElim {dl n fv b c left rite lane p}
     
     let ⟨insCallLeft, insCallRite⟩ := inIrElim insPair
     
-    let ⟨pArgLeft, inMapLeft, inArgLeft⟩ := inCallElim insCallLeft
-    let insLeftAlias := singleCallElim 11 inMapLeft inArgLeft leftEncEq
+    let insLeftAlias := inMapCallElim 11 insCallLeft leftEncEq
       (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
     
-    let ⟨pArgRite, inMapRite, inArgRite⟩ := inCallElim insCallRite
-    let insRiteAlias := singleCallElim 11 inMapRite inArgRite riteEncEq
+    let insRiteAlias := inMapCallElim 11 insCallRite riteEncEq
       (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
 
     ⟨insLeftAlias, insRiteAlias⟩
@@ -623,12 +625,16 @@ def isAtIrElim {dl n fv b c left rite lane p}
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
 
-def isAtUnElim {dl n fv b c left rite lane p}
-  (ins: InUniSetMapAt dl n fv b c (.un left rite) lane p)
+def isAtComplIrElim {dl n fv b c left rite lane p}
+  (ins:
+    let expr := .compl (.ir left rite)
+    InUniSetMapAt dl n fv b c expr lane p)
 :
   Or
-    ((c consts.uniSetMap).getLane lane (.pair (uniSetMapIndex dl n fv left) p))
-    ((c consts.uniSetMap).getLane lane (.pair (uniSetMapIndex dl n fv rite) p))
+    ((c consts.uniSetMap).getLane lane
+      (.pair (uniSetMapIndex dl n fv left.compl) p))
+    ((c consts.uniSetMap).getLane lane
+      (.pair (uniSetMapIndex dl n fv rite.compl) p))
 :=
   let main ins :=
     let ⟨leftEnc, ins⟩ := inArbUnElim ins
@@ -638,14 +644,14 @@ def isAtUnElim {dl n fv b c left rite lane p}
     match inUnElim insUnCall with
     | .inl insCallLeft =>
       let ⟨_pArgLeft, inMapLeft, inArgLeft⟩ := inCallElim insCallLeft
-      .inl <|
-        singleCallElim 13 inMapLeft inArgLeft leftEncEq
-          (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
+      .inl
+        (inMapCallElim 13 insCallLeft leftEncEq
+          (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl))
     | .inr insCallRite =>
       let ⟨_pArgRite, inMapRite, inArgRite⟩ := inCallElim insCallRite
-      .inr <|
-        singleCallElim 13 inMapRite inArgRite riteEncEq
-          (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
+      .inr
+        (inMapCallElim 13 insCallRite riteEncEq
+          (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl))
   exprEncListElim
     ins
     (isAtConstNope · (by decide))
@@ -673,10 +679,7 @@ def isAtFullElim {dl n fv b c body lane p}
     let ⟨bodyEnc, ins⟩ := inArbUnElim ins
     let ⟨insExprGuard, ins⟩ := inIrElim ins
     let bodyEncEq := exprGuardElimUnary insExprGuard
-    
-    let insArg := ins dB
-    let ⟨pArg, inMap, inArg⟩ := inCallElim insArg
-    singleCallElim 12 inMap inArg bodyEncEq
+    inMapCallElim 12 (ins dB) bodyEncEq
       (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
   exprEncListElim
     ins
@@ -708,7 +711,7 @@ def isAtSomeElim {dl n fv b c body lane p}
     let ⟨dB, insArg⟩ := inSomeElim ins
     let ⟨_pArg, inMap, inArg⟩ := inCallElim insArg
     ⟨dB,
-      singleCallElim 14 inMap inArg bodyEncEq
+      inMapCallElim 14 insArg bodyEncEq
         (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)⟩
   exprEncListElim
     ins
@@ -737,15 +740,14 @@ def isAtArbIrElim {dl n fv b c body lane p}
     let ⟨bodyEnc, ins⟩ := inArbUnElim ins
     let ⟨insExprGuard, ins⟩ := inIrElim ins
     let bodyEncEq := exprGuardElimUnary insExprGuard
-    let ⟨pArg, inMap, inArg⟩ := inCallElim (inArbIrElim ins dX)
-    singleCallElim 14 inMap inArg bodyEncEq
+    inMapCallElim 14 (ins dX) bodyEncEq
       (inVarElim · rfl)
       (fun h =>
         let ⟨_vL, _vR, hEq, hL, hR⟩ := inPairElimEx h
         let eqL := inVarElim hL rfl
         let eqR := inVarElim hR rfl
         by rw [hEq, eqL, eqR]; rfl)
-      (fun h => inVarElim h rfl)
+      (inVarElim · rfl)
   exprEncListElim
     ins
     (isAtConstNope · (by decide))
@@ -774,16 +776,15 @@ def isAtArbUnElim {dl n fv b c body lane p}
     let ⟨insExprGuard, ins⟩ := inIrElim ins
     let bodyEncEq := exprGuardElimUnary (i := .nat 11) insExprGuard
     let ⟨dX, insArg⟩ := inArbUnElim ins
-    let ⟨_pArg, inMap, inArg⟩ := inCallElim insArg
     ⟨dX,
-      singleCallElim 15 inMap inArg bodyEncEq
+      inMapCallElim 15 insArg bodyEncEq
         (inVarElim · rfl)
         (fun h =>
           let ⟨_vL, _vR, hEq, hL, hR⟩ := inPairElimEx h
           let eqL := inVarElim hL rfl
           let eqR := inVarElim hR rfl
           by rw [hEq, eqL, eqR]; rfl)
-        (fun h => inVarElim h rfl)⟩
+        (inVarElim · rfl)⟩
   exprEncListElim
     ins
     (isAtConstNope · (by decide))
@@ -852,6 +853,45 @@ def isAtConst {dl n fv b c x lane p}
                   rfl)
                 rfl))))))
 
+def isAtComplConst {dl n fv b c x lane p}
+  (ninGetNth:
+    (∀ {exprEnc: Pair},
+      exprEnc ≠ ((dl.prefix n).getDef x).encoding →
+      Not
+        ((b consts.getNth).getLane
+          lane.toggle
+          (getNthEnc (dl.prefixList 0 n) x exprEnc))))
+  (ninMap:
+    Not
+      ((b consts.uniSetMap).getLane
+        lane.toggle
+        (.pair (uniSetMapIndexDef dl n x) p)))
+:
+  InUniSetMapAt dl n fv b c (.compl (.const x)) lane p
+:=
+  inUnR
+    (inUnL
+      (inArbUn
+        (.nat x)
+        (inIr
+          (inSome _ (inIr (inPair (inNat 1) rfl) rfl))
+          (inCompl fun insBody =>
+            let inMap := inMapCallElim 5 insBody rfl
+              (inVarElim · rfl)
+              (fv:=[])
+              inNullElim
+              (expr := (dl.prefix n).getDef x)
+              (fun inGetNthCall =>
+                let ⟨pArgX, inMid, inArgX⟩ := inCallElim inGetNthCall
+                let ⟨pArgDl, inFn, inArgDl⟩ := inCallElim inMid
+                let eqX := inVarElim inArgX rfl
+                let eqDl := inVarElim inArgDl rfl
+                let inFn := by
+                  rw [eqX, eqDl] at inFn;
+                  exact inToggle2Elim 9 inFn
+                byContradiction (ninGetNth · inFn))
+            ninMap inMap))))
+
 def isAtNull {dl n fv b c lane}:
   InUniSetMapAt dl n fv b c .null lane .null
 :=
@@ -882,6 +922,26 @@ def isAtVar {dl n fv b c x lane p}
                 (inToggle2 8 insGetNth)
                 rfl)
               rfl)))))
+
+def isAtComplVar {dl n fv b c x lane p}
+  (ninGetNth:
+    Not ((b consts.getNth).getLane lane.toggle (getNthEnc fv x p)))
+:
+  InUniSetMapAt dl n fv b c (.compl (.var x)) lane p
+:=
+  inUnR
+    (inUnR
+      (inUnR
+        (inUnL
+          (inArbUn
+            (.nat x)
+            (inIr
+              (inSome _ (inIr (inPair (inNat 3) rfl) rfl))
+              (inCompl fun insGetNthCall =>
+                let insGetNth := inCallElimSingle insGetNthCall rfl
+                let insGetNth := inCallElimSingle insGetNth rfl
+                let insGetNth := inToggle2Elim 9 insGetNth
+                ninGetNth insGetNth))))))
 
 def isAtPair {dl n fv b c left rite lane pL pR}
   (insLeft:
@@ -970,6 +1030,18 @@ def isAtUn {dl n fv b c left rite lane p}
 :
   InUniSetMapAt dl n fv b c (.un left rite) lane p
 :=
+  let ins :=
+    match ins with
+    | .inl insLeft =>
+      inUnL
+        (inCall
+          (inToggle2 13 insLeft)
+          (inPair rfl (inPair rfl (inVar rfl))))
+    | .inr insRite =>
+      inUnR
+        (inCall
+          (inToggle2 13 insRite)
+          (inPair rfl (inPair rfl (inVar rfl))))
   inUnR
     (inUnR
       (inUnR
@@ -989,17 +1061,7 @@ def isAtUn {dl n fv b c left rite lane p}
                               (inNat 7)
                               (inPair (inVar rfl) (inVar rfl)))
                             rfl))
-                        (match ins with
-                        | .inl insLeft =>
-                          inUnL
-                            (inCall
-                              (inToggle2 13 insLeft)
-                              (inPair rfl (inPair rfl (inVar rfl))))
-                        | .inr insRite =>
-                          inUnR
-                            (inCall
-                              (inToggle2 13 insRite)
-                              (inPair rfl (inPair rfl (inVar rfl)))))))))))))))
+                        ins))))))))))
 
 def isAtFull {dl n fv b c body lane p}
   (insBody:
@@ -1086,6 +1148,25 @@ def causeConst
   bout _ := {}
 }
 
+def causeComplConst
+  (dl: DefList)
+  (n: Nat)
+  (xInt: Nat)
+  (dInt: Pair)
+:
+  Cause Pair
+:= {
+  cins _ := {}
+  bout xExt dExt :=
+    Or
+      (∃ exprEnc,
+        exprEnc ≠ ((dl.prefix n).getDef xInt).encoding ∧
+        xExt = consts.getNth ∧
+        dExt = getNthEnc (dl.prefixList 0 n) xInt exprEnc)
+      (xExt = consts.uniSetMap ∧
+        dExt = .pair (uniSetMapIndexDef dl n xInt) dInt)
+}
+
 def causeVar
   (fv: List Pair)
   (xInt: Nat)
@@ -1098,6 +1179,15 @@ def causeVar
     dExt = getNthEnc fv xInt dInt
   bout _ := {}
 }
+
+def causeComplVar
+  (fv: List Pair)
+  (xInt: Nat)
+  (dInt: Pair)
+:
+  Cause Pair
+:=
+  Cause.boutJust consts.getNth (getNthEnc fv xInt dInt)
 
 abbrev causeNull: Cause Pair := Cause.empty
 
@@ -1215,6 +1305,24 @@ def isWeakCauseConst {dl n fv x d}:
     let ins := isSat.cinsSat (Or.inr ⟨rfl, rfl⟩)
     isInMap (isAtConst ins insGetNth)
 
+def isWeakCauseComplConst {dl n fv x d}:
+  (causeComplConst dl n x d).IsWeakCause
+    (uniSetMapDl.getDef consts.uniSetMap)
+    (.pair (uniSetMapIndex dl n fv (.compl (.const x))) d)
+:=
+  fun _ _ isSat =>
+    let ninGetNth :=
+      fun {exprEnc} exprEncNe inGetNth =>
+        isSat.boutSat
+          (Or.inl ⟨exprEnc, exprEncNe, rfl, rfl⟩)
+          inGetNth
+    let ninMap :=
+      fun inMap =>
+        isSat.boutSat
+          (Or.inr ⟨rfl, rfl⟩)
+          inMap
+    isInMap (isAtComplConst ninGetNth ninMap)
+
 def isWeakCauseVar {dl n fv x d}:
   (causeVar fv x d).IsWeakCause
     (uniSetMapDl.getDef consts.uniSetMap)
@@ -1223,6 +1331,17 @@ def isWeakCauseVar {dl n fv x d}:
   fun _ _ isSat =>
     let inGetNth := isSat.cinsSat ⟨rfl, rfl⟩
     isInMap (isAtVar inGetNth)
+
+def isWeakCauseComplVar {dl n fv x d}:
+  (causeComplVar fv x d).IsWeakCause
+    (uniSetMapDl.getDef consts.uniSetMap)
+    (.pair (uniSetMapIndex dl n fv (.compl (.var x))) d)
+:=
+  fun _ _ isSat =>
+    let ninGetNth :=
+      fun inGetNth =>
+        isSat.boutSat ⟨rfl, rfl⟩ inGetNth
+    isInMap (isAtComplVar ninGetNth)
 
 def isWeakCauseNull {dl n fv}:
   causeNull.IsWeakCause

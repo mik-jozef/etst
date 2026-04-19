@@ -120,7 +120,7 @@ namespace uniSetMapDl
       Ex rite,
       & (?some (7, (left, rite)) & expr)
       & (
-        [uniSetMapConst] (dl, (fv, left))
+        | [uniSetMapConst] (dl, (fv, left))
         | [uniSetMapConst] (dl, (fv, rite))
       )
     )
@@ -507,4 +507,15 @@ namespace uniSetMapDl
     list[i]?.getD df = valEnc
   :=
     getNthElim inGetDef ▸ rfl
+  
+  def getNthEq {dl: DefList} {n x exprEnc lane}
+    (inGetNth:
+      (uniSetMapDl.wfm consts.getNth).getLane
+        lane
+        (getNthEnc (dl.prefixList 0 n) x exprEnc))
+  :
+    exprEnc = ((dl.prefix n).getDef x).encoding
+  :=
+    dl.prefixList_at_eq n x ▸ (getNthElimD inGetNth).symm
+
 end uniSetMapDl

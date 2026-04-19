@@ -13,10 +13,13 @@ def IsInappExtIh
   Prop
 :=
   externalCause.IsInapplicable extCycle fun xExt dExt =>
-    {n fv expr dInt: _} →
-    xExt = consts.uniSetMap →
-    dExt = .pair (uniSetMapIndex dl n fv expr) dInt →
-    ((dl.prefix n).triIntp fv expr).defMem dInt
+    And
+      (({n fv expr dInt: _} →
+        xExt = consts.uniSetMap →
+        dExt = .pair (uniSetMapIndex dl n fv expr) dInt →
+        ((dl.prefix n).triIntp fv expr).defMem dInt))
+      (xExt = consts.getNth →
+        (uniSetMapDl.wfm consts.getNth).defMem dExt)
 
 def intOfExtCycle
   (dl: DefList)
@@ -139,8 +142,6 @@ def allInternalInapp {dl n fv expr d}
         extIsEmpty everyCauseInapp inCycle intCause riteIsCause
     | .blockedBout _ inBout _ => inBout.elim
   | .full body =>
-    let bodyIsCause dB _ _ isSat :=
-      inFullElim (intIsCause isSat) dB
     match extIsEmpty
       inExtCycle
       (causeFull dl n fv body)
@@ -149,25 +150,35 @@ def allInternalInapp {dl n fv expr d}
     | .blockedCins _ inCins inCycle =>
       let ⟨dB, xEq, dEq⟩ := inCins
       let inCycle := xEq ▸ dEq ▸ inCycle
+      let bodyIsCause _ _ isSat := inFullElim (intIsCause isSat) dB
       allInternalInapp
-        extIsEmpty everyCauseInapp inCycle intCause (bodyIsCause dB)
+        extIsEmpty everyCauseInapp inCycle intCause bodyIsCause
     | .blockedBout _ inBout _ => inBout.elim
-  -- | .compl _ =>
-  --   let isExtInapp := everyCauseInapp inExtCycle _ isWeakCauseCompl
-  --   match isExtInapp with
-  --   | .blockedBout ⟨xEq, dEq⟩ isDefFn =>
-  --     let isDef := not_not_intro (isDefFn xEq dEq)
-  --     let isInapp := intIsCause.isInapplicableOfIsNonmember isDef
-  --     match isInapp with
-  --     | .blockedCins inCins notPos =>
-  --       .blockedCinsOut inCins (DefList.Out.isComplete notPos)
-  --     | .blockedBout inBout isDef =>
-  --       .blockedBout inBout (DefList.Ins.isComplete isDef)
   | .compl (.const x) =>
-    sorry
+    let inBout := intIsCause.complConstElim
+    match everyCauseInapp inExtCycle _ isWeakCauseComplConst with
+    | .blockedBout (Or.inl ⟨enc, neq, xEq, dEq⟩) inDef =>
+      let inGetNth := dEq ▸ (inDef.right xEq)
+      let encEq :=
+        dl.prefixList_at_eq n x ▸
+        getNthElimD (lane := .defLane) inGetNth
+      False.elim (neq encEq.symm)
+    | .blockedBout (Or.inr ⟨xEq, dEq⟩) inDef =>
+      let inConst := InWfm.of_in_def_no_fv (inDef.left xEq dEq)
+      .blockedBout inBout (DefList.Ins.isComplete inConst)
   | .compl (.var x) =>
-    sorry
-  | .compl (.null) =>
+    let inBout := intIsCause intCause.maximalValsApxAreSat
+    match
+      extIsEmpty inExtCycle (causeComplVar fv x d) isWeakCauseComplVar
+    with
+    | .blockedBout _ ⟨xEq, dEq⟩ insGetNth =>
+      let inGetNth := xEq ▸ dEq ▸ insGetNth.isSound
+      let inVar:
+        (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm d
+      :=
+        inVar (getNthElim (lane := .defLane) inGetNth)
+      False.elim (inBout inVar)
+  | .compl .null =>
     sorry
   | .compl (.pair left rite) =>
     sorry
@@ -261,7 +272,6 @@ termination_by sizeOf expr
       indices are not variables
   ```
 -/
-mutual
 def externalInsElimHelper {dl n fv index cst expr p}
   (ins: uniSetMapDl.Ins cst index)
   (cstEq: cst = consts.uniSetMap)
@@ -342,8 +352,10 @@ def externalOutElimHelper {dl n fv index cst expr p}
       | .blockedCins _ inCins inCycle =>
         .blockedCins inCins inCycle
       | .blockedBout _ inBout ins =>
-        .blockedBout inBout fun xEq dEq =>
-          externalInsElimHelper ins xEq dEq
+        .blockedBout inBout ⟨
+          (fun xEq dEq => externalInsElimHelper ins xEq dEq),
+          (fun xEq => xEq ▸ DefList.Ins.isSound ins)
+        ⟩
     
     fun isPos =>
       let isCause: Cause.IsWeakCauseFv _ fv expr p :=
@@ -372,7 +384,6 @@ def externalOutElimHelper {dl n fv index cst expr p}
         out.nopePos inCins
       | .blockedCinsOut inCins out => out.isSound inCins
       | .blockedBout inBout ins => ins.nopeNotDef inBout
-end
 
 
 def externalInsElim {dl n fv expr p}

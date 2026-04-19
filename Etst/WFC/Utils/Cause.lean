@@ -20,7 +20,7 @@ def Cause.empty: Cause D := {
   bout _ := ∅
 }
 
-def Cause.const
+def Cause.cinsJust
   (x: Nat)
   (d: D)
 :
@@ -28,6 +28,16 @@ def Cause.const
 := {
   cins xx dd := xx = x ∧ dd = d
   bout _ := ∅
+}
+
+def Cause.boutJust
+  (x: Nat)
+  (d: D)
+:
+  Cause D
+:= {
+  cins _ := ∅
+  bout xx dd := xx = x ∧ dd = d
 }
 
 def Cause.union
@@ -286,7 +296,7 @@ def Cause.maximalValsApxAreSat
 
 
 def Cause.IsWeakCauseFv.const {fv x d}:
-  IsWeakCauseFv (Cause.const x d) fv (.const x) d
+  IsWeakCauseFv (Cause.cinsJust x d) fv (.const x) d
 :=
   fun _ _ isSat => isSat.cinsSat ⟨rfl, rfl⟩
 
@@ -296,9 +306,21 @@ def Cause.IsWeakCauseFv.constElim {fv x d}
 :
   cause.cins x d
 :=
-  byContradiction fun notInCins =>
-    let isSat := cause.maximalValsApxAreSat
-    notInCins (isCause isSat)
+  isCause cause.maximalValsApxAreSat
+
+def Cause.IsWeakCauseFv.complConst {fv x d}:
+   IsWeakCauseFv (Cause.boutJust x d) fv (.compl (.const x)) d
+:=
+  fun _ _ isSat => isSat.boutSat ⟨rfl, rfl⟩
+
+def Cause.IsWeakCauseFv.complConstElim {fv x d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv (.compl (.const x)) d)
+:
+  cause.bout x d
+:=
+  (isCause cause.maximalValsApxAreSat).dne
+  
 
 def Cause.IsWeakCauseFv.complIrElim {fv l r d}
   {cause: Cause Pair}
@@ -331,6 +353,7 @@ def Cause.IsWeakCauseFv.complIrElim {fv l r d}
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
 
+
 def Cause.IsWeakCauseFv.noneElim {fv d}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv (.none) d)
@@ -343,7 +366,7 @@ def Cause.IsWeakCauseFv.noneElim {fv d}
 
 
 def Cause.IsStrongCauseFv.const {fv x d}:
-  IsStrongCauseFv (Cause.const x d) fv (.const x) d
+  IsStrongCauseFv (Cause.cinsJust x d) fv (.const x) d
 :=
   fun _ _ isSat => isSat.cinsSat ⟨rfl, rfl⟩
 
@@ -353,9 +376,15 @@ def Cause.IsStrongCauseFv.constElim {fv x d}
 :
   cause.cins x d
 :=
-  byContradiction fun notInCins =>
-    let isSat := cause.leastValsApxAreSat
-    notInCins (isCause isSat)
+  isCause cause.leastValsApxAreSat
+
+def Cause.IsStrongCauseFv.complConstElim {fv x d}
+  {cause: Cause Pair}
+  (isCause: cause.IsStrongCauseFv fv (.compl (.const x)) d)
+:
+  cause.bout x d
+:=
+  (isCause cause.leastValsApxAreSat).dne
 
 def Cause.IsStrongCauseFv.noneElim {fv d}
   {cause: Cause Pair}
