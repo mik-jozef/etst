@@ -30,6 +30,15 @@ def Cause.const
   bout _ := ∅
 }
 
+def Cause.union
+  (a b: Cause D)
+:
+  Cause D
+:= {
+  cins x d := a.cins x d ∨ b.cins x d
+  bout x d := a.bout x d ∨ b.bout x d
+}
+
 def Cause.ofValDef
   (b c: Valuation D)
 :
@@ -57,6 +66,30 @@ where
   boutLe: a.bout ≤ b.bout
 
 instance (D: Type*): HasSubset (Cause D) := ⟨Cause.IsSubset⟩
+
+
+def Cause.IsWeaklySatisfiedBy.unionElimL
+  {a b: Cause D}
+  {bg c: Valuation D}
+  (isSat: (Cause.union a b).IsWeaklySatisfiedBy bg c)
+:
+  a.IsWeaklySatisfiedBy bg c
+:= {
+  cinsSat := fun inCins => isSat.cinsSat (Or.inl inCins)
+  boutSat := fun inBout => isSat.boutSat (Or.inl inBout)
+}
+
+def Cause.IsWeaklySatisfiedBy.unionElimR
+  {a b: Cause D}
+  {bg c: Valuation D}
+  (isSat: (Cause.union a b).IsWeaklySatisfiedBy bg c)
+:
+  b.IsWeaklySatisfiedBy bg c
+:= {
+  cinsSat := fun inCins => isSat.cinsSat (Or.inr inCins)
+  boutSat := fun inBout => isSat.boutSat (Or.inr inBout)
+}
+
 
 /-
   This definition differs from `IsCauseInapplicable` in that it
@@ -267,6 +300,48 @@ def Cause.IsWeakCauseFv.constElim {fv x d}
     let isSat := cause.maximalValsApxAreSat
     notInCins (isCause isSat)
 
+def Cause.IsWeakCauseFv.complIrElim {fv l r d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv (.compl (.ir l r)) d)
+  (b c: Valuation Pair)
+:
+  Or
+    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv fv (.compl l) d)
+    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv fv (.compl r) d)
+:=
+  let causeUn := cause.union (Cause.ofValPos b c)
+  let isSat := causeUn.maximalValsApxAreSat.unionElimL
+  match not_and_or.mp (isCause isSat) with
+  | Or.inl isPosL =>
+    Or.inl (fun _ _ isSat =>
+      BasicExpr.triIntp2_mono_std_posMem
+        (expr := .compl l)
+        (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
+        (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
+        (fun _ _ inCins => isSat.cinsSat inCins)
+        isPosL)
+  | Or.inr isPosR =>
+    Or.inr (fun _ _ isSat =>
+      BasicExpr.triIntp2_mono_std_posMem
+        (expr := .compl r)
+        (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
+        (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
+        (fun _ _ inCins => isSat.cinsSat inCins)
+        isPosR)
+
+def Cause.IsWeakCauseFv.noneElim {fv d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv (.none) d)
+  {P: Prop}
+:
+  P
+:=
+  SingleLaneExpr.inNoneElim
+    (isCause cause.maximalValsApxAreSat)
+
+
 def Cause.IsStrongCauseFv.const {fv x d}:
   IsStrongCauseFv (Cause.const x d) fv (.const x) d
 :=
@@ -281,17 +356,6 @@ def Cause.IsStrongCauseFv.constElim {fv x d}
   byContradiction fun notInCins =>
     let isSat := cause.leastValsApxAreSat
     notInCins (isCause isSat)
-
-
-def Cause.IsWeakCauseFv.noneElim {fv d}
-  {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.none) d)
-  {P: Prop}
-:
-  P
-:=
-  SingleLaneExpr.inNoneElim
-    (isCause cause.maximalValsApxAreSat)
 
 def Cause.IsStrongCauseFv.noneElim {fv d}
   {cause: Cause Pair}

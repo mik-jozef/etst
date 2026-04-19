@@ -152,17 +152,87 @@ def allInternalInapp {dl n fv expr d}
       allInternalInapp
         extIsEmpty everyCauseInapp inCycle intCause (bodyIsCause dB)
     | .blockedBout _ inBout _ => inBout.elim
-  | .compl _ =>
-    let isExtInapp := everyCauseInapp inExtCycle _ isWeakCauseCompl
-    match isExtInapp with
-    | .blockedBout ⟨xEq, dEq⟩ isDefFn =>
-      let isDef := not_not_intro (isDefFn xEq dEq)
-      let isInapp := intIsCause.isInapplicableOfIsNonmember isDef
+  -- | .compl _ =>
+  --   let isExtInapp := everyCauseInapp inExtCycle _ isWeakCauseCompl
+  --   match isExtInapp with
+  --   | .blockedBout ⟨xEq, dEq⟩ isDefFn =>
+  --     let isDef := not_not_intro (isDefFn xEq dEq)
+  --     let isInapp := intIsCause.isInapplicableOfIsNonmember isDef
+  --     match isInapp with
+  --     | .blockedCins inCins notPos =>
+  --       .blockedCinsOut inCins (DefList.Out.isComplete notPos)
+  --     | .blockedBout inBout isDef =>
+  --       .blockedBout inBout (DefList.Ins.isComplete isDef)
+  | .compl (.const x) =>
+    sorry
+  | .compl (.var x) =>
+    sorry
+  | .compl (.null) =>
+    sorry
+  | .compl (.pair left rite) =>
+    sorry
+  | .compl (.ir left rite) =>
+    let extIsCauseL :=
+      isWeakCauseUnL (left:=left.compl) (rite:=rite.compl)
+    let inExtCycleL :=
+      match everyCauseInapp inExtCycle _ extIsCauseL with
+      | .blockedCins ⟨xEq, dEq⟩ inCycle =>
+        xEq ▸ dEq ▸ inCycle
+    
+    let extIsCauseR :=
+      isWeakCauseUnR (left:=left.compl) (rite:=rite.compl)
+    let inExtCycleR :=
+      match everyCauseInapp inExtCycle _ extIsCauseR with
+      | .blockedCins ⟨xEq, dEq⟩ inCycle =>
+        xEq ▸ dEq ▸ inCycle
+    
+    let intWfm := (dl.prefix n).wfm
+    let isInappOfInappUn
+      {cause: Cause Pair}
+      (isInapp:
+        (dl.prefix n).IsCauseInapplicableExtended
+          (intOfExtCycle dl n extCycle)
+          (cause.union (Cause.ofValPos intWfm Valuation.empty)))
+    :
+      (dl.prefix n).IsCauseInapplicableExtended
+        (intOfExtCycle dl n extCycle)
+        cause
+    :=
       match isInapp with
-      | .blockedCins inCins notPos =>
-        .blockedCinsOut inCins (DefList.Out.isComplete notPos)
-      | .blockedBout inBout isDef =>
-        .blockedBout inBout (DefList.Ins.isComplete isDef)
+      | .blockedCinsCycle (Or.inl inCins) inCycle =>
+        .blockedCinsCycle inCins inCycle
+      | .blockedCinsOut (Or.inl inCins) isOut =>
+        .blockedCinsOut inCins isOut
+      | .blockedBout (Or.inl inBout) isIns =>
+        .blockedBout inBout isIns
+      | .blockedBout (Or.inr inBout) isIns =>
+        isIns.nopeNotDef inBout
+    
+    match intIsCause.complIrElim intWfm Valuation.empty with
+    | Or.inl isCauseL =>
+      have := complBinLtL left rite
+      isInappOfInappUn
+        (allInternalInapp
+          extIsEmpty
+          everyCauseInapp
+          inExtCycleL
+          _
+          isCauseL)
+    | Or.inr isCauseR =>
+      have := complBinLtR left rite
+      isInappOfInappUn
+        (allInternalInapp
+          extIsEmpty
+          everyCauseInapp
+          inExtCycleR
+          _
+          isCauseR)
+  | .compl (.full body) =>
+    sorry
+  | .compl (.compl body) =>
+    sorry
+  | .compl (.arbIr body) =>
+    sorry
   | .arbIr body =>
     let bodyIsCause dX _ _ isSat :=
       inArbIrElim (intIsCause isSat) dX
@@ -177,6 +247,8 @@ def allInternalInapp {dl n fv expr d}
       allInternalInapp
         extIsEmpty everyCauseInapp inCycle intCause (bodyIsCause dX)
     | .blockedBout _ inBout _ => inBout.elim
+
+termination_by sizeOf expr
 
 /-
   Has to use the weird equality trick :( else we get:
@@ -238,10 +310,11 @@ def externalInsElimHelper {dl n fv index cst expr p}
       fun dB =>
         externalInsElimHelper (cinsSat (isAtFullElim insList dB)) rfl rfl
     | .compl _ =>
-      let insList: IsAt _ .defLane p :=
-        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      let inBout := boutSat (isAtComplElim insList).dne
-      externalOutElimHelper inBout rfl rfl
+      -- let insList: IsAt _ .defLane p :=
+      --   isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
+      -- let inBout := boutSat (isAtComplElim insList).dne
+      -- externalOutElimHelper inBout rfl rfl
+      sorry
     | .arbIr _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)

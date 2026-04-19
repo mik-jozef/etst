@@ -1,4 +1,5 @@
 import Etst.WFC.Syntax.FiniteDefList
+import Etst.WFC.Utils.Expr.NegationNormalform
 
 namespace Etst
 open SingleLaneExpr
@@ -9,17 +10,22 @@ open SingleLaneExpr
   Lists are encoded with null as the empty list, and
   (head, tail) as a non-empty list.
   
-  Expressions are encoded like this:
+  Expressions are converted to negation normal form and then encoded
+  like this:
   
   ```
-    | const x        => (0, x)
-    | var x          => (1, x)
-    | null           => (2, null)
-    | pair left rite => (3, (left, rite))
-    | ir left rite   => (4, (left, rite))
-    | full body      => (5, body)
-    | compl body     => (6, body)
-    | arbIr body     => (7, body)
+    | const x         => (0, x)
+    | compl (const x) => (1, x)
+    | var x           => (2, x)
+    | compl (var x)   => (3, x)
+    | null            => (4, null)
+    | pair left rite  => (5, (left, rite))
+    | ir left rite    => (6, (left, rite))
+    | un left rite    => (7, (left, rite))
+    | full body       => (8, body)
+    | some body       => (9, body)
+    | arbIr body      => (10, body)
+    | arbUn body      => (11, body)
   ```
   
   Any pair that does not conform to one of the above encodings is
@@ -27,6 +33,19 @@ open SingleLaneExpr
   
   A definition list (with all but finitely many definitions at the
   start being empty) is encoded as a list of expression encodings.
+  
+  Note: we need to use negation normal form because the definitions
+  below have different semantics, while `uniSetMap` below would
+  otherwise effectively convert one to the other:
+  
+  ```
+    -- The empty set
+    let T := ~~T
+    
+    -- The undetermined set
+    let A := ~B
+    let B := ~A
+  ```
 -/
 
 namespace uniSetMapDl
@@ -41,18 +60,34 @@ namespace uniSetMapDl
       & [uniSetMapConst] (dl, (null, [getNthConst] dl x))
     )
   
-  def exprEncVar: BasicExpr :=
+  def exprEncComplConst: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex x,
       & (?some (1, x) & expr)
+      & ! [uniSetMapConst] (dl, (null, [getNthConst] dl x))
+    )
+  
+  def exprEncVar: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex x,
+      & (?some (2, x) & expr)
       & [getNthConst] fv x
+    )
+  
+  def exprEncComplVar: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex x,
+      & (?some (3, x) & expr)
+      & ! [getNthConst] fv x
     )
   
   def exprEncNull: BasicExpr :=
     s3(
       null; dl, fv, expr;
-      & (?some (2, null) & expr)
+      & (?some (4, null) & expr)
       & null
     )
   
@@ -61,7 +96,7 @@ namespace uniSetMapDl
       null; dl, fv, expr;
       Ex left,
       Ex rite,
-      & (?some (3, (left, rite)) & expr)
+      & (?some (5, (left, rite)) & expr)
       & (
         [uniSetMapConst] (dl, (fv, left)),
         [uniSetMapConst] (dl, (fv, rite))
@@ -73,46 +108,70 @@ namespace uniSetMapDl
       null; dl, fv, expr;
       Ex left,
       Ex rite,
-      & (?some (4, (left, rite)) & expr)
+      & (?some (6, (left, rite)) & expr)
       & [uniSetMapConst] (dl, (fv, left))
       & [uniSetMapConst] (dl, (fv, rite))
+    )
+  
+  def exprEncUn: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex left,
+      Ex rite,
+      & (?some (7, (left, rite)) & expr)
+      & (
+        [uniSetMapConst] (dl, (fv, left))
+        | [uniSetMapConst] (dl, (fv, rite))
+      )
     )
   
   def exprEncFull: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex body,
-      & (?some (5, body) & expr)
+      & (?some (8, body) & expr)
       & (?full [uniSetMapConst] (dl, (fv, body)))
     )
   
-  def exprEncCompl: BasicExpr :=
+  def exprEncSome: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex body,
-      & (?some (6, body) & expr)
-      & (! [uniSetMapConst] (dl, (fv, body)))
+      & (?some (9, body) & expr)
+      & (?some [uniSetMapConst] (dl, (fv, body)))
     )
   
   def exprEncArbIr: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex body,
-      & (?some (7, body) & expr)
+      & (?some (10, body) & expr)
       & (All p, [uniSetMapConst] (dl, ((p, fv), body)))
+    )
+  
+  def exprEncArbUn: BasicExpr :=
+    s3(
+      null; dl, fv, expr;
+      Ex body,
+      & (?some (11, body) & expr)
+      & (Ex p, [uniSetMapConst] (dl, ((p, fv), body)))
     )
   
   def exprEncList: BasicExpr :=
     s3(
       null,
       | [exprEncConst]
+      | [exprEncComplConst]
       | [exprEncVar]
+      | [exprEncComplVar]
       | [exprEncNull]
       | [exprEncPair]
       | [exprEncIr]
+      | [exprEncUn]
       | [exprEncFull]
-      | [exprEncCompl]
+      | [exprEncSome]
       | [exprEncArbIr]
+      | [exprEncArbUn]
     )
 end uniSetMapDl
 
@@ -147,17 +206,33 @@ namespace uniSetMapDl
 end uniSetMapDl
 
 -- Any pair not in the codomain encodes `none`.
-def BasicExpr.encoding: BasicExpr → Pair
+def BasicExpr.encodingNnf: BasicExpr → Pair
 | .const x => .pair (.nat 0) (.nat x)
-| .var x => .pair (.nat 1) (.nat x)
-| .null => .pair (.nat 2) .null
+| .compl (.const x) => .pair (.nat 1) (.nat x)
+| .var x => .pair (.nat 2) (.nat x)
+| .compl (.var x) => .pair (.nat 3) (.nat x)
+| .null => .pair (.nat 4) .null
 | .pair left rite =>
-  .pair (.nat 3) (.pair left.encoding rite.encoding)
+  .pair (.nat 5) (.pair left.encodingNnf rite.encodingNnf)
 | .ir left rite =>
-  .pair (.nat 4) (.pair left.encoding rite.encoding)
-| .full body => .pair (.nat 5) body.encoding
-| .compl body => .pair (.nat 6) body.encoding
-| .arbIr body => .pair (.nat 7) body.encoding
+  .pair (.nat 6) (.pair left.encodingNnf rite.encodingNnf)
+| .compl (.ir (.compl left) (.compl rite)) =>
+  .pair (.nat 7) (.pair left.encodingNnf rite.encodingNnf)
+| .full body => .pair (.nat 8) body.encodingNnf
+| .compl (.full (.compl body)) => .pair (.nat 9) body.encodingNnf
+| .arbIr body => .pair (.nat 10) body.encodingNnf
+| .compl (.arbIr (.compl body)) => .pair (.nat 11) body.encodingNnf
+| _ =>
+  -- We don't care what non-nnf expressions encode as, but `none`
+  -- is a convenient choice.
+  .pair (.nat 10) (.pair (.nat 3) (.nat 0))
+
+def BasicExpr.encoding
+  (expr: BasicExpr)
+:
+  Pair
+:=
+  BasicExpr.encodingNnf expr.toNnf
 
 def DefList.prefix
   (dl: DefList)

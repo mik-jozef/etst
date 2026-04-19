@@ -20,8 +20,8 @@ namespace Pair
   
   
   def nat: Nat → Pair
-  | Nat.zero => Pair.null
-  | Nat.succ n => Pair.pair (nat n) null
+  | .zero => Pair.null
+  | .succ n => Pair.pair (nat n) null
   
   instance nat.inst: Coe Nat Pair := ⟨nat⟩
   
