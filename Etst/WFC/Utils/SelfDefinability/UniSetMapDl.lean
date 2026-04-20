@@ -391,9 +391,7 @@ namespace uniSetMapDl
   def getNth {list i lane}
     (lt: i < list.length)
   :
-    (uniSetMapDl.wfm consts.getNth).getLane
-      lane
-      (getNthEnc list i list[i])
+    vals.getNth.getLane lane (getNthEnc list i list[i])
   :=
     match list with
     | listH :: listT =>
@@ -420,9 +418,7 @@ namespace uniSetMapDl
   def getNthDl {dl n i lane}
     (lt: i < n)
   :
-    (uniSetMapDl.wfm consts.getNth).getLane
-      lane
-      (getDefNthEnc dl n i)
+    vals.getNth.getLane lane (getDefNthEnc dl n i)
   := by
     let lt := (dl.prefixList_length_eq 0 n).symm ▸ lt
     unfold getDefNthEnc
@@ -431,10 +427,7 @@ namespace uniSetMapDl
     exact getNth (i:=i) lt
   
   def getNthElim {list i valEnc lane}
-    (inGetDef:
-      (uniSetMapDl.wfm consts.getNth).getLane
-        lane
-        (getNthEnc list i valEnc))
+    (inGetDef: vals.getNth.getLane lane (getNthEnc list i valEnc))
   :
     list[i]? = valEnc
   :=
@@ -471,7 +464,7 @@ namespace uniSetMapDl
   
   def getNthElimLt {list i valEnc lane}
     (inGetDef:
-      (uniSetMapDl.wfm consts.getNth).getLane
+      vals.getNth.getLane
         lane
         (getNthEnc list i valEnc))
   :
@@ -481,14 +474,9 @@ namespace uniSetMapDl
     (List.getElem?_eq_some_iff.mp eqSome).choose
   
   def getNthLaneSwap {list i valEnc laneA laneB}
-    (inGetDef:
-      (uniSetMapDl.wfm consts.getNth).getLane
-        laneA
-        (getNthEnc list i valEnc))
+    (inGetDef: vals.getNth.getLane laneA (getNthEnc list i valEnc))
   :
-    (uniSetMapDl.wfm consts.getNth).getLane
-      laneB
-      (getNthEnc list i valEnc)
+    vals.getNth.getLane laneB (getNthEnc list i valEnc)
   :=
     let lt := getNthElimLt inGetDef
     let valEq := getNthElim inGetDef
@@ -496,13 +484,19 @@ namespace uniSetMapDl
     have valEq: list[i] = valEnc := Option.some.inj (eq ▸ valEq)
     valEq ▸ getNth lt
   
+  def getNthClassical {list i valEnc}:
+    Or
+      (uniSetMapDl.Ins consts.getNth (getNthEnc list i valEnc))
+      (uniSetMapDl.Out consts.getNth (getNthEnc list i valEnc))
+  :=
+    Classical.or_iff_not_imp_left.mpr fun nins =>
+      DefList.Out.isComplete fun isPos =>
+        let isDef :=
+          getNthLaneSwap (laneA:=.posLane) (laneB:=.defLane) isPos
+        nins (DefList.Ins.isComplete isDef)
+  
   def getNthElimD {list i valEnc lane df}
-    (inGetDef:
-      intp
-        (const lane consts.getNth)
-        []
-        uniSetMapDl.wfm
-        (getNthEnc list i valEnc))
+    (inGetDef: vals.getNth.getLane lane (getNthEnc list i valEnc))
   :
     list[i]?.getD df = valEnc
   :=
@@ -510,7 +504,7 @@ namespace uniSetMapDl
   
   def getNthEq {dl: DefList} {n x exprEnc lane}
     (inGetNth:
-      (uniSetMapDl.wfm consts.getNth).getLane
+      (vals.getNth).getLane
         lane
         (getNthEnc (dl.prefixList 0 n) x exprEnc))
   :

@@ -71,7 +71,6 @@ def extOfIntCycle
       (AllIntCausesInappIh dl n intCycle fv expr pInt)
       (pExt = .pair (uniSetMapIndex dl n fv expr) pInt))
 
-mutual
 def internalCauseElim {dl n fv expr p}
   {intCause: Cause Pair}
   (intIsCause: intCause.IsStrongCauseFv fv expr p)
@@ -99,6 +98,13 @@ def internalCauseElim {dl n fv expr p}
   | .pair _ _ => sorry
   | .ir _ _ => sorry
   | .full _ => sorry
+  | .compl (.const x) =>
+    let isAt :=
+      isAtComplConst
+        (lane := .defLane)
+        (fun exprNeq inGetNth => exprNeq (getNthEq inGetNth))
+        (boutIh intIsCause.complConstElim)
+    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
   | .compl _ => sorry
   | .arbIr _ => sorry
 
@@ -110,6 +116,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
     {intCause: _} →
     intCause.IsWeakCauseFv [] ((dl.prefix n).getDef x) p →
     IntCauseIsInappIh dl n intCycle intCause)
+  -- TODO delete if unused.
   (intCycleIsEmpty:
     ∀ {x p},
       intCycle x p →
@@ -132,17 +139,12 @@ def allCausesInappElim {dl n fv intCycle expr p}
     let isAt := isAtOfInsDef (isCause (extCause.maximalValsApxAreSat))
     let isAtDef :=
       isAtConstElim
-        (lane := .defLane)
         isAt
         (fun inCins =>
           byContradiction fun notDef =>
           let out :=
-            DefList.Out.isComplete
-              (Function.comp
-                notDef
-                (getNthLaneSwap
-                  (laneA := .posLane)
-                  (laneB := .defLane)))
+            getNthClassical.resolve_left
+              (notDef ∘ DefList.Ins.isSound)
           isApplicable (.blockedCinsOut inCins out))
     match allInapp Cause.IsWeakCauseFv.const with
     | .blockedCins ⟨xEq, dEq⟩ inCycle =>
@@ -150,53 +152,78 @@ def allCausesInappElim {dl n fv intCycle expr p}
         intCauseInappIh (xEq ▸ dEq ▸ inCycle) (intCause := intCause)
       let isInExtCycle := ⟨rfl, ⟨_, _, _, allInapp _, rfl⟩⟩
       isApplicable (.blockedCinsCycle isAtDef isInExtCycle)
-  | .var x => sorry
+  | .var x =>
+    byContradiction fun isApplicable =>
+    let isAt := isAtOfInsDef (isCause (extCause.maximalValsApxAreSat))
+    let inGetNth:
+      extCause.cins consts.getNth (getNthEnc fv x p)
+    :=
+      isAtVarElim isAt
+    let insGetNth :=
+      byContradiction fun notIns =>
+      let out := getNthClassical.resolve_left notIns
+      isApplicable (.blockedCinsOut inGetNth out)
+    let inVar:
+      (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm p
+    :=
+      inVar (getNthElim (lane := .defLane) insGetNth.isSound)
+    nomatch allInapp (intCause := Cause.empty) (fun _ _ _ => inVar)
   | .null => sorry
   | .pair _ _ => sorry
   | .ir _ _ => sorry
   | .full _ => sorry
-  | .compl body =>
+  | .compl (.const x) =>
     let isAt := isAtOfInsDef (isCause (extCause.maximalValsApxAreSat))
-    let inBout := (isAtComplElim isAt).dne
-    let cause: Cause Pair := {
-      cins x d :=
-        uniSetMapDl.Ins
-          consts.uniSetMap
-          (.pair (uniSetMapIndexDef dl n x) d)
-      bout x d :=
-        uniSetMapDl.Out
-          consts.uniSetMap
-          (.pair (uniSetMapIndexDef dl n x) d)
-    }
-    byContradiction fun isApplicable =>
-    let isCauseBody: cause.IsStrongCauseFv fv body p :=
-      fun b c isSat =>
-      byContradiction fun notDef =>
-        let isWeakCauseCompl :=
-          Cause.IsWeakCauseFv.ofValPos (expr := body.compl) notDef
-        match allInapp isWeakCauseCompl with
-        | .blockedCins inCins inIntCycle =>
-          let out :=
-            DefList.Out.intro intCycle intCycleIsEmpty inIntCycle
-          let lkj: (b _).posMem _ := inCins
-          /-
-            Houston, we have a problem: `let a = !!a` is equivalent to
-            `let a = a`, but `uniSetMap` effectively splits that into
-            `let a := ~b; let b := ~a`, which has different semantics.
-            We need to convert our expressions to negation normal form.
-          -/
-          sorry
-        | .blockedBout inBout ins =>
-          inBout (isSat.cinsSat (DefList.Ins.isComplete ins))
-    let ins :=
-      internalCauseElim
-        isCauseBody
-        DefList.Ins.isSound
-        DefList.Out.isSound
-    isApplicable (.blockedBout inBout (DefList.Ins.isComplete ins))
-    -- .blockedBout inBout (DefList.Ins.isComplete ins)
+    
+    match allInapp Cause.IsWeakCauseFv.complConst with
+    | .blockedBout ⟨xEq, dEq⟩ ins =>
+    
+    match isAtComplConstElim isAt with
+    | Or.inl inBoutGetNth =>
+      if h: x < n then
+        let ins := DefList.Ins.isComplete (getNthDl (lane:=.defLane) h)
+        .blockedBout inBoutGetNth.dne ins
+      else
+        sorry
+    | Or.inr inBout =>
+      let ins := DefList.Ins.isComplete (xEq ▸ dEq ▸ ins)
+      .blockedBout inBout.dne ins
+  | .compl (.var x) =>
+    sorry
+  | .compl .null =>
+    sorry
+  | .compl (.pair left rite) =>
+    sorry
+  | .compl (.ir left rite) =>
+    let isAt := isAtOfInsDef (isCause (extCause.maximalValsApxAreSat))
+    
+    match isAtComplIrElim isAt with
+    | Or.inl inCinsL =>
+      let allInappL:
+        AllIntCausesInappIh dl n intCycle fv left.compl p
+      :=
+        fun isCauseL =>
+          let isCauseComplIr _ _ isSat inIr :=
+            isCauseL isSat inIr.left
+          allInapp isCauseComplIr
+      let isInExtCycleL := ⟨rfl, ⟨_, _, _, allInappL, rfl⟩⟩
+      .blockedCinsCycle inCinsL isInExtCycleL
+    | Or.inr inCinsR =>
+      let allInappR: AllIntCausesInappIh dl n intCycle fv rite.compl p :=
+        fun isCauseR =>
+          let isCauseComplIr _ _ isSat inIr :=
+            isCauseR isSat inIr.right
+          allInapp isCauseComplIr
+      let isInExtCycleR := ⟨rfl, ⟨_, _, _, allInappR, rfl⟩⟩
+      .blockedCinsCycle inCinsR isInExtCycleR
+  | .compl (.full _) =>
+    sorry
+  | .compl (.compl body) =>
+     sorry
+  | .compl (.arbIr _) =>
+    sorry
   | .arbIr _ => sorry
-end
+
 
 mutual
 def internalInsElim {dl n x p}
@@ -262,9 +289,60 @@ def uniSetMapAt_ge
       (Cause.IsStrongCauseFv.ofValDef isDef)
       (internalInsElim ∘ DefList.Ins.isComplete)
       (internalOutElim ∘ DefList.Out.isComplete)
-  posLe _ isPos :=
-    -- Function.mtr (internalOutElim ∘ DefList.Out.isComplete)
-    -- allCausesInappElim sorry
-    byContradiction fun notPos =>
-      sorry
+  posLe x (isPos: (uniSetMapAt dl n fv expr).posMem x) :=
+    byContradiction fun
+      (notPos: ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem x)
+    =>
+      let intCycle: Nat → Set Pair := (dl.prefix n).Out
+      let allInapp: AllIntCausesInappIh dl n intCycle fv expr x :=
+        fun isCause =>
+          match isCause.isInapplicableOfIsNonmember notPos with
+          | .blockedCins inCins inCycle =>
+            .blockedCins inCins (DefList.Out.isComplete inCycle)
+          | .blockedBout inBout isDef =>
+            let ins := internalInsElim (DefList.Ins.isComplete isDef)
+            .blockedBout inBout ins
+      let intCauseInapp
+        {x p: _}
+        (inIntCycle: intCycle x p)
+        {intCause: Cause Pair}
+        (isCause: intCause.IsWeakCauseFv [] ((dl.prefix n).getDef x) p)
+      :
+        IntCauseIsInappIh dl n intCycle intCause
+      :=
+        match inIntCycle with
+        | .intro cycle isEmpty inCycle =>
+          match isEmpty inCycle _ isCause with
+          | .blockedCins _ inCins inInnerCycle =>
+            .blockedCins inCins (.intro cycle isEmpty inInnerCycle)
+          | .blockedBout _ inBout ins =>
+            .blockedBout inBout (internalInsElim ins)
+      let intCycleIsEmpty:
+        ∀ {x p},
+          intCycle x p →
+          (intCause: Cause Pair) →
+          intCause.IsWeakCause ((dl.prefix n).getDef x) p →
+          (dl.prefix n).IsCauseInapplicable intCycle intCause
+      :=
+        fun inIntCycle _ isCause =>
+          match inIntCycle with
+          | .intro cycle isEmpty inCycle =>
+            match isEmpty inCycle _ isCause with
+            | .blockedCins cause inCins inInnerCycle =>
+              let out := .intro cycle isEmpty inInnerCycle
+              .blockedCins cause inCins out
+            | .blockedBout cause inBout ins =>
+              .blockedBout cause inBout ins
+      let out :=
+        DefList.Out.intro3
+          (extOfIntCycle dl n intCycle)
+          (fun inExtCycle _ isExtCause =>
+            let ⟨xEq, ⟨_, _, _, ⟨allInapp, dEq⟩⟩⟩ := inExtCycle
+            allCausesInappElim
+              allInapp
+              intCauseInapp
+              intCycleIsEmpty
+              (xEq ▸ dEq ▸ isExtCause))
+          ⟨rfl, ⟨_, _, _, ⟨allInapp, rfl⟩⟩⟩
+      out.nopePos isPos
 }

@@ -373,7 +373,7 @@ def isAtConstElim {dl n fv b c lane x p}
   (getNthSat:
     ∀ {list i valEnc},
       (c consts.getNth).getLane lane (getNthEnc list i valEnc) →
-      (uniSetMapDl.wfm consts.getNth).defMem (getNthEnc list i valEnc))
+      (vals.getNth).defMem (getNthEnc list i valEnc))
 :
   (c consts.uniSetMap).getLane
     lane
@@ -464,9 +464,8 @@ def isAtComplConstElim {dl n fv b c lane x p}
 
 def isAtVarElim {dl n fv b c lane x p}
   (ins: InUniSetMapAt dl n fv b c (.var x) lane p)
-  (cinsSat: (∀ {x d}, d ∈ (c x).getLane lane → uniSetMapDl.Ins x d))
 :
-  (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm p
+  (c consts.getNth).getLane lane (getNthEnc fv x p)
 :=
   let main ins :=
     let ⟨xEnc, ins⟩ := inArbUnElim ins
@@ -475,9 +474,7 @@ def isAtVarElim {dl n fv b c lane x p}
     let ins := inCallElimSingle ins rfl
     let ins := inCallElimSingle ins rfl
     let ins := inToggle2Elim 8 ins
-    let ins := (cinsSat ins).isSound
-    let ins := by rw [← xEncEq] at ins; exact ins
-    inVar (getNthElim (lane := .defLane) ins)
+    by unfold getNthEnc; exact xEncEq ▸ ins
   exprEncListElim
     ins
     (isAtConstNope · (by decide))

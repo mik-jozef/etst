@@ -18,8 +18,7 @@ def IsInappExtIh
         xExt = consts.uniSetMap →
         dExt = .pair (uniSetMapIndex dl n fv expr) dInt →
         ((dl.prefix n).triIntp fv expr).defMem dInt))
-      (xExt = consts.getNth →
-        (uniSetMapDl.wfm consts.getNth).defMem dExt)
+      (xExt = consts.getNth → vals.getNth.defMem dExt)
 
 def intOfExtCycle
   (dl: DefList)
@@ -154,7 +153,7 @@ def allInternalInapp {dl n fv expr d}
       let ⟨xEq, dEqGetNth⟩ := inCins
       let out := DefList.Out.intro extCycle extIsEmpty inCycle
       let insGetNth:
-        (uniSetMapDl.wfm consts.getNth).posMem (getNthEnc fv x d)
+        vals.getNth.posMem (getNthEnc fv x d)
       :=
         dEq ▸ uniSetMapDl.getNth (list:=fv) (lane:=.posLane) xLt
       False.elim (out.isSound (xEq ▸ dEqGetNth ▸ insGetNth))
@@ -232,7 +231,8 @@ def allInternalInapp {dl n fv expr d}
       extIsEmpty inExtCycle (causeComplVar fv x d) isWeakCauseComplVar
     with
     | .blockedBout _ ⟨xEq, dEq⟩ insGetNth =>
-      let inGetNth := xEq ▸ dEq ▸ insGetNth.isSound
+      let inGetNth: (uniSetMapDl.wfm consts.getNth).getLane _ _ :=
+        xEq ▸ dEq ▸ insGetNth.isSound
       let inVar:
         (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm d
       :=
@@ -450,7 +450,8 @@ def externalInsElimHelper {dl n fv index cst expr p}
     | .var _x =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      isAtVarElim insList cinsSat
+      let ins := (cinsSat (isAtVarElim insList)).isSound
+      inVar (b:=.empty) (c:=.empty) (getNthElim (lane := .defLane) ins)
     | .null =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
@@ -509,7 +510,10 @@ def externalOutElimHelper {dl n fv index cst expr p}
       | .blockedBout _ inBout ins =>
         .blockedBout inBout ⟨
           (fun xEq dEq => externalInsElimHelper ins xEq dEq),
-          (fun xEq => xEq ▸ DefList.Ins.isSound ins)
+          (fun xEq => show
+            (uniSetMapDl.wfm consts.getNth).defMem _
+          from
+            xEq ▸ DefList.Ins.isSound ins)
         ⟩
     
     fun isPos =>
