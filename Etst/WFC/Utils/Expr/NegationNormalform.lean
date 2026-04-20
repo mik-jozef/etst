@@ -33,7 +33,7 @@ namespace Etst
 --   .compl (.arbIr (.compl body.compl.toNnf))
 -- | .arbIr body => .arbIr body.toNnf
 def Expr.toNnfAux {E} : Expr E → Bool → Expr E
--- Positive context (negated = false)
+-- Positive context (isNegated = false)
 | .const e x, false => .const e x
 | .var x,     false => .var x
 | .null,      false => .null
@@ -42,7 +42,7 @@ def Expr.toNnfAux {E} : Expr E → Bool → Expr E
 | .full b,    false => .full (b.toNnfAux false)
 | .arbIr b,   false => .arbIr (b.toNnfAux false)
 | .compl b,   false => b.toNnfAux true -- Switch to negative context
--- Negative context (negated = true)
+-- Negative context (isNegated = true)
 | .const e x, true  => .compl (.const e x)
 | .var x,     true  => .compl (.var x)
 | .null,      true  => .pair .any .any
@@ -183,6 +183,15 @@ def SingleLaneExpr.intp2_toNnf_p
   congr (intp2_toNnf expr fv b c) rfl
 
 
+-- A unary helper for termination when recursing on nnf expressions.
+def complUnaryLt {E} [SizeOf E]
+  (body: Expr E)
+:
+  sizeOf (Expr.compl body) < 1 + (1 + (sizeOf body))
+:= by
+  apply Nat.add_lt_add_left
+  exact lt_add_of_pos_of_le zero_lt_one le_rfl
+
 -- A left helper for termination when recursing on nnf expressions.
 def complBinLtL {E} [SizeOf E]
   (left rite: Expr E)
@@ -198,7 +207,6 @@ def complBinLtR {E} [SizeOf E]
 :
   sizeOf (Expr.compl rite) < 1 + (1 + sizeOf left + sizeOf rite)
 := by
-  show 1 + sizeOf rite < 1 + (1 + sizeOf left + sizeOf rite)
   apply Nat.add_lt_add_left _ 1
   rw [Nat.add_assoc]
   apply lt_add_of_pos_of_le zero_lt_one

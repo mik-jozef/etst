@@ -696,13 +696,13 @@ def isAtFullElim {dl n fv b c body lane p}
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
 
-def isAtSomeElim {dl n fv b c body lane p}
-  (ins: InUniSetMapAt dl n fv b c (.some body) lane p)
+def isAtComplFullElim {dl n fv b c body lane p}
+  (ins: InUniSetMapAt dl n fv b c (.compl (.full body)) lane p)
 :
   ∃ dB,
     (c consts.uniSetMap).getLane
       lane
-      (.pair (uniSetMapIndex dl n fv body) dB)
+      (.pair (uniSetMapIndex dl n fv (.compl body)) dB)
 :=
   let main ins :=
     let ⟨bodyEnc, ins⟩ := inArbUnElim ins
@@ -763,13 +763,13 @@ def isAtArbIrElim {dl n fv b c body lane p}
     main
     (isAtArbUnNope · (by decide))
 
-def isAtArbUnElim {dl n fv b c body lane p}
-  (ins: InUniSetMapAt dl n fv b c (.arbUn body) lane p)
+def isAtComplArbIrElim {dl n fv b c body lane p}
+  (ins: InUniSetMapAt dl n fv b c (.compl (.arbIr body)) lane p)
 :
   ∃ dX,
     (c consts.uniSetMap).getLane
       lane
-      (.pair (uniSetMapIndex dl n (dX :: fv) body) p)
+      (.pair (uniSetMapIndex dl n (dX :: fv) (.compl body)) p)
 :=
   let main ins :=
     let ⟨bodyEnc, ins⟩ := inArbUnElim ins
@@ -1431,7 +1431,10 @@ def isWeakCauseFull {dl n fv body p}:
   fun _ _ isSat =>
     isInMap (isAtFull fun dB => isSat.cinsSat ⟨dB, rfl, rfl⟩)
 
-def isWeakCauseSome {dl n fv body dBody p}:
+def isWeakCauseSome {dl n fv p}
+  (body: BasicExpr)
+  (dBody: Pair)
+:
   (causeSome dl n fv body dBody).IsWeakCause
     (uniSetMapDl.getDef consts.uniSetMap)
     (.pair (uniSetMapIndex dl n fv (.some body)) p)

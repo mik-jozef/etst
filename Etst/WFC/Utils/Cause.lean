@@ -353,7 +353,6 @@ def Cause.IsWeakCauseFv.complPairElim {fv l r pL pR}
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
 
-
 def Cause.IsWeakCauseFv.complIrElim {fv l r d}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv (.compl (.ir l r)) d)
@@ -384,6 +383,62 @@ def Cause.IsWeakCauseFv.complIrElim {fv l r d}
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
+
+def Cause.IsWeakCauseFv.complFullElim {fv body d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv (.compl (.full body)) d)
+  (b c: Valuation Pair)
+:
+  ∃ dB,
+    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv
+      fv
+      (.compl body)
+      dB)
+:=
+  let causeUn := cause.union (Cause.ofValPos b c)
+  let isSat := causeUn.maximalValsApxAreSat.unionElimL
+  match Classical.not_forall.mp (isCause isSat) with
+  | ⟨dB, notDefBody⟩ =>
+    ⟨dB, fun _ _ isSat =>
+      BasicExpr.triIntp2_mono_std_posMem
+        (expr := body.compl)
+        (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
+        (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
+        (fun _ _ inCins => isSat.cinsSat inCins)
+        notDefBody⟩
+
+def Cause.IsWeakCauseFv.complComplElim {fv body d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv (.compl (.compl body)) d)
+:
+  cause.IsWeakCauseFv fv body d
+:=
+  fun _ _ isSat => (isCause isSat).dne
+
+def Cause.IsWeakCauseFv.complArbIrElim {fv body d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv (.compl (.arbIr body)) d)
+  (b c: Valuation Pair)
+:
+  ∃ dX,
+    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv
+      (dX :: fv)
+      (.compl body)
+      d)
+:=
+  let causeUn := cause.union (Cause.ofValPos b c)
+  let isSat := causeUn.maximalValsApxAreSat.unionElimL
+  match Classical.not_forall.mp (isCause isSat) with
+  | ⟨dX, notDefBody⟩ =>
+    ⟨dX, fun _ _ isSat =>
+      BasicExpr.triIntp2_mono_std_posMem
+        (expr := body.compl)
+        (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
+        (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
+        (fun _ _ inCins => isSat.cinsSat inCins)
+        notDefBody⟩
 
 
 def Cause.IsWeakCauseFv.noneElim {fv d}

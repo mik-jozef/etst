@@ -353,11 +353,52 @@ def allInternalInapp {dl n fv expr d}
           _
           isCauseR)
   | .compl (.full body) =>
-    sorry
+    match intIsCause.complFullElim (dl.prefix n).wfm .empty with
+    | ⟨dB, isCauseBody⟩ =>
+      let inExtCycleBody :=
+        let extIsCause := isWeakCauseSome (.compl body) dB
+        match everyCauseInapp inExtCycle _ extIsCause with
+        | .blockedCins ⟨xEq, dEq⟩ inCycle =>
+          xEq ▸ dEq ▸ inCycle
+      
+      have := complUnaryLt body
+      isInappOfInappUn
+        (allInternalInapp
+          extIsEmpty
+          everyCauseInapp
+          inExtCycleBody
+          _
+          isCauseBody)
   | .compl (.compl body) =>
-    sorry
+    let inExtCycleBody:
+      extCycle
+        consts.uniSetMap
+        (.pair (uniSetMapIndex dl n fv body) d)
+    :=
+      inExtCycle
+
+    allInternalInapp
+      extIsEmpty
+      everyCauseInapp
+      inExtCycleBody
+      intCause
+      intIsCause.complComplElim
   | .compl (.arbIr body) =>
-    sorry
+    match intIsCause.complArbIrElim (dl.prefix n).wfm .empty with
+    | ⟨dX, isCauseBody⟩ =>
+      let inExtCycleBody :=
+        let extIsCause := isWeakCauseArbUn (body:=.compl body)
+        match everyCauseInapp inExtCycle _ extIsCause with
+        | .blockedCins ⟨xEq, dEq⟩ inCycle =>
+          xEq ▸ dEq ▸ inCycle
+      have := complUnaryLt body
+      isInappOfInappUn
+        (allInternalInapp
+          extIsEmpty
+          everyCauseInapp
+          inExtCycleBody
+          _
+          isCauseBody)
   | .arbIr body =>
     let bodyIsCause dX _ _ isSat :=
       inArbIrElim (intIsCause isSat) dX
