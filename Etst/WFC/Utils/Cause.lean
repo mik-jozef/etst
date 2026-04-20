@@ -322,6 +322,38 @@ def Cause.IsWeakCauseFv.complConstElim {fv x d}
   (isCause cause.maximalValsApxAreSat).dne
   
 
+def Cause.IsWeakCauseFv.complPairElim {fv l r pL pR}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv (.compl (.pair l r)) (.pair pL pR))
+  (b c: Valuation Pair)
+:
+  Or
+    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv fv (.compl l) pL)
+    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv fv (.compl r) pR)
+:=
+  let causeUn := cause.union (Cause.ofValPos b c)
+  let isSat := causeUn.maximalValsApxAreSat.unionElimL
+  match not_and_or.mp (fun inPair => isCause isSat ⟨pL, pR, rfl, inPair.left, inPair.right⟩) with
+  | Or.inl isPosL =>
+    Or.inl (fun _ _ isSat =>
+      BasicExpr.triIntp2_mono_std_posMem
+        (expr := .compl l)
+        (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
+        (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
+        (fun _ _ inCins => isSat.cinsSat inCins)
+        isPosL)
+  | Or.inr isPosR =>
+    Or.inr (fun _ _ isSat =>
+      BasicExpr.triIntp2_mono_std_posMem
+        (expr := .compl r)
+        (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
+        (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
+        (fun _ _ inCins => isSat.cinsSat inCins)
+        isPosR)
+
+
 def Cause.IsWeakCauseFv.complIrElim {fv l r d}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv (.compl (.ir l r)) d)
