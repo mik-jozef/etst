@@ -49,6 +49,34 @@ def Cause.union
   bout x d := a.bout x d ∨ b.bout x d
 }
 
+def Cause.arbUn
+  {I: Type*}
+  (f: I → Cause D)
+:
+  Cause D
+:= {
+  -- Originally defining these as follows was a mistake!
+  -- 
+  -- ```
+  --   cins := ⋃ i, (f i).cins,
+  --   bout := ⋃ i, (f i).bout,
+  -- ```
+  -- 
+  -- Instead of
+  -- 
+  --     { d: D | ∃ i: I, d ∈ f i } \,,
+  -- 
+  -- the arbitrary set union is defined in Mathlib as
+  -- 
+  --     { d: D | ∃ s: Set D, (∃ i: I, s = f i) ∧ d ∈ s } \,.
+  -- 
+  -- This is silly. (And yes, it is because it's the result of
+  -- instantiating a more general definition to a specific context
+  -- where it makes less sense, and that doesn't make it less silly).
+  cins x d := ∃ i, (f i).cins x d
+  bout x d := ∃ i, (f i).bout x d
+}
+
 def Cause.ofValDef
   (b c: Valuation D)
 :
@@ -100,6 +128,31 @@ def Cause.IsWeaklySatisfiedBy.unionElimR
   boutSat := fun inBout => isSat.boutSat (Or.inr inBout)
 }
 
+def Cause.IsWeaklySatisfiedBy.arbUn
+  {I: Type*}
+  {f: I → Cause D}
+  {bg c: Valuation D}
+  (allSat: ∀ i, (f i).IsWeaklySatisfiedBy bg c)
+:
+  (Cause.arbUn f).IsWeaklySatisfiedBy bg c
+:= {
+  cinsSat := fun ⟨i, inCins⟩ => (allSat i).cinsSat inCins
+  boutSat := fun ⟨i, inBout⟩ => (allSat i).boutSat inBout
+}
+
+def Cause.IsWeaklySatisfiedBy.arbUnElim
+  {I: Type*}
+  {f: I → Cause D}
+  {bg c: Valuation D}
+  (isSat: (Cause.arbUn f).IsWeaklySatisfiedBy bg c)
+  (i: I)
+:
+  (f i).IsWeaklySatisfiedBy bg c
+:= {
+  cinsSat := fun inCins => isSat.cinsSat ⟨i, inCins⟩
+  boutSat := fun inBout => isSat.boutSat ⟨i, inBout⟩
+}
+
 
 /-
   This definition differs from `IsCauseInapplicable` in that it
@@ -142,6 +195,40 @@ def Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy
         byContradiction fun isDef =>
           isApplicable (blockedBout inBout isDef.dne)
   }
+
+def Cause.IsInapplicable.Not.union
+  {a b: Cause D}
+  {outSet inSet: Nat → Set D}
+  (aIsApp: ¬ Cause.IsInapplicable a outSet inSet)
+  (bIsApp: ¬ Cause.IsInapplicable b outSet inSet)
+  (abIsInapp: Cause.IsInapplicable (a.union b) outSet inSet)
+:
+  False
+:=
+  match abIsInapp with
+  | .blockedCins (Or.inl inCins) inCycle =>
+    aIsApp (.blockedCins inCins inCycle)
+  | .blockedCins (Or.inr inCins) inCycle =>
+    bIsApp (.blockedCins inCins inCycle)
+  | .blockedBout (Or.inl inBout) isIns =>
+    aIsApp (.blockedBout inBout isIns)
+  | .blockedBout (Or.inr inBout) isIns =>
+    bIsApp (.blockedBout inBout isIns)
+
+def Cause.IsInapplicable.Not.arbUn
+  {I: Type*}
+  {causes: I → Cause D}
+  {outSet inSet: Nat → Set D}
+  (isApp: ∀ i, ¬ Cause.IsInapplicable (causes i) outSet inSet)
+  (isInapp: Cause.IsInapplicable (Cause.arbUn causes) outSet inSet)
+:
+  False
+:=
+  match isInapp with
+  | .blockedCins ⟨i, inCins⟩ inCycle =>
+    isApp i (.blockedCins inCins inCycle)
+  | .blockedBout ⟨i, inBout⟩ isIns =>
+    isApp i (.blockedBout inBout isIns)
 
 def Cause.IsWeaklySatisfiedBy.toIsApplicable
   {cause b c}
@@ -245,8 +332,8 @@ def Cause.leastValsApxAreSat
   (cause: Cause D)
 :
   cause.IsStronglySatisfiedBy
-    (cause.leastBackgroundApx)
-    (cause.leastContextApx)
+    cause.leastBackgroundApx
+    cause.leastContextApx
 := {
   cinsSat := id
   boutSat := Function.eval
@@ -287,8 +374,8 @@ def Cause.maximalValsApxAreSat
   (cause: Cause D)
 :
   cause.IsWeaklySatisfiedBy
-    (cause.maximalBackgroundApx)
-    (cause.maximalContextApx)
+    cause.maximalBackgroundApx
+    cause.maximalContextApx
 := {
   cinsSat := id
   boutSat := Function.eval
@@ -320,7 +407,22 @@ def Cause.IsWeakCauseFv.complConstElim {fv x d}
   cause.bout x d
 :=
   (isCause cause.maximalValsApxAreSat).dne
-  
+
+
+def Cause.IsWeakCauseFv.pair {fv l r pL pR}
+  {causeL causeR: Cause Pair}
+  (leftIsCause: causeL.IsWeakCauseFv fv l pL)
+  (riteIsCause: causeR.IsWeakCauseFv fv r pR)
+:
+  (causeL.union causeR).IsWeakCauseFv fv (.pair l r) (.pair pL pR)
+:=
+  fun _ _ isSat => ⟨
+    pL,
+    pR,
+    rfl,
+    leftIsCause isSat.unionElimL,
+    riteIsCause isSat.unionElimR,
+  ⟩
 
 def Cause.IsWeakCauseFv.complPairElim {fv l r pL pR}
   {cause: Cause Pair}
@@ -353,6 +455,19 @@ def Cause.IsWeakCauseFv.complPairElim {fv l r pL pR}
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
 
+
+def Cause.IsWeakCauseFv.ir {fv l r d}
+  {causeL causeR: Cause Pair}
+  (leftIsCause: causeL.IsWeakCauseFv fv l d)
+  (riteIsCause: causeR.IsWeakCauseFv fv r d)
+:
+  (causeL.union causeR).IsWeakCauseFv fv (.ir l r) d
+:=
+  fun _ _ isSat => ⟨
+    leftIsCause isSat.unionElimL,
+    riteIsCause isSat.unionElimR,
+  ⟩
+
 def Cause.IsWeakCauseFv.complIrElim {fv l r d}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv (.compl (.ir l r)) d)
@@ -383,6 +498,7 @@ def Cause.IsWeakCauseFv.complIrElim {fv l r d}
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
+
 
 def Cause.IsWeakCauseFv.complFullElim {fv body d}
   {cause: Cause Pair}
@@ -443,7 +559,7 @@ def Cause.IsWeakCauseFv.complArbIrElim {fv body d}
 
 def Cause.IsWeakCauseFv.noneElim {fv d}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.none) d)
+  (isCause: cause.IsWeakCauseFv fv .none d)
   {P: Prop}
 :
   P
@@ -475,7 +591,7 @@ def Cause.IsStrongCauseFv.complConstElim {fv x d}
 
 def Cause.IsStrongCauseFv.noneElim {fv d}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.none) d)
+  (isCause: cause.IsStrongCauseFv fv .none d)
   {P: Prop}
 :
   P
