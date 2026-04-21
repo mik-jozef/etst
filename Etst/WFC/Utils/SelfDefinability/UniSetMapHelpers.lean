@@ -336,7 +336,7 @@ def exprGuardElimBinary {i iEnc encL encR fvRite fvLeft fvRest b c p}
 
 def inMapCallElim
   {dl n fv b c expr lane p fvMeta eDl eFv eExpr exprEnc}
-  (toggleCount)
+  (toggleCount: Nat)
   (inCall:
     intp2
       (.call
@@ -373,7 +373,7 @@ def isAtConstElim {dl n fv b c lane x p}
   (getNthSat:
     ∀ {list i valEnc},
       (c consts.getNth).getLane lane (getNthEnc list i valEnc) →
-      (vals.getNth).defMem (getNthEnc list i valEnc))
+      vals.getNth.defMem (getNthEnc list i valEnc))
 :
   (c consts.uniSetMap).getLane
     lane

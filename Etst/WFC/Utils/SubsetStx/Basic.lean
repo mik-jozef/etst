@@ -395,7 +395,7 @@ namespace DefList.SubsetStx
   
   def unElimComplL {x a b}
     (ab: dl.SubsetStx x (un a b))
-    (aCompl: dl.SubsetStx x (a.compl))
+    (aCompl: dl.SubsetStx x a.compl)
   :
     dl.SubsetStx x b
   :=
@@ -406,7 +406,7 @@ namespace DefList.SubsetStx
   
   def unElimComplR {x a b}
     (ab: dl.SubsetStx x (un a b))
-    (bCompl: dl.SubsetStx x (b.compl))
+    (bCompl: dl.SubsetStx x b.compl)
   :
     dl.SubsetStx x a
   :=
@@ -1892,7 +1892,7 @@ namespace DefList.SubsetStx
                 (someI (irI (irCtxR subPair) (irCtxL subIrL)))
                 (irCtxR subPair))
               (irCtxR subPair))
-            (sub.arbUnPopCtx.toLift)
+            sub.arbUnPopCtx.toLift
             subId)))
   
   def projFstCtxElimNull {x b}
@@ -2107,6 +2107,6 @@ namespace DefList.SubsetStx
             (irCtxL subIrR)
             (irCtxR (someMonoSub subId (irSymm subId)))))
         (subIrR.arbUnArbUnElim adapter)
-    arbIrI (mainWithVar)
+    arbIrI mainWithVar
   
 end DefList.SubsetStx

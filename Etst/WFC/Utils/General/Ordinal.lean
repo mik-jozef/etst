@@ -63,7 +63,7 @@ namespace Ordinal
     a ≤ b.pred
   :=
     (Ordinal.instLinearOrder.le_total a b.pred).elim
-      (id)
+      id
       (fun bPredLeA =>
         if h: a = b.pred then
           h ▸ Ordinal.instLinearOrder.le_refl _

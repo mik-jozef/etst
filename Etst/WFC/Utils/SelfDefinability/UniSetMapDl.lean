@@ -201,8 +201,8 @@ pairDefList.
 
 namespace uniSetMapDl
   -- Assert the correctness of the consts.
-  example: .const (consts.getNth) = getNthConst := rfl
-  example: .const (consts.uniSetMap) = uniSetMapConst := rfl
+  example: .const consts.getNth = getNthConst := rfl
+  example: .const consts.uniSetMap = uniSetMapConst := rfl
 end uniSetMapDl
 
 -- Any pair not in the codomain encodes `none`.
@@ -504,7 +504,7 @@ namespace uniSetMapDl
   
   def getNthEq {dl: DefList} {n x exprEnc lane}
     (inGetNth:
-      (vals.getNth).getLane
+      vals.getNth.getLane
         lane
         (getNthEnc (dl.prefixList 0 n) x exprEnc))
   :

@@ -71,7 +71,7 @@ namespace DefList.SubsetStx
     :=
       match d with
       | 0 => rfl
-      | dPred + 1 => congrArg Nat.succ (map_var_ge)
+      | dPred + 1 => congrArg Nat.succ map_var_ge
 
     let substVar_lift_depth_eq
       (body: SingleLaneExpr)

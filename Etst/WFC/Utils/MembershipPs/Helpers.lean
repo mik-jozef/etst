@@ -38,7 +38,7 @@ def empty_cycle_is_out
     cycle x d →
     (cause: Cause Pair) →
     cause.IsWeakCause (dl.getDef x) d →  
-    cause.IsInapplicable cycle (dl.wfm).defMembers)
+    cause.IsInapplicable cycle dl.wfm.defMembers)
   {x d} (inCycle: cycle x d)
 :
   ¬(dl.wfm x).posMem d
@@ -134,7 +134,7 @@ def completenessProofC {dl b}
 def completenessProofB
   (dl: DefList)
 :
-  InsOutComplete dl (dl.wfm)
+  InsOutComplete dl dl.wfm
 :=
   let _ := Valuation.ordApx
   let opB := operatorB dl

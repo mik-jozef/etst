@@ -57,7 +57,7 @@ def Expr.isSubsingleton_body {E} (e: Expr E): Expr E :=
   impl (some (ir e.lift (var 0))) (full (impl e.lift (var 0)))
 
 def Expr.isSubsingleton {E} (e: Expr E) : Expr E :=
-  arbIr (e.isSubsingleton_body)
+  arbIr e.isSubsingleton_body
 
 def Expr.isSubsingleton_freeVarUb_pos {E}
   (e: Expr E)

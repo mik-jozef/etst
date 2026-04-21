@@ -85,7 +85,7 @@ def DefList.lfpStage_le_wfm_std
 := by
   intro
   conv => rhs; rw [dl.wfm_eq_lfpC]
-  exact (operatorC dl (dl.wfm)).lfpStage_le_lfp n
+  exact (operatorC dl dl.wfm).lfpStage_le_lfp n
 
 def InductionDescriptor.Invariant {dl}
   (desc: InductionDescriptor dl)

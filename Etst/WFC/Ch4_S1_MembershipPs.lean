@@ -74,7 +74,7 @@ def DefList.Ins.nopeNotDef {P dl x d}
 :
   P
 :=
-  False.elim (notDef (isIns.isSound))
+  False.elim (notDef isIns.isSound)
 
 def DefList.Ins.nopeNotPos {P dl x d}
   (isIns: Ins dl x d)
@@ -82,7 +82,7 @@ def DefList.Ins.nopeNotPos {P dl x d}
 :
   P
 :=
-  False.elim (notPos (isIns.isSound.toPos))
+  False.elim (notPos isIns.isSound.toPos)
 
 
 def DefList.Out.nopeIns {P dl x d}
@@ -99,7 +99,7 @@ def DefList.Out.nopeDef {P dl x d}
 :
   P
 :=
-  False.elim (isOut.isSound (isDef.toPos))
+  False.elim (isOut.isSound isDef.toPos)
 
 def DefList.Out.nopePos {P dl x d}
   (isOut: Out dl x d)

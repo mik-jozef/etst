@@ -679,11 +679,11 @@ namespace Expr
     | var _ => rfl
     | null => rfl
     | pair l r =>
-      congrArg₂ pair (l.substId_eq) (r.substId_eq)
+      congrArg₂ pair l.substId_eq r.substId_eq
     | ir l r =>
-      congrArg₂ ir (l.substId_eq) (r.substId_eq)
-    | full body => congrArg full (body.substId_eq)
-    | compl body => congrArg compl (body.substId_eq)
+      congrArg₂ ir l.substId_eq r.substId_eq
+    | full body => congrArg full body.substId_eq
+    | compl body => congrArg compl body.substId_eq
     | arbIr body =>
       let liftEq:
         (liftFvMap fun x => var (E := E) x) = (fun x => var x)
@@ -1069,7 +1069,7 @@ namespace SingleLaneExpr
     (expr: SingleLaneExpr)
     {fv b c}
   :
-    expr.intp2 [] b c = intp2 (expr.clearFreeVars) fv b c
+    expr.intp2 [] b c = intp2 expr.clearFreeVars fv b c
   :=
     intp2_subst_eq
       (fun _ _ => intp2_none_eq_empty ▸ rfl)

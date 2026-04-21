@@ -256,7 +256,7 @@ noncomputable def DefList.wfm
 def DefList.wfm_is_fp_operatorB
   (dl: DefList)
 :
-  dl.wfm = operatorC.lfp dl (dl.wfm)
+  dl.wfm = operatorC.lfp dl dl.wfm
 :=
   ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
 
@@ -293,23 +293,23 @@ def DefList.wfm_isLfpC
 :
   IsLfp
     (Valuation.ordStd Pair).le
-    (operatorC dl (dl.wfm))
-    (dl.wfm)
+    (operatorC dl dl.wfm)
+    dl.wfm
 := by
   let _ := Valuation.ordStdLattice
-  let eq: (dl.wfm) = (operatorC dl (dl.wfm)).lfp :=
+  let eq: dl.wfm = (operatorC dl dl.wfm).lfp :=
     ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
   conv => rhs; rw [eq]
-  exact (operatorC dl (dl.wfm)).isLeast_lfp
+  exact (operatorC dl dl.wfm).isLeast_lfp
 
 def DefList.wfm_eq_lfpC
   (dl: DefList)
 :
   let := Valuation.ordStdLattice Pair
-  dl.wfm = (operatorC dl (dl.wfm)).lfp
+  dl.wfm = (operatorC dl dl.wfm).lfp
 :=
   let := Valuation.ordStdLattice Pair
-  IsLeast.unique (dl.wfm_isLfpC) (OrderHom.isLeast_lfp _)
+  IsLeast.unique dl.wfm_isLfpC (OrderHom.isLeast_lfp _)
 
 def DefList.wfm_isLfpB
   (dl: DefList)
@@ -317,7 +317,7 @@ def DefList.wfm_isLfpB
   IsLfp
     (Valuation.ordApx Pair).le
     (operatorB dl)
-    (dl.wfm)
+    dl.wfm
 :=
   (operatorB dl).lfpCc_isLfp isCcApx
 
@@ -325,7 +325,7 @@ def DefList.wfm_isLfpB
 def DefList.wfm_isModel
   (dl: DefList)
 :
-  (dl.wfm).IsModel dl
+  dl.wfm.IsModel dl
 :=
   operatorB.fp_is_model dl (wfm_isLfpB dl).left
 

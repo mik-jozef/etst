@@ -73,10 +73,7 @@ namespace Expr
     match expr with
     | .const _ _ => .isFalse (fun h => h.elim)
     | .var v =>
-      if h: x = v then
-        .isTrue h
-      else
-        .isFalse (fun hVar => h (hVar))
+      if h: x = v then .isTrue h else .isFalse h
     | .null => .isFalse (fun h => h.elim)
     | .pair left rite =>
       match left.usesFreeVar x, rite.usesFreeVar x with
