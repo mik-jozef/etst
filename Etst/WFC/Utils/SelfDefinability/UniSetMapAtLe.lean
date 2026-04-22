@@ -170,7 +170,7 @@ def allInternalInapp {dl n fv expr d}
       extIsEmpty inExtCycle (causeComplVar fv x d) isWeakCauseComplVar
     with
     | .blockedBout _ ⟨xEq, dEq⟩ insGetNth =>
-      let inGetNth: (uniSetMapDl.wfm consts.getNth).getLane _ _ :=
+      let inGetNth: (usmWfm consts.getNth).getLane _ _ :=
         xEq ▸ dEq ▸ insGetNth.isSound
       let inVar:
         (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm d
@@ -514,9 +514,7 @@ def externalOutElimHelper {dl n fv index cst expr p}
       | .blockedBout _ inBout ins =>
         .blockedBout inBout ⟨
           (fun xEq dEq => externalInsElimHelper ins xEq dEq),
-          (fun xEq => show
-            (uniSetMapDl.wfm consts.getNth).defMem _
-          from
+          (fun xEq => show (usmWfm consts.getNth).defMem _ from
             xEq ▸ DefList.Ins.isSound ins)
         ⟩
     

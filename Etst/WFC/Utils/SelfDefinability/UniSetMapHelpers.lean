@@ -1461,8 +1461,10 @@ def isWeakCauseArbUn {dl n fv body dX d}:
   ## Section: Some extra randos
 -/
 
+noncomputable def usmWfm := uniSetMapDl.wfm
+
 def isAtAny {dl n fv p lane}:
-  InUniSetMapAt dl n fv uniSetMapDl.wfm uniSetMapDl.wfm .any lane p
+  InUniSetMapAt dl n fv usmWfm usmWfm .any lane p
 :=
   isAtArbUn
     p

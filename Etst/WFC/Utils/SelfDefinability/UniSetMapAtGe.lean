@@ -127,8 +127,67 @@ def internalCauseElim {dl n fv expr p}
           (InWfm.of_in_def_no_fv (isInMap isAtAny))
           (InWfm.of_in_def_no_fv (isInMap isAtAny))
       InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
-  | .pair _ _ => sorry
-  | .compl (.pair _ _) => sorry
+  | .pair left rite =>
+    match p with
+    | .null =>
+      let isPair := intIsCause intCause.leastValsApxAreSat
+      False.elim (inPairElimNope isPair)
+    | .pair pL pR =>
+      let isCauseL _ _ isSat := (inPairElim (intIsCause isSat)).left
+      let isCauseR _ _ isSat := (inPairElim (intIsCause isSat)).right
+      let isAt :=
+        isAtPair
+          (lane := .defLane)
+          (internalCauseElim isCauseL cinsIh boutIh)
+          (internalCauseElim isCauseR cinsIh boutIh)
+      InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+  | .compl (.pair left rite) =>
+    let isAt:
+      InUniSetMapAt dl n fv usmWfm usmWfm
+        (.un .null (.un (.pair left.compl .any) (.pair .any rite.compl)))
+        .defLane
+        p
+    :=
+      match p with
+      | .null =>
+        let atNull:
+          (usmWfm consts.uniSetMap).getLane
+            .defLane
+            ((uniSetMapIndex dl n fv .null).pair .null)
+        :=
+          InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAtNull)
+        isAtUn (Or.inl atNull)
+      | .pair pL pR =>
+        match intIsCause.complPairElim with
+        | Or.inl intIsCauseL =>
+          let ih := internalCauseElim intIsCauseL cinsIh boutIh
+          isAtUn
+            (Or.inr
+              (InWfm.of_in_def_no_fv
+                (isInMap
+                  (isAtUn
+                    (Or.inl
+                      (InWfm.of_in_def_no_fv
+                        (isInMap
+                          (isAtPair
+                            ih
+                            (InWfm.of_in_def_no_fv
+                              (isInMap isAtAny))))))))))
+        | Or.inr intIsCauseR =>
+          let ih := internalCauseElim intIsCauseR cinsIh boutIh
+          isAtUn
+            (Or.inr
+              (InWfm.of_in_def_no_fv
+                (isInMap
+                  (isAtUn
+                    (Or.inr
+                      (InWfm.of_in_def_no_fv
+                        (isInMap
+                          (isAtPair
+                            (InWfm.of_in_def_no_fv
+                              (isInMap isAtAny))
+                            ih))))))))
+    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap (isAt))
   | .ir _ _ => sorry
   | .compl (.ir _ _) => sorry
   | .full _ => sorry
