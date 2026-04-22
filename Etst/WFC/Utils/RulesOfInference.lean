@@ -58,6 +58,15 @@ namespace SingleLaneExpr
     rw [intp2_var_eq_singleton eq] at h
     exact Set.mem_singleton_iff.mp h
   
+  def inVarElimLt
+    (h: (var x).intp2 fv b c d)
+    (lt: x < fv.length)
+  :
+    fv[x] = d
+  := by
+    rw [intp2_var_eq_of_lt lt] at h
+    exact Set.mem_singleton_iff.mp h.symm
+  
   def inVarNope
     (h: (var x).intp2 fv b c d)
     (nlt: ¬ x < fv.length)

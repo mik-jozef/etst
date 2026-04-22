@@ -180,24 +180,46 @@ def allCausesInappElim {dl n fv intCycle expr p}
     let insGetNth :=
       getNthClassical.resolve_right fun out =>
         isApplicable (.blockedCinsOut inGetNth out)
-    let inVar:
-      (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm p
-    :=
+    let inVar _ _ _ :=
       inVar (getNthElim (lane := .defLane) insGetNth.isSound)
-    nomatch allInapp (intCause := Cause.empty) (fun _ _ _ => inVar)
+    nomatch allInapp (intCause := Cause.empty) inVar
   | .compl (.var x) =>
-    sorry
+    let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
+    match getNthClassical with
+    | Or.inl ins =>
+      .blockedBout (isAtComplVarElim isAt).dne ins
+    | Or.inr out =>
+      let inComplVar _ _ _ :=
+        inCompl fun inVar =>
+          let xLt: x < fv.length :=
+            byContradiction fun nlt => inVarNope inVar nlt
+          let pEq: fv[x] = p := inVarElimLt inVar xLt
+          out.isSound (pEq ▸ getNth (lane := .posLane) xLt)
+      nomatch allInapp (intCause := Cause.empty) inComplVar
   | .null =>
-    let pEq :=
-      isAtNullElim
-        (isAtOfInsDef (isCause extCause.maximalValsApxAreSat))
-    nomatch allInapp (intCause := Cause.empty) (fun _ _ _ => pEq)
+    let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
+    let pEq _ _ _ := isAtNullElim isAt
+    nomatch allInapp (intCause := Cause.empty) pEq
   | .compl .null =>
-    sorry
+    match p with
+    | .null =>
+      let isAtAny:
+        InUniSetMapAt dl n fv
+          extCause.maximalBackgroundApx
+          extCause.maximalContextApx
+          (.pair .any .any)
+          .defLane
+          .null
+      :=
+        isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
+      nomatch isAtPairElim isAtAny
+    | .pair pL pR =>
+      let inComplNull _ _ _ :=
+        inCompl fun inNull => inNullElimNope inNull
+      nomatch allInapp (intCause := Cause.empty) inComplNull
   | .pair left rite =>
-    let ⟨pL, pR, pEq, inCinsLeft, inCinsRite⟩ :=
-      let inCins := isCause extCause.maximalValsApxAreSat
-      isAtPairElim (isAtOfInsDef inCins)
+    let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
+    let ⟨pL, pR, pEq, inCinsLeft, inCinsRite⟩ := isAtPairElim isAt
     if hL: AllIntCausesInappIh dl n intCycle fv left pL then
       let isInExtCycle := ⟨rfl, ⟨_, _, _, hL, rfl⟩⟩
       .blockedCinsCycle inCinsLeft isInExtCycle
@@ -217,9 +239,8 @@ def allCausesInappElim {dl n fv intCycle expr p}
   | .compl (.pair left rite) =>
     sorry
   | .ir left rite =>
-    let ⟨inCinsLeft, inCinsRite⟩ :=
-      let inCins := isCause extCause.maximalValsApxAreSat
-      isAtIrElim (isAtOfInsDef inCins)
+    let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
+    let ⟨inCinsLeft, inCinsRite⟩ := isAtIrElim isAt
     if hL: AllIntCausesInappIh dl n intCycle fv left p then
       let isInExtCycle := ⟨rfl, ⟨_, _, _, hL, rfl⟩⟩
       .blockedCinsCycle inCinsLeft isInExtCycle
@@ -237,7 +258,6 @@ def allCausesInappElim {dl n fv intCycle expr p}
         (Cause.IsInapplicable.Not.union isAppL isAppR isInappUnion)
   | .compl (.ir left rite) =>
     let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
-    
     match isAtComplIrElim isAt with
     | Or.inl inCinsL =>
       let allInappL:
@@ -276,8 +296,23 @@ def allCausesInappElim {dl n fv intCycle expr p}
           (allInapp fullIsCause))
   | .compl (.full _) =>
     sorry
-  | .arbIr _ =>
-    sorry
+  | .arbIr body =>
+    let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
+    if h: ∃ dX, AllIntCausesInappIh dl n intCycle (dX :: fv) body p then
+      let ⟨dX, hBody⟩ := h
+      let isInExtCycle := ⟨rfl, ⟨_, _, _, hBody, rfl⟩⟩
+      .blockedCinsCycle (isAtArbIrElim isAt dX) isInExtCycle
+    else
+      let allApplicable :=
+        h.toAll fun dX notAllInapp =>
+          (notAllInapp.toEx fun _ => Classical.not_imp.mp).unwrap
+      let causes dX := (allApplicable dX).val
+      let arbIrIsCause _ _ isSat dX :=
+        (allApplicable dX).property.left (isSat.arbUnElim dX)
+      False.elim
+        (Cause.IsInapplicable.Not.arbUn
+          (fun dX => (allApplicable dX).property.right)
+          (allInapp arbIrIsCause))
   | .compl (.arbIr _) =>
     sorry
   | .compl (.compl body) =>
