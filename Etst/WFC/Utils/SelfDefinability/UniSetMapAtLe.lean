@@ -134,15 +134,22 @@ def allInternalInapp {dl n fv expr d}
           uniSetMapDl.getNthDl (lane:=.posLane) h
         False.elim (out.isSound (xEq ▸ dEq ▸ insGetNth))
       | .blockedCins (Or.inr ⟨xEq, dEq⟩) inCycle =>
-        let inCycle:
-          extCycle
-            consts.uniSetMap
-            (.pair (uniSetMapIndexDef dl n x) d)
-        :=
-          xEq ▸ dEq ▸ inCycle
+        let inCycle := xEq ▸ dEq ▸ inCycle
         .blockedCinsCycle intIsCause.constElim (Or.inl inCycle)
     else
       .blockedCinsCycle intIsCause.constElim (Or.inr h)
+  | .compl (.const x) =>
+    let inBout := intIsCause.complConstElim
+    match everyCauseInapp inExtCycle _ isWeakCauseComplConst with
+    | .blockedBout (Or.inl ⟨enc, neq, xEq, dEq⟩) inDef =>
+      let inGetNth := dEq ▸ (inDef.right xEq)
+      let encEq :=
+        dl.prefixList_at_eq n x ▸
+        getNthElimD (lane := .defLane) inGetNth
+      False.elim (neq encEq.symm)
+    | .blockedBout (Or.inr ⟨xEq, dEq⟩) inDef =>
+      let inConst := InWfm.of_in_def_no_fv (inDef.left xEq dEq)
+      .blockedBout inBout (DefList.Ins.isComplete inConst)
   | .var x =>
     let inVar := intIsCause intCause.maximalValsApxAreSat
     let xLt: x < fv.length :=
@@ -157,9 +164,34 @@ def allInternalInapp {dl n fv expr d}
       :=
         dEq ▸ uniSetMapDl.getNth (list:=fv) (lane:=.posLane) xLt
       False.elim (out.isSound (xEq ▸ dEqGetNth ▸ insGetNth))
+  | .compl (.var x) =>
+    let inBout := intIsCause intCause.maximalValsApxAreSat
+    match
+      extIsEmpty inExtCycle (causeComplVar fv x d) isWeakCauseComplVar
+    with
+    | .blockedBout _ ⟨xEq, dEq⟩ insGetNth =>
+      let inGetNth: (uniSetMapDl.wfm consts.getNth).getLane _ _ :=
+        xEq ▸ dEq ▸ insGetNth.isSound
+      let inVar:
+        (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm d
+      :=
+        inVar (getNthElim (lane := .defLane) inGetNth)
+      False.elim (inBout inVar)
   | .null =>
     let dEq := inNullElim (intIsCause intCause.maximalValsApxAreSat)
     nomatch extIsEmpty inExtCycle Cause.empty (dEq ▸ isWeakCauseNull)
+  | .compl .null =>
+    match d with
+    | .null =>
+      let inNullCompl := intIsCause intCause.maximalValsApxAreSat
+      False.elim (inComplElim inNullCompl inNull)
+    | .pair pL pR =>
+      let isExtCause := isWeakCausePair (left := .any) (rite := .any)
+      match everyCauseInapp inExtCycle _ isExtCause with
+      | .blockedCins (Or.inl ⟨xEq, dEq⟩) inCycle =>
+        anyCycleNope extIsEmpty (xEq ▸ dEq ▸ inCycle)
+      | .blockedCins (Or.inr ⟨xEq, dEq⟩) inCycle =>
+        anyCycleNope extIsEmpty (xEq ▸ dEq ▸ inCycle)
   | .pair left rite =>
     match d with
     | .null =>
@@ -182,74 +214,6 @@ def allInternalInapp {dl n fv expr d}
         let inCycle := xEq ▸ dEq ▸ inCycle
         allInternalInapp
           extIsEmpty everyCauseInapp inCycle intCause riteIsCause
-  | .ir left rite =>
-    let leftIsCause _ _ isSat :=
-      (inIrElim (intIsCause isSat)).left
-    let riteIsCause _ _ isSat :=
-      (inIrElim (intIsCause isSat)).right
-    match extIsEmpty
-      inExtCycle
-      (causeTwoExprs dl n fv left rite d d)
-      isWeakCauseIr
-    with
-    | .blockedCins _ (Or.inl ⟨xEq, dEq⟩) inCycle =>
-      let inCycle := xEq ▸ dEq ▸ inCycle
-      allInternalInapp
-        extIsEmpty everyCauseInapp inCycle intCause leftIsCause
-    | .blockedCins _ (Or.inr ⟨xEq, dEq⟩) inCycle =>
-      let inCycle := xEq ▸ dEq ▸ inCycle
-      allInternalInapp
-        extIsEmpty everyCauseInapp inCycle intCause riteIsCause
-  | .full body =>
-    match extIsEmpty
-      inExtCycle
-      (causeFull dl n fv body)
-      isWeakCauseFull
-    with
-    | .blockedCins _ inCins inCycle =>
-      let ⟨dB, xEq, dEq⟩ := inCins
-      let inCycle := xEq ▸ dEq ▸ inCycle
-      let bodyIsCause _ _ isSat := inFullElim (intIsCause isSat) dB
-      allInternalInapp
-        extIsEmpty everyCauseInapp inCycle intCause bodyIsCause
-    | .blockedBout _ inBout _ => inBout.elim
-  | .compl (.const x) =>
-    let inBout := intIsCause.complConstElim
-    match everyCauseInapp inExtCycle _ isWeakCauseComplConst with
-    | .blockedBout (Or.inl ⟨enc, neq, xEq, dEq⟩) inDef =>
-      let inGetNth := dEq ▸ (inDef.right xEq)
-      let encEq :=
-        dl.prefixList_at_eq n x ▸
-        getNthElimD (lane := .defLane) inGetNth
-      False.elim (neq encEq.symm)
-    | .blockedBout (Or.inr ⟨xEq, dEq⟩) inDef =>
-      let inConst := InWfm.of_in_def_no_fv (inDef.left xEq dEq)
-      .blockedBout inBout (DefList.Ins.isComplete inConst)
-  | .compl (.var x) =>
-    let inBout := intIsCause intCause.maximalValsApxAreSat
-    match
-      extIsEmpty inExtCycle (causeComplVar fv x d) isWeakCauseComplVar
-    with
-    | .blockedBout _ ⟨xEq, dEq⟩ insGetNth =>
-      let inGetNth: (uniSetMapDl.wfm consts.getNth).getLane _ _ :=
-        xEq ▸ dEq ▸ insGetNth.isSound
-      let inVar:
-        (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm d
-      :=
-        inVar (getNthElim (lane := .defLane) inGetNth)
-      False.elim (inBout inVar)
-  | .compl .null =>
-    match d with
-    | .null =>
-      let inNullCompl := intIsCause intCause.maximalValsApxAreSat
-      False.elim (inComplElim inNullCompl inNull)
-    | .pair pL pR =>
-      let isExtCause := isWeakCausePair (left := .any) (rite := .any)
-      match everyCauseInapp inExtCycle _ isExtCause with
-      | .blockedCins (Or.inl ⟨xEq, dEq⟩) inCycle =>
-        anyCycleNope extIsEmpty (xEq ▸ dEq ▸ inCycle)
-      | .blockedCins (Or.inr ⟨xEq, dEq⟩) inCycle =>
-        anyCycleNope extIsEmpty (xEq ▸ dEq ▸ inCycle)
   | .compl (.pair left rite) =>
     let inner :=
       .un (.pair left.compl .any) (.pair .any rite.compl)
@@ -320,6 +284,24 @@ def allInternalInapp {dl n fv expr d}
             inExtCycleR
             _
             isCauseR)
+  | .ir left rite =>
+    let leftIsCause _ _ isSat :=
+      (inIrElim (intIsCause isSat)).left
+    let riteIsCause _ _ isSat :=
+      (inIrElim (intIsCause isSat)).right
+    match extIsEmpty
+      inExtCycle
+      (causeTwoExprs dl n fv left rite d d)
+      isWeakCauseIr
+    with
+    | .blockedCins _ (Or.inl ⟨xEq, dEq⟩) inCycle =>
+      let inCycle := xEq ▸ dEq ▸ inCycle
+      allInternalInapp
+        extIsEmpty everyCauseInapp inCycle intCause leftIsCause
+    | .blockedCins _ (Or.inr ⟨xEq, dEq⟩) inCycle =>
+      let inCycle := xEq ▸ dEq ▸ inCycle
+      allInternalInapp
+        extIsEmpty everyCauseInapp inCycle intCause riteIsCause
   | .compl (.ir left rite) =>
     let inExtCycleL :=
       let extIsCauseL := isWeakCauseUnL left.compl rite.compl
@@ -352,6 +334,19 @@ def allInternalInapp {dl n fv expr d}
           inExtCycleR
           _
           isCauseR)
+  | .full body =>
+    match extIsEmpty
+      inExtCycle
+      (causeFull dl n fv body)
+      isWeakCauseFull
+    with
+    | .blockedCins _ inCins inCycle =>
+      let ⟨dB, xEq, dEq⟩ := inCins
+      let inCycle := xEq ▸ dEq ▸ inCycle
+      let bodyIsCause _ _ isSat := inFullElim (intIsCause isSat) dB
+      allInternalInapp
+        extIsEmpty everyCauseInapp inCycle intCause bodyIsCause
+    | .blockedBout _ inBout _ => inBout.elim
   | .compl (.full body) =>
     match intIsCause.complFullElim (dl.prefix n).wfm .empty with
     | ⟨dB, isCauseBody⟩ =>
@@ -361,36 +356,6 @@ def allInternalInapp {dl n fv expr d}
         | .blockedCins ⟨xEq, dEq⟩ inCycle =>
           xEq ▸ dEq ▸ inCycle
       
-      have := complUnaryLt body
-      isInappOfInappUn
-        (allInternalInapp
-          extIsEmpty
-          everyCauseInapp
-          inExtCycleBody
-          _
-          isCauseBody)
-  | .compl (.compl body) =>
-    let inExtCycleBody:
-      extCycle
-        consts.uniSetMap
-        (.pair (uniSetMapIndex dl n fv body) d)
-    :=
-      inExtCycle
-
-    allInternalInapp
-      extIsEmpty
-      everyCauseInapp
-      inExtCycleBody
-      intCause
-      intIsCause.complComplElim
-  | .compl (.arbIr body) =>
-    match intIsCause.complArbIrElim (dl.prefix n).wfm .empty with
-    | ⟨dX, isCauseBody⟩ =>
-      let inExtCycleBody :=
-        let extIsCause := isWeakCauseArbUn (body:=.compl body)
-        match everyCauseInapp inExtCycle _ extIsCause with
-        | .blockedCins ⟨xEq, dEq⟩ inCycle =>
-          xEq ▸ dEq ▸ inCycle
       have := complUnaryLt body
       isInappOfInappUn
         (allInternalInapp
@@ -413,8 +378,37 @@ def allInternalInapp {dl n fv expr d}
       allInternalInapp
         extIsEmpty everyCauseInapp inCycle intCause (bodyIsCause dX)
     | .blockedBout _ inBout _ => inBout.elim
+  | .compl (.arbIr body) =>
+    match intIsCause.complArbIrElim (dl.prefix n).wfm .empty with
+    | ⟨dX, isCauseBody⟩ =>
+      let inExtCycleBody :=
+        let extIsCause := isWeakCauseArbUn (body:=.compl body)
+        match everyCauseInapp inExtCycle _ extIsCause with
+        | .blockedCins ⟨xEq, dEq⟩ inCycle =>
+          xEq ▸ dEq ▸ inCycle
+      have := complUnaryLt body
+      isInappOfInappUn
+        (allInternalInapp
+          extIsEmpty
+          everyCauseInapp
+          inExtCycleBody
+          _
+          isCauseBody)
+  | .compl (.compl body) =>
+    let inExtCycleBody:
+      extCycle
+        consts.uniSetMap
+        (.pair (uniSetMapIndex dl n fv body) d)
+    :=
+      inExtCycle
 
-termination_by sizeOf expr
+    allInternalInapp
+      extIsEmpty
+      everyCauseInapp
+      inExtCycleBody
+      intCause
+      intIsCause.complComplElim
+
 
 /-
   Has to use the weird equality trick :( else we get:
@@ -441,45 +435,51 @@ def externalInsElimHelper {dl n fv index cst expr p}
     let IsAt :=
       InUniSetMapAt dl n fv cause.leastBackgroundApx cause.leastContextApx
     match expr with
-    | .const _x =>
+    | .const _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let inCins := isAtConstElim insList (DefList.Ins.isSound ∘ cinsSat)
       let ih := externalInsElimHelper (cinsSat inCins) rfl rfl
       InWfm.of_in_def_no_fv (lane := .defLane) ih
-    | .var _x =>
+    | .compl (.const _) =>
+      sorry
+    | .var _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let ins := (cinsSat (isAtVarElim insList)).isSound
       inVar (b:=.empty) (c:=.empty) (getNthElim (lane := .defLane) ins)
+    | .compl (.var _) =>
+      sorry
     | .null =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       isAtNullElim insList
-    | .pair _left _rite =>
+    | .compl .null =>
+      sorry
+    | .pair _ _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let ⟨_pL, _pR, eqP, inLeft, inRite⟩ := isAtPairElim insList
       let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl
       let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl
       eqP ▸ inPair ihL ihR
-    | .ir _left _rite =>
+    | .compl (.ir _ _) =>
+      sorry
+    | .ir _ _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let ⟨inLeft, inRite⟩ := isAtIrElim insList
       let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl
       let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl
       And.intro ihL ihR
-    | .full _body =>
+    | .compl (.pair _left _rite) =>
+      sorry
+    | .full _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       fun dB =>
         externalInsElimHelper (cinsSat (isAtFullElim insList dB)) rfl rfl
-    | .compl _ =>
-      -- let insList: IsAt _ .defLane p :=
-      --   isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      -- let inBout := boutSat (isAtComplElim insList).dne
-      -- externalOutElimHelper inBout rfl rfl
+    | .compl (.full _) =>
       sorry
     | .arbIr _ =>
       let insList: IsAt _ .defLane p :=
@@ -487,6 +487,10 @@ def externalInsElimHelper {dl n fv index cst expr p}
       inArbIr fun dX =>
         let insBody := cinsSat (isAtArbIrElim insList dX)
         externalInsElimHelper insBody rfl rfl
+    | .compl (.arbIr _) =>
+      sorry
+    | .compl (.compl _) =>
+      sorry
 
 def externalOutElimHelper {dl n fv index cst expr p}
   (out: uniSetMapDl.Out cst index)
