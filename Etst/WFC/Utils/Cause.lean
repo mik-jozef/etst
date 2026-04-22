@@ -524,6 +524,15 @@ def Cause.IsWeakCauseFv.complFullElim {fv body d}
         (fun _ _ inCins => isSat.cinsSat inCins)
         notDefBody⟩
 
+def Cause.IsWeakCauseFv.complCompl {fv body d}
+  {cause: Cause Pair}
+  (isCause: cause.IsWeakCauseFv fv body d)
+:
+  cause.IsWeakCauseFv fv (.compl (.compl body)) d
+:=
+  open SingleLaneExpr in
+  fun _ _ isSat => inCompl (ninCompl (isCause isSat))
+
 def Cause.IsWeakCauseFv.complComplElim {fv body d}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv (.compl (.compl body)) d)

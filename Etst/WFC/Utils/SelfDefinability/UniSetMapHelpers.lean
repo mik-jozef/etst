@@ -1458,10 +1458,29 @@ def isWeakCauseArbUn {dl n fv body dX d}:
     isInMap (isAtArbUn dX inBody)
 
 /-
-  ## Section: Not beyond prefix
-  
-  TODO:
-  - this section
-  - replace un elim towers
-  - single helper for non-matching eliminators
+  ## Section: Some extra randos
 -/
+
+def isAtAny {dl n fv p lane}:
+  InUniSetMapAt dl n fv uniSetMapDl.wfm uniSetMapDl.wfm .any lane p
+:=
+  isAtArbUn
+    p
+    (SingleLaneExpr.InWfm.of_in_def_no_fv
+      (isInMap
+        (isAtVar
+          (uniSetMapDl.getNth
+            (Nat.succ_pos fv.length)))))
+
+def notAtDefGeN {dl n x d}
+  (xNlt: ¬ x < n)
+:
+  ¬ vals.uniSetMap.posMem ((uniSetMapIndexDef dl n x).pair d)
+:=
+  fun inMap =>
+    let isAtNone :=
+      DefList.prefix_none_at (dl:=dl) (n:=n) (x:=x) xNlt ▸
+      isAtOfInsDef (InWfm.in_def_no_fv (lane := .posLane) inMap)
+    isAtComplVarElim
+      (isAtOfInsDef (InWfm.in_def_no_fv (isAtArbIrElim isAtNone d)))
+      (uniSetMapDl.getNth (list:=[d]) zero_lt_one)
