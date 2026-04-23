@@ -1020,12 +1020,12 @@ def isAtUn {dl n fv b c left rite lane p}
     Or
       ((c consts.uniSetMap).getLane
         lane
-        (.pair (uniSetMapIndex dl n fv left) p))
+        (.pair (uniSetMapIndex dl n fv left.compl) p))
       ((c consts.uniSetMap).getLane
         lane
-        (.pair (uniSetMapIndex dl n fv rite) p)))
+        (.pair (uniSetMapIndex dl n fv rite.compl) p)))
 :
-  InUniSetMapAt dl n fv b c (.un left rite) lane p
+  InUniSetMapAt dl n fv b c (.compl (.ir left rite)) lane p
 :=
   let ins :=
     match ins with
@@ -1048,9 +1048,9 @@ def isAtUn {dl n fv b c left rite lane p}
   (inUnR
   (inUnL
   (inArbUn
-    left.encoding
+    left.compl.encoding
     (inArbUn
-      rite.encoding
+      rite.compl.encoding
       (inIr
         (inSome _
           (inIr
@@ -1092,9 +1092,9 @@ def isAtSome {dl n fv b c body lane p}
   (insBody:
     (c consts.uniSetMap).getLane
       lane
-      (.pair (uniSetMapIndex dl n fv body) dB))
+      (.pair (uniSetMapIndex dl n fv body.compl) dB))
 :
-  InUniSetMapAt dl n fv b c (.some body) lane p
+  InUniSetMapAt dl n fv b c (.compl (.full body)) lane p
 :=
   inUnR
   (inUnR
@@ -1107,7 +1107,7 @@ def isAtSome {dl n fv b c body lane p}
   (inUnR
   (inUnL
   (inArbUn
-    body.encoding
+    body.compl.encoding
     (inIr
       (inSome _ (inIr (inPair (inNat 9) rfl) rfl))
       (inSome dB
@@ -1153,9 +1153,9 @@ def isAtArbUn {dl n fv b c body lane p}
   (insBody:
     (c consts.uniSetMap).getLane
       lane
-      (.pair (uniSetMapIndex dl n (dX :: fv) body) p))
+      (.pair (uniSetMapIndex dl n (dX :: fv) body.compl) p))
 :
-  InUniSetMapAt dl n fv b c (.arbUn body) lane p
+  InUniSetMapAt dl n fv b c (.compl (.arbIr body)) lane p
 :=
   inUnR
   (inUnR
@@ -1169,7 +1169,7 @@ def isAtArbUn {dl n fv b c body lane p}
   (inUnR
   (inUnR
   (inArbUn
-    body.encoding
+    body.compl.encoding
     (inIr
       (inSome _ (inIr (inPair (inNat 11) rfl) rfl))
       (inArbUn

@@ -571,6 +571,7 @@ def Cause.IsStrongCauseFv.complIrElim {fv l r d}
   | Or.inl notPosL => Or.inl (Cause.IsStrongCauseFv.ofLeastCompl notPosL)
   | Or.inr notPosR => Or.inr (Cause.IsStrongCauseFv.ofLeastCompl notPosR)
 
+
 def Cause.IsWeakCauseFv.complFullElim {fv body d}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv (.compl (.full body)) d)
@@ -595,6 +596,18 @@ def Cause.IsWeakCauseFv.complFullElim {fv body d}
         (fun _ _ inCins => isSat.cinsSat inCins)
         notDefBody⟩
 
+def Cause.IsStrongCauseFv.complFullElim {fv body d}
+  {cause: Cause Pair}
+  (isCause: cause.IsStrongCauseFv fv (.compl (.full body)) d)
+:
+  ∃ dB,
+    cause.IsStrongCauseFv fv (.compl body) dB
+:=
+  match Classical.not_forall.mp (isCause cause.leastValsApxAreSat) with
+  | ⟨dB, notPosBody⟩ =>
+    ⟨dB, Cause.IsStrongCauseFv.ofLeastCompl notPosBody⟩
+
+
 def Cause.IsWeakCauseFv.complCompl {fv body d}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv body d)
@@ -611,6 +624,15 @@ def Cause.IsWeakCauseFv.complComplElim {fv body d}
   cause.IsWeakCauseFv fv body d
 :=
   fun _ _ isSat => (isCause isSat).dne
+
+def Cause.IsStrongCauseFv.complComplElim {fv body d}
+  {cause: Cause Pair}
+  (isCause: cause.IsStrongCauseFv fv (.compl (.compl body)) d)
+:
+  cause.IsStrongCauseFv fv body d
+:=
+  fun _ _ isSat => (isCause isSat).dne
+
 
 def Cause.IsWeakCauseFv.complArbIrElim {fv body d}
   {cause: Cause Pair}
@@ -635,6 +657,18 @@ def Cause.IsWeakCauseFv.complArbIrElim {fv body d}
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         notDefBody⟩
+
+def Cause.IsStrongCauseFv.complArbIrElim {fv body d}
+  {cause: Cause Pair}
+  (isCause: cause.IsStrongCauseFv fv (.compl (.arbIr body)) d)
+:
+  ∃ dX,
+    cause.IsStrongCauseFv (dX :: fv) (.compl body) d
+:=
+  match Classical.not_forall.mp (isCause cause.leastValsApxAreSat) with
+  | ⟨dX, notPosBody⟩ =>
+    ⟨dX, Cause.IsStrongCauseFv.ofLeastCompl notPosBody⟩
+
 
 
 def Cause.IsWeakCauseFv.noneElim {fv d}
