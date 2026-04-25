@@ -367,6 +367,13 @@ def uniSetMapAt
   uniSetMap.pairCallJust (uniSetMapIndex dl n fv expr)
 
 
+def uniSetMapIndex_nnf_eq {dl n fv expr}:
+  uniSetMapIndex dl n fv expr = uniSetMapIndex dl n fv expr.toNnf
+:= by
+  unfold uniSetMapIndex BasicExpr.encoding
+  rw [expr.toNnf_idem]
+
+
 namespace uniSetMapDl
   def getNthEnc
     (list: List Pair)

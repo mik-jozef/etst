@@ -307,13 +307,6 @@ def allCausesInappElim {dl n fv intCycle expr p}
     {intCause: _} →
     intCause.IsWeakCauseFv [] ((dl.prefix n).getDef x) p →
     IntCauseIsInappIh dl n intCycle intCause)
-  -- TODO delete if unused.
-  (intCycleIsEmpty:
-    ∀ {x p},
-      intCycle x p →
-      (intCause: Cause Pair) →
-      intCause.IsWeakCause ((dl.prefix n).getDef x) p →
-      (dl.prefix n).IsCauseInapplicable intCycle intCause)
   {extCause: Cause Pair}
   (isCause:
     extCause.IsWeakCause
@@ -562,7 +555,6 @@ def allCausesInappElim {dl n fv intCycle expr p}
     allCausesInappElim
       (fun isCause => allInapp isCause.complCompl)
       intCauseInappIh
-      intCycleIsEmpty
       isCause
 
 
@@ -610,7 +602,6 @@ def internalOutElim {dl n x p}
           allCausesInappElim
             allInapp
             intCauseInapp
-            intCycleIsEmpty
             (xEq ▸ dEq ▸ isExtCause))
         ⟨rfl, ⟨_, _, _, ⟨intCauseInapp inIntCycle, rfl⟩⟩⟩
     out.isSound
@@ -658,22 +649,6 @@ def uniSetMapAt_ge
             .blockedCins inCins (.intro cycle isEmpty inInnerCycle)
           | .blockedBout _ inBout ins =>
             .blockedBout inBout (internalInsElim ins)
-      let intCycleIsEmpty:
-        ∀ {x p},
-          intCycle x p →
-          (intCause: Cause Pair) →
-          intCause.IsWeakCause ((dl.prefix n).getDef x) p →
-          (dl.prefix n).IsCauseInapplicable intCycle intCause
-      :=
-        fun inIntCycle _ isCause =>
-          match inIntCycle with
-          | .intro cycle isEmpty inCycle =>
-            match isEmpty inCycle _ isCause with
-            | .blockedCins cause inCins inInnerCycle =>
-              let out := .intro cycle isEmpty inInnerCycle
-              .blockedCins cause inCins out
-            | .blockedBout cause inBout ins =>
-              .blockedBout cause inBout ins
       let out :=
         DefList.Out.intro3
           (extOfIntCycle dl n intCycle)
@@ -682,7 +657,6 @@ def uniSetMapAt_ge
             allCausesInappElim
               allInapp
               intCauseInapp
-              intCycleIsEmpty
               (xEq ▸ dEq ▸ isExtCause))
           ⟨rfl, ⟨_, _, _, ⟨allInapp, rfl⟩⟩⟩
       out.nopePos isPos

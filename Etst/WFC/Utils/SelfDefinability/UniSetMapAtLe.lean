@@ -426,23 +426,41 @@ def externalInsElimHelper {dl n fv index cst expr p}
   (ins: uniSetMapDl.Ins cst index)
   (cstEq: cst = consts.uniSetMap)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
+  (isNnf: expr.IsNnf)
 :
 (expr.triIntp fv (dl.prefix n).wfm).defMem p
 :=
   match ins with
   | .intro _ _ cause isCause cinsSat boutSat =>
+    let InCins expr fv p :=
+      cause.cins
+        consts.uniSetMap
+        ((uniSetMapIndex dl n fv expr).pair p)
+    let inCinsCcElim {expr fv p} (inCins: InCins expr.compl.compl fv p):
+      InCins expr fv p
+    :=
+      inCins
+    let inCinsNnf {expr fv p} (inCins: InCins expr fv p):
+      InCins expr.toNnf fv p
+    := by
+      unfold InCins
+      exact uniSetMapIndex_nnf_eq ▸ inCins
+    
     let ins := isCause cause.leastValsApxAreSat
     -- TODO Lean, why can't I call `isAtOfInsDef` once before the match?
     let IsAt :=
       InUniSetMapAt dl n fv cause.leastBackgroundApx cause.leastContextApx
-    match expr with
-    | .const _ =>
+    match expr, isNnf with
+    | .const x, _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let inCins := isAtConstElim insList (DefList.Ins.isSound ∘ cinsSat)
-      let ih := externalInsElimHelper (cinsSat inCins) rfl rfl
+      let insDef := cinsSat (inCinsNnf inCins)
+      let ih: (BasicExpr.triIntp _ _ _).defMem _ :=
+        BasicExpr.triIntp_toNnf_eq _ _ _ ▸
+        externalInsElimHelper insDef rfl rfl (Expr.toNnf_isNnf _)
       InWfm.of_in_def_no_fv (lane := .defLane) ih
-    | .compl (.const x) =>
+    | .compl (.const x), _ =>
       let insList := isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       fun inConst =>
       match isAtComplConstElim insList with
@@ -457,25 +475,26 @@ def externalInsElimHelper {dl n fv index cst expr p}
             InWfm.in_def_no_fv (lane := .posLane) inConst
           ninNone inNone
       | Or.inr inBout =>
+        let df := (dl.prefix n).getDef x
         let out:
           uniSetMapDl.Out
             consts.uniSetMap
-            ((uniSetMapIndexDef dl n x).pair p)
+            ((uniSetMapIndex dl n [] df.toNnf).pair p)
         :=
-          boutSat inBout.dne
+          boutSat (uniSetMapIndex_nnf_eq ▸ inBout.dne)
         externalOutElimHelper
-          (fv := [])
-          (expr := (dl.prefix n).getDef x)
           out
           rfl
           rfl
-          (InWfm.in_def_no_fv (lane := .posLane) inConst)
-    | .var _ =>
+          df.toNnf_isNnf
+          ((BasicExpr.triIntp_toNnf_eq _ _ _).symm ▸
+          InWfm.in_def_no_fv (lane := .posLane) inConst)
+    | .var _, _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let ins := (cinsSat (isAtVarElim insList)).isSound
       inVar (b:=.empty) (c:=.empty) (getNthElim (lane := .defLane) ins)
-    | .compl (.var x) =>
+    | .compl (.var x), _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       inCompl fun inVar =>
@@ -484,143 +503,69 @@ def externalInsElimHelper {dl n fv index cst expr p}
         let pEq: fv[x] = p := inVarElimLt inVar xLt
         let out := boutSat (isAtComplVarElim insList).dne
         out.isSound (pEq ▸ uniSetMapDl.getNth (lane:=.posLane) xLt)
-    | .null =>
+    | .null, _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       isAtNullElim insList
-    | .compl .null =>
-      match p with
-      | .null =>
-        let isAt:
-          InUniSetMapAt dl n fv
-            cause.leastBackgroundApx
-            cause.leastContextApx
-            (.pair .any .any)
-            .defLane
-            .null
-        :=
-          isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-        nomatch isAtPairElim isAt
-      | .pair _pL _pR =>
-        inCompl fun inNull => inNullElimNope inNull
-    | .pair _ _ =>
+    | .pair _ _, .pair nnfL nnfR =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let ⟨_pL, _pR, eqP, inLeft, inRite⟩ := isAtPairElim insList
-      let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl
-      let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl
+      let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl nnfL
+      let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl nnfR
       eqP ▸ inPair ihL ihR
-    | .compl (.ir left rite) =>
+    | .un left rite, .un nnfL nnfR =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       match isAtComplIrElim insList with
-      | Or.inl inLeft =>
-        let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl
-        inCompl fun inIr => inComplElim ihL (inIrElim inIr).left
-      | Or.inr inRite =>
-        let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl
-        inCompl fun inIr => inComplElim ihR (inIrElim inIr).right
-    | .ir _ _ =>
+      | Or.inl inLeftCc =>
+        let inLeft := inCinsCcElim inLeftCc
+        inUnL (externalInsElimHelper (cinsSat inLeft) rfl rfl nnfL)
+      | Or.inr inRiteCc =>
+        let inRite := inCinsCcElim inRiteCc
+        inUnR (externalInsElimHelper (cinsSat inRite) rfl rfl nnfR)
+    | .ir _ _, .ir nnfL nnfR =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let ⟨inLeft, inRite⟩ := isAtIrElim insList
-      let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl
-      let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl
-      And.intro ihL ihR
-    | .compl (.pair left rite) =>
-      let inner := .un (.pair left.compl .any) (.pair .any rite.compl)
-      let isAt: IsAt (.un .null inner) .defLane p :=
-        isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      match isAtComplIrElim isAt with
-      | Or.inl inCinsNull =>
-        let inNullComplCompl :=
-          externalInsElimHelper (cinsSat inCinsNull) rfl rfl
-        let inNull := inNullComplCompl.dne
-        inCompl fun _ => nomatch p, inNull
-      | Or.inr inCinsInner =>
-        let insInner :=
-          externalInsElimHelper (cinsSat inCinsInner) rfl rfl
-        let insInner := insInner.dne
-        match p, insInner with
-        | .null, insInner =>
-          (inUnElim insInner).elim
-            (fun ins => inPairElimNope ins)
-            (fun ins => inPairElimNope ins)
-        | .pair _ _, insInner =>
-          (inUnElim insInner).elim
-            (fun ins =>
-              let ⟨insComplL, _⟩ := inPairElim ins
-              fun ins =>
-                let ⟨insL, _⟩ := inPairElim ins
-                insComplL insL)
-            (fun ins =>
-              let ⟨_, insComplR⟩ := inPairElim ins
-              fun ins =>
-                let ⟨_, insR⟩ := inPairElim ins
-                insComplR insR)
-    | .full _ =>
+      let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl nnfL
+      let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl nnfR
+      inIr ihL ihR
+    | .full _, .full nnfB =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       fun dB =>
-        externalInsElimHelper (cinsSat (isAtFullElim insList dB)) rfl rfl
-    | .compl (.full body) =>
+        externalInsElimHelper
+          (cinsSat (isAtFullElim insList dB))
+          rfl
+          rfl
+          nnfB
+    | .some body, .some nnfB =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      let ⟨dB, inBody⟩ := isAtComplFullElim insList
-      let ih := externalInsElimHelper (cinsSat inBody) rfl rfl
-      inCompl fun inFull => inComplElim ih (inFullElim inFull dB)
-    | .arbIr _ =>
+      let ⟨dB, inBodyCc⟩ := isAtComplFullElim insList
+      let inBody := inCinsCcElim inBodyCc
+      inSome _ (externalInsElimHelper (cinsSat inBody) rfl rfl nnfB)
+    | .arbIr _, .arbIr nnfB =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       inArbIr fun dX =>
         let insBody := cinsSat (isAtArbIrElim insList dX)
-        externalInsElimHelper insBody rfl rfl
-    | .compl (.arbIr body) =>
+        externalInsElimHelper insBody rfl rfl nnfB
+    | .arbUn body, .arbUn nnfB =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      let ⟨dX, inBody⟩ := isAtComplArbIrElim insList
-      let ih := externalInsElimHelper (cinsSat inBody) rfl rfl
-      inCompl fun inArbIr => inComplElim ih (inArbIrElim inArbIr dX)
-    | .compl (.compl body) =>
-      -- fck me.)
-      -- let insSelf: uniSetMapDl.Ins cst index :=
-      --   .intro _ _ cause isCause cinsSat boutSat
-      -- let indexEq:
-      --   index = (uniSetMapIndex dl n fv body).pair p
-      -- :=
-      --   indexEq
-      -- let ih :=
-      --   externalInsElimHelper
-      --     (dl := dl)
-      --     (n := n)
-      --     (fv := fv)
-      --     (p := p)
-      --     (expr := body)
-      --     (cst := cst)
-      --     (index := index)
-      --     sorry
-      --     sorry
-      --     sorry
-      -- let eq :=
-      --   SingleLaneExpr.intp2_compl_compl_eq
-      --     (body.toLane .defLane)
-      --     fv
-      --     (dl.prefix n).wfm
-      --     (dl.prefix n).wfm
-      -- show
-      --   (body.toLane .defLane).compl.compl.intp2
-      --     fv
-      --     (dl.prefix n).wfm
-      --     (dl.prefix n).wfm
-      --     p
-      -- from
-      --   eq.symm ▸ ih
-      sorry
+      let ⟨dX, inBodyCc⟩ := isAtComplArbIrElim insList
+      let inBody := inCinsCcElim inBodyCc
+      inArbUn dX (externalInsElimHelper (cinsSat inBody) rfl rfl nnfB)
 
 def externalOutElimHelper {dl n fv index cst expr p}
   (out: uniSetMapDl.Out cst index)
   (cstEq: cst = consts.uniSetMap)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
+  -- Note: allInternalInapp could be optimized with this to remove
+  -- some of the branches. But since it already works... ¯\_(ツ)_/¯
+  (_isNnf: expr.IsNnf)
 :
   ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
 :=
@@ -638,7 +583,14 @@ def externalOutElimHelper {dl n fv index cst expr p}
         .blockedCins inCins inCycle
       | .blockedBout _ inBout ins =>
         .blockedBout inBout ⟨
-          (fun xEq dEq => externalInsElimHelper ins xEq dEq),
+          (fun {_ _ expr _} xEq dEq =>
+            show (expr.triIntp _ _).defMem _ from
+            (expr.triIntp_toNnf_eq _ _).symm ▸
+            externalInsElimHelper
+              ins
+              xEq
+              (uniSetMapIndex_nnf_eq ▸ dEq)
+              expr.toNnf_isNnf),
           (fun xEq => show (usmWfm consts.getNth).defMem _ from
             xEq ▸ DefList.Ins.isSound ins)
         ⟩
@@ -674,24 +626,34 @@ end
 
 
 def externalInsElim {dl n fv expr p}
-  (ins:
+  (insExt:
     uniSetMapDl.Ins
       consts.uniSetMap
       (.pair (uniSetMapIndex dl n fv expr) p))
 :
   (expr.triIntp fv (dl.prefix n).wfm).defMem p
 :=
-  externalInsElimHelper ins rfl rfl
+  expr.triIntp_toNnf_eq fv _ ▸
+  externalInsElimHelper
+    (uniSetMapIndex_nnf_eq ▸ insExt)
+    rfl
+    rfl
+    expr.toNnf_isNnf
 
 def externalOutElim {dl n fv expr p}
-  (out:
+  (outExt:
     uniSetMapDl.Out
       consts.uniSetMap
       (.pair (uniSetMapIndex dl n fv expr) p))
 :
   ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
 :=
-  externalOutElimHelper out rfl rfl
+  expr.triIntp_toNnf_eq fv _ ▸
+  externalOutElimHelper
+      (uniSetMapIndex_nnf_eq ▸ outExt)
+      rfl
+      rfl
+      expr.toNnf_isNnf
 
 def uniSetMapAt_le
   (dl: DefList)
