@@ -1,5 +1,6 @@
 import Etst.WFC.Syntax.FiniteDefList
 import Etst.WFC.Utils.Expr.NegationNormalform
+import Etst.WFC.Utils.DefList
 
 namespace Etst
 open SingleLaneExpr
@@ -234,18 +235,6 @@ def BasicExpr.encoding
 :=
   BasicExpr.encodingNnf expr.toNnf
 
-def DefList.prefix
-  (dl: DefList)
-  (n: Nat)
-:
-  DefList
-:= {
-  getDef x := if x < n then dl.getDef x else .none
-  isClean x :=
-    if h: x < n
-    then if_pos h ▸ dl.isClean x
-    else if_neg h ▸ nofun
-}
 
 def DefList.prefixList
   (dl: DefList)
@@ -264,23 +253,6 @@ def DefList.prefixEncoding
 :=
   .listEncoding (dl.prefixList 0 n)
 
-
-def DefList.prefix_eq_at
-  {dl: DefList}
-  {n x} (lt: x < n)
-:
-  (dl.prefix n).getDef x = dl.getDef x
-:=
-  if_pos lt
-
-def DefList.prefix_none_at
-  {dl: DefList}
-  {n x} (nlt: ¬ x < n)
-:
-  (dl.prefix n).getDef x = .none
-:=
-  if_neg nlt
-
 def DefList.prefixList_length_eq
   (dl: DefList)
   (start length: Nat)
@@ -292,7 +264,6 @@ def DefList.prefixList_length_eq
   | lengthPred+1 =>
     let ih := dl.prefixList_length_eq (start + 1) lengthPred
     Nat.succ_inj.mpr ih
-
 
 def DefList.prefixList_at_eq_start
   (dl: DefList)

@@ -216,6 +216,14 @@ def DefList.DependsOn.push
   | Base b => Rec b (Base isFree)
   | Rec head tail => Rec head (push tail isFree)
 
+def DefList.IsDefBoundedBy
+  (getDef: GetDef)
+  (x ub: Nat)
+:
+  Prop
+:=
+  ∀ {dep} (_: DependsOn getDef x dep), dep < ub
+
 /-
   A definition list is finitely bounded iff every definition only
   depends on finitely many other definitions (transitively). This
@@ -231,10 +239,7 @@ def DefList.DependsOn.push
 def DefList.IsFinBounded (getDef: GetDef): Prop :=
   ∀ name,
   ∃ upperBound,
-  ∀ {dep}
-    (_: DependsOn getDef name dep)
-  ,
-    dep < upperBound
+  IsDefBoundedBy getDef name upperBound
 
 -- A finitely bounded definition list. See IsFinBounded above.
 structure FinBoundedDL extends DefList where
