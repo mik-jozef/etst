@@ -1,5 +1,5 @@
 import Etst.WFC.Syntax.FiniteDefList
-import Etst.WFC.Utils.Expr.NegationNormalform
+import Etst.WFC.Utils.Expr.NegationNormalForm
 import Etst.WFC.Utils.DefList
 
 namespace Etst
