@@ -14,16 +14,16 @@ variable
 def every_cause_inapplicable_preserves_definitive_nonmember
   (b c: Valuation Pair)
   (expr: BasicExpr)
-  (d: Pair)
+  (p: Pair)
   (outSet: Nat → Set Pair)
   (isEveryCauseInapplicable:
     {cause: Cause Pair} →
-    cause.IsWeakCause expr d →
+    cause.IsWeakCause expr p →
     cause.IsInapplicable outSet b.defMembers)
   (outSetIsEmpty:
-    ∀ {x d}, outSet x d → ¬ (c x).posMem d)
+    ∀ {x p}, outSet x p → ¬ (c x).posMem p)
 :
-  ¬(expr.triIntp2 [] b c).posMem d
+  ¬(expr.triIntp2 [] b c).posMem p
 :=
   let isSat := Cause.IsWeaklySatisfiedBy.ofValPos b c
   let isApp := isSat.toIsApplicable outSet outSetIsEmpty
@@ -34,14 +34,14 @@ def empty_cycle_is_out
   (dl: DefList)
   (cycle: Nat → Set Pair)
   (isEmptyCycle:
-    ∀ {x d},
-    cycle x d →
+    ∀ {x p},
+    cycle x p →
     (cause: Cause Pair) →
-    cause.IsWeakCause (dl.getDef x) d →  
+    cause.IsWeakCause (dl.getDef x) p →
     cause.IsInapplicable cycle dl.wfm.defMembers)
-  {x d} (inCycle: cycle x d)
+  {x p} (inCycle: cycle x p)
 :
-  ¬(dl.wfm x).posMem d
+  ¬(dl.wfm x).posMem p
 :=
   let _ := Valuation.ordStdLattice
   let wfm := dl.wfm
@@ -50,18 +50,18 @@ def empty_cycle_is_out
   isFp ▸
   OrderHom.lfpStage_induction
     (operatorC dl wfm)
-    (fun v => ∀ {x d}, cycle x d → ¬(v x).posMem d)
+    (fun v => ∀ {x p}, cycle x p → ¬(v x).posMem p)
     (fun _n _isLim ih _ _ inCycle =>
       (Valuation.ordStd.in_set_in_sup_posMem isLUB_iSup).nmp
-        fun ⟨prev, ⟨⟨i, eqAtI⟩, dInPrev⟩⟩ =>
+        fun ⟨prev, ⟨⟨i, eqAtI⟩, pInPrev⟩⟩ =>
           let eq: (operatorC dl wfm).lfpStage i = prev := eqAtI
-          ih i inCycle (eq ▸ dInPrev))
-    (fun n _notLim predLt ih x d inCycle =>
+          ih i inCycle (eq ▸ pInPrev))
+    (fun n _notLim predLt ih x p inCycle =>
       every_cause_inapplicable_preserves_definitive_nonmember
         wfm
         _
         (dl.getDef x)
-        d
+        p
         cycle
         (isEmptyCycle inCycle _)
         (ih ⟨n.pred, predLt⟩))
@@ -75,9 +75,9 @@ structure InsOutComplete
   Prop
 where
   insIsComplete:
-    ∀ {x d}, (v x).defMem d → DefList.Ins dl x d
+    ∀ {x p}, (v x).defMem p → DefList.Ins dl x p
   outIsComplete:
-    ∀ {x d}, ¬(v x).posMem d → DefList.Out dl x d
+    ∀ {x p}, ¬(v x).posMem p → DefList.Out dl x p
 
 open DefList in
 def completenessProofC {dl b}
@@ -90,20 +90,20 @@ def completenessProofC {dl b}
   {
     insIsComplete :=
       opC.lfpStage_induction
-        (fun v => ∀ {x d}, (v x).defMem d → Ins dl x d)
-        (fun _n _isLim ih _x _d isDefN =>
+        (fun v => ∀ {x p}, (v x).defMem p → Ins dl x p)
+        (fun _n _isLim ih _x _p isDefN =>
           let ⟨_v, ⟨m, (vEq: opC.lfpStage _ = _)⟩, inDefV⟩ :=
             (Valuation.ordStd.in_set_in_sup_defMem isLUB_iSup).mpr isDefN
           ih m (vEq ▸ inDefV))
-        (fun n _notLim predLt ih x d isDefN =>
+        (fun n _notLim predLt ih x p isDefN =>
           let c := opC.lfpStage n.pred
           
           let cause: Cause Pair := {
-            cins x d := (c x).defMem d
-            bout x d := ¬(b x).posMem d
+            cins x p := (c x).defMem p
+            bout x p := ¬(b x).posMem p
           }
           
-          let isCause: cause.IsStrongCause (dl.getDef x) d :=
+          let isCause: cause.IsStrongCause (dl.getDef x) p :=
             fun _ _ isSat =>
               BasicExpr.triIntp2_mono_std_defMem
                 (fun _ _ isDef =>
@@ -111,12 +111,12 @@ def completenessProofC {dl b}
                 (fun _ _ => isSat.cinsSat)
                 isDefN
           
-          Ins.intro x d cause isCause
+          Ins.intro x p cause isCause
             (ih ⟨n.pred, predLt⟩)
             isComplete.outIsComplete)
     outIsComplete :=
       Out.intro
-        (fun x d => ¬(operatorC.lfp dl b x).posMem d)
+        (fun x p => ¬(operatorC.lfp dl b x).posMem p)
         (fun {xx dd} notPos _cause isCause =>
           let opC := operatorC dl b
           let lfp := operatorC.lfp dl b

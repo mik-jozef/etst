@@ -179,7 +179,7 @@ def SingleLaneExpr.intpVar
 :=
   match fv[x]? with
   | none => {}
-  | some d => {d}
+  | some p => {p}
 
 /-
   The interpretation of an expression is defined using two valuations
@@ -214,23 +214,23 @@ def SingleLaneExpr.intp2
   | .var x => intpVar fv x
   | .null => {.null}
   | .pair left rite =>
-      fun d =>
-        ∃ dL dR,
-          d = .pair dL dR ∧
-          intp2 left fv b c dL ∧
-          intp2 rite fv b c dR
+    fun p =>
+      ∃ pL pR,
+        p = .pair pL pR ∧
+        intp2 left fv b c pL ∧
+        intp2 rite fv b c pR
   | .ir left rite =>
-      fun d =>
-        And
-          (intp2 left fv b c d)
-          (intp2 rite fv b c d)
+    fun p =>
+      And
+        (intp2 left fv b c p)
+        (intp2 rite fv b c p)
   | .full body =>
-      fun _ => ∀ dB, intp2 body fv b c dB
+    fun _ => ∀ pB, intp2 body fv b c pB
   | .compl body =>
-      -- Note the swap of b and c.
-      (intp2 body fv c b).compl
+    -- Note the swap of b and c.
+    (intp2 body fv c b).compl
   | .arbIr body =>
-      fun d => ∀ dX, intp2 body (dX :: fv) b c d
+    fun p => ∀ pX, intp2 body (pX :: fv) b c p
 
 abbrev SingleLaneExpr.intp
   (expr: SingleLaneExpr)
@@ -283,30 +283,30 @@ def BasicExpr.triIntp2Pos
 
 -- A proof that definite membership implies possible membership.
 def BasicExpr.triIntp2_defLePos
-  {fv b c d}
+  {fv b c p}
   (expr: BasicExpr)
-  (isDef: expr.triIntp2Def fv b c d)
+  (isDef: expr.triIntp2Def fv b c p)
 :
-  expr.triIntp2Pos fv b c d
+  expr.triIntp2Pos fv b c p
 :=
   match expr, isDef with
   | .const x, isDef => (c x).defLePos isDef
   | .var _, isDef => isDef
   | .null, isDef => isDef
   | .pair left rite, ⟨pl, pr, eq, isDefL, isDefR⟩ =>
-      let ihL := triIntp2_defLePos left isDefL
-      let ihR := triIntp2_defLePos rite isDefR
-      ⟨pl, pr, eq, ihL, ihR⟩
+    let ihL := triIntp2_defLePos left isDefL
+    let ihR := triIntp2_defLePos rite isDefR
+    ⟨pl, pr, eq, ihL, ihR⟩
   | .ir left rite, ⟨isDefL, isDefR⟩ => ⟨
       triIntp2_defLePos left isDefL,
       triIntp2_defLePos rite isDefR
     ⟩
-  | .full body, isDef => fun dB =>
-      triIntp2_defLePos body (isDef dB)
+  | .full body, isDef => fun pB =>
+    triIntp2_defLePos body (isDef pB)
   | .compl body, isDef => fun isPos =>
       isDef (triIntp2_defLePos body isPos)
-  | .arbIr body, isDef => fun dX =>
-      triIntp2_defLePos body (isDef dX)
+  | .arbIr body, isDef => fun pX =>
+    triIntp2_defLePos body (isDef pX)
 
 /-
   A three-valued interpretation is an intuitive extension of single-lane
@@ -314,8 +314,8 @@ def BasicExpr.triIntp2_defLePos
   terms of the definite members of its subexpressions, and the same
   applies to the possible members.
   
-  An interesting exception is the complement, where `d` is a
-  definite member of the complement of `expr` iff `d` is not
+  An interesting exception is the complement, where `p` is a
+  definite member of the complement of `expr` iff `p` is not
   a *possible* member of `expr`, and vice versa. This is handled
   in `toLane` by toggling the lane of constants inside complements.
 -/

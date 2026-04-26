@@ -185,8 +185,8 @@ mutual
       intp2_mono_std_compl
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimCompl v_le)
     | .arbIr _ =>
-      intp2_mono_std_arbIr fun d =>
-        desc.le_hypothesify fv (d :: fvDepth) inv laneEq.elimArbIr v_le
+      intp2_mono_std_arbIr fun p =>
+        desc.le_hypothesify fv (p :: fvDepth) inv laneEq.elimArbIr v_le
 
   def MutIndDescriptor.ge_hypothesify {dl v lane}
     (desc: MutIndDescriptor dl)
@@ -223,8 +223,8 @@ mutual
       intp2_mono_std_compl
         (desc.le_hypothesify fv fvDepth inv laneEq.elimCompl v_le)
     | .arbIr _ =>
-      intp2_mono_std_arbIr fun d =>
-        desc.ge_hypothesify fv (d :: fvDepth) inv laneEq.elimArbIr v_le
+      intp2_mono_std_arbIr fun p =>
+        desc.ge_hypothesify fv (p :: fvDepth) inv laneEq.elimArbIr v_le
 end
 
 open SingleLaneExpr in

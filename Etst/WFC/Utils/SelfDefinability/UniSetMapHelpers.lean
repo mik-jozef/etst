@@ -50,9 +50,9 @@ def isAtIndexNope
     intp2 expr fv b c p)
   (evalActual: fv[aliasVar]? = .some (.pair (.nat actual) enc))
   (evalIndex:
-    ∀ {d},
-      indexExpr.intp2 fv b c d →
-      d = Pair.nat expected)
+    ∀ {pIndex},
+      indexExpr.intp2 fv b c pIndex →
+      pIndex = Pair.nat expected)
   (indexNeq: actual ≠ expected)
   {P: Prop}
 :
@@ -667,16 +667,16 @@ def isAtComplIrElim {dl n fv b c left rite lane p}
 def isAtFullElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.full body) lane p)
 :
-  ∀ dB,
+  ∀ pB,
     (c consts.uniSetMap).getLane
       lane
-      (.pair (uniSetMapIndex dl n fv body) dB)
+      (.pair (uniSetMapIndex dl n fv body) pB)
 :=
-  let main ins dB :=
+  let main ins pB :=
     let ⟨bodyEnc, ins⟩ := inArbUnElim ins
     let ⟨insExprGuard, ins⟩ := inIrElim ins
     let bodyEncEq := exprGuardElimUnary insExprGuard
-    inMapCallElim 12 (ins dB) bodyEncEq
+    inMapCallElim 12 (ins pB) bodyEncEq
       (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)
   exprEncListElim
     ins
@@ -696,18 +696,18 @@ def isAtFullElim {dl n fv b c body lane p}
 def isAtComplFullElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.compl (.full body)) lane p)
 :
-  ∃ dB,
+  ∃ pB,
     (c consts.uniSetMap).getLane
       lane
-      (.pair (uniSetMapIndex dl n fv (.compl body)) dB)
+      (.pair (uniSetMapIndex dl n fv (.compl body)) pB)
 :=
   let main ins :=
     let ⟨bodyEnc, ins⟩ := inArbUnElim ins
     let ⟨insExprGuard, ins⟩ := inIrElim ins
     let bodyEncEq := exprGuardElimUnary (i := .nat 9) insExprGuard
-    let ⟨dB, insArg⟩ := inSomeElim ins
+    let ⟨pB, insArg⟩ := inSomeElim ins
     let ⟨_pArg, inMap, inArg⟩ := inCallElim insArg
-    ⟨dB,
+    ⟨pB,
       inMapCallElim 14 insArg bodyEncEq
         (inVarElim · rfl) (inVarElim · rfl) (inVarElim · rfl)⟩
   exprEncListElim
@@ -728,16 +728,16 @@ def isAtComplFullElim {dl n fv b c body lane p}
 def isAtArbIrElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.arbIr body) lane p)
 :
-  ∀ dX,
+  ∀ pX,
     (c consts.uniSetMap).getLane
       lane
-      (.pair (uniSetMapIndex dl n (dX :: fv) body) p)
+      (.pair (uniSetMapIndex dl n (pX :: fv) body) p)
 :=
-  let main ins dX :=
+  let main ins pX :=
     let ⟨bodyEnc, ins⟩ := inArbUnElim ins
     let ⟨insExprGuard, ins⟩ := inIrElim ins
     let bodyEncEq := exprGuardElimUnary insExprGuard
-    inMapCallElim 14 (ins dX) bodyEncEq
+    inMapCallElim 14 (ins pX) bodyEncEq
       (inVarElim · rfl)
       (fun h =>
         let ⟨_vL, _vR, hEq, hL, hR⟩ := inPairElimEx h
@@ -763,17 +763,17 @@ def isAtArbIrElim {dl n fv b c body lane p}
 def isAtComplArbIrElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.compl (.arbIr body)) lane p)
 :
-  ∃ dX,
+  ∃ pX,
     (c consts.uniSetMap).getLane
       lane
-      (.pair (uniSetMapIndex dl n (dX :: fv) (.compl body)) p)
+      (.pair (uniSetMapIndex dl n (pX :: fv) (.compl body)) p)
 :=
   let main ins :=
     let ⟨bodyEnc, ins⟩ := inArbUnElim ins
     let ⟨insExprGuard, ins⟩ := inIrElim ins
     let bodyEncEq := exprGuardElimUnary (i := .nat 11) insExprGuard
-    let ⟨dX, insArg⟩ := inArbUnElim ins
-    ⟨dX,
+    let ⟨pX, insArg⟩ := inArbUnElim ins
+    ⟨pX,
       inMapCallElim 15 insArg bodyEncEq
         (inVarElim · rfl)
         (fun h =>

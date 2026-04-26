@@ -254,10 +254,10 @@ def Cause.IsWeaklySatisfiedBy.ofValPos
 }
 
 
-def Cause.IsWeakCauseFv.ofValPos {expr fv b c d}
-  (isPos: (expr.triIntp2 fv b c).posMem d)
+def Cause.IsWeakCauseFv.ofValPos {expr fv b c p}
+  (isPos: (expr.triIntp2 fv b c).posMem p)
 :
-  (Cause.ofValPos b c).IsWeakCauseFv fv expr d
+  (Cause.ofValPos b c).IsWeakCauseFv fv expr p
 :=
   fun _ _ isSat =>
     BasicExpr.triIntp2_mono_std_posMem
@@ -265,10 +265,10 @@ def Cause.IsWeakCauseFv.ofValPos {expr fv b c d}
       (fun _ _ => isSat.cinsSat)
       isPos
 
-def Cause.IsStrongCauseFv.ofValDef {expr fv b c d}
-  (isDef: (expr.triIntp2 fv b c).defMem d)
+def Cause.IsStrongCauseFv.ofValDef {expr fv b c p}
+  (isDef: (expr.triIntp2 fv b c).defMem p)
 :
-  (Cause.ofValDef b c).IsStrongCauseFv fv expr d
+  (Cause.ofValDef b c).IsStrongCauseFv fv expr p
 :=
   fun _ _ isSat =>
     BasicExpr.triIntp2_mono_std_defMem
@@ -277,21 +277,21 @@ def Cause.IsStrongCauseFv.ofValDef {expr fv b c d}
       isDef
 
 
-def Cause.IsWeakCauseFv.isPosOfIsApplicable {fv d expr}
+def Cause.IsWeakCauseFv.isPosOfIsApplicable {fv p expr}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv expr d)
+  (isCause: cause.IsWeakCauseFv fv expr p)
   {b c}
   (isApp: ¬ cause.IsInapplicable c.defNonMembers b.defMembers)
 :
-  (expr.triIntp2 fv b c).posMem d
+  (expr.triIntp2 fv b c).posMem p
 :=
   isCause (Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy isApp)
 
-def Cause.IsWeakCauseFv.isInapplicableOfIsNonmember {fv d expr}
+def Cause.IsWeakCauseFv.isInapplicableOfIsNonmember {fv p expr}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv expr d)
+  (isCause: cause.IsWeakCauseFv fv expr p)
   {b c: Valuation Pair}
-  (notPos: ¬(expr.triIntp2 fv b c).posMem d)
+  (notPos: ¬(expr.triIntp2 fv b c).posMem p)
 :
   cause.IsInapplicable c.defNonMembers b.defMembers
 :=
@@ -382,12 +382,12 @@ def Cause.maximalValsApxAreSat
 }
 
 
-def Cause.IsStrongCauseFv.ofLeastCompl {fv expr d}
+def Cause.IsStrongCauseFv.ofLeastCompl {fv expr p}
   {cause: Cause Pair}
   (notPos:
-    ¬ expr.triIntp2Pos fv cause.leastContextApx cause.leastBackgroundApx d)
+    ¬ expr.triIntp2Pos fv cause.leastContextApx cause.leastBackgroundApx p)
 :
-  cause.IsStrongCauseFv fv (.compl expr) d
+  cause.IsStrongCauseFv fv (.compl expr) p
 :=
   fun _ c isSat =>
     let bgLe: cause.leastContextApx ⊑ c :=
@@ -404,50 +404,50 @@ def Cause.IsStrongCauseFv.ofLeastCompl {fv expr d}
     fun isPos => notPos (posLe isPos)
 
 
-def Cause.IsWeakCauseFv.const {fv x d}:
-  IsWeakCauseFv (Cause.cinsJust x d) fv (.const x) d
+def Cause.IsWeakCauseFv.const {fv x p}:
+  IsWeakCauseFv (Cause.cinsJust x p) fv (.const x) p
 :=
   fun _ _ isSat => isSat.cinsSat ⟨rfl, rfl⟩
 
-def Cause.IsWeakCauseFv.constElim {fv x d}
+def Cause.IsWeakCauseFv.constElim {fv x p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.const x) d)
+  (isCause: cause.IsWeakCauseFv fv (.const x) p)
 :
-  cause.cins x d
+  cause.cins x p
 :=
   isCause cause.maximalValsApxAreSat
 
-def Cause.IsWeakCauseFv.complConst {fv x d}:
-   IsWeakCauseFv (Cause.boutJust x d) fv (.compl (.const x)) d
+def Cause.IsWeakCauseFv.complConst {fv x p}:
+   IsWeakCauseFv (Cause.boutJust x p) fv (.compl (.const x)) p
 :=
   fun _ _ isSat => isSat.boutSat ⟨rfl, rfl⟩
 
-def Cause.IsWeakCauseFv.complConstElim {fv x d}
+def Cause.IsWeakCauseFv.complConstElim {fv x p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.compl (.const x)) d)
+  (isCause: cause.IsWeakCauseFv fv (.compl (.const x)) p)
 :
-  cause.bout x d
+  cause.bout x p
 :=
   (isCause cause.maximalValsApxAreSat).dne
 
-def Cause.IsStrongCauseFv.const {fv x d}:
-  IsStrongCauseFv (Cause.cinsJust x d) fv (.const x) d
+def Cause.IsStrongCauseFv.const {fv x p}:
+  IsStrongCauseFv (Cause.cinsJust x p) fv (.const x) p
 :=
   fun _ _ isSat => isSat.cinsSat ⟨rfl, rfl⟩
 
-def Cause.IsStrongCauseFv.constElim {fv x d}
+def Cause.IsStrongCauseFv.constElim {fv x p}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.const x) d)
+  (isCause: cause.IsStrongCauseFv fv (.const x) p)
 :
-  cause.cins x d
+  cause.cins x p
 :=
   isCause cause.leastValsApxAreSat
 
-def Cause.IsStrongCauseFv.complConstElim {fv x d}
+def Cause.IsStrongCauseFv.complConstElim {fv x p}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.compl (.const x)) d)
+  (isCause: cause.IsStrongCauseFv fv (.compl (.const x)) p)
 :
-  cause.bout x d
+  cause.bout x p
 :=
   (isCause cause.leastValsApxAreSat).dne
 
@@ -516,26 +516,26 @@ def Cause.IsStrongCauseFv.complPairElim {fv l r pL pR}
   | Or.inr notPosR => Or.inr (Cause.IsStrongCauseFv.ofLeastCompl notPosR)
 
 
-def Cause.IsWeakCauseFv.ir {fv l r d}
+def Cause.IsWeakCauseFv.ir {fv l r p}
   {causeL causeR: Cause Pair}
-  (leftIsCause: causeL.IsWeakCauseFv fv l d)
-  (riteIsCause: causeR.IsWeakCauseFv fv r d)
+  (leftIsCause: causeL.IsWeakCauseFv fv l p)
+  (riteIsCause: causeR.IsWeakCauseFv fv r p)
 :
-  (causeL.union causeR).IsWeakCauseFv fv (.ir l r) d
+  (causeL.union causeR).IsWeakCauseFv fv (.ir l r) p
 :=
   fun _ _ isSat => ⟨
     leftIsCause isSat.unionElimL,
     riteIsCause isSat.unionElimR,
   ⟩
 
-def Cause.IsWeakCauseFv.complIrElim {fv l r d}
+def Cause.IsWeakCauseFv.complIrElim {fv l r p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.compl (.ir l r)) d)
+  (isCause: cause.IsWeakCauseFv fv (.compl (.ir l r)) p)
   (b c: Valuation Pair)
 :
   Or
-    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv fv (.compl l) d)
-    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv fv (.compl r) d)
+    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv fv (.compl l) p)
+    ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv fv (.compl r) p)
 :=
   let causeUn := cause.union (Cause.ofValPos b c)
   let isSat := causeUn.maximalValsApxAreSat.unionElimL
@@ -559,35 +559,35 @@ def Cause.IsWeakCauseFv.complIrElim {fv l r d}
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
 
-def Cause.IsStrongCauseFv.complIrElim {fv l r d}
+def Cause.IsStrongCauseFv.complIrElim {fv l r p}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.compl (.ir l r)) d)
+  (isCause: cause.IsStrongCauseFv fv (.compl (.ir l r)) p)
 :
   Or
-    (cause.IsStrongCauseFv fv (.compl l) d)
-    (cause.IsStrongCauseFv fv (.compl r) d)
+    (cause.IsStrongCauseFv fv (.compl l) p)
+    (cause.IsStrongCauseFv fv (.compl r) p)
 :=
   match not_and_or.mp (isCause cause.leastValsApxAreSat) with
   | Or.inl notPosL => Or.inl (Cause.IsStrongCauseFv.ofLeastCompl notPosL)
   | Or.inr notPosR => Or.inr (Cause.IsStrongCauseFv.ofLeastCompl notPosR)
 
 
-def Cause.IsWeakCauseFv.complFullElim {fv body d}
+def Cause.IsWeakCauseFv.complFullElim {fv body p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.compl (.full body)) d)
+  (isCause: cause.IsWeakCauseFv fv (.compl (.full body)) p)
   (b c: Valuation Pair)
 :
-  ∃ dB,
+  ∃ pB,
     ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv
       fv
       (.compl body)
-      dB)
+      pB)
 :=
   let causeUn := cause.union (Cause.ofValPos b c)
   let isSat := causeUn.maximalValsApxAreSat.unionElimL
   match Classical.not_forall.mp (isCause isSat) with
-  | ⟨dB, notDefBody⟩ =>
-    ⟨dB, fun _ _ isSat =>
+  | ⟨pB, notDefBody⟩ =>
+    ⟨pB, fun _ _ isSat =>
       BasicExpr.triIntp2_mono_std_posMem
         (expr := body.compl)
         (b0 := causeUn.maximalBackgroundApx)
@@ -596,60 +596,60 @@ def Cause.IsWeakCauseFv.complFullElim {fv body d}
         (fun _ _ inCins => isSat.cinsSat inCins)
         notDefBody⟩
 
-def Cause.IsStrongCauseFv.complFullElim {fv body d}
+def Cause.IsStrongCauseFv.complFullElim {fv body p}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.compl (.full body)) d)
+  (isCause: cause.IsStrongCauseFv fv (.compl (.full body)) p)
 :
-  ∃ dB,
-    cause.IsStrongCauseFv fv (.compl body) dB
+  ∃ pB,
+    cause.IsStrongCauseFv fv (.compl body) pB
 :=
   match Classical.not_forall.mp (isCause cause.leastValsApxAreSat) with
-  | ⟨dB, notPosBody⟩ =>
-    ⟨dB, Cause.IsStrongCauseFv.ofLeastCompl notPosBody⟩
+  | ⟨pB, notPosBody⟩ =>
+    ⟨pB, Cause.IsStrongCauseFv.ofLeastCompl notPosBody⟩
 
 
-def Cause.IsWeakCauseFv.complCompl {fv body d}
+def Cause.IsWeakCauseFv.complCompl {fv body p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv body d)
+  (isCause: cause.IsWeakCauseFv fv body p)
 :
-  cause.IsWeakCauseFv fv (.compl (.compl body)) d
+  cause.IsWeakCauseFv fv (.compl (.compl body)) p
 :=
   open SingleLaneExpr in
   fun _ _ isSat => inCompl (ninCompl (isCause isSat))
 
-def Cause.IsWeakCauseFv.complComplElim {fv body d}
+def Cause.IsWeakCauseFv.complComplElim {fv body p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.compl (.compl body)) d)
+  (isCause: cause.IsWeakCauseFv fv (.compl (.compl body)) p)
 :
-  cause.IsWeakCauseFv fv body d
+  cause.IsWeakCauseFv fv body p
 :=
   fun _ _ isSat => (isCause isSat).dne
 
-def Cause.IsStrongCauseFv.complComplElim {fv body d}
+def Cause.IsStrongCauseFv.complComplElim {fv body p}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.compl (.compl body)) d)
+  (isCause: cause.IsStrongCauseFv fv (.compl (.compl body)) p)
 :
-  cause.IsStrongCauseFv fv body d
+  cause.IsStrongCauseFv fv body p
 :=
   fun _ _ isSat => (isCause isSat).dne
 
 
-def Cause.IsWeakCauseFv.complArbIrElim {fv body d}
+def Cause.IsWeakCauseFv.complArbIrElim {fv body p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.compl (.arbIr body)) d)
+  (isCause: cause.IsWeakCauseFv fv (.compl (.arbIr body)) p)
   (b c: Valuation Pair)
 :
-  ∃ dX,
+  ∃ pX,
     ((cause.union (Cause.ofValPos b c)).IsWeakCauseFv
-      (dX :: fv)
+      (pX :: fv)
       (.compl body)
-      d)
+      p)
 :=
   let causeUn := cause.union (Cause.ofValPos b c)
   let isSat := causeUn.maximalValsApxAreSat.unionElimL
   match Classical.not_forall.mp (isCause isSat) with
-  | ⟨dX, notDefBody⟩ =>
-    ⟨dX, fun _ _ isSat =>
+  | ⟨pX, notDefBody⟩ =>
+    ⟨pX, fun _ _ isSat =>
       BasicExpr.triIntp2_mono_std_posMem
         (expr := body.compl)
         (b0 := causeUn.maximalBackgroundApx)
@@ -658,22 +658,22 @@ def Cause.IsWeakCauseFv.complArbIrElim {fv body d}
         (fun _ _ inCins => isSat.cinsSat inCins)
         notDefBody⟩
 
-def Cause.IsStrongCauseFv.complArbIrElim {fv body d}
+def Cause.IsStrongCauseFv.complArbIrElim {fv body p}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.compl (.arbIr body)) d)
+  (isCause: cause.IsStrongCauseFv fv (.compl (.arbIr body)) p)
 :
-  ∃ dX,
-    cause.IsStrongCauseFv (dX :: fv) (.compl body) d
+  ∃ pX,
+    cause.IsStrongCauseFv (pX :: fv) (.compl body) p
 :=
   match Classical.not_forall.mp (isCause cause.leastValsApxAreSat) with
-  | ⟨dX, notPosBody⟩ =>
-    ⟨dX, Cause.IsStrongCauseFv.ofLeastCompl notPosBody⟩
+  | ⟨pX, notPosBody⟩ =>
+    ⟨pX, Cause.IsStrongCauseFv.ofLeastCompl notPosBody⟩
 
 
 
-def Cause.IsWeakCauseFv.noneElim {fv d}
+def Cause.IsWeakCauseFv.noneElim {fv p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv .none d)
+  (isCause: cause.IsWeakCauseFv fv .none p)
   {P: Prop}
 :
   P
@@ -681,9 +681,9 @@ def Cause.IsWeakCauseFv.noneElim {fv d}
   SingleLaneExpr.inNoneElim
     (isCause cause.maximalValsApxAreSat)
 
-def Cause.IsStrongCauseFv.noneElim {fv d}
+def Cause.IsStrongCauseFv.noneElim {fv p}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv .none d)
+  (isCause: cause.IsStrongCauseFv fv .none p)
   {P: Prop}
 :
   P

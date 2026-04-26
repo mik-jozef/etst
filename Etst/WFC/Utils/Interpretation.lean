@@ -22,33 +22,33 @@ def SingleLaneExpr.intp2_mono_std {fv}
 :
   expr.intp2 fv b0 c0 ⊆ expr.intp2 fv b1 c1
 :=
-  fun _ dIn =>
+  fun _ pIn =>
     match expr with
     | .const lane x =>
       match lane, even, laneEq with
-      | .defLane, .none, .constNone => (cLe x).defLe dIn
-      | .posLane, .none, .constNone => (cLe x).posLe dIn
-      | .defLane, .some .defLane, .constSome => cLe x dIn
-      | .posLane, .some .posLane, .constSome => cLe x dIn
-    | .var _ => dIn
-    | .null => dIn
+      | .defLane, .none, .constNone => (cLe x).defLe pIn
+      | .posLane, .none, .constNone => (cLe x).posLe pIn
+      | .defLane, .some .defLane, .constSome => cLe x pIn
+      | .posLane, .some .posLane, .constSome => cLe x pIn
+    | .var _ => pIn
+    | .null => pIn
     | .pair _ _ =>
-      let ⟨dL, dR, eq, dLIn, dRIn⟩ := dIn
-      let ihL := intp2_mono_std bLe cLe laneEq.elimPairLeft dLIn
-      let ihR := intp2_mono_std bLe cLe laneEq.elimPairRite dRIn
-      ⟨dL, dR, eq, ihL, ihR⟩
+      let ⟨pL, pR, eq, pLIn, pRIn⟩ := pIn
+      let ihL := intp2_mono_std bLe cLe laneEq.elimPairLeft pLIn
+      let ihR := intp2_mono_std bLe cLe laneEq.elimPairRite pRIn
+      ⟨pL, pR, eq, ihL, ihR⟩
     | .ir _ _ =>
-      let ⟨dLIn, dRIn⟩ := dIn
-      let ihL := intp2_mono_std bLe cLe laneEq.elimIrLeft dLIn
-      let ihR := intp2_mono_std bLe cLe laneEq.elimIrRite dRIn
+      let ⟨pLIn, pRIn⟩ := pIn
+      let ihL := intp2_mono_std bLe cLe laneEq.elimIrLeft pLIn
+      let ihR := intp2_mono_std bLe cLe laneEq.elimIrRite pRIn
       ⟨ihL, ihR⟩
     | .full _ =>
-      fun dB => intp2_mono_std bLe cLe laneEq.elimFull (dIn dB)
+      fun pB => intp2_mono_std bLe cLe laneEq.elimFull (pIn pB)
     | .compl _ =>
       let ih := intp2_mono_std cLe bLe laneEq.elimCompl
-      (Set.compl_subset_compl.mpr ih) dIn
+      (Set.compl_subset_compl.mpr ih) pIn
     | .arbIr _ =>
-      fun dX => intp2_mono_std bLe cLe laneEq.elimArbIr (dIn dX)
+      fun pX => intp2_mono_std bLe cLe laneEq.elimArbIr (pIn pX)
 
 def BasicExpr.triIntp2_mono_std_defMem
   {b0 b1} (bLePos: ∀ x, (b1 x).posMem ≤ (b0 x).posMem)
@@ -123,8 +123,8 @@ def BasicExpr.triIntp2_mono_apx
 :=
   match expr with
   | .const x => {
-      defLe := fun _d dIn => (cLe x).defLe dIn
-      posLe := fun _d dIn => (cLe x).posLe dIn
+      defLe := fun _p pIn => (cLe x).defLe pIn
+      posLe := fun _p pIn => (cLe x).posLe pIn
     }
   | .var _ => ⟨fun _ => id, fun _ => id⟩
   | .null => ⟨fun _ => id, fun _ => id⟩
@@ -132,41 +132,41 @@ def BasicExpr.triIntp2_mono_apx
       let ihL := triIntp2_mono_apx bLe cLe
       let ihR := triIntp2_mono_apx bLe cLe
       {
-        defLe := fun _d ⟨dL, dR, eq, dLIn, dRIn⟩ =>
-          ⟨dL, dR, eq, ihL.defLe dLIn, ihR.defLe dRIn⟩
-        posLe := fun _d ⟨dL, dR, eq, dLIn, dRIn⟩ =>
-          ⟨dL, dR, eq, ihL.posLe dLIn, ihR.posLe dRIn⟩
+        defLe := fun _p ⟨pL, pR, eq, pLIn, pRIn⟩ =>
+          ⟨pL, pR, eq, ihL.defLe pLIn, ihR.defLe pRIn⟩
+        posLe := fun _p ⟨pL, pR, eq, pLIn, pRIn⟩ =>
+          ⟨pL, pR, eq, ihL.posLe pLIn, ihR.posLe pRIn⟩
       }
   | .ir _ _ =>
       let ihL := triIntp2_mono_apx bLe cLe
       let ihR := triIntp2_mono_apx bLe cLe
       {
-        defLe := fun _d ⟨dLIn, dRIn⟩ =>
-          ⟨ihL.defLe dLIn, ihR.defLe dRIn⟩
-        posLe := fun _d ⟨dLIn, dRIn⟩ =>
-          ⟨ihL.posLe dLIn, ihR.posLe dRIn⟩
+        defLe := fun _p ⟨pLIn, pRIn⟩ =>
+          ⟨ihL.defLe pLIn, ihR.defLe pRIn⟩
+        posLe := fun _p ⟨pLIn, pRIn⟩ =>
+          ⟨ihL.posLe pLIn, ihR.posLe pRIn⟩
       }
   | .full _ =>
       let ih := triIntp2_mono_apx bLe cLe
       {
-        defLe := fun _d dIn dB => ih.defLe (dIn dB)
-        posLe := fun _d dIn dB => ih.posLe (dIn dB)
+        defLe := fun _p pIn pB => ih.defLe (pIn pB)
+        posLe := fun _p pIn pB => ih.posLe (pIn pB)
       }
   | .compl _ =>
       let ih := triIntp2_mono_apx cLe bLe
       {
-        defLe := fun d dIn =>
-          let tmp: (d: Pair) → _ → _ := ih.posLe
-          not_imp_not.mpr (tmp d) dIn
-        posLe := fun d dIn =>
-          let tmp: (d: Pair) → _ → _ := ih.defLe
-          not_imp_not.mpr (tmp d) dIn
+        defLe := fun p pIn =>
+          let tmp: (p: Pair) → _ → _ := ih.posLe
+          not_imp_not.mpr (tmp p) pIn
+        posLe := fun p pIn =>
+          let tmp: (p: Pair) → _ → _ := ih.defLe
+          not_imp_not.mpr (tmp p) pIn
       }
   | .arbIr _ =>
       let ih _d := triIntp2_mono_apx bLe cLe
       {
-        defLe := fun _d dIn dXPos1 => (ih dXPos1).defLe (dIn dXPos1)
-        posLe := fun _d dIn dXPos0 => (ih dXPos0).posLe (dIn dXPos0)
+        defLe := fun _p pIn pXPos1 => (ih pXPos1).defLe (pIn pXPos1)
+        posLe := fun _p pIn pXPos0 => (ih pXPos0).posLe (pIn pXPos0)
       }
 
 def BasicExpr.triIntp2_mono_apx_defMem

@@ -891,8 +891,8 @@ namespace SingleLaneExpr
       eq_intp2_compl_of_eq
         (intp2_lift_eq_depth body fv fvDepth fvLiftBy c b)
     | .arbIr body =>
-      eq_intp2_arbIr_of_eq fun d =>
-        intp2_lift_eq_depth body fv (d :: fvDepth) fvLiftBy b c
+      eq_intp2_arbIr_of_eq fun p =>
+        intp2_lift_eq_depth body fv (p :: fvDepth) fvLiftBy b c
   
   def intp2_lift_eq
     (expr: SingleLaneExpr)
@@ -918,24 +918,24 @@ namespace SingleLaneExpr
   
   def intp2_lift_head_eq
     (expr: SingleLaneExpr)
-    (dA dB: Pair)
+    (pA pB: Pair)
     (fv: List Pair)
     (b c: Valuation Pair)
   :
-    intp2 expr.lift (dA :: fv) b c = intp2 expr.lift (dB :: fv) b c
+    intp2 expr.lift (pA :: fv) b c = intp2 expr.lift (pB :: fv) b c
   :=
-    (intp2_lift_eq expr fv [dA] b c).symm.trans
-      (intp2_lift_eq expr fv [dB] b c)
+    (intp2_lift_eq expr fv [pA] b c).symm.trans
+      (intp2_lift_eq expr fv [pB] b c)
   
   def intp_lift_head_eq
     (expr: SingleLaneExpr)
-    (dA dB: Pair)
+    (pA pB: Pair)
     (fv: List Pair)
     (v: Valuation Pair)
   :
-    intp expr.lift (dA :: fv) v = intp expr.lift (dB :: fv) v
+    intp expr.lift (pA :: fv) v = intp expr.lift (pB :: fv) v
   :=
-    intp2_lift_head_eq expr dA dB fv v v
+    intp2_lift_head_eq expr pA pB fv v v
   
   
   def intp2_subst_eq
@@ -986,21 +986,21 @@ namespace SingleLaneExpr
         (hyp:
           ∀ x ∈ (arbIr body).UsesFreeVar,
             intpVar fvLeft x = (fvMap x).intp2 fvRite b c)
-        (d: Pair)
+        (p: Pair)
         (x: Nat)
         (h: x ∈ body.UsesFreeVar)
       :
-        intpVar (d :: fvLeft) x = (fvMap' x).intp2 (d :: fvRite) b c
+        intpVar (p :: fvLeft) x = (fvMap' x).intp2 (p :: fvRite) b c
       :=
         match x with
         | 0 => rfl
         | x + 1 =>
-          intp2_lift_eq (fvMap x) fvRite [d] b c ▸ hyp x h
+          intp2_lift_eq (fvMap x) fvRite [p] b c ▸ hyp x h
       
-      eq_intp2_arbIr_of_eq fun d =>
+      eq_intp2_arbIr_of_eq fun p =>
         intp2_subst_eq
-          (fvEqLifted fvEq d)
-          (fvEqLifted fvEqCpl d)
+          (fvEqLifted fvEq p)
+          (fvEqLifted fvEqCpl p)
   
   def intp_subst_eq
     {fvMap: Nat → SingleLaneExpr}
@@ -1031,18 +1031,18 @@ namespace SingleLaneExpr
       intp2_subst_eq
       (fun x hx =>
         congrArg
-          (fun | .none => (∅: Set Pair) | .some d => {d})
+          (fun | .none => (∅: Set Pair) | .some p => {p})
           (fvEq x hx))
   
   
   def intp2_instantiateVar_eq
     (expr: SingleLaneExpr)
     (t: SingleLaneExpr)
-    {fv b c dB}
-    (t_eq: t.intp2 fv b c = {dB})
-    (t_eq_c: t.intp2 fv c b = {dB})
+    {fv b c pB}
+    (t_eq: t.intp2 fv b c = {pB})
+    (t_eq_c: t.intp2 fv c b = {pB})
   :
-    expr.intp2 (dB :: fv) b c = intp2 (expr.instantiateVar t) fv b c
+    expr.intp2 (pB :: fv) b c = intp2 (expr.instantiateVar t) fv b c
   :=
     intp2_subst_eq
       (fun
@@ -1055,10 +1055,10 @@ namespace SingleLaneExpr
   def intp_instantiateVar_eq
     (expr: SingleLaneExpr)
     (t: SingleLaneExpr)
-    {fv v dB}
-    (t_eq: t.intp fv v = {dB})
+    {fv v pB}
+    (t_eq: t.intp fv v = {pB})
   :
-    expr.intp (dB :: fv) v = intp (expr.instantiateVar t) fv v
+    expr.intp (pB :: fv) v = intp (expr.instantiateVar t) fv v
   :=
     intp_subst_eq (fun
       | 0, _ => t_eq ▸ rfl

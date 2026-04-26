@@ -13,10 +13,10 @@ namespace Etst
 
 
 mutual
-def DefList.Ins.isSound {dl x d}
-  (ins: Ins dl x d)
+def DefList.Ins.isSound {dl x p}
+  (ins: Ins dl x p)
 :
-  (dl.wfm x).defMem d
+  (dl.wfm x).defMem p
 :=
   match ins with
   | Ins.intro _ _ _ isCause insCins outBout =>
@@ -26,10 +26,10 @@ def DefList.Ins.isSound {dl x d}
       boutSat := fun h => Out.isSound (outBout h)
     }
 
-def DefList.Out.isSound {dl x d}
-  (out: Out dl x d)
+def DefList.Out.isSound {dl x p}
+  (out: Out dl x p)
 :
-  ¬(dl.wfm x).posMem d
+  ¬(dl.wfm x).posMem p
 :=
   match out with
   | .intro cycle isEmptyCycle inCycle =>
@@ -45,65 +45,65 @@ def DefList.Out.isSound {dl x d}
 end
 
 
-def DefList.Ins.isComplete {dl x d}
-  (ins: (dl.wfm x).defMem d)
+def DefList.Ins.isComplete {dl x p}
+  (ins: (dl.wfm x).defMem p)
 :
-  Ins dl x d
+  Ins dl x p
 :=
   (completenessProofB dl).insIsComplete ins
 
-def DefList.Out.isComplete {dl x d}
-  (out: ¬(dl.wfm x).posMem d)
+def DefList.Out.isComplete {dl x p}
+  (out: ¬(dl.wfm x).posMem p)
 :
-  Out dl x d
+  Out dl x p
 :=
   (completenessProofB dl).outIsComplete out
 
 
-def DefList.Ins.nopeOut {P dl x d}
-  (isIns: Ins dl x d)
-  (isOut: Out dl x d)
+def DefList.Ins.nopeOut {P dl x p}
+  (isIns: Ins dl x p)
+  (isOut: Out dl x p)
 :
   P
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
 
-def DefList.Ins.nopeNotDef {P dl x d}
-  (isIns: Ins dl x d)
-  (notDef: ¬(dl.wfm x).defMem d)
+def DefList.Ins.nopeNotDef {P dl x p}
+  (isIns: Ins dl x p)
+  (notDef: ¬(dl.wfm x).defMem p)
 :
   P
 :=
   False.elim (notDef isIns.isSound)
 
-def DefList.Ins.nopeNotPos {P dl x d}
-  (isIns: Ins dl x d)
-  (notPos: ¬(dl.wfm x).posMem d)
+def DefList.Ins.nopeNotPos {P dl x p}
+  (isIns: Ins dl x p)
+  (notPos: ¬(dl.wfm x).posMem p)
 :
   P
 :=
   False.elim (notPos isIns.isSound.toPos)
 
 
-def DefList.Out.nopeIns {P dl x d}
-  (isOut: Out dl x d)
-  (isIns: Ins dl x d)
+def DefList.Out.nopeIns {P dl x p}
+  (isOut: Out dl x p)
+  (isIns: Ins dl x p)
 :
   P
 :=
   False.elim (isOut.isSound isIns.isSound.toPos)
 
-def DefList.Out.nopeDef {P dl x d}
-  (isOut: Out dl x d)
-  (isDef: (dl.wfm x).defMem d)
+def DefList.Out.nopeDef {P dl x p}
+  (isOut: Out dl x p)
+  (isDef: (dl.wfm x).defMem p)
 :
   P
 :=
   False.elim (isOut.isSound isDef.toPos)
 
-def DefList.Out.nopePos {P dl x d}
-  (isOut: Out dl x d)
-  (isPos: (dl.wfm x).posMem d)
+def DefList.Out.nopePos {P dl x p}
+  (isOut: Out dl x p)
+  (isPos: (dl.wfm x).posMem p)
 :
   P
 :=

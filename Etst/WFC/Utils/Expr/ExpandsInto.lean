@@ -7,6 +7,7 @@ namespace Etst
 
 /-
   `ExpandsInto dl a b` iff `a` expands into `b` using definitions from `dl`.
+  Only constants under an even number of complements can be expanded.
   
   Eg. if `dl` contains `Nat = 0 | succ Nat`, then `Nat` can expand into
   `0 | succ (0 | succ Nat)`.
@@ -14,7 +15,7 @@ namespace Etst
 inductive DefList.ExpandsInto
   (dl: DefList)
 :
-  Bool → BasicExpr → BasicExpr → Type
+  (isEvenDepth: Bool) → BasicExpr → BasicExpr → Type
 
 | refl {ed} e: ExpandsInto dl ed e e
 | const {xExp} (x: Nat)
@@ -136,7 +137,7 @@ namespace DefList.ExpandsInto
     eq_triIntp2_compl_of_eq (expr.triIntp_eq_wfm dl fv)
   | .arbIr expr =>
     eq_triIntp2_arbIr_of_eq
-      (fun dB => expr.triIntp_eq_wfm dl (dB :: fv))
+      (fun pB => expr.triIntp_eq_wfm dl (pB :: fv))
   
   open BasicExpr in
   open SingleLaneExpr in
@@ -206,9 +207,9 @@ namespace DefList.ExpandsInto
     | arbIr exp =>
       match ed with
       | true =>
-        triIntp2_mono_std_arbIr (fun dB =>
-          exp.lfpStage_le_std (dB :: fv) n)
+        triIntp2_mono_std_arbIr (fun pB =>
+          exp.lfpStage_le_std (pB :: fv) n)
       | false =>
-        triIntp2_mono_std_arbIr (fun dB =>
-          exp.lfpStage_le_std (dB :: fv) n)
+        triIntp2_mono_std_arbIr (fun pB =>
+          exp.lfpStage_le_std (pB :: fv) n)
 end DefList.ExpandsInto

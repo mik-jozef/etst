@@ -4,12 +4,13 @@ import Etst.WFC.Utils.RulesOfInference
 
 namespace Etst
 
-variable {E: Type*}
-variable {x: Nat}
-variable {pA pB dE dBound d dB dC: Pair}
-variable {fv: List Pair}
-variable {b c: Valuation Pair}
-variable {lane: Set3.Lane}
+variable
+  {E: Type*}
+  {x: Nat}
+  {p pA pB pC: Pair}
+  {fv: List Pair}
+  {b c: Valuation Pair}
+  {lane: Set3.Lane}
 
 
 namespace Expr
@@ -115,19 +116,19 @@ namespace SingleLaneExpr
   
   def inImpl
     -- Note the swapped valuations in the domain.
-    (inFn: intp2 exprA fv c b d → intp2 exprB fv b c d)
+    (inFn: intp2 exprA fv c b p → intp2 exprB fv b c p)
   :
-    intp2 (impl exprA exprB) fv b c d
+    intp2 (impl exprA exprB) fv b c p
   :=
-    match Classical.em (intp2 exprA fv c b d) with
+    match Classical.em (intp2 exprA fv c b p) with
     | Or.inl inA => inUnR (inFn inA)
     | Or.inr notInA => inUnL notInA
   
   def inImplElim
-    (inImpl: intp2 (impl exprA exprB) fv b c d)
+    (inImpl: intp2 (impl exprA exprB) fv b c p)
   :
     -- Note the swapped valuations in the domain.
-    (intp2 exprA fv c b d → intp2 exprB fv b c d)
+    (intp2 exprA fv c b p → intp2 exprB fv b c p)
   :=
     fun inA =>
       (inUnElim inImpl).elim
@@ -137,20 +138,20 @@ namespace SingleLaneExpr
   
   def inIfThen
     {cond: SingleLaneExpr}
-    (inCond: intp2 cond fv b c dC)
-    (inBody: intp2 body fv b c d)
+    (inCond: intp2 cond fv b c pC)
+    (inBody: intp2 body fv b c p)
   :
-    intp2 (ifThen cond body) fv b c d
+    intp2 (ifThen cond body) fv b c p
   :=
-    inIr (inSome dC inCond) inBody
+    inIr (inSome pC inCond) inBody
   
   def inIfThenElim
     {cond: SingleLaneExpr}
-    (inIfThen: intp2 (ifThen cond body) fv b c d)
+    (inIfThen: intp2 (ifThen cond body) fv b c p)
   :
     And
-      (∃ dC, intp2 cond fv b c dC)
-      (intp2 body fv b c d)
+      (∃ pC, intp2 cond fv b c pC)
+      (intp2 body fv b c p)
   :=
     let ⟨inCond, inBody⟩ := inIrElim inIfThen
     And.intro (inSomeElim inCond) inBody
@@ -161,15 +162,15 @@ namespace SingleLaneExpr
     too. It's unfortunate, but inevitable -- have a look at the
     implementation of `arbUnDom` to see for yourself.
   -/
-  def inUnDom
+  def inUnDom {pDom}
     (inDomain:
-      intp2 domain (dB :: fv) b c dB)
+      intp2 domain (pDom :: fv) b c pDom)
     (inBody:
-      intp2 body (dB :: fv) b c d)
+      intp2 body (pDom :: fv) b c p)
   :
-    intp2 (arbUnDom domain body) fv b c d
+    intp2 (arbUnDom domain body) fv b c p
   :=
-    inArbUn dB (inIr (inSome dB ⟨rfl, inDomain⟩) inBody)
+    inArbUn pDom (inIr (inSome pDom ⟨rfl, inDomain⟩) inBody)
   
   -- I wish Lean supported anonymous structures.
   -- And also non-Prop-typed members of prop structures
@@ -180,31 +181,31 @@ namespace SingleLaneExpr
     (fv: List Pair)
     (b c: Valuation Pair)
     (x: Nat)
-    (dB: Pair)
+    (pBnd: Pair)
     (domain body: SingleLaneExpr)
-    (d: Pair): Prop
+    (p: Pair): Prop
   where
-    inDomain: intp2 domain (dB :: fv) b c dB
-    inBody: intp2 body (dB :: fv) b c d
+    inDomain: intp2 domain (pBnd :: fv) b c pBnd
+    inBody: intp2 body (pBnd :: fv) b c p
   
   def inUnDomElim
-    (inUnDom: intp2 (arbUnDom domain body) fv b c d)
+    (inUnDom: intp2 (arbUnDom domain body) fv b c p)
   :
-    ∃ dBound, InsUnDomElim fv b c x dBound domain body d
+    ∃ pBound, InsUnDomElim fv b c x pBound domain body p
   :=
-    let ⟨dBound, inIfThen⟩ := inArbUnElim inUnDom
-    let ⟨⟨_dC, inFvDom⟩, inBody⟩ := inIfThenElim inIfThen
+    let ⟨pBound, inIfThen⟩ := inArbUnElim inUnDom
+    let ⟨⟨_pC, inFvDom⟩, inBody⟩ := inIfThenElim inIfThen
     let ⟨inFv, inDom⟩ := inIrElim inFvDom
     let fvEq := inVarElim inFv rfl
-    ⟨dBound, { inDomain := fvEq ▸ inDom, inBody }⟩
+    ⟨pBound, { inDomain := fvEq ▸ inDom, inBody }⟩
   
   
   def inFinUn
     {list: List SingleLaneExpr}
     (exprIn: expr ∈ list)
-    (inExpr: intp2 expr fv b c d)
+    (inExpr: intp2 expr fv b c p)
   :
-    intp2 (finUn list) fv b c d
+    intp2 (finUn list) fv b c p
   :=
     match list with
     | [_e0] =>
@@ -223,18 +224,18 @@ namespace SingleLaneExpr
   def InFinUnElim
     (fv: List Pair)
     (b c: Valuation Pair)
-    (d: Pair)
+    (p: Pair)
     (P: Prop)
   :
     List SingleLaneExpr → Prop
   | List.nil => P
   | List.cons head tail =>
-    (intp2 head fv b c d → P) → InFinUnElim fv b c d P tail
+    (intp2 head fv b c p → P) → InFinUnElim fv b c p P tail
   
   def inFinUnElim {P list}
-    (inFinUn: intp2 (finUn list) fv b c d)
+    (inFinUn: intp2 (finUn list) fv b c p)
   :
-    InFinUnElim fv b c d P list
+    InFinUnElim fv b c p P list
   :=
     match list with
     | List.nil => False.elim (ninNone inFinUn)
@@ -243,10 +244,10 @@ namespace SingleLaneExpr
     | List.cons _head (_e1 :: _tail) =>
       (inUnElim inFinUn).elim
         (fun inHead inHeadToP =>
-          let rec ofP (p: P) l: InFinUnElim fv b c d P l :=
+          let rec ofP (proof: P) l: InFinUnElim fv b c p P l :=
             match l with
-            | List.nil => p
-            | List.cons _head tail => fun _ => ofP p tail
+            | List.nil => proof
+            | List.cons _head tail => fun _ => ofP proof tail
           
           ofP (inHeadToP inHead) _)
         (fun inTail _ => inFinUnElim inTail)
@@ -304,7 +305,7 @@ namespace SingleLaneExpr
   def inZthFstElim {p0 p1}
     (inZth: intp2 (zth (const lane x)) fv b c p0)
     (inFst: intp2 (fst (const lane x)) fv b c p1)
-    (isUnit: c x = Set3.just d)
+    (isUnit: c x = Set3.just p)
   :
     intp2 (Expr.const lane x) fv b c (.pair p0 p1)
   :=
@@ -316,8 +317,8 @@ namespace SingleLaneExpr
     :=
       open Set3.just in
       match lane with
-      | .defLane => inDefToEqBin d (isUnit ▸ inFstB) (isUnit ▸ inZthB)
-      | .posLane => inPosToEqBin d (isUnit ▸ inFstB) (isUnit ▸ inZthB)
+      | .defLane => inDefToEqBin p (isUnit ▸ inFstB) (isUnit ▸ inZthB)
+      | .posLane => inPosToEqBin p (isUnit ▸ inFstB) (isUnit ▸ inZthB)
     
     let eqR: p0 = zthB := Pair.noConfusion eq fun eq _ => eq
     

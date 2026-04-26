@@ -10,23 +10,23 @@ inductive DefList.IsCauseInapplicableExtended
   Prop
 |
   blockedCinsCycle
-  {x d}
-  (inCins: cause.cins x d)
-  (inCycle: cycle x d)
+  {x p}
+  (inCins: cause.cins x p)
+  (inCycle: cycle x p)
 :
   IsCauseInapplicableExtended dl cycle cause
 |
   blockedCinsOut
-  {x d}
-  (inCins: cause.cins x d)
-  (isOut: DefList.Out dl x d)
+  {x p}
+  (inCins: cause.cins x p)
+  (isOut: DefList.Out dl x p)
 :
   IsCauseInapplicableExtended dl cycle cause
 |
   blockedBout
-  {x d}
-  (inBout: cause.bout x d)
-  (isIns: DefList.Ins dl x d)
+  {x p}
+  (inBout: cause.bout x p)
+  (isIns: DefList.Ins dl x p)
 :
   IsCauseInapplicableExtended dl cycle cause
 
@@ -34,17 +34,17 @@ def DefList.Out.intro3
   {dl: DefList}
   (cycle: Nat → Set Pair)
   (isEmptyCycle:
-    ∀ {x d},
-    cycle x d →
+    ∀ {x p},
+    cycle x p →
     (cause: Cause Pair) →
-    cause.IsWeakCause (dl.getDef x) d →
+    cause.IsWeakCause (dl.getDef x) p →
     dl.IsCauseInapplicableExtended cycle cause)
-  {x d}
-  (inCycle: cycle x d)
+  {x p}
+  (inCycle: cycle x p)
 :
-  DefList.Out dl x d
+  DefList.Out dl x p
 :=
-  let largeCycle x d := cycle x d ∨ ¬(dl.wfm x).posMem d
+  let largeCycle x p := cycle x p ∨ ¬(dl.wfm x).posMem p
 
   DefList.Out.intro
     largeCycle

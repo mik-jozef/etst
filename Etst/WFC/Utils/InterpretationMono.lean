@@ -88,7 +88,7 @@ namespace SingleLaneExpr
     intp2 (some e0) fv0 b0 c0 ⊆ intp2 (some e1) fv1 b1 c1
   :=
     fun _ ins =>
-      let ⟨_, insE⟩ := inSomeElim ins (d := .null)
+      let ⟨_, insE⟩ := inSomeElim ins (p := .null)
       inSome .null (le insE)
   
   def eq_intp2_some_of_eq
@@ -108,7 +108,7 @@ namespace SingleLaneExpr
   :=
     fun _ ins =>
       let insE := inFullElim ins
-      inFull .null (fun d => le (insE d))
+      inFull .null (fun p => le (insE p))
   
   def eq_intp2_full_of_eq
     (eq: intp2 e0 fv0 b0 c0 = intp2 e1 fv1 b1 c1)
@@ -189,33 +189,33 @@ namespace SingleLaneExpr
     {fv0 fv1: List Pair}
     {b0 c0 b1 c1: Valuation Pair}
     (le:
-      ∀ dB,
+      ∀ pB,
       Set.Subset
-        (e0.intp2 (dB :: fv0) b0 c0)
-        (e1.intp2 (dB :: fv1) b1 c1))
+        (e0.intp2 (pB :: fv0) b0 c0)
+        (e1.intp2 (pB :: fv1) b1 c1))
   :
     Set.Subset
       ((arbIr e0).intp2 fv0 b0 c0)
       ((arbIr e1).intp2 fv1 b1 c1)
   :=
-    fun _ h dB => (le dB) (h dB)
+    fun _ h pB => (le pB) (h pB)
   
   def eq_intp2_arbIr_of_eq
     {fv0 fv1: List Pair}
     {b0 c0 b1 c1: Valuation Pair}
     (eq:
-      ∀ dB,
+      ∀ pB,
       Eq
-        (e0.intp2 (dB :: fv0) b0 c0)
-        (e1.intp2 (dB :: fv1) b1 c1))
+        (e0.intp2 (pB :: fv0) b0 c0)
+        (e1.intp2 (pB :: fv1) b1 c1))
   :
     Eq
       ((arbIr e0).intp2 fv0 b0 c0)
       ((arbIr e1).intp2 fv1 b1 c1)
   :=
     le_antisymm
-      (intp2_mono_std_arbIr (fun dB => le_of_eq (eq dB)))
-      (intp2_mono_std_arbIr (fun dB => le_of_eq (eq dB).symm))
+      (intp2_mono_std_arbIr (fun pB => le_of_eq (eq pB)))
+      (intp2_mono_std_arbIr (fun pB => le_of_eq (eq pB).symm))
   
 end SingleLaneExpr
 
@@ -345,24 +345,24 @@ namespace BasicExpr
   
   def triIntp2_mono_std_arbIr
     (le:
-      ∀ dB,
-      triIntp2 e0 (dB :: fv0) b0 c0 ≤ triIntp2 e1 (dB :: fv1) b1 c1)
+      ∀ pB,
+      triIntp2 e0 (pB :: fv0) b0 c0 ≤ triIntp2 e1 (pB :: fv1) b1 c1)
   :
     triIntp2 (arbIr e0) fv0 b0 c0 ≤ triIntp2 (arbIr e1) fv1 b1 c1
   := {
-    defLe := intp2_mono_std_arbIr (fun (dB: Pair) => (le dB).defLe)
-    posLe := intp2_mono_std_arbIr (fun (dB: Pair) => (le dB).posLe)
+    defLe := intp2_mono_std_arbIr (fun (pB: Pair) => (le pB).defLe)
+    posLe := intp2_mono_std_arbIr (fun (pB: Pair) => (le pB).posLe)
   }
   
   def eq_triIntp2_arbIr_of_eq
     (eq:
-      ∀ dB,
-      triIntp2 e0 (dB :: fv0) b0 c0 = triIntp2 e1 (dB :: fv1) b1 c1)
+      ∀ pB,
+      triIntp2 e0 (pB :: fv0) b0 c0 = triIntp2 e1 (pB :: fv1) b1 c1)
   :
     triIntp2 (arbIr e0) fv0 b0 c0 = triIntp2 (arbIr e1) fv1 b1 c1
   :=
     Set3.eq
-      (eq_intp2_arbIr_of_eq (fun (dB: Pair) => Set3.def_eq (eq dB)))
-      (eq_intp2_arbIr_of_eq (fun (dB: Pair) => Set3.pos_eq (eq dB)))
+      (eq_intp2_arbIr_of_eq (fun (pB: Pair) => Set3.def_eq (eq pB)))
+      (eq_intp2_arbIr_of_eq (fun (pB: Pair) => Set3.pos_eq (eq pB)))
   
 end BasicExpr

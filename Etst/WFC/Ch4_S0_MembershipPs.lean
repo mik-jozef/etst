@@ -58,8 +58,8 @@ where
     ∀ {x d}, cause.bout x d → ¬(b x).defMem d
 
 /-
-  `Is[X]Cause cause d expr` means that for every pair of
-  valuations `(b, c)` that satisfies `cause`, `d ∈ expr` holds
+  `Is[X]Cause cause p expr` means that for every pair of
+  valuations `(b, c)` that satisfies `cause`, `p ∈ expr` holds
   (with `b` and `c` serving as background and context valuations,
   respectively).
 -/
@@ -67,58 +67,58 @@ def Cause.IsStrongCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
   (expr: BasicExpr)
-  (d: Pair)
+  (p: Pair)
 :
   Prop
 :=
   ⦃b c: Valuation Pair⦄ →
   cause.IsStronglySatisfiedBy b c →
-  expr.triIntp2Def fv b c d
+  expr.triIntp2Def fv b c p
 
 def Cause.IsWeakCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
   (expr: BasicExpr)
-  (d: Pair)
+  (p: Pair)
 :
   Prop
 :=
   ⦃b c: Valuation Pair⦄ →
   cause.IsWeaklySatisfiedBy b c →
-  expr.triIntp2Pos fv b c d
+  expr.triIntp2Pos fv b c p
 
 abbrev Cause.IsStrongCause
   (cause: Cause Pair)
   (expr: BasicExpr)
-  (d: Pair)
+  (p: Pair)
 :
   Prop
 :=
-  IsStrongCauseFv cause [] expr d
+  IsStrongCauseFv cause [] expr p
 
 abbrev Cause.IsWeakCause
   (cause: Cause Pair)
   (expr: BasicExpr)
-  (d: Pair)
+  (p: Pair)
 :
   Prop
 :=
-  IsWeakCauseFv cause [] expr d
+  IsWeakCauseFv cause [] expr p
 
 
 mutual
 /-
-  `Ins dl x d` means that `d` is (provably) a member of `x`
+  `Ins dl x p` means that `p` is (provably) a member of `x`
   (in the well-founded model of `dl`).
   
-  If there exists a strong cause of `d ∈ dl.getDef x` such that
-  for every value–variable pair `(d, x)`:
+  If there exists a strong cause of `p ∈ dl.getDef x` such that
+  for every value-variable pair `(p, x)`:
   
-  0. `cause.cins x d` implies `d` is provably a member of `x`, and
-  1. `cause.bout x d` implies `d` is provably a non-member
+  0. `cause.cins x p` implies `p` is provably a member of `x`, and
+  1. `cause.bout x p` implies `p` is provably a non-member
     of `x`,
   
-  then `d` is provably a member of `x`.
+  then `p` is provably a member of `x`.
 -/
 inductive DefList.Ins
   (dl: DefList)
@@ -127,20 +127,20 @@ inductive DefList.Ins
 
 | intro:
   (x: Nat) →
-  (d: Pair) →
+  (p: Pair) →
   (cause: Cause Pair) →
-  cause.IsStrongCause (dl.getDef x) d →
-  (∀ {x d}, cause.cins x d → Ins dl x d) →
-  (∀ {x d}, cause.bout x d → Out dl x d) →
-  Ins dl x d
+  cause.IsStrongCause (dl.getDef x) p →
+  (∀ {x p}, cause.cins x p → Ins dl x p) →
+  (∀ {x p}, cause.bout x p → Out dl x p) →
+  Ins dl x p
 
 
 /-
   A cause is *provably* inapplicable for a given set S of constant-
-  value pairs if for some `x` and `d`, either
+  value pairs if for some `x` and `p`, either
   
-  0. `cause.cins x d` and `d` is in S, or
-  1. `cause.bout x d` and `d` is provably a member of `x`.
+  0. `cause.cins x p` and `p` is in S, or
+  1. `cause.bout x p` and `p` is provably a member of `x`.
   
   A set of constant-value pairs is called an empty cycle if all
   its elements have only inapplicable causes. Empty cycles formalize
@@ -160,24 +160,24 @@ inductive DefList.IsCauseInapplicable
 |
   blockedCins
   (cause: Cause Pair)
-  {x d} (inContext: cause.cins x d)
-  {cycle} (inCycle: cycle x d)
+  {x p} (inContext: cause.cins x p)
+  {cycle} (inCycle: cycle x p)
 :
   IsCauseInapplicable dl cycle cause
 |
   blockedBout {cycle}
   (cause: Cause Pair)
-  {x d} (inBackground: cause.bout x d)
-  (isIns: Ins dl x d)
+  {x p} (inBackground: cause.bout x p)
+  (isIns: Ins dl x p)
 :
   IsCauseInapplicable dl cycle cause
 
 /-
-  `Out dl x d` means that `d` is a definitive non-member of
+  `Out dl x p` means that `p` is a definitive non-member of
   `x` in the well-founded model of `dl`.
   
-  A `d` is provably a non-member of `x` if there exists an empty
-  cycle containing the pair `(d, x)`.
+  A `p` is provably a non-member of `x` if there exists an empty
+  cycle containing the pair `(p, x)`.
   
   TODO: Could `Out` be defined coinductively?
     Also see the commit that added this todo for more info.
@@ -187,17 +187,17 @@ inductive DefList.Out
 :
   Nat → Pair → Prop
 |
-  intro {x d}
+  intro {x p}
   (cycle: Nat → Set Pair)
   (isEmptyCycle:
-    ∀ {x d},
-    cycle x d →
+    ∀ {x p},
+    cycle x p →
     (cause: Cause Pair) →
-    cause.IsWeakCause (dl.getDef x) d →
+    cause.IsWeakCause (dl.getDef x) p →
     dl.IsCauseInapplicable cycle cause)
-  (incycle: cycle x d)
+  (incycle: cycle x p)
 :
-  Out dl x d
+  Out dl x p
 end
 
 /-

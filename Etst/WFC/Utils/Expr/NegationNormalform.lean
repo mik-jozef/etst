@@ -95,10 +95,10 @@ def SingleLaneExpr.intp2_toNnfAux_eq
     let ⟨ihR, ihCR⟩ := rite.intp2_toNnfAux_eq fv b c
     ⟨
       eq_intp2_pair_of_eq ihL ihR,
-      funext fun d =>
+      funext fun p =>
       propext ⟨
         fun inUnNullPairPair =>
-          match d with
+          match p with
           | .null => inCompl fun inPair => inPairElimNope inPair
           | .pair _ _ =>
             inCompl fun inPairAB =>
@@ -114,7 +114,7 @@ def SingleLaneExpr.intp2_toNnfAux_eq
                       let ⟨_, inCplRite⟩ := inPairElim inPairR
                       inComplElim (ihCR.symm ▸ inCplRite) inRite)),
         fun inComplPair =>
-          match d with
+          match p with
           | .null => inUnL inNull
           | .pair _ _ =>
             (ninPairElim inComplPair).elim
@@ -161,13 +161,13 @@ def SingleLaneExpr.intp2_toNnfAux_eq
     ⟩
   | .arbIr body =>
     ⟨
-      eq_intp2_arbIr_of_eq fun dB =>
-        (body.intp2_toNnfAux_eq (dB :: fv) b c).left,
+      eq_intp2_arbIr_of_eq fun pB =>
+        (body.intp2_toNnfAux_eq (pB :: fv) b c).left,
       eq_intp2_compl_of_eq
-        (eq_intp2_arbIr_of_eq fun dX =>
-          let ⟨_, ihC⟩ := body.intp2_toNnfAux_eq (dX :: fv) b c
+        (eq_intp2_arbIr_of_eq fun pX =>
+          let ⟨_, ihC⟩ := body.intp2_toNnfAux_eq (pX :: fv) b c
           ((eq_intp2_compl_of_eq ihC.symm).symm.trans
-            (intp2_compl_compl_eq body (dX :: fv) c b))),
+            (intp2_compl_compl_eq body (pX :: fv) c b))),
     ⟩
 
 def SingleLaneExpr.intp2_toNnf_eq
