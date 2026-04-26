@@ -207,7 +207,7 @@ termination_by n
 
 -- I wish Lean had anonymous structures.
 inductive DistinctOrdinalsEqualStageCc
-  {T} [Inhabited T]
+  {T: Type u} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
   (f: T →o T)
@@ -215,8 +215,8 @@ inductive DistinctOrdinalsEqualStageCc
   Prop
 |
   intro
-    (n0: Ordinal)
-    (n1: Ordinal)
+    (n0: Ordinal.{u})
+    (n1: Ordinal.{u})
     (nLt: n0 < n1)
     (eqAt: f.lfpStageCc isCc n0 = f.lfpStageCc isCc n1)
 

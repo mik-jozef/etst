@@ -36,12 +36,14 @@ namespace Valuation
   def univ: Valuation D := fun _ => Set3.univ
   
   -- The approximation order on valuations is defined pointwise.
+  @[reducible]
   def ordApx (D: Type u):
     PartialOrder (Valuation D)
   :=
     PartialOrder.pointwise Nat (Set3.ordApx D)
   
   -- The standard order on valuations is defined pointwise.
+  @[reducible]
   def ordStd (D: Type u)
   :
     PartialOrder (Valuation D)

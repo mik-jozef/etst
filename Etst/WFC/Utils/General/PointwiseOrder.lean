@@ -30,18 +30,19 @@ def IsChain.iUnion_of_subset
 :=
   fun
     _t0
-    ⟨s0, ⟨i0, (eq0: s i0 = s0)⟩, t0In⟩
+    ⟨_, ⟨i0, rfl⟩, t0In⟩
     _t1
-    ⟨s1, ⟨i1, (eq1: s i1 = s1)⟩, t1In⟩
+    ⟨_, ⟨i1, rfl⟩, t1In⟩
     neq
   =>
     (isSubset i0 i1).elim
       (fun s0Le =>
-        areChains i1 (s0Le (eq0 ▸ t0In)) (eq1 ▸ t1In) neq)
+        areChains i1 (s0Le t0In) t1In neq)
       (fun s1Le =>
-        areChains i0 (eq0 ▸ t0In) (s1Le (eq1 ▸ t1In)) neq)
+        areChains i0 t0In (s1Le t1In) neq)
 
 
+@[reducible]
 def PartialOrder.pointwise
   {Y} (X: Type*)
   (_: PartialOrder Y)
@@ -148,6 +149,7 @@ def IsChain.pointwiseSup_isLUB
       isLeUb fun _d ⟨_f1, f1In, eq⟩ => eq ▸ f0In f1In i)
 
 
+@[reducible]
 def CompleteLattice.pointwise
   {Y} (X: Type*)
   (cl: CompleteLattice Y)
@@ -172,19 +174,19 @@ where
   le_inf _ _ _ := le_inf
   
   sSup s x := sSup (s.pointwiseImage x)
-  le_sSup s f fIn x :=
-    le_sSup (s.pointwiseImage x) (f x) ⟨f, fIn, rfl⟩
-  sSup_le s f leF x :=
-    sSup_le
-      (s.pointwiseImage x)
-      (f x)
-      (fun _y ⟨fY, fYIn, eq⟩ => eq ▸ leF fY fYIn x)
+  isLUB_sSup s := ⟨
+    fun f fIn x =>
+      (isLUB_sSup (s.pointwiseImage x)).1 ⟨f, fIn, rfl⟩,
+    fun _ leF x =>
+      (isLUB_sSup (s.pointwiseImage x)).2 (fun _ ⟨_, gIn, hy⟩ =>
+        hy ▸ leF gIn x)
+  ⟩
 
   sInf s x := sInf (s.pointwiseImage x)
-  sInf_le s f fIn x :=
-    sInf_le (s.pointwiseImage x) (f x) ⟨f, fIn, rfl⟩
-  le_sInf s f leF x :=
-    le_sInf
-      (s.pointwiseImage x)
-      (f x)
-      (fun _y ⟨fY, fYIn, eq⟩ => eq ▸ leF fY fYIn x)
+  isGLB_sInf s := ⟨
+    fun f fIn x =>
+      (isGLB_sInf (s.pointwiseImage x)).1 ⟨f, fIn, rfl⟩,
+    fun _ leF x =>
+      (isGLB_sInf (s.pointwiseImage x)).2 (fun _ ⟨_, gIn, hy⟩ =>
+        hy ▸ leF gIn x)
+  ⟩

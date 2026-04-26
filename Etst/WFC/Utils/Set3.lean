@@ -413,6 +413,7 @@ namespace Set3
     Set3.eq defEq posEq
   
   -- The definition of the approximation order.
+  @[reducible]
   def ordApx (D: Type u): PartialOrder (Set3 D) where
     le := LeApx
     lt := LtApx
@@ -500,6 +501,7 @@ namespace Set3
       (PartialOrder.le_antisymm _ _ ab.posLe ba.posLe)
   
   -- The definition of the standard order.
+  @[reducible]
   def ordStd (D: Type u): PartialOrder (Set3 D) where
     le := LeStd
     lt := LtStd
@@ -674,6 +676,7 @@ namespace Set3
         posLe _d dMem s3 := (lbIsGLB s3.property).posLe dMem
       }
   
+  @[reducible]
   def ordStdLattice (D: Type u): CompleteLattice (Set3 D) := {
     __ := ordStd D
     
@@ -689,8 +692,7 @@ namespace Set3
     sup_le _ _ _ := union.union_le
     
     sSup := ordStd.sSup
-    le_sSup s _s3 s3In := (ordStd.sSup_isLUB s).left s3In
-    sSup_le s _s3 sLe := (ordStd.sSup_isLUB s).right sLe
+    isLUB_sSup s := ordStd.sSup_isLUB s
     
     inf := inter
     inf_le_left := inter.monoLeft
@@ -698,8 +700,7 @@ namespace Set3
     le_inf _ _ _ := inter.le_inter
 
     sInf := ordStd.sInf
-    sInf_le s _s3 s3In := (ordStd.sInf_isGLB s).left s3In
-    le_sInf s _s3 sLe := (ordStd.sInf_isGLB s).right sLe
+    isGLB_sInf s := ordStd.sInf_isGLB s
   }
   
   

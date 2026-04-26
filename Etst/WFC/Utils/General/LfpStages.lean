@@ -120,14 +120,14 @@ termination_by n
 
 -- I wish Lean had anonymous structures.
 inductive DistinctOrdinalsEqualStage
-  {T} {ord: CompleteLattice T}
+  {T: Type u} {ord: CompleteLattice T}
   (f: T →o T)
 :
   Prop
 |
   intro
-    (n0: Ordinal)
-    (n1: Ordinal)
+    (n0: Ordinal.{u})
+    (n1: Ordinal.{u})
     (nLt: n0 < n1)
     (eqAt: f.lfpStage n0 = f.lfpStage n1)
 

@@ -327,7 +327,7 @@ def uniSetMapIndexDef
 :=
   uniSetMapIndex dl n [] ((dl.prefix n).getDef x)
 
-def uniSetMapAt
+noncomputable def uniSetMapAt
   (dl: DefList)
   (n: Nat)
   (fv: List Pair)
