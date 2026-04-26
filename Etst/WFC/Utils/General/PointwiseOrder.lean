@@ -50,10 +50,10 @@ def PartialOrder.pointwise
 where
   le a b := ∀ x: X, a x ≤ b x
   
-  le_refl _ := fun _ => le_rfl
-  le_antisymm _ _ := fun ab ba => funext fun v =>
+  le_refl _ _ := le_rfl
+  le_antisymm _ _ ab ba := funext fun v =>
     PartialOrder.le_antisymm _ _ (ab v) (ba v)
-  le_trans _ _ _ := fun ab bc v => Preorder.le_trans _ _ _ (ab v) (bc v)
+  le_trans _ _ _ ab bc v := Preorder.le_trans _ _ _ (ab v) (bc v)
 
 
 def Set.pointwiseImage

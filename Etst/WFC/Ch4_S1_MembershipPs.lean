@@ -22,8 +22,8 @@ def DefList.Ins.isSound {dl x p}
   | Ins.intro _ _ _ isCause insCins outBout =>
     DefList.wfm_isModel dl ▸
     isCause {
-      cinsSat := fun h => Ins.isSound (insCins h)
-      boutSat := fun h => Out.isSound (outBout h)
+      cinsSat h := Ins.isSound (insCins h)
+      boutSat h := Out.isSound (outBout h)
     }
 
 def DefList.Out.isSound {dl x p}

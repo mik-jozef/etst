@@ -123,8 +123,8 @@ def BasicExpr.triIntp2_mono_apx
 :=
   match expr with
   | .const x => {
-      defLe := fun _p pIn => (cLe x).defLe pIn
-      posLe := fun _p pIn => (cLe x).posLe pIn
+      defLe _p pIn := (cLe x).defLe pIn
+      posLe _p pIn := (cLe x).posLe pIn
     }
   | .var _ => ⟨fun _ => id, fun _ => id⟩
   | .null => ⟨fun _ => id, fun _ => id⟩
@@ -149,24 +149,24 @@ def BasicExpr.triIntp2_mono_apx
   | .full _ =>
       let ih := triIntp2_mono_apx bLe cLe
       {
-        defLe := fun _p pIn pB => ih.defLe (pIn pB)
-        posLe := fun _p pIn pB => ih.posLe (pIn pB)
+        defLe _p pIn pB := ih.defLe (pIn pB)
+        posLe _p pIn pB := ih.posLe (pIn pB)
       }
   | .compl _ =>
       let ih := triIntp2_mono_apx cLe bLe
       {
-        defLe := fun p pIn =>
+        defLe p pIn :=
           let tmp: (p: Pair) → _ → _ := ih.posLe
           not_imp_not.mpr (tmp p) pIn
-        posLe := fun p pIn =>
+        posLe p pIn :=
           let tmp: (p: Pair) → _ → _ := ih.defLe
           not_imp_not.mpr (tmp p) pIn
       }
   | .arbIr _ =>
       let ih _d := triIntp2_mono_apx bLe cLe
       {
-        defLe := fun _p pIn pXPos1 => (ih pXPos1).defLe (pIn pXPos1)
-        posLe := fun _p pIn pXPos0 => (ih pXPos0).posLe (pIn pXPos0)
+        defLe _p pIn pXPos1 := (ih pXPos1).defLe (pIn pXPos1)
+        posLe _p pIn pXPos0 := (ih pXPos0).posLe (pIn pXPos0)
       }
 
 def BasicExpr.triIntp2_mono_apx_defMem

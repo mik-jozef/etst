@@ -99,7 +99,7 @@ namespace Valuation
     trivial,
     fun _v _valInFull _x => {
       defLe := nofun
-      posLe := fun _ _ => trivial
+      posLe _ _ := trivial
     }
   ⟩
 

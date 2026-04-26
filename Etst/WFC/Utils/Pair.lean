@@ -126,9 +126,9 @@ def Set3.pairCallJust
 :
   Set3 Pair
 := {
-  defMem := fun p => fn.defMem (Pair.pair arg p)
-  posMem := fun p => fn.posMem (Pair.pair arg p)
-  defLePos := fun _ pInDef => pInDef.toPos
+  defMem p := fn.defMem (Pair.pair arg p)
+  posMem p := fn.posMem (Pair.pair arg p)
+  defLePos _ pInDef := pInDef.toPos
 }
 
 def Set3.PairMem

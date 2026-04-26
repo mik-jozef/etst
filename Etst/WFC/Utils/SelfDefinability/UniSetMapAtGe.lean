@@ -505,7 +505,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
       let allApplicable :=
         h.toAll fun pB notAllInapp =>
           (notAllInapp.toEx fun _ => Classical.not_imp.mp).unwrap
-      let causes := fun pB => (allApplicable pB).val
+      let causes pB := (allApplicable pB).val
       let fullIsCause _ _ isSat pB :=
           (allApplicable pB).property.left (isSat.arbUnElim pB)
       False.elim

@@ -56,10 +56,10 @@ def FiniteDefList.size
   dl.constNames.length
 
 def FiniteDefList.empty: FiniteDefList := {
-  getDef := fun _ => Expr.none
+  getDef _ := Expr.none
   constNames := []
-  constsLt := fun _ => Expr.noneLtSize _
-  isClean := fun _ => by decide
+  constsLt _ := Expr.noneLtSize _
+  isClean _ := by decide
 }
 
 def FiniteDefList.emptySizeZero: empty.size = 0 := rfl
@@ -143,13 +143,13 @@ def FiniteDefList.Prelude: FiniteDefList :=
     {
       name := "Any"
       expr := Expr.arbUn (Expr.var 0)
-      constsLt := fun _ h => nomatch h
+      constsLt _ h := nomatch h
       isClean := by decide
     },
     {
       name := "None"
       expr := Expr.arbIr (Expr.var 0)
-      constsLt := fun _ h => nomatch h
+      constsLt _ h := nomatch h
       isClean := by decide
     }
   ] rfl

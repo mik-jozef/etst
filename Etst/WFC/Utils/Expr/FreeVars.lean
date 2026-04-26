@@ -783,14 +783,14 @@ namespace Expr
     | null =>
       rfl
     | pair l r ihL ihR =>
-      let varLtL := fun x h => freeVarLt x (Or.inl h)
-      let varLtR := fun x h => freeVarLt x (Or.inr h)
+      let varLtL x h := freeVarLt x (Or.inl h)
+      let varLtR x h := freeVarLt x (Or.inr h)
       exact congrArg₂ pair
         (ihL bound varLtL map map_id_lt)
         (ihR bound varLtR map map_id_lt)
     | ir l r ihL ihR =>
-      let varLtL := fun x h => freeVarLt x (Or.inl h)
-      let varLtR := fun x h => freeVarLt x (Or.inr h)
+      let varLtL x h := freeVarLt x (Or.inl h)
+      let varLtR x h := freeVarLt x (Or.inr h)
       exact congrArg₂ ir
         (ihL bound varLtL map map_id_lt)
         (ihR bound varLtR map map_id_lt)

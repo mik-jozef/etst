@@ -113,8 +113,8 @@ def Cause.IsWeaklySatisfiedBy.unionElimL
 :
   a.IsWeaklySatisfiedBy bg c
 := {
-  cinsSat := fun inCins => isSat.cinsSat (Or.inl inCins)
-  boutSat := fun inBout => isSat.boutSat (Or.inl inBout)
+  cinsSat inCins := isSat.cinsSat (Or.inl inCins)
+  boutSat inBout := isSat.boutSat (Or.inl inBout)
 }
 
 def Cause.IsWeaklySatisfiedBy.unionElimR
@@ -124,8 +124,8 @@ def Cause.IsWeaklySatisfiedBy.unionElimR
 :
   b.IsWeaklySatisfiedBy bg c
 := {
-  cinsSat := fun inCins => isSat.cinsSat (Or.inr inCins)
-  boutSat := fun inBout => isSat.boutSat (Or.inr inBout)
+  cinsSat inCins := isSat.cinsSat (Or.inr inCins)
+  boutSat inBout := isSat.boutSat (Or.inr inBout)
 }
 
 def Cause.IsWeaklySatisfiedBy.arbUn
@@ -149,8 +149,8 @@ def Cause.IsWeaklySatisfiedBy.arbUnElim
 :
   (f i).IsWeaklySatisfiedBy bg c
 := {
-  cinsSat := fun inCins => isSat.cinsSat ⟨i, inCins⟩
-  boutSat := fun inBout => isSat.boutSat ⟨i, inBout⟩
+  cinsSat inCins := isSat.cinsSat ⟨i, inCins⟩
+  boutSat inBout := isSat.boutSat ⟨i, inBout⟩
 }
 
 
