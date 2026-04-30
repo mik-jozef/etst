@@ -76,6 +76,10 @@ namespace Set3
     aIn.trans bIn.symm
   
   
+  def IsClassical {D} (s3: Set3 D): Prop :=
+    ∀ d, s3.posMem d → s3.defMem d
+  
+  
   def empty.nin.def {D} (d: D): d ∉ (Set3.empty (D := D)).defMem := False.elim
   def empty.nin.pos {D} (d: D): d ∉ (Set3.empty (D := D)).posMem := False.elim
   

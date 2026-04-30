@@ -167,7 +167,7 @@ syntax:70 "(?some " s3_pair_expr ")" : s3_pair_expr
 syntax:70 "(?full " s3_pair_expr ")" : s3_pair_expr
 syntax:70 "(" s3_pair_expr ")" : s3_pair_expr
 syntax:70 "null" : s3_pair_expr
-syntax:70 "(" s3_pair_expr ", " s3_pair_expr ")" : s3_pair_expr
+syntax:70 "(" s3_pair_expr ", " s3_pair_expr ","? ")" : s3_pair_expr
 syntax:70 "[" term "]" : s3_pair_expr
 syntax:60 s3_pair_expr:60 s3_pair_expr:61 : s3_pair_expr
 syntax:50 "!" s3_pair_expr:50 : s3_pair_expr
@@ -179,11 +179,43 @@ syntax:20 s3_pair_expr:20 "then" s3_pair_expr:21 : s3_pair_expr
 syntax:10 s3_pair_expr:11 "->" s3_pair_expr:10 : s3_pair_expr
 syntax:9 s3_pair_expr:10 "<->" s3_pair_expr:10 : s3_pair_expr
 syntax:00 "Ex " ident ", " s3_pair_expr : s3_pair_expr
+syntax:00 "Ex " ident+ ", " s3_pair_expr : s3_pair_expr
 syntax:00 "Ex " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
 syntax:00 "All " ident ", " s3_pair_expr : s3_pair_expr
+syntax:00 "All " ident+ ", " s3_pair_expr : s3_pair_expr
 syntax:00 "All " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
 
+
+private partial def mkNestedEx
+  (xs: List (TSyntax `ident))
+  (body: TSyntax `s3_pair_expr)
+:
+  MacroM (TSyntax `s3_pair_expr)
+:=
+  match xs with
+  | [] => Macro.throwUnsupported
+  | [x] => `(s3_pair_expr| Ex $x, $body)
+  | x :: xs => do
+    let tail ← mkNestedEx xs body
+    `(s3_pair_expr| Ex $x, $tail)
+
+private partial def mkNestedAll
+  (xs: List (TSyntax `ident))
+  (body: TSyntax `s3_pair_expr)
+:
+  MacroM (TSyntax `s3_pair_expr)
+:=
+  match xs with
+  | [] => Macro.throwUnsupported
+  | [x] => `(s3_pair_expr| All $x, $body)
+  | x :: xs => do
+    let tail ← mkNestedAll xs body
+    `(s3_pair_expr| All $x, $tail)
+
+
 macro_rules
+-- Trailing comma removal in pairs
+| `(s3_pair_expr| ($a, $b,)) => `(s3_pair_expr| ($a, $b))
 -- Parentheses removal
 | `(s3_pair_expr| ($expr)) => `(s3_pair_expr| $expr)
 -- Function application
@@ -200,9 +232,15 @@ macro_rules
 -- Equivalence (<->) to conjunction of implications
 | `(s3_pair_expr| $a <-> $b) =>
   `(s3_pair_expr| ($a -> $b) & ($b -> $a))
+-- Multi-variable existential quantifier
+| `(s3_pair_expr| Ex $xArr*, $body) =>
+  mkNestedEx xArr.toList body
 -- Bounded existential quantifier
 | `(s3_pair_expr| Ex $x:ident: $domain, $body) =>
   `(s3_pair_expr| Ex $x, $x:ident & $domain then $body)
+-- Multi-variable universal quantifier
+| `(s3_pair_expr| All $xArr*, $body) =>
+  mkNestedAll xArr.toList body
 -- Bounded universal quantifier
 | `(s3_pair_expr| All $x:ident: $domain, $body) =>
   `(s3_pair_expr| All $x, (?some ($x:ident & !$domain)) | $body)

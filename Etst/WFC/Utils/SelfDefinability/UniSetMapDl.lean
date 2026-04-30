@@ -335,7 +335,7 @@ noncomputable def uniSetMapAt
 :
   Set3 Pair
 :=
-  uniSetMap.pairCallJust (uniSetMapIndex dl n fv expr)
+  uniSetMap.call (uniSetMapIndex dl n fv expr)
 
 
 def uniSetMapIndex_nnf_eq {dl n fv expr}:

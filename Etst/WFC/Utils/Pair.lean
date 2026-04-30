@@ -114,13 +114,13 @@ end Pair
 
 
 /-
-  `fn.pairCallJust arg` is the triset of pairs `b` such that
+  `fn.call arg` is the triset of pairs `b` such that
   `(arg, b)` is in `fn`.
   
   You can think of `fn` as a set of input-output pairs representing
   a function `f: Pair → Set3 Pair`.
 -/
-def Set3.pairCallJust
+def Set3.call
   (fn: Set3 Pair)
   (arg: Pair)
 :
@@ -136,7 +136,7 @@ def Set3.PairMem
 :
   Prop
 :=
-  ∃ i: Pair, s.pairCallJust i = e
+  ∃ i: Pair, s.call i = e
 
 instance Set3.pairInstMem:
   Membership (Set3 Pair) (Set3 Pair)
