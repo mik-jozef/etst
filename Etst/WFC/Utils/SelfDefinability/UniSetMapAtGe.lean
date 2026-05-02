@@ -92,6 +92,7 @@ def internalCauseElimComplPair {dl n fv left rite p}
     (.pair (uniSetMapIndex dl n fv (.compl (.pair left rite))) p)
   
 :=
+  open DefList in
   let isAt:
     InUniSetMapAt dl n fv usmWfm usmWfm
       (.un .null (.un (.pair left.compl .any) (.pair .any rite.compl)))
@@ -145,6 +146,7 @@ def internalCauseElim {dl n fv expr p}
 :
   vals.uniSetMap.defMem (.pair (uniSetMapIndex dl n fv expr) p)
 :=
+  open DefList in
   match expr with
   | .const x =>
     let inDefExt := cinsIh intIsCause.constElim

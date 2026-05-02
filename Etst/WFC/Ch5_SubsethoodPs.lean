@@ -572,10 +572,10 @@ namespace DefList.SubsetStx
       | noneElim sub =>
         inNoneElim (sub.isSound fv leX (Nat.zero_le _) isIn)
       | unfold sub =>
-        SingleLaneExpr.InWfm.in_def
+        DefList.InWfm.in_def
           (sub.isSound fv leX (Nat.zero_le _) isIn)
       | fold (c:=c) (lane:=lane) sub =>
-        SingleLaneExpr.InWfm.of_in_def
+        DefList.InWfm.of_in_def
           (sub.isSound.call fv leX _ isIn)
       | trans (b:=b) ab bc =>
         let inB := ab.isSound.call fv leX _ isIn

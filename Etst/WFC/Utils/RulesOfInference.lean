@@ -322,44 +322,6 @@ namespace SingleLaneExpr
     le_antisymm (fun _ => ninNone) nofun
   
   
-  abbrev InWfm
-    (fv: List Pair)
-    (dl: DefList)
-    (expr: SingleLaneExpr)
-    (p: Pair)
-  :
-    Prop
-  :=
-    expr.intp2 fv dl.wfm dl.wfm p
-  
-  
-  def InWfm.of_in_def_no_fv {dl lane}
-    (inDef: InWfm [] dl ((dl.getDef x).toLane lane) p)
-  :
-    InWfm [] dl (.const lane x) p
-  := by
-    cases lane
-    all_goals
-    unfold InWfm
-    rw [DefList.wfm_isModel dl]
-    exact inDef
-  
-  
-  def InWfm.in_def_no_fv {dl lane}
-    (inConst: InWfm [] dl (.const lane x) p)
-  :
-    InWfm [] dl ((dl.getDef x).toLane lane) p
-  :=
-    let v := dl.wfm
-    
-    let eqAtN: v x = dl.intpDefs v x :=
-      congr (DefList.wfm_isModel dl) rfl
-    
-    match lane with
-    | .defLane => show (dl.intpDefs v x).defMem p from eqAtN ▸ inConst
-    | .posLane => show (dl.intpDefs v x).posMem p from eqAtN ▸ inConst
-  
-  
   def toggle2N (lane: Set3.Lane): Nat → Set3.Lane
   | 0 => lane
   | n+1 => Set3.Lane.toggle (Set3.Lane.toggle (toggle2N lane n))
@@ -400,3 +362,41 @@ namespace SingleLaneExpr
         exact inToggle)
   
 end SingleLaneExpr
+
+namespace DefList
+  abbrev InWfm
+    (dl: DefList)
+    (fv: List Pair := [])
+    (expr: SingleLaneExpr)
+    (p: Pair)
+  :
+    Prop
+  :=
+    expr.intp2 fv dl.wfm dl.wfm p
+  
+  def InWfm.of_in_def_no_fv {dl x lane p}
+    (inDef: InWfm dl [] ((dl.getDef x).toLane lane) p)
+  :
+    dl.InWfm [] (.const lane x) p
+  := by
+    cases lane
+    all_goals
+    unfold InWfm
+    rw [DefList.wfm_isModel dl]
+    exact inDef
+  
+  def InWfm.in_def_no_fv {dl x lane p}
+    (inConst: InWfm dl [] (.const lane x) p)
+  :
+    dl.InWfm [] ((dl.getDef x).toLane lane) p
+  :=
+    let v := dl.wfm
+    
+    let eqAtN: v x = dl.intpDefs v x :=
+      congr (DefList.wfm_isModel dl) rfl
+    
+    match lane with
+    | .defLane => show (dl.intpDefs v x).defMem p from eqAtN ▸ inConst
+    | .posLane => show (dl.intpDefs v x).posMem p from eqAtN ▸ inConst
+  
+end DefList

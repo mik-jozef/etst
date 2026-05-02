@@ -1468,7 +1468,7 @@ def isAtAny {dl n fv p lane}:
 :=
   isAtArbUn
     p
-    (SingleLaneExpr.InWfm.of_in_def_no_fv
+    (DefList.InWfm.of_in_def_no_fv
       (isInMap
         (isAtVar
           (uniSetMapDl.getNth
@@ -1479,6 +1479,7 @@ def notAtDefGeN {dl n x d}
 :
   ¬ vals.uniSetMap.posMem ((uniSetMapIndexDef dl n x).pair d)
 :=
+  open DefList in
   fun inMap =>
     let isAtNone :=
       DefList.prefix_none_at (dl:=dl) (n:=n) (x:=x) xNlt ▸

@@ -1209,12 +1209,15 @@ namespace DefList
   
 end DefList
 
-namespace SingleLaneExpr
-  def InWfm.of_in_def {dl fv x lane d}
-    (inDef: InWfm fv dl ((dl.getDef x).toLane lane) d)
+namespace DefList
+  variable {dl: DefList}
+  
+  def InWfm.of_in_def {fv x lane d}
+    (inDef: dl.InWfm fv ((dl.getDef x).toLane lane) d)
   :
-    InWfm [] dl (.const lane x) d
+    dl.InWfm [] (.const lane x) d
   :=
+    open SingleLaneExpr in
     of_in_def_no_fv
       (match lane with
       | .defLane =>
@@ -1226,12 +1229,12 @@ namespace SingleLaneExpr
         show intp2 _ _ _ _ _ from
         eqPos ▸ inDef)
   
-  def InWfm.in_def {dl fv x lane d}
-    (inVar: InWfm [] dl (.const lane x) d)
+  def InWfm.in_def {fv x lane d}
+    (inVar: dl.InWfm [] (.const lane x) d)
   :
-    InWfm fv dl ((dl.getDef x).toLane lane) d
+    dl.InWfm fv ((dl.getDef x).toLane lane) d
   :=
-    show intp2 _ _ _ _ _ from
+    show SingleLaneExpr.intp2 _ _ _ _ _ from
     match lane with
     | .defLane =>
       dl.intpDefs2_eq_fv_def x fv [] dl.wfm dl.wfm ▸
@@ -1240,4 +1243,4 @@ namespace SingleLaneExpr
       dl.intpDefs2_eq_fv_pos x fv [] dl.wfm dl.wfm ▸
       in_def_no_fv inVar
   
-end SingleLaneExpr
+end DefList

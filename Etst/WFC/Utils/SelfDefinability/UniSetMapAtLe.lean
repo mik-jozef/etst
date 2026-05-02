@@ -148,7 +148,7 @@ def allInternalInapp {dl n fv expr p}
         getNthElimD (lane := .defLane) inGetNth
       False.elim (neq encEq.symm)
     | .blockedBout (Or.inr ⟨xEq, pEq⟩) inDef =>
-      let inConst := InWfm.of_in_def_no_fv (inDef.left xEq pEq)
+      let inConst := DefList.InWfm.of_in_def_no_fv (inDef.left xEq pEq)
       .blockedBout inBout (DefList.Ins.isComplete inConst)
   | .var x =>
     let inVar := intIsCause intCause.maximalValsApxAreSat
@@ -459,7 +459,7 @@ def externalInsElimHelper {dl n fv index cst expr p}
       let ih: (BasicExpr.triIntp _ _ _).defMem _ :=
         BasicExpr.triIntp_toNnf_eq _ _ _ ▸
         externalInsElimHelper insDef rfl rfl (Expr.toNnf_isNnf _)
-      InWfm.of_in_def_no_fv (lane := .defLane) ih
+      DefList.InWfm.of_in_def_no_fv (lane := .defLane) ih
     | .compl (.const x), _ =>
       let insList := isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       fun inConst =>
@@ -472,7 +472,7 @@ def externalInsElimHelper {dl n fv index cst expr p}
         else
           let inNone :=
             DefList.prefix_none_at h ▸
-            InWfm.in_def_no_fv (lane := .posLane) inConst
+            DefList.InWfm.in_def_no_fv (lane := .posLane) inConst
           ninNone inNone
       | Or.inr inBout =>
         let df := (dl.prefix n).getDef x
@@ -488,7 +488,7 @@ def externalInsElimHelper {dl n fv index cst expr p}
           rfl
           df.toNnf_isNnf
           ((BasicExpr.triIntp_toNnf_eq _ _ _).symm ▸
-          InWfm.in_def_no_fv (lane := .posLane) inConst)
+          DefList.InWfm.in_def_no_fv (lane := .posLane) inConst)
     | .var _, _ =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
