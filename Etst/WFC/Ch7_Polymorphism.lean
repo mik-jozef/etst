@@ -136,6 +136,12 @@ namespace Pair
   noncomputable def diagMagic (op i: Pair): Set3 Pair :=
     (uniSetMap.call op).call (callEnc i i)
   
+  def toExpr_IsClean: (p: Pair) → p.toExpr.IsClean
+  | .null => fun _ => id
+  | .pair left rite =>
+    fun x usesX =>
+      usesX.elim (toExpr_IsClean left x) (toExpr_IsClean rite x)
+  
 end Pair
 
 def Expr.encodeCall_eq
@@ -448,7 +454,33 @@ namespace callFixDl
   :
     uniSetMap.call (fn.callEnc arg) = (uniSetMap.call fn).call arg
   :=
-    sorry
+    let fnCallExpr :=
+      (BasicExpr.const uniSetMapDl.consts.uniSetMap).call fn.toExpr
+    let fullExpr := fnCallExpr.call arg.toExpr
+    let fnCallExprClean: fnCallExpr.IsClean :=
+      fun x usesX =>
+        usesX.elim
+          (fun 
+          | Or.inr (Or.inl fnUses) => fn.toExpr_IsClean (x + 1) fnUses)
+          nofun
+    let eqAt := FiniteDefList.uniSetMapAt_eq uniSetMapDl [] fullExpr
+    let eqCall :=
+      BasicExpr.pair_call_expr_call_eq
+        fnCallExpr
+        fnCallExprClean
+        arg
+        []
+        uniSetMapDl.wfm
+        uniSetMapDl.wfm
+    let eqFn :=
+      BasicExpr.pair_call_expr_call_eq
+        (BasicExpr.const uniSetMapDl.consts.uniSetMap)
+        (by decide)
+        fn
+        []
+        uniSetMapDl.wfm
+        uniSetMapDl.wfm
+    eqAt.trans (eqCall.trans (congrArg (fun s => s.call arg) eqFn))
   
 end callFixDl
 
