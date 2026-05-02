@@ -411,4 +411,35 @@ namespace SingleLaneExpr
   :=
     inNatElimDepth inNatExpr
   
+  
+  def inToExpr {lane fv b c}
+    (p: Pair)
+  :
+    (p.toExpr.toLane lane).intp2 fv b c p
+  :=
+    match p with
+    | .null => inNull
+    | .pair l r => inPair (inToExpr l) (inToExpr r)
+  
+  def inToExprElim {lane fv b c}
+    {pExpr p: Pair}
+    (inExpr: (pExpr.toExpr.toLane lane).intp2 fv b c p)
+  :
+    pExpr = p
+  :=
+    match pExpr, p, inExpr with
+    | .null, _, inExpr => (inNullElim inExpr).symm
+    | .pair _ _, .pair _ _, inExpr =>
+      let ⟨inL, inR⟩ := inPairElim inExpr
+      (Pair.eq (inToExprElim inL) (inToExprElim inR))
+  
+  def intp2_toExpr_eq_singleton {lane fv b c}
+    (p: Pair)
+  :
+    intp2 (p.toExpr.toLane lane) fv b c = {p}
+  :=
+    Set.ext fun _ => Iff.intro
+      (fun inExpr => (inToExprElim inExpr).symm)
+      (fun eq => eq ▸ inToExpr p)
+  
 end SingleLaneExpr

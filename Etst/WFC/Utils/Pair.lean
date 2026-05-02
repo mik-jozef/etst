@@ -110,6 +110,11 @@ namespace Pair
       ⟨p0, s0.defLePos p0InDef, p1, s1.defLePos p1InDef, pEq⟩
   }
   
+  
+  def toExpr: Pair → BasicExpr
+  | .null => .null
+  | .pair l r => .pair l.toExpr r.toExpr
+  
 end Pair
 
 

@@ -1,3 +1,4 @@
+import Etst.WFC.Ch4_S1_MembershipPs
 import Etst.WFC.Syntax.FiniteDefList
 import Etst.WFC.Utils.Expr.NegationNormalForm
 import Etst.WFC.Utils.DefList

@@ -1,7 +1,9 @@
 import Etst.WFC.Ch3_WellFoundedModel
 import Etst.WFC.Utils.Expr.ConstRenaming
+import Etst.WFC.Utils.Expr.ConstsVarsSat
 
 namespace Etst
+
 
 namespace DefListEq
   abbrev InvariantOn
@@ -181,6 +183,14 @@ def DefList.prefix_none_at
 :=
   if_neg nlt
 
+def DefList.eq {dlSrc dlDst: DefList}
+  (getDefEq: dlSrc.getDef = dlDst.getDef)
+:
+  dlSrc = dlDst
+:=
+  match dlSrc, dlDst, getDefEq with
+  | ⟨_, _⟩, _, rfl => rfl
+
 
 def FinBoundedDL.ex_expr_uses_bound
   (dl: FinBoundedDL)
@@ -285,15 +295,219 @@ def FinBoundedDL.ex_prefix_wfm_eq_expr
     let ⟨xLtN, depsLtN⟩ := isBounded x xIn
     dl.prefix_wfm_eq_of_lt xLtN depsLtN
   ⟨n, by
-    simpa [BasicExpr.triIntp, Expr.mapConst_eq_id] using
-      (BasicExpr.mapConst_triIntp2
-        (map := id)
-        (expr := expr)
-        (fv := fv)
-        (bSrc := (dl.prefix n).wfm)
-        (bDst := dl.wfm)
-        (cSrc := (dl.prefix n).wfm)
-        (cDst := dl.wfm)
-        eqAtN
-        eqAtN).symm
+    conv => rhs; rw [←Expr.mapConst_eq_id expr]
+    exact (BasicExpr.mapConst_triIntp2 (map := id) eqAtN eqAtN).symm
   ⟩
+
+
+def Expr.noneLtSize {E: Type*}
+  (size: Nat)
+:
+  (none (E := E)).ConstsLt size
+:=
+  nofun
+
+def DefList.DependsOn.toUsesConst {getDef a b}
+  (depOn: DependsOn getDef a b)
+:
+  ∃ x, (getDef x).UsesConst b
+:=
+  match depOn with
+  | Base usesVar => ⟨_, usesVar⟩
+  | Rec _ depOn => depOn.toUsesConst
+
+def DefList.IsExprBoundedBy
+  (dl: DefList)
+  (expr: BasicExpr)
+  (ub: Nat)
+:
+  Prop
+:=
+  ∀ x ∈ expr.UsesConst, DefList.IsDefBoundedBy dl.getDef x ub
+
+
+namespace FiniteDefList
+  def ConstsLt
+    (getDef: DefList.GetDef)
+    (size: Nat)
+  :=
+    ∀ x, (getDef x).ConstsLt size
+  
+  def isFinBounded_of_constsLt {getDef size}
+    (constsLt: ConstsLt getDef size)
+  :
+    DefList.IsFinBounded getDef
+  :=
+    fun _ => ⟨
+      size,
+      fun depOn =>
+        let ⟨x, usesVar⟩ := depOn.toUsesConst
+        constsLt x _ usesVar,
+    ⟩
+end FiniteDefList
+
+structure FiniteDefList extends FinBoundedDL where
+  constNames: List String
+  constsLt: FiniteDefList.ConstsLt getDef constNames.length
+  noneAboveSize: ∀ {x}, constNames.length ≤ x → getDef x = .none
+  isFinBounded := FiniteDefList.isFinBounded_of_constsLt constsLt
+
+namespace FiniteDefList
+  def size
+    (dl: FiniteDefList)
+  :=
+    dl.constNames.length
+  
+  def empty: FiniteDefList := {
+    getDef _ := Expr.none
+    constNames := []
+    constsLt _ := Expr.noneLtSize _
+    noneAboveSize _ := rfl
+    isClean _ := by decide
+  }
+  
+  def emptySizeZero: empty.size = 0 := rfl
+  
+  structure Def (size: Nat) where
+    name: String
+    expr: BasicExpr
+    constsLt: expr.ConstsLt size
+    isClean: expr.IsClean
+  
+  def defsGetNth {ub} 
+    (defs: List (Def ub))
+    (n: Nat)
+  :
+    Def ub
+  :=
+    defs[n]?.getD {
+      name := "«empty»"
+      expr := Expr.none
+      constsLt := Expr.noneLtSize ub
+      isClean := by decide
+    }
+  
+  def defsToGetDef {ub}
+    (defs: List (Def ub))
+  :
+    DefList.GetDef
+  :=
+    fun x => (defsGetNth defs x).expr
+
+  def defsToGetDef_gt_none {ub}
+    (defs: List (Def ub))
+    {x: Nat}
+    (xGe: defs.length ≤ x)
+  :
+    defsToGetDef defs x = .none
+  := by
+    unfold defsToGetDef defsGetNth
+    rw [List.getElem?_eq_none_iff.mpr xGe]
+    rfl
+  
+  def extend {ub}
+    (dl: FiniteDefList)
+    (defs: List (Def ub))
+    (ubEq: ub = dl.size + defs.length)
+  :
+    FiniteDefList
+  :=
+    let getDef :=
+      fun x =>
+        if x < dl.size
+        then dl.getDef x
+        else defsToGetDef defs (x - dl.size)
+    {
+      getDef
+      constNames := dl.constNames ++ defs.map Def.name
+      constsLt :=
+        fun x y (usesVar: (getDef x).UsesConst y) => by
+          unfold getDef at usesVar
+          rw [List.length_append]
+          if h: x < dl.size then
+            rw [if_pos h] at usesVar
+            apply Nat.lt_add_right
+            exact dl.constsLt x y usesVar
+          else
+            rw [if_neg h] at usesVar
+            unfold size at ubEq
+            rw [List.length_map, ←ubEq]
+            exact (defsGetNth defs (x - dl.size)).constsLt _ usesVar
+      noneAboveSize {x} xGe :=
+        if h: x < dl.size then
+          let le := List.length_le_append_rite _ _
+          False.elim (Nat.not_lt_of_ge xGe (Nat.lt_of_lt_of_le h le))
+        else by
+          unfold getDef
+          rw [if_neg h]
+          apply defsToGetDef_gt_none
+          exact Nat.le_sub_of_add_le (by
+            simpa [size, Nat.add_comm] using xGe)
+      isClean x := by
+        unfold getDef
+        if h: x < dl.size then
+          rw [if_pos h]
+          exact dl.isClean x
+        else
+          rw [if_neg h]
+          exact (defsGetNth defs (x - dl.size)).isClean
+    }
+  
+  def ofDefs {ub}
+    (defs: List (Def ub))
+    (ubEq: ub = defs.length)
+  :
+    FiniteDefList
+  :=
+    empty.extend defs (by
+      rw [emptySizeZero, Nat.zero_add];
+      exact ubEq)
+
+  def Prelude: FiniteDefList :=
+    FiniteDefList.ofDefs (ub := 2) [
+      {
+        name := "Any"
+        expr := Expr.arbUn (Expr.var 0)
+        constsLt _ h := nomatch h
+        isClean := by decide
+      },
+      {
+        name := "None"
+        expr := Expr.arbIr (Expr.var 0)
+        constsLt _ h := nomatch h
+        isClean := by decide
+      }
+    ] rfl
+  
+  def isExprBoundedBy
+    (dl: FiniteDefList)
+    (expr: BasicExpr)
+  :
+    dl.IsExprBoundedBy expr dl.size
+  :=
+    fun _ _ {dep} depOn =>
+      let ⟨y, usesConst⟩ := depOn.toUsesConst
+      dl.constsLt y dep usesConst
+
+  def prefix_size_eq
+    (dl: FiniteDefList)
+  :
+    dl.toDefList = dl.toDefList.prefix dl.size
+  :=
+    DefList.eq <|
+    funext fun x =>
+    if h: x < dl.size then
+      (DefList.prefix_eq_at h).symm
+    else
+      DefList.prefix_none_at h ▸
+      dl.noneAboveSize (le_of_not_gt h)
+
+  def prefix_size_wfm_eq
+    (dl: FiniteDefList)
+  :
+    (dl.toDefList.prefix dl.size).wfm = dl.wfm
+  :=
+    dl.prefix_size_eq ▸ rfl
+  
+  
+end FiniteDefList
