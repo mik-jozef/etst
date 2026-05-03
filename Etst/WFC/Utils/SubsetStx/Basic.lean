@@ -997,6 +997,41 @@ namespace DefList.SubsetStx
   :=
     mp (fullElim (simplePairInduction (fullImpl sub))) subId
   
+  def subSimpleInduction {x lane expr}
+    (premise:
+      let desc0: InductionDescriptor dl := {
+        lane
+        x
+        expr
+        expansion := dl.getDef x
+        expandsInto := .rfl
+      }
+      let desc: MutIndDescriptor dl := [desc0]
+      dl.SubsetStx
+        (desc.hypothesify 0 ((dl.getDef x).toLane lane))
+        expr)
+  :
+    dl.SubsetStx (const lane x) expr
+  :=
+    let desc0: InductionDescriptor dl := {
+      lane
+      x
+      expr
+      expansion := dl.getDef x
+      expandsInto := .rfl
+    }
+    let desc: MutIndDescriptor dl := [desc0]
+    let i: desc.Index := ⟨0, Nat.zero_lt_succ _⟩
+    let ind:
+      dl.SubsetStx (const lane x) (full (impl (const lane x) expr))
+    :=
+      mutInduction
+        (x := const lane x)
+        desc
+        (fun | ⟨0, _⟩ => fullImpl (x := const lane x) premise)
+        i
+    mp (fullElim ind) subId
+  
   def pairIrOfIr {x al ar bl br}
     (sub: dl.SubsetStx x (ir (pair al ar) (pair bl br)))
   :

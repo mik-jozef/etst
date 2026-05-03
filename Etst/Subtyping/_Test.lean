@@ -77,25 +77,28 @@ abbrev IsSub := SubsetStx TestDl.toDefList
 def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
   subSimpleInduction
     (fold
-      (unCtx
+      (subId.unElimSub
         (unL
           subId)
         (unR
-          (pairMonoOfSub
+          (subPairMono
             (irCtxL
               subId)
             subId))))
 
 def SubsetStx.natNotNat: IsSub s3(.Any) s3(:Nat | !.Nat) :=
-  trans em (unCtxLR natSub subId)
+  em.unElimSub
+    (unL natSub)
+    (unR subId)
 
 
+/-
 def natLeZeroThen: IsSub s3(.Nat) s3(:ThenNatLeZero) :=
-  subSimpleInduction
-    (fold
-      (unCtx
-        sorry
-        sorry))
+  fold
+    (unCtx
+      sorry
+      sorry)
+-/
 
 
 
@@ -110,11 +113,11 @@ def SubsetStx.AddSymm :=
   BasicExpr.toDefLane
     s3(All a: Nat, All b: Nat, Eq (add a b) (add b a))
 
+/-
 def SubsetStx.addSymmNat:
   IsSub s3(.Nat) AddSymm
 :=
-  subSimpleInduction
-    sorry
+  sorry
 
 def SubsetStx.addSymm:
   IsSub s3(:Any) AddSymm
@@ -126,6 +129,7 @@ def SubsetStx.infinitudeOfPrimes:
   IsSub s3(.Any) s3(:PrimesInf)
 :=
   sorry
+-/
 
 
 /-
