@@ -54,7 +54,7 @@ structure Set3 (D: Type*) where
 namespace Set3
   -- A convenience function allowing us to use `isDef.toPos` on
   -- instances of `Set3.defMem s d`.
-  def defMem.toPos {D} {s: Set3 D} {d} (isDef: Set3.defMem s d) : s.posMem d :=
+  def defMem.toPos {D d} {s: Set3 D} (isDef: s.defMem d): s.posMem d :=
     s.defLePos isDef
   
   -- If two trisets have the same definitive and possible members,

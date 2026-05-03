@@ -147,3 +147,22 @@ instance Set3.pairInstMem:
   Membership (Set3 Pair) (Set3 Pair)
 :=
   ⟨Set3.PairMem⟩
+
+
+def Set3.inCall {s lane arg res}
+  (inS: s.getLane lane (.pair arg res))
+:
+  (call s arg).getLane lane res
+:=
+  match lane with
+  | .defLane => inS
+  | .posLane => inS
+
+def Set3.inCallElim {s lane arg res}
+  (inCall: (call s arg).getLane lane res)
+:
+  s.getLane lane (.pair arg res)
+:=
+  match lane with
+  | .defLane => inCall
+  | .posLane => inCall

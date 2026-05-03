@@ -489,6 +489,7 @@ namespace FiniteDefList
       let ⟨y, usesConst⟩ := depOn.toUsesConst
       dl.constsLt y dep usesConst
 
+
   def prefix_size_eq
     (dl: FiniteDefList)
   :
@@ -509,5 +510,45 @@ namespace FiniteDefList
   :=
     dl.prefix_size_eq ▸ rfl
   
+  
+  def extend_wfm_eq_of_lt {ub}
+    (dlParent dlChild: FiniteDefList)
+    {defs: List (Def ub)}
+    (ubEq: ub = dlParent.size + defs.length)
+    (childEq: dlChild = dlParent.extend defs ubEq)
+    {x: Nat}
+    (xLt: x < dlParent.size)
+  :
+    dlParent.wfm x = dlChild.wfm x
+  :=
+    let names y := y = x ∨ DefList.DependsOn dlParent.getDef x y
+    let defsEq:
+      DefListEq.EqDefsOn
+        dlParent.toDefList
+        (dlParent.extend defs ubEq).toDefList
+        id
+        names
+    :=
+      fun y yIn =>
+        let yLt :=
+          match yIn with
+          | Or.inl yEq => yEq ▸ xLt
+          | Or.inr depOn =>
+            let ⟨z, usesConst⟩ := depOn.toUsesConst
+            dlParent.constsLt z y usesConst
+        let eqAtY:
+          (dlParent.extend defs ubEq).getDef y = dlParent.getDef y
+        := by
+          show (if y < dlParent.size then _ else _) = dlParent.getDef y
+          rw [if_pos yLt]
+        (Expr.mapConst_eq_id _).trans eqAtY.symm
+    let closed _ yIn _ zUsed :=
+      match yIn with
+      | Or.inl yEq =>
+        Or.inr <| yEq ▸ DefList.DependsOn.Base zUsed
+      | Or.inr depOn =>
+        Or.inr <| depOn.push zUsed
+    let eqAtX := DefList.eq_defs_eq_vals defsEq closed x (Or.inl rfl)
+    childEq ▸ eqAtX
   
 end FiniteDefList

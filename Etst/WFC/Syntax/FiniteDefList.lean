@@ -274,6 +274,7 @@ namespace pair_def_list
     ```
       def dl.consts.foo := [foo's index]
       def dl.vals.foo := dl.wfm [foo's index]
+      def dl.defs.foo := dl.getDef [foo's index]
       ...
     ```
   -/
@@ -287,12 +288,14 @@ namespace pair_def_list
     let mut i := 0
     for name in names do
       let num := mkNumLit i.repr
-      let defName := mkIdent ((dlName.append `consts).append name.toName)
+      let constName := mkIdent ((dlName.append `consts).append name.toName)
       let valName := mkIdent ((dlName.append `vals).append name.toName)
+      let defName := mkIdent ((dlName.append `defs).append name.toName)
       let dlIdent := mkIdent dlName
       
-      cmds := cmds.push (← `(def $defName := $num))
+      cmds := cmds.push (← `(def $constName := $num))
       cmds := cmds.push (← `(noncomputable def $valName := ($dlIdent).wfm $num))
+      cmds := cmds.push (← `(def $defName := ($dlIdent).getDef $num))
       i := i + 1
     return cmds
       

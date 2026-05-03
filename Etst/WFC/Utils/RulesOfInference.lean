@@ -49,6 +49,15 @@ namespace SingleLaneExpr
   :=
     intp2_var_eq_singleton eq ▸ rfl
   
+  def inVarEq
+    {fv: List Pair}
+    {pBound: Pair}
+    (eq: fv[x]? = .some pBound)
+  :
+    (var x).intp2 fv b c = {pBound}
+  :=
+    intp2_var_eq_singleton eq ▸ rfl
+  
   def inVarElim
     (h: (var x).intp2 fv b c p)
     (eq: fv[x]? = .some pBound)

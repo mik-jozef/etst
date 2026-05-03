@@ -796,4 +796,22 @@ namespace Set3
     | .defLane, .posLane => inA.toPos
     | .posLane, .posLane => inA
   
+  def defMem.toLane {D d lane} {s: Set3 D}
+    (isDef: s.defMem d)
+  :
+    s.getLane lane d
+  :=
+    match lane with
+    | .defLane => isDef
+    | .posLane => isDef.toPos
+  
+  def getLane.toPos {D d lane} {s: Set3 D}
+    (inLane: s.getLane lane d)
+  :
+    s.posMem d
+  :=
+    match lane with
+    | .defLane => defMem.toPos inLane
+    | .posLane => inLane
+  
 end Set3
