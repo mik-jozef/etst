@@ -50,7 +50,7 @@ def uniSetMapDl.uniSetMapAt_eq
     (uniSetMapAt_ge dl n fv expr)
 
 def uniSetMapDl.ex_uniSetMapAt_eq
-  (dl: FinBoundedDL)
+  (dl: FinBoundedDl)
   (fv: List Pair)
   (expr: BasicExpr)
 :
@@ -71,7 +71,7 @@ def uniSetMap.isUniversal {s}
   ⟨i, eqAtI.trans sEq.symm⟩
 
 def uniSetMap.isDefinable: DefList.IsDefinable uniSetMap := ⟨
-  uniSetMapDl.toFinBoundedDL,
+  uniSetMapDl.toFinBoundedDl,
   uniSetMapDl.consts.uniSetMap,
   rfl,
 ⟩

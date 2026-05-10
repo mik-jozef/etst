@@ -350,7 +350,7 @@ def DefList.IsDefinable
 :
   Prop
 :=
-  ∃ (dl: FinBoundedDL)
+  ∃ (dl: FinBoundedDl)
     (x: Nat),
     set = dl.wfm x
 

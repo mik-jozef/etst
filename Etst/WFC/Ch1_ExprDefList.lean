@@ -242,5 +242,5 @@ def DefList.IsFinBounded (getDef: GetDef): Prop :=
   IsDefBoundedBy getDef name upperBound
 
 -- A finitely bounded definition list. See IsFinBounded above.
-structure FinBoundedDL extends DefList where
+structure FinBoundedDl extends DefList where
   isFinBounded: DefList.IsFinBounded getDef

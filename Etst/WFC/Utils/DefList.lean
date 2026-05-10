@@ -192,8 +192,8 @@ def DefList.eq {dlSrc dlDst: DefList}
   | ⟨_, _⟩, _, rfl => rfl
 
 
-def FinBoundedDL.ex_expr_uses_bound
-  (dl: FinBoundedDL)
+def FinBoundedDl.ex_expr_uses_bound
+  (dl: FinBoundedDl)
   (expr: BasicExpr)
 :
   ∃ n,
@@ -240,8 +240,8 @@ def FinBoundedDL.ex_expr_uses_bound
   | .arbIr body => dl.ex_expr_uses_bound body
 
 
-def FinBoundedDL.prefix_wfm_eq_of_lt
-  (dl: FinBoundedDL)
+def FinBoundedDl.prefix_wfm_eq_of_lt
+  (dl: FinBoundedDl)
   {x n: Nat}
   (xLtN: x < n)
   (depsLtN: ∀ {dep}, DefList.DependsOn dl.getDef x dep → dep < n)
@@ -267,8 +267,8 @@ def FinBoundedDL.prefix_wfm_eq_of_lt
   let eqAtN := DefList.eq_defs_eq_vals defsEq closed x (Or.inl rfl)
   eqAtN.symm
 
-def FinBoundedDL.ex_prefix_wfm_eq
-  (dl: FinBoundedDL)
+def FinBoundedDl.ex_prefix_wfm_eq
+  (dl: FinBoundedDl)
   (x: Nat)
 :
   ∃ n, (dl.prefix n).wfm x = dl.wfm x
@@ -283,8 +283,8 @@ def FinBoundedDL.ex_prefix_wfm_eq
     Nat.lt_of_lt_of_le (depsLt depOn) (Nat.le_max_right _ _)
   ⟨n, dl.prefix_wfm_eq_of_lt xLtN depsLtN⟩
 
-def FinBoundedDL.ex_prefix_wfm_eq_expr
-  (dl: FinBoundedDL)
+def FinBoundedDl.ex_prefix_wfm_eq_expr
+  (dl: FinBoundedDl)
   (fv: List Pair)
   (expr: BasicExpr)
 :
@@ -346,7 +346,7 @@ namespace FiniteDefList
     ⟩
 end FiniteDefList
 
-structure FiniteDefList extends FinBoundedDL where
+structure FiniteDefList extends FinBoundedDl where
   constNames: List String
   constsLt: FiniteDefList.ConstsLt getDef constNames.length
   noneAboveSize: ∀ {x}, constNames.length ≤ x → getDef x = .none
