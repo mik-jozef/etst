@@ -5,56 +5,6 @@ namespace Etst
 open Expr
 
 
-pairDefList ExampleDl
-  s3 Any := Ex x, x
-  
-  s3 Nat := null | (Nat, null)
-  
-  s3 NotNat :=
-  | (Any, (Any, Any))
-  | (NotNat, Any)
-
-pairDefList.
-
-local macro "s3(" e:s3_pair_expr ")" : term => `(s3(ExampleDl, $e))
-
-def notNatDef := ExampleDl.defs.NotNat.toLane .posLane
-
-def NotNat.notNat:
-  ExampleDl.SubsetStx s3(.NotNat) s3(!.Nat)
-:=
-  .trans
-    (.unfold .subId)
-    (.complSwap -- complSwapping should not be necessary with coinduction.
-      (.subSimpleInduction
-        (show
-          ExampleDl.SubsetStx
-            (.un
-              .null
-              (.pair
-                (.ir (.compl notNatDef) (.const .posLane 1))
-                .null))
-            (.compl notNatDef)
-        from
-          .complUn
-            (.unElim
-              .subId
-              (.irCtxR
-                (.irI
-                  (.nullComplPair .subId)
-                  (.nullComplPair .subId)))
-              (.irCtxR
-                (.irI
-                  (.complRiteComplPair
-                    (.subPairMono
-                      .anyI
-                      (.nullComplPair .subId)))
-                  (.complLeftComplPair
-                    (.subPairMono
-                      (.irCtxL (.subCompl (.unfold .subId)))
-                      .anyI))))))))
-
-
 inductive IndCoindDescriptor.Type
 | induction
 | coinduction
