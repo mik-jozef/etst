@@ -599,32 +599,32 @@ namespace DefList.SubsetStx
       (mpIrContra subIrR (irMonoCtxL (implAbsorb sub) subIrL))
   
   def complUn {x l r}
-    (sub: dl.SubsetStx x (compl (un l r)))
-  :
-    dl.SubsetStx x (ir (compl l) (compl r))
-  :=
-    dne sub
-  
-  def complUnElim {x l r}
     (sub: dl.SubsetStx x (ir (compl l) (compl r)))
   :
     dl.SubsetStx x (compl (un l r))
   :=
     dni sub
   
+  def complUnElim {x l r}
+    (sub: dl.SubsetStx x (compl (un l r)))
+  :
+    dl.SubsetStx x (ir (compl l) (compl r))
+  :=
+    dne sub
+  
   def complUnElimL {x l r}
     (sub: dl.SubsetStx x (compl (un l r)))
   :
     dl.SubsetStx x (compl l)
   :=
-    irL (complUn sub)
+    irL (complUnElim sub)
   
   def complUnElimR {x l r}
     (sub: dl.SubsetStx x (compl (un l r)))
   :
     dl.SubsetStx x (compl r)
   :=
-    irR (complUn sub)
+    irR (complUnElim sub)
   
   def byContra {x a}
     (sub: dl.SubsetStx (ir x a.compl) none)
@@ -1088,7 +1088,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair (compl (un a b)) c)
   :=
-    pairMonoSubL (pairIrL subA subB) (complUnElim subId)
+    pairMonoSubL (pairIrL subA subB) (complUn subId)
   
   def pairComplUnR {x a b c}
     (subA: dl.SubsetStx x (pair a (compl b)))
@@ -1096,7 +1096,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (pair a (compl (un b c)))
   :=
-    pairMonoSubR (pairIrR subA subB) (complUnElim subId)
+    pairMonoSubR (pairIrR subA subB) (complUn subId)
   
   def complPairUnL {x a b c}
     (subA: dl.SubsetStx x (compl (pair a c)))
@@ -1132,12 +1132,41 @@ namespace DefList.SubsetStx
             (unR (unL subIrR))
             (unR (unR (pairComplUnR (irR (irL subIrL)) subIrR))))))
   
+  def nullComplPair {x l r}
+    (sub: dl.SubsetStx x null)
+  :
+    dl.SubsetStx x (compl (pair l r))
+  :=
+    complPair (unL sub)
+  
+  def pairComplNull {x l r}
+    (sub: dl.SubsetStx x (pair l r))
+  :
+    dl.SubsetStx x (compl null)
+  :=
+    complI (irCtxL sub) (complPair (unL subIrR))
+  
+  def complLeftComplPair {x l r}
+    (sub: dl.SubsetStx x (pair (compl l) any))
+  :
+    dl.SubsetStx x (compl (pair l r))
+  :=
+    complPair (unR (unL sub))
+  
+  def complRiteComplPair {x l r}
+    (sub: dl.SubsetStx x (pair any (compl r)))
+  :
+    dl.SubsetStx x (compl (pair l r))
+  :=
+    complPair (unR (unR sub))
+  
+  
   def unPairL {x a b c}
     (sub: dl.SubsetStx x (pair (un a b) c))
   :
     dl.SubsetStx x (un (pair a c) (pair b c))
   :=
-    let s := complUn subIrR
+    let s := complUnElim subIrR
     byContra
       (pe (irCtxL sub) (complPairUnL (irL s) (irR s)))
   
@@ -1146,7 +1175,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (un (pair a b) (pair a c))
   :=
-    let s := complUn subIrR
+    let s := complUnElim subIrR
     byContra
       (pe (irCtxL sub) (complPairUnR (irL s) (irR s)))
   

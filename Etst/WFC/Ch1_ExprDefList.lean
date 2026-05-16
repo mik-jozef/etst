@@ -7,8 +7,6 @@ import Etst.WFC.Ch0_Set3
 
 namespace Etst
 
-universe u
-
 
 /-
   An expression is an inductive structure that (as we later define)
@@ -20,7 +18,7 @@ universe u
   The variables use de Bruijn indices, ie. `var 0` refers to the
   innermost quantifier, `var 1` to the next outer one, and so on.
 -/
-inductive Expr (E: Type u) where
+inductive Expr (E: Type*) where
 | const (e: E) (x: Nat)
 | var (x: Nat)
 | null
