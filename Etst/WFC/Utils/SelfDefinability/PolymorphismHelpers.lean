@@ -111,15 +111,28 @@ pairDefList callFixHelpersDl extends uniSetMapDl
   -- Named χ on the wiki's article on the Diagonal lemma:
   s3 magic :=
     Ex iFn iArg, (iFn, (iArg, uniSetMap iFn (callEnc iArg iArg)))
+  
+  s3 composeOp :=
+    Ex iOp iArg, (iOp, (iArg, uniSetMap (uniSetMap iOp iArg)))
 pairDefList.
 
 -- An index representing `callFixHelpersDl.magic`.
 def callFixDl.magicIndex: Pair :=
   (uniSetMapIndex
     callFixHelpersDl.toDefList
-    (callFixHelpersDl.consts.magic + 1)
+    callFixHelpersDl.size
     []
     (.const callFixHelpersDl.consts.magic))
+
+def composeOpIndex: Pair :=
+  uniSetMapIndex
+    callFixHelpersDl.toDefList
+    callFixHelpersDl.size
+    []
+    (.const callFixHelpersDl.consts.composeOp)
+
+def composeIndex (iOp: Pair): Pair :=
+  composeOpIndex.callEnc iOp
 
 pairDefList callFixDl extends callFixHelpersDl
   s3 callFix :=
@@ -444,25 +457,14 @@ namespace callFixDl
     {fn arg: SingleLaneExpr}
     (inFn:
       ∀ pRes,
-      Eq
-        (fn.intp2
-          (.pair iArg pRes :: pRes :: fv)
-          callFixDl.wfm
-          callFixDl.wfm)
-        {iFn}
-    )
+        let fvFn := .pair iArg pRes :: pRes :: fv
+        fn.intp2 fvFn callFixDl.wfm callFixDl.wfm = {iFn})
     (inArg:
       ∀ pRes,
-      Eq
-        (arg.intp2 (pRes :: fv) callFixDl.wfm callFixDl.wfm)
-        {iArg}
-    )
+      arg.intp2 (pRes :: fv) callFixDl.wfm callFixDl.wfm = {iArg})
   :
     Eq
-      ((callEnc_call fn arg lane).intp2
-        fv
-        callFixDl.wfm
-        callFixDl.wfm)
+      ((callEnc_call fn arg lane).intp2 fv callFixDl.wfm callFixDl.wfm)
       {iFn.callEnc iArg}
   :=
     Set.ext fun p => Iff.intro
@@ -585,6 +587,126 @@ namespace callFixDl
     congrArg
       (fun s => s.call iCall)
       (congrArg (fun s => s.call iFn) (eqMagicParent.trans eqMagicChild))
+  
+  
+  def composeOp_ins {iOp iArg lane p}
+    (ins:
+      (uniSetMap.flatCall ((uniSetMap.call iOp).call iArg)).getLane
+        lane
+        p)
+  :
+    ((vals.composeOp.call iOp).call iArg).getLane lane p
+  :=
+    let ⟨q, inQ, inUsm⟩ := Set3.inFlatCallElim ins
+    let eqU :=
+      uniSetMapDl.extend_wfm_eq_of_lt callFixHelpersDl rfl rfl (by decide)
+    let eqH :=
+      callFixHelpersDl.extend_wfm_eq_of_lt callFixDl rfl rfl (by decide)
+    let eqUni := eqU.trans eqH
+    let insInner:
+      (callFixDl.wfm consts.uniSetMap).getLane lane
+        (.pair iOp (.pair iArg q))
+    :=
+      eqUni.symm ▸ (Set3.inCallElim (Set3.inCallElim inQ))
+    let insOuter:
+      (callFixDl.wfm consts.uniSetMap).getLane lane (.pair q p)
+    :=
+      eqUni.symm ▸ inUsm
+    let inComposeCall :=
+      inCall
+        (inToggle2 2 insOuter)
+        (inCall
+          (inCall
+            (inToggle2 6 insInner)
+            (inVar rfl))
+          (inVar rfl))
+    Set3.inCall <|
+    Set3.inCall <|
+    DefList.InWfm.of_in_def_no_fv <|
+    inArbUn iOp <|
+    inArbUn iArg <|
+    inPair
+      (inVar rfl)
+      (inPair (inVar rfl) (inToggle2 2 inComposeCall))
+  
+  def composeOp_elim {iOp iArg lane p}
+    (ins: ((vals.composeOp.call iOp).call iArg).getLane lane p)
+  :
+    (uniSetMap.flatCall ((uniSetMap.call iOp).call iArg)).getLane lane p
+  :=
+    let ins := Set3.inCallElim (Set3.inCallElim ins)
+    let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
+    let ⟨opAlias, ins⟩ := inArbUnElim ins
+    let ⟨argAlias, ins⟩ := inArbUnElim ins
+    let ⟨inVarOp, ins⟩ := inPairElim ins
+    let ⟨inVarArg, ins⟩ := inPairElim ins
+    let opEq := inVarElim inVarOp rfl
+    let argEq := inVarElim inVarArg rfl
+    let ins := inToggle2Elim 2 ins
+    let ⟨qAlias, ⟨inOuterFn, inInnerCall⟩⟩ := inCallElim ins
+    let ⟨argAlias2, ⟨inMidFn, inArgVar⟩⟩ := inCallElim inInnerCall
+    let argAlias2Eq := inVarElim inArgVar rfl
+    let ⟨opAlias2, ⟨inUsmConst, inOpVar⟩⟩ := inCallElim inMidFn
+    let opAlias2Eq := inVarElim inOpVar rfl
+    let inUsmConst := inToggle2Elim 6 inUsmConst
+    let inOuterFn := inToggle2Elim 2 inOuterFn
+    let eqU :=
+      uniSetMapDl.extend_wfm_eq_of_lt callFixHelpersDl rfl rfl (by decide)
+    let eqH :=
+      callFixHelpersDl.extend_wfm_eq_of_lt callFixDl rfl rfl (by decide)
+    let eqUni := eqU.trans eqH
+    let inUsmConst:
+      (uniSetMapDl.wfm consts.uniSetMap).getLane lane
+        (.pair opAlias2 (.pair argAlias2 qAlias))
+    :=
+      eqUni ▸ inUsmConst
+    let inOuterFn:
+      (uniSetMapDl.wfm consts.uniSetMap).getLane lane (.pair qAlias p)
+    :=
+      eqUni ▸ inOuterFn
+    let inQ: ((uniSetMap.call iOp).call iArg).getLane lane qAlias :=
+      opEq ▸ argEq ▸ opAlias2Eq ▸ argAlias2Eq ▸
+        Set3.inCall (Set3.inCall inUsmConst)
+    Set3.inFlatCall inQ inOuterFn
+  
+  def composeOp_call_eq
+    (iOp iArg: Pair)
+  :
+    Eq
+      ((vals.composeOp.call iOp).call iArg)
+      (uniSetMap.flatCall ((uniSetMap.call iOp).call iArg))
+  :=
+    Set3.eq4
+      (fun _ => composeOp_elim (lane := .defLane))
+      (fun _ => composeOp_ins (lane := .defLane))
+      (fun _ => composeOp_elim (lane := .posLane))
+      (fun _ => composeOp_ins (lane := .posLane))
+  
+  def composeIndex_call
+    (iOp iArg: Pair)
+  :
+    Eq
+      ((uniSetMap.call (composeIndex iOp)).call iArg)
+      (uniSetMap.flatCall ((uniSetMap.call iOp).call iArg))
+  :=
+    let eqCall := callEnc_correct composeOpIndex iOp
+    let eqComposeOpParent :=
+      callFixHelpersDl.uniSetMapAt_eq
+        []
+        (.const callFixHelpersDl.consts.composeOp)
+    let eqComposeOpChild :=
+      callFixHelpersDl.extend_wfm_eq_of_lt
+        callFixDl
+        rfl
+        rfl
+        (by decide)
+    let eqHead:
+      uniSetMap.call composeOpIndex = vals.composeOp
+    :=
+      eqComposeOpParent.trans eqComposeOpChild
+    (congrArg (fun s => Set3.call s iArg) eqCall).trans
+      ((congrArg (fun s => (Set3.call s iOp).call iArg) eqHead).trans
+        (composeOp_call_eq iOp iArg))
   
   
   def callFix_ins {iFn lane p}

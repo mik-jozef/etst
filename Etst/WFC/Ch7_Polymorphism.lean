@@ -125,6 +125,23 @@ def callFix_call_eq_magic (iFn: Pair):
   (callFix_call_eq iFn).trans (magicCallIndex_fix iFn)
 
 
+/-
+  A version of the above for operators on indices instead of maps from
+  indices to trisets.
+-/
+def magicOpIndex (iOp: Pair): Pair :=
+  callFixDl.magicCallIndex (composeIndex iOp)
+
+open callFixDl in
+def magicOpIndex_fix (iOp: Pair):
+  Eq
+    (uniSetMap.call (magicOpIndex iOp))
+    (uniSetMap.flatCall ((uniSetMap.call iOp).call (magicOpIndex iOp)))
+:=
+  (magicCallIndex_fix (composeIndex iOp)).trans
+    (composeIndex_call iOp (magicOpIndex iOp))
+
+
 -- ## Section: Multiple definitions version
 
 /-

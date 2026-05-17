@@ -131,9 +131,15 @@ def Set3.call
 :
   Set3 Pair
 := {
-  defMem p := fn.defMem (Pair.pair arg p)
-  posMem p := fn.posMem (Pair.pair arg p)
-  defLePos _ pInDef := pInDef.toPos
+  defMem p := fn.defMem (.pair arg p)
+  posMem p := fn.posMem (.pair arg p)
+  defLePos _ inDef := inDef.toPos
+}
+
+def Set3.flatCall (fn args: Set3 Pair): Set3 Pair := {
+  defMem p := ∃ arg, args.defMem arg ∧ (fn.call arg).defMem p,
+  posMem p := ∃ arg, args.posMem arg ∧ (fn.call arg).posMem p,
+  defLePos _ := fun ⟨arg, hp, hq⟩ => ⟨arg, hp.toPos, hq.toPos⟩
 }
 
 def Set3.PairMem
@@ -166,3 +172,23 @@ def Set3.inCallElim {s lane arg res}
   match lane with
   | .defLane => inCall
   | .posLane => inCall
+
+
+def Set3.inFlatCall {fn args lane arg res}
+  (inArg: args.getLane lane arg)
+  (inFn: fn.getLane lane (.pair arg res))
+:
+  (flatCall fn args).getLane lane res
+:=
+  match lane with
+  | .defLane => ⟨arg, inArg, inFn⟩
+  | .posLane => ⟨arg, inArg, inFn⟩
+
+def Set3.inFlatCallElim {fn args lane res}
+  (inFlat: (flatCall fn args).getLane lane res)
+:
+  ∃ arg, args.getLane lane arg ∧ fn.getLane lane (.pair arg res)
+:=
+  match lane with
+  | .defLane => inFlat
+  | .posLane => inFlat
