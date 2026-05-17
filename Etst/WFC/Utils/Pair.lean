@@ -192,3 +192,12 @@ def Set3.inFlatCallElim {fn args lane res}
   match lane with
   | .defLane => inFlat
   | .posLane => inFlat
+
+def Set3.flatCall_just (fn: Set3 Pair) (p: Pair):
+  flatCall fn (just p) = fn.call p
+:=
+  Set3.eq4
+    (fun _ ⟨_, eq, inFn⟩ => eq ▸ inFn)
+    (fun _ inFn => ⟨p, rfl, inFn⟩)
+    (fun _ ⟨_, eq, inFn⟩ => eq ▸ inFn)
+    (fun _ inFn => ⟨p, rfl, inFn⟩)

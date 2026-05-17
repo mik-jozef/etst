@@ -5,10 +5,9 @@
   
   - named variables: Eg. `Ex x, x` instead of `arbUn (var 0)`
   - function calls: `f x`, see `Expr.call` in `PairExpr.lean`
-    for syntax, and `Set3.call` for a restricted semantic
+    for syntax, and `Set3.call` / `Set3.flatCall` for the semantic
     version.
-  - parameters: `s3 Foo (x: Bar) := [body]` instead of
-    `s3 Foo := Ex x, (some x & Bar) & (x, [body])`
+  - parameters: `s3 Foo T := [body]` means `s3 Foo := Ex T, (T, [body])`
   
   Function calls and parameters work together just as one would expect:
   for `s3 Foo n := (n, null)`, the expression `Foo x` evaluates to the
@@ -28,9 +27,14 @@
   On a more theoretical level, the chapter can be understood as showing
   that diagonalization arguments a la the diagonal lemma and Rogers's
   fixed-point theorem go through in WFC, and we can define fixed points
-  of arbitrary definable transformations of definable trisets, internally.
+  of arbitrary definable transformations of trisets, internally.
   
   ## The easy part
+  
+  TODO the approach shown here works, but might not be the one that
+  will eventually be chosen as the "official" way to do polymorphism,
+  resp. what polymorphism in latter chapters desugars into.
+  To be revised later, potentially.
   
   The initial "showing how" proceeds by example -- here is a simple
   definition of a list of natural numbers:
@@ -98,48 +102,81 @@ namespace Etst
 -- ## Section: Single definition version
 
 /-
-  The main result: `magicCallIndex iFn` is the index of a fixed point
+  The main result: `trisetFixIndex iFn` is the index of a fixed point
   of `iFn`.
 -/
-open callFixDl in
-def magicCallIndex_fix
+open opFixDl in
+def trisetFixIndex_fix
   (iFn: Pair)
 :
   Eq
-    (uniSetMap.call (magicCallIndex iFn))
-    ((uniSetMap.call iFn).call (magicCallIndex iFn))
+    (uniSetMap.call (trisetFixIndex iFn))
+    ((uniSetMap.call iFn).call (trisetFixIndex iFn))
 :=
-  magicCallIndex_eq iFn ▸
+  trisetFixIndex_eq iFn ▸
   magic_call_eq iFn (magicIndex.callEnc iFn) ▸
   rfl
 
 /-
-  The fixed point `magicCallIndex iFn` is definable internally.
+  The fixed point `trisetFixIndex iFn` is definable internally.
 -/
-open callFixDl in
-def callFix_call_eq_magic (iFn: Pair):
+open opFixDl in
+def trisetFix_eq (iFn: Pair):
   Eq
-    (vals.callFix.call iFn)
-    ((uniSetMap.call iFn).call (magicCallIndex iFn))
+    (vals.trisetFix.call iFn)
+    ((uniSetMap.call iFn).call (trisetFixIndex iFn))
 :=
-  (callFix_call_eq iFn).trans (magicCallIndex_fix iFn)
+  (trisetFix_call_eq iFn).trans (trisetFixIndex_fix iFn)
 
 
 /-
   A version of the above for operators on indices instead of maps from
   indices to trisets.
 -/
-def magicOpIndex (iOp: Pair): Pair :=
-  callFixDl.magicCallIndex (composeIndex iOp)
+def indexFixIndex (iOp: Pair): Pair :=
+  opFixDl.trisetFixIndex (composeIndex iOp)
 
-open callFixDl in
-def magicOpIndex_fix (iOp: Pair):
+open opFixDl in
+def indexFixIndex_fix (iOp: Pair):
   Eq
-    (uniSetMap.call (magicOpIndex iOp))
-    (uniSetMap.flatCall ((uniSetMap.call iOp).call (magicOpIndex iOp)))
+    (uniSetMap.call (indexFixIndex iOp))
+    (uniSetMap.flatCall ((uniSetMap.call iOp).call (indexFixIndex iOp)))
 :=
-  (magicCallIndex_fix (composeIndex iOp)).trans
-    (composeIndex_call iOp (magicOpIndex iOp))
+  (trisetFixIndex_fix (composeIndex iOp)).trans
+    (composeIndex_call iOp (indexFixIndex iOp))
+
+/-
+  Specialized to the case where `iOp` is total and functional at
+  the fixed point input: if its output there is a single index `p`,
+  then `indexFixIndex iOp` and `p` denote the same triset.
+-/
+def indexFixIndex_fix_of_just
+  (iOp: Pair)
+  {p: Pair}
+  (hJust: (uniSetMap.call iOp).call (indexFixIndex iOp) = Set3.just p)
+:
+  Eq
+    (uniSetMap.call (indexFixIndex iOp))
+    (uniSetMap.call p)
+:=
+  (indexFixIndex_fix iOp).trans
+    (hJust ▸ Set3.flatCall_just uniSetMap p)
+
+/-
+  Variant for the case where `iOp` codes a total function
+  `f: Pair → Pair`. Then `indexFixIndex iOp` denotes the same
+  triset as `f` applied to it.
+-/
+def indexFixIndex_fix_of_fn
+  (iOp: Pair)
+  (f: Pair → Pair)
+  (hFn: ∀ arg, (uniSetMap.call iOp).call arg = Set3.just (f arg))
+:
+  Eq
+    (uniSetMap.call (indexFixIndex iOp))
+    (uniSetMap.call (f (indexFixIndex iOp)))
+:=
+  indexFixIndex_fix_of_just iOp (hFn (indexFixIndex iOp))
 
 
 -- ## Section: Multiple definitions version

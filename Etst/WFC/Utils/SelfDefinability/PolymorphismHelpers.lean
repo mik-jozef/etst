@@ -80,7 +80,7 @@ def uniSetMapDlEncoding :=
   uniSetMapDl.prefixEncoding (uniSetMapDl.consts.uniSetMap + 1)
 
 open uniSetMapDl in
-pairDefList callFixHelpersDl extends uniSetMapDl
+pairDefList opFixHelpersDl extends uniSetMapDl
   -- Converts a pair to an encoding of an expression that evaluates to it.
   s3 encodeAsExpr :=
   | (null, (4, null))
@@ -116,39 +116,39 @@ pairDefList callFixHelpersDl extends uniSetMapDl
     Ex iOp iArg, (iOp, (iArg, uniSetMap (uniSetMap iOp iArg)))
 pairDefList.
 
--- An index representing `callFixHelpersDl.magic`.
-def callFixDl.magicIndex: Pair :=
+-- An index representing `opFixHelpersDl.magic`.
+def opFixDl.magicIndex: Pair :=
   (uniSetMapIndex
-    callFixHelpersDl.toDefList
-    callFixHelpersDl.size
+    opFixHelpersDl.toDefList
+    opFixHelpersDl.size
     []
-    (.const callFixHelpersDl.consts.magic))
+    (.const opFixHelpersDl.consts.magic))
 
 def composeOpIndex: Pair :=
   uniSetMapIndex
-    callFixHelpersDl.toDefList
-    callFixHelpersDl.size
+    opFixHelpersDl.toDefList
+    opFixHelpersDl.size
     []
-    (.const callFixHelpersDl.consts.composeOp)
+    (.const opFixHelpersDl.consts.composeOp)
 
 def composeIndex (iOp: Pair): Pair :=
   composeOpIndex.callEnc iOp
 
-pairDefList callFixDl extends callFixHelpersDl
-  s3 callFix :=
+pairDefList opFixDl extends opFixHelpersDl
+  s3 trisetFix :=
     Ex i, (
       i,
-      magic i (callEnc [callFixDl.magicIndex.toExpr] i)
+      magic i (callEnc [opFixDl.magicIndex.toExpr] i)
     )
 pairDefList.
 
 
-namespace callFixDl
-  open callFixHelpersDl
+namespace opFixDl
+  open opFixHelpersDl
   open SingleLaneExpr
   
   def encodeAsExpr_ins (p: Pair):
-    callFixDl.InWfm []
+    opFixDl.InWfm []
       (.const .defLane consts.encodeAsExpr)
       (.pair p p.toExpr.encoding)
   :=
@@ -163,7 +163,7 @@ namespace callFixDl
   
   def encodeAsExpr_elim {p enc}
     (ins:
-      callFixDl.InWfm []
+      opFixDl.InWfm []
         (.const .posLane consts.encodeAsExpr)
         (.pair p enc)
     )
@@ -218,7 +218,7 @@ namespace callFixDl
   def encodeCall_ins
     (fn arg: Pair)
   :
-    callFixDl.InWfm []
+    opFixDl.InWfm []
       (.const .defLane consts.encodeCall)
       (.pair fn (.pair arg (fn.encodeCall arg)))
   :=
@@ -233,7 +233,7 @@ namespace callFixDl
   
   def encodeCall_elim {fn arg enc}
     (ins:
-      callFixDl.InWfm []
+      opFixDl.InWfm []
         (.const .posLane consts.encodeCall)
         (.pair fn (.pair arg enc))
     )
@@ -308,7 +308,7 @@ namespace callFixDl
   def callEnc_ins
     (fn arg: Pair)
   :
-    callFixDl.InWfm []
+      opFixDl.InWfm []
       (.const .defLane consts.callEnc)
       (.pair fn (.pair arg (fn.callEnc arg)))
   :=
@@ -451,20 +451,20 @@ namespace callFixDl
   :
     SingleLaneExpr
   :=
-    ((const lane callFixDl.consts.callEnc).call fn).call arg
+    ((const lane opFixDl.consts.callEnc).call fn).call arg
   
   def callEnc_eq_singleton {fv iFn iArg lane}
     {fn arg: SingleLaneExpr}
     (inFn:
       ∀ pRes,
         let fvFn := .pair iArg pRes :: pRes :: fv
-        fn.intp2 fvFn callFixDl.wfm callFixDl.wfm = {iFn})
+        fn.intp2 fvFn opFixDl.wfm opFixDl.wfm = {iFn})
     (inArg:
       ∀ pRes,
-      arg.intp2 (pRes :: fv) callFixDl.wfm callFixDl.wfm = {iArg})
+      arg.intp2 (pRes :: fv) opFixDl.wfm opFixDl.wfm = {iArg})
   :
     Eq
-      ((callEnc_call fn arg lane).intp2 fv callFixDl.wfm callFixDl.wfm)
+      ((callEnc_call fn arg lane).intp2 fv opFixDl.wfm opFixDl.wfm)
       {iFn.callEnc iArg}
   :=
     Set.ext fun p => Iff.intro
@@ -488,12 +488,12 @@ namespace callFixDl
     ((vals.magic.call iFn).call iArg).getLane lane p
   :=
     let eqU :=
-      uniSetMapDl.extend_wfm_eq_of_lt callFixHelpersDl rfl rfl (by decide)
+      uniSetMapDl.extend_wfm_eq_of_lt opFixHelpersDl rfl rfl (by decide)
     let eqH :=
-      callFixHelpersDl.extend_wfm_eq_of_lt callFixDl rfl rfl (by decide)
+      opFixHelpersDl.extend_wfm_eq_of_lt opFixDl rfl rfl (by decide)
     let eqUni := eqU.trans eqH
     let ins:
-      (callFixDl.wfm consts.uniSetMap).getLane lane
+      (opFixDl.wfm consts.uniSetMap).getLane lane
         (.pair iFn (.pair (iArg.callEnc iArg) p))
     :=
       eqUni.symm ▸ (Set3.inCallElim (Set3.inCallElim ins))
@@ -535,9 +535,9 @@ namespace callFixDl
     let ins := inCallElimSingle ins rfl
     let ins := inToggle2Elim 6 ins
     let eqU :=
-      uniSetMapDl.extend_wfm_eq_of_lt callFixHelpersDl rfl rfl (by decide)
+      uniSetMapDl.extend_wfm_eq_of_lt opFixHelpersDl rfl rfl (by decide)
     let eqH :=
-      callFixHelpersDl.extend_wfm_eq_of_lt callFixDl rfl rfl (by decide)
+      opFixHelpersDl.extend_wfm_eq_of_lt opFixDl rfl rfl (by decide)
     let eqUni := eqU.trans eqH
     let ins:
       (uniSetMapDl.wfm consts.uniSetMap).getLane lane
@@ -559,26 +559,26 @@ namespace callFixDl
       (fun _ => magic_elim (lane := .posLane))
       (fun _ => magic_ins (lane := .posLane))
   
-  def magicCallIndex (iFn: Pair): Pair :=
+  def trisetFixIndex (iFn: Pair): Pair :=
     (magicIndex.callEnc iFn).callEnc (magicIndex.callEnc iFn)
   
-  def magicCallIndex_eq
+  def trisetFixIndex_eq
     (iFn: Pair)
   :
     Eq
-      (uniSetMap.call (magicCallIndex iFn))
+      (uniSetMap.call (trisetFixIndex iFn))
       ((vals.magic.call iFn).call (magicIndex.callEnc iFn))
   :=
     let iCall := magicIndex.callEnc iFn
     let eqOuter := callEnc_correct iCall iCall
     let eqInnerCall := callEnc_correct magicIndex iFn
     let eqMagicParent :=
-      (callFixHelpersDl.uniSetMapAt_eq
+      (opFixHelpersDl.uniSetMapAt_eq
         []
-        (.const callFixHelpersDl.consts.magic))
+        (.const opFixHelpersDl.consts.magic))
     let eqMagicChild :=
-      callFixHelpersDl.extend_wfm_eq_of_lt
-        callFixDl
+      opFixHelpersDl.extend_wfm_eq_of_lt
+        opFixDl
         rfl
         rfl
         (by decide)
@@ -599,17 +599,17 @@ namespace callFixDl
   :=
     let ⟨q, inQ, inUsm⟩ := Set3.inFlatCallElim ins
     let eqU :=
-      uniSetMapDl.extend_wfm_eq_of_lt callFixHelpersDl rfl rfl (by decide)
+      uniSetMapDl.extend_wfm_eq_of_lt opFixHelpersDl rfl rfl (by decide)
     let eqH :=
-      callFixHelpersDl.extend_wfm_eq_of_lt callFixDl rfl rfl (by decide)
+      opFixHelpersDl.extend_wfm_eq_of_lt opFixDl rfl rfl (by decide)
     let eqUni := eqU.trans eqH
     let insInner:
-      (callFixDl.wfm consts.uniSetMap).getLane lane
+      (opFixDl.wfm consts.uniSetMap).getLane lane
         (.pair iOp (.pair iArg q))
     :=
       eqUni.symm ▸ (Set3.inCallElim (Set3.inCallElim inQ))
     let insOuter:
-      (callFixDl.wfm consts.uniSetMap).getLane lane (.pair q p)
+      (opFixDl.wfm consts.uniSetMap).getLane lane (.pair q p)
     :=
       eqUni.symm ▸ inUsm
     let inComposeCall :=
@@ -651,9 +651,9 @@ namespace callFixDl
     let inUsmConst := inToggle2Elim 6 inUsmConst
     let inOuterFn := inToggle2Elim 2 inOuterFn
     let eqU :=
-      uniSetMapDl.extend_wfm_eq_of_lt callFixHelpersDl rfl rfl (by decide)
+      uniSetMapDl.extend_wfm_eq_of_lt opFixHelpersDl rfl rfl (by decide)
     let eqH :=
-      callFixHelpersDl.extend_wfm_eq_of_lt callFixDl rfl rfl (by decide)
+      opFixHelpersDl.extend_wfm_eq_of_lt opFixDl rfl rfl (by decide)
     let eqUni := eqU.trans eqH
     let inUsmConst:
       (uniSetMapDl.wfm consts.uniSetMap).getLane lane
@@ -691,12 +691,12 @@ namespace callFixDl
   :=
     let eqCall := callEnc_correct composeOpIndex iOp
     let eqComposeOpParent :=
-      callFixHelpersDl.uniSetMapAt_eq
+      opFixHelpersDl.uniSetMapAt_eq
         []
-        (.const callFixHelpersDl.consts.composeOp)
+        (.const opFixHelpersDl.consts.composeOp)
     let eqComposeOpChild :=
-      callFixHelpersDl.extend_wfm_eq_of_lt
-        callFixDl
+      opFixHelpersDl.extend_wfm_eq_of_lt
+        opFixDl
         rfl
         rfl
         (by decide)
@@ -709,14 +709,14 @@ namespace callFixDl
         (composeOp_call_eq iOp iArg))
   
   
-  def callFix_ins {iFn lane p}
+  def trisetFix_ins {iFn lane p}
     (ins:
       Set3.getLane
         ((vals.magic.call iFn).call (magicIndex.callEnc iFn))
         lane
         p)
   :
-    (vals.callFix.call iFn).getLane lane p
+    (vals.trisetFix.call iFn).getLane lane p
   :=
     let callEncEq :=
       callEnc_eq_singleton
@@ -733,8 +733,8 @@ namespace callFixDl
           rfl)
         (callEncEq ▸ rfl))
 
-  def callFix_elim {iFn lane p}
-    (ins: (vals.callFix.call iFn).getLane lane p)
+  def trisetFix_elim {iFn lane p}
+    (ins: (vals.trisetFix.call iFn).getLane lane p)
   :
     ((vals.magic.call iFn).call (magicIndex.callEnc iFn)).getLane lane p
   :=
@@ -752,21 +752,21 @@ namespace callFixDl
     let ins := inCallElimSingle ins (intp2_var_eq_singleton rfl)
     Set3.inCall (Set3.inCall (iEq ▸ (inToggle2Elim 4 ins)))
 
-  def callFix_call_eq
+  def trisetFix_call_eq
     (iFn: Pair)
   :
     Eq
-      (vals.callFix.call iFn)
-      (uniSetMap.call (magicCallIndex iFn))
+      (vals.trisetFix.call iFn)
+      (uniSetMap.call (trisetFixIndex iFn))
   :=
     Set3.eq4
       (fun _ ins =>
-        magicCallIndex_eq iFn ▸ callFix_elim (lane := .defLane) ins)
+        trisetFixIndex_eq iFn ▸ trisetFix_elim (lane := .defLane) ins)
       (fun _ ins =>
-        callFix_ins (lane := .defLane) (magicCallIndex_eq iFn ▸ ins))
+        trisetFix_ins (lane := .defLane) (trisetFixIndex_eq iFn ▸ ins))
       (fun _ ins =>
-        magicCallIndex_eq iFn ▸ callFix_elim (lane := .posLane) ins)
+        trisetFixIndex_eq iFn ▸ trisetFix_elim (lane := .posLane) ins)
       (fun _ ins =>
-        callFix_ins (lane := .posLane) (magicCallIndex_eq iFn ▸ ins))
+        trisetFix_ins (lane := .posLane) (trisetFixIndex_eq iFn ▸ ins))
   
-end callFixDl
+end opFixDl
