@@ -146,6 +146,19 @@ def indexFixIndex_fix (iOp: Pair):
     (composeIndex_call iOp (indexFixIndex iOp))
 
 /-
+  The fixed point `indexFixIndex iOp` is definable internally.
+-/
+open opFixDl in
+def indexFix_eq (iOp: Pair):
+  Eq
+    (vals.indexFix.call iOp)
+    (uniSetMap.flatCall ((uniSetMap.call iOp).call (indexFixIndex iOp)))
+:=
+  (indexFix_call_eq iOp).trans
+    ((trisetFix_eq (composeIndex iOp)).trans
+      (composeIndex_call iOp (indexFixIndex iOp)))
+
+/-
   Specialized to the case where `iOp` is total and functional at
   the fixed point input: if its output there is a single index `p`,
   then `indexFixIndex iOp` and `p` denote the same triset.

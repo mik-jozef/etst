@@ -140,6 +140,12 @@ pairDefList opFixDl extends opFixHelpersDl
       i,
       magic i (callEnc [opFixDl.magicIndex.toExpr] i)
     )
+  
+  s3 indexFix :=
+    Ex iOp, (
+      iOp,
+      trisetFix (callEnc [composeOpIndex.toExpr] iOp)
+    )
 pairDefList.
 
 
@@ -768,5 +774,62 @@ namespace opFixDl
         trisetFixIndex_eq iFn ▸ trisetFix_elim (lane := .posLane) ins)
       (fun _ ins =>
         trisetFix_ins (lane := .posLane) (trisetFixIndex_eq iFn ▸ ins))
+  
+  
+  /-
+    The `indexFix` symbol of `opFixDl` is defined as
+    `Ex iOp, (iOp, trisetFix (callEnc [composeOpIndex.toExpr] iOp))`,
+    so calling it with `iOp` semantically reduces to evaluating
+    `trisetFix` at the composed-op index `composeIndex iOp`.
+  -/
+  def indexFix_ins {iOp lane p}
+    (ins:
+      Set3.getLane (vals.trisetFix.call (composeIndex iOp)) lane p)
+  :
+    (vals.indexFix.call iOp).getLane lane p
+  :=
+    let callEncEq :=
+      callEnc_eq_singleton
+        (fun _ => intp2_toExpr_eq_singleton composeOpIndex)
+        (fun _ => intp2_var_eq_singleton rfl)
+    Set3.inCall <|
+    DefList.InWfm.of_in_def_no_fv <|
+    inArbUn iOp <|
+    inPair
+      (inVar rfl)
+      (inCall
+        (inToggle2 3 (Set3.inCallElim ins))
+        (callEncEq ▸ rfl))
+  
+  def indexFix_elim {iOp lane p}
+    (ins: (vals.indexFix.call iOp).getLane lane p)
+  :
+    (vals.trisetFix.call (composeIndex iOp)).getLane lane p
+  :=
+    let ins := Set3.inCallElim ins
+    let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
+    let ⟨_, ins⟩ := inArbUnElim ins
+    let ⟨inVarI, ins⟩ := inPairElim ins
+    let iEq := inVarElim inVarI rfl
+    let ins := inToggle2Elim 1 ins
+    let callEncEq :=
+      callEnc_eq_singleton
+        (fun _ => intp2_toExpr_eq_singleton composeOpIndex)
+        (fun _ => intp2_var_eq_singleton rfl)
+    let ins := inCallElimSingle ins callEncEq
+    Set3.inCall (iEq ▸ inToggle2Elim 2 ins)
+  
+  def indexFix_call_eq
+    (iOp: Pair)
+  :
+    Eq
+      (vals.indexFix.call iOp)
+      (vals.trisetFix.call (composeIndex iOp))
+  :=
+    Set3.eq4
+      (fun _ => indexFix_elim (lane := .defLane))
+      (fun _ => indexFix_ins (lane := .defLane))
+      (fun _ => indexFix_elim (lane := .posLane))
+      (fun _ => indexFix_ins (lane := .posLane))
   
 end opFixDl
