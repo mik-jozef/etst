@@ -46,7 +46,7 @@ def isAtOfInsDef {dl n fv b c lane expr p}
 def isAtIndexNope
   {actual expected enc fv b c p indexExpr restExpr aliasVar}
   (insExprGuard:
-    let expr := .some (ir (pair indexExpr restExpr) (var aliasVar))
+    let expr := .some (ir (prod indexExpr restExpr) (var aliasVar))
     intp2 expr fv b c p)
   (evalActual: fv[aliasVar]? = .some (.pair (.nat actual) enc))
   (evalIndex:
@@ -287,7 +287,7 @@ def exprEncListElim {fv b c lane p}
 def exprGuardElimUnary {i iEnc encRest fv0 fvRest b c p}
   (ins:
     intp2
-      (some (ir (pair i (var 0)) (var 1)))
+      (some (ir (prod i (var 0)) (var 1)))
       (fv0 :: .pair iEnc encRest :: fvRest)
       b
       c
@@ -308,7 +308,7 @@ def exprGuardElimUnary {i iEnc encRest fv0 fvRest b c p}
 def exprGuardElimBinary {i iEnc encL encR fvRite fvLeft fvRest b c p}
   (ins:
     intp2
-      (some (ir (pair i (pair (var 1) (var 0))) (var 2)))
+      (some (ir (prod i (prod (var 1) (var 0))) (var 2)))
       (fvRite :: fvLeft :: .pair iEnc (.pair encL encR) :: fvRest)
       b
       c
@@ -341,7 +341,7 @@ def inMapCallElim
     intp2
       (.call
         (uniSetMapConst.toLane (toggle2N lane toggleCount))
-        (.pair eDl (.pair eFv eExpr)))
+        (.prod eDl (.prod eFv eExpr)))
       fvMeta b c p)
   (exprEncEq: expr.encoding = exprEnc)
   (evalDl: ∀ {v fvH}, intp2 eDl (fvH::fvMeta) b c v → v = dl.prefixEncoding n)
@@ -546,7 +546,7 @@ def isAtNullElim {dl n fv b c lane p}
     (isAtArbUnNope · (by decide))
 
 def isAtPairElim {dl n fv b c left rite lane p}
-  (ins: InUniSetMapAt dl n fv b c (.pair left rite) lane p)
+  (ins: InUniSetMapAt dl n fv b c (.prod left rite) lane p)
 :
   ∃ pL pR,
     p = .pair pL pR ∧
@@ -950,7 +950,7 @@ def isAtPair {dl n fv b c left rite lane pL pR}
       lane
       (.pair (uniSetMapIndex dl n fv rite) pR))
 :
-  InUniSetMapAt dl n fv b c (.pair left rite) lane (.pair pL pR)
+  InUniSetMapAt dl n fv b c (.prod left rite) lane (.pair pL pR)
 :=
   inUnR
   (inUnR
@@ -1381,7 +1381,7 @@ def isWeakCauseNull {dl n fv}:
 def isWeakCausePair {dl n fv left rite pL pR}:
   (causeTwoExprs dl n fv left rite pL pR).IsWeakCause
     (uniSetMapDl.getDef consts.uniSetMap)
-    (.pair (uniSetMapIndex dl n fv (.pair left rite)) (.pair pL pR))
+    (.pair (uniSetMapIndex dl n fv (.prod left rite)) (.pair pL pR))
 :=
   fun _ _ isSat =>
     let inLeft := isSat.cinsSat (Or.inl ⟨rfl, rfl⟩)

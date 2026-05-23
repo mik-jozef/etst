@@ -120,12 +120,12 @@ namespace SingleLaneExpr
     (inLeft: exprL.intp2 fv b c pA)
     (inRite: exprR.intp2 fv b c pB)
   :
-    (pair exprL exprR).intp2 fv b c (Pair.pair pA pB)
+    (prod exprL exprR).intp2 fv b c (Pair.pair pA pB)
   :=
     ⟨pA, pB, rfl, inLeft, inRite⟩
   
   def inPairElim
-    (inPair: (pair exprL exprR).intp2 fv b c (Pair.pair pA pB))
+    (inPair: (prod exprL exprR).intp2 fv b c (Pair.pair pA pB))
   :
     And
       (exprL.intp2 fv b c pA)
@@ -136,7 +136,7 @@ namespace SingleLaneExpr
     ⟨eqL ▸ inL, eqR ▸ inR⟩
   
   def inPairElimEx
-    (inPair: (pair exprL exprR).intp2 fv b c p)
+    (inPair: (prod exprL exprR).intp2 fv b c p)
   :
     ∃ pA pB,
       p = Pair.pair pA pB ∧
@@ -150,7 +150,7 @@ namespace SingleLaneExpr
       ⟨pA, pB, ⟨rfl, eqL ▸ inL, eqR ▸ inR⟩⟩
   
   def inPairElimNope
-    (inPair: (pair exprL exprR).intp2 fv b c .null)
+    (inPair: (prod exprL exprR).intp2 fv b c .null)
     {P: Prop}
   :
     P
@@ -159,7 +159,7 @@ namespace SingleLaneExpr
     Pair.noConfusion eq
   
   def ninPairElim
-    (ninPair: ¬ (pair exprL exprR).intp2 fv b c (.pair pA pB))
+    (ninPair: ¬ (prod exprL exprR).intp2 fv b c (.pair pA pB))
   :
     ¬ exprL.intp2 fv b c pA ∨ ¬ exprR.intp2 fv b c pB
   :=

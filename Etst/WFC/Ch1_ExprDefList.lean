@@ -22,7 +22,7 @@ inductive Expr (E: Type*) where
 | const (e: E) (x: Nat)
 | var (x: Nat)
 | null
-| pair (left rite: Expr E)
+| prod (left rite: Expr E)
 | ir (left rite: Expr E)
 | full (body: Expr E)
 | compl (body: Expr E)
@@ -43,8 +43,8 @@ abbrev BasicExpr := Expr Unit
 def BasicExpr.const (x: Nat): BasicExpr := Expr.const () x
 def BasicExpr.var (x: Nat): BasicExpr := Expr.var x
 def BasicExpr.null: BasicExpr := Expr.null
-def BasicExpr.pair (left rite: BasicExpr): BasicExpr :=
-  Expr.pair left rite
+def BasicExpr.prod (left rite: BasicExpr): BasicExpr :=
+  Expr.prod left rite
 def BasicExpr.un (left rite: BasicExpr): BasicExpr :=
   Expr.un left rite
 def BasicExpr.ir (left rite: BasicExpr): BasicExpr :=
@@ -67,7 +67,7 @@ namespace Expr
         | const _ v => x = v
         | var _ => False
         | null => False
-        | pair left rite => left.UsesConst x ∨ rite.UsesConst x
+        | prod left rite => left.UsesConst x ∨ rite.UsesConst x
         | ir left rite => left.UsesConst x ∨ rite.UsesConst x
         | full body => body.UsesConst x
         | compl body => body.UsesConst x
@@ -79,7 +79,7 @@ namespace Expr
         | const _ _ => False
         | var v => x = v
         | null => False
-        | pair left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
+        | prod left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
         | ir left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
         | full body => body.UsesFreeVar x
         | compl body => body.UsesFreeVar x
@@ -98,7 +98,7 @@ namespace Expr
     | const _ _ => isEvenD
     | var _ => True
     | null => True
-    | pair left rite =>
+    | prod left rite =>
         left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
     | ir left rite =>
         left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
@@ -126,7 +126,7 @@ namespace Expr
     | const info x => const info x
     | var x => var (if x < depth then x else x + liftBy)
     | null => null
-    | pair l r => pair (l.lift depth liftBy) (r.lift depth liftBy)
+    | prod l r => prod (l.lift depth liftBy) (r.lift depth liftBy)
     | ir l r => ir (l.lift depth liftBy) (r.lift depth liftBy)
     | full body => full (body.lift depth liftBy)
     | compl body => compl (body.lift depth liftBy)
@@ -151,8 +151,8 @@ namespace Expr
   | .const e x => .const e x
   | .var x => fvMap x
   | .null => .null
-  | .pair left rite =>
-    .pair (subst fvMap left) (subst fvMap rite)
+  | .prod left rite =>
+    .prod (subst fvMap left) (subst fvMap rite)
   | .ir left rite =>
     .ir (subst fvMap left) (subst fvMap rite)
   | .full body =>

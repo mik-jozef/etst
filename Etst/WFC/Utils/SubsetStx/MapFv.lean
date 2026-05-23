@@ -116,11 +116,11 @@ namespace DefList.SubsetStx
     | .var x =>
       congrArg Expr.var (map_var_lt (varLt x rfl))
     | .null => rfl
-    | .pair l r =>
+    | .prod l r =>
       let varLtL x h := varLt x (Or.inl h)
       let varLtR x h := varLt x (Or.inr h)
       congrArg₂
-        pair
+        prod
           (substVar_hypothesify_map desc map depth ed l varLtL)
           (substVar_hypothesify_map desc map depth ed r varLtR)
     | .ir l r =>

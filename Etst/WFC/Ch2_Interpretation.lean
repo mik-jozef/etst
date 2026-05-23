@@ -215,7 +215,7 @@ def SingleLaneExpr.intp2
   | .const lane x => (c x).getLane lane
   | .var x => intpVar fv x
   | .null => {.null}
-  | .pair left rite =>
+  | .prod left rite =>
     fun p =>
       ∃ pL pR,
         p = .pair pL pR ∧
@@ -253,7 +253,7 @@ def BasicExpr.toLane
   | .const a => .const lane a
   | .var a => .var a
   | .null => .null
-  | .pair left rite => .pair (left.toLane lane) (rite.toLane lane)
+  | .prod left rite => .prod (left.toLane lane) (rite.toLane lane)
   | .ir left rite => .ir (left.toLane lane) (rite.toLane lane)
   | .full body => .full (body.toLane lane)
   | .compl body => .compl (body.toLane lane.toggle)
@@ -295,7 +295,7 @@ def BasicExpr.triIntp2_defLePos
   | .const x, isDef => (c x).defLePos isDef
   | .var _, isDef => isDef
   | .null, isDef => isDef
-  | .pair left rite, ⟨pl, pr, eq, isDefL, isDefR⟩ =>
+  | .prod left rite, ⟨pl, pr, eq, isDefL, isDefR⟩ =>
     let ihL := triIntp2_defLePos left isDefL
     let ihR := triIntp2_defLePos rite isDefR
     ⟨pl, pr, eq, ihL, ihR⟩

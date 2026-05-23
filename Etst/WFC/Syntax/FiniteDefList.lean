@@ -203,7 +203,7 @@ namespace pair_def_list
     `(s3_pair_expr|
       $a:s3_pair_expr × $b:s3_pair_expr)
     => do
-      `(Expr.pair
+      `(Expr.prod
         $(← makeExpr idents a)
         $(← makeExpr idents b))
   |

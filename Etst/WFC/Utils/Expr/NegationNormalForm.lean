@@ -37,7 +37,7 @@ def Expr.toNnfAux {E} : Expr E → Bool → Expr E
 | .const e x, false => .const e x
 | .var x,     false => .var x
 | .null,      false => .null
-| .pair l r,  false => .pair (l.toNnfAux false) (r.toNnfAux false)
+| .prod l r,  false => .prod (l.toNnfAux false) (r.toNnfAux false)
 | .ir l r,    false => .ir (l.toNnfAux false) (r.toNnfAux false)
 | .full b,    false => .full (b.toNnfAux false)
 | .arbIr b,   false => .arbIr (b.toNnfAux false)
@@ -45,13 +45,13 @@ def Expr.toNnfAux {E} : Expr E → Bool → Expr E
 -- Negative context (isNegated = true)
 | .const e x, true  => .compl (.const e x)
 | .var x,     true  => .compl (.var x)
-| .null,      true  => .pair .any .any
-| .pair l r,  true  => 
+| .null,      true  => .prod .any .any
+| .prod l r,  true  => 
   .un
     .null
     (.un
-      (.pair (l.toNnfAux true) .any)
-      (.pair .any (r.toNnfAux true)))
+      (.prod (l.toNnfAux true) .any)
+      (.prod .any (r.toNnfAux true)))
 | .ir l r,    true  => 
   .compl (.ir (.compl (l.toNnfAux true)) (.compl (r.toNnfAux true)))
 | .full b,    true  => 
@@ -90,7 +90,7 @@ def SingleLaneExpr.intp2_toNnfAux_eq
       | .null => propext ⟨nofun, nofun⟩
       | .pair _ _ => propext ⟨nofun, fun _ => inPair inAny inAny⟩,
     ⟩
-  | .pair left rite =>
+  | .prod left rite =>
     let ⟨ihL, ihCL⟩ := left.intp2_toNnfAux_eq fv b c
     let ⟨ihR, ihCR⟩ := rite.intp2_toNnfAux_eq fv b c
     ⟨
@@ -216,7 +216,7 @@ inductive Expr.IsNnf {E}: Expr E → Prop
 | var {x}: IsNnf (.var x)
 | complVar {x}: IsNnf (.compl (.var x))
 | null: IsNnf .null
-| pair {left rite}: IsNnf left → IsNnf rite → IsNnf (.pair left rite)
+| pair {left rite}: IsNnf left → IsNnf rite → IsNnf (prod left rite)
 | ir {left rite}: IsNnf left → IsNnf rite → IsNnf (.ir left rite)
 | un {left rite}: IsNnf left → IsNnf rite → IsNnf (.un left rite)
 | full {body}: IsNnf body → IsNnf (.full body)
@@ -238,9 +238,9 @@ def Expr.isNnfAux {E}:
 | .var _, true => .complVar
 | .null, false => .null
 | .null, true => .pair .any .any
-| .pair l r, false =>
+| .prod l r, false =>
   .pair (isNnfAux l false) (isNnfAux r false)
-| .pair l r, true =>
+| .prod l r, true =>
   .un .null
     (.un
       (.pair (isNnfAux l true) .any)
@@ -270,7 +270,7 @@ def Expr.IsNnf.toNnf_id {E} {expr: Expr E}:
 | .complVar => rfl
 | .null => rfl
 | .pair l r =>
-  show Expr.pair _ _ = _ from
+  show prod _ _ = _ from
   congr (congr rfl l.toNnf_id) r.toNnf_id
 | .ir l r =>
   show Expr.ir _ _ = _ from
@@ -316,12 +316,12 @@ def BasicExpr.toNnfAux_toLane_comm
   | .var x, true => rfl
   | .null, false => rfl
   | .null, true => rfl
-  | .pair left rite, false =>
+  | .prod left rite, false =>
     let ihL := toNnfAux_toLane_comm left false lane
     let ihR := toNnfAux_toLane_comm rite false lane
-    show Expr.pair _ _ = Expr.pair _ _ from
+    show Expr.prod _ _ = Expr.prod _ _ from
     congr (congr rfl ihL) ihR
-  | .pair left rite, true =>
+  | .prod left rite, true =>
     let ihL := toNnfAux_toLane_comm left true lane
     let ihR := toNnfAux_toLane_comm rite true lane
     show .un _ (.un _ _) = Expr.un _ (.un _ _) from

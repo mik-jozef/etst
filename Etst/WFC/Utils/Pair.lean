@@ -113,7 +113,7 @@ namespace Pair
   
   def toExpr: Pair → BasicExpr
   | .null => .null
-  | .pair l r => .pair l.toExpr r.toExpr
+  | .pair l r => .prod l.toExpr r.toExpr
   
 end Pair
 

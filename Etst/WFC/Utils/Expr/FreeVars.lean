@@ -90,9 +90,9 @@ namespace Expr
         else
           (lift_var_ge x (not_lt.mp h) 0).symm ▸ rfl
     | null => rfl
-    | pair l r =>
+    | prod l r =>
       congrArg₂
-        pair
+        prod
         (l.lift_zero_eq depth)
         (r.lift_zero_eq depth)
     | ir l r =>
@@ -127,9 +127,9 @@ namespace Expr
         rw [lift_var_ge (x + a) le1X]
         rw [Nat.add_assoc]
     | null => rfl
-    | pair l r =>
+    | prod l r =>
       congrArg₂
-        pair
+        prod
         (l.lift_add_eq le0 le1 b)
         (r.lift_add_eq le0 le1 b)
     | ir l r =>
@@ -184,9 +184,9 @@ namespace Expr
           Expr.noConfusion rfl (heq_of_eq eq) id
         exact congr rfl (Nat.add_right_cancel iEq)
     | null, null => rfl
-    | pair al ar, pair bl br => by
+    | prod al ar, prod bl br => by
       injection eq with eql eqr
-      exact congrArg₂ pair (lift_inj eql) (lift_inj eqr)
+      exact congrArg₂ prod (lift_inj eql) (lift_inj eqr)
     | ir al ar, ir bl br => by
       injection eq with eql eqr
       exact congrArg₂ ir (lift_inj eql) (lift_inj eqr)
@@ -231,9 +231,9 @@ namespace Expr
           omega
         rw [lift_var_ge _ (Nat.succ_le_succ x_ge) 1]
     | null => rfl
-    | pair l r =>
+    | prod l r =>
       congrArg₂
-        pair
+        prod
         (lift_inv_step (by injection eq))
         (lift_inv_step (by injection eq))
     | ir l r =>
@@ -316,8 +316,8 @@ namespace Expr
     | const _ _ => rfl
     | var x => rfl
     | null => rfl
-    | pair l r =>
-      congrArg₂ pair (subst_comp_var f g l) (subst_comp_var f g r)
+    | prod l r =>
+      congrArg₂ prod (subst_comp_var f g l) (subst_comp_var f g r)
     | ir l r =>
       congrArg₂ ir (subst_comp_var f g l) (subst_comp_var f g r)
     | full body => congrArg full (subst_comp_var f g body)
@@ -388,8 +388,8 @@ namespace Expr
     | const _ _ => rfl
     | var _ => rfl
     | null => rfl
-    | pair l r =>
-      congrArg₂ pair (lift_eq_substLift l ..) (lift_eq_substLift r ..)
+    | prod l r =>
+      congrArg₂ prod (lift_eq_substLift l ..) (lift_eq_substLift r ..)
     | ir l r =>
       congrArg₂ ir (lift_eq_substLift l ..) (lift_eq_substLift r ..)
     | full body =>
@@ -446,9 +446,9 @@ namespace Expr
         dsimp [subst, liftFvMap]
         exact h_safe x ge
     | null => rfl
-    | pair l r =>
+    | prod l r =>
       congrArg₂
-        pair
+        prod
         (subst_liftFvMap_lift_general k f l h_safe h_id)
         (subst_liftFvMap_lift_general k f r h_safe h_id)
     | ir l r =>
@@ -503,8 +503,8 @@ namespace Expr
     | const _ _ => rfl
     | var x => rfl
     | null => rfl
-    | pair l r =>
-      congrArg₂ pair (subst_subst f g l) (subst_subst f g r)
+    | prod l r =>
+      congrArg₂ prod (subst_subst f g l) (subst_subst f g r)
     | ir l r =>
       congrArg₂ ir (subst_subst f g l) (subst_subst f g r)
     | full body => congrArg full (subst_subst f g body)
@@ -526,7 +526,7 @@ namespace Expr
     | .const _ _ => 0
     | .var x => x + 1
     | .null => 0
-    | .pair left rite =>
+    | .prod left rite =>
         Nat.max left.freeVarUb rite.freeVarUb
     | .ir left rite =>
         Nat.max left.freeVarUb rite.freeVarUb
@@ -554,7 +554,7 @@ namespace Expr
       unfold lift freeVarUb
       split_ifs <;> omega
     | .null => Nat.zero_sub _ ▸ rfl
-    | .pair l r => by
+    | .prod l r => by
       show (Nat.max _ _) - _ - _ = _
       rw [max_eq]
       rw [freeVarUb_lift_eq_depth l liftBy depth]
@@ -609,7 +609,7 @@ namespace Expr
   :=
     match expr with
     | var _ => uses ▸ Nat.lt_succ_self _
-    | pair _ _ =>
+    | prod _ _ =>
       match uses with
       | .inl h =>
         let ih := freeVarUb_freeVarLt h
@@ -678,8 +678,8 @@ namespace Expr
     | const _ _ => rfl
     | var _ => rfl
     | null => rfl
-    | pair l r =>
-      congrArg₂ pair l.substId_eq r.substId_eq
+    | prod l r =>
+      congrArg₂ prod l.substId_eq r.substId_eq
     | ir l r =>
       congrArg₂ ir l.substId_eq r.substId_eq
     | full body => congrArg full body.substId_eq
@@ -782,10 +782,10 @@ namespace Expr
       rw [map_id_lt x ltBound]
     | null =>
       rfl
-    | pair l r ihL ihR =>
+    | prod l r ihL ihR =>
       let varLtL x h := freeVarLt x (Or.inl h)
       let varLtR x h := freeVarLt x (Or.inr h)
-      exact congrArg₂ pair
+      exact congrArg₂ prod
         (ihL bound varLtL map map_id_lt)
         (ihR bound varLtR map map_id_lt)
     | ir l r ihL ihR =>
@@ -876,7 +876,7 @@ namespace SingleLaneExpr
           rw [Nat.add_comm fvLiftBy.length fvDepth.length]
           exact Nat.add_le_add_right (Nat.le_of_not_lt h1) fvLiftBy.length
     | .null => rfl
-    | .pair l r =>
+    | .prod l r =>
       eq_intp2_pair_of_eq
         (intp2_lift_eq_depth l fv fvDepth fvLiftBy b c)
         (intp2_lift_eq_depth r fv fvDepth fvLiftBy b c)
@@ -958,7 +958,7 @@ namespace SingleLaneExpr
     | .const _ _ => rfl
     | .var x => fvEq x rfl
     | .null => rfl
-    | .pair _ _ =>
+    | .prod _ _ =>
       eq_intp2_pair_of_eq
         (intp2_subst_eq
           (fun x h => fvEq x (Or.inl h))
@@ -1114,7 +1114,7 @@ namespace BasicExpr
     | .const _ => Iff.rfl
     | .var _ => Iff.rfl
     | .null => Iff.rfl
-    | .pair l r =>
+    | .prod l r =>
       Iff.intro
         (fun h => Or.elim h
           (fun hl => Or.inl ((toLane_UsesFreeVar l lane x).mp hl))

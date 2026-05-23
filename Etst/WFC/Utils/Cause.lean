@@ -457,7 +457,7 @@ def Cause.IsWeakCauseFv.pair {fv l r pL pR}
   (leftIsCause: causeL.IsWeakCauseFv fv l pL)
   (riteIsCause: causeR.IsWeakCauseFv fv r pR)
 :
-  (causeL.union causeR).IsWeakCauseFv fv (.pair l r) (.pair pL pR)
+  (causeL.union causeR).IsWeakCauseFv fv (.prod l r) (.pair pL pR)
 :=
   fun _ _ isSat => ⟨
     pL,
@@ -469,7 +469,7 @@ def Cause.IsWeakCauseFv.pair {fv l r pL pR}
 
 def Cause.IsWeakCauseFv.complPairElim {fv l r pL pR}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.compl (.pair l r)) (.pair pL pR))
+  (isCause: cause.IsWeakCauseFv fv (.compl (.prod l r)) (.pair pL pR))
   (b c: Valuation Pair)
 :
   Or
@@ -500,7 +500,7 @@ def Cause.IsWeakCauseFv.complPairElim {fv l r pL pR}
 
 def Cause.IsStrongCauseFv.complPairElim {fv l r pL pR}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.compl (.pair l r)) (.pair pL pR))
+  (isCause: cause.IsStrongCauseFv fv (.compl (.prod l r)) (.pair pL pR))
 :
   Or
     (cause.IsStrongCauseFv fv (.compl l) pL)

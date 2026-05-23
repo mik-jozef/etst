@@ -110,50 +110,50 @@ inductive DefList.SubsetStx
     (subA: dl.SubsetStx x (some a))
     (subB: dl.SubsetStx x (some b))
   :
-    dl.SubsetStx x (some (pair a b))
+    dl.SubsetStx x (some (prod a b))
 |
   pairVarSomeFull {x i j a}
-    (sub: dl.SubsetStx x (some (ir (pair (var i) (var j)) a)))
+    (sub: dl.SubsetStx x (some (ir (prod (var i) (var j)) a)))
   :
-    dl.SubsetStx x (full (impl (pair (var i) (var j)) a))
+    dl.SubsetStx x (full (impl (prod (var i) (var j)) a))
 |
   -- TODO replace with pairMono and derive?
   pairMonoFullImpl {x al bl ar br}
     (sl: dl.SubsetStx x (full (impl al bl)))
     (sr: dl.SubsetStx x (full (impl ar br)))
   :
-    dl.SubsetStx x (full (impl (pair al ar) (pair bl br)))
+    dl.SubsetStx x (full (impl (prod al ar) (prod bl br)))
 |
   pairIr {x al bl ar br}
-    (subA: dl.SubsetStx x (pair al ar))
-    (subB: dl.SubsetStx x (pair bl br))
+    (subA: dl.SubsetStx x (prod al ar))
+    (subB: dl.SubsetStx x (prod bl br))
   :
-    dl.SubsetStx x (pair (ir al bl) (ir ar br))
+    dl.SubsetStx x (prod (ir al bl) (ir ar br))
 |
   pairArbIrL {x a b}
-    (sub: dl.SubsetStx x (arbIr (pair a b.lift)))
+    (sub: dl.SubsetStx x (arbIr (prod a b.lift)))
   :
-    dl.SubsetStx x (pair (arbIr a) b)
+    dl.SubsetStx x (prod (arbIr a) b)
 |
   pairArbIrR {x a b}
-    (sub: dl.SubsetStx x (arbIr (pair a.lift b)))
+    (sub: dl.SubsetStx x (arbIr (prod a.lift b)))
   :
-    dl.SubsetStx x (pair a (arbIr b))
+    dl.SubsetStx x (prod a (arbIr b))
 |
   complPair {x a b}
     (sub:
       dl.SubsetStx
         x
-        (un null (un (pair (compl a) any) (pair any (compl b)))))
+        (un null (un (prod (compl a) any) (prod any (compl b)))))
   :
-    dl.SubsetStx x (compl (pair a b))
+    dl.SubsetStx x (compl (prod a b))
 |
   complPairElim {x a b}
-    (sub: dl.SubsetStx x (compl (pair a b)))
+    (sub: dl.SubsetStx x (compl (prod a b)))
   :
     dl.SubsetStx
       x
-      (un null (un (pair (compl a) any) (pair any (compl b))))
+      (un null (un (prod (compl a) any) (prod any (compl b))))
 |
   irL {x l r}
     (sub: dl.SubsetStx x (ir l r))
@@ -258,7 +258,7 @@ inductive DefList.SubsetStx
 |
   -- TODO: should this be replaced with general (fixed-depth) pair induction?
   simplePairInduction {x p a}
-    (sub: dl.SubsetStx x (full (impl (un null (pair p p)) p)))
+    (sub: dl.SubsetStx x (full (impl (un null (prod p p)) p)))
   :
     dl.SubsetStx x (full (impl a p))
 

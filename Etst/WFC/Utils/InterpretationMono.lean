@@ -21,7 +21,7 @@ namespace SingleLaneExpr
     (leL: intp2 l0 fv0 b0 c0 ≤ intp2 l1 fv1 b1 c1)
     (leR: intp2 r0 fv0 b0 c0 ≤ intp2 r1 fv1 b1 c1)
   :
-    intp2 (pair l0 r0) fv0 b0 c0 ⊆ intp2 (pair l1 r1) fv1 b1 c1
+    intp2 (prod l0 r0) fv0 b0 c0 ⊆ intp2 (prod l1 r1) fv1 b1 c1
   :=
     fun
     | .pair _ _, isDef =>
@@ -32,7 +32,7 @@ namespace SingleLaneExpr
     (eqL: intp2 l0 fv0 b0 c0 = intp2 l1 fv1 b1 c1)
     (eqR: intp2 r0 fv0 b0 c0 = intp2 r1 fv1 b1 c1)
   :
-    intp2 (pair l0 r0) fv0 b0 c0 = intp2 (pair l1 r1) fv1 b1 c1
+    intp2 (prod l0 r0) fv0 b0 c0 = intp2 (prod l1 r1) fv1 b1 c1
   :=
     le_antisymm
       (intp2_mono_std_pair (le_of_eq eqL) (le_of_eq eqR))
@@ -227,7 +227,7 @@ namespace BasicExpr
     (leL: triIntp2 l0 fv0 b0 c0 ≤ triIntp2 l1 fv1 b1 c1)
     (leR: triIntp2 r0 fv0 b0 c0 ≤ triIntp2 r1 fv1 b1 c1)
   :
-    triIntp2 (pair l0 r0) fv0 b0 c0 ≤ triIntp2 (pair l1 r1) fv1 b1 c1
+    triIntp2 (prod l0 r0) fv0 b0 c0 ≤ triIntp2 (prod l1 r1) fv1 b1 c1
   := {
     defLe := intp2_mono_std_pair leL.defLe leR.defLe
     posLe := intp2_mono_std_pair leL.posLe leR.posLe
@@ -237,7 +237,7 @@ namespace BasicExpr
     (eqL: triIntp2 l0 fv0 b0 c0 = triIntp2 l1 fv1 b1 c1)
     (eqR: triIntp2 r0 fv0 b0 c0 = triIntp2 r1 fv1 b1 c1)
   :
-    triIntp2 (pair l0 r0) fv0 b0 c0 = triIntp2 (pair l1 r1) fv1 b1 c1
+    triIntp2 (prod l0 r0) fv0 b0 c0 = triIntp2 (prod l1 r1) fv1 b1 c1
   :=
     Set3.eq
       (eq_intp2_pair_of_eq (Set3.def_eq eqL) (Set3.def_eq eqR))

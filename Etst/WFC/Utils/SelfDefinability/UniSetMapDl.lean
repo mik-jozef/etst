@@ -214,7 +214,7 @@ def BasicExpr.encodingNnf: BasicExpr → Pair
 | .var x => .pair (.nat 2) (.nat x)
 | .compl (.var x) => .pair (.nat 3) (.nat x)
 | .null => .pair (.nat 4) .null
-| .pair left rite =>
+| .prod left rite =>
   .pair (.nat 5) (.pair left.encodingNnf rite.encodingNnf)
 | .ir left rite =>
   .pair (.nat 6) (.pair left.encodingNnf rite.encodingNnf)

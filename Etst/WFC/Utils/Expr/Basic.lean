@@ -11,8 +11,8 @@ namespace SingleLaneExpr
   def var (x: Nat): SingleLaneExpr :=
     Expr.var x
   def null: SingleLaneExpr := Expr.null
-  def pair (left rite: SingleLaneExpr): SingleLaneExpr :=
-    Expr.pair left rite
+  def prod (left rite: SingleLaneExpr): SingleLaneExpr :=
+    Expr.prod left rite
   def un (left rite: SingleLaneExpr): SingleLaneExpr :=
     Expr.un left rite
   def ir (left rite: SingleLaneExpr): SingleLaneExpr :=
@@ -53,7 +53,7 @@ namespace SingleLaneExpr
       (leftEq: LaneEq even odd left)
       (riteEq: LaneEq even odd rite)
     :
-      LaneEq even odd (pair left rite)
+      LaneEq even odd (prod left rite)
   | ir {even odd left rite}
       (leftEq: LaneEq even odd left)
       (riteEq: LaneEq even odd rite)
@@ -78,7 +78,7 @@ namespace SingleLaneExpr
       {left rite body: SingleLaneExpr}
     
     def elimPairLeft
-      (laneEq: LaneEq even odd (Expr.pair left rite))
+      (laneEq: LaneEq even odd (.prod left rite))
     :
       LaneEq even odd left
     :=
@@ -86,7 +86,7 @@ namespace SingleLaneExpr
       | .pair leftEq _ => leftEq
     
     def elimPairRite
-      (laneEq: LaneEq even odd (Expr.pair left rite))
+      (laneEq: LaneEq even odd (.prod left rite))
     :
       LaneEq even odd rite
     :=
@@ -151,9 +151,9 @@ def BasicExpr.laneEq
   | .var _, .posLane => .var
   | .null, .defLane => .null
   | .null, .posLane => .null
-  | .pair left rite, .defLane =>
+  | .prod left rite, .defLane =>
     .pair (left.laneEq .defLane) (rite.laneEq .defLane)
-  | .pair left rite, .posLane =>
+  | .prod left rite, .posLane =>
     .pair (left.laneEq .posLane) (rite.laneEq .posLane)
   | .ir left rite, .defLane =>
     .ir (left.laneEq .defLane) (rite.laneEq .defLane)
@@ -183,7 +183,7 @@ def Expr.toString {E} (serializeVar: E → Nat → String):
 | .var x => s!"v{x}"
 | .null =>
   "null"
-| .pair left rite =>
+| .prod left rite =>
   let left := left.toString serializeVar
   let rite := rite.toString serializeVar
   s!"({left}, {rite})"

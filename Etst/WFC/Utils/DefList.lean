@@ -213,7 +213,7 @@ def FinBoundedDl.ex_expr_uses_bound
     ⟩
   | .var _ => ⟨0, nofun⟩
   | .null => ⟨0, nofun⟩
-  | .pair left rite
+  | .prod left rite
   | .ir left rite =>
     let ⟨nL, hL⟩ := dl.ex_expr_uses_bound left
     let ⟨nR, hR⟩ := dl.ex_expr_uses_bound rite

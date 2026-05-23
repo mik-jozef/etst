@@ -192,7 +192,7 @@ def allInternalInapp {dl n fv expr p}
         anyCycleNope extIsEmpty (xEq ▸ pEq ▸ inCycle)
       | .blockedCins (Or.inr ⟨xEq, pEq⟩) inCycle =>
         anyCycleNope extIsEmpty (xEq ▸ pEq ▸ inCycle)
-  | .pair left rite =>
+  | .prod left rite =>
     match p with
     | .null =>
       inPairElimNope (intIsCause intCause.maximalValsApxAreSat)
@@ -214,9 +214,9 @@ def allInternalInapp {dl n fv expr p}
         let inCycle := xEq ▸ pEq ▸ inCycle
         allInternalInapp
           extIsEmpty everyCauseInapp inCycle intCause riteIsCause
-  | .compl (.pair left rite) =>
+  | .compl (.prod left rite) =>
     let inner :=
-      .un (.pair left.compl .any) (.pair .any rite.compl)
+      .un (.prod left.compl .any) (.prod .any rite.compl)
     match p with
     | .null =>
       let inCycleNull :=
@@ -235,8 +235,8 @@ def allInternalInapp {dl n fv expr p}
       
       let inExtCycleL :=
         let inExtCyclePairL :=
-          let exprLeft := .pair left.compl .any
-          let exprRite := .pair .any rite.compl
+          let exprLeft := .prod left.compl .any
+          let exprRite := .prod .any rite.compl
           let extIsCause := isWeakCauseUnL exprLeft exprRite
           match everyCauseInapp inExtCycleInner _ extIsCause with
           | .blockedCins ⟨xEq, pEq⟩ inCycle =>
@@ -251,8 +251,8 @@ def allInternalInapp {dl n fv expr p}
       
       let inExtCycleR :=
         let inExtCyclePairR :=
-          let exprLeft := .pair left.compl .any
-          let exprRite := .pair .any rite.compl
+          let exprLeft := .prod left.compl .any
+          let exprRite := .prod .any rite.compl
           let extIsCause := isWeakCauseUnR exprLeft exprRite
           match everyCauseInapp inExtCycleInner _ extIsCause with
           | .blockedCins ⟨xEq, pEq⟩ inCycle =>
@@ -507,7 +507,7 @@ def externalInsElimHelper {dl n fv index cst expr p}
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       isAtNullElim insList
-    | .pair _ _, .pair nnfL nnfR =>
+    | .prod _ _, .pair nnfL nnfR =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let ⟨_pL, _pR, eqP, inLeft, inRite⟩ := isAtPairElim insList

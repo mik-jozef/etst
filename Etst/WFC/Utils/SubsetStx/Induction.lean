@@ -16,8 +16,8 @@ def Expr.replaceDepthEvenConsts {E}
   | const i x => if ed then replacer depth i x else .const i x
   | var x => .var x
   | null => null
-  | pair left rite =>
-    pair
+  | prod left rite =>
+    prod
       (left.replaceDepthEvenConsts depth ed replacer)
       (rite.replaceDepthEvenConsts depth ed replacer)
   | ir left rite =>
@@ -170,7 +170,7 @@ mutual
       var_le_hypothesify desc fv fvDepth inv v_le
     | .var _ => le_refl ((intp2 _ _ _ _))
     | .null => le_refl ((intp2 _ _ _ _))
-    | .pair _ _ =>
+    | .prod _ _ =>
       intp2_mono_std_pair
         (desc.le_hypothesify fv fvDepth inv laneEq.elimPairLeft v_le)
         (desc.le_hypothesify fv fvDepth inv laneEq.elimPairRite v_le)
@@ -208,7 +208,7 @@ mutual
     | .const _ _ => le_refl ((intp2 _ _ _ _))
     | .var _ => le_refl ((intp2 _ _ _ _))
     | .null => le_refl ((intp2 _ _ _ _))
-    | .pair _ _ =>
+    | .prod _ _ =>
       intp2_mono_std_pair
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimPairLeft v_le)
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimPairRite v_le)

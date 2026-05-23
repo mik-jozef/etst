@@ -33,7 +33,7 @@ namespace Expr
         .isFalse (fun hSat => h (hSat xV rfl))
     | .var _ => .isTrue (fun _ h => h.elim)
     | .null => .isTrue (fun _ h => h.elim)
-    | .pair left rite =>
+    | .prod left rite =>
       match constsSat left P, constsSat rite P with
       | .isTrue hL, .isTrue hR =>
         .isTrue fun
@@ -75,7 +75,7 @@ namespace Expr
     | .var v =>
       if h: x = v then .isTrue h else .isFalse h
     | .null => .isFalse (fun h => h.elim)
-    | .pair left rite =>
+    | .prod left rite =>
       match left.usesFreeVar x, rite.usesFreeVar x with
       | .isTrue hL, _ => .isTrue (Or.inl hL)
       | _, .isTrue hR => .isTrue (Or.inr hR)
@@ -113,7 +113,7 @@ namespace Expr
       else
         .isFalse (fun hSat => h (hSat xV rfl))
     | .null => .isTrue (fun _ h => h.elim)
-    | .pair left rite =>
+    | .prod left rite =>
       match freeVarsSat left P, freeVarsSat rite P with
       | .isTrue hL, .isTrue hR =>
       .isTrue fun

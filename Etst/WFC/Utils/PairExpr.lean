@@ -67,7 +67,7 @@ namespace Expr
     variables of `expr` need to be incremented.
   -/
   def zth (expr: Expr E): Expr E :=
-    arbUn (ifThen (ir (pair (var 0) any) expr) (var 0))
+    arbUn (ifThen (ir (prod (var 0) any) expr) (var 0))
   
   /-
     Let `expr` be an expression that represets a set of
@@ -79,7 +79,7 @@ namespace Expr
     variables of `expr` need to be incremented.
   -/
   def fst (expr: Expr E): Expr E :=
-    arbUn (ifThen (ir (pair any (var 0)) expr) (var 0))
+    arbUn (ifThen (ir (prod any (var 0)) expr) (var 0))
   
   /-
     Let `fn` and `arg` be expressions that represent
@@ -95,14 +95,14 @@ namespace Expr
     variables of `fn` and `arg` need to be incremented.
   -/
   def call (fn arg: Expr E): Expr E :=
-    arbUn (ifThen (ir fn (pair arg (var 0))) (var 0))
+    arbUn (ifThen (ir fn (prod arg (var 0))) (var 0))
   
   /-
     For an encoding `nEnc` of a natural number `n`,
     `succ nEnc` represents the encoding of `n + 1`.
     (Note 0 is reprezented by `Pair.null`.)
   -/
-  def succ (expr: Expr E): Expr E := pair expr null
+  def succ (expr: Expr E): Expr E := prod expr null
   
   def nat: Nat → Expr E
   | Nat.zero => null

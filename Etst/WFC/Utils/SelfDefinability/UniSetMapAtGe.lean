@@ -78,7 +78,7 @@ def internalCauseElimComplPair {dl n fv left rite p}
   {intCause: Cause Pair}
   (intIsCause:
     intCause.IsStrongCauseFv fv
-      (.compl (.pair left rite)) p)
+      (.compl (.prod left rite)) p)
   (ih:
     ∀ pL pR: Pair,
     p = .pair pL pR →
@@ -89,13 +89,13 @@ def internalCauseElimComplPair {dl n fv left rite p}
         (.pair (uniSetMapIndex dl n fv rite.compl) pR)))
 :
   vals.uniSetMap.defMem
-    (.pair (uniSetMapIndex dl n fv (.compl (.pair left rite))) p)
+    (.pair (uniSetMapIndex dl n fv (.compl (.prod left rite))) p)
   
 :=
   open DefList in
   let isAt:
     InUniSetMapAt dl n fv usmWfm usmWfm
-      (.un .null (.un (.pair left.compl .any) (.pair .any rite.compl)))
+      (.un .null (.un (.prod left.compl .any) (.prod .any rite.compl)))
       .defLane
       p
   :=
@@ -190,12 +190,12 @@ def internalCauseElim {dl n fv expr p}
       let inCompl := intIsCause intCause.leastValsApxAreSat
       False.elim (inComplElim inCompl inNull)
     | .pair pL pR =>
-      let isAt: InUniSetMapAt dl n fv _ _ (.pair .any .any) _ _ :=
+      let isAt: InUniSetMapAt dl n fv _ _ (.prod .any .any) _ _ :=
         isAtPair
           (InWfm.of_in_def_no_fv (isInMap isAtAny))
           (InWfm.of_in_def_no_fv (isInMap isAtAny))
       InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
-  | .pair left rite =>
+  | .prod left rite =>
     match p with
     | .null =>
       let isPair := intIsCause intCause.leastValsApxAreSat
@@ -209,7 +209,7 @@ def internalCauseElim {dl n fv expr p}
           (internalCauseElim isCauseL cinsIh boutIh)
           (internalCauseElim isCauseR cinsIh boutIh)
       InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
-  | .compl (.pair left rite) =>
+  | .compl (.prod left rite) =>
     internalCauseElimComplPair
       intIsCause
       (fun _ _ eq =>
@@ -387,7 +387,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
         InUniSetMapAt dl n fv
           extCause.maximalBackgroundApx
           extCause.maximalContextApx
-          (.pair .any .any)
+          (.prod .any .any)
           .defLane
           .null
       :=
@@ -397,7 +397,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
       let inComplNull _ _ _ :=
         inCompl fun inNull => inNullElimNope inNull
       nomatch allInapp (intCause := Cause.empty) inComplNull
-  | .pair left rite =>
+  | .prod left rite =>
     let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
     let ⟨pL, pR, pEq, inCinsLeft, inCinsRite⟩ := isAtPairElim isAt
     if hL: AllIntCausesInappIh dl n intCycle fv left pL then
@@ -416,12 +416,12 @@ def allCausesInappElim {dl n fv intCycle expr p}
           (pEq ▸ Cause.IsWeakCauseFv.pair isCauseL isCauseR)
       False.elim
         (Cause.IsInapplicable.Not.union isAppL isAppR isInappUnion)
-  | .compl (.pair left rite) =>
+  | .compl (.prod left rite) =>
     let isAt:
       InUniSetMapAt dl n fv
         extCause.maximalBackgroundApx
         extCause.maximalContextApx
-        (.un .null (.un (.pair left.compl .any) (.pair .any rite.compl)))
+        (.un .null (.un (.prod left.compl .any) (.prod .any rite.compl)))
         .posLane
         p
     :=
@@ -438,14 +438,14 @@ def allCausesInappElim {dl n fv intCycle expr p}
       let isInExtCycle := ⟨rfl, ⟨_, _, _, allInappNull, rfl⟩⟩
       .blockedCinsCycle inCinsComplComplNull isInExtCycle
     | Or.inr inCinsInner =>
-      let inner := .un (.pair left.compl .any) (.pair .any rite.compl)
+      let inner := .un (.prod left.compl .any) (.prod .any rite.compl)
       let allInappInner:
         AllIntCausesInappIh dl n intCycle fv inner p
       :=
         fun isCauseInner =>
           allInapp fun b c isSat inPair =>
-            let innerLeft := BasicExpr.toPosLane (.pair left.compl .any)
-            let innerRite := BasicExpr.toPosLane (.pair .any rite.compl)
+            let innerLeft := BasicExpr.toPosLane (.prod left.compl .any)
+            let innerRite := BasicExpr.toPosLane (.prod .any rite.compl)
             have isInner: (un innerLeft innerRite).intp2 fv b c p :=
               -- (why tf is by exact needed here?)
               by exact isCauseInner isSat

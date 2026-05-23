@@ -32,7 +32,7 @@ def SingleLaneExpr.intp2_mono_std {fv}
       | .posLane, .some .posLane, .constSome => cLe x pIn
     | .var _ => pIn
     | .null => pIn
-    | .pair _ _ =>
+    | .prod _ _ =>
       let ⟨pL, pR, eq, pLIn, pRIn⟩ := pIn
       let ihL := intp2_mono_std bLe cLe laneEq.elimPairLeft pLIn
       let ihR := intp2_mono_std bLe cLe laneEq.elimPairRite pRIn
@@ -128,7 +128,7 @@ def BasicExpr.triIntp2_mono_apx
     }
   | .var _ => ⟨fun _ => id, fun _ => id⟩
   | .null => ⟨fun _ => id, fun _ => id⟩
-  | .pair _ _ =>
+  | .prod _ _ =>
       let ihL := triIntp2_mono_apx bLe cLe
       let ihR := triIntp2_mono_apx bLe cLe
       {

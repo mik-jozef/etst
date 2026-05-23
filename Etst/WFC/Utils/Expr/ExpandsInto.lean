@@ -26,7 +26,7 @@ inductive DefList.ExpandsInto
     (left: ExpandsInto dl ed l lExp)
     (rite: ExpandsInto dl ed r rExp)
   :
-    ExpandsInto dl ed (.pair l r) (.pair lExp rExp)
+    ExpandsInto dl ed (.prod l r) (.prod lExp rExp)
 | full {ed body bodyExp}
     (exp: ExpandsInto dl ed body bodyExp)
   :

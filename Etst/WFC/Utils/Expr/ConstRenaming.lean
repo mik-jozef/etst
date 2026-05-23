@@ -16,7 +16,7 @@ def Expr.substConst {E}
   .const e x => map e x
 | .var x => .var x
 | .null => .null
-| .pair l r => .pair (l.substConst map) (r.substConst map)
+| .prod l r => .prod (l.substConst map) (r.substConst map)
 | .ir l r => .ir (l.substConst map) (r.substConst map)
 | .full b => .full (b.substConst map)
 | .compl b => .compl (b.substConst map)
@@ -42,20 +42,20 @@ def Expr.substConst_eq_id {E}
   | .const e x => isId e x
   | .var _ => rfl
   | .null => rfl
-  | .pair left rite =>
-    congrArg₂ Expr.pair
+  | .prod left rite =>
+    congrArg₂ prod
       (left.substConst_eq_id isId)
       (rite.substConst_eq_id isId)
   | .ir left rite =>
-    congrArg₂ Expr.ir
+    congrArg₂ ir
       (left.substConst_eq_id isId)
       (rite.substConst_eq_id isId)
   | .full body =>
-    congrArg Expr.full (body.substConst_eq_id isId)
+    congrArg full (body.substConst_eq_id isId)
   | .compl body =>
-    congrArg Expr.compl (body.substConst_eq_id isId)
+    congrArg compl (body.substConst_eq_id isId)
   | .arbIr body =>
-    congrArg Expr.arbIr (body.substConst_eq_id isId)
+    congrArg arbIr (body.substConst_eq_id isId)
 
 def Expr.mapConst_eq_id {E}
   (expr: Expr E)
@@ -88,7 +88,7 @@ def SingleLaneExpr.substConst_intp2 {fv bSrc bDst cSrc cDst}
   | .const lane x => eqBC fv lane x rfl
   | .var _ => rfl
   | .null => rfl
-  | .pair _ _ =>
+  | .prod _ _ =>
     eq_intp2_pair_of_eq
       (substConst_intp2 map
         (fun fv lane x h => eqBC fv lane x (Or.inl h))
@@ -139,7 +139,7 @@ namespace BasicExpr
       | const y => rfl
       | var y => rfl
       | null => rfl
-      | pair left rite ihL ihR =>
+      | prod left rite ihL ihR =>
         exact propext <| Iff.intro
           (fun h => h.elim
             (Or.inl ∘ ((ihL lane).mp))
@@ -179,8 +179,8 @@ namespace BasicExpr
     | .const _ => rfl
     | .var _ => rfl
     | .null => rfl
-    | .pair left rite =>
-      congrArg₂ SingleLaneExpr.pair
+    | .prod left rite =>
+      congrArg₂ SingleLaneExpr.prod
         (toLane_substConst left lane map)
         (toLane_substConst rite lane map)
     | .ir left rite =>
