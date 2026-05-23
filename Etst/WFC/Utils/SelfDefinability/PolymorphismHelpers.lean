@@ -130,7 +130,7 @@ def composeIndex (iOp: Pair): Pair :=
 
 pairDefList opFixDl extends opFixHelpersDl
   s3 trisetFix :=
-    Ex i, i × magic i (callEnc [opFixDl.magicIndex.toExpr] i)
+    Ex iOp, iOp × magic iOp (callEnc [opFixDl.magicIndex.toExpr] iOp)
   
   s3 indexFix :=
     Ex iOp, iOp × trisetFix (callEnc [composeOpIndex.toExpr] iOp)
