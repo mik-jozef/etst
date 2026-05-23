@@ -83,37 +83,31 @@ open uniSetMapDl in
 pairDefList opFixHelpersDl extends uniSetMapDl
   -- Converts a pair to an encoding of an expression that evaluates to it.
   s3 encodeAsExpr :=
-  | (null, (4, null))
-  | (Ex l r, ((l, r), (5, (encodeAsExpr l, encodeAsExpr r))))
+  | null × 4 × null
+  | (Ex l r, (l × r) × 5 × encodeAsExpr l × encodeAsExpr r)
   
   s3 encodeCall :=
-    Ex aEnc bEnc, (
-      aEnc, (bEnc,
-      (11, (6, ((9, (6, (aEnc, (5, (bEnc, (2, 0)))))), (2, 0))))
-    ))
+    Ex aEnc bEnc,
+      × aEnc × bEnc
+      × 11 × 6 × (9 × 6 × aEnc × 5 × bEnc × 2 × 0) × 2 × 0
   
   s3 callEnc :=
-    Ex fn arg, (
-      fn, (arg,
-      (
-        [uniSetMapDlEncoding.toExpr],
-        (
-          null,
-          encodeCall
-            (encodeCall
-              [((BasicExpr.const consts.uniSetMap).encoding.toExpr)]
-              (encodeAsExpr fn))
-            (encodeAsExpr arg)
-        )
-      )
-    ))
+    Ex fn arg,
+      × fn × arg
+      × [uniSetMapDlEncoding.toExpr]
+      × null
+      × encodeCall
+          (encodeCall
+            [((BasicExpr.const consts.uniSetMap).encoding.toExpr)]
+            (encodeAsExpr fn))
+          (encodeAsExpr arg)
   
   -- Named χ on the wiki's article on the Diagonal lemma:
   s3 magic :=
-    Ex iFn iArg, (iFn, (iArg, uniSetMap iFn (callEnc iArg iArg)))
+    Ex iFn iArg, iFn × iArg × uniSetMap iFn (callEnc iArg iArg)
   
   s3 composeOp :=
-    Ex iOp iArg, (iOp, (iArg, uniSetMap (uniSetMap iOp iArg)))
+    Ex iOp iArg, iOp × iArg × uniSetMap (uniSetMap iOp iArg)
 pairDefList.
 
 -- An index representing `opFixHelpersDl.magic`.
@@ -136,16 +130,10 @@ def composeIndex (iOp: Pair): Pair :=
 
 pairDefList opFixDl extends opFixHelpersDl
   s3 trisetFix :=
-    Ex i, (
-      i,
-      magic i (callEnc [opFixDl.magicIndex.toExpr] i)
-    )
+    Ex i, i × magic i (callEnc [opFixDl.magicIndex.toExpr] i)
   
   s3 indexFix :=
-    Ex iOp, (
-      iOp,
-      trisetFix (callEnc [composeOpIndex.toExpr] iOp)
-    )
+    Ex iOp, iOp × trisetFix (callEnc [composeOpIndex.toExpr] iOp)
 pairDefList.
 
 

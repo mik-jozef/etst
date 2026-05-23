@@ -58,23 +58,23 @@ namespace uniSetMapDl
     s3(
       null; dl, fv, expr;
       Ex x,
-      & (?some (0, x) & expr)
-      & [uniSetMapConst] (dl, (null, [getNthConst] dl x))
+      & (?some 0 × x & expr)
+      & [uniSetMapConst] (dl × null × [getNthConst] dl x)
     )
   
   def exprEncComplConst: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex x,
-      & (?some (1, x) & expr)
-      & ! [uniSetMapConst] (dl, (null, [getNthConst] dl x))
+      & (?some 1 × x & expr)
+      & ! [uniSetMapConst] (dl × null × [getNthConst] dl x)
     )
   
   def exprEncVar: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex x,
-      & (?some (2, x) & expr)
+      & (?some 2 × x & expr)
       & [getNthConst] fv x
     )
   
@@ -82,14 +82,14 @@ namespace uniSetMapDl
     s3(
       null; dl, fv, expr;
       Ex x,
-      & (?some (3, x) & expr)
+      & (?some 3 × x & expr)
       & ! [getNthConst] fv x
     )
   
   def exprEncNull: BasicExpr :=
     s3(
       null; dl, fv, expr;
-      & (?some (4, null) & expr)
+      & (?some 4 × null & expr)
       & null
     )
   
@@ -98,10 +98,10 @@ namespace uniSetMapDl
       null; dl, fv, expr;
       Ex left,
       Ex rite,
-      & (?some (5, (left, rite)) & expr)
+      & (?some 5 × left × rite & expr)
       & (
-        [uniSetMapConst] (dl, (fv, left)),
-        [uniSetMapConst] (dl, (fv, rite))
+        × [uniSetMapConst] (dl × fv × left)
+        × [uniSetMapConst] (dl × fv × rite)
       )
     )
   
@@ -110,9 +110,9 @@ namespace uniSetMapDl
       null; dl, fv, expr;
       Ex left,
       Ex rite,
-      & (?some (6, (left, rite)) & expr)
-      & [uniSetMapConst] (dl, (fv, left))
-      & [uniSetMapConst] (dl, (fv, rite))
+      & (?some 6 × left × rite & expr)
+      & [uniSetMapConst] (dl × fv × left)
+      & [uniSetMapConst] (dl × fv × rite)
     )
   
   def exprEncUn: BasicExpr :=
@@ -120,10 +120,10 @@ namespace uniSetMapDl
       null; dl, fv, expr;
       Ex left,
       Ex rite,
-      & (?some (7, (left, rite)) & expr)
+      & (?some 7 × left × rite & expr)
       & (
-        | [uniSetMapConst] (dl, (fv, left))
-        | [uniSetMapConst] (dl, (fv, rite))
+        | [uniSetMapConst] (dl × fv × left)
+        | [uniSetMapConst] (dl × fv × rite)
       )
     )
   
@@ -131,32 +131,32 @@ namespace uniSetMapDl
     s3(
       null; dl, fv, expr;
       Ex body,
-      & (?some (8, body) & expr)
-      & (?full [uniSetMapConst] (dl, (fv, body)))
+      & (?some 8 × body & expr)
+      & (?full [uniSetMapConst] (dl × fv × body))
     )
   
   def exprEncSome: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex body,
-      & (?some (9, body) & expr)
-      & (?some [uniSetMapConst] (dl, (fv, body)))
+      & (?some 9 × body & expr)
+      & (?some [uniSetMapConst] (dl × fv × body))
     )
   
   def exprEncArbIr: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex body,
-      & (?some (10, body) & expr)
-      & (All p, [uniSetMapConst] (dl, ((p, fv), body)))
+      & (?some 10 × body & expr)
+      & (All p, [uniSetMapConst] (dl × (p × fv) × body))
     )
   
   def exprEncArbUn: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex body,
-      & (?some (11, body) & expr)
-      & (Ex p, [uniSetMapConst] (dl, ((p, fv), body)))
+      & (?some 11 × body & expr)
+      & (Ex p, [uniSetMapConst] (dl × (p × fv) × body))
     )
   
   def exprEncList: BasicExpr :=
@@ -182,8 +182,8 @@ pairDefList uniSetMapDl
   s3 getNth :=
     Ex head,
     Ex tail,
-    | ((head, tail), (0, head))
-    | (Ex i, ((head, tail), ((i, null), getNth tail i)))
+    | (head × tail) × 0 × head
+    | (Ex i, (head × tail) × (i × null) × getNth tail i)
   
   /-
     `uniSetMap` defines a triset of pairs `((dl, (fv, expr)), p)`
@@ -198,7 +198,7 @@ pairDefList uniSetMapDl
     that serves as an index for it in `uniSetMap`.
   -/
   s3 uniSetMap :=
-    Ex dl, Ex fv, Ex expr, ((dl, (fv, expr)), [exprEncList])
+    Ex dl, Ex fv, Ex expr, (dl × fv × expr) × [exprEncList]
 pairDefList.
 
 namespace uniSetMapDl

@@ -7,11 +7,11 @@
   - function calls: `f x`, see `Expr.call` in `PairExpr.lean`
     for syntax, and `Set3.call` / `Set3.flatCall` for the semantic
     version.
-  - parameters: `s3 Foo T := [body]` means `s3 Foo := Ex T, (T, [body])`
+  - parameters: `s3 Foo T := [body]` means `s3 Foo := Ex T, T × [body]`
   
   Function calls and parameters work together just as one would expect:
-  for `s3 Foo n := (n, null)`, the expression `Foo x` evaluates to the
-  same value as `(x, null)`.
+  for `s3 Foo n := n × null`, the expression `Foo x` evaluates to the
+  same value as `x × null`.
   
   ## The what
   
@@ -40,10 +40,10 @@
   definition of a list of natural numbers:
   
   ```
-    s3 Nat := null | (Nat, null) -- zero or successor
+    s3 Nat := null | Nat × null -- zero or successor
     s3 ListNat :=
       | null -- the empty list
-      | (Nat, ListNat) -- a head and tail
+      | Nat × ListNat -- a head and tail
   ```
   
   We would like to quantify this definition with a type of the elements
@@ -53,7 +53,7 @@
   ```
     s3 List (T: Any) :=
       | null
-      | (uniSetMap T, List T)
+      | uniSetMap T × List T
   ```
   
   From the previous chapter, we know that for any definable triset `t`,
@@ -61,7 +61,7 @@
   This index is mechanically derivable from the definition of `t`.
   
   Thanks to that, a caller wishing to use a List of eg. pairs of
-  naturals just needs to mechanically convert `(Nat, Nat)` to the
+  naturals just needs to mechanically convert `Nat × Nat` to the
   corresponding index, and then use `List i`.
   
   This also means that quantification over types collapses to

@@ -14,25 +14,26 @@ declare_syntax_cat s3_pair_def
 declare_syntax_cat s3_pair_expr
 
 -- Expressions
-syntax:70 ident : s3_pair_expr
-syntax:70 "."ident : s3_pair_expr
-syntax:70 ":"ident : s3_pair_expr
-syntax:70 num : s3_pair_expr
-syntax:70 "(?some " s3_pair_expr ")" : s3_pair_expr
-syntax:70 "(?full " s3_pair_expr ")" : s3_pair_expr
-syntax:70 "(" s3_pair_expr ")" : s3_pair_expr
-syntax:70 "null" : s3_pair_expr
-syntax:70 "(" s3_pair_expr ", " s3_pair_expr ","? ")" : s3_pair_expr
-syntax:70 "[" term "]" : s3_pair_expr
-syntax:60 s3_pair_expr:60 s3_pair_expr:61 : s3_pair_expr
-syntax:50 "!" s3_pair_expr:50 : s3_pair_expr
-syntax:40 s3_pair_expr:41 "|" s3_pair_expr:40 : s3_pair_expr
-syntax:40 "|" s3_pair_expr:41 "|" s3_pair_expr:40 : s3_pair_expr
-syntax:30 s3_pair_expr:31 "&" s3_pair_expr:30 : s3_pair_expr
-syntax:30 "&" s3_pair_expr:31 "&" s3_pair_expr:30 : s3_pair_expr
-syntax:20 s3_pair_expr:20 "then" s3_pair_expr:21 : s3_pair_expr
-syntax:10 s3_pair_expr:11 "->" s3_pair_expr:10 : s3_pair_expr
-syntax:9 s3_pair_expr:10 "<->" s3_pair_expr:10 : s3_pair_expr
+syntax:90 ident : s3_pair_expr
+syntax:90 "."ident : s3_pair_expr
+syntax:90 ":"ident : s3_pair_expr
+syntax:90 num : s3_pair_expr
+syntax:90 "(?some " s3_pair_expr ")" : s3_pair_expr
+syntax:90 "(?full " s3_pair_expr ")" : s3_pair_expr
+syntax:90 "(" s3_pair_expr ")" : s3_pair_expr
+syntax:90 "null" : s3_pair_expr
+syntax:90 "[" term "]" : s3_pair_expr
+syntax:80 s3_pair_expr:80 s3_pair_expr:81 : s3_pair_expr
+syntax:70 s3_pair_expr:71 " × " s3_pair_expr:70 : s3_pair_expr
+syntax:70 " × " s3_pair_expr:71 " × " s3_pair_expr:70 : s3_pair_expr
+syntax:60 "!" s3_pair_expr:60 : s3_pair_expr
+syntax:50 s3_pair_expr:51 "|" s3_pair_expr:50 : s3_pair_expr
+syntax:50 "|" s3_pair_expr:51 "|" s3_pair_expr:50 : s3_pair_expr
+syntax:40 s3_pair_expr:41 "&" s3_pair_expr:40 : s3_pair_expr
+syntax:40 "&" s3_pair_expr:41 "&" s3_pair_expr:40 : s3_pair_expr
+syntax:30 s3_pair_expr:30 "then" s3_pair_expr:31 : s3_pair_expr
+syntax:20 s3_pair_expr:21 "->" s3_pair_expr:20 : s3_pair_expr
+syntax:10 s3_pair_expr:20 "<->" s3_pair_expr:20 : s3_pair_expr
 syntax:00 "Ex " ident ", " s3_pair_expr : s3_pair_expr
 syntax:00 "Ex " ident+ ", " s3_pair_expr : s3_pair_expr
 syntax:00 "Ex " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
@@ -69,17 +70,17 @@ private partial def mkNestedAll
 
 
 macro_rules
--- Trailing comma removal in pairs
-| `(s3_pair_expr| ($a, $b,)) => `(s3_pair_expr| ($a, $b))
 -- Parentheses removal
 | `(s3_pair_expr| ($expr)) => `(s3_pair_expr| $expr)
 -- Function application
 | `(s3_pair_expr| $fn $arg) =>
-  `(s3_pair_expr| Ex res, $fn & ($arg, res) then res)
+  `(s3_pair_expr| Ex res, $fn & ($arg × res) then res)
 -- Remove leading "|"
 | `(s3_pair_expr| | $a | $b) => `(s3_pair_expr| $a | $b)
 -- Remove leading "&"
 | `(s3_pair_expr| & $a & $b) => `(s3_pair_expr| $a & $b)
+-- Remove leading "×"
+| `(s3_pair_expr| × $a × $b) => `(s3_pair_expr| $a × $b)
 -- Then to some
 | `(s3_pair_expr| $a then $b) => `(s3_pair_expr| (?some $a) & $b)
 -- Implication (->) to disjunction
@@ -200,7 +201,7 @@ namespace pair_def_list
       `(Expr.full $(← makeExpr idents body))
   |
     `(s3_pair_expr|
-      ($a:s3_pair_expr, $b:s3_pair_expr))
+      $a:s3_pair_expr × $b:s3_pair_expr)
     => do
       `(Expr.pair
         $(← makeExpr idents a)
@@ -405,11 +406,11 @@ namespace pair_def_list
   pairDefList ExampleDL
     s3 X := Ex x, x
     s3 Y := All y, y
-    s3 Z := (X, Y) | !(X & Y)
+    s3 Z := X × Y | !(X & Y)
   pairDefList.
   
   pairDefList ExampleDL2 extends ExampleDL
-    s3 A := (X, Y)
+    s3 A := X × Y
     s3 B := !(X & Y)
     s3 C := A | B
   pairDefList.
