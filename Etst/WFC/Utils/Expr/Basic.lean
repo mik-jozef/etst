@@ -49,7 +49,7 @@ namespace SingleLaneExpr
       LaneEq even odd (var x)
   | null {even odd}:
       LaneEq even odd null
-  | pair {even odd left rite}
+  | prod {even odd left rite}
       (leftEq: LaneEq even odd left)
       (riteEq: LaneEq even odd rite)
     :
@@ -77,21 +77,21 @@ namespace SingleLaneExpr
       {even odd: Option Set3.Lane}
       {left rite body: SingleLaneExpr}
     
-    def elimPairLeft
+    def elimProdLeft
       (laneEq: LaneEq even odd (.prod left rite))
     :
       LaneEq even odd left
     :=
       match laneEq with
-      | .pair leftEq _ => leftEq
+      | .prod leftEq _ => leftEq
     
-    def elimPairRite
+    def elimProdRite
       (laneEq: LaneEq even odd (.prod left rite))
     :
       LaneEq even odd rite
     :=
       match laneEq with
-      | .pair _ riteEq => riteEq
+      | .prod _ riteEq => riteEq
     
     def elimIrLeft
       (laneEq: LaneEq even odd (Expr.ir left rite))
@@ -152,9 +152,9 @@ def BasicExpr.laneEq
   | .null, .defLane => .null
   | .null, .posLane => .null
   | .prod left rite, .defLane =>
-    .pair (left.laneEq .defLane) (rite.laneEq .defLane)
+    .prod (left.laneEq .defLane) (rite.laneEq .defLane)
   | .prod left rite, .posLane =>
-    .pair (left.laneEq .posLane) (rite.laneEq .posLane)
+    .prod (left.laneEq .posLane) (rite.laneEq .posLane)
   | .ir left rite, .defLane =>
     .ir (left.laneEq .defLane) (rite.laneEq .defLane)
   | .ir left rite, .posLane =>

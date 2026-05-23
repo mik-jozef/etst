@@ -46,7 +46,7 @@ def Expr.encodeCall_eq
 :=
   rfl
 
-def BasicExpr.pair_call_expr_call_eq
+def BasicExpr.prod_call_expr_call_eq
   (fn: BasicExpr)
   (fnIsClean: fn.IsClean)
   (arg: Pair)
@@ -422,7 +422,7 @@ namespace opFixDl
           nofun
     let eqAt := FiniteDefList.uniSetMapAt_eq uniSetMapDl [] fullExpr
     let eqCall :=
-      BasicExpr.pair_call_expr_call_eq
+      BasicExpr.prod_call_expr_call_eq
         fnCallExpr
         fnCallExprClean
         arg
@@ -430,7 +430,7 @@ namespace opFixDl
         uniSetMapDl.wfm
         uniSetMapDl.wfm
     let eqFn :=
-      BasicExpr.pair_call_expr_call_eq
+      BasicExpr.prod_call_expr_call_eq
         (BasicExpr.const uniSetMapDl.consts.uniSetMap)
         (by decide)
         fn

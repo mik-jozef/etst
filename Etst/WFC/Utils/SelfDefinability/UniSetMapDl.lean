@@ -93,7 +93,7 @@ namespace uniSetMapDl
       & null
     )
   
-  def exprEncPair: BasicExpr :=
+  def exprEncProd: BasicExpr :=
     s3(
       null; dl, fv, expr;
       Ex left,
@@ -167,7 +167,7 @@ namespace uniSetMapDl
       | [exprEncVar]
       | [exprEncComplVar]
       | [exprEncNull]
-      | [exprEncPair]
+      | [exprEncProd]
       | [exprEncIr]
       | [exprEncUn]
       | [exprEncFull]

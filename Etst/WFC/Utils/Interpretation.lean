@@ -34,8 +34,8 @@ def SingleLaneExpr.intp2_mono_std {fv}
     | .null => pIn
     | .prod _ _ =>
       let ⟨pL, pR, eq, pLIn, pRIn⟩ := pIn
-      let ihL := intp2_mono_std bLe cLe laneEq.elimPairLeft pLIn
-      let ihR := intp2_mono_std bLe cLe laneEq.elimPairRite pRIn
+      let ihL := intp2_mono_std bLe cLe laneEq.elimProdLeft pLIn
+      let ihR := intp2_mono_std bLe cLe laneEq.elimProdRite pRIn
       ⟨pL, pR, eq, ihL, ihR⟩
     | .ir _ _ =>
       let ⟨pLIn, pRIn⟩ := pIn

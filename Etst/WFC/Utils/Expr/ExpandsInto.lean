@@ -22,7 +22,7 @@ inductive DefList.ExpandsInto
     (exp: ExpandsInto dl true (dl.getDef x) xExp)
   :
     ExpandsInto dl true (.const x) xExp
-| pair {ed l lExp r rExp}
+| prod {ed l lExp r rExp}
     (left: ExpandsInto dl ed l lExp)
     (rite: ExpandsInto dl ed r rExp)
   :
@@ -92,7 +92,7 @@ namespace DefList.ExpandsInto
         exp
         shift
         (fun y hy => False.elim ((dl.isClean x) (y + shift) hy))
-    | .pair left rite =>
+    | .prod left rite =>
       let hL := isClean_expands left shift (fun x hx => h x (Or.inl hx))
       let hR := isClean_expands rite shift (fun x hx => h x (Or.inr hx))
       fun x hx => Or.elim hx (hL x) (hR x)
@@ -123,8 +123,8 @@ namespace DefList.ExpandsInto
     let eqDef := dl.wfm_eq_def x
     let eqFv := dl.intpDefs2_eq_fv x [] fv dl.wfm dl.wfm
     eqDef.trans (eqFv.trans ih)
-  | .pair left rite =>
-    eq_triIntp2_pair_of_eq
+  | .prod left rite =>
+    eq_triIntp2_prod_of_eq
       (left.triIntp_eq_wfm dl fv)
       (rite.triIntp_eq_wfm dl fv)
   | .full expr =>
@@ -176,16 +176,16 @@ namespace DefList.ExpandsInto
         
         eqClear ▸ eqNext ▸ op.lfpStage_mono (Order.le_succ n) x
       leNextStage.trans ih
-    | pair left rite =>
+    | prod left rite =>
       match ed with
       | true =>
         let leLeft := left.lfpStage_le_std fv n
         let leRite := rite.lfpStage_le_std fv n
-        triIntp2_mono_std_pair leLeft leRite
+        triIntp2_mono_std_prod leLeft leRite
       | false =>
         let leLeft := left.lfpStage_le_std fv n
         let leRite := rite.lfpStage_le_std fv n
-        triIntp2_mono_std_pair leLeft leRite
+        triIntp2_mono_std_prod leLeft leRite
     | ir left rite =>
       match ed with
       | true =>

@@ -16,7 +16,7 @@ namespace SingleLaneExpr
   open Expr
   variable {l0 l1 r0 r1 e0 e1: SingleLaneExpr}
   
-  def intp2_mono_std_pair
+  def intp2_mono_std_prod
     {l0 l1 r0 r1: SingleLaneExpr}
     (leL: intp2 l0 fv0 b0 c0 ≤ intp2 l1 fv1 b1 c1)
     (leR: intp2 r0 fv0 b0 c0 ≤ intp2 r1 fv1 b1 c1)
@@ -28,15 +28,15 @@ namespace SingleLaneExpr
       let ⟨insL, insR⟩ := inProdElim isDef
       inProd (leL insL) (leR insR)
   
-  def eq_intp2_pair_of_eq
+  def eq_intp2_prod_of_eq
     (eqL: intp2 l0 fv0 b0 c0 = intp2 l1 fv1 b1 c1)
     (eqR: intp2 r0 fv0 b0 c0 = intp2 r1 fv1 b1 c1)
   :
     intp2 (prod l0 r0) fv0 b0 c0 = intp2 (prod l1 r1) fv1 b1 c1
   :=
     le_antisymm
-      (intp2_mono_std_pair (le_of_eq eqL) (le_of_eq eqR))
-      (intp2_mono_std_pair (le_of_eq eqL.symm) (le_of_eq eqR.symm))
+      (intp2_mono_std_prod (le_of_eq eqL) (le_of_eq eqR))
+      (intp2_mono_std_prod (le_of_eq eqL.symm) (le_of_eq eqR.symm))
   
   
   def intp2_mono_std_un
@@ -223,25 +223,25 @@ namespace BasicExpr
   open SingleLaneExpr
   variable {l0 l1 r0 r1 e0 e1: BasicExpr}
   
-  def triIntp2_mono_std_pair
+  def triIntp2_mono_std_prod
     (leL: triIntp2 l0 fv0 b0 c0 ≤ triIntp2 l1 fv1 b1 c1)
     (leR: triIntp2 r0 fv0 b0 c0 ≤ triIntp2 r1 fv1 b1 c1)
   :
     triIntp2 (prod l0 r0) fv0 b0 c0 ≤ triIntp2 (prod l1 r1) fv1 b1 c1
   := {
-    defLe := intp2_mono_std_pair leL.defLe leR.defLe
-    posLe := intp2_mono_std_pair leL.posLe leR.posLe
+    defLe := intp2_mono_std_prod leL.defLe leR.defLe
+    posLe := intp2_mono_std_prod leL.posLe leR.posLe
   }
   
-  def eq_triIntp2_pair_of_eq
+  def eq_triIntp2_prod_of_eq
     (eqL: triIntp2 l0 fv0 b0 c0 = triIntp2 l1 fv1 b1 c1)
     (eqR: triIntp2 r0 fv0 b0 c0 = triIntp2 r1 fv1 b1 c1)
   :
     triIntp2 (prod l0 r0) fv0 b0 c0 = triIntp2 (prod l1 r1) fv1 b1 c1
   :=
     Set3.eq
-      (eq_intp2_pair_of_eq (Set3.def_eq eqL) (Set3.def_eq eqR))
-      (eq_intp2_pair_of_eq (Set3.pos_eq eqL) (Set3.pos_eq eqR))
+      (eq_intp2_prod_of_eq (Set3.def_eq eqL) (Set3.def_eq eqR))
+      (eq_intp2_prod_of_eq (Set3.pos_eq eqL) (Set3.pos_eq eqR))
   
   
   def triIntp2_mono_std_un

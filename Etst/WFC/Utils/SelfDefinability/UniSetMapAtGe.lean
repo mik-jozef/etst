@@ -74,7 +74,7 @@ def extOfIntCycle
   Taking out the largest branch because we're getting timeouts
   at whnf.
 -/
-def internalCauseElimComplPair {dl n fv left rite p}
+def internalCauseElimComplProd {dl n fv left rite p}
   {intCause: Cause Pair}
   (intIsCause:
     intCause.IsStrongCauseFv fv
@@ -119,7 +119,7 @@ def internalCauseElimComplPair {dl n fv left rite p}
                   (Or.inl
                     (InWfm.of_in_def_no_fv
                       (isInMap
-                        (isAtPair
+                        (isAtProd
                           ihL
                           (InWfm.of_in_def_no_fv
                             (isInMap isAtAny))))))))))
@@ -132,7 +132,7 @@ def internalCauseElimComplPair {dl n fv left rite p}
                   (Or.inr
                     (InWfm.of_in_def_no_fv
                       (isInMap
-                        (isAtPair
+                        (isAtProd
                           (InWfm.of_in_def_no_fv
                             (isInMap isAtAny))
                           ihR))))))))
@@ -191,7 +191,7 @@ def internalCauseElim {dl n fv expr p}
       False.elim (inComplElim inCompl inNull)
     | .pair pL pR =>
       let isAt: InUniSetMapAt dl n fv _ _ (.prod .any .any) _ _ :=
-        isAtPair
+        isAtProd
           (InWfm.of_in_def_no_fv (isInMap isAtAny))
           (InWfm.of_in_def_no_fv (isInMap isAtAny))
       InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
@@ -204,18 +204,18 @@ def internalCauseElim {dl n fv expr p}
       let isCauseL _ _ isSat := (inProdElim (intIsCause isSat)).left
       let isCauseR _ _ isSat := (inProdElim (intIsCause isSat)).right
       let isAt :=
-        isAtPair
+        isAtProd
           (lane := .defLane)
           (internalCauseElim isCauseL cinsIh boutIh)
           (internalCauseElim isCauseR cinsIh boutIh)
       InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
   | .compl (.prod left rite) =>
-    internalCauseElimComplPair
+    internalCauseElimComplProd
       intIsCause
       (fun _ _ eq =>
         match p with
         | .pair _ _ =>
-        match intIsCause.complPairElim with
+        match intIsCause.complProdElim with
         | Or.inl intIsCauseL =>
           have := complBinLtL left rite
           let eqL := Pair.noConfusion eq fun a b => a
@@ -392,14 +392,14 @@ def allCausesInappElim {dl n fv intCycle expr p}
           .null
       :=
         isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
-      nomatch isAtPairElim isAtAny
+      nomatch isAtProdElim isAtAny
     | .pair pL pR =>
       let inComplNull _ _ _ :=
         inCompl fun inNull => inNullElimNope inNull
       nomatch allInapp (intCause := Cause.empty) inComplNull
   | .prod left rite =>
     let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
-    let ⟨pL, pR, pEq, inCinsLeft, inCinsRite⟩ := isAtPairElim isAt
+    let ⟨pL, pR, pEq, inCinsLeft, inCinsRite⟩ := isAtProdElim isAt
     if hL: AllIntCausesInappIh dl n intCycle fv left pL then
       let isInExtCycle := ⟨rfl, ⟨_, _, _, hL, rfl⟩⟩
       .blockedCinsCycle inCinsLeft isInExtCycle
@@ -413,7 +413,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
         hR.toEx fun _ => Classical.not_imp.mp
       let isInappUnion :=
         allInapp
-          (pEq ▸ Cause.IsWeakCauseFv.pair isCauseL isCauseR)
+          (pEq ▸ Cause.IsWeakCauseFv.prod isCauseL isCauseR)
       False.elim
         (Cause.IsInapplicable.Not.union isAppL isAppR isInappUnion)
   | .compl (.prod left rite) =>

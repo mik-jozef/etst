@@ -133,9 +133,9 @@ def isAtNullNope {fv b c lane i enc p}
   let ⟨insExprGuard, _⟩ := inIrElim ins
   isAtIndexNope insExprGuard rfl (inNatElim (n := 4)) indexNeq
 
-def isAtPairNope {fv b c lane i enc p}
+def isAtProdNope {fv b c lane i enc p}
   (ins:
-    (exprEncPair.toLane lane).intp2
+    (exprEncProd.toLane lane).intp2
       (.pair (.nat i) enc :: fv) b c p)
   (indexNeq: i ≠ 5)
   {P: Prop}
@@ -235,7 +235,7 @@ def exprEncListElim {fv b c lane p}
   (onVar: (exprEncVar.toLane (toggle2N lane 3)).intp2 fv b c p → P)
   (onComplVar: (exprEncComplVar.toLane (toggle2N lane 4)).intp2 fv b c p → P)
   (onNull: (exprEncNull.toLane (toggle2N lane 5)).intp2 fv b c p → P)
-  (onPair: (exprEncPair.toLane (toggle2N lane 6)).intp2 fv b c p → P)
+  (onPair: (exprEncProd.toLane (toggle2N lane 6)).intp2 fv b c p → P)
   (onIr: (exprEncIr.toLane (toggle2N lane 7)).intp2 fv b c p → P)
   (onUn: (exprEncUn.toLane (toggle2N lane 8)).intp2 fv b c p → P)
   (onFull: (exprEncFull.toLane (toggle2N lane 9)).intp2 fv b c p → P)
@@ -412,7 +412,7 @@ def isAtConstElim {dl n fv b c lane x p}
     (isAtVarNope · (by decide))
     (isAtComplVarNope · (by decide))
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     (isAtUnNope · (by decide))
     (isAtFullNope · (by decide))
@@ -454,7 +454,7 @@ def isAtComplConstElim {dl n fv b c lane x p}
     (isAtVarNope · (by decide))
     (isAtComplVarNope · (by decide))
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     (isAtUnNope · (by decide))
     (isAtFullNope · (by decide))
@@ -482,7 +482,7 @@ def isAtVarElim {dl n fv b c lane x p}
     main
     (isAtComplVarNope · (by decide))
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     (isAtUnNope · (by decide))
     (isAtFullNope · (by decide))
@@ -513,7 +513,7 @@ def isAtComplVarElim {dl n fv b c lane x p}
     (isAtVarNope · (by decide))
     main
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     (isAtUnNope · (by decide))
     (isAtFullNope · (by decide))
@@ -537,7 +537,7 @@ def isAtNullElim {dl n fv b c lane p}
     (isAtVarNope · (by decide))
     (isAtComplVarNope · (by decide))
     main
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     (isAtUnNope · (by decide))
     (isAtFullNope · (by decide))
@@ -545,7 +545,7 @@ def isAtNullElim {dl n fv b c lane p}
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
 
-def isAtPairElim {dl n fv b c left rite lane p}
+def isAtProdElim {dl n fv b c left rite lane p}
   (ins: InUniSetMapAt dl n fv b c (.prod left rite) lane p)
 :
   ∃ pL pR,
@@ -614,7 +614,7 @@ def isAtIrElim {dl n fv b c left rite lane p}
     (isAtVarNope · (by decide))
     (isAtComplVarNope · (by decide))
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     main
     (isAtUnNope · (by decide))
     (isAtFullNope · (by decide))
@@ -656,7 +656,7 @@ def isAtComplIrElim {dl n fv b c left rite lane p}
     (isAtVarNope · (by decide))
     (isAtComplVarNope · (by decide))
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     main
     (isAtFullNope · (by decide))
@@ -685,7 +685,7 @@ def isAtFullElim {dl n fv b c body lane p}
     (isAtVarNope · (by decide))
     (isAtComplVarNope · (by decide))
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     (isAtUnNope · (by decide))
     main
@@ -717,7 +717,7 @@ def isAtComplFullElim {dl n fv b c body lane p}
     (isAtVarNope · (by decide))
     (isAtComplVarNope · (by decide))
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     (isAtUnNope · (by decide))
     (isAtFullNope · (by decide))
@@ -752,7 +752,7 @@ def isAtArbIrElim {dl n fv b c body lane p}
     (isAtVarNope · (by decide))
     (isAtComplVarNope · (by decide))
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     (isAtUnNope · (by decide))
     (isAtFullNope · (by decide))
@@ -789,7 +789,7 @@ def isAtComplArbIrElim {dl n fv b c body lane p}
     (isAtVarNope · (by decide))
     (isAtComplVarNope · (by decide))
     (isAtNullNope · (by decide))
-    (isAtPairNope · (by decide))
+    (isAtProdNope · (by decide))
     (isAtIrNope · (by decide))
     (isAtUnNope · (by decide))
     (isAtFullNope · (by decide))
@@ -940,7 +940,7 @@ def isAtNull {dl n fv b c lane}:
     (inSome _ (inIr (inProd (inNat 4) inNull) rfl))
     inNull)))))
 
-def isAtPair {dl n fv b c left rite lane pL pR}
+def isAtProd {dl n fv b c left rite lane pL pR}
   (insLeft:
     (c consts.uniSetMap).getLane
       lane
@@ -1378,7 +1378,7 @@ def isWeakCauseNull {dl n fv}:
 :=
   fun _ _ _ => isInMap isAtNull
 
-def isWeakCausePair {dl n fv left rite pL pR}:
+def isWeakCauseProd {dl n fv left rite pL pR}:
   (causeTwoExprs dl n fv left rite pL pR).IsWeakCause
     (uniSetMapDl.getDef consts.uniSetMap)
     (.pair (uniSetMapIndex dl n fv (.prod left rite)) (.pair pL pR))
@@ -1386,7 +1386,7 @@ def isWeakCausePair {dl n fv left rite pL pR}:
   fun _ _ isSat =>
     let inLeft := isSat.cinsSat (Or.inl ⟨rfl, rfl⟩)
     let inRite := isSat.cinsSat (Or.inr ⟨rfl, rfl⟩)
-    isInMap (isAtPair inLeft inRite)
+    isInMap (isAtProd inLeft inRite)
 
 def isWeakCauseIr {dl n fv left rite p}:
   (causeTwoExprs dl n fv left rite p p).IsWeakCause

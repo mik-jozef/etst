@@ -186,7 +186,7 @@ def allInternalInapp {dl n fv expr p}
       let inNullCompl := intIsCause intCause.maximalValsApxAreSat
       False.elim (inComplElim inNullCompl inNull)
     | .pair pL pR =>
-      let isExtCause := isWeakCausePair (left := .any) (rite := .any)
+      let isExtCause := isWeakCauseProd (left := .any) (rite := .any)
       match everyCauseInapp inExtCycle _ isExtCause with
       | .blockedCins (Or.inl ⟨xEq, pEq⟩) inCycle =>
         anyCycleNope extIsEmpty (xEq ▸ pEq ▸ inCycle)
@@ -204,7 +204,7 @@ def allInternalInapp {dl n fv expr p}
       match extIsEmpty
         inExtCycle
         (causeTwoExprs dl n fv left rite pL pR)
-        isWeakCausePair
+        isWeakCauseProd
       with
       | .blockedCins _ (Or.inl ⟨xEq, pEq⟩) inCycle =>
         let inCycle := xEq ▸ pEq ▸ inCycle
@@ -242,7 +242,7 @@ def allInternalInapp {dl n fv expr p}
           | .blockedCins ⟨xEq, pEq⟩ inCycle =>
             xEq ▸ pEq ▸ inCycle
         let extIsCause :=
-          isWeakCausePair (left := left.compl) (rite := .any)
+          isWeakCauseProd (left := left.compl) (rite := .any)
         match everyCauseInapp inExtCyclePairL _ extIsCause with
         | .blockedCins (Or.inl ⟨xEq, pEq⟩) inCycle =>
           xEq ▸ pEq ▸ inCycle
@@ -258,14 +258,14 @@ def allInternalInapp {dl n fv expr p}
           | .blockedCins ⟨xEq, pEq⟩ inCycle =>
             xEq ▸ pEq ▸ inCycle
         let extIsCause :=
-          isWeakCausePair (left := .any) (rite := rite.compl)
+          isWeakCauseProd (left := .any) (rite := rite.compl)
         match everyCauseInapp inExtCyclePairR _ extIsCause with
         | .blockedCins (Or.inl ⟨xEq, pEq⟩) inCycle =>
           anyCycleNope extIsEmpty (xEq ▸ pEq ▸ inCycle)
         | .blockedCins (Or.inr ⟨xEq, pEq⟩) inCycle =>
           xEq ▸ pEq ▸ inCycle
       
-      match intIsCause.complPairElim (dl.prefix n).wfm .empty with
+      match intIsCause.complProdElim (dl.prefix n).wfm .empty with
       | Or.inl isCauseL =>
         have := complBinLtL left rite
         isInappOfInappUn
@@ -507,10 +507,10 @@ def externalInsElimHelper {dl n fv index cst expr p}
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       isAtNullElim insList
-    | .prod _ _, .pair nnfL nnfR =>
+    | .prod _ _, .prod nnfL nnfR =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
-      let ⟨_pL, _pR, eqP, inLeft, inRite⟩ := isAtPairElim insList
+      let ⟨_pL, _pR, eqP, inLeft, inRite⟩ := isAtProdElim insList
       let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl nnfL
       let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl nnfR
       eqP ▸ inProd ihL ihR

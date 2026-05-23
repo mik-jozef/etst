@@ -171,9 +171,9 @@ mutual
     | .var _ => le_refl ((intp2 _ _ _ _))
     | .null => le_refl ((intp2 _ _ _ _))
     | .prod _ _ =>
-      intp2_mono_std_pair
-        (desc.le_hypothesify fv fvDepth inv laneEq.elimPairLeft v_le)
-        (desc.le_hypothesify fv fvDepth inv laneEq.elimPairRite v_le)
+      intp2_mono_std_prod
+        (desc.le_hypothesify fv fvDepth inv laneEq.elimProdLeft v_le)
+        (desc.le_hypothesify fv fvDepth inv laneEq.elimProdRite v_le)
     | .ir _ _ =>
       intp2_mono_std_ir
         (desc.le_hypothesify fv fvDepth inv laneEq.elimIrLeft v_le)
@@ -209,9 +209,9 @@ mutual
     | .var _ => le_refl ((intp2 _ _ _ _))
     | .null => le_refl ((intp2 _ _ _ _))
     | .prod _ _ =>
-      intp2_mono_std_pair
-        (desc.ge_hypothesify fv fvDepth inv laneEq.elimPairLeft v_le)
-        (desc.ge_hypothesify fv fvDepth inv laneEq.elimPairRite v_le)
+      intp2_mono_std_prod
+        (desc.ge_hypothesify fv fvDepth inv laneEq.elimProdLeft v_le)
+        (desc.ge_hypothesify fv fvDepth inv laneEq.elimProdRite v_le)
     | .ir _ _ =>
       intp2_mono_std_ir
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimIrLeft v_le)

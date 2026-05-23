@@ -877,7 +877,7 @@ namespace SingleLaneExpr
           exact Nat.add_le_add_right (Nat.le_of_not_lt h1) fvLiftBy.length
     | .null => rfl
     | .prod l r =>
-      eq_intp2_pair_of_eq
+      eq_intp2_prod_of_eq
         (intp2_lift_eq_depth l fv fvDepth fvLiftBy b c)
         (intp2_lift_eq_depth r fv fvDepth fvLiftBy b c)
     | .ir l r =>
@@ -959,7 +959,7 @@ namespace SingleLaneExpr
     | .var x => fvEq x rfl
     | .null => rfl
     | .prod _ _ =>
-      eq_intp2_pair_of_eq
+      eq_intp2_prod_of_eq
         (intp2_subst_eq
           (fun x h => fvEq x (Or.inl h))
           (fun x h => fvEqCpl x (Or.inl h)))

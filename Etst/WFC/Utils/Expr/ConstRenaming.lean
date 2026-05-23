@@ -89,7 +89,7 @@ def SingleLaneExpr.substConst_intp2 {fv bSrc bDst cSrc cDst}
   | .var _ => rfl
   | .null => rfl
   | .prod _ _ =>
-    eq_intp2_pair_of_eq
+    eq_intp2_prod_of_eq
       (substConst_intp2 map
         (fun fv lane x h => eqBC fv lane x (Or.inl h))
         (fun fv lane x h => eqCB fv lane x (Or.inl h)))

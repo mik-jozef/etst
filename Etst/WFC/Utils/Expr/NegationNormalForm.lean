@@ -94,7 +94,7 @@ def SingleLaneExpr.intp2_toNnfAux_eq
     let ⟨ihL, ihCL⟩ := left.intp2_toNnfAux_eq fv b c
     let ⟨ihR, ihCR⟩ := rite.intp2_toNnfAux_eq fv b c
     ⟨
-      eq_intp2_pair_of_eq ihL ihR,
+      eq_intp2_prod_of_eq ihL ihR,
       funext fun p =>
       propext ⟨
         fun inUnNullPairPair =>
@@ -216,7 +216,7 @@ inductive Expr.IsNnf {E}: Expr E → Prop
 | var {x}: IsNnf (.var x)
 | complVar {x}: IsNnf (.compl (.var x))
 | null: IsNnf .null
-| pair {left rite}: IsNnf left → IsNnf rite → IsNnf (prod left rite)
+| prod {left rite}: IsNnf left → IsNnf rite → IsNnf (prod left rite)
 | ir {left rite}: IsNnf left → IsNnf rite → IsNnf (.ir left rite)
 | un {left rite}: IsNnf left → IsNnf rite → IsNnf (.un left rite)
 | full {body}: IsNnf body → IsNnf (.full body)
@@ -237,14 +237,14 @@ def Expr.isNnfAux {E}:
 | .var _, false => .var
 | .var _, true => .complVar
 | .null, false => .null
-| .null, true => .pair .any .any
+| .null, true => .prod .any .any
 | .prod l r, false =>
-  .pair (isNnfAux l false) (isNnfAux r false)
+  .prod (isNnfAux l false) (isNnfAux r false)
 | .prod l r, true =>
   .un .null
     (.un
-      (.pair (isNnfAux l true) .any)
-      (.pair .any (isNnfAux r true)))
+      (.prod (isNnfAux l true) .any)
+      (.prod .any (isNnfAux r true)))
 | .ir l r, false =>
   .ir (isNnfAux l false) (isNnfAux r false)
 | .ir l r, true =>
@@ -269,8 +269,8 @@ def Expr.IsNnf.toNnf_id {E} {expr: Expr E}:
 | .var => rfl
 | .complVar => rfl
 | .null => rfl
-| .pair l r =>
-  show prod _ _ = _ from
+| .prod l r =>
+  show Expr.prod _ _ = _ from
   congr (congr rfl l.toNnf_id) r.toNnf_id
 | .ir l r =>
   show Expr.ir _ _ = _ from

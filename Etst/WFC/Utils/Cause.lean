@@ -452,7 +452,7 @@ def Cause.IsStrongCauseFv.complConstElim {fv x p}
   (isCause cause.leastValsApxAreSat).dne
 
 
-def Cause.IsWeakCauseFv.pair {fv l r pL pR}
+def Cause.IsWeakCauseFv.prod {fv l r pL pR}
   {causeL causeR: Cause Pair}
   (leftIsCause: causeL.IsWeakCauseFv fv l pL)
   (riteIsCause: causeR.IsWeakCauseFv fv r pR)
@@ -467,7 +467,7 @@ def Cause.IsWeakCauseFv.pair {fv l r pL pR}
     riteIsCause isSat.unionElimR,
   ⟩
 
-def Cause.IsWeakCauseFv.complPairElim {fv l r pL pR}
+def Cause.IsWeakCauseFv.complProdElim {fv l r pL pR}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv (.compl (.prod l r)) (.pair pL pR))
   (b c: Valuation Pair)
@@ -498,7 +498,7 @@ def Cause.IsWeakCauseFv.complPairElim {fv l r pL pR}
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
 
-def Cause.IsStrongCauseFv.complPairElim {fv l r pL pR}
+def Cause.IsStrongCauseFv.complProdElim {fv l r pL pR}
   {cause: Cause Pair}
   (isCause: cause.IsStrongCauseFv fv (.compl (.prod l r)) (.pair pL pR))
 :
