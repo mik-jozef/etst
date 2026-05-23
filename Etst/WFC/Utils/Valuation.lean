@@ -19,6 +19,7 @@ namespace Valuation
   | .some .posLane => ∀ x: Nat, (v0 x).posMem ⊆ (v1 x).posMem
   
   
+  @[reducible]
   def ordStdLattice D: CompleteLattice (Valuation D) :=
     CompleteLattice.pointwise Nat (Set3.ordStdLattice D)
   
