@@ -103,12 +103,12 @@ namespace SingleLaneExpr
     (inNull: null.intp2 fv b c p)
     a b
   :
-    p ≠ Pair.pair a b
+    p ≠ .pair a b
   :=
     fun eq => Pair.noConfusion (inNull.symm.trans eq)
   
   def inNullElimNope
-    (inNull: null.intp2 fv b c (Pair.pair pA pB))
+    (inNull: null.intp2 fv b c (.pair pA pB))
     {P: Prop}
   :
     P
@@ -116,40 +116,40 @@ namespace SingleLaneExpr
     (inNullElimNeq inNull pA pB rfl).elim
   
   
-  def inPair
+  def inProd
     (inLeft: exprL.intp2 fv b c pA)
     (inRite: exprR.intp2 fv b c pB)
   :
-    (prod exprL exprR).intp2 fv b c (Pair.pair pA pB)
+    (prod exprL exprR).intp2 fv b c (.pair pA pB)
   :=
     ⟨pA, pB, rfl, inLeft, inRite⟩
   
-  def inPairElim
-    (inPair: (prod exprL exprR).intp2 fv b c (Pair.pair pA pB))
+  def inProdElim
+    (inProd: (prod exprL exprR).intp2 fv b c (.pair pA pB))
   :
     And
       (exprL.intp2 fv b c pA)
       (exprR.intp2 fv b c pB)
   :=
-    let ⟨_pairL, _pairR, eq, inL, inR⟩ := inPair
+    let ⟨_pairL, _pairR, eq, inL, inR⟩ := inProd
     let ⟨eqL, eqR⟩ := Pair.noConfusion eq And.intro
     ⟨eqL ▸ inL, eqR ▸ inR⟩
   
-  def inPairElimEx
-    (inPair: (prod exprL exprR).intp2 fv b c p)
+  def inProdElimEx
+    (inProd: (prod exprL exprR).intp2 fv b c p)
   :
     ∃ pA pB,
-      p = Pair.pair pA pB ∧
+      p = .pair pA pB ∧
       exprL.intp2 fv b c pA ∧
       exprR.intp2 fv b c pB
   :=
     match p with
-    | Pair.pair pA pB =>
-      let ⟨_pairL, _pairR, eq, inL, inR⟩ := inPair
+    | .pair pA pB =>
+      let ⟨_pairL, _pairR, eq, inL, inR⟩ := inProd
       let ⟨eqL, eqR⟩ := Pair.noConfusion eq And.intro
       ⟨pA, pB, ⟨rfl, eqL ▸ inL, eqR ▸ inR⟩⟩
   
-  def inPairElimNope
+  def inProdElimNope
     (inPair: (prod exprL exprR).intp2 fv b c .null)
     {P: Prop}
   :
@@ -158,7 +158,7 @@ namespace SingleLaneExpr
     let ⟨_, _, eq, _⟩ := inPair
     Pair.noConfusion eq
   
-  def ninPairElim
+  def ninProdElim
     (ninPair: ¬ (prod exprL exprR).intp2 fv b c (.pair pA pB))
   :
     ¬ exprL.intp2 fv b c pA ∨ ¬ exprR.intp2 fv b c pB

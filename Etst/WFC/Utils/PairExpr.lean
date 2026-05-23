@@ -259,7 +259,7 @@ namespace SingleLaneExpr
   :
     intp2 (zth expr) fv b c pA
   :=
-    inArbUn pA (inIfThen (inIr (inPair rfl inAny) inExpr) rfl)
+    inArbUn pA (inIfThen (inIr (inProd rfl inAny) inExpr) rfl)
   
   
   def inFst
@@ -267,7 +267,7 @@ namespace SingleLaneExpr
   :
     intp2 (fst expr) fv b c pB
   :=
-    inArbUn pB (inIfThen (inIr (inPair inAny rfl) inExpr) rfl)
+    inArbUn pB (inIfThen (inIr (inProd inAny rfl) inExpr) rfl)
   
   
   def inZthElim {p0}
@@ -279,9 +279,9 @@ namespace SingleLaneExpr
     let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inSomeElim inCond
     
     match pCond with
-    | Pair.null => inPairElimNope inPair
+    | Pair.null => inProdElimNope inPair
     | Pair.pair pCondZth pCondFst =>
-      let ⟨inL, _insR⟩ := inPairElim inPair
+      let ⟨inL, _insR⟩ := inProdElim inPair
       let eqPCondZth: pCondZth = pZth := inVarElim inL rfl
       let eqPZth: p0 = pZth := inVarElim inBody rfl
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInExpr⟩
@@ -295,9 +295,9 @@ namespace SingleLaneExpr
     let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inSomeElim inCond
     
     match pCond with
-    | Pair.null => inPairElimNope inPair
+    | Pair.null => inProdElimNope inPair
     | Pair.pair pCondZth pCondFst =>
-      let ⟨_insL, inR⟩ := inPairElim inPair
+      let ⟨_insL, inR⟩ := inProdElim inPair
       let eqPCondFst: pCondFst = pFst := inVarElim inR rfl
       let eqPFst: p1 = pFst := inVarElim inBody rfl
       ⟨pCondZth, eqPFst ▸ eqPCondFst ▸ pCondInExpr⟩
@@ -334,7 +334,7 @@ namespace SingleLaneExpr
     inArbUn
       pB
       (inIfThen
-        (inIr inFn (inPair inArg (inVar rfl)))
+        (inIr inFn (inProd inArg (inVar rfl)))
         (inVar rfl))
   
   
@@ -350,9 +350,9 @@ namespace SingleLaneExpr
     let ⟨⟨fnP, inFn, inPair⟩, inVarRes⟩ := inIfThenElim inIfThen
     let pbEq := inVarElim inVarRes rfl
     match fnP with
-    | .null => inPairElimNope inPair
+    | .null => inProdElimNope inPair
     | .pair _fnArg _fnRes =>
-      let ⟨inFnArg, inFnRes⟩ := inPairElim inPair
+      let ⟨inFnArg, inFnRes⟩ := inProdElim inPair
       let fnResEq := inVarElim inFnRes rfl
       ⟨_, And.intro (pbEq ▸ fnResEq ▸ inFn) (pbEq ▸ inFnArg)⟩
   
@@ -375,7 +375,7 @@ namespace SingleLaneExpr
   :=
     match n with
     | Nat.zero => inNull
-    | Nat.succ pred => inPair (inNat pred) inNull
+    | Nat.succ pred => inProd (inNat pred) inNull
   
   def inNatElim {n p}
     (inNatExpr: intp2 (nat n) fv b c p)
@@ -384,9 +384,9 @@ namespace SingleLaneExpr
   :=
     match n, p with
     | Nat.zero, _ => inNullElim inNatExpr ▸ rfl
-    | Nat.succ _, .null => inPairElimNope inNatExpr
+    | Nat.succ _, .null => inProdElimNope inNatExpr
     | Nat.succ _, .pair _ _ =>
-      let ⟨l, r⟩ := inPairElim inNatExpr
+      let ⟨l, r⟩ := inProdElim inNatExpr
       (inNatElim l) ▸ (inNullElim r) ▸ rfl
   
   def inNatElimNope {P n m}
@@ -419,7 +419,7 @@ namespace SingleLaneExpr
   :=
     match p with
     | .null => inNull
-    | .pair l r => inPair (inToExpr l) (inToExpr r)
+    | .pair l r => inProd (inToExpr l) (inToExpr r)
   
   def inToExprElim {lane fv b c}
     {pExpr p: Pair}
@@ -430,7 +430,7 @@ namespace SingleLaneExpr
     match pExpr, p, inExpr with
     | .null, _, inExpr => (inNullElim inExpr).symm
     | .pair _ _, .pair _ _, inExpr =>
-      let ⟨inL, inR⟩ := inPairElim inExpr
+      let ⟨inL, inR⟩ := inProdElim inExpr
       (Pair.eq (inToExprElim inL) (inToExprElim inR))
   
   def intp2_toExpr_eq_singleton {lane fv b c}

@@ -88,7 +88,7 @@ def SingleLaneExpr.intp2_toNnfAux_eq
       funext fun _ => rfl,
       funext fun
       | .null => propext ⟨nofun, nofun⟩
-      | .pair _ _ => propext ⟨nofun, fun _ => inPair inAny inAny⟩,
+      | .pair _ _ => propext ⟨nofun, fun _ => inProd inAny inAny⟩,
     ⟩
   | .prod left rite =>
     let ⟨ihL, ihCL⟩ := left.intp2_toNnfAux_eq fv b c
@@ -99,35 +99,35 @@ def SingleLaneExpr.intp2_toNnfAux_eq
       propext ⟨
         fun inUnNullPairPair =>
           match p with
-          | .null => inCompl fun inPair => inPairElimNope inPair
+          | .null => inCompl fun inPair => inProdElimNope inPair
           | .pair _ _ =>
             inCompl fun inPairAB =>
-              let ⟨inLeft, inRite⟩ := inPairElim inPairAB
+              let ⟨inLeft, inRite⟩ := inProdElim inPairAB
               (inUnElim inUnNullPairPair).elim
                 (fun inNull => inNullElimNope inNull)
                 (fun inInner =>
                   (inUnElim inInner).elim
                     (fun inPairL =>
-                      let ⟨inCplLeft, _⟩ := inPairElim inPairL
+                      let ⟨inCplLeft, _⟩ := inProdElim inPairL
                       inComplElim (ihCL.symm ▸ inCplLeft) inLeft)
                     (fun inPairR =>
-                      let ⟨_, inCplRite⟩ := inPairElim inPairR
+                      let ⟨_, inCplRite⟩ := inProdElim inPairR
                       inComplElim (ihCR.symm ▸ inCplRite) inRite)),
         fun inComplPair =>
           match p with
           | .null => inUnL inNull
           | .pair _ _ =>
-            (ninPairElim inComplPair).elim
+            (ninProdElim inComplPair).elim
               (fun ninLeft =>
                 inUnR
                   (inUnL
-                    (inPair
+                    (inProd
                       (ihCL ▸ inCompl ninLeft)
                       inAny)))
               (fun ninRite =>
                 inUnR
                   (inUnR
-                    (inPair
+                    (inProd
                       inAny
                       (ihCR ▸ inCompl ninRite)))),
       ⟩,

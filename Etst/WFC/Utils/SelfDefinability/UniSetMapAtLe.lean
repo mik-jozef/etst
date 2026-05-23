@@ -195,12 +195,12 @@ def allInternalInapp {dl n fv expr p}
   | .prod left rite =>
     match p with
     | .null =>
-      inPairElimNope (intIsCause intCause.maximalValsApxAreSat)
+      inProdElimNope (intIsCause intCause.maximalValsApxAreSat)
     | .pair pL pR =>
       let leftIsCause _ _ isSat :=
-        (inPairElim (intIsCause isSat)).left
+        (inProdElim (intIsCause isSat)).left
       let riteIsCause _ _ isSat :=
-        (inPairElim (intIsCause isSat)).right
+        (inProdElim (intIsCause isSat)).right
       match extIsEmpty
         inExtCycle
         (causeTwoExprs dl n fv left rite pL pR)
@@ -513,7 +513,7 @@ def externalInsElimHelper {dl n fv index cst expr p}
       let ⟨_pL, _pR, eqP, inLeft, inRite⟩ := isAtPairElim insList
       let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl nnfL
       let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl nnfR
-      eqP ▸ inPair ihL ihR
+      eqP ▸ inProd ihL ihR
     | .un left rite, .un nnfL nnfR =>
       let insList: IsAt _ .defLane p :=
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)

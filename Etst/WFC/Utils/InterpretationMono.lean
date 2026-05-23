@@ -25,8 +25,8 @@ namespace SingleLaneExpr
   :=
     fun
     | .pair _ _, isDef =>
-      let ⟨insL, insR⟩ := inPairElim isDef
-      inPair (leL insL) (leR insR)
+      let ⟨insL, insR⟩ := inProdElim isDef
+      inProd (leL insL) (leR insR)
   
   def eq_intp2_pair_of_eq
     (eqL: intp2 l0 fv0 b0 c0 = intp2 l1 fv1 b1 c1)

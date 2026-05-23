@@ -148,12 +148,12 @@ namespace opFixDl
   :=
     DefList.InWfm.of_in_def_no_fv
     (match p with
-    | .null => inUnL (inPair inNull (inPair (inNat 4) inNull))
+    | .null => inUnL (inProd inNull (inProd (inNat 4) inNull))
     | .pair l r =>
       let ihL := inCall (encodeAsExpr_ins l) (inVar rfl)
       let ihR := inCall (encodeAsExpr_ins r) (inVar rfl)
-      let inRet := inPair (inNat 5) (inPair ihL ihR)
-      inUnR (inArbUn l (inArbUn r (inPair (inPair rfl rfl) inRet))))
+      let inRet := inProd (inNat 5) (inProd ihL ihR)
+      inUnR (inArbUn l (inArbUn r (inProd (inProd rfl rfl) inRet))))
   
   def encodeAsExpr_elim {p enc}
     (ins:
@@ -169,35 +169,35 @@ namespace opFixDl
       let ins := DefList.InWfm.in_def_no_fv (lane := .posLane) ins
       (inUnElim ins).elim
         (fun ins =>
-          let ⟨_, inEnc⟩ := inPairElim ins
+          let ⟨_, inEnc⟩ := inProdElim ins
           match enc with
           | .pair _ _ =>
-          let ⟨inTag, inNullEnc⟩ := inPairElim inEnc
+          let ⟨inTag, inNullEnc⟩ := inProdElim inEnc
           let tagEq := inNatElim (n := 4) inTag
           let argEq := inNullElim inNullEnc
           tagEq ▸ argEq.symm ▸ rfl)
         (fun ins =>
           let ⟨_, ins⟩ := inArbUnElim ins
           let ⟨_, ins⟩ := inArbUnElim ins
-          let ⟨inPairP, _⟩ := inPairElim ins
-          inPairElimNope inPairP)
+          let ⟨inPairP, _⟩ := inProdElim ins
+          inProdElimNope inPairP)
     | .pair l r =>
       let ins := DefList.InWfm.in_def_no_fv (lane := .posLane) ins
       (inUnElim ins).elim
         (fun ins =>
-          let ⟨inPairP, _⟩ := inPairElim ins
+          let ⟨inPairP, _⟩ := inProdElim ins
           inNullElimNope inPairP)
         (fun ins =>
           let ⟨lWit, ins⟩ := inArbUnElim ins
           let ⟨rWit, ins⟩ := inArbUnElim ins
-          let ⟨inPairP, inEnc⟩ := inPairElim ins
-          let ⟨_, _, pEq, inLeft, inRite⟩ := inPairElimEx inPairP
+          let ⟨inPairP, inEnc⟩ := inProdElim ins
+          let ⟨_, _, pEq, inLeft, inRite⟩ := inProdElimEx inPairP
           let ⟨lEq, rEq⟩ := Pair.noConfusion pEq And.intro
           match enc with
           | .pair _ (.pair _ _) =>
-          let ⟨inTag, inArg⟩ := inPairElim inEnc
+          let ⟨inTag, inArg⟩ := inProdElim inEnc
           let tagEq := inNatElim (n := 5) inTag
-          let ⟨inLeftEnc, inRiteEnc⟩ := inPairElim inArg
+          let ⟨inLeftEnc, inRiteEnc⟩ := inProdElim inArg
           let pLEq := inVarElim inLeft rfl
           let pREq := inVarElim inRite rfl
           let insLeft := inCallElimSingle inLeftEnc rfl
@@ -216,13 +216,13 @@ namespace opFixDl
       (.const .defLane consts.encodeCall)
       (.pair fn (.pair arg (fn.encodeCall arg)))
   :=
-    let inVar0 := inPair (inNat 2) (inNat 0)
-    let inBin5 := inPair (inNat 5) (inPair (inVar rfl) inVar0)
-    let inBin6 := inPair (inNat 6) (inPair (inVar rfl) inBin5)
-    let inEnc9 := inPair (inNat 9) inBin6
-    let inEncBody := inPair (inNat 6) (inPair inEnc9 inVar0)
-    let inEnc11 := inPair (inNat 11) inEncBody
-    let inBody := inPair (inVar rfl) (inPair (inVar rfl) inEnc11)
+    let inVar0 := inProd (inNat 2) (inNat 0)
+    let inBin5 := inProd (inNat 5) (inProd (inVar rfl) inVar0)
+    let inBin6 := inProd (inNat 6) (inProd (inVar rfl) inBin5)
+    let inEnc9 := inProd (inNat 9) inBin6
+    let inEncBody := inProd (inNat 6) (inProd inEnc9 inVar0)
+    let inEnc11 := inProd (inNat 11) inEncBody
+    let inBody := inProd (inVar rfl) (inProd (inVar rfl) inEnc11)
     DefList.InWfm.of_in_def_no_fv (inArbUn fn (inArbUn arg inBody))
   
   def encodeCall_elim {fn arg enc}
@@ -237,47 +237,47 @@ namespace opFixDl
     let ins := DefList.InWfm.in_def_no_fv (lane := .posLane) ins
     let ⟨fnWit, ins⟩ := inArbUnElim ins
     let ⟨argWit, ins⟩ := inArbUnElim ins
-    let ⟨inFn, ins⟩ := inPairElim ins
+    let ⟨inFn, ins⟩ := inProdElim ins
     let fnEq := inVarElim inFn rfl
-    let ⟨inArg, inEnc⟩ := inPairElim ins
+    let ⟨inArg, inEnc⟩ := inProdElim ins
     let argEq := inVarElim inArg rfl
     match enc with
     | .pair tag11 encBody =>
-    let ⟨inTag11, inEncBody⟩ := inPairElim inEnc
+    let ⟨inTag11, inEncBody⟩ := inProdElim inEnc
     let tag11Eq := inNatElim (n := 11) inTag11
     match encBody with
     | .pair tag6 encArgs =>
-    let ⟨inTag6, inEncArgs⟩ := inPairElim inEncBody
+    let ⟨inTag6, inEncArgs⟩ := inProdElim inEncBody
     let tag6Eq := inNatElim (n := 6) inTag6
     match encArgs with
     | .pair enc9 var0R =>
-    let ⟨inEnc9, inVar0R⟩ := inPairElim inEncArgs
+    let ⟨inEnc9, inVar0R⟩ := inProdElim inEncArgs
     match enc9 with
     | .pair tag9 bin6 =>
-    let ⟨inTag9, inBin6⟩ := inPairElim inEnc9
+    let ⟨inTag9, inBin6⟩ := inProdElim inEnc9
     let tag9Eq := inNatElim (n := 9) inTag9
     match bin6 with
     | .pair tag6L bin5Wrap =>
-    let ⟨inTag6L, inBin5Wrap⟩ := inPairElim inBin6
+    let ⟨inTag6L, inBin5Wrap⟩ := inProdElim inBin6
     let tag6LEq := inNatElim (n := 6) inTag6L
     match bin5Wrap with
     | .pair fnVar bin5 =>
-    let ⟨inFnVar, inBin5⟩ := inPairElim inBin5Wrap
+    let ⟨inFnVar, inBin5⟩ := inProdElim inBin5Wrap
     let fnWitEq := inVarElim inFnVar rfl
     match bin5 with
     | .pair tag5 bin5Args =>
-    let ⟨inTag5, inBin5Args⟩ := inPairElim inBin5
+    let ⟨inTag5, inBin5Args⟩ := inProdElim inBin5
     let tag5Eq := inNatElim (n := 5) inTag5
     match bin5Args with
     | .pair argVar var0L =>
-    let ⟨inArgVar, inVar0L⟩ := inPairElim inBin5Args
+    let ⟨inArgVar, inVar0L⟩ := inProdElim inBin5Args
     let argWitEq := inVarElim inArgVar rfl
     match var0L, var0R with
     | .pair tag2L tag0L, .pair tag2R tag0R =>
-    let ⟨inTag2L, inTag0L⟩ := inPairElim inVar0L
+    let ⟨inTag2L, inTag0L⟩ := inProdElim inVar0L
     let tag2LEq := inNatElim (n := 2) inTag2L
     let tag0LEq := inNatElim (n := 0) inTag0L
-    let ⟨inTag2R, inTag0R⟩ := inPairElim inVar0R
+    let ⟨inTag2R, inTag0R⟩ := inProdElim inVar0R
     let tag2REq := inNatElim (n := 2) inTag2R
     let tag0REq := inNatElim (n := 0) inTag0R
     let encEq:
@@ -328,10 +328,10 @@ namespace opFixDl
           inInnerCall)
         inArgEnc
     let inResult :=
-      inPair
+      inProd
         (inToExpr uniSetMapDlEncoding)
-        (inPair inNull inExprEnc)
-    let inCallEnc := inPair (inVar rfl) (inPair (inVar rfl) inResult)
+        (inProd inNull inExprEnc)
+    let inCallEnc := inProd (inVar rfl) (inProd (inVar rfl) inResult)
     DefList.InWfm.of_in_def_no_fv (inArbUn fn (inArbUn arg inCallEnc))
   
   def callEnc_elim {fn arg enc}
@@ -342,18 +342,18 @@ namespace opFixDl
     let ins := DefList.InWfm.in_def_no_fv (lane := .posLane) ins
     let ⟨fnWit, ins⟩ := inArbUnElim ins
     let ⟨argWit, ins⟩ := inArbUnElim ins
-    let ⟨inFn, ins⟩ := inPairElim ins
+    let ⟨inFn, ins⟩ := inProdElim ins
     let fnEq := inVarElim inFn rfl
-    let ⟨inArg, inEnc⟩ := inPairElim ins
+    let ⟨inArg, inEnc⟩ := inProdElim ins
     let argEq := inVarElim inArg rfl
     match enc with
     | .pair dlEnc encTail =>
-    let ⟨inDlEnc, inEncTail⟩ := inPairElim inEnc
+    let ⟨inDlEnc, inEncTail⟩ := inProdElim inEnc
     let dlEq := inToExprElim inDlEnc
     match encTail with
-    | .null => inPairElimNope inEncTail
+    | .null => inProdElimNope inEncTail
     | .pair fvEnc exprEnc =>
-    let ⟨inFvEnc, inExprEnc⟩ := inPairElim inEncTail
+    let ⟨inFvEnc, inExprEnc⟩ := inProdElim inEncTail
     let fvEq := inNullElim inFvEnc
 
     let ⟨argEncAlias, ⟨inOuterFn, inArgExpr⟩⟩ := inCallElim inExprEnc
@@ -506,9 +506,9 @@ namespace opFixDl
     DefList.InWfm.of_in_def_no_fv <|
     inArbUn iFn <|
     inArbUn iArg <|
-    inPair
+    inProd
       (inVar rfl)
-      (inPair (inVar rfl) (inToggle2 2 inMagicCall))
+      (inProd (inVar rfl) (inToggle2 2 inMagicCall))
   
   def magic_elim {iFn iArg lane p}
     (ins: ((vals.magic.call iFn).call iArg).getLane lane p)
@@ -519,8 +519,8 @@ namespace opFixDl
     let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
     let ⟨fnAlias, ins⟩ := inArbUnElim ins
     let ⟨argAlias, ins⟩ := inArbUnElim ins
-    let ⟨inVarFn, ins⟩ := inPairElim ins
-    let ⟨inVarArg, ins⟩ := inPairElim ins
+    let ⟨inVarFn, ins⟩ := inProdElim ins
+    let ⟨inVarArg, ins⟩ := inProdElim ins
     let fnEq := inVarElim inVarFn rfl
     let argEq := inVarElim inVarArg rfl
     
@@ -619,9 +619,9 @@ namespace opFixDl
     DefList.InWfm.of_in_def_no_fv <|
     inArbUn iOp <|
     inArbUn iArg <|
-    inPair
+    inProd
       (inVar rfl)
-      (inPair (inVar rfl) (inToggle2 2 inComposeCall))
+      (inProd (inVar rfl) (inToggle2 2 inComposeCall))
   
   def composeOp_elim {iOp iArg lane p}
     (ins: ((vals.composeOp.call iOp).call iArg).getLane lane p)
@@ -632,8 +632,8 @@ namespace opFixDl
     let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
     let ⟨opAlias, ins⟩ := inArbUnElim ins
     let ⟨argAlias, ins⟩ := inArbUnElim ins
-    let ⟨inVarOp, ins⟩ := inPairElim ins
-    let ⟨inVarArg, ins⟩ := inPairElim ins
+    let ⟨inVarOp, ins⟩ := inProdElim ins
+    let ⟨inVarArg, ins⟩ := inProdElim ins
     let opEq := inVarElim inVarOp rfl
     let argEq := inVarElim inVarArg rfl
     let ins := inToggle2Elim 2 ins
@@ -719,7 +719,7 @@ namespace opFixDl
     Set3.inCall <|
     DefList.InWfm.of_in_def_no_fv <|
     inArbUn iFn <|
-    inPair
+    inProd
       (inVar rfl)
       (inCall
         (inCall
@@ -735,7 +735,7 @@ namespace opFixDl
     let ins := Set3.inCallElim ins
     let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
     let ⟨_, ins⟩ := inArbUnElim ins
-    let ⟨inVarI, ins⟩ := inPairElim ins
+    let ⟨inVarI, ins⟩ := inProdElim ins
     let iEq := inVarElim inVarI rfl
     let ins := inToggle2Elim 1 ins
     let callEncEq :=
@@ -783,7 +783,7 @@ namespace opFixDl
     Set3.inCall <|
     DefList.InWfm.of_in_def_no_fv <|
     inArbUn iOp <|
-    inPair
+    inProd
       (inVar rfl)
       (inCall
         (inToggle2 3 (Set3.inCallElim ins))
@@ -797,7 +797,7 @@ namespace opFixDl
     let ins := Set3.inCallElim ins
     let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
     let ⟨_, ins⟩ := inArbUnElim ins
-    let ⟨inVarI, ins⟩ := inPairElim ins
+    let ⟨inVarI, ins⟩ := inProdElim ins
     let iEq := inVarElim inVarI rfl
     let ins := inToggle2Elim 1 ins
     let callEncEq :=

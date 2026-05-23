@@ -199,10 +199,10 @@ def internalCauseElim {dl n fv expr p}
     match p with
     | .null =>
       let isPair := intIsCause intCause.leastValsApxAreSat
-      False.elim (inPairElimNope isPair)
+      False.elim (inProdElimNope isPair)
     | .pair pL pR =>
-      let isCauseL _ _ isSat := (inPairElim (intIsCause isSat)).left
-      let isCauseR _ _ isSat := (inPairElim (intIsCause isSat)).right
+      let isCauseL _ _ isSat := (inProdElim (intIsCause isSat)).left
+      let isCauseR _ _ isSat := (inProdElim (intIsCause isSat)).right
       let isAt :=
         isAtPair
           (lane := .defLane)
@@ -434,7 +434,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
         fun isCauseNull =>
           allInapp fun _ _ isSat =>
             let pEq := inNullElim (isCauseNull isSat)
-            pEq ▸ inCompl fun inPair => inPairElimNope inPair
+            pEq ▸ inCompl fun inPair => inProdElimNope inPair
       let isInExtCycle := ⟨rfl, ⟨_, _, _, allInappNull, rfl⟩⟩
       .blockedCinsCycle inCinsComplComplNull isInExtCycle
     | Or.inr inCinsInner =>
@@ -451,11 +451,11 @@ def allCausesInappElim {dl n fv intCycle expr p}
               by exact isCauseInner isSat
             match inUnElim (isInner) with
             | .inl inLeft =>
-              let ⟨pL, pR, pEq, inComplLeft, _⟩ := inPairElimEx inLeft
-              inComplElim inComplLeft (inPairElim (pEq ▸ inPair)).left
+              let ⟨pL, pR, pEq, inComplLeft, _⟩ := inProdElimEx inLeft
+              inComplElim inComplLeft (inProdElim (pEq ▸ inPair)).left
             | .inr inRite =>
-              let ⟨pL, pR, pEq, _, inComplRite⟩ := inPairElimEx inRite
-              inComplElim inComplRite (inPairElim (pEq ▸ inPair)).right
+              let ⟨pL, pR, pEq, _, inComplRite⟩ := inProdElimEx inRite
+              inComplElim inComplRite (inProdElim (pEq ▸ inPair)).right
       let isInExtCycle := ⟨rfl, ⟨_, _, _, allInappInner, rfl⟩⟩
       .blockedCinsCycle inCinsInner isInExtCycle
   | .ir left rite =>

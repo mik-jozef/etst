@@ -376,16 +376,16 @@ namespace uniSetMapDl
     | listH :: listT =>
       let ins :=
         match i with
-        | 0 => inUnL (inPair (inPair rfl rfl) (inPair (inNat 0) rfl))
+        | 0 => inUnL (inProd (inProd rfl rfl) (inProd (inNat 0) rfl))
         | iPred + 1 =>
           let ih := getNth (Nat.lt_of_succ_lt_succ lt)
           inUnR
             (inArbUn
               iPred
-              (inPair
-                (inPair rfl rfl)
-                (inPair
-                  (inPair rfl inNull)
+              (inProd
+                (inProd rfl rfl)
+                (inProd
+                  (inProd rfl inNull)
                   (inCall (inCall (inToggle2 8 ih) rfl) rfl))))
       DefList.InWfm.of_in_def_no_fv
         (inArbUn
@@ -415,10 +415,10 @@ namespace uniSetMapDl
     let ⟨_, ins⟩ := inArbUnElim ins
     (inUnElim ins).elim
       (fun ins =>
-        let ⟨inList, ins⟩ := inPairElim ins
-        let ⟨_, _, listEq, inHead, _⟩ := inPairElimEx inList
+        let ⟨inList, ins⟩ := inProdElim ins
+        let ⟨_, _, listEq, inHead, _⟩ := inProdElimEx inList
         let headEq := inVarElim inHead rfl
-        let ⟨inI, ins⟩ := inPairElim ins
+        let ⟨inI, ins⟩ := inProdElim ins
         let iEq := Pair.nat_inj_eq (inNatElim (n:=0) inI)
         let valEncEq := inVarElim ins rfl
         match list with
@@ -427,13 +427,13 @@ namespace uniSetMapDl
           iEq ▸ hEq ▸ headEq ▸ valEncEq ▸ rfl)
       (fun ins =>
         let ⟨_iPredEnc, ins⟩ := inArbUnElim ins
-        let ⟨inList, ins⟩ := inPairElim ins
-        let ⟨inI, insLB⟩ := inPairElim ins
+        let ⟨inList, ins⟩ := inProdElim ins
+        let ⟨inI, insLB⟩ := inProdElim ins
           match list, i with
         | _h :: t, iPred+1 =>
-          let ⟨_, inTail⟩ := inPairElim inList
+          let ⟨_, inTail⟩ := inProdElim inList
           let tailEq := inVarElim inTail rfl
-          let ⟨inIPred, _⟩ := inPairElim inI
+          let ⟨inIPred, _⟩ := inProdElim inI
           let iPredEq := inVarElim inIPred rfl
           let ins := inCallElimSingle insLB rfl
           let ins := inCallElimSingle ins rfl
