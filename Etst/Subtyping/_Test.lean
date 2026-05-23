@@ -81,7 +81,7 @@ def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
         (unL
           subId)
         (unR
-          (subPairMono
+          (subProdMono
             (irCtxL
               subId)
             subId))))

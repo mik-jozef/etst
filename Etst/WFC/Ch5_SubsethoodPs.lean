@@ -106,41 +106,41 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (some (ir null a))
 |
-  somePair {x a b}
+  someProd {x a b}
     (subA: dl.SubsetStx x (some a))
     (subB: dl.SubsetStx x (some b))
   :
     dl.SubsetStx x (some (prod a b))
 |
-  pairVarSomeFull {x i j a}
+  prodVarSomeFull {x i j a}
     (sub: dl.SubsetStx x (some (ir (prod (var i) (var j)) a)))
   :
     dl.SubsetStx x (full (impl (prod (var i) (var j)) a))
 |
-  -- TODO replace with pairMono and derive?
-  pairMonoFullImpl {x al bl ar br}
+  -- TODO replace with prodMono and derive?
+  prodMonoFullImpl {x al bl ar br}
     (sl: dl.SubsetStx x (full (impl al bl)))
     (sr: dl.SubsetStx x (full (impl ar br)))
   :
     dl.SubsetStx x (full (impl (prod al ar) (prod bl br)))
 |
-  pairIr {x al bl ar br}
+  prodIr {x al bl ar br}
     (subA: dl.SubsetStx x (prod al ar))
     (subB: dl.SubsetStx x (prod bl br))
   :
     dl.SubsetStx x (prod (ir al bl) (ir ar br))
 |
-  pairArbIrL {x a b}
+  prodArbIrL {x a b}
     (sub: dl.SubsetStx x (arbIr (prod a b.lift)))
   :
     dl.SubsetStx x (prod (arbIr a) b)
 |
-  pairArbIrR {x a b}
+  prodArbIrR {x a b}
     (sub: dl.SubsetStx x (arbIr (prod a.lift b)))
   :
     dl.SubsetStx x (prod a (arbIr b))
 |
-  complPair {x a b}
+  complProd {x a b}
     (sub:
       dl.SubsetStx
         x
@@ -148,7 +148,7 @@ inductive DefList.SubsetStx
   :
     dl.SubsetStx x (compl (prod a b))
 |
-  complPairElim {x a b}
+  complProdElim {x a b}
     (sub: dl.SubsetStx x (compl (prod a b)))
   :
     dl.SubsetStx
@@ -371,7 +371,7 @@ namespace DefList.SubsetStx
         let inFullImplNullA := sub.isSound fv leX leE isIn
         let inNull_A := inImplElim (inFullElim inFullImplNullA .null) inNull
         inSome p (inIr inNull inNull_A)
-      | somePair subA subB =>
+      | someProd subA subB =>
         let inSubA :=
           subA.isSound fv leX (freeVarUb_bin_le_elimL leE) isIn
         let inSubB :=
@@ -379,7 +379,7 @@ namespace DefList.SubsetStx
         let ⟨pA, inA⟩ := inSomeElim inSubA
         let ⟨pB, inB⟩ := inSomeElim inSubB
         inSome p (inProd inA inB)
-      | pairVarSomeFull (x:=x) (i:=i) (j:=j) (a:=a) sub =>
+      | prodVarSomeFull (x:=x) (i:=i) (j:=j) (a:=a) sub =>
         let lePairVar := freeVarUb_bin_le_elimL leE
         let leVarI := freeVarUb_bin_le_elimL lePairVar
         let leVarJ := freeVarUb_bin_le_elimR lePairVar
@@ -401,7 +401,7 @@ namespace DefList.SubsetStx
               (eqP.trans (congrArg₂ Pair.pair eqPA eqPB)).trans
                 (eqP2.trans (congrArg₂ Pair.pair eqPA2 eqPB2)).symm
             p_eq_p2 ▸ inA
-      | pairMonoFullImpl subL subR =>
+      | prodMonoFullImpl subL subR =>
         let ⟨leAlAr, leBlBr⟩ := freeVarUb_bin_le_elim leE
         let ⟨leAl, leAr⟩ := freeVarUb_bin_le_elim leAlAr
         let ⟨leBl, leBr⟩ := freeVarUb_bin_le_elim leBlBr
@@ -415,7 +415,7 @@ namespace DefList.SubsetStx
                 (inFullElim (subL.isSound fv leX leL isIn) pA) inAl)
               (inImplElim
                 (inFullElim (subR.isSound fv leX leR isIn) pB) inAr)
-      | pairIr subA subB =>
+      | prodIr subA subB =>
         let ⟨leL, leR⟩ := freeVarUb_bin_le_elim leE
         let ⟨leAl, leBl⟩ := freeVarUb_bin_le_elim leL
         let ⟨leAr, leBr⟩ := freeVarUb_bin_le_elim leR
@@ -426,7 +426,7 @@ namespace DefList.SubsetStx
         let ⟨pA, pB, eq, inAl, inAr⟩ := inProdElimEx inPairAlAr
         let ⟨inBl, inBr⟩ := inProdElim (eq ▸ inPairBlBr)
         eq ▸ inProd (inIr inAl inBl) (inIr inAr inBr)
-      | pairArbIrL (a:=a) (b:=b) sub =>
+      | prodArbIrL (a:=a) (b:=b) sub =>
         let ⟨leArbIrA, leB⟩ := freeVarUb_bin_le_elim leE
         let leA := Nat.le_add_of_sub_le leArbIrA
         let leBLift := freeVarUb_le_lift leB
@@ -438,7 +438,7 @@ namespace DefList.SubsetStx
           (inArbIr fun pX =>
             (inProdElim (eq ▸ inArbIrElim inArbIrArg pX)).left)
           ((intp2_lift_eq b fv [.null] dl.wfm dl.wfm).symm ▸ inBLift0)
-      | pairArbIrR (a:=a) (b:=b) sub =>
+      | prodArbIrR (a:=a) (b:=b) sub =>
         let ⟨leA, leArbIrB⟩ := freeVarUb_bin_le_elim leE
         let leB := Nat.le_add_of_sub_le leArbIrB
         let leALift := freeVarUb_le_lift leA
@@ -450,7 +450,7 @@ namespace DefList.SubsetStx
           ((intp2_lift_eq a fv [.null] dl.wfm dl.wfm).symm ▸ inALift0)
           (inArbIr fun pX =>
             (inProdElim (eq ▸ inArbIrElim inArbIrArg pX)).right)
-      | complPair sub (a:=a) (b:=b) => fun inPairAB =>
+      | complProd sub (a:=a) (b:=b) => fun inPairAB =>
         let ⟨pA, pB, eq, inA, inB⟩ := inProdElimEx inPairAB
         let ⟨leA, leB⟩ := freeVarUb_bin_le_elim leE
         let inPrem := sub.isSound.call fv leX p isIn
@@ -470,7 +470,7 @@ namespace DefList.SubsetStx
                 Pair.noConfusion (eq.symm.trans eq') And.intro
               (inComplElim inCplB)
                 (eqB ▸ intp2_bv_append leB _ ▸ inB)))
-      | complPairElim sub (a:=a) (b:=b) =>
+      | complProdElim sub (a:=a) (b:=b) =>
         let leInner := freeVarUb_bin_le_elimR leE
         let ⟨lePairCA, lePairAC⟩ := freeVarUb_bin_le_elim leInner
         let leA := freeVarUb_bin_le_elimL lePairCA

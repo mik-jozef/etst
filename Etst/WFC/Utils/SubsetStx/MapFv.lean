@@ -170,27 +170,27 @@ namespace DefList.SubsetStx
     | varFullSome sub => varFullSome (mapFv sub map)
     | nullSomeFull sub => nullSomeFull (mapFv sub map)
     | nullFullSome sub => nullFullSome (mapFv sub map)
-    | somePair subL subR =>
-      somePair (mapFv subL map) (mapFv subR map)
-    | pairVarSomeFull sub => pairVarSomeFull (mapFv sub map)
-    | pairMonoFullImpl subL subR =>
-      pairMonoFullImpl (mapFv subL map) (mapFv subR map)
-    | pairIr subL subR =>
-      pairIr (mapFv subL map) (mapFv subR map)
-    | pairArbIrL (a:=a) (b:=b) sub =>
+    | someProd subL subR =>
+      someProd (mapFv subL map) (mapFv subR map)
+    | prodVarSomeFull sub => prodVarSomeFull (mapFv sub map)
+    | prodMonoFullImpl subL subR =>
+      prodMonoFullImpl (mapFv subL map) (mapFv subR map)
+    | prodIr subL subR =>
+      prodIr (mapFv subL map) (mapFv subR map)
+    | prodArbIrL (a:=a) (b:=b) sub =>
       let mapped :=
         lift_substVar_eq b map ▸
         substVar_liftFvMapVar_subst b.lift map ▸
         mapFv sub map
-      pairArbIrL mapped
-    | pairArbIrR (a:=a) (b:=b) sub =>
+      prodArbIrL mapped
+    | prodArbIrR (a:=a) (b:=b) sub =>
       let mapped :=
         lift_substVar_eq a map ▸
         substVar_liftFvMapVar_subst a.lift map ▸
         mapFv sub map
-      pairArbIrR mapped
-    | complPair sub => complPair (mapFv sub map)
-    | complPairElim sub => complPairElim (mapFv sub map)
+      prodArbIrR mapped
+    | complProd sub => complProd (mapFv sub map)
+    | complProdElim sub => complProdElim (mapFv sub map)
     | irL sub => irL (mapFv sub map)
     | irR sub => irR (mapFv sub map)
     | irI subL subR => irI (mapFv subL map) (mapFv subR map)
