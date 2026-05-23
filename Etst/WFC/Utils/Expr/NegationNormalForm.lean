@@ -16,13 +16,13 @@ namespace Etst
 -- | .const e x => .const e x
 -- | .var x => .var x
 -- | .null => .null
--- | .pair left rite => .pair left.toNnf rite.toNnf
+-- | .prod left rite => .prod left.toNnf rite.toNnf
 -- | .ir left rite => .ir left.toNnf rite.toNnf
 -- | .full body => .full body.toNnf
 -- | .compl (.const e x) => .compl (.const e x)
 -- | .compl (.var x) => .compl (.var x)
 -- | .compl .null => .pair .any .any
--- | .compl (.pair left rite) =>
+-- | .compl (.prod left rite) =>
 --   s3(null, null | (![left.toNnf], [any]) | ([any], ![rite.toNnf]))
 -- | .compl (.ir left rite) =>
 --   .compl (.ir (.compl left.compl.toNnf) (.compl rite.compl.toNnf))
@@ -99,25 +99,25 @@ def SingleLaneExpr.intp2_toNnfAux_eq
       propext ⟨
         fun inUnNullPairPair =>
           match p with
-          | .null => inCompl fun inPair => inProdElimNope inPair
+          | .null => inCompl fun inProdNull => inProdElimNope inProdNull
           | .pair _ _ =>
-            inCompl fun inPairAB =>
-              let ⟨inLeft, inRite⟩ := inProdElim inPairAB
+            inCompl fun inProdAB =>
+              let ⟨inLeft, inRite⟩ := inProdElim inProdAB
               (inUnElim inUnNullPairPair).elim
                 (fun inNull => inNullElimNope inNull)
                 (fun inInner =>
                   (inUnElim inInner).elim
-                    (fun inPairL =>
-                      let ⟨inCplLeft, _⟩ := inProdElim inPairL
+                    (fun inProdL =>
+                      let ⟨inCplLeft, _⟩ := inProdElim inProdL
                       inComplElim (ihCL.symm ▸ inCplLeft) inLeft)
-                    (fun inPairR =>
-                      let ⟨_, inCplRite⟩ := inProdElim inPairR
+                    (fun inProdR =>
+                      let ⟨_, inCplRite⟩ := inProdElim inProdR
                       inComplElim (ihCR.symm ▸ inCplRite) inRite)),
-        fun inComplPair =>
+        fun inComplProd =>
           match p with
           | .null => inUnL inNull
           | .pair _ _ =>
-            (ninProdElim inComplPair).elim
+            (ninProdElim inComplProd).elim
               (fun ninLeft =>
                 inUnR
                   (inUnL

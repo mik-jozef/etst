@@ -1945,7 +1945,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (un null (prod a any))
   :=
-    let subPair := prodMonoSub subId subId anyI
+    let subProd := prodMonoSub subId subId anyI
     arbUnNullProd.arbUnArbUnElim
       (subIrR.unElim
         (irCtxR subUnL)
@@ -1953,9 +1953,9 @@ namespace DefList.SubsetStx
           (prodMonoSub
             (prodIrL
               (prodSomeL
-                (someI (irI (irCtxR subPair) (irCtxL subIrL)))
-                (irCtxR subPair))
-              (irCtxR subPair))
+                (someI (irI (irCtxR subProd) (irCtxL subIrL)))
+                (irCtxR subProd))
+              (irCtxR subProd))
             sub.arbUnPopCtx.toLift
             subId)))
   
@@ -1964,7 +1964,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (un null (prod any b))
   :=
-    let subPair := prodMonoSub subId anyI subId
+    let subProd := prodMonoSub subId anyI subId
     arbUnNullProd.arbUnArbUnElim
       (subIrR.unElim
         (irCtxR subUnL)
@@ -1972,9 +1972,9 @@ namespace DefList.SubsetStx
           (prodMonoSub
             (prodIrR
               (prodSomeR
-                (someI (irI (irCtxR subPair) (irCtxL subIrL)))
-                (irCtxR subPair))
-              (irCtxR subPair))
+                (someI (irI (irCtxR subProd) (irCtxL subIrL)))
+                (irCtxR subProd))
+              (irCtxR subProd))
             subId
             ((lift_lift_eq_one b).symm ▸
               (lift_lift_eq_one x).symm ▸
@@ -1982,26 +1982,26 @@ namespace DefList.SubsetStx
   
   def projZthCtxElim {x a b}
     (sub: dl.SubsetStx (zth x.lift) a)
-    (subPair: dl.SubsetStx x (prod any b))
+    (subProd: dl.SubsetStx x (prod any b))
   :
     dl.SubsetStx x (prod a b)
   :=
     (projZthCtxElimNull sub).unElim
-      (pe (irCtxL subPair) (complProd (unL subIrR)))
+      (pe (irCtxL subProd) (complProd (unL subIrR)))
       (prodMonoSub
-        (prodIrOfIr (irI subIrR (irCtxL subPair)))
+        (prodIrOfIr (irI subIrR (irCtxL subProd)))
         subIrL subIrR)
   
   def projFstCtxElim {x a b}
     (sub: dl.SubsetStx (fst x.lift) b)
-    (subPair: dl.SubsetStx x (prod a any))
+    (subProd: dl.SubsetStx x (prod a any))
   :
     dl.SubsetStx x (prod a b)
   :=
     (projFstCtxElimNull sub).unElim
-      (pe (irCtxL subPair) (complProd (unL subIrR)))
+      (pe (irCtxL subProd) (complProd (unL subIrR)))
       (prodMonoSub
-        (prodIrOfIr (irI (irCtxL subPair) subIrR))
+        (prodIrOfIr (irI (irCtxL subProd) subIrR))
         subIrL subIrR)
   
   def prodOfZthFstNull {x a b}
@@ -2021,22 +2021,22 @@ namespace DefList.SubsetStx
   def prodOfZthFst {x a b}
     (subZth: dl.SubsetStx (zth x.lift) a)
     (subFst: dl.SubsetStx (fst x.lift) b)
-    (subPair: dl.SubsetStx x (prod any any))
+    (subProd: dl.SubsetStx x (prod any any))
   :
     dl.SubsetStx x (prod a b)
   :=
-    projZthCtxElim subZth (projFstCtxElim subFst subPair)
+    projZthCtxElim subZth (projFstCtxElim subFst subProd)
   
   def prodZthFst {x e}
     (sub: dl.SubsetStx x e)
-    (subPair: dl.SubsetStx x (prod any any))
+    (subProd: dl.SubsetStx x (prod any any))
   :
     dl.SubsetStx x (prod (zth e.lift) (fst e.lift))
   :=
     prodOfZthFst
       (zthMono subId (fullImpl sub))
       (fstMono subId (fullImpl sub))
-      subPair
+      subProd
   
   def nullProdZthFst {x e}
     (subE: dl.SubsetStx x e)

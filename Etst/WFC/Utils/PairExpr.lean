@@ -276,12 +276,12 @@ namespace SingleLaneExpr
     ∃ p1, intp2 expr (p0 :: fv) b c (Pair.pair p0 p1)
   :=
     let ⟨pZth, ⟨inCond, inBody⟩⟩ := inArbUnElim inZth
-    let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inSomeElim inCond
+    let ⟨pCond, ⟨inProdCond, pCondInExpr⟩⟩ := inSomeElim inCond
     
     match pCond with
-    | Pair.null => inProdElimNope inPair
+    | Pair.null => inProdElimNope inProdCond
     | Pair.pair pCondZth pCondFst =>
-      let ⟨inL, _insR⟩ := inProdElim inPair
+      let ⟨inL, _insR⟩ := inProdElim inProdCond
       let eqPCondZth: pCondZth = pZth := inVarElim inL rfl
       let eqPZth: p0 = pZth := inVarElim inBody rfl
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInExpr⟩
@@ -292,12 +292,12 @@ namespace SingleLaneExpr
     ∃ p0, intp2 expr (p1 :: fv) b c (Pair.pair p0 p1)
   :=
     let ⟨pFst, ⟨inCond, inBody⟩⟩ := inArbUnElim inFst
-    let ⟨pCond, ⟨inPair, pCondInExpr⟩⟩ := inSomeElim inCond
+    let ⟨pCond, ⟨inProdCond, pCondInExpr⟩⟩ := inSomeElim inCond
     
     match pCond with
-    | Pair.null => inProdElimNope inPair
+    | Pair.null => inProdElimNope inProdCond
     | Pair.pair pCondZth pCondFst =>
-      let ⟨_insL, inR⟩ := inProdElim inPair
+      let ⟨_insL, inR⟩ := inProdElim inProdCond
       let eqPCondFst: pCondFst = pFst := inVarElim inR rfl
       let eqPFst: p1 = pFst := inVarElim inBody rfl
       ⟨pCondZth, eqPFst ▸ eqPCondFst ▸ pCondInExpr⟩
@@ -347,12 +347,12 @@ namespace SingleLaneExpr
         (intp2 arg (pB :: fv) b c pA)
   :=
     let ⟨_res, inIfThen⟩ := inArbUnElim inCall
-    let ⟨⟨fnP, inFn, inPair⟩, inVarRes⟩ := inIfThenElim inIfThen
+    let ⟨⟨fnP, inFn, inProdFn⟩, inVarRes⟩ := inIfThenElim inIfThen
     let pbEq := inVarElim inVarRes rfl
     match fnP with
-    | .null => inProdElimNope inPair
+    | .null => inProdElimNope inProdFn
     | .pair _fnArg _fnRes =>
-      let ⟨inFnArg, inFnRes⟩ := inProdElim inPair
+      let ⟨inFnArg, inFnRes⟩ := inProdElim inProdFn
       let fnResEq := inVarElim inFnRes rfl
       ⟨_, And.intro (pbEq ▸ fnResEq ▸ inFn) (pbEq ▸ inFnArg)⟩
   

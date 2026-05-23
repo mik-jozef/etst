@@ -478,7 +478,7 @@ def Cause.IsWeakCauseFv.complProdElim {fv l r pL pR}
 :=
   let causeUn := cause.union (Cause.ofValPos b c)
   let isSat := causeUn.maximalValsApxAreSat.unionElimL
-  match not_and_or.mp (fun inPair => isCause isSat ⟨pL, pR, rfl, inPair.left, inPair.right⟩) with
+  match not_and_or.mp (fun inProd => isCause isSat ⟨pL, pR, rfl, inProd.left, inProd.right⟩) with
   | Or.inl isPosL =>
     Or.inl (fun _ _ isSat =>
       BasicExpr.triIntp2_mono_std_posMem
@@ -508,9 +508,9 @@ def Cause.IsStrongCauseFv.complProdElim {fv l r pL pR}
 :=
   match
     not_and_or.mp
-      (fun inPair =>
+      (fun inProd =>
         isCause cause.leastValsApxAreSat
-          ⟨pL, pR, rfl, inPair.left, inPair.right⟩)
+          ⟨pL, pR, rfl, inProd.left, inProd.right⟩)
   with
   | Or.inl notPosL => Or.inl (Cause.IsStrongCauseFv.ofLeastCompl notPosL)
   | Or.inr notPosR => Or.inr (Cause.IsStrongCauseFv.ofLeastCompl notPosR)

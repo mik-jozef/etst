@@ -21,7 +21,7 @@ open SingleLaneExpr
     | var x           => (2, x)
     | compl (var x)   => (3, x)
     | null            => (4, null)
-    | pair left rite  => (5, (left, rite))
+    | prod left rite  => (5, (left, rite))
     | ir left rite    => (6, (left, rite))
     | un left rite    => (7, (left, rite))
     | full body       => (8, body)

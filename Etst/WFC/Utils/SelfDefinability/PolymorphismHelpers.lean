@@ -179,19 +179,19 @@ namespace opFixDl
         (fun ins =>
           let ⟨_, ins⟩ := inArbUnElim ins
           let ⟨_, ins⟩ := inArbUnElim ins
-          let ⟨inPairP, _⟩ := inProdElim ins
-          inProdElimNope inPairP)
+          let ⟨inProdP, _⟩ := inProdElim ins
+          inProdElimNope inProdP)
     | .pair l r =>
       let ins := DefList.InWfm.in_def_no_fv (lane := .posLane) ins
       (inUnElim ins).elim
         (fun ins =>
-          let ⟨inPairP, _⟩ := inProdElim ins
-          inNullElimNope inPairP)
+          let ⟨inProdP, _⟩ := inProdElim ins
+          inNullElimNope inProdP)
         (fun ins =>
           let ⟨lWit, ins⟩ := inArbUnElim ins
           let ⟨rWit, ins⟩ := inArbUnElim ins
-          let ⟨inPairP, inEnc⟩ := inProdElim ins
-          let ⟨_, _, pEq, inLeft, inRite⟩ := inProdElimEx inPairP
+          let ⟨inProdP, inEnc⟩ := inProdElim ins
+          let ⟨_, _, pEq, inLeft, inRite⟩ := inProdElimEx inProdP
           let ⟨lEq, rEq⟩ := Pair.noConfusion pEq And.intro
           match enc with
           | .pair _ (.pair _ _) =>

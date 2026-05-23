@@ -434,7 +434,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
         fun isCauseNull =>
           allInapp fun _ _ isSat =>
             let pEq := inNullElim (isCauseNull isSat)
-            pEq ▸ inCompl fun inPair => inProdElimNope inPair
+            pEq ▸ inCompl fun inProdNull => inProdElimNope inProdNull
       let isInExtCycle := ⟨rfl, ⟨_, _, _, allInappNull, rfl⟩⟩
       .blockedCinsCycle inCinsComplComplNull isInExtCycle
     | Or.inr inCinsInner =>
@@ -443,7 +443,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
         AllIntCausesInappIh dl n intCycle fv inner p
       :=
         fun isCauseInner =>
-          allInapp fun b c isSat inPair =>
+          allInapp fun b c isSat inProdP =>
             let innerLeft := BasicExpr.toPosLane (.prod left.compl .any)
             let innerRite := BasicExpr.toPosLane (.prod .any rite.compl)
             have isInner: (un innerLeft innerRite).intp2 fv b c p :=
@@ -452,10 +452,10 @@ def allCausesInappElim {dl n fv intCycle expr p}
             match inUnElim (isInner) with
             | .inl inLeft =>
               let ⟨pL, pR, pEq, inComplLeft, _⟩ := inProdElimEx inLeft
-              inComplElim inComplLeft (inProdElim (pEq ▸ inPair)).left
+              inComplElim inComplLeft (inProdElim (pEq ▸ inProdP)).left
             | .inr inRite =>
               let ⟨pL, pR, pEq, _, inComplRite⟩ := inProdElimEx inRite
-              inComplElim inComplRite (inProdElim (pEq ▸ inPair)).right
+              inComplElim inComplRite (inProdElim (pEq ▸ inProdP)).right
       let isInExtCycle := ⟨rfl, ⟨_, _, _, allInappInner, rfl⟩⟩
       .blockedCinsCycle inCinsInner isInExtCycle
   | .ir left rite =>

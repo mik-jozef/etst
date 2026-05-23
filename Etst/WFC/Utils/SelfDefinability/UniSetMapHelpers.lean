@@ -235,7 +235,7 @@ def exprEncListElim {fv b c lane p}
   (onVar: (exprEncVar.toLane (toggle2N lane 3)).intp2 fv b c p → P)
   (onComplVar: (exprEncComplVar.toLane (toggle2N lane 4)).intp2 fv b c p → P)
   (onNull: (exprEncNull.toLane (toggle2N lane 5)).intp2 fv b c p → P)
-  (onPair: (exprEncProd.toLane (toggle2N lane 6)).intp2 fv b c p → P)
+  (onProd: (exprEncProd.toLane (toggle2N lane 6)).intp2 fv b c p → P)
   (onIr: (exprEncIr.toLane (toggle2N lane 7)).intp2 fv b c p → P)
   (onUn: (exprEncUn.toLane (toggle2N lane 8)).intp2 fv b c p → P)
   (onFull: (exprEncFull.toLane (toggle2N lane 9)).intp2 fv b c p → P)
@@ -261,7 +261,7 @@ def exprEncListElim {fv b c lane p}
   | Or.inl ins => onNull ins
   | Or.inr ins =>
   match inUnElim ins with
-  | Or.inl ins => onPair ins
+  | Or.inl ins => onProd ins
   | Or.inr ins =>
   match inUnElim ins with
   | Or.inl ins => onIr ins

@@ -150,21 +150,21 @@ namespace SingleLaneExpr
       ⟨pA, pB, ⟨rfl, eqL ▸ inL, eqR ▸ inR⟩⟩
   
   def inProdElimNope
-    (inPair: (prod exprL exprR).intp2 fv b c .null)
+    (inProdNull: (prod exprL exprR).intp2 fv b c .null)
     {P: Prop}
   :
     P
   :=
-    let ⟨_, _, eq, _⟩ := inPair
+    let ⟨_, _, eq, _⟩ := inProdNull
     Pair.noConfusion eq
   
   def ninProdElim
-    (ninPair: ¬ (prod exprL exprR).intp2 fv b c (.pair pA pB))
+    (ninProd: ¬ (prod exprL exprR).intp2 fv b c (.pair pA pB))
   :
     ¬ exprL.intp2 fv b c pA ∨ ¬ exprR.intp2 fv b c pB
   :=
     not_and_or.mp fun ⟨inL, inR⟩ =>
-      ninPair ⟨pA, pB, rfl, inL, inR⟩
+      ninProd ⟨pA, pB, rfl, inL, inR⟩
   
   
   def inIr
