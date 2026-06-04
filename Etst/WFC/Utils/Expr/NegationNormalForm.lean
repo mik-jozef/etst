@@ -23,7 +23,8 @@ namespace Etst
 -- | .compl (.var x) => .compl (.var x)
 -- | .compl .null => .pair .any .any
 -- | .compl (.prod left rite) =>
---   s3(null, null | (![left.toNnf], [any]) | ([any], ![rite.toNnf]))
+--   s3(null,
+--     null | (!<[left.toNnf]>, <[any]>) | (<[any]>, !<[rite.toNnf]>))
 -- | .compl (.ir left rite) =>
 --   .compl (.ir (.compl left.compl.toNnf) (.compl rite.compl.toNnf))
 -- | .compl (.full body) =>

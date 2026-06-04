@@ -22,7 +22,7 @@ syntax:90 "(?some " s3_pair_expr ")" : s3_pair_expr
 syntax:90 "(?full " s3_pair_expr ")" : s3_pair_expr
 syntax:90 "(" s3_pair_expr ")" : s3_pair_expr
 syntax:90 "null" : s3_pair_expr
-syntax:90 "[" term "]" : s3_pair_expr
+syntax:90 "<[" term "]>" : s3_pair_expr
 syntax:80 s3_pair_expr:80 s3_pair_expr:81 : s3_pair_expr
 syntax:70 s3_pair_expr:71 " × " s3_pair_expr:70 : s3_pair_expr
 syntax:70 " × " s3_pair_expr:71 " × " s3_pair_expr:70 : s3_pair_expr
@@ -188,7 +188,7 @@ namespace pair_def_list
   |
     `(s3_pair_expr| null) => `(Expr.null)
   |
-    `(s3_pair_expr| [$t:term]) => pure t
+    `(s3_pair_expr| <[$t:term]>) => pure t
   |
     `(s3_pair_expr|
       (?some $body:s3_pair_expr))

@@ -94,11 +94,11 @@ pairDefList opFixHelpersDl extends uniSetMapDl
   s3 callEnc :=
     Ex fn arg,
       × fn × arg
-      × [uniSetMapDlEncoding.toExpr]
+      × <[uniSetMapDlEncoding.toExpr]>
       × null
       × encodeCall
           (encodeCall
-            [((BasicExpr.const consts.uniSetMap).encoding.toExpr)]
+            <[((BasicExpr.const consts.uniSetMap).encoding.toExpr)]>
             (encodeAsExpr fn))
           (encodeAsExpr arg)
   
@@ -130,10 +130,10 @@ def composeIndex (iOp: Pair): Pair :=
 
 pairDefList opFixDl extends opFixHelpersDl
   s3 trisetFix :=
-    Ex iOp, iOp × magic iOp (callEnc [opFixDl.magicIndex.toExpr] iOp)
+    Ex iOp, iOp × magic iOp (callEnc <[opFixDl.magicIndex.toExpr]> iOp)
   
   s3 indexFix :=
-    Ex iOp, iOp × trisetFix (callEnc [composeOpIndex.toExpr] iOp)
+    Ex iOp, iOp × trisetFix (callEnc <[composeOpIndex.toExpr]> iOp)
 pairDefList.
 
 
