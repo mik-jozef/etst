@@ -38,19 +38,21 @@ open Expr
 abbrev DefList.SubsetFv
   (dl: DefList)
   (fv: List Pair)
+  (o: Valuation Pair)
   (a b: SingleLaneExpr)
 :=
-  Set.Subset (a.intp fv dl.wfm) (b.intp fv dl.wfm)
+  Set.Subset (a.intp fv (dl.wfm o) o) (b.intp fv (dl.wfm o) o)
 
 -- Semantic entailment.
 abbrev DefList.Subset
   (dl: DefList)
+  (o: Valuation Pair)
   (a b: SingleLaneExpr)
 :=
   ∀ fv,
     a.freeVarUb ≤ fv.length →
     b.freeVarUb ≤ fv.length →
-    dl.SubsetFv fv a b
+    dl.SubsetFv fv o a b
 
 
 def Expr.isSubsingleton_body {E} (e: Expr E): Expr E :=
@@ -263,31 +265,31 @@ inductive DefList.SubsetStx
     dl.SubsetStx x (full (impl a p))
 
 
-def DefList.SubsetFv.subsetOfFullImpl {dl fv x a b p}
-  (h: SubsetFv dl fv x (.full (.impl a b)))
-  (isIn: p ∈ x.intp fv dl.wfm)
+def DefList.SubsetFv.subsetOfFullImpl {dl fv o x a b p}
+  (h: SubsetFv dl fv o x (.full (.impl a b)))
+  (isIn: p ∈ x.intp fv (dl.wfm o) o)
 :
-  dl.SubsetFv fv a b
+  dl.SubsetFv fv o a b
 :=
   open SingleLaneExpr in
   fun p' inA => inImplElim (inFullElim (h isIn) p') inA
 
-def DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
-  (h: SubsetFv dl fv a b)
+def DefList.SubsetFv.fullImplOfSubset {dl fv o x a b}
+  (h: SubsetFv dl fv o a b)
 :
-  SubsetFv dl fv x (.full (.impl a b))
+  SubsetFv dl fv o x (.full (.impl a b))
 :=
   open SingleLaneExpr in
   fun _ _ => inFull .null fun _ => inImpl fun inA => h inA
 
-def DefList.Subset.call {dl a b}
-  (sub: Subset dl a b)
+def DefList.Subset.call {dl o a b}
+  (sub: Subset dl o a b)
   (fv: List Pair)
   (leA: a.freeVarUb ≤ fv.length)
   (p: Pair)
-  (isIn: p ∈ a.intp fv dl.wfm)
+  (isIn: p ∈ a.intp fv (dl.wfm o) o)
 :
-  p ∈ b.intp (fv ++ List.replicate b.freeVarUb Pair.null) dl.wfm
+  p ∈ b.intp (fv ++ List.replicate b.freeVarUb Pair.null) (dl.wfm o) o
 :=
   let fvPad := fv ++ List.replicate b.freeVarUb Pair.null
   let padLen: fvPad.length = fv.length + b.freeVarUb :=
@@ -296,17 +298,17 @@ def DefList.Subset.call {dl a b}
     padLen ▸ Nat.le_add_right_of_le leA
   let leBPad: b.freeVarUb ≤ fvPad.length :=
     padLen ▸ Nat.le_add_left _ _
-  let isInPad: p ∈ a.intp fvPad dl.wfm :=
+  let isInPad: p ∈ a.intp fvPad (dl.wfm o) o :=
     SingleLaneExpr.intp_bv_append leA _ ▸ isIn
   sub fvPad leAPad leBPad isInPad
 
 
 def SingleLaneExpr.isSubsingleton_intp_eq
-  {expr fv v p pS}
-  (inSubs: intp expr.isSubsingleton fv v pS)
-  (inExpr: intp expr fv v p)
+  {expr fv v o p pS}
+  (inSubs: intp expr.isSubsingleton fv v o pS)
+  (inExpr: intp expr fv v o p)
 :
-  intp expr fv v = {p}
+  intp expr fv v o = {p}
 :=
   Set.eq_singleton_iff_unique_mem.mpr
     (And.intro
@@ -319,10 +321,10 @@ def SingleLaneExpr.isSubsingleton_intp_eq
               (inSome
                 .null
                 (inIr
-                  (intp2_lift_eq expr fv [p] v v ▸ inExpr)
+                  (intp2_lift_eq expr fv [p] v v o ▸ inExpr)
                   (inVar rfl)))
               pE)
-            (intp2_lift_eq expr fv [p] v v ▸ isIn))
+            (intp2_lift_eq expr fv [p] v v o ▸ isIn))
           rfl))
 
 namespace DefList.SubsetStx
@@ -333,19 +335,20 @@ namespace DefList.SubsetStx
   
   def isSound {x e}
     (sub: dl.SubsetStx x e)
+    (o: Valuation Pair)
   :
-    dl.Subset x e
+    dl.Subset o x e
   :=
     open List SingleLaneExpr in
     fun fv leX leE p isIn =>
       match sub with
       | subId => isIn
-      | defPos sub => Set3.defLePos _ (sub.isSound fv leX leE isIn)
+      | defPos sub => Set3.defLePos _ (sub.isSound o fv leX leE isIn)
       | varSomeFull (i:=i) (a:=a) sub =>
         let leVar := freeVarUb_bin_le_elimL leE
         let ltI: i < fv.length := Nat.lt_of_succ_le leVar
         let eqI := List.getElem?_eq_getElem ltI
-        let ⟨pW, inIr⟩ := inSomeElim (sub.isSound fv leX leE isIn)
+        let ⟨pW, inIr⟩ := inSomeElim (sub.isSound o fv leX leE isIn)
         let ⟨inVarI, inA⟩ := inIrElim inIr
         let eqP := inVarElim inVarI eqI
         inFull p fun p2 =>
@@ -356,11 +359,11 @@ namespace DefList.SubsetStx
         let leVar := freeVarUb_bin_le_elimL leE
         let ltI: i < fv.length := Nat.lt_of_succ_le leVar
         let eqI := List.getElem?_eq_getElem ltI
-        let inFull := sub.isSound fv leX leE isIn
+        let inFull := sub.isSound o fv leX leE isIn
         let inDI_A := inImplElim (inFullElim inFull fv[i]) (inVar eqI)
         inSome p (inIr (inVar eqI) inDI_A)
       | nullSomeFull (a:=a) sub =>
-        let ⟨pW, inIr⟩ := inSomeElim (sub.isSound fv leX leE isIn)
+        let ⟨pW, inIr⟩ := inSomeElim (sub.isSound o fv leX leE isIn)
         let ⟨inNullP, inA⟩ := inIrElim inIr
         let eqP := inNullElim inNullP
         inFull p fun p2 =>
@@ -368,14 +371,14 @@ namespace DefList.SubsetStx
             let eqP2 := inNullElim inNull2
             (eqP.trans eqP2.symm) ▸ inA
       | nullFullSome (a:=a) sub =>
-        let inFullImplNullA := sub.isSound fv leX leE isIn
+        let inFullImplNullA := sub.isSound o fv leX leE isIn
         let inNull_A := inImplElim (inFullElim inFullImplNullA .null) inNull
         inSome p (inIr inNull inNull_A)
       | someProd subA subB =>
         let inSubA :=
-          subA.isSound fv leX (freeVarUb_bin_le_elimL leE) isIn
+          subA.isSound o fv leX (freeVarUb_bin_le_elimL leE) isIn
         let inSubB :=
-          subB.isSound fv leX (freeVarUb_bin_le_elimR leE) isIn
+          subB.isSound o fv leX (freeVarUb_bin_le_elimR leE) isIn
         let ⟨pA, inA⟩ := inSomeElim inSubA
         let ⟨pB, inB⟩ := inSomeElim inSubB
         inSome p (inProd inA inB)
@@ -387,7 +390,7 @@ namespace DefList.SubsetStx
         let ltJ: j < fv.length := Nat.lt_of_succ_le leVarJ
         let eqI := List.getElem?_eq_getElem ltI
         let eqJ := List.getElem?_eq_getElem ltJ
-        let ⟨pW, inIr⟩ := inSomeElim (sub.isSound fv leX leE isIn)
+        let ⟨pW, inIr⟩ := inSomeElim (sub.isSound o fv leX leE isIn)
         let ⟨inProdP, inA⟩ := inIrElim inIr
         let ⟨pA, pB, eqP, inVI, inVJ⟩ := inProdElimEx inProdP
         let eqPA := inVarElim inVI eqI
@@ -412,17 +415,17 @@ namespace DefList.SubsetStx
             let ⟨pA, pB, eq, inAl, inAr⟩ := inProdElimEx inProdAlAr
             eq ▸ inProd
               (inImplElim
-                (inFullElim (subL.isSound fv leX leL isIn) pA) inAl)
+                (inFullElim (subL.isSound o fv leX leL isIn) pA) inAl)
               (inImplElim
-                (inFullElim (subR.isSound fv leX leR isIn) pB) inAr)
+                (inFullElim (subR.isSound o fv leX leR isIn) pB) inAr)
       | prodIr subA subB =>
         let ⟨leL, leR⟩ := freeVarUb_bin_le_elim leE
         let ⟨leAl, leBl⟩ := freeVarUb_bin_le_elim leL
         let ⟨leAr, leBr⟩ := freeVarUb_bin_le_elim leR
         let inProdAlAr :=
-          subA.isSound fv leX (freeVarUb_bin_le leAl leAr) isIn
+          subA.isSound o fv leX (freeVarUb_bin_le leAl leAr) isIn
         let inProdBlBr :=
-          subB.isSound fv leX (freeVarUb_bin_le leBl leBr) isIn
+          subB.isSound o fv leX (freeVarUb_bin_le leBl leBr) isIn
         let ⟨pA, pB, eq, inAl, inAr⟩ := inProdElimEx inProdAlAr
         let ⟨inBl, inBr⟩ := inProdElim (eq ▸ inProdBlBr)
         eq ▸ inProd (inIr inAl inBl) (inIr inAr inBr)
@@ -432,28 +435,30 @@ namespace DefList.SubsetStx
         let leBLift := freeVarUb_le_lift leB
         let leInner := freeVarUb_bin_le leA leBLift
         let leArbIrInner := Nat.sub_le_of_le_add leInner
-        let inArbIrArg := sub.isSound fv leX leArbIrInner isIn
+        let inArbIrArg := sub.isSound o fv leX leArbIrInner isIn
         let ⟨pA, pB, eq, _, inBLift0⟩ := inProdElimEx (inArbIrElim inArbIrArg .null)
         eq ▸ inProd
           (inArbIr fun pX =>
             (inProdElim (eq ▸ inArbIrElim inArbIrArg pX)).left)
-          ((intp2_lift_eq b fv [.null] dl.wfm dl.wfm).symm ▸ inBLift0)
+          ((intp2_lift_eq b fv [.null] (dl.wfm o) (dl.wfm o) o).symm ▸
+          inBLift0)
       | prodArbIrR (a:=a) (b:=b) sub =>
         let ⟨leA, leArbIrB⟩ := freeVarUb_bin_le_elim leE
         let leB := Nat.le_add_of_sub_le leArbIrB
         let leALift := freeVarUb_le_lift leA
         let leInner := freeVarUb_bin_le leALift leB
         let leArbIrInner := Nat.sub_le_of_le_add leInner
-        let inArbIrArg := sub.isSound fv leX leArbIrInner isIn
+        let inArbIrArg := sub.isSound o fv leX leArbIrInner isIn
         let ⟨pA, pB, eq, inALift0, _⟩ := inProdElimEx (inArbIrElim inArbIrArg .null)
         eq ▸ inProd
-          ((intp2_lift_eq a fv [.null] dl.wfm dl.wfm).symm ▸ inALift0)
+          ((intp2_lift_eq a fv [.null] (dl.wfm o) (dl.wfm o) o).symm ▸
+          inALift0)
           (inArbIr fun pX =>
             (inProdElim (eq ▸ inArbIrElim inArbIrArg pX)).right)
       | complProd sub (a:=a) (b:=b) => fun inProdAB =>
         let ⟨pA, pB, eq, inA, inB⟩ := inProdElimEx inProdAB
         let ⟨leA, leB⟩ := freeVarUb_bin_le_elim leE
-        let inPrem := sub.isSound.call fv leX p isIn
+        let inPrem := (sub.isSound o).call fv leX p isIn
         (inUnElim inPrem).elim
           (fun inNull =>
             Pair.noConfusion ((inNullElim inNull).symm.trans eq))
@@ -479,58 +484,59 @@ namespace DefList.SubsetStx
         match p with
         | .null => inUnL inNull
         | .pair pA pB =>
-          (ninProdElim (sub.isSound fv leX leSub isIn)).elim
+          (ninProdElim (sub.isSound o fv leX leSub isIn)).elim
             (fun ninA =>
               inUnR (inUnL (inProd (inCompl ninA) inAny)))
             (fun ninB =>
               inUnR (inUnR (inProd inAny (inCompl ninB))))
       | irL sub (r:=r) =>
-        let inIr := sub.isSound.call fv leX p isIn
+        let inIr := (sub.isSound o).call fv leX p isIn
         intp_bv_append leE _ ▸ inIrElimL inIr
       | irR sub (l:=l) =>
-        let inIr := sub.isSound.call fv leX p isIn
+        let inIr := (sub.isSound o).call fv leX p isIn
         intp_bv_append leE _ ▸ inIrElimR inIr
       | irI ac bc =>
         let ⟨leL, leR⟩ := freeVarUb_bin_le_elim leE
         inIr
-          (ac.isSound fv leX leL isIn)
-          (bc.isSound fv leX leR isIn)
+          (ac.isSound o fv leX leL isIn)
+          (bc.isSound o fv leX leR isIn)
       | complI sub subCpl (a:=a) (b:=b) => fun isInA =>
         let leIr: freeVarUb (.ir x a) ≤ fv.length :=
           Nat.max_le.mpr ⟨leX, leE⟩
         let inIr := inIr isIn isInA
-        let inB := sub.isSound.call fv leIr p inIr
-        let inBCpl := subCpl.isSound.call fv leIr p inIr
+        let inB := (sub.isSound o).call fv leIr p inIr
+        let inBCpl := (subCpl.isSound o).call fv leIr p inIr
         inBCpl inB
       | complElim (a:=a) (b:=b) sub subCpl =>
         byContradiction fun ninA =>
           let leIr: freeVarUb (.ir x a.compl) ≤ fv.length :=
             Nat.max_le.mpr ⟨leX, leE⟩
           let inIr := inIr isIn (inCompl ninA)
-          let inB := sub.isSound.call fv leIr p inIr
-          let inBCpl := subCpl.isSound.call fv leIr p inIr
+          let inB := (sub.isSound o).call fv leIr p inIr
+          let inBCpl := (subCpl.isSound o).call fv leIr p inIr
           inBCpl inB
       | fullImpl (a:=a) (b:=b) subA =>
         inFull p fun _ =>
           inImpl fun inA =>
             let ⟨leA, leB⟩ := freeVarUb_bin_le_elim leE
-            subA.isSound fv leA leB inA
+            subA.isSound o fv leA leB inA
       | fullImplDist (a:=a) (b:=b) sub =>
         inImpl fun inFullA =>
           inFull _ (fun pB =>
             inImplElim
-              (inFullElim (sub.isSound fv leX leE isIn) pB)
+              (inFullElim (sub.isSound o fv leX leE isIn) pB)
               (inFullElim inFullA pB))
-      | fullElim sub => inFullElim (sub.isSound fv leX leE isIn) p
+      | fullElim sub => inFullElim (sub.isSound o fv leX leE isIn) p
       | someStripFull (a:=a) sub =>
-        (inSomeElim (sub.isSound fv leX leE isIn)).choose_spec
+        (inSomeElim (sub.isSound o fv leX leE isIn)).choose_spec
       | arbIrI sub =>
         fun pX =>
           sub.isSound
+            o
             (pX :: fv)
             (freeVarUb_le_lift leX)
             (Nat.le_add_of_sub_le leE)
-            (intp_lift_eq x fv [pX] dl.wfm ▸ isIn)
+            (intp_lift_eq x fv [pX] (dl.wfm o) o ▸ isIn)
       | arbIrElim (x:=x) (t:=t) (a:=a) sub isSome isSubsin =>
         let bUb :=
           Nat.max
@@ -553,16 +559,16 @@ namespace DefList.SubsetStx
           padLen ▸ Nat.le_add_left_of_le (Nat.le_max_left _ _)
         let isInPad := intp_bv_append leX _ ▸ isIn
         
-        let tIsSub: intp t.isSubsingleton fvPad dl.wfm p :=
-          isSubsin.isSound fvPad lePadX lePadSubsin isInPad
+        let tIsSub: intp t.isSubsingleton fvPad (dl.wfm o) o p :=
+          isSubsin.isSound o fvPad lePadX lePadSubsin isInPad
         
         let ⟨pBound, inT⟩ :=
-          inSomeElim (isSome.isSound fvPad lePadX lePadT isInPad)
+          inSomeElim (isSome.isSound o fvPad lePadX lePadT isInPad)
         
-        let tIntpEq: intp t fvPad dl.wfm = {pBound} :=
+        let tIntpEq: intp t fvPad (dl.wfm o) o = {pBound} :=
           isSubsingleton_intp_eq tIsSub inT
         
-        let inArbIrA := sub.isSound fvPad lePadX lePadA isInPad
+        let inArbIrA := sub.isSound o fvPad lePadX lePadA isInPad
         let inA := inArbIrElim inArbIrA pBound
         let inInst := intp_instantiateVar_eq a t tIntpEq ▸ inA
         
@@ -570,19 +576,19 @@ namespace DefList.SubsetStx
         inInst
       
       | noneElim sub =>
-        inNoneElim (sub.isSound fv leX (Nat.zero_le _) isIn)
+        inNoneElim (sub.isSound o fv leX (Nat.zero_le _) isIn)
       | unfold sub =>
         DefList.InWfm.in_def
-          (sub.isSound fv leX (Nat.zero_le _) isIn)
+          (sub.isSound o fv leX (Nat.zero_le _) isIn)
       | fold (c:=c) (lane:=lane) sub =>
         DefList.InWfm.of_in_def
-          (sub.isSound.call fv leX _ isIn)
+          ((sub.isSound o).call fv leX _ isIn)
       | trans (b:=b) ab bc =>
-        let inB := ab.isSound.call fv leX _ isIn
+        let inB := (ab.isSound o).call fv leX _ isIn
         let leB := by
           rw [length_append, length_replicate]
           exact Nat.le_add_left _ _
-        let inC := bc.isSound.call _ leB _ inB
+        let inC := (bc.isSound o).call _ leB _ inB
         by
         rw [List.append_assoc] at inC
         exact intp_bv_append leE _ ▸ inC
@@ -596,15 +602,15 @@ namespace DefList.SubsetStx
           length_replicate (n := ub) ▸ length_append
         let lePadX := padLen ▸ Nat.le_add_right_of_le leX
         let isInPad := intp_bv_append leX _ ▸ isIn
-        let isSub: dl.SubsetFv _ _ _ :=
-          MutIndDescriptor.isSound
-            desc
+        let isSub: dl.SubsetFv _ _ _ _ :=
+          desc.isSound
             fvPad
+            o
             (fun i =>
               let lePadE :=
                 padLen ▸ Nat.le_add_left_of_le (ubAtLe i)
               let premise :=
-               (premises i).isSound fvPad lePadX lePadE
+               (premises i).isSound o fvPad lePadX lePadE
               premise.subsetOfFullImpl isInPad)
             i
         let isInPad := intp_bv_append leX _ ▸ isIn
@@ -618,8 +624,8 @@ namespace DefList.SubsetStx
               (Nat.zero_le _)
               (freeVarUb_bin_le leE leE))
             leE
-        let ind := (sub.isSound fv leX leE).subsetOfFullImpl isIn
-        let rec inP: (p: Pair) → intp prop fv dl.wfm p
+        let ind := (sub.isSound o fv leX leE).subsetOfFullImpl isIn
+        let rec inP: (p: Pair) → intp prop fv (dl.wfm o) o p
         | Pair.null => ind (inUnL inNull)
         | .pair pa pb => ind (inUnR (inProd (inP pa) (inP pb)))
         DefList.SubsetFv.fullImplOfSubset

@@ -33,7 +33,7 @@ namespace DefListEq
     ∀ x ∈ names, ∀ y ∈ (dl.getDef x).UsesConst, y ∈ names
   
   
-  def intpDefs2_eqOn {map dlSrc dlDst names bSrc bDst cSrc cDst}
+  def intpDefs2_eqOn {map dlSrc dlDst names bSrc bDst cSrc cDst o}
     (defsEq: EqDefsOn dlSrc dlDst map names)
     (closed: ClosedUnderUses dlSrc names)
     (eqB: InvariantOn map names bSrc bDst)
@@ -41,7 +41,7 @@ namespace DefListEq
     {x: Nat}
     (xIn: x ∈ names)
   :
-    dlSrc.intpDefs2 bSrc cSrc x = dlDst.intpDefs2 bDst cDst (map x)
+    dlSrc.intpDefs2 bSrc cSrc o x = dlDst.intpDefs2 bDst cDst o (map x)
   :=
     let eq :=
       BasicExpr.mapConst_triIntp2
@@ -51,26 +51,26 @@ namespace DefListEq
     eq.symm.trans (defsEq x xIn ▸ rfl)
   
   
-  def operatorC_lfp_eqOn {map names dlSrc dlDst bSrc bDst}
+  def operatorC_lfp_eqOn {map names dlSrc dlDst bSrc bDst o}
     (defsEq: EqDefsOn dlSrc dlDst map names)
     (closed: ClosedUnderUses dlSrc names)
     (eqB: InvariantOn map names bSrc bDst)
   :
     InvariantOn map names
-      (operatorC.lfp dlSrc bSrc)
-      (operatorC.lfp dlDst bDst)
+      (operatorC.lfp dlSrc bSrc o)
+      (operatorC.lfp dlDst bDst o)
   :=
     let _ := Valuation.ordStdLattice Pair
     OrderHom.lfpStage_induction2
-      (operatorC dlSrc bSrc)
-      (operatorC dlDst bDst)
+      (operatorC dlSrc bSrc o)
+      (operatorC dlDst bDst o)
       (InvariantOn map names)
       (fun n _ ih x xIn => by
         let _ := Set3.ordStd Pair
         let prevSrc (m: ↑n): Valuation Pair :=
-          (operatorC dlSrc bSrc).lfpStage m
+          (operatorC dlSrc bSrc o).lfpStage m
         let prevDst (m: ↑n): Valuation Pair :=
-          (operatorC dlDst bDst).lfpStage m
+          (operatorC dlDst bDst o).lfpStage m
         let isLubSrc :=
           PartialOrder.isLUB_pointwise_isLUB
             (isLUB_iSup (f := prevSrc))
@@ -102,24 +102,25 @@ def DefList.eq_defs_eq_vals
   {dlSrc dlDst: DefList}
   {map: Nat → Nat}
   {names: Set Nat}
+  {o: Valuation Pair}
   (defsEq: EqDefsOn dlSrc dlDst map names)
   (closed: ClosedUnderUses dlSrc names)
 :
-  InvariantOn map names dlSrc.wfm dlDst.wfm
+  InvariantOn map names (dlSrc.wfm o) (dlDst.wfm o)
 :=
   let _ := Valuation.ordApx Pair
   let _ : Inhabited (Valuation Pair) := inferInstance
   OrderHom.lfpStageCc_induction2
     isCcApx
     isCcApx
-    (operatorB dlSrc)
-    (operatorB dlDst)
+    (operatorB dlSrc o)
+    (operatorB dlDst o)
     (InvariantOn map names)
     (fun n _ ih isChainSrc isChainDst x xIn =>
       let prevSrc (m: ↑n): Valuation Pair :=
-        (operatorB dlSrc).lfpStageCc isCcApx m
+        (operatorB dlSrc o).lfpStageCc isCcApx m
       let prevDst (m: ↑n): Valuation Pair :=
-        (operatorB dlDst).lfpStageCc isCcApx m
+        (operatorB dlDst o).lfpStageCc isCcApx m
       let _ := Set3.ordApx Pair
       let isLubSrc :=
         PartialOrder.isLUB_pointwise_isLUB
@@ -212,6 +213,7 @@ def FinBoundedDl.ex_expr_uses_bound
       ⟩
     ⟩
   | .var _ => ⟨0, nofun⟩
+  | .oracle _ => ⟨0, nofun⟩
   | .null => ⟨0, nofun⟩
   | .prod left rite
   | .ir left rite =>
@@ -245,8 +247,9 @@ def FinBoundedDl.prefix_wfm_eq_of_lt
   {x n: Nat}
   (xLtN: x < n)
   (depsLtN: ∀ {dep}, DefList.DependsOn dl.getDef x dep → dep < n)
+  (o: Valuation Pair)
 :
-  (dl.prefix n).wfm x = dl.wfm x
+  (dl.prefix n).wfm o x = dl.wfm o x
 :=
   let names y := y = x ∨ DefList.DependsOn dl.getDef x y
   let defsEq:
@@ -270,8 +273,9 @@ def FinBoundedDl.prefix_wfm_eq_of_lt
 def FinBoundedDl.ex_prefix_wfm_eq
   (dl: FinBoundedDl)
   (x: Nat)
+  (o: Valuation Pair)
 :
-  ∃ n, (dl.prefix n).wfm x = dl.wfm x
+  ∃ n, (dl.prefix n).wfm o x = dl.wfm o x
 :=
   let ⟨bound, depsLt⟩ := dl.isFinBounded x
   let n := max (x + 1) bound
@@ -281,19 +285,20 @@ def FinBoundedDl.ex_prefix_wfm_eq
     dep < n
   :=
     Nat.lt_of_lt_of_le (depsLt depOn) (Nat.le_max_right _ _)
-  ⟨n, dl.prefix_wfm_eq_of_lt xLtN depsLtN⟩
+  ⟨n, dl.prefix_wfm_eq_of_lt xLtN depsLtN o⟩
 
 def FinBoundedDl.ex_prefix_wfm_eq_expr
   (dl: FinBoundedDl)
   (fv: List Pair)
   (expr: BasicExpr)
+  (o: Valuation Pair)
 :
-  ∃ n, expr.triIntp fv (dl.prefix n).wfm = expr.triIntp fv dl.wfm
+  ∃ n, expr.triIntp fv ((dl.prefix n).wfm o) o = expr.triIntp fv (dl.wfm o) o
 :=
   let ⟨n, isBounded⟩ := dl.ex_expr_uses_bound expr
   let eqAtN x xIn :=
     let ⟨xLtN, depsLtN⟩ := isBounded x xIn
-    dl.prefix_wfm_eq_of_lt xLtN depsLtN
+    dl.prefix_wfm_eq_of_lt xLtN depsLtN o
   ⟨n, by
     conv => rhs; rw [←Expr.mapConst_eq_id expr]
     exact (BasicExpr.mapConst_triIntp2 (map := id) eqAtN eqAtN).symm
@@ -506,7 +511,7 @@ namespace FiniteDefList
   def prefix_size_wfm_eq
     (dl: FiniteDefList)
   :
-    (dl.toDefList.prefix dl.size).wfm = dl.wfm
+    (dl.prefix dl.size).wfm = dl.wfm
   :=
     dl.prefix_size_eq ▸ rfl
   
@@ -518,8 +523,9 @@ namespace FiniteDefList
     (childEq: dlChild = dlParent.extend defs ubEq)
     {x: Nat}
     (xLt: x < dlParent.size)
+    {o: Valuation Pair}
   :
-    dlParent.wfm x = dlChild.wfm x
+    dlParent.wfm o x = dlChild.wfm o x
   :=
     let names y := y = x ∨ DefList.DependsOn dlParent.getDef x y
     let defsEq:

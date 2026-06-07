@@ -3,11 +3,11 @@
   
   Used syntax sugars:
   
-  - named variables: Eg. `Ex x, x` instead of `arbUn (var 0)`
-  - function calls: `f x`, see `Expr.call` in `PairExpr.lean`
+  * named variables: Eg. `Ex x, x` instead of `arbUn (var 0)`
+  * function calls: `f x`, see `Expr.call` in `PairExpr.lean`
     for syntax, and `Set3.call` / `Set3.flatCall` for the semantic
     version.
-  - parameters: `s3 Foo T := [body]` means `s3 Foo := Ex T, T × [body]`
+  * parameters: `s3 Foo T := ...` means `s3 Foo := Ex T, T × ...`
   
   Function calls and parameters work together just as one would expect:
   for `s3 Foo n := n × null`, the expression `Foo x` evaluates to the

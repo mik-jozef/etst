@@ -14,6 +14,7 @@ def Expr.substConst {E}
   Expr E → Expr E
 |
   .const e x => map e x
+| .oracle e x => .oracle e x
 | .var x => .var x
 | .null => .null
 | .prod l r => .prod (l.substConst map) (r.substConst map)
@@ -40,6 +41,7 @@ def Expr.substConst_eq_id {E}
 :=
   match expr with
   | .const e x => isId e x
+  | .oracle _ _ => rfl
   | .var _ => rfl
   | .null => rfl
   | .prod left rite =>
@@ -70,22 +72,23 @@ def Expr.mapConst_eq_id {E}
   each replacement expression has the same interpretation as the
   original constant in both complement polarities.
 -/
-def SingleLaneExpr.substConst_intp2 {fv bSrc bDst cSrc cDst}
+def SingleLaneExpr.substConst_intp2 {fv bSrc bDst cSrc cDst o}
   (map: Set3.Lane → Nat → SingleLaneExpr)
   {expr: SingleLaneExpr}
   (eqBC:
     ∀ fv lane x,
       x ∈ expr.UsesConst →
-      intp2 (map lane x) fv bDst cDst = (cSrc x).getLane lane)
+      intp2 (map lane x) fv bDst cDst o = (cSrc x).getLane lane)
   (eqCB:
     ∀ fv lane x,
       x ∈ expr.UsesConst →
-      intp2 (map lane x) fv cDst bDst = (bSrc x).getLane lane)
+      intp2 (map lane x) fv cDst bDst o = (bSrc x).getLane lane)
 :
-  intp2 (expr.substConst map) fv bDst cDst = intp2 expr fv bSrc cSrc
+  intp2 (expr.substConst map) fv bDst cDst o = intp2 expr fv bSrc cSrc o
 :=
   match expr with
   | .const lane x => eqBC fv lane x rfl
+  | .oracle _ _ => rfl
   | .var _ => rfl
   | .null => rfl
   | .prod _ _ =>
@@ -111,13 +114,13 @@ def SingleLaneExpr.substConst_intp2 {fv bSrc bDst cSrc cDst}
   | .arbIr _ =>
     eq_intp2_arbIr_of_eq fun _ => substConst_intp2 map eqBC eqCB
 
-def SingleLaneExpr.mapConst_intp2 {fv bSrc bDst cSrc cDst}
+def SingleLaneExpr.mapConst_intp2 {fv bSrc bDst cSrc cDst o}
   (map: Nat → Nat)
   {expr: SingleLaneExpr}
   (eqB: ∀ x ∈ expr.UsesConst, bSrc x = bDst (map x))
   (eqC: ∀ x ∈ expr.UsesConst, cSrc x = cDst (map x))
 :
-  intp2 (expr.mapConst map) fv bDst cDst = intp2 expr fv bSrc cSrc
+  intp2 (expr.mapConst map) fv bDst cDst o = intp2 expr fv bSrc cSrc o
 :=
   substConst_intp2
     (fun lane x => .const lane (map x))
@@ -137,6 +140,7 @@ namespace BasicExpr
     funext fun x => by
       induction expr generalizing lane with
       | const y => rfl
+      | oracle y => rfl
       | var y => rfl
       | null => rfl
       | prod left rite ihL ihR =>
@@ -177,6 +181,7 @@ namespace BasicExpr
   :=
     match expr with
     | .const _ => rfl
+    | .oracle _ => rfl
     | .var _ => rfl
     | .null => rfl
     | .prod left rite =>
@@ -211,23 +216,23 @@ namespace BasicExpr
     (map: Nat → BasicExpr)
     {expr: BasicExpr}
     {fv: List Pair}
-    {bSrc bDst cSrc cDst: Valuation Pair}
+    {bSrc bDst cSrc cDst o: Valuation Pair}
     (eqBC:
       ∀ fv x,
         x ∈ expr.UsesConst →
-        triIntp2 (map x) fv bDst cDst = cSrc x)
+        triIntp2 (map x) fv bDst cDst o = cSrc x)
     (eqCB:
       ∀ fv x,
         x ∈ expr.UsesConst →
-        triIntp2 (map x) fv cDst bDst = bSrc x)
+        triIntp2 (map x) fv cDst bDst o = bSrc x)
   :
     Eq
-      (triIntp2 (expr.substConst (fun _ => map)) fv bDst cDst)
-      (expr.triIntp2 fv bSrc cSrc)
+      (triIntp2 (expr.substConst (fun _ => map)) fv bDst cDst o)
+      (expr.triIntp2 fv bSrc cSrc o)
   :=
     let usesEq := toLane_UsesConst expr
     Set3.eq
-      (show SingleLaneExpr.intp2 _ _ _ _ = _ from
+      (show SingleLaneExpr.intp2 _ _ _ _ _ = _ from
       toLane_substConst expr .defLane map ▸
       SingleLaneExpr.substConst_intp2
         (fun lane x => (map x).toLane lane)
@@ -241,7 +246,7 @@ namespace BasicExpr
           congrArg
             (fun s => s.getLane lane)
             (eqCB fv x ((congrFun (usesEq .defLane) x).mp hx))))
-      (show SingleLaneExpr.intp2 _ _ _ _ = _ from
+      (show SingleLaneExpr.intp2 _ _ _ _ _ = _ from
       toLane_substConst expr .posLane map ▸
       SingleLaneExpr.substConst_intp2
         (fun lane x => (map x).toLane lane)
@@ -260,13 +265,13 @@ namespace BasicExpr
     (map: Nat → Nat)
     {expr: BasicExpr}
     {fv: List Pair}
-    {bSrc bDst cSrc cDst: Valuation Pair}
+    {bSrc bDst cSrc cDst o: Valuation Pair}
     (eqB: ∀ x ∈ expr.UsesConst, bSrc x = bDst (map x))
     (eqC: ∀ x ∈ expr.UsesConst, cSrc x = cDst (map x))
   :
     Eq
-      (triIntp2 (expr.mapConst map) fv bDst cDst)
-      (expr.triIntp2 fv bSrc cSrc)
+      (triIntp2 (expr.mapConst map) fv bDst cDst o)
+      (expr.triIntp2 fv bSrc cSrc o)
   :=
     substConst_triIntp2
       (fun x => .const (map x))

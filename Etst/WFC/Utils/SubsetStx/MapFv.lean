@@ -113,6 +113,7 @@ namespace DefList.SubsetStx
             · exact ih
         hypo_map desc
       | false => rfl
+    | .oracle lane x => rfl
     | .var x =>
       congrArg Expr.var (map_var_lt (varLt x rfl))
     | .null => rfl

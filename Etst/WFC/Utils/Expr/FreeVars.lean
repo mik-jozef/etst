@@ -5,25 +5,25 @@ import Etst.WFC.Utils.Expr.ConstsVarsSat
 
 namespace Etst
 
-variable {E: Type*}
+variable {L: Type*}
 
 
 namespace Expr
   def substVar
     (fvMap: Nat → Nat)
   :
-    Expr E → Expr E
+    Expr L → Expr L
   :=
     subst (var ∘ fvMap)
   
-  def instantiateVar.fn (t: Expr E): Nat → Expr E
+  def instantiateVar.fn (t: Expr L): Nat → Expr L
   | 0 => t
   | n + 1 => var n
   
-  def instantiateVar (expr: Expr E) (t: Expr E): Expr E :=
+  def instantiateVar (expr: Expr L) (t: Expr L): Expr L :=
     expr.subst (instantiateVar.fn t)
   
-  def substId {E}: Expr E → Expr E := substVar id  
+  def substId: Expr L → Expr L := substVar id  
   
   def substLift.fn (depth liftBy: Nat) :=
     fun x => if x < depth then x else x + liftBy
@@ -34,11 +34,11 @@ namespace Expr
   -- Redefining `lift` using `substVar`, so we can use composition
   -- properties of `substVar` to prove properties of `lift`.
   def substLift
-    (expr: Expr E)
+    (expr: Expr L)
     (depth: Nat)
     (liftBy: Nat)
   :
-    Expr E
+    Expr L
   :=
     expr.substVar (substLift.fn depth liftBy)
   
@@ -63,7 +63,7 @@ namespace Expr
     {depth} (lt: x < depth)
     (liftBy: Nat)
   :
-    (var (E := E) x).lift depth liftBy = var x
+    (var (L := L) x).lift depth liftBy = var x
   :=
     show var _ = _ from if_pos lt ▸ rfl
   
@@ -72,18 +72,19 @@ namespace Expr
     {depth} (ge: depth ≤ x)
     (liftBy: Nat)
   :
-    (var (E := E) x).lift depth liftBy = var (x + liftBy)
+    (var (L := L) x).lift depth liftBy = var (x + liftBy)
   :=
     show var _ = _ from if_neg (not_lt.mpr ge) ▸ rfl
   
   def lift_zero_eq
-    (expr: Expr E)
+    (expr: Expr L)
     (depth: Nat)
   :
     expr.lift depth 0 = expr
   :=
     match expr with
     | const _ _ => rfl
+    | oracle _ _ => rfl
     | var x =>
         if h: x < depth then
           (lift_var_lt x h 0).symm ▸ rfl
@@ -105,7 +106,7 @@ namespace Expr
     | arbIr body => congrArg arbIr (body.lift_zero_eq depth.succ)
   
   def lift_add_eq
-    (expr: Expr E)
+    (expr: Expr L)
     {d0 d1} (le0: d0 ≤ d1)
     {a} (le1: d1 ≤ d0 + a)
     (b: Nat)
@@ -114,6 +115,7 @@ namespace Expr
   :=
     match expr with
     | const _ _ => rfl
+    | oracle _ _ => rfl
     | var x => by
       if h: x < d0 then
         rw [lift_var_lt x h]
@@ -148,13 +150,14 @@ namespace Expr
           b)
   
   def lift_inj
-    {a b: Expr E} {depth liftBy}
+    {a b: Expr L} {depth liftBy}
     (eq: a.lift depth liftBy = b.lift depth liftBy)
   :
     a = b
   :=
     match a, b with
     | const _ _, const _ _ => eq
+    | oracle _ _, oracle _ _ => eq
     | var x, var y => by
       let hX := Classical.em (x < depth)
       let hY := Classical.em (y < depth)
@@ -203,7 +206,7 @@ namespace Expr
   -- Intuition: if one lift at `depth` already lands where a lift at
   -- `k + depth` would land, then after lifting once more we keep that
   -- alignment one level up (`depth` ↦ `k + depth + 1`).
-  def lift_inv_step {expr: Expr E} {k depth}
+  def lift_inv_step {expr: Expr L} {k depth}
     (eq: expr.lift depth 1 = expr.lift (k + depth) 1)
   :
     Eq
@@ -212,6 +215,7 @@ namespace Expr
   :=
     match expr with
     | const _ _ => rfl
+    | oracle _ _ => rfl
     | var x => by
       if h: x < depth then
         rw [lift_var_lt x h 1]
@@ -249,21 +253,21 @@ namespace Expr
       congrArg arbIr (lift_inv_step (depth:=depth+1) (by injection eq))
   
   def lift_lift_eq_one
-    (expr: Expr E)
+    (expr: Expr L)
   :
     expr.lift.lift = expr.lift.lift 1
   :=
     lift_inv_step rfl
   
   def lift_zth
-    (expr: Expr E)
+    (expr: Expr L)
   :
     expr.lift.zth.lift = expr.lift.lift.zth
   :=
     congrArg zth (lift_lift_eq_one expr).symm
   
   def lift_fst
-    (expr: Expr E)
+    (expr: Expr L)
   :
     expr.lift.fst.lift = expr.lift.lift.fst
   :=
@@ -280,7 +284,7 @@ namespace Expr
     | _ + 1 => rfl
   
   def liftFvMap_comp_var
-    (f: Nat → Expr E)
+    (f: Nat → Expr L)
     (g: Nat → Nat)
   :
     liftFvMap (f ∘ g) = (liftFvMap f) ∘ (liftFvMapVar g)
@@ -290,7 +294,7 @@ namespace Expr
     | _ + 1 => rfl
   
   def substVar_liftFvMapVar_subst
-    (expr: Expr E)
+    (expr: Expr L)
     (map: Nat → Nat)
   :
     Eq
@@ -306,14 +310,15 @@ namespace Expr
     congrArg (subst · expr) mapEq
   
   def subst_comp_var
-    (f: Nat → Expr E)
+    (f: Nat → Expr L)
     (g: Nat → Nat)
-    (expr: Expr E)
+    (expr: Expr L)
   :
     subst (f ∘ g) expr = subst f (substVar g expr)
   :=
     match expr with
     | const _ _ => rfl
+    | oracle _ _ => rfl
     | var x => rfl
     | null => rfl
     | prod l r =>
@@ -334,7 +339,7 @@ namespace Expr
   
   def substVar_comp
     (f g: Nat → Nat)
-    (expr: Expr E)
+    (expr: Expr L)
   :
     substVar (f ∘ g) expr = substVar f (substVar g expr)
   :=
@@ -378,7 +383,7 @@ namespace Expr
         rw [Nat.add_right_comm]
   
   def lift_eq_substLift
-    (expr: Expr E)
+    (expr: Expr L)
     (depth: Nat)
     (liftBy: Nat)
   :
@@ -386,6 +391,7 @@ namespace Expr
   :=
     match expr with
     | const _ _ => rfl
+    | oracle _ _ => rfl
     | var _ => rfl
     | null => rfl
     | prod l r =>
@@ -404,7 +410,7 @@ namespace Expr
         lift_eq_substLift body (depth + 1) liftBy)
   
   def lift_substVar_eq
-    (expr: Expr E)
+    (expr: Expr L)
     (map: Nat → Nat)
   :
     Eq
@@ -418,8 +424,8 @@ namespace Expr
   
   def subst_liftFvMap_lift_general
     (k: Nat)
-    (f: Nat → Expr E)
-    (expr: Expr E)
+    (f: Nat → Expr L)
+    (expr: Expr L)
     (h_safe: ∀ x, k ≤ x → (f x).lift 0 1 = (f x).lift k 1)
     (h_id: ∀ x, x < k → f x = var x)
   :
@@ -427,6 +433,7 @@ namespace Expr
   :=
     match expr with
     | const _ _ => rfl
+    | oracle _ _ => rfl
     | var x => by
       if h: x < k then
         rw [lift_var_lt x h 1]
@@ -481,8 +488,8 @@ namespace Expr
               exact lift_var_ge y (Nat.zero_le _) 1))
 
   def lift_subst_eq
-    (f: Nat → Expr E)
-    (expr: Expr E)
+    (f: Nat → Expr L)
+    (expr: Expr L)
   :
     subst (liftFvMap f) expr.lift = (subst f expr).lift
   :=
@@ -494,13 +501,14 @@ namespace Expr
       (fun x h => (Nat.not_lt_zero x h).elim)
   
   def subst_subst
-    (f g: Nat → Expr E)
-    (expr: Expr E)
+    (f g: Nat → Expr L)
+    (expr: Expr L)
   :
     subst f (subst g expr) = subst (fun x => subst f (g x)) expr
   :=
     match expr with
     | const _ _ => rfl
+    | oracle _ _ => rfl
     | var x => rfl
     | null => rfl
     | prod l r =>
@@ -518,12 +526,13 @@ namespace Expr
         | n + 1 => lift_subst_eq f (g n))
   
   def freeVarUb
-    (expr: Expr E)
+    (expr: Expr L)
   :
     Nat
   :=
     match expr with
     | .const _ _ => 0
+    | .oracle _ _ => 0
     | .var x => x + 1
     | .null => 0
     | .prod left rite =>
@@ -535,7 +544,7 @@ namespace Expr
     | .arbIr body => body.freeVarUb - 1
   
   def freeVarUb_lift_eq_depth
-    (expr: Expr E)
+    (expr: Expr L)
     (liftBy depth: Nat)
   :
     Eq
@@ -550,6 +559,7 @@ namespace Expr
       
     match expr with
     | .const _ _ => Nat.zero_sub _ ▸ rfl
+    | .oracle _ _ => Nat.zero_sub _ ▸ rfl
     | .var x => by
       unfold lift freeVarUb
       split_ifs <;> omega
@@ -582,7 +592,7 @@ namespace Expr
       omega
   
   def freeVarUb_le_lift
-    {expr: Expr E} {liftBy ub}
+    {expr: Expr L} {liftBy ub}
     (le: expr.freeVarUb ≤ ub)
   :
     (expr.lift 0 liftBy).freeVarUb ≤ ub + liftBy
@@ -591,7 +601,7 @@ namespace Expr
     Nat.le_add_of_sub_le (eq ▸ le)
   
   def freeVarUb_le_of_lift
-    {expr: Expr E} {liftBy ub}
+    {expr: Expr L} {liftBy ub}
     (le: (expr.lift 0 liftBy).freeVarUb ≤ ub + liftBy)
   :
     expr.freeVarUb ≤ ub
@@ -602,7 +612,7 @@ namespace Expr
     exact Nat.sub_le_of_le_add le
   
   def freeVarUb_freeVarLt {x}
-    {expr: Expr E}
+    {expr: Expr L}
     (uses: expr.UsesFreeVar x)
   :
     x < expr.freeVarUb
@@ -637,7 +647,7 @@ namespace Expr
       Nat.le_sub_of_add_le ih
   
   def freeVarUb_bin_le_elim
-    {a b: Expr E} {n}
+    {a b: Expr L} {n}
     (le: Nat.max a.freeVarUb b.freeVarUb ≤ n)
   :
     a.freeVarUb ≤ n ∧ b.freeVarUb ≤ n
@@ -645,7 +655,7 @@ namespace Expr
     Nat.max_le.mp le
   
   def freeVarUb_bin_le_elimL
-    {a b: Expr E} {n}
+    {a b: Expr L} {n}
     (le: Nat.max a.freeVarUb b.freeVarUb ≤ n)
   :
     a.freeVarUb ≤ n
@@ -653,7 +663,7 @@ namespace Expr
     (freeVarUb_bin_le_elim le).left
   
   def freeVarUb_bin_le_elimR
-    {a b: Expr E} {n}
+    {a b: Expr L} {n}
     (le: Nat.max a.freeVarUb b.freeVarUb ≤ n)
   :
     b.freeVarUb ≤ n
@@ -661,7 +671,7 @@ namespace Expr
     (freeVarUb_bin_le_elim le).right
   
   def freeVarUb_bin_le
-    {a b: Expr E} {n}
+    {a b: Expr L} {n}
     (leA: a.freeVarUb ≤ n)
     (leB: b.freeVarUb ≤ n)
   :
@@ -670,12 +680,13 @@ namespace Expr
     Nat.max_le.mpr ⟨leA, leB⟩
   
   def substId_eq
-    (expr: Expr E)
+    (expr: Expr L)
   :
     expr.substId = expr
   :=
     match expr with
     | const _ _ => rfl
+    | oracle _ _ => rfl
     | var _ => rfl
     | null => rfl
     | prod l r =>
@@ -686,14 +697,14 @@ namespace Expr
     | compl body => congrArg compl body.substId_eq
     | arbIr body =>
       let liftEq:
-        (liftFvMap fun x => var (E := E) x) = (fun x => var x)
+        (liftFvMap fun x => var (L := L) x) = (fun x => var x)
       :=
         funext fun | 0 => rfl | _+1 => rfl
       congrArg arbIr (liftEq.symm ▸ body.substId_eq)
   
   def lift_instantiateVar_eq
-    (expr: Expr E)
-    (t: Expr E)
+    (expr: Expr L)
+    (t: Expr L)
   :
     expr.lift.instantiateVar t = expr
   := by
@@ -704,8 +715,8 @@ namespace Expr
     exact substId_eq expr
   
   def lift_pos_instantiateVar_eq
-    (expr: Expr E)
-    (t: Expr E)
+    (expr: Expr L)
+    (t: Expr L)
     (n: Nat)
   :
     (expr.lift 0 n.succ).instantiateVar t = expr.lift 0 n
@@ -716,12 +727,12 @@ namespace Expr
     rfl
   
   def lift_d1_instantiateVar_eq
-    (expr: Expr E)
+    (expr: Expr L)
   :
     (expr.lift 1).instantiateVar (var 0) = expr
   := by
     let fnEq:
-      instantiateVar.fn (var (E := E) 0) = var ∘ (substUnlift.fn 1 1)
+      instantiateVar.fn (var (L := L) 0) = var ∘ (substUnlift.fn 1 1)
     :=
       funext fun x =>
       match x with
@@ -737,7 +748,7 @@ namespace Expr
     exact substId_eq expr
   
   def substVar_substUnlift_substLift_eq
-    (expr: Expr E)
+    (expr: Expr L)
     (depth liftBy: Nat)
   :
     Eq
@@ -751,7 +762,7 @@ namespace Expr
     exact substId_eq expr
 
   def substVar_substUnlift_lift_eq
-    (expr: Expr E)
+    (expr: Expr L)
     (depth liftBy: Nat)
   :
     Eq
@@ -764,17 +775,19 @@ namespace Expr
     exact substVar_substUnlift_substLift_eq expr depth liftBy
   
   
-  def subst_eq_of_freeVarLt {E}
-    {expr: Expr E}
+  def subst_eq_of_freeVarLt
+    {expr: Expr L}
     (bound: Nat)
     (freeVarLt: ∀ x ∈ expr.UsesFreeVar, x < bound)
-    (map: Nat → Expr E)
+    (map: Nat → Expr L)
     (map_id_lt: ∀ x, x < bound → map x = var x)
   :
     subst map expr = expr
   := by
     induction expr generalizing bound map with
     | const _ _ =>
+      rfl
+    | oracle _ _ =>
       rfl
     | var x =>
       let ltBound := freeVarLt x rfl
@@ -838,18 +851,20 @@ namespace SingleLaneExpr
   def intp2_lift_eq_depth
     (expr: SingleLaneExpr)
     (fv fvDepth fvLiftBy: List Pair)
-    (b c: Valuation Pair)
+    (b c o: Valuation Pair)
   :
     Eq
-      (expr.intp2 (fvDepth ++ fv) b c)
+      (expr.intp2 (fvDepth ++ fv) b c o)
       (SingleLaneExpr.intp2
         (expr.lift fvDepth.length fvLiftBy.length)
         (fvDepth ++ fvLiftBy ++ fv)
         b
-        c)
+        c
+        o)
   :=
     match expr with
     | .const _ _ => rfl
+    | .oracle _ _ => rfl
     | .var x => by
       show
         Eq
@@ -878,84 +893,85 @@ namespace SingleLaneExpr
     | .null => rfl
     | .prod l r =>
       eq_intp2_prod_of_eq
-        (intp2_lift_eq_depth l fv fvDepth fvLiftBy b c)
-        (intp2_lift_eq_depth r fv fvDepth fvLiftBy b c)
+        (intp2_lift_eq_depth l fv fvDepth fvLiftBy b c o)
+        (intp2_lift_eq_depth r fv fvDepth fvLiftBy b c o)
     | .ir l r =>
       eq_intp2_ir_of_eq
-        (intp2_lift_eq_depth l fv fvDepth fvLiftBy b c)
-        (intp2_lift_eq_depth r fv fvDepth fvLiftBy b c)
+        (intp2_lift_eq_depth l fv fvDepth fvLiftBy b c o)
+        (intp2_lift_eq_depth r fv fvDepth fvLiftBy b c o)
     | .full body =>
       eq_intp2_full_of_eq
-        (intp2_lift_eq_depth body fv fvDepth fvLiftBy b c)
+        (intp2_lift_eq_depth body fv fvDepth fvLiftBy b c o)
     | .compl body =>
       eq_intp2_compl_of_eq
-        (intp2_lift_eq_depth body fv fvDepth fvLiftBy c b)
+        (intp2_lift_eq_depth body fv fvDepth fvLiftBy c b o)
     | .arbIr body =>
       eq_intp2_arbIr_of_eq fun p =>
-        intp2_lift_eq_depth body fv (p :: fvDepth) fvLiftBy b c
+        intp2_lift_eq_depth body fv (p :: fvDepth) fvLiftBy b c o
   
   def intp2_lift_eq
     (expr: SingleLaneExpr)
     (fv fvLiftBy: List Pair)
-    (b c: Valuation Pair)
+    (b c o: Valuation Pair)
   :
     Eq
-      (expr.intp2 fv b c)
-      (intp2 (expr.lift 0 fvLiftBy.length) (fvLiftBy ++ fv) b c)
+      (expr.intp2 fv b c o)
+      (intp2 (expr.lift 0 fvLiftBy.length) (fvLiftBy ++ fv) b c o)
   :=
-    intp2_lift_eq_depth expr fv [] fvLiftBy b c
+    intp2_lift_eq_depth expr fv [] fvLiftBy b c o
   
   def intp_lift_eq
     (expr: SingleLaneExpr)
     (fv fvLiftBy: List Pair)
-    (v: Valuation Pair)
+    (v o: Valuation Pair)
   :
     Eq
-      (expr.intp fv v)
-      (intp (expr.lift 0 fvLiftBy.length) (fvLiftBy ++ fv) v)
+      (expr.intp fv v o)
+      (intp (expr.lift 0 fvLiftBy.length) (fvLiftBy ++ fv) v o)
   :=
-    intp2_lift_eq expr fv fvLiftBy v v
+    intp2_lift_eq expr fv fvLiftBy v v o
   
   def intp2_lift_head_eq
     (expr: SingleLaneExpr)
     (pA pB: Pair)
     (fv: List Pair)
-    (b c: Valuation Pair)
+    (b c o: Valuation Pair)
   :
-    intp2 expr.lift (pA :: fv) b c = intp2 expr.lift (pB :: fv) b c
+    intp2 expr.lift (pA :: fv) b c o = intp2 expr.lift (pB :: fv) b c o
   :=
-    (intp2_lift_eq expr fv [pA] b c).symm.trans
-      (intp2_lift_eq expr fv [pB] b c)
+    (intp2_lift_eq expr fv [pA] b c o).symm.trans
+      (intp2_lift_eq expr fv [pB] b c o)
   
   def intp_lift_head_eq
     (expr: SingleLaneExpr)
     (pA pB: Pair)
     (fv: List Pair)
-    (v: Valuation Pair)
+    (v o: Valuation Pair)
   :
-    intp expr.lift (pA :: fv) v = intp expr.lift (pB :: fv) v
+    intp expr.lift (pA :: fv) v o = intp expr.lift (pB :: fv) v o
   :=
-    intp2_lift_head_eq expr pA pB fv v v
+    intp2_lift_head_eq expr pA pB fv v v o
   
   
   def intp2_subst_eq
     {fvMap: Nat → SingleLaneExpr}
     {expr: SingleLaneExpr}
-    {b c: Valuation Pair}
+    {b c o: Valuation Pair}
     {fvLeft fvRite}
     (fvEq:
       ∀ x ∈ expr.UsesFreeVar,
-        intpVar fvLeft x = (fvMap x).intp2 fvRite b c)
+        intpVar fvLeft x = (fvMap x).intp2 fvRite b c o)
     (fvEqCpl:
       ∀ x ∈ expr.UsesFreeVar,
-        intpVar fvLeft x = (fvMap x).intp2 fvRite c b)
+        intpVar fvLeft x = (fvMap x).intp2 fvRite c b o)
   :
     Eq
-      (expr.intp2 fvLeft b c)
-      (intp2 (expr.subst fvMap) fvRite b c)
+      (expr.intp2 fvLeft b c o)
+      (intp2 (expr.subst fvMap) fvRite b c o)
   :=
     match expr with
     | .const _ _ => rfl
+    | .oracle _ _ => rfl
     | .var x => fvEq x rfl
     | .null => rfl
     | .prod _ _ =>
@@ -985,17 +1001,17 @@ namespace SingleLaneExpr
       let fvEqLifted {b c}
         (hyp:
           ∀ x ∈ (arbIr body).UsesFreeVar,
-            intpVar fvLeft x = (fvMap x).intp2 fvRite b c)
+            intpVar fvLeft x = (fvMap x).intp2 fvRite b c o)
         (p: Pair)
         (x: Nat)
         (h: x ∈ body.UsesFreeVar)
       :
-        intpVar (p :: fvLeft) x = (fvMap' x).intp2 (p :: fvRite) b c
+        intpVar (p :: fvLeft) x = (fvMap' x).intp2 (p :: fvRite) b c o
       :=
         match x with
         | 0 => rfl
         | x + 1 =>
-          intp2_lift_eq (fvMap x) fvRite [p] b c ▸ hyp x h
+          intp2_lift_eq (fvMap x) fvRite [p] b c o ▸ hyp x h
       
       eq_intp2_arbIr_of_eq fun p =>
         intp2_subst_eq
@@ -1005,27 +1021,27 @@ namespace SingleLaneExpr
   def intp_subst_eq
     {fvMap: Nat → SingleLaneExpr}
     {expr: SingleLaneExpr}
-    {fvLeft fvRite v}
+    {fvLeft fvRite v o}
     (fvEq:
       ∀ x ∈ expr.UsesFreeVar,
-        intpVar fvLeft x = (fvMap x).intp fvRite v)
+        intpVar fvLeft x = (fvMap x).intp fvRite v o)
   :
     Eq
-      (expr.intp2 fvLeft v v)
-      (intp2 (expr.subst fvMap) fvRite v v)
+      (expr.intp2 fvLeft v v o)
+      (intp2 (expr.subst fvMap) fvRite v v o)
   :=
     intp2_subst_eq fvEq fvEq
   
   def intp2_substVar_eq
     {fvMap: Nat → Nat}
     {expr: SingleLaneExpr}
-    {b c: Valuation Pair}
+    {b c o: Valuation Pair}
     {fvLeft fvRite}
     (fvEq: ∀ x ∈ expr.UsesFreeVar, fvLeft[x]? = fvRite[fvMap x]?)
   :
     Eq
-      (expr.intp2 fvLeft b c)
-      (intp2 (expr.substVar fvMap) fvRite b c)
+      (expr.intp2 fvLeft b c o)
+      (intp2 (expr.substVar fvMap) fvRite b c o)
   :=
     (fun ab a => ab a a)
       intp2_subst_eq
@@ -1038,11 +1054,11 @@ namespace SingleLaneExpr
   def intp2_instantiateVar_eq
     (expr: SingleLaneExpr)
     (t: SingleLaneExpr)
-    {fv b c pB}
-    (t_eq: t.intp2 fv b c = {pB})
-    (t_eq_c: t.intp2 fv c b = {pB})
+    {fv b c o pB}
+    (t_eq: t.intp2 fv b c o = {pB})
+    (t_eq_c: t.intp2 fv c b o = {pB})
   :
-    expr.intp2 (pB :: fv) b c = intp2 (expr.instantiateVar t) fv b c
+    expr.intp2 (pB :: fv) b c o = intp2 (expr.instantiateVar t) fv b c o
   :=
     intp2_subst_eq
       (fun
@@ -1055,10 +1071,10 @@ namespace SingleLaneExpr
   def intp_instantiateVar_eq
     (expr: SingleLaneExpr)
     (t: SingleLaneExpr)
-    {fv v pB}
-    (t_eq: t.intp fv v = {pB})
+    {fv v o pB}
+    (t_eq: t.intp fv v o = {pB})
   :
-    expr.intp (pB :: fv) v = intp (expr.instantiateVar t) fv v
+    expr.intp (pB :: fv) v o = intp (expr.instantiateVar t) fv v o
   :=
     intp_subst_eq (fun
       | 0, _ => t_eq ▸ rfl
@@ -1067,9 +1083,9 @@ namespace SingleLaneExpr
   
   def intp2_clearFreeVars_eq
     (expr: SingleLaneExpr)
-    {fv b c}
+    {fv b c o}
   :
-    expr.intp2 [] b c = intp2 expr.clearFreeVars fv b c
+    expr.intp2 [] b c o = intp2 expr.clearFreeVars fv b c o
   :=
     intp2_subst_eq
       (fun _ _ => intp2_none_eq_empty ▸ rfl)
@@ -1078,12 +1094,12 @@ namespace SingleLaneExpr
   
   def intp2_bv_append
     {expr: SingleLaneExpr}
-    {fv b c} (ubLe: expr.freeVarUb ≤ fv.length)
+    {fv b c o} (ubLe: expr.freeVarUb ≤ fv.length)
     (rest: List Pair)
   :
-    expr.intp2 fv b c = expr.intp2 (fv ++ rest) b c
+    expr.intp2 fv b c o = expr.intp2 (fv ++ rest) b c o
   :=
-    let eq: expr.intp2 fv b c = intp2 expr.substId (fv ++ rest) b c :=
+    let eq: expr.intp2 fv b c o = intp2 expr.substId (fv ++ rest) b c o :=
       intp2_substVar_eq
         (fun x xUsed =>
           let ltUb := expr.freeVarUb_freeVarLt xUsed
@@ -1093,10 +1109,10 @@ namespace SingleLaneExpr
   
   def intp_bv_append
     {expr: SingleLaneExpr}
-    {fv v} (ubLe: expr.freeVarUb ≤ fv.length)
+    {fv v o} (ubLe: expr.freeVarUb ≤ fv.length)
     (rest: List Pair)
   :
-    expr.intp fv v = expr.intp (fv ++ rest) v
+    expr.intp fv v o = expr.intp (fv ++ rest) v o
   :=
     intp2_bv_append ubLe rest
   
@@ -1112,6 +1128,7 @@ namespace BasicExpr
   :=
     match expr with
     | .const _ => Iff.rfl
+    | .oracle _ => Iff.rfl
     | .var _ => Iff.rfl
     | .null => Iff.rfl
     | .prod l r =>
@@ -1145,17 +1162,17 @@ namespace BasicExpr
 end BasicExpr
 
 open SingleLaneExpr in
-def Expr.IsClean.intp2_eq {fvL fvR b c}
+def Expr.IsClean.intp2_eq {fvL fvR b c o}
   {expr: SingleLaneExpr}
   (h: Expr.IsClean expr)
 :
-  expr.intp2 fvL b c = intp2 expr fvR b c
+  expr.intp2 fvL b c o = intp2 expr fvR b c o
 :=
   let nope {P: Nat → Prop}: ∀ x ∈ expr.UsesFreeVar, P x :=
     fun x hx => (h x hx).elim
-  let eqL: expr.intp2 fvL b c = intp2 expr.clearFreeVars [] b c :=
+  let eqL: expr.intp2 fvL b c o = intp2 expr.clearFreeVars [] b c o :=
     intp2_subst_eq nope nope
-  let eqR: expr.intp2 fvR b c = intp2 expr.clearFreeVars [] b c :=
+  let eqR: expr.intp2 fvR b c o = intp2 expr.clearFreeVars [] b c o :=
     intp2_subst_eq nope nope
   eqL.trans eqR.symm
 
@@ -1175,11 +1192,11 @@ namespace DefList
     (dl: DefList)
     (x: Nat)
     (fv0 fv1: List Pair)
-    (b c: Valuation Pair)
+    (b c o: Valuation Pair)
   :
     Eq
-      ((dl.getDef x).toDefLane.intp2 fv0 b c)
-      ((dl.getDef x).toDefLane.intp2 fv1 b c)
+      ((dl.getDef x).toDefLane.intp2 fv0 b c o)
+      ((dl.getDef x).toDefLane.intp2 fv1 b c o)
   :=
     ((dl.isClean x).toLane .defLane).intp2_eq
   
@@ -1187,11 +1204,11 @@ namespace DefList
     (dl: DefList)
     (x: Nat)
     (fv0 fv1: List Pair)
-    (b c: Valuation Pair)
+    (b c o: Valuation Pair)
   :
     Eq
-      ((dl.getDef x).toPosLane.intp2 fv0 b c)
-      ((dl.getDef x).toPosLane.intp2 fv1 b c)
+      ((dl.getDef x).toPosLane.intp2 fv0 b c o)
+      ((dl.getDef x).toPosLane.intp2 fv1 b c o)
   :=
     ((dl.isClean x).toLane .posLane).intp2_eq
   
@@ -1199,48 +1216,48 @@ namespace DefList
     (dl: DefList)
     (x: Nat)
     (fv0 fv1: List Pair)
-    (b c: Valuation Pair)
+    (b c o: Valuation Pair)
   :
-    (dl.getDef x).triIntp2 fv0 b c = (dl.getDef x).triIntp2 fv1 b c
+    (dl.getDef x).triIntp2 fv0 b c o = (dl.getDef x).triIntp2 fv1 b c o
   :=
     Set3.eq
-      (dl.intpDefs2_eq_fv_def x fv0 fv1 b c)
-      (dl.intpDefs2_eq_fv_pos x fv0 fv1 b c)
+      (dl.intpDefs2_eq_fv_def x fv0 fv1 b c o)
+      (dl.intpDefs2_eq_fv_pos x fv0 fv1 b c o)
   
 end DefList
 
 namespace DefList
   variable {dl: DefList}
   
-  def InWfm.of_in_def {fv x lane d}
-    (inDef: dl.InWfm fv ((dl.getDef x).toLane lane) d)
+  def InWfm.of_in_def {fv x lane d o}
+    (inDef: dl.InWfm o fv ((dl.getDef x).toLane lane) d)
   :
-    dl.InWfm [] (.const lane x) d
+    dl.InWfm o [] (.const lane x) d
   :=
     open SingleLaneExpr in
     of_in_def_no_fv
       (match lane with
       | .defLane =>
-        let eqDef := dl.intpDefs2_eq_fv_def x [] fv dl.wfm dl.wfm
-        show intp2 _ _ _ _ _ from
+        let eqDef := dl.intpDefs2_eq_fv_def x [] fv (dl.wfm o) (dl.wfm o) o
+        show intp2 _ _ _ _ _ _ from
         eqDef ▸ inDef
       | .posLane =>
-        let eqPos := dl.intpDefs2_eq_fv_pos x [] fv dl.wfm dl.wfm
-        show intp2 _ _ _ _ _ from
+        let eqPos := dl.intpDefs2_eq_fv_pos x [] fv (dl.wfm o) (dl.wfm o) o
+        show intp2 _ _ _ _ _ _ from
         eqPos ▸ inDef)
   
-  def InWfm.in_def {fv x lane d}
-    (inVar: dl.InWfm [] (.const lane x) d)
+  def InWfm.in_def {fv x lane d o}
+    (inVar: dl.InWfm o [] (.const lane x) d)
   :
-    dl.InWfm fv ((dl.getDef x).toLane lane) d
+    dl.InWfm o fv ((dl.getDef x).toLane lane) d
   :=
-    show SingleLaneExpr.intp2 _ _ _ _ _ from
+    show SingleLaneExpr.intp2 _ _ _ _ _ _ from
     match lane with
     | .defLane =>
-      dl.intpDefs2_eq_fv_def x fv [] dl.wfm dl.wfm ▸
+      dl.intpDefs2_eq_fv_def x fv [] (dl.wfm o) (dl.wfm o) o ▸
       in_def_no_fv inVar
     | .posLane =>
-      dl.intpDefs2_eq_fv_pos x fv [] dl.wfm dl.wfm ▸
+      dl.intpDefs2_eq_fv_pos x fv [] (dl.wfm o) (dl.wfm o) o ▸
       in_def_no_fv inVar
   
 end DefList

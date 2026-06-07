@@ -8,6 +8,8 @@ universe u
 namespace SingleLaneExpr
   def const (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
     Expr.const lane x
+  def oracle (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
+    Expr.oracle lane x
   def var (x: Nat): SingleLaneExpr :=
     Expr.var x
   def null: SingleLaneExpr := Expr.null
@@ -45,6 +47,8 @@ namespace SingleLaneExpr
       LaneEq .none odd (const lane x)
   | constSome {odd lane x}:
       LaneEq (.some lane) odd (const lane x)
+  | oracle {even odd lane x}:
+      LaneEq even odd (oracle lane x)
   | var {even odd x}:
       LaneEq even odd (var x)
   | null {even odd}:
@@ -147,6 +151,8 @@ def BasicExpr.laneEq
   match expr, lane with
   | .const _, .defLane => .constSome
   | .const _, .posLane => .constSome
+  | .oracle _, .defLane => .oracle
+  | .oracle _, .posLane => .oracle
   | .var _, .defLane => .var
   | .var _, .posLane => .var
   | .null, .defLane => .null
@@ -179,7 +185,8 @@ def Expr.toString {E} (serializeVar: E → Nat → String):
 | .arbUn body =>
   let bodyStr := body.toString serializeVar
   s!"Ex ({bodyStr})"
-| .const info x => serializeVar info x
+| .const l x => serializeVar l x
+| .oracle l x => s!"o:{serializeVar l x}"
 | .var x => s!"v{x}"
 | .null =>
   "null"

@@ -36,6 +36,7 @@ namespace Etst
 def Expr.toNnfAux {E} : Expr E → Bool → Expr E
 -- Positive context (isNegated = false)
 | .const e x, false => .const e x
+| .oracle e x, false => .oracle e x
 | .var x,     false => .var x
 | .null,      false => .null
 | .prod l r,  false => .prod (l.toNnfAux false) (r.toNnfAux false)
@@ -45,6 +46,7 @@ def Expr.toNnfAux {E} : Expr E → Bool → Expr E
 | .compl b,   false => b.toNnfAux true -- Switch to negative context
 -- Negative context (isNegated = true)
 | .const e x, true  => .compl (.const e x)
+| .oracle e x, true => .compl (.oracle e x)
 | .var x,     true  => .compl (.var x)
 | .null,      true  => .prod .any .any
 | .prod l r,  true  => 
@@ -76,14 +78,15 @@ def Expr.toNnfCcElim {E}
 def SingleLaneExpr.intp2_toNnfAux_eq
   (expr: SingleLaneExpr)
   (fv: List Pair)
-  (b c: Valuation Pair)
+  (b c o: Valuation Pair)
 :
   And
-    (intp2 (expr.toNnfAux false) fv b c = intp2 expr fv b c)
-    (intp2 (expr.toNnfAux true) fv b c = intp2 (.compl expr) fv b c)
+    (intp2 (expr.toNnfAux false) fv b c o = intp2 expr fv b c o)
+    (intp2 (expr.toNnfAux true) fv b c o = intp2 (.compl expr) fv b c o)
 :=
   match expr with
   | .const _ _ => ⟨rfl, rfl⟩
+  | .oracle _ _ => ⟨rfl, rfl⟩
   | .var _ => ⟨rfl, rfl⟩
   | .null => ⟨
       funext fun _ => rfl,
@@ -92,8 +95,8 @@ def SingleLaneExpr.intp2_toNnfAux_eq
       | .pair _ _ => propext ⟨nofun, fun _ => inProd inAny inAny⟩,
     ⟩
   | .prod left rite =>
-    let ⟨ihL, ihCL⟩ := left.intp2_toNnfAux_eq fv b c
-    let ⟨ihR, ihCR⟩ := rite.intp2_toNnfAux_eq fv b c
+    let ⟨ihL, ihCL⟩ := left.intp2_toNnfAux_eq fv b c o
+    let ⟨ihR, ihCR⟩ := rite.intp2_toNnfAux_eq fv b c o
     ⟨
       eq_intp2_prod_of_eq ihL ihR,
       funext fun p =>
@@ -134,51 +137,51 @@ def SingleLaneExpr.intp2_toNnfAux_eq
       ⟩,
     ⟩
   | .ir left rite =>
-    let ⟨ihL, ihCL⟩ := left.intp2_toNnfAux_eq fv b c
-    let ⟨ihR, ihCR⟩ := rite.intp2_toNnfAux_eq fv b c
+    let ⟨ihL, ihCL⟩ := left.intp2_toNnfAux_eq fv b c o
+    let ⟨ihR, ihCR⟩ := rite.intp2_toNnfAux_eq fv b c o
     ⟨
       eq_intp2_ir_of_eq ihL ihR,
       eq_intp2_compl_of_eq
         (eq_intp2_ir_of_eq
           ((eq_intp2_compl_of_eq ihCL.symm).symm.trans
-            ((intp2_compl_compl_eq left fv c b)))
+            ((intp2_compl_compl_eq left fv c b o)))
           ((eq_intp2_compl_of_eq ihCR.symm).symm.trans
-            ((intp2_compl_compl_eq rite fv c b)))),
+            ((intp2_compl_compl_eq rite fv c b o)))),
     ⟩
   | .full body =>
-    let ⟨ih, ihC⟩ := body.intp2_toNnfAux_eq fv b c
+    let ⟨ih, ihC⟩ := body.intp2_toNnfAux_eq fv b c o
     ⟨
       eq_intp2_full_of_eq ih,
       eq_intp2_compl_of_eq
         (eq_intp2_full_of_eq
           ((eq_intp2_compl_of_eq ihC.symm).symm.trans
-            (intp2_compl_compl_eq body fv c b))),
+            (intp2_compl_compl_eq body fv c b o))),
     ⟩
   | .compl body =>
-    let ⟨ih, ihC⟩ := body.intp2_toNnfAux_eq fv b c
+    let ⟨ih, ihC⟩ := body.intp2_toNnfAux_eq fv b c o
     ⟨
       ihC,
-      (ih.trans (intp2_compl_compl_eq body fv b c).symm),
+      (ih.trans (intp2_compl_compl_eq body fv b c o).symm),
     ⟩
   | .arbIr body =>
     ⟨
       eq_intp2_arbIr_of_eq fun pB =>
-        (body.intp2_toNnfAux_eq (pB :: fv) b c).left,
+        (body.intp2_toNnfAux_eq (pB :: fv) b c o).left,
       eq_intp2_compl_of_eq
         (eq_intp2_arbIr_of_eq fun pX =>
-          let ⟨_, ihC⟩ := body.intp2_toNnfAux_eq (pX :: fv) b c
+          let ⟨_, ihC⟩ := body.intp2_toNnfAux_eq (pX :: fv) b c o
           ((eq_intp2_compl_of_eq ihC.symm).symm.trans
-            (intp2_compl_compl_eq body (pX :: fv) c b))),
+            (intp2_compl_compl_eq body (pX :: fv) c b o))),
     ⟩
 
 def SingleLaneExpr.intp2_toNnf_eq
   (expr: SingleLaneExpr)
   (fv: List Pair)
-  (b c: Valuation Pair)
+  (b c o: Valuation Pair)
 :
-  intp2 expr.toNnf fv b c = intp2 expr fv b c
+  intp2 expr.toNnf fv b c o = intp2 expr fv b c o
 :=
-  (expr.intp2_toNnfAux_eq fv b c).left
+  (expr.intp2_toNnfAux_eq fv b c o).left
 
 
 -- A unary helper for termination when recursing on nnf expressions.
@@ -214,6 +217,8 @@ def complBinLtR {E} [SizeOf E]
 inductive Expr.IsNnf {E}: Expr E → Prop
 | const {e x}: IsNnf (.const e x)
 | complConst {e x}: IsNnf (.compl (.const e x))
+| oracle {e x}: IsNnf (.oracle e x)
+| complOracle {e x}: IsNnf (.compl (.oracle e x))
 | var {x}: IsNnf (.var x)
 | complVar {x}: IsNnf (.compl (.var x))
 | null: IsNnf .null
@@ -235,6 +240,8 @@ def Expr.isNnfAux {E}:
 |
   .const _ _, false => .const
 | .const _ _, true => .complConst
+| .oracle _ _, false => .oracle
+| .oracle _ _, true => .complOracle
 | .var _, false => .var
 | .var _, true => .complVar
 | .null, false => .null
@@ -267,6 +274,8 @@ def Expr.IsNnf.toNnf_id {E} {expr: Expr E}:
 |
   .const => rfl
 | .complConst => rfl
+| .oracle => rfl
+| .complOracle => rfl
 | .var => rfl
 | .complVar => rfl
 | .null => rfl
@@ -313,6 +322,8 @@ def BasicExpr.toNnfAux_toLane_comm
   match expr, isNegated with
   | .const x, false => rfl
   | .const x, true => rfl
+  | .oracle x, false => rfl
+  | .oracle x, true => rfl
   | .var x, false => rfl
   | .var x, true => rfl
   | .null, false => rfl
@@ -381,18 +392,18 @@ def BasicExpr.toNnf_toLane_comm
 def BasicExpr.triIntp2_toNnf_eq
   (expr: BasicExpr)
   (fv: List Pair)
-  (b c: Valuation Pair)
+  (b c o: Valuation Pair)
 :
-  BasicExpr.triIntp2 expr.toNnf fv b c = expr.triIntp2 fv b c
+  BasicExpr.triIntp2 expr.toNnf fv b c o = expr.triIntp2 fv b c o
 :=
   open SingleLaneExpr in
   Set3.eq
-    (show intp2 _ _ _ _ = _ from
+    (show intp2 _ _ _ _ _ = _ from
       toNnf_toLane_comm _ _ ▸
-      intp2_toNnf_eq _ _ _ _)
-    (show intp2 _ _ _ _ = _ from
+      intp2_toNnf_eq _ _ _ _ _)
+    (show intp2 _ _ _ _ _ = _ from
       toNnf_toLane_comm _ _ ▸
-      intp2_toNnf_eq _ _ _ _)
+      intp2_toNnf_eq _ _ _ _ _)
 
 def BasicExpr.triIntp_toNnf_eq
   (expr: BasicExpr)
@@ -401,4 +412,4 @@ def BasicExpr.triIntp_toNnf_eq
 :
   BasicExpr.triIntp expr.toNnf fv v = expr.triIntp fv v
 :=
-  expr.triIntp2_toNnf_eq fv v v
+  funext fun o => expr.triIntp2_toNnf_eq fv v v o

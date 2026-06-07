@@ -31,6 +31,7 @@ namespace Expr
         .isTrue (fun x (hx: x = xV) => hx.symm ▸ h)
       else
         .isFalse (fun hSat => h (hSat xV rfl))
+    | .oracle _ _ => .isTrue (fun _ h => h.elim)
     | .var _ => .isTrue (fun _ h => h.elim)
     | .null => .isTrue (fun _ h => h.elim)
     | .prod left rite =>
@@ -72,6 +73,7 @@ namespace Expr
   :=
     match expr with
     | .const _ _ => .isFalse (fun h => h.elim)
+    | .oracle _ _ => .isFalse (fun h => h.elim)
     | .var v =>
       if h: x = v then .isTrue h else .isFalse h
     | .null => .isFalse (fun h => h.elim)
@@ -107,6 +109,7 @@ namespace Expr
   :=
     match expr with
     | .const _ _ => .isTrue (fun _ h => h.elim)
+    | .oracle _ _ => .isTrue (fun _ h => h.elim)
     | .var xV =>
       if h: P xV then
         .isTrue (fun x (hx: x = xV) => hx.symm ▸ h)

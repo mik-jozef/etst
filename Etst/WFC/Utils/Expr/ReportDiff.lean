@@ -162,3 +162,32 @@ def reportDiff {E}
   | .arbIr _, .ir _ _ => s!"{path}: arbIr vs ir"
   | .arbIr _, .full _ => s!"{path}: arbIr vs full"
   | .arbIr _, .compl _ => s!"{path}: arbIr vs compl"
+  | .oracle infoA xA, .oracle infoB xB =>
+    if infoA != infoB then
+      s!"{path}.info: {infoA} != {infoB}"
+    else if xA != xB then
+      s!"{path}.x: {xA} != {xB}"
+    else
+      none
+  | .oracle _ _, .un _ _ => s!"{path}: oracle vs un"
+  | .oracle _ _, .some _ => s!"{path}: oracle vs some"
+  | .oracle _ _, .arbUn _ => s!"{path}: oracle vs arbUn"
+  | .oracle _ _, .const _ _ => s!"{path}: oracle vs const"
+  | .oracle _ _, .var _ => s!"{path}: oracle vs var"
+  | .oracle _ _, .null => s!"{path}: oracle vs null"
+  | .oracle _ _, .prod _ _ => s!"{path}: oracle vs prod"
+  | .oracle _ _, .ir _ _ => s!"{path}: oracle vs ir"
+  | .oracle _ _, .full _ => s!"{path}: oracle vs full"
+  | .oracle _ _, .compl _ => s!"{path}: oracle vs compl"
+  | .oracle _ _, .arbIr _ => s!"{path}: oracle vs arbIr"
+  | .un _ _, .oracle _ _ => s!"{path}: un vs oracle"
+  | .some _, .oracle _ _ => s!"{path}: some vs oracle"
+  | .arbUn _, .oracle _ _ => s!"{path}: arbUn vs oracle"
+  | .const _ _, .oracle _ _ => s!"{path}: const vs oracle"
+  | .var _, .oracle _ _ => s!"{path}: var vs oracle"
+  | .null, .oracle _ _ => s!"{path}: null vs oracle"
+  | .prod _ _, .oracle _ _ => s!"{path}: prod vs oracle"
+  | .ir _ _, .oracle _ _ => s!"{path}: ir vs oracle"
+  | .full _, .oracle _ _ => s!"{path}: full vs oracle"
+  | .compl _, .oracle _ _ => s!"{path}: compl vs oracle"
+  | .arbIr _, .oracle _ _ => s!"{path}: arbIr vs oracle"

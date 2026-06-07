@@ -42,7 +42,7 @@ def uniSetMapDl.uniSetMapAt_eq
   (fv: List Pair)
   (expr: BasicExpr)
 :
-  uniSetMapAt dl n fv expr = expr.triIntp fv (dl.prefix n).wfm
+  uniSetMapAt dl n fv expr = expr.triIntp fv ((dl.prefix n).wfm .empty) .empty
 :=
   Set3.ordApx.le_antisymm
     _ _
@@ -54,9 +54,9 @@ def uniSetMapDl.ex_uniSetMapAt_eq
   (fv: List Pair)
   (expr: BasicExpr)
 :
-  ∃ n, uniSetMapAt dl.toDefList n fv expr = expr.triIntp fv dl.wfm
+  ∃ n, uniSetMapAt dl.toDefList n fv expr = expr.triIntp fv (dl.wfm .empty) .empty
 :=
-  let ⟨n, eqAtN⟩ := dl.ex_prefix_wfm_eq_expr fv expr
+  let ⟨n, eqAtN⟩ := dl.ex_prefix_wfm_eq_expr fv expr .empty
   ⟨n, (uniSetMapAt_eq dl.toDefList n fv expr).trans eqAtN⟩
 
 
@@ -85,7 +85,9 @@ def FiniteDefList.uniSetMapAt_eq
   (fv: List Pair)
   (expr: BasicExpr)
 :
-  uniSetMapAt dl.toDefList dl.size fv expr = expr.triIntp fv dl.wfm
+  Eq
+    (uniSetMapAt dl.toDefList dl.size fv expr)
+    (expr.triIntp fv (dl.wfm .empty) .empty)
 :=
   (uniSetMapDl.uniSetMapAt_eq dl.toDefList dl.size fv expr).trans
-    (congrArg (expr.triIntp fv) dl.prefix_size_wfm_eq)
+    (congrArg (expr.triIntp fv · .empty) (congrFun dl.prefix_size_wfm_eq .empty))

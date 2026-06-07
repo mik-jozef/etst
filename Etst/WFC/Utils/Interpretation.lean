@@ -15,12 +15,12 @@ namespace Etst
 -/
 def SingleLaneExpr.intp2_mono_std {fv}
   {even odd: Option Set3.Lane}
-  {b0 b1 c0 c1}
+  {b0 b1 c0 c1 o}
   (bLe: Valuation.LaneLe b1 b0 odd)
   (cLe: Valuation.LaneLe c0 c1 even)
   {expr: SingleLaneExpr} (laneEq: expr.LaneEq even odd)
 :
-  expr.intp2 fv b0 c0 ⊆ expr.intp2 fv b1 c1
+  expr.intp2 fv b0 c0 o ⊆ expr.intp2 fv b1 c1 o
 :=
   fun _ pIn =>
     match expr with
@@ -30,6 +30,7 @@ def SingleLaneExpr.intp2_mono_std {fv}
       | .posLane, .none, .constNone => (cLe x).posLe pIn
       | .defLane, .some .defLane, .constSome => cLe x pIn
       | .posLane, .some .posLane, .constSome => cLe x pIn
+    | .oracle _ _ => pIn
     | .var _ => pIn
     | .null => pIn
     | .prod _ _ =>
@@ -53,12 +54,13 @@ def SingleLaneExpr.intp2_mono_std {fv}
 def BasicExpr.triIntp2_mono_std_defMem
   {b0 b1} (bLePos: ∀ x, (b1 x).posMem ≤ (b0 x).posMem)
   {c0 c1} (cLeDef: ∀ x, (c0 x).defMem ≤ (c1 x).defMem)
+  {o}
   {expr: BasicExpr}
   {fv}
 :
   Set.Subset
-    (expr.triIntp2 fv b0 c0).defMem
-    (expr.triIntp2 fv b1 c1).defMem
+    (expr.triIntp2 fv b0 c0 o).defMem
+    (expr.triIntp2 fv b1 c1 o).defMem
 :=
   SingleLaneExpr.intp2_mono_std
     (even := .some .defLane)
@@ -70,12 +72,13 @@ def BasicExpr.triIntp2_mono_std_defMem
 def BasicExpr.triIntp2_mono_std_posMem
   {b0 b1} (bLeDef: ∀ x, (b1 x).defMem ≤ (b0 x).defMem)
   {c0 c1} (cLePos: ∀ x, (c0 x).posMem ≤ (c1 x).posMem)
+  {o}
   {expr: BasicExpr}
   {fv}
 :
   Set.Subset
-    (expr.triIntp2 fv b0 c0).posMem
-    (expr.triIntp2 fv b1 c1).posMem
+    (expr.triIntp2 fv b0 c0 o).posMem
+    (expr.triIntp2 fv b1 c1 o).posMem
 :=
   SingleLaneExpr.intp2_mono_std
     (even := .some .posLane)
@@ -87,10 +90,11 @@ def BasicExpr.triIntp2_mono_std_posMem
 def BasicExpr.triIntp2_mono_std
   {b0 b1} (bLe: b1 ≤ b0)
   {c0 c1} (cLe: c0 ≤ c1)
+  {o}
   {expr: BasicExpr}
   {fv}
 :
-  expr.triIntp2 fv b0 c0 ≤ expr.triIntp2 fv b1 c1
+  expr.triIntp2 fv b0 c0 o ≤ expr.triIntp2 fv b1 c1 o
 :=
   {
     defLe :=
@@ -105,27 +109,29 @@ def BasicExpr.triIntp2_mono_std
 
 def DefList.intpDefs2_mono_std
   {dl: DefList}
+  {o}
   {b0 b1} (bLe: b1 ≤ b0)
   {c0 c1} (cLe: c0 ≤ c1)
 :
-  dl.intpDefs2 b0 c0 ≤ dl.intpDefs2 b1 c1
+  dl.intpDefs2 b0 c0 o ≤ dl.intpDefs2 b1 c1 o
 :=
   fun _ => BasicExpr.triIntp2_mono_std bLe cLe
 
 
 def BasicExpr.triIntp2_mono_apx
   {expr: BasicExpr}
-  {fv b0 b1 c0 c1}
+  {fv b0 b1 c0 c1 o}
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
-  expr.triIntp2 fv b0 c0 ⊑ expr.triIntp2 fv b1 c1
+  expr.triIntp2 fv b0 c0 o ⊑ expr.triIntp2 fv b1 c1 o
 :=
   match expr with
   | .const x => {
       defLe _p pIn := (cLe x).defLe pIn
       posLe _p pIn := (cLe x).posLe pIn
     }
+  | .oracle _ => ⟨fun _ => id, fun _ => id⟩
   | .var _ => ⟨fun _ => id, fun _ => id⟩
   | .null => ⟨fun _ => id, fun _ => id⟩
   | .prod _ _ =>
@@ -173,11 +179,12 @@ def BasicExpr.triIntp2_mono_apx_defMem
   {expr: BasicExpr}
   {b0 b1} (bLe: b0 ⊑ b1)
   {c0 c1} (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
+  {o}
   {fv}
 :
   Set.Subset
-    (expr.triIntp2 fv b0 c0).defMem
-    (expr.triIntp2 fv b1 c1).defMem
+    (expr.triIntp2 fv b0 c0 o).defMem
+    (expr.triIntp2 fv b1 c1 o).defMem
 :=
   let c0LeSelf := (Valuation.ordApx Pair).le_refl c0
   let isMonoB := triIntp2_mono_apx bLe c0LeSelf
@@ -190,11 +197,12 @@ def BasicExpr.triIntp2_mono_apx_posMem
   {expr: BasicExpr}
   {b0 b1} (bLe: b0 ⊑ b1)
   {c0 c1} (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
+  {o}
   {fv}
 :
   Set.Subset
-    (expr.triIntp2 fv b1 c1).posMem
-    (expr.triIntp2 fv b0 c0).posMem
+    (expr.triIntp2 fv b1 c1 o).posMem
+    (expr.triIntp2 fv b0 c0 o).posMem
 :=
   let c0LeSelf := (Valuation.ordApx Pair).le_refl c1
   let isMonoB := triIntp2_mono_apx bLe c0LeSelf
@@ -205,21 +213,21 @@ def BasicExpr.triIntp2_mono_apx_posMem
 
 def DefList.intpDefs2_mono_apx
   {dl: DefList}
-  {b0 b1 c0 c1: Valuation Pair}
+  {b0 b1 c0 c1 o: Valuation Pair}
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
-  dl.intpDefs2 b0 c0 ⊑ dl.intpDefs2 b1 c1
+  dl.intpDefs2 b0 c0 o ⊑ dl.intpDefs2 b1 c1 o
 :=
   fun _ => BasicExpr.triIntp2_mono_apx bLe cLe
 
 
-def BasicExpr.triIntp2_getLane_eq {fv b c lane}
+def BasicExpr.triIntp2_getLane_eq {fv b c o lane}
   (expr: BasicExpr)
 :
   Eq
-    ((expr.triIntp2 fv b c).getLane lane)
-    ((expr.toLane lane).intp2 fv b c)
+    ((expr.triIntp2 fv b c o).getLane lane)
+    ((expr.toLane lane).intp2 fv b c o)
 :=
   match lane with
   | .defLane => rfl

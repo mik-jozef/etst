@@ -4,6 +4,7 @@ namespace Etst
 
 inductive DefList.IsCauseInapplicableExtended
   (dl: DefList)
+  (o: Valuation Pair)
   (cycle: Nat → Set Pair)
   (cause: Cause Pair)
 :
@@ -14,37 +15,38 @@ inductive DefList.IsCauseInapplicableExtended
   (inCins: cause.cins x p)
   (inCycle: cycle x p)
 :
-  IsCauseInapplicableExtended dl cycle cause
+  IsCauseInapplicableExtended dl o cycle cause
 |
   blockedCinsOut
   {x p}
   (inCins: cause.cins x p)
-  (isOut: DefList.Out dl x p)
+  (isOut: DefList.Out dl o x p)
 :
-  IsCauseInapplicableExtended dl cycle cause
+  IsCauseInapplicableExtended dl o cycle cause
 |
   blockedBout
   {x p}
   (inBout: cause.bout x p)
-  (isIns: DefList.Ins dl x p)
+  (isIns: DefList.Ins dl o x p)
 :
-  IsCauseInapplicableExtended dl cycle cause
+  IsCauseInapplicableExtended dl o cycle cause
 
 def DefList.Out.intro3
   {dl: DefList}
+  {o: Valuation Pair}
   (cycle: Nat → Set Pair)
   (isEmptyCycle:
     ∀ {x p},
     cycle x p →
     (cause: Cause Pair) →
-    cause.IsWeakCause (dl.getDef x) p →
-    dl.IsCauseInapplicableExtended cycle cause)
+    cause.IsWeakCause o (dl.getDef x) p →
+    dl.IsCauseInapplicableExtended o cycle cause)
   {x p}
   (inCycle: cycle x p)
 :
-  DefList.Out dl x p
+  DefList.Out dl o x p
 :=
-  let largeCycle x p := cycle x p ∨ ¬(dl.wfm x).posMem p
+  let largeCycle x p := cycle x p ∨ ¬(dl.wfm o x).posMem p
 
   DefList.Out.intro
     largeCycle

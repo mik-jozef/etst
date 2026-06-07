@@ -51,27 +51,27 @@ def BasicExpr.prod_call_expr_call_eq
   (fnIsClean: fn.IsClean)
   (arg: Pair)
   (fv: List Pair)
-  (b c: Valuation Pair)
+  (b c o: Valuation Pair)
 :
   Eq
-    (BasicExpr.triIntp2 (fn.call arg.toExpr) fv b c)
-    ((fn.triIntp2 fv b c).call arg)
+    (BasicExpr.triIntp2 (fn.call arg.toExpr) fv b c o)
+    ((fn.triIntp2 fv b c o).call arg)
 :=
   open SingleLaneExpr in
   Set3.eq4
     (fun _ inCall =>
-      show (fn.toLane .defLane).intp2 fv b c _ from
+      show (fn.toLane .defLane).intp2 fv b c o _ from
       (fnIsClean.toLane .defLane).intp2_eq ▸
       inCallElimSingle inCall (intp2_toExpr_eq_singleton arg))
     (fun _ inFn =>
       let inFnShifted := (fnIsClean.toLane .defLane).intp2_eq ▸ inFn
       inCall inFnShifted (inToExpr arg))
     (fun _ inCall =>
-      show (fn.toLane .posLane).intp2 fv b c _ from
+      show (fn.toLane .posLane).intp2 fv b c o _ from
       (fnIsClean.toLane .posLane).intp2_eq ▸
       inCallElimSingle inCall (intp2_toExpr_eq_singleton arg))
     (fun _ inFn =>
-      let inFnShifted: (fn.toLane .posLane).intp2 _ _ _ _ :=
+      let inFnShifted: (fn.toLane .posLane).intp2 _ _ _ _ _ :=
         (fnIsClean.toLane .posLane).intp2_eq ▸ inFn
       inCall inFnShifted (inToExpr arg))
 
@@ -142,7 +142,7 @@ namespace opFixDl
   open SingleLaneExpr
   
   def encodeAsExpr_ins (p: Pair):
-    opFixDl.InWfm []
+    opFixDl.InWfm .empty []
       (.const .defLane consts.encodeAsExpr)
       (.pair p p.toExpr.encoding)
   :=
@@ -157,7 +157,7 @@ namespace opFixDl
   
   def encodeAsExpr_elim {p enc}
     (ins:
-      opFixDl.InWfm []
+      opFixDl.InWfm .empty []
         (.const .posLane consts.encodeAsExpr)
         (.pair p enc)
     )
@@ -212,7 +212,7 @@ namespace opFixDl
   def encodeCall_ins
     (fn arg: Pair)
   :
-    opFixDl.InWfm []
+    opFixDl.InWfm .empty []
       (.const .defLane consts.encodeCall)
       (.pair fn (.pair arg (fn.encodeCall arg)))
   :=
@@ -227,7 +227,7 @@ namespace opFixDl
   
   def encodeCall_elim {fn arg enc}
     (ins:
-      opFixDl.InWfm []
+      opFixDl.InWfm .empty []
         (.const .posLane consts.encodeCall)
         (.pair fn (.pair arg enc))
     )
@@ -302,7 +302,7 @@ namespace opFixDl
   def callEnc_ins
     (fn arg: Pair)
   :
-      opFixDl.InWfm []
+      opFixDl.InWfm .empty []
       (.const .defLane consts.callEnc)
       (.pair fn (.pair arg (fn.callEnc arg)))
   :=
@@ -427,16 +427,18 @@ namespace opFixDl
         fnCallExprClean
         arg
         []
-        uniSetMapDl.wfm
-        uniSetMapDl.wfm
+        (uniSetMapDl.wfm .empty)
+        (uniSetMapDl.wfm .empty)
+        .empty
     let eqFn :=
       BasicExpr.prod_call_expr_call_eq
         (BasicExpr.const uniSetMapDl.consts.uniSetMap)
         (by decide)
         fn
         []
-        uniSetMapDl.wfm
-        uniSetMapDl.wfm
+        (uniSetMapDl.wfm .empty)
+        (uniSetMapDl.wfm .empty)
+        .empty
     eqAt.trans (eqCall.trans (congrArg (fun s => s.call arg) eqFn))
   
   def callEnc_call
@@ -452,13 +454,13 @@ namespace opFixDl
     (inFn:
       ∀ pRes,
         let fvFn := .pair iArg pRes :: pRes :: fv
-        fn.intp2 fvFn opFixDl.wfm opFixDl.wfm = {iFn})
+        fn.intp2 fvFn (opFixDl.wfm .empty) (opFixDl.wfm .empty) .empty = {iFn})
     (inArg:
       ∀ pRes,
-      arg.intp2 (pRes :: fv) opFixDl.wfm opFixDl.wfm = {iArg})
+      arg.intp2 (pRes :: fv) (opFixDl.wfm .empty) (opFixDl.wfm .empty) .empty = {iArg})
   :
     Eq
-      ((callEnc_call fn arg lane).intp2 fv opFixDl.wfm opFixDl.wfm)
+      ((callEnc_call fn arg lane).intp2 fv (opFixDl.wfm .empty) (opFixDl.wfm .empty) .empty)
       {iFn.callEnc iArg}
   :=
     Set.ext fun p => Iff.intro
@@ -487,11 +489,11 @@ namespace opFixDl
       opFixHelpersDl.extend_wfm_eq_of_lt opFixDl rfl rfl (by decide)
     let eqUni := eqU.trans eqH
     let ins:
-      (opFixDl.wfm consts.uniSetMap).getLane lane
+      (opFixDl.wfm .empty consts.uniSetMap).getLane lane
         (.pair iFn (.pair (iArg.callEnc iArg) p))
     :=
       eqUni.symm ▸ (Set3.inCallElim (Set3.inCallElim ins))
-    let insCallEnc: ((BasicExpr.const 4).toLane lane).intp2 _ _ _ _ :=
+    let insCallEnc: ((BasicExpr.const 4).toLane lane).intp2 _ _ _ _ _ :=
       (callEnc_ins iArg iArg).toLane
     let inMagicCall :=
       inCall
@@ -534,7 +536,7 @@ namespace opFixDl
       opFixHelpersDl.extend_wfm_eq_of_lt opFixDl rfl rfl (by decide)
     let eqUni := eqU.trans eqH
     let ins:
-      (uniSetMapDl.wfm consts.uniSetMap).getLane lane
+      (uniSetMapDl.wfm .empty consts.uniSetMap).getLane lane
         (.pair fnAlias (.pair (argAlias.callEnc argAlias) p))
     :=
        eqUni ▸ ins
@@ -598,12 +600,12 @@ namespace opFixDl
       opFixHelpersDl.extend_wfm_eq_of_lt opFixDl rfl rfl (by decide)
     let eqUni := eqU.trans eqH
     let insInner:
-      (opFixDl.wfm consts.uniSetMap).getLane lane
+      (opFixDl.wfm .empty consts.uniSetMap).getLane lane
         (.pair iOp (.pair iArg q))
     :=
       eqUni.symm ▸ (Set3.inCallElim (Set3.inCallElim inQ))
     let insOuter:
-      (opFixDl.wfm consts.uniSetMap).getLane lane (.pair q p)
+      (opFixDl.wfm .empty consts.uniSetMap).getLane lane (.pair q p)
     :=
       eqUni.symm ▸ inUsm
     let inComposeCall :=
@@ -650,12 +652,12 @@ namespace opFixDl
       opFixHelpersDl.extend_wfm_eq_of_lt opFixDl rfl rfl (by decide)
     let eqUni := eqU.trans eqH
     let inUsmConst:
-      (uniSetMapDl.wfm consts.uniSetMap).getLane lane
+      (uniSetMapDl.wfm .empty consts.uniSetMap).getLane lane
         (.pair opAlias2 (.pair argAlias2 qAlias))
     :=
       eqUni ▸ inUsmConst
     let inOuterFn:
-      (uniSetMapDl.wfm consts.uniSetMap).getLane lane (.pair qAlias p)
+      (uniSetMapDl.wfm .empty consts.uniSetMap).getLane lane (.pair qAlias p)
     :=
       eqUni ▸ inOuterFn
     let inQ: ((uniSetMap.call iOp).call iArg).getLane lane qAlias :=

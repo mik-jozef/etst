@@ -132,7 +132,7 @@ def isCcApx {T} := Valuation.ordApx.isChainComplete T
 -- The family of operators C_b (often called "the" operator C).
 def operatorC
   (dl: DefList)
-  (b: Valuation Pair)
+  (b o: Valuation Pair)
 :
   OrderHomWrt (Valuation.ordStd Pair) (Valuation.ordStd Pair)
 :=
@@ -140,32 +140,32 @@ def operatorC
   -- https://github.com/leanprover/lean4/issues/952
   let _ := Valuation.ordStd Pair
   {
-    toFun := dl.intpDefs2 b
+    toFun c := dl.intpDefs2 b c o
     monotone' _ _ := dl.intpDefs2_mono_std (le_refl _)
   }
 
 -- The least fixed point of the operator C.
 def operatorC.lfp
   (dl: DefList)
-  (b: Valuation Pair)
+  (b o: Valuation Pair)
 :
   Valuation Pair
 :=
   let _ := Valuation.ordStdLattice Pair
-  (operatorC dl b).lfp
+  (operatorC dl b o).lfp
 
 -- The operator C is monotonic wrt. the standard order.
 def operatorC.mono_std
   (dl: DefList)
-  (b: Valuation Pair)
+  (b o: Valuation Pair)
 :
   IsMonotonic
     (Valuation.ordStd Pair)
     (Valuation.ordStd Pair)
-    (operatorC dl b)
+    (operatorC dl b o)
 :=
   let _ := Valuation.ordStd Pair
-  (operatorC dl b).monotone'
+  (operatorC dl b o).monotone'
 
 -- The operator C is monotonic wrt. the approximation order (incl.
 -- across different background valuations).
@@ -175,59 +175,63 @@ def operatorC.mono_apx
   (bLe: b0 ⊑ b1)
   {c0 c1: Valuation Pair}
   (cLe: c0 ⊑ c1)
+  (o: Valuation Pair)
 :
-  operatorC dl b0 c0 ⊑ operatorC dl b1 c1
+  operatorC dl b0 o c0 ⊑ operatorC dl b1 o c1
 :=
   dl.intpDefs2_mono_apx bLe cLe
 
 
 def operatorB.monotone'
   (dl: DefList)
+  (o: Valuation Pair)
   ⦃a b: Valuation Pair⦄
   (le: a ⊑ b)
 :
-  operatorC.lfp dl a ⊑ operatorC.lfp dl b
+  operatorC.lfp dl a o ⊑ operatorC.lfp dl b o
 :=
   let _ := Valuation.ordStdLattice Pair
   OrderHom.lfpStage_induction2
-    (operatorC dl a)
-    (operatorC dl b)
+    (operatorC dl a o)
+    (operatorC dl b o)
     (Valuation.ordApx Pair).le
     (fun _n _isLim ih =>
       Valuation.ordStd.lubPreservesLeApxLub
         isLUB_iSup
         isLUB_iSup
         (fun _ ⟨m, eq⟩ => ⟨
-          (operatorC dl b).lfpStage m,
+          (operatorC dl b o).lfpStage m,
           ⟨m, rfl⟩,
           eq ▸ ih m,
         ⟩)
         (fun _ ⟨m, eq⟩ => ⟨
-          (operatorC dl a).lfpStage m,
+          (operatorC dl a o).lfpStage m,
           ⟨m, rfl⟩,
           eq ▸ ih m,
         ⟩))
     (fun _n _notLim prevLt ih =>
-      operatorC.mono_apx dl le (ih ⟨_, prevLt⟩))
+      operatorC.mono_apx dl le (ih ⟨_, prevLt⟩) o)
 
 -- The operator B.
 noncomputable def operatorB
   (dl: DefList)
+  (o: Valuation Pair)
 :
   OrderHomWrt (Valuation.ordApx Pair) (Valuation.ordApx Pair)
 :=
   let := Valuation.ordApx Pair
   {
-    toFun := operatorC.lfp dl,
-    monotone' := operatorB.monotone' dl
+    toFun b := operatorC.lfp dl b o,
+    monotone' := operatorB.monotone' dl o
   }
 
 noncomputable def operatorB.lfp
   (dl: DefList)
+  (o: Valuation Pair)
 :
   Valuation Pair
 :=
-  (operatorB dl).lfpCc isCcApx
+  (operatorB dl o).lfpCc isCcApx
 
 
 /-
@@ -236,10 +240,11 @@ noncomputable def operatorB.lfp
 -/
 def Valuation.IsModel
   (dl: DefList)
+  (o: Valuation Pair)
 :
   Set (Valuation Pair)
 :=
-  fun v => v = dl.intpDefs v
+  fun v => v = dl.intpDefs v o
 
 /-
   The well-founded model of a definition list `dl` defines the
@@ -248,26 +253,29 @@ def Valuation.IsModel
 -/
 noncomputable def DefList.wfm
   (dl: DefList)
+  (o: Valuation Pair)
 :
   Valuation Pair
 :=
-  (operatorB dl).lfpCc isCcApx
+  (operatorB dl o).lfpCc isCcApx
 
 def DefList.wfm_is_fp_operatorB
   (dl: DefList)
+  (o: Valuation Pair)
 :
-  dl.wfm = operatorC.lfp dl dl.wfm
+  dl.wfm o = operatorC.lfp dl (dl.wfm o) o
 :=
-  ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
+  ((operatorB dl o).lfpCc_isLfp isCcApx).left.symm
 
 noncomputable def DefList.triIntp
   (dl: DefList)
+  (o: Valuation Pair)
   (fv: List Pair)
   (expr: BasicExpr)
 :
   Set3 Pair
 :=
-  expr.triIntp fv dl.wfm
+  expr.triIntp fv (dl.wfm o) o
 
 
 /-
@@ -276,83 +284,101 @@ noncomputable def DefList.triIntp
 -/
 def operatorB.fp_is_model
   (dl: DefList)
+  (o: Valuation Pair)
   {fp: Valuation Pair}
-  (isFp: Function.fixedPoints (operatorB dl) fp)
+  (isFp: Function.fixedPoints (operatorB dl o) fp)
 :
-  fp.IsModel dl
+  Valuation.IsModel dl o fp
 := by
   let _ := Valuation.ordStdLattice Pair
-  let eqC: fp = (operatorC dl fp).lfp := isFp.symm
-  let eq: fp = operatorC.lfp dl fp := isFp.symm
-  rw [operatorC.lfp, ←(operatorC dl fp).map_lfp] at eq
+  let eqC: fp = (operatorC dl fp o).lfp := isFp.symm
+  let eq: fp = operatorC.lfp dl fp o := isFp.symm
+  rw [operatorC.lfp, ←(operatorC dl fp o).map_lfp] at eq
   conv at eq => rhs; rw [←eqC]
   exact eq
 
 def DefList.wfm_isLfpC
   (dl: DefList)
+  (o: Valuation Pair)
 :
   IsLfp
     (Valuation.ordStd Pair).le
-    (operatorC dl dl.wfm)
-    dl.wfm
+    (operatorC dl (dl.wfm o) o)
+    (dl.wfm o)
 := by
   let _ := Valuation.ordStdLattice
-  let eq: dl.wfm = (operatorC dl dl.wfm).lfp :=
-    ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
+  let eq: dl.wfm o = (operatorC dl (dl.wfm o) o).lfp :=
+    ((operatorB dl o).lfpCc_isLfp isCcApx).left.symm
   conv => rhs; rw [eq]
-  exact (operatorC dl dl.wfm).isLeast_lfp
+  exact (operatorC dl (dl.wfm o) o).isLeast_lfp
 
 def DefList.wfm_eq_lfpC
   (dl: DefList)
+  (o: Valuation Pair)
 :
   let := Valuation.ordStdLattice Pair
-  dl.wfm = (operatorC dl dl.wfm).lfp
+  dl.wfm o = (operatorC dl (dl.wfm o) o).lfp
 :=
   let := Valuation.ordStdLattice Pair
-  IsLeast.unique dl.wfm_isLfpC (OrderHom.isLeast_lfp _)
+  IsLeast.unique (dl.wfm_isLfpC o) (OrderHom.isLeast_lfp _)
 
 def DefList.wfm_isLfpB
   (dl: DefList)
+  (o: Valuation Pair)
 :
   IsLfp
     (Valuation.ordApx Pair).le
-    (operatorB dl)
-    dl.wfm
+    (operatorB dl o)
+    (dl.wfm o)
 :=
-  (operatorB dl).lfpCc_isLfp isCcApx
+  (operatorB dl o).lfpCc_isLfp isCcApx
 
 -- The well-founded model is a model of the definition list.
 def DefList.wfm_isModel
   (dl: DefList)
+  (o: Valuation Pair)
 :
-  dl.wfm.IsModel dl
+  Valuation.IsModel dl o (dl.wfm o)
 :=
-  operatorB.fp_is_model dl (wfm_isLfpB dl).left
+  operatorB.fp_is_model dl o (wfm_isLfpB dl o).left
 
 def DefList.wfm_eq_def
   (dl: DefList)
+  (o: Valuation Pair)
   (x: Nat)
 :
-  dl.wfm x = dl.intpDefs dl.wfm x
+  dl.wfm o x = dl.intpDefs (dl.wfm o) o x
 :=
-  congr dl.wfm_isModel rfl
+  congr (dl.wfm_isModel o) rfl
 
 
 /-
-  A triset is definable in aebra if there exists a finitely
-  bounded definition list whose well-founded model contains the
-  triset.
+  A triset is definable relative to an oracle `o` if there exists
+  a finitely bounded definition list whose well-founded model
+  (computed wrt. the oracle `o`) contains the triset.
   
   See `DefList.IsFinBounded` from Chapter 3.
 -/
-def DefList.IsDefinable
+def DefList.IsOracleDefinable
+  (o: Valuation Pair)
   (set: Set3 Pair)
 :
   Prop
 :=
   ∃ (dl: FinBoundedDl)
     (x: Nat),
-    set = dl.wfm x
+    set = dl.wfm o x
+
+/-
+  A triset is definable if it is oracle-definable wrt. the empty
+  valuation.
+-/
+def DefList.IsDefinable
+  (set: Set3 Pair)
+:
+  Prop
+:=
+  DefList.IsOracleDefinable .empty set
 
 -- The type of definable trisets.
 def DefList.Definable: Type :=

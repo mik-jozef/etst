@@ -12,21 +12,21 @@ namespace Etst
   An expression is an inductive structure that (as we later define)
   can be evaluated to a triset.
   
-  `E` (extra info) is for storing arbitrary extra information in each
-  constant.
+  (`L` will make more sense in the next chapter.)
   
   The variables use de Bruijn indices, ie. `var 0` refers to the
   innermost quantifier, `var 1` to the next outer one, and so on.
 -/
-inductive Expr (E: Type*) where
-| const (e: E) (x: Nat)
+inductive Expr (L: Type*) where
+| const (l: L) (x: Nat)
+| oracle (l: L) (x: Nat)
 | var (x: Nat)
 | null
-| prod (left rite: Expr E)
-| ir (left rite: Expr E)
-| full (body: Expr E)
-| compl (body: Expr E)
-| arbIr (body: Expr E)
+| prod (left rite: Expr L)
+| ir (left rite: Expr L)
+| full (body: Expr L)
+| compl (body: Expr L)
+| arbIr (body: Expr L)
 deriving DecidableEq
 
 def Expr.un {E} (left rite: Expr E): Expr E :=
@@ -42,6 +42,7 @@ abbrev BasicExpr := Expr Unit
 -- Convenience definitions for preserving the `BasicExpr` type in arguments.
 def BasicExpr.const (x: Nat): BasicExpr := Expr.const () x
 def BasicExpr.var (x: Nat): BasicExpr := Expr.var x
+def BasicExpr.oracle (x: Nat): BasicExpr := Expr.oracle () x
 def BasicExpr.null: BasicExpr := Expr.null
 def BasicExpr.prod (left rite: BasicExpr): BasicExpr :=
   Expr.prod left rite
@@ -65,6 +66,7 @@ namespace Expr
     fun x =>
       match expr with
         | const _ v => x = v
+        | oracle _ _ => False
         | var _ => False
         | null => False
         | prod left rite => left.UsesConst x ∨ rite.UsesConst x
@@ -77,6 +79,7 @@ namespace Expr
     fun x =>
       match expr with
         | const _ _ => False
+        | oracle _ _ => False
         | var v => x = v
         | null => False
         | prod left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
@@ -88,24 +91,6 @@ namespace Expr
   abbrev FreeVarsSat {E} (expr: Expr E) (P: Nat → Prop): Prop :=
     ∀ x ∈ expr.UsesFreeVar, P x
   
-  
-  /-
-    A positive expression only refers to constants under an even
-    number of complements.
-  -/
-  def IsPositive {E} (expr: Expr E) (isEvenD := true): Prop :=
-    match expr with
-    | const _ _ => isEvenD
-    | var _ => True
-    | null => True
-    | prod left rite =>
-        left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
-    | ir left rite =>
-        left.IsPositive isEvenD ∧ rite.IsPositive isEvenD
-    | full body => body.IsPositive isEvenD
-    | compl body => body.IsPositive (!isEvenD)
-    | arbIr body => body.IsPositive isEvenD
-
   
   -- `any` contains all elements, under any valuation.
   def any {E}: Expr E := arbUn (var 0)
@@ -123,7 +108,8 @@ namespace Expr
     (liftBy := 1)
   :=
     match expr with
-    | const info x => const info x
+    | const l x => const l x
+    | oracle l x => oracle l x
     | var x => var (if x < depth then x else x + liftBy)
     | null => null
     | prod l r => prod (l.lift depth liftBy) (r.lift depth liftBy)
@@ -148,7 +134,8 @@ namespace Expr
     (fvMap: Nat → Expr E)
   :
     Expr E → Expr E
-  | .const e x => .const e x
+  | .const l x => .const l x
+  | .oracle l x => .oracle l x
   | .var x => fvMap x
   | .null => .null
   | .prod left rite =>

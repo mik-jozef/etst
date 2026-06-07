@@ -207,32 +207,33 @@ def SingleLaneExpr.intpVar
 def SingleLaneExpr.intp2
   (expr: SingleLaneExpr)
   (fv: List Pair)
-  (b c: Valuation Pair)
+  (b c o: Valuation Pair)
 :
   Set Pair
 :=
   match expr with
   | .const lane x => (c x).getLane lane
+  | .oracle lane x => (o x).getLane lane
   | .var x => intpVar fv x
   | .null => {.null}
   | .prod left rite =>
     fun p =>
       ∃ pL pR,
         p = .pair pL pR ∧
-        intp2 left fv b c pL ∧
-        intp2 rite fv b c pR
+        intp2 left fv b c o pL ∧
+        intp2 rite fv b c o pR
   | .ir left rite =>
     fun p =>
       And
-        (intp2 left fv b c p)
-        (intp2 rite fv b c p)
+        (intp2 left fv b c o p)
+        (intp2 rite fv b c o p)
   | .full body =>
-    fun _ => ∀ pB, intp2 body fv b c pB
+    fun _ => ∀ pB, intp2 body fv b c o pB
   | .compl body =>
     -- Note the swap of b and c.
-    (intp2 body fv c b).compl
+    (intp2 body fv c b o).compl
   | .arbIr body =>
-    fun p => ∀ pX, intp2 body (pX :: fv) b c p
+    fun p => ∀ pX, intp2 body (pX :: fv) b c o p
 
 abbrev SingleLaneExpr.intp
   (expr: SingleLaneExpr)
@@ -251,6 +252,7 @@ def BasicExpr.toLane
 :=
   match expr with
   | .const a => .const lane a
+  | .oracle a => .oracle lane a
   | .var a => .var a
   | .null => .null
   | .prod left rite => .prod (left.toLane lane) (rite.toLane lane)
@@ -268,31 +270,32 @@ def BasicExpr.toPosLane (expr: BasicExpr): SingleLaneExpr :=
 def BasicExpr.triIntp2Def
   (expr: BasicExpr)
   (fv: List Pair)
-  (b c: Valuation Pair)
+  (b c o: Valuation Pair)
 :
   Set Pair
 :=
-  (expr.toLane .defLane).intp2 fv b c
+  (expr.toLane .defLane).intp2 fv b c o
 
 def BasicExpr.triIntp2Pos
   (expr: BasicExpr)
   (fv: List Pair)
-  (b c: Valuation Pair)
+  (b c o: Valuation Pair)
 :
   Set Pair
 :=
-  (expr.toLane .posLane).intp2 fv b c
+  (expr.toLane .posLane).intp2 fv b c o
 
 -- A proof that definite membership implies possible membership.
 def BasicExpr.triIntp2_defLePos
-  {fv b c p}
+  {fv b c o p}
   (expr: BasicExpr)
-  (isDef: expr.triIntp2Def fv b c p)
+  (isDef: expr.triIntp2Def fv b c o p)
 :
-  expr.triIntp2Pos fv b c p
+  expr.triIntp2Pos fv b c o p
 :=
   match expr, isDef with
   | .const x, isDef => (c x).defLePos isDef
+  | .oracle x, isDef => (o x).defLePos isDef
   | .var _, isDef => isDef
   | .null, isDef => isDef
   | .prod left rite, ⟨pl, pr, eq, isDefL, isDefR⟩ =>
@@ -324,12 +327,12 @@ def BasicExpr.triIntp2_defLePos
 def BasicExpr.triIntp2
   (expr: BasicExpr)
   (fv: List Pair)
-  (b c: Valuation Pair)
+  (b c o: Valuation Pair)
 :
   Set3 Pair
 := {
-  defMem := expr.triIntp2Def fv b c
-  posMem := expr.triIntp2Pos fv b c
+  defMem := expr.triIntp2Def fv b c o
+  posMem := expr.triIntp2Pos fv b c o
   defLePos _ := triIntp2_defLePos expr
 }
 
@@ -343,14 +346,14 @@ abbrev BasicExpr.triIntp
 -- Interpretation on definition lists is defined pointwise.
 def DefList.intpDefs2
   (dl: DefList)
-  (b c: Valuation Pair)
+  (b c o: Valuation Pair)
 :
   Valuation Pair
 :=
-  fun x => (dl.getDef x).triIntp2 [] b c
+  fun x => (dl.getDef x).triIntp2 [] b c o
 
 abbrev DefList.intpDefs
   (dl: DefList)
-  (v: Valuation Pair)
+  (v o: Valuation Pair)
 :=
-  dl.intpDefs2 v v
+  dl.intpDefs2 v v o

@@ -30,6 +30,15 @@ open SingleLaneExpr
     | arbUn body      => (11, body)
   ```
   
+  Chapter 6 is an oracle-less endeavor: we encode the well-founded
+  model internally using finite means, so oracles are hardcoded to
+  denote the empty triset. Accordingly,
+  
+  ```
+    | oracle x         => (10, (3, 0))  -- empty, like `arbIr ~var 0`
+    | compl (oracle x) => (11, (2, 0))  -- full,  like `arbUn var 0`
+  ```
+  
   Any pair that does not conform to one of the above encodings is
   considered as defining (an expression denoting) the empty triset.
   
@@ -224,6 +233,10 @@ def BasicExpr.encodingNnf: BasicExpr → Pair
 | .compl (.full (.compl body)) => .pair (.nat 9) body.encodingNnf
 | .arbIr body => .pair (.nat 10) body.encodingNnf
 | .compl (.arbIr (.compl body)) => .pair (.nat 11) body.encodingNnf
+-- Oracles are hardcoded to the empty triset, their complement to the
+-- full triset (encoded as `arbIr ~(var 0)` and `arbUn (var 0)`).
+| .oracle _ => .pair (.nat 10) (.pair (.nat 3) (.nat 0))
+| .compl (.oracle _) => .pair (.nat 11) (.pair (.nat 2) (.nat 0))
 | _ =>
   -- We don't care what non-nnf expressions encode as, but `none`
   -- is a convenient choice.
@@ -465,8 +478,8 @@ namespace uniSetMapDl
   
   def getNthClassical {list i valEnc}:
     Or
-      (uniSetMapDl.Ins consts.getNth (getNthEnc list i valEnc))
-      (uniSetMapDl.Out consts.getNth (getNthEnc list i valEnc))
+      (uniSetMapDl.Ins .empty consts.getNth (getNthEnc list i valEnc))
+      (uniSetMapDl.Out .empty consts.getNth (getNthEnc list i valEnc))
   :=
     Classical.or_iff_not_imp_left.mpr fun nins =>
       DefList.Out.isComplete fun isPos =>

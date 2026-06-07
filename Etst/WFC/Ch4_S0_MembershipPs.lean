@@ -58,14 +58,15 @@ where
     ∀ {x d}, cause.bout x d → ¬(b x).defMem d
 
 /-
-  `Is[X]Cause cause p expr` means that for every pair of
-  valuations `(b, c)` that satisfies `cause`, `p ∈ expr` holds
-  (with `b` and `c` serving as background and context valuations,
-  respectively).
+  `Is[X]Cause cause o expr p` means that, for the fixed oracle
+  valuation `o`, every pair of valuations `(b, c)` that satisfies
+  `cause` makes `p ∈ expr` hold (with `b` and `c` serving as
+  background and context valuations, respectively).
 -/
 def Cause.IsStrongCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
+  (o: Valuation Pair)
   (expr: BasicExpr)
   (p: Pair)
 :
@@ -73,11 +74,12 @@ def Cause.IsStrongCauseFv
 :=
   ⦃b c: Valuation Pair⦄ →
   cause.IsStronglySatisfiedBy b c →
-  expr.triIntp2Def fv b c p
+  expr.triIntp2Def fv b c o p
 
 def Cause.IsWeakCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
+  (o: Valuation Pair)
   (expr: BasicExpr)
   (p: Pair)
 :
@@ -85,31 +87,33 @@ def Cause.IsWeakCauseFv
 :=
   ⦃b c: Valuation Pair⦄ →
   cause.IsWeaklySatisfiedBy b c →
-  expr.triIntp2Pos fv b c p
+  expr.triIntp2Pos fv b c o p
 
 abbrev Cause.IsStrongCause
   (cause: Cause Pair)
+  (o: Valuation Pair)
   (expr: BasicExpr)
   (p: Pair)
 :
   Prop
 :=
-  IsStrongCauseFv cause [] expr p
+  IsStrongCauseFv cause [] o expr p
 
 abbrev Cause.IsWeakCause
   (cause: Cause Pair)
+  (o: Valuation Pair)
   (expr: BasicExpr)
   (p: Pair)
 :
   Prop
 :=
-  IsWeakCauseFv cause [] expr p
+  IsWeakCauseFv cause [] o expr p
 
 
 mutual
 /-
-  `Ins dl x p` means that `p` is (provably) a member of `x`
-  (in the well-founded model of `dl`).
+  `Ins dl o x p` means that `p` is (provably) a member of `x`
+  (in the well-founded model of `dl` under the oracle `o`).
   
   If there exists a strong cause of `p ∈ dl.getDef x` such that
   for every value-variable pair `(p, x)`:
@@ -122,6 +126,7 @@ mutual
 -/
 inductive DefList.Ins
   (dl: DefList)
+  (o: Valuation Pair)
 :
   Nat → Pair → Prop
 
@@ -129,10 +134,10 @@ inductive DefList.Ins
   (x: Nat) →
   (p: Pair) →
   (cause: Cause Pair) →
-  cause.IsStrongCause (dl.getDef x) p →
-  (∀ {x p}, cause.cins x p → Ins dl x p) →
-  (∀ {x p}, cause.bout x p → Out dl x p) →
-  Ins dl x p
+  cause.IsStrongCause o (dl.getDef x) p →
+  (∀ {x p}, cause.cins x p → Ins dl o x p) →
+  (∀ {x p}, cause.bout x p → Out dl o x p) →
+  Ins dl o x p
 
 
 /-
@@ -153,6 +158,7 @@ inductive DefList.Ins
 -/
 inductive DefList.IsCauseInapplicable
   (dl: DefList)
+  (o: Valuation Pair)
 :
   (Nat → Set Pair) →
   Cause Pair →
@@ -163,18 +169,18 @@ inductive DefList.IsCauseInapplicable
   {x p} (inContext: cause.cins x p)
   {cycle} (inCycle: cycle x p)
 :
-  IsCauseInapplicable dl cycle cause
+  IsCauseInapplicable dl o cycle cause
 |
   blockedBout {cycle}
   (cause: Cause Pair)
   {x p} (inBackground: cause.bout x p)
-  (isIns: Ins dl x p)
+  (isIns: Ins dl o x p)
 :
-  IsCauseInapplicable dl cycle cause
+  IsCauseInapplicable dl o cycle cause
 
 /-
-  `Out dl x p` means that `p` is a definitive non-member of
-  `x` in the well-founded model of `dl`.
+  `Out dl o x p` means that `p` is a definitive non-member of
+  `x` in the well-founded model of `dl` under the oracle `o`.
   
   A `p` is provably a non-member of `x` if there exists an empty
   cycle containing the pair `(p, x)`.
@@ -184,6 +190,7 @@ inductive DefList.IsCauseInapplicable
 -/
 inductive DefList.Out
   (dl: DefList)
+  (o: Valuation Pair)
 :
   Nat → Pair → Prop
 |
@@ -193,11 +200,11 @@ inductive DefList.Out
     ∀ {x p},
     cycle x p →
     (cause: Cause Pair) →
-    cause.IsWeakCause (dl.getDef x) p →
-    dl.IsCauseInapplicable cycle cause)
+    cause.IsWeakCause o (dl.getDef x) p →
+    dl.IsCauseInapplicable o cycle cause)
   (incycle: cycle x p)
 :
-  Out dl x p
+  Out dl o x p
 end
 
 /-

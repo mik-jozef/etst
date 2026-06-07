@@ -14,6 +14,7 @@ def Expr.replaceDepthEvenConsts {E}
 :=
   match e with
   | const i x => if ed then replacer depth i x else .const i x
+  | oracle i x => .oracle i x
   | var x => .var x
   | null => null
   | prod left rite =>
@@ -78,38 +79,40 @@ def MutIndDescriptor.hypothesify
 
 def DefList.lfpStage_le_wfm_std
   (dl: DefList)
+  (o: Valuation Pair)
   (n: Ordinal)
 :
   let _ := Valuation.ordStdLattice
-  (operatorC dl dl.wfm).lfpStage n ≤ dl.wfm
+  (operatorC dl (dl.wfm o) o).lfpStage n ≤ dl.wfm o
 := by
   intro
-  conv => rhs; rw [dl.wfm_eq_lfpC]
-  exact (operatorC dl dl.wfm).lfpStage_le_lfp n
+  conv => rhs; rw [dl.wfm_eq_lfpC o]
+  exact (operatorC dl (dl.wfm o) o).lfpStage_le_lfp n
 
 def InductionDescriptor.Invariant {dl}
   (desc: InductionDescriptor dl)
-  (wfm v: Valuation Pair)
+  (wfm v o: Valuation Pair)
   (fv: List Pair)
 :=
-  Set.Subset ((v desc.x).getLane desc.lane) (desc.expr.intp fv wfm)
+  Set.Subset ((v desc.x).getLane desc.lane) (desc.expr.intp fv wfm o)
 
 open SingleLaneExpr in
-def MutIndDescriptor.var_le_hypothesify {dl v x lane}
+def MutIndDescriptor.var_le_hypothesify {dl v x lane o}
   (desc: MutIndDescriptor dl)
   -- `fv` represent the bound variables of the induction itself,
   -- `fvDepth` represent the bound variables introduced by the
   -- quantifiers of the hypothesified expression.
   (fv fvDepth: List Pair)
-  (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v fv)
-  (v_le: v ≤ dl.wfm)
+  (inv: ∀ (i: desc.Index), desc[i].Invariant (dl.wfm o) v o fv)
+  (v_le: v ≤ dl.wfm o)
 :
   Set.Subset
     ((v x).getLane lane)
     (intp
       (desc.hypothesify fvDepth.length (.const lane x))
       (fvDepth ++ fv)
-      dl.wfm)
+      (dl.wfm o)
+      o)
 :=
   match desc with
   | [] =>
@@ -117,11 +120,11 @@ def MutIndDescriptor.var_le_hypothesify {dl v x lane}
     | .posLane => (v_le x).posLe
     | .defLane => (v_le x).defLe
   | head :: (rest: MutIndDescriptor dl) =>
-    show _ ≤ intp (if _ then _ else _) _ dl.wfm from
+    show _ ≤ intp (if _ then _ else _) _ (dl.wfm o) o from
     let invTail := List.Index.indexedTail
       (P :=
         fun (desc: InductionDescriptor dl) =>
-          desc.Invariant dl.wfm v fv)
+          desc.Invariant (dl.wfm o) v o fv)
       inv
     if h: lane.Le head.lane && head.x = x then
       let ⟨laneLe, xEq⟩ := Bool.and_eq_true_iff.mp h
@@ -136,8 +139,8 @@ def MutIndDescriptor.var_le_hypothesify {dl v x lane}
             ⟨0, Nat.zero_lt_succ _⟩
             inXHeadLane
         inIr
-          (show intp2 _ _ _ _ _ from
-          head.expr.intp2_lift_eq fv fvDepth dl.wfm dl.wfm ▸
+          (show intp2 _ _ _ _ _ _ from
+          head.expr.intp2_lift_eq fv fvDepth (dl.wfm o) (dl.wfm o) o ▸
           inRite)
           (rest.var_le_hypothesify fv fvDepth invTail v_le inXLane)
     else
@@ -145,7 +148,7 @@ def MutIndDescriptor.var_le_hypothesify {dl v x lane}
       rest.var_le_hypothesify fv fvDepth invTail v_le
 
 mutual
-  def MutIndDescriptor.le_hypothesify {dl v lane}
+  def MutIndDescriptor.le_hypothesify {dl v lane o}
     (desc: MutIndDescriptor dl)
     -- The bound variables of the induction itself.
     (fv: List Pair)
@@ -153,23 +156,24 @@ mutual
     -- good for the recursive calls. It represents the bound variables
     -- introduced by the quantifiers of the hypothesified expression.
     (fvDepth: List Pair := [])
-    (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v fv)
+    (inv: ∀ (i: desc.Index), desc[i].Invariant (dl.wfm o) v o fv)
     {expr: SingleLaneExpr}
     (laneEq: expr.LaneEq (.some lane) (.some lane.toggle))
-    (v_le: v ≤ dl.wfm)
+    (v_le: v ≤ dl.wfm o)
   :
     let exprHypothesified: SingleLaneExpr :=
       expr.replaceDepthEvenConsts fvDepth.length true desc.hypothesis
     Set.Subset
-      (expr.intp2 (fvDepth ++ fv) dl.wfm v)
-      (exprHypothesified.intp (fvDepth ++ fv) dl.wfm)
+      (expr.intp2 (fvDepth ++ fv) (dl.wfm o) v o)
+      (exprHypothesified.intp (fvDepth ++ fv) (dl.wfm o) o)
   :=
     open SingleLaneExpr in
     match expr with
     | .const _ _ =>
       var_le_hypothesify desc fv fvDepth inv v_le
-    | .var _ => le_refl ((intp2 _ _ _ _))
-    | .null => le_refl ((intp2 _ _ _ _))
+    | .oracle _ _ => le_refl ((intp2 _ _ _ _ _))
+    | .var _ => le_refl ((intp2 _ _ _ _ _))
+    | .null => le_refl ((intp2 _ _ _ _ _))
     | .prod _ _ =>
       intp2_mono_std_prod
         (desc.le_hypothesify fv fvDepth inv laneEq.elimProdLeft v_le)
@@ -188,26 +192,27 @@ mutual
       intp2_mono_std_arbIr fun p =>
         desc.le_hypothesify fv (p :: fvDepth) inv laneEq.elimArbIr v_le
 
-  def MutIndDescriptor.ge_hypothesify {dl v lane}
+  def MutIndDescriptor.ge_hypothesify {dl v lane o}
     (desc: MutIndDescriptor dl)
     (fv: List Pair)
     (fvDepth: List Pair := [])
-    (inv: ∀ (i: desc.Index), desc[i].Invariant dl.wfm v fv)
+    (inv: ∀ (i: desc.Index), desc[i].Invariant (dl.wfm o) v o fv)
     {expr: SingleLaneExpr}
     (laneEq: expr.LaneEq (.some lane.toggle) (.some lane))
-    (v_le: v ≤ dl.wfm)
+    (v_le: v ≤ dl.wfm o)
   :
     let exprHypothesified: SingleLaneExpr :=
       expr.replaceDepthEvenConsts fvDepth.length false desc.hypothesis
     Set.Subset
-      (exprHypothesified.intp (fvDepth ++ fv) dl.wfm)
-      (expr.intp2 (fvDepth ++ fv) v dl.wfm)
+      (exprHypothesified.intp (fvDepth ++ fv) (dl.wfm o) o)
+      (expr.intp2 (fvDepth ++ fv) v (dl.wfm o) o)
   :=
     open SingleLaneExpr in
     match expr with
-    | .const _ _ => le_refl ((intp2 _ _ _ _))
-    | .var _ => le_refl ((intp2 _ _ _ _))
-    | .null => le_refl ((intp2 _ _ _ _))
+    | .const _ _ => le_refl ((intp2 _ _ _ _ _))
+    | .oracle _ _ => le_refl ((intp2 _ _ _ _ _))
+    | .var _ => le_refl ((intp2 _ _ _ _ _))
+    | .null => le_refl ((intp2 _ _ _ _ _))
     | .prod _ _ =>
       intp2_mono_std_prod
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimProdLeft v_le)
@@ -231,57 +236,58 @@ open SingleLaneExpr in
 def MutIndDescriptor.isSound {dl}
   (desc: MutIndDescriptor dl)
   (fv: List Pair)
+  (o: Valuation Pair)
   (premisesHold:
     (i: desc.Index) →
     let expansion := desc[i].expansion.toLane desc[i].lane
     Set.Subset
-      (intp (desc.hypothesify 0 expansion) fv dl.wfm)
-      (intp desc[i].expr fv dl.wfm))
+      (intp (desc.hypothesify 0 expansion) fv (dl.wfm o) o)
+      (intp desc[i].expr fv (dl.wfm o) o))
   (i: desc.Index)
 :
   Set.Subset
-    (intp (.const desc[i].lane desc[i].x) fv dl.wfm)
-    (intp desc[i].expr fv dl.wfm)
+    (intp (.const desc[i].lane desc[i].x) fv (dl.wfm o) o)
+    (intp desc[i].expr fv (dl.wfm o) o)
 :=
   let := Valuation.ordStdLattice
-  let eq: dl.wfm = (operatorC dl dl.wfm).lfp := dl.wfm_eq_lfpC
+  let eq: dl.wfm o = (operatorC dl (dl.wfm o) o).lfp := dl.wfm_eq_lfpC o
   
   let isDefSub :=
     OrderHom.lfpStage_induction
-      (operatorC dl dl.wfm)
+      (operatorC dl (dl.wfm o) o)
       (fun v =>
-        ∀ (i: desc.Index), desc[i].Invariant dl.wfm v fv)
+        ∀ (i: desc.Index), desc[i].Invariant (dl.wfm o) v o fv)
       (fun n isLim ih i p inSup =>
         let ⟨m, isMem⟩:
           ∃ m: ↑n,
-            ((operatorC dl dl.wfm).lfpStage m desc[i].x).getLane
+            ((operatorC dl (dl.wfm o) o).lfpStage m desc[i].x).getLane
               desc[i].lane p
         :=
           match h: desc[i].lane with
           | .posLane =>
             let ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, isMem⟩ := h ▸ inSup
-            let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
+            let vEq: (operatorC dl (dl.wfm o) o).lfpStage m = v := vEq
             let s3Eq: v _ = s3 := s3Eq
             ⟨m, h ▸ vEq ▸ s3Eq ▸ isMem⟩
           | .defLane =>
             let ⟨⟨s3, ⟨v, ⟨m, vEq⟩, s3Eq⟩⟩, isMem⟩ := h ▸ inSup
-            let vEq: (operatorC dl dl.wfm).lfpStage m = v := vEq
+            let vEq: (operatorC dl (dl.wfm o) o).lfpStage m = v := vEq
             let s3Eq: v _ = s3 := s3Eq
             ⟨m, h ▸ vEq ▸ s3Eq ▸ isMem⟩
         ih m i isMem)
       (fun n notLim predLt ih i x isMem =>
         let ihPred := ih ⟨n.pred, predLt⟩
-        let op := operatorC dl dl.wfm
+        let op := operatorC dl (dl.wfm o) o
         let predStage := op.lfpStage n.pred
-        let predStageLe := dl.lfpStage_le_wfm_std n.pred
+        let predStageLe := dl.lfpStage_le_wfm_std o n.pred
         let laneEq := desc[i].expansion.laneEq desc[i].lane
         let lePremise :=
           desc.le_hypothesify fv [] ihPred laneEq predStageLe
-        let leExp := desc[i].expandsInto.lfpStage_le_std fv n.pred
+        let leExp := desc[i].expandsInto.lfpStage_le_std fv n.pred o
         let isMemFv:
-          ((dl.getDef desc[i].x).triIntp2 _ _ _).getLane _ x
+          ((dl.getDef desc[i].x).triIntp2 _ _ _ _).getLane _ x
         := by
-          rw [←dl.intpDefs2_eq_fv desc[i].x [] fv dl.wfm predStage]
+          rw [←dl.intpDefs2_eq_fv desc[i].x [] fv (dl.wfm o) predStage o]
           exact isMem
         let inExpansion :=
           desc[i].expansion.triIntp2_getLane_eq ▸ leExp.memLe isMemFv

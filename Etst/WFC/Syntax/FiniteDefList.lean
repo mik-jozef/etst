@@ -274,7 +274,7 @@ namespace pair_def_list
     
     ```
       def dl.consts.foo := [foo's index]
-      def dl.vals.foo := dl.wfm [foo's index]
+      def dl.vals.foo := dl.wfm .empty [foo's index]
       def dl.defs.foo := dl.getDef [foo's index]
       ...
     ```
@@ -295,7 +295,7 @@ namespace pair_def_list
       let dlIdent := mkIdent dlName
       
       cmds := cmds.push (← `(def $constName := $num))
-      cmds := cmds.push (← `(noncomputable def $valName := ($dlIdent).wfm $num))
+      cmds := cmds.push (← `(noncomputable def $valName := ($dlIdent).wfm .empty $num))
       cmds := cmds.push (← `(def $defName := ($dlIdent).getDef $num))
       i := i + 1
     return cmds
