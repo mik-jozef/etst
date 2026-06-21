@@ -164,12 +164,7 @@ namespace Valuation
 end Valuation
 
 
--- ## Section 3: The Interpretation Function
-
-inductive Pair where
-| null -- Null is considered an improper pair.
-| pair (a b: Pair)
-
+-- ## Section 1: The Interpretation Function
 
 abbrev SingleLaneExpr := Expr Set3.Lane
 
@@ -341,16 +336,19 @@ abbrev BasicExpr.triIntp
   expr.triIntp2 fv v v
 
 -- Interpretation on definition lists is defined pointwise.
-def DefList.intpDefs2
-  (dl: DefList)
+def DefList.intpDefs2 {oracles}
+  (dl: DefList oracles)
   (b c: Valuation Pair)
 :
   Valuation Pair
 :=
-  fun x => (dl.getDef x).triIntp2 [] b c
+  fun x =>
+    match oracles x with
+    | .none => (dl.getDef x).triIntp2 [] b c
+    | .some value => value
 
-abbrev DefList.intpDefs
-  (dl: DefList)
+abbrev DefList.intpDefs {oracles}
+  (dl: DefList oracles)
   (v: Valuation Pair)
 :=
   dl.intpDefs2 v v

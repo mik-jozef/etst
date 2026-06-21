@@ -15,25 +15,37 @@ namespace DefListEq
   :=
     ∀ x ∈ names, vSrc x = vDst (map x)
   
-  abbrev EqDefsOn
-    (dlSrc dlDst: DefList)
+  abbrev EqDefsOn {o0 o1}
+    (dlSrc: DefList o0)
+    (dlDst: DefList o1)
     (map: Nat → Nat)
     (names: Set Nat)
   :
     Prop
   :=
-    ∀ x ∈ names, (dlSrc.getDef x).mapConst map = dlDst.getDef (map x)
+    ∀ x ∈ names,
+      Or
+        (o0 x = .none
+        ∧ o1 (map x) = .none
+        ∧ ((dlSrc.getDef x).mapConst map = dlDst.getDef (map x)))
+        (o0 x ≠ .none
+        ∧ o0 x = o1 (map x))
   
-  abbrev ClosedUnderUses
-    (dl: DefList)
+  abbrev ClosedUnderUses {o}
+    (dl: DefList o)
     (names: Set Nat)
   :
     Prop
   :=
-    ∀ x ∈ names, ∀ y ∈ (dl.getDef x).UsesConst, y ∈ names
+    ∀ x ∈ names,
+      o x = .none →
+    ∀ y ∈ (dl.getDef x).UsesConst,
+      y ∈ names
   
   
-  def intpDefs2_eqOn {map dlSrc dlDst names bSrc bDst cSrc cDst}
+  def intpDefs2_eqOn {map o0 o1 names bSrc bDst cSrc cDst}
+    {dlSrc: DefList o0}
+    {dlDst: DefList o1}
     (defsEq: EqDefsOn dlSrc dlDst map names)
     (closed: ClosedUnderUses dlSrc names)
     (eqB: InvariantOn map names bSrc bDst)
@@ -43,15 +55,27 @@ namespace DefListEq
   :
     dlSrc.intpDefs2 bSrc cSrc x = dlDst.intpDefs2 bDst cDst (map x)
   :=
-    let eq :=
-      BasicExpr.mapConst_triIntp2
-        map
-        (fun y yUsed => eqB y (closed x xIn y yUsed))
-        (fun y yUsed => eqC y (closed x xIn y yUsed))
-    eq.symm.trans (defsEq x xIn ▸ rfl)
+    match defsEq x xIn with
+    | Or.inl ⟨o0None, o1None, defEq⟩ =>
+      let eqB' y yUsed := eqB y (closed x xIn o0None y yUsed)
+      let eqC' y yUsed := eqC y (closed x xIn o0None y yUsed)
+      let eq := BasicExpr.mapConst_triIntp2 map eqB' eqC'
+      by
+        unfold DefList.intpDefs2
+        rw [o0None, o1None]
+        exact defEq ▸ eq.symm
+    | Or.inr ⟨o0NeNone, o0EqO1⟩ =>
+      by
+        unfold DefList.intpDefs2
+        rw [← o0EqO1]
+        cases h: o0 x with
+        | none => exact absurd h o0NeNone
+        | some _ => rfl
   
   
-  def operatorC_lfp_eqOn {map names dlSrc dlDst bSrc bDst}
+  def operatorC_lfp_eqOn {map names o0 o1 bSrc bDst}
+    {dlSrc: DefList o0}
+    {dlDst: DefList o1}
     (defsEq: EqDefsOn dlSrc dlDst map names)
     (closed: ClosedUnderUses dlSrc names)
     (eqB: InvariantOn map names bSrc bDst)
@@ -99,7 +123,9 @@ end DefListEq
 
 open DefListEq in
 def DefList.eq_defs_eq_vals
-  {dlSrc dlDst: DefList}
+  {o0 o1}
+  {dlSrc: DefList o0}
+  {dlDst: DefList o1}
   {map: Nat → Nat}
   {names: Set Nat}
   (defsEq: EqDefsOn dlSrc dlDst map names)
@@ -154,11 +180,11 @@ def DefList.eq_defs_eq_vals
       operatorC_lfp_eqOn defsEq closed (ih ⟨_, predLt⟩))
 
 
-def DefList.prefix
-  (dl: DefList)
+def DefList.prefix {o}
+  (dl: DefList o)
   (n: Nat)
 :
-  DefList
+  DefList o
 := {
   getDef x := if x < n then dl.getDef x else .none
   isClean x :=
@@ -168,7 +194,7 @@ def DefList.prefix
 }
 
 def DefList.prefix_eq_at
-  {dl: DefList}
+  {o} {dl: DefList o}
   {n x} (lt: x < n)
 :
   (dl.prefix n).getDef x = dl.getDef x
@@ -176,14 +202,14 @@ def DefList.prefix_eq_at
   if_pos lt
 
 def DefList.prefix_none_at
-  {dl: DefList}
+  {o} {dl: DefList o}
   {n x} (nlt: ¬ x < n)
 :
   (dl.prefix n).getDef x = .none
 :=
   if_neg nlt
 
-def DefList.eq {dlSrc dlDst: DefList}
+def DefList.eq {o} {dlSrc dlDst: DefList o}
   (getDefEq: dlSrc.getDef = dlDst.getDef)
 :
   dlSrc = dlDst
@@ -192,8 +218,8 @@ def DefList.eq {dlSrc dlDst: DefList}
   | ⟨_, _⟩, _, rfl => rfl
 
 
-def FinBoundedDl.ex_expr_uses_bound
-  (dl: FinBoundedDl)
+def FinBoundedDl.ex_expr_uses_bound {o}
+  (dl: FinBoundedDl o)
   (expr: BasicExpr)
 :
   ∃ n,
@@ -240,8 +266,8 @@ def FinBoundedDl.ex_expr_uses_bound
   | .arbIr body => dl.ex_expr_uses_bound body
 
 
-def FinBoundedDl.prefix_wfm_eq_of_lt
-  (dl: FinBoundedDl)
+def FinBoundedDl.prefix_wfm_eq_of_lt {o}
+  (dl: FinBoundedDl o)
   {x n: Nat}
   (xLtN: x < n)
   (depsLtN: ∀ {dep}, DefList.DependsOn dl.getDef x dep → dep < n)
@@ -257,8 +283,11 @@ def FinBoundedDl.prefix_wfm_eq_of_lt
         match yIn with
         | Or.inl yEq => yEq ▸ xLtN
         | Or.inr depOn => depsLtN depOn
-      (Expr.mapConst_eq_id _).trans (dl.prefix_eq_at yLtN).symm
-  let closed _ yIn _ zUsed :=
+      if h: o y = .none then
+        Or.inl ⟨h, h, Expr.mapConst_eq_id _ ▸ (dl.prefix_eq_at yLtN).symm⟩
+      else
+        Or.inr ⟨h, rfl⟩
+  let closed _ yIn _ _ zUsed :=
       match yIn with
       | Or.inl yEq =>
         Or.inr <| yEq ▸ DefList.DependsOn.Base zUsed
@@ -267,8 +296,8 @@ def FinBoundedDl.prefix_wfm_eq_of_lt
   let eqAtN := DefList.eq_defs_eq_vals defsEq closed x (Or.inl rfl)
   eqAtN.symm
 
-def FinBoundedDl.ex_prefix_wfm_eq
-  (dl: FinBoundedDl)
+def FinBoundedDl.ex_prefix_wfm_eq {o}
+  (dl: FinBoundedDl o)
   (x: Nat)
 :
   ∃ n, (dl.prefix n).wfm x = dl.wfm x
@@ -283,8 +312,8 @@ def FinBoundedDl.ex_prefix_wfm_eq
     Nat.lt_of_lt_of_le (depsLt depOn) (Nat.le_max_right _ _)
   ⟨n, dl.prefix_wfm_eq_of_lt xLtN depsLtN⟩
 
-def FinBoundedDl.ex_prefix_wfm_eq_expr
-  (dl: FinBoundedDl)
+def FinBoundedDl.ex_prefix_wfm_eq_expr {o}
+  (dl: FinBoundedDl o)
   (fv: List Pair)
   (expr: BasicExpr)
 :
@@ -316,8 +345,8 @@ def DefList.DependsOn.toUsesConst {getDef a b}
   | Base usesVar => ⟨_, usesVar⟩
   | Rec _ depOn => depOn.toUsesConst
 
-def DefList.IsExprBoundedBy
-  (dl: DefList)
+def DefList.IsExprBoundedBy {o}
+  (dl: DefList o)
   (expr: BasicExpr)
   (ub: Nat)
 :
@@ -346,7 +375,7 @@ namespace FiniteDefList
     ⟩
 end FiniteDefList
 
-structure FiniteDefList extends FinBoundedDl where
+structure FiniteDefList extends FinBoundedDl DefList.emptyOracles where
   constNames: List String
   constsLt: FiniteDefList.ConstsLt getDef constNames.length
   noneAboveSize: ∀ {x}, constNames.length ≤ x → getDef x = .none
@@ -541,8 +570,8 @@ namespace FiniteDefList
         := by
           show (if y < dlParent.size then _ else _) = dlParent.getDef y
           rw [if_pos yLt]
-        (Expr.mapConst_eq_id _).trans eqAtY.symm
-    let closed _ yIn _ zUsed :=
+        Or.inl ⟨rfl, rfl, (Expr.mapConst_eq_id _).trans eqAtY.symm⟩
+    let closed _ yIn _ _ zUsed :=
       match yIn with
       | Or.inl yEq =>
         Or.inr <| yEq ▸ DefList.DependsOn.Base zUsed

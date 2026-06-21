@@ -104,13 +104,19 @@ def BasicExpr.triIntp2_mono_std
   }
 
 def DefList.intpDefs2_mono_std
-  {dl: DefList}
+  {oracles}
+  {dl: DefList oracles}
   {b0 b1} (bLe: b1 ≤ b0)
   {c0 c1} (cLe: c0 ≤ c1)
 :
   dl.intpDefs2 b0 c0 ≤ dl.intpDefs2 b1 c1
 :=
-  fun _ => BasicExpr.triIntp2_mono_std bLe cLe
+  fun x => by
+  unfold DefList.intpDefs2
+  exact
+  match oracles x with
+  | .none => BasicExpr.triIntp2_mono_std bLe cLe
+  | .some value => (Set3.ordStd Pair).le_refl value
 
 
 def BasicExpr.triIntp2_mono_apx
@@ -204,14 +210,20 @@ def BasicExpr.triIntp2_mono_apx_posMem
   isMonoB.posLe.trans isMonoC
 
 def DefList.intpDefs2_mono_apx
-  {dl: DefList}
+  {oracles}
+  {dl: DefList oracles}
   {b0 b1 c0 c1: Valuation Pair}
   (bLe: b0 ⊑ b1)
   (cLe: c0 ⊑ c1)
 :
   dl.intpDefs2 b0 c0 ⊑ dl.intpDefs2 b1 c1
 :=
-  fun _ => BasicExpr.triIntp2_mono_apx bLe cLe
+  fun _ => by
+  unfold DefList.intpDefs2
+  exact
+  match oracles _ with
+  | .none => BasicExpr.triIntp2_mono_apx bLe cLe
+  | .some value => (Set3.ordApx Pair).le_refl value
 
 
 def BasicExpr.triIntp2_getLane_eq {fv b c lane}

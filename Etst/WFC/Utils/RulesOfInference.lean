@@ -373,8 +373,18 @@ namespace SingleLaneExpr
 end SingleLaneExpr
 
 namespace DefList
+  abbrev InWfmOracles {o}
+    (dl: DefList o)
+    (fv: List Pair := [])
+    (expr: SingleLaneExpr)
+    (p: Pair)
+  :
+    Prop
+  :=
+    expr.intp2 fv dl.wfm dl.wfm p
+  
   abbrev InWfm
-    (dl: DefList)
+    (dl: DefList emptyOracles)
     (fv: List Pair := [])
     (expr: SingleLaneExpr)
     (p: Pair)

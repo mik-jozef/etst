@@ -1171,8 +1171,8 @@ def Expr.IsClean.toLane
     isClean x (iff.mp isCleanLane)
 
 namespace DefList
-  def intpDefs2_eq_fv_def
-    (dl: DefList)
+  def intpDefs2_eq_fv_def {o}
+    (dl: DefList o)
     (x: Nat)
     (fv0 fv1: List Pair)
     (b c: Valuation Pair)
@@ -1183,8 +1183,8 @@ namespace DefList
   :=
     ((dl.isClean x).toLane .defLane).intp2_eq
   
-  def intpDefs2_eq_fv_pos
-    (dl: DefList)
+  def intpDefs2_eq_fv_pos {o}
+    (dl: DefList o)
     (x: Nat)
     (fv0 fv1: List Pair)
     (b c: Valuation Pair)
@@ -1195,8 +1195,8 @@ namespace DefList
   :=
     ((dl.isClean x).toLane .posLane).intp2_eq
   
-  def intpDefs2_eq_fv
-    (dl: DefList)
+  def intpDefs2_eq_fv {o}
+    (dl: DefList o)
     (x: Nat)
     (fv0 fv1: List Pair)
     (b c: Valuation Pair)
@@ -1210,7 +1210,7 @@ namespace DefList
 end DefList
 
 namespace DefList
-  variable {dl: DefList}
+  variable {dl: DefList emptyOracles}
   
   def InWfm.of_in_def {fv x lane d}
     (inDef: dl.InWfm fv ((dl.getDef x).toLane lane) d)

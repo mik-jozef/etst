@@ -172,16 +172,26 @@ namespace Expr
 end Expr
 
 
+inductive Pair where
+| null -- Null is considered an improper pair.
+| pair (a b: Pair)
+
 def DefList.GetDef := Nat → BasicExpr
 
 /-
   A definition list is a map from natural numbers to expressions.
   It is used to allow recursive definitions -- the constants
   in a definition refer to other definitions of the definition list.
+  
+  Oracles may override the meaning of constants. Unlike getDef, they are
+  a part of the signature to have easy type-level control over them.
 -/
-structure DefList where
+structure DefList (oracles: Nat → Option (Set3 Pair)) where
   getDef: DefList.GetDef
   isClean: ∀ name, (getDef name).IsClean
+
+-- The trivial oracle assignment that overrides no constants.
+def DefList.emptyOracles (_: Nat): Option (Set3 Pair) := .none
 
 -- The definition x depends on y iff x contains y, possibly transitively.
 inductive DefList.DependsOn
@@ -240,5 +250,5 @@ def DefList.IsFinBounded (getDef: GetDef): Prop :=
   IsDefBoundedBy getDef name upperBound
 
 -- A finitely bounded definition list. See IsFinBounded above.
-structure FinBoundedDl extends DefList where
+structure FinBoundedDl oracles extends DefList oracles where
   isFinBounded: DefList.IsFinBounded getDef
