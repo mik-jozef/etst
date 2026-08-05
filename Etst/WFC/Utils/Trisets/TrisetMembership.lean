@@ -97,12 +97,12 @@ def bisimDl.IsBisimPos (p q: Pair): Prop := ¬ NonBisimDef p q
 -- A Lean-native definition of `IsIn`'s definite-membership lane:
 -- `elem` is (a bisimilar copy of) a definite element of `set`.
 def bisimDl.IsInDef (set elem: Pair): Prop :=
-  ∃ elemX, IsBisimDef elem elemX ∧ Set3Pair.PreTriset.Ins set elemX
+  ∃ elemX, IsBisimDef elem elemX ∧ Pair.PreTriset.Ins set elemX
 
 -- A Lean-native definition of `IsIn`'s possible-membership lane:
 -- `elem` is (a bisimilar copy of) a possible element of `set`.
 def bisimDl.IsInPos (set elem: Pair): Prop :=
-  ∃ elemX, IsBisimPos elem elemX ∧ Set3Pair.PreTriset.Inw set elemX
+  ∃ elemX, IsBisimPos elem elemX ∧ Pair.PreTriset.Inw set elemX
 
 /-
   ## Section: proving equivalence of the Lean-native WFM defs
@@ -430,8 +430,8 @@ def bisimDl.NonBisimPos.toPosMem {p q w}
 def bisimDl.NonBisimDef.respectsBisim:
   {p q p' q': Pair} →
   NonBisimDef p q →
-  Set3Pair.Bisim p p' →
-  Set3Pair.Bisim q q' →
+  Pair.PreTriset.Bisim p p' →
+  Pair.PreTriset.Bisim q q' →
   NonBisimDef p' q'
 |
   _p, _q, _p', _q', .ofP pp insP allQ, ⟨R, isBisimP, Rpp'⟩, qBisim =>
@@ -453,8 +453,8 @@ def bisimDl.NonBisimDef.respectsBisim:
 def bisimDl.NonBisimPos.respectsBisim:
   {p q p' q': Pair} →
   NonBisimPos p q →
-  Set3Pair.Bisim p p' →
-  Set3Pair.Bisim q q' →
+  Pair.PreTriset.Bisim p p' →
+  Pair.PreTriset.Bisim q q' →
   NonBisimPos p' q'
 |
   _p, _q, _p', _q', .ofP pp inwP allQ, ⟨R, isBisimP, Rpp'⟩, qBisim =>
@@ -474,11 +474,11 @@ def bisimDl.NonBisimPos.respectsBisim:
         ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
 
 
-def Triset.NonBisimDef (a b: Set3Pair.Triset) :=
+def Triset.NonBisimDef (a b: Pair.Triset) :=
   let respects
     a0 b0 a1 b1
-    (aBisim: Set3Pair.trisetSetoid.r a0 a1)
-    (bBisim: Set3Pair.trisetSetoid.r b0 b1)
+    (aBisim: Pair.PreTriset.setoid.r a0 a1)
+    (bBisim: Pair.PreTriset.setoid.r b0 b1)
   :
     bisimDl.NonBisimDef a0 b0 = bisimDl.NonBisimDef a1 b1
   :=
@@ -486,15 +486,15 @@ def Triset.NonBisimDef (a b: Set3Pair.Triset) :=
       (fun nbi => nbi.respectsBisim aBisim bBisim)
       (fun nbi =>
         nbi.respectsBisim
-          (Set3Pair.trisetSetoid.iseqv.symm aBisim)
-          (Set3Pair.trisetSetoid.iseqv.symm bBisim)))
+          (Pair.PreTriset.setoid.iseqv.symm aBisim)
+          (Pair.PreTriset.setoid.iseqv.symm bBisim)))
   Quotient.lift₂ bisimDl.NonBisimDef respects a b
 
-def Triset.NonBisimPos (a b: Set3Pair.Triset) :=
+def Triset.NonBisimPos (a b: Pair.Triset) :=
   let respects
     a0 b0 a1 b1
-    (aBisim: Set3Pair.trisetSetoid.r a0 a1)
-    (bBisim: Set3Pair.trisetSetoid.r b0 b1)
+    (aBisim: Pair.PreTriset.setoid.r a0 a1)
+    (bBisim: Pair.PreTriset.setoid.r b0 b1)
   :
     bisimDl.NonBisimPos a0 b0 = bisimDl.NonBisimPos a1 b1
   :=
@@ -502,8 +502,8 @@ def Triset.NonBisimPos (a b: Set3Pair.Triset) :=
       (fun nbi => nbi.respectsBisim aBisim bBisim)
       (fun nbi =>
         nbi.respectsBisim
-          (Set3Pair.trisetSetoid.iseqv.symm aBisim)
-          (Set3Pair.trisetSetoid.iseqv.symm bBisim)))
+          (Pair.PreTriset.setoid.iseqv.symm aBisim)
+          (Pair.PreTriset.setoid.iseqv.symm bBisim)))
   Quotient.lift₂ bisimDl.NonBisimPos respects a b
 
 
@@ -516,36 +516,36 @@ def Triset.NonBisimPos (a b: Set3Pair.Triset) :=
 
 def bisimDl.IsBisimDef.respectsBisim {p q p' q': Pair}
   (isB: IsBisimDef p q)
-  (pBisim: Set3Pair.Bisim p p')
-  (qBisim: Set3Pair.Bisim q q')
+  (pBisim: Pair.PreTriset.Bisim p p')
+  (qBisim: Pair.PreTriset.Bisim q q')
 :
   IsBisimDef p' q'
 :=
   fun nbi =>
     isB
       (nbi.respectsBisim
-        (Set3Pair.trisetSetoid.iseqv.symm pBisim)
-        (Set3Pair.trisetSetoid.iseqv.symm qBisim))
+        (Pair.PreTriset.setoid.iseqv.symm pBisim)
+        (Pair.PreTriset.setoid.iseqv.symm qBisim))
 
 def bisimDl.IsBisimPos.respectsBisim {p q p' q': Pair}
   (isB: IsBisimPos p q)
-  (pBisim: Set3Pair.Bisim p p')
-  (qBisim: Set3Pair.Bisim q q')
+  (pBisim: Pair.PreTriset.Bisim p p')
+  (qBisim: Pair.PreTriset.Bisim q q')
 :
   IsBisimPos p' q'
 :=
   fun nbi =>
     isB
       (nbi.respectsBisim
-        (Set3Pair.trisetSetoid.iseqv.symm pBisim)
-        (Set3Pair.trisetSetoid.iseqv.symm qBisim))
+        (Pair.PreTriset.setoid.iseqv.symm pBisim)
+        (Pair.PreTriset.setoid.iseqv.symm qBisim))
 
 
-def Triset.IsBisimDef (a b: Set3Pair.Triset) :=
+def Triset.IsBisimDef (a b: Pair.Triset) :=
   let respects
     a0 b0 a1 b1
-    (aBisim: Set3Pair.trisetSetoid.r a0 a1)
-    (bBisim: Set3Pair.trisetSetoid.r b0 b1)
+    (aBisim: Pair.PreTriset.setoid.r a0 a1)
+    (bBisim: Pair.PreTriset.setoid.r b0 b1)
   :
     bisimDl.IsBisimDef a0 b0 = bisimDl.IsBisimDef a1 b1
   :=
@@ -553,15 +553,15 @@ def Triset.IsBisimDef (a b: Set3Pair.Triset) :=
       (fun isB => isB.respectsBisim aBisim bBisim)
       (fun isB =>
         isB.respectsBisim
-          (Set3Pair.trisetSetoid.iseqv.symm aBisim)
-          (Set3Pair.trisetSetoid.iseqv.symm bBisim)))
+          (Pair.PreTriset.setoid.iseqv.symm aBisim)
+          (Pair.PreTriset.setoid.iseqv.symm bBisim)))
   Quotient.lift₂ bisimDl.IsBisimDef respects a b
 
-def Triset.IsBisimPos (a b: Set3Pair.Triset) :=
+def Triset.IsBisimPos (a b: Pair.Triset) :=
   let respects
     a0 b0 a1 b1
-    (aBisim: Set3Pair.trisetSetoid.r a0 a1)
-    (bBisim: Set3Pair.trisetSetoid.r b0 b1)
+    (aBisim: Pair.PreTriset.setoid.r a0 a1)
+    (bBisim: Pair.PreTriset.setoid.r b0 b1)
   :
     bisimDl.IsBisimPos a0 b0 = bisimDl.IsBisimPos a1 b1
   :=
@@ -569,8 +569,8 @@ def Triset.IsBisimPos (a b: Set3Pair.Triset) :=
       (fun isB => isB.respectsBisim aBisim bBisim)
       (fun isB =>
         isB.respectsBisim
-          (Set3Pair.trisetSetoid.iseqv.symm aBisim)
-          (Set3Pair.trisetSetoid.iseqv.symm bBisim)))
+          (Pair.PreTriset.setoid.iseqv.symm aBisim)
+          (Pair.PreTriset.setoid.iseqv.symm bBisim)))
   Quotient.lift₂ bisimDl.IsBisimPos respects a b
 
 
@@ -582,8 +582,8 @@ def Triset.IsBisimPos (a b: Set3Pair.Triset) :=
 
 def bisimDl.IsInDef.respectsBisim {set elem set' elem': Pair}
   (isIn: IsInDef set elem)
-  (setBisim: Set3Pair.Bisim set set')
-  (elemBisim: Set3Pair.Bisim elem elem')
+  (setBisim: Pair.PreTriset.Bisim set set')
+  (elemBisim: Pair.PreTriset.Bisim elem elem')
 :
   IsInDef set' elem'
 :=
@@ -594,8 +594,8 @@ def bisimDl.IsInDef.respectsBisim {set elem set' elem': Pair}
 
 def bisimDl.IsInPos.respectsBisim {set elem set' elem': Pair}
   (isIn: IsInPos set elem)
-  (setBisim: Set3Pair.Bisim set set')
-  (elemBisim: Set3Pair.Bisim elem elem')
+  (setBisim: Pair.PreTriset.Bisim set set')
+  (elemBisim: Pair.PreTriset.Bisim elem elem')
 :
   IsInPos set' elem'
 :=
@@ -605,11 +605,11 @@ def bisimDl.IsInPos.respectsBisim {set elem set' elem': Pair}
   ⟨elemX', isB.respectsBisim elemBisim ⟨R, isBisimSet, RxX'⟩, inw'⟩
 
 
-def Triset.IsInDef (set elem: Set3Pair.Triset) :=
+def Triset.IsInDef (set elem: Pair.Triset) :=
   let respects
     s0 e0 s1 e1
-    (sBisim: Set3Pair.trisetSetoid.r s0 s1)
-    (eBisim: Set3Pair.trisetSetoid.r e0 e1)
+    (sBisim: Pair.PreTriset.setoid.r s0 s1)
+    (eBisim: Pair.PreTriset.setoid.r e0 e1)
   :
     bisimDl.IsInDef s0 e0 = bisimDl.IsInDef s1 e1
   :=
@@ -617,15 +617,15 @@ def Triset.IsInDef (set elem: Set3Pair.Triset) :=
       (fun isIn => isIn.respectsBisim sBisim eBisim)
       (fun isIn =>
         isIn.respectsBisim
-          (Set3Pair.trisetSetoid.iseqv.symm sBisim)
-          (Set3Pair.trisetSetoid.iseqv.symm eBisim)))
+          (Pair.PreTriset.setoid.iseqv.symm sBisim)
+          (Pair.PreTriset.setoid.iseqv.symm eBisim)))
   Quotient.lift₂ bisimDl.IsInDef respects set elem
 
-def Triset.IsInPos (set elem: Set3Pair.Triset) :=
+def Triset.IsInPos (set elem: Pair.Triset) :=
   let respects
     s0 e0 s1 e1
-    (sBisim: Set3Pair.trisetSetoid.r s0 s1)
-    (eBisim: Set3Pair.trisetSetoid.r e0 e1)
+    (sBisim: Pair.PreTriset.setoid.r s0 s1)
+    (eBisim: Pair.PreTriset.setoid.r e0 e1)
   :
     bisimDl.IsInPos s0 e0 = bisimDl.IsInPos s1 e1
   :=
@@ -633,15 +633,15 @@ def Triset.IsInPos (set elem: Set3Pair.Triset) :=
       (fun isIn => isIn.respectsBisim sBisim eBisim)
       (fun isIn =>
         isIn.respectsBisim
-          (Set3Pair.trisetSetoid.iseqv.symm sBisim)
-          (Set3Pair.trisetSetoid.iseqv.symm eBisim)))
+          (Pair.PreTriset.setoid.iseqv.symm sBisim)
+          (Pair.PreTriset.setoid.iseqv.symm eBisim)))
   Quotient.lift₂ bisimDl.IsInPos respects set elem
 
 
 /-
   ## Section: definite bisimilarity implies equality
 
-  We show `IsBisimDef p q → Set3Pair.Bisim p q`, hence at the quotient
+  We show `IsBisimDef p q → Pair.PreTriset.Bisim p q`, hence at the quotient
   level `Triset.IsBisimDef ts0 ts1 → ts0 = ts1`.
 
   Note this needs NEITHER the requested `IsBisimPos` hypothesis NOR any
@@ -686,7 +686,7 @@ def bisimDl.IsBisimDef.matchDef' {p q q': Pair}
 def bisimDl.IsBisimDef.toBisim {p q: Pair}
   (isBD: IsBisimDef p q)
 :
-  Set3Pair.Bisim p q
+  Pair.PreTriset.Bisim p q
 :=
   ⟨
     bisimDl.IsBisimDef,
@@ -718,7 +718,7 @@ def bisimDl.IsBisimDef.toBisim {p q: Pair}
   ⟩
 
 -- Bisimilar pre-trisets are equal in the quotient.
-def Triset.IsBisimDef.toEq {ts0 ts1: Set3Pair.Triset}
+def Triset.IsBisimDef.toEq {ts0 ts1: Pair.Triset}
   (isBisim: Triset.IsBisimDef ts0 ts1)
 :
   ts0 = ts1
@@ -745,28 +745,28 @@ def Triset.IsBisimDef.toEq {ts0 ts1: Set3Pair.Triset}
 -/
 
 -- Transporting a definite/possible transition across a bisimulation.
-def Set3Pair.Bisim.symm {a b: Set3Pair.PreTriset}
-  (bisim: Set3Pair.Bisim a b)
+def Pair.PreTriset.Bisim.symm {a b: Pair.PreTriset}
+  (bisim: Pair.PreTriset.Bisim a b)
 :
-  Set3Pair.Bisim b a
+  Pair.PreTriset.Bisim b a
 :=
-  Set3Pair.trisetSetoid.iseqv.symm bisim
+  Pair.PreTriset.setoid.iseqv.symm bisim
 
-def Set3Pair.Bisim.ins {a b x: Set3Pair.PreTriset}
-  (bisim: Set3Pair.Bisim a b)
-  (ins: Set3Pair.PreTriset.Ins a x)
+def Pair.PreTriset.Bisim.ins {a b x: Pair.PreTriset}
+  (bisim: Pair.PreTriset.Bisim a b)
+  (ins: Pair.PreTriset.Ins a x)
 :
-  ∃ y, Set3Pair.PreTriset.Ins b y ∧ Set3Pair.Bisim x y
+  ∃ y, Pair.PreTriset.Ins b y ∧ Pair.PreTriset.Bisim x y
 :=
   let ⟨R, isBisim, Rab⟩ := bisim
   let ⟨y, insY, Rxy⟩ := isBisim.left .ins a b x Rab ins
   ⟨y, insY, R, isBisim, Rxy⟩
 
-def Set3Pair.Bisim.inw {a b x: Set3Pair.PreTriset}
-  (bisim: Set3Pair.Bisim a b)
-  (inw: Set3Pair.PreTriset.Inw a x)
+def Pair.PreTriset.Bisim.inw {a b x: Pair.PreTriset}
+  (bisim: Pair.PreTriset.Bisim a b)
+  (inw: Pair.PreTriset.Inw a x)
 :
-  ∃ y, Set3Pair.PreTriset.Inw b y ∧ Set3Pair.Bisim x y
+  ∃ y, Pair.PreTriset.Inw b y ∧ Pair.PreTriset.Bisim x y
 :=
   let ⟨R, isBisim, Rab⟩ := bisim
   let ⟨y, inwY, Rxy⟩ := isBisim.left .inw a b x Rab inw
@@ -791,7 +791,7 @@ def bisimDl.IsBisimDef.toIsBisimPos {p q: Pair}
 
 -- Bisimilar pre-trisets are never `NonBisimDef`, so `Bisim ⊆ IsBisimPos`.
 def bisimDl.NonBisimDef.not_bisim:
-  {p q: Pair} → NonBisimDef p q → ¬ Set3Pair.Bisim p q
+  {p q: Pair} → NonBisimDef p q → ¬ Pair.PreTriset.Bisim p q
 | _, _, .ofP _p' inP allQ, bisim =>
     let ⟨q', insQ', bisimP'Q'⟩ := bisim.ins inP
     (allQ q' insQ'.toPos).not_bisim bisimP'Q'
@@ -800,7 +800,7 @@ def bisimDl.NonBisimDef.not_bisim:
     (allP p' insP'.toPos).not_bisim bisimQ'P'.symm
 
 def bisimDl.IsBisimPos.of_bisim {p q: Pair}
-  (bisim: Set3Pair.Bisim p q)
+  (bisim: Pair.PreTriset.Bisim p q)
 :
   IsBisimPos p q
 :=
@@ -809,71 +809,71 @@ def bisimDl.IsBisimPos.of_bisim {p q: Pair}
 
 -- On an Hc triset, every possible element is a definite element up to
 -- bisimilarity. (If not, the pre-triset witnesses `Nhc` via `notClassical`.)
-def Set3Pair.Triset.hc_ins_of_inw {p p': Set3Pair.PreTriset}
-  (hc: Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p))
-  (inw: Set3Pair.PreTriset.Inw p p')
+def Pair.Triset.hc_ins_of_inw {p p': Pair.PreTriset}
+  (hc: Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid p))
+  (inw: Pair.PreTriset.Inw p p')
 :
-  ∃ p'', Set3Pair.PreTriset.Ins p p'' ∧ Set3Pair.Bisim p' p''
+  ∃ p'', Pair.PreTriset.Ins p p'' ∧ Pair.PreTriset.Bisim p' p''
 :=
   Classical.byContradiction fun h =>
-    hc (Set3Pair.Triset.Nhc.notClassical
-      (elem := Quotient.mk Set3Pair.trisetSetoid p')
+    hc (Pair.Triset.Nhc.notClassical
+      (elem := Quotient.mk Pair.PreTriset.setoid p')
       ⟨p, p', rfl, rfl, inw⟩
       fun exIns =>
         let ⟨preTs, preElem, tsEq, elemEq, ins⟩ := exIns
-        let bisimPre: Set3Pair.Bisim p preTs := Quotient.exact tsEq
-        let bisimElem: Set3Pair.Bisim p' preElem := Quotient.exact elemEq
+        let bisimPre: Pair.PreTriset.Bisim p preTs := Quotient.exact tsEq
+        let bisimElem: Pair.PreTriset.Bisim p' preElem := Quotient.exact elemEq
         let ⟨p'', insP'', bisimPreElem⟩ := bisimPre.symm.ins ins
         h ⟨p'', insP'',
-          Set3Pair.trisetSetoid.iseqv.trans bisimElem bisimPreElem⟩)
+          Pair.PreTriset.setoid.iseqv.trans bisimElem bisimPreElem⟩)
 
 -- On an Hc triset, every possible element is itself Hc.
 -- (Otherwise the pre-triset witnesses `Nhc` via `containsNhc`.)
-def Set3Pair.Triset.hc_hered {p p': Set3Pair.PreTriset}
-  (hc: Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p))
-  (inw: Set3Pair.PreTriset.Inw p p')
+def Pair.Triset.hc_hered {p p': Pair.PreTriset}
+  (hc: Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid p))
+  (inw: Pair.PreTriset.Inw p p')
 :
-  Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p')
+  Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid p')
 :=
   fun nhc' =>
-    hc (Set3Pair.Triset.Nhc.containsNhc ⟨p, p', rfl, rfl, inw⟩ nhc')
+    hc (Pair.Triset.Nhc.containsNhc ⟨p, p', rfl, rfl, inw⟩ nhc')
 
 
 -- On Hc trisets possible non-bisimilarity implies the definite one.
 def bisimDl.NonBisimPos.toNonBisimDef:
   {p q: Pair} →
   NonBisimPos p q →
-  Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p) →
-  Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid q) →
+  Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid p) →
+  Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid q) →
   NonBisimDef p q
 | _p, _q, .ofP _p' inwP allQ, hcP, hcQ =>
-    let ⟨p'', insP'', bisimP'⟩ := Set3Pair.Triset.hc_ins_of_inw hcP inwP
+    let ⟨p'', insP'', bisimP'⟩ := Pair.Triset.hc_ins_of_inw hcP inwP
     .ofP p'' insP'' fun _q' inwQ' =>
-      let ⟨q'', insQ'', bisimQ'⟩ := Set3Pair.Triset.hc_ins_of_inw hcQ inwQ'
-      let hcP' := Set3Pair.Triset.hc_hered hcP inwP
-      let hcQ' := Set3Pair.Triset.hc_hered hcQ inwQ'
+      let ⟨q'', insQ'', bisimQ'⟩ := Pair.Triset.hc_ins_of_inw hcQ inwQ'
+      let hcP' := Pair.Triset.hc_hered hcP inwP
+      let hcQ' := Pair.Triset.hc_hered hcQ inwQ'
       let hcQ'':
-        Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid q'')
+        Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid q'')
       :=
-        (@Quotient.sound _ Set3Pair.trisetSetoid _ _ bisimQ') ▸ hcQ'
+        (@Quotient.sound _ Pair.PreTriset.setoid _ _ bisimQ') ▸ hcQ'
       let nbd := (allQ q'' insQ'').toNonBisimDef hcP' hcQ''
       nbd.respectsBisim bisimP' bisimQ'.symm
 | _p, _q, .ofQ _q' inwQ allP, hcP, hcQ =>
-    let ⟨q'', insQ'', bisimQ'⟩ := Set3Pair.Triset.hc_ins_of_inw hcQ inwQ
+    let ⟨q'', insQ'', bisimQ'⟩ := Pair.Triset.hc_ins_of_inw hcQ inwQ
     .ofQ q'' insQ'' fun _p' inwP' =>
-      let ⟨p'', insP'', bisimP'⟩ := Set3Pair.Triset.hc_ins_of_inw hcP inwP'
-      let hcQ' := Set3Pair.Triset.hc_hered hcQ inwQ
-      let hcP' := Set3Pair.Triset.hc_hered hcP inwP'
+      let ⟨p'', insP'', bisimP'⟩ := Pair.Triset.hc_ins_of_inw hcP inwP'
+      let hcQ' := Pair.Triset.hc_hered hcQ inwQ
+      let hcP' := Pair.Triset.hc_hered hcP inwP'
       let hcP'':
-        Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p'')
+        Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid p'')
       :=
-        (@Quotient.sound _ Set3Pair.trisetSetoid _ _ bisimP') ▸ hcP'
+        (@Quotient.sound _ Pair.PreTriset.setoid _ _ bisimP') ▸ hcP'
       let nbd := (allP p'' insP'').toNonBisimDef hcP'' hcQ'
       nbd.respectsBisim bisimP'.symm bisimQ'
 
 def bisimDl.IsBisimPos.toIsBisimDef {p q: Pair}
-  (hcP: Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p))
-  (hcQ: Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid q))
+  (hcP: Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid p))
+  (hcQ: Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid q))
   (isBP: IsBisimPos p q)
 :
   IsBisimDef p q
@@ -882,7 +882,7 @@ def bisimDl.IsBisimPos.toIsBisimDef {p q: Pair}
 
 
 -- Lifting the collapse to the quotient, and packaging the equivalences.
-def Triset.IsBisimDef.toIsBisimPos {ts0 ts1: Set3Pair.Triset}
+def Triset.IsBisimDef.toIsBisimPos {ts0 ts1: Pair.Triset}
   (isBD: Triset.IsBisimDef ts0 ts1)
 :
   Triset.IsBisimPos ts0 ts1
@@ -894,17 +894,17 @@ def Triset.IsBisimDef.toIsBisimPos {ts0 ts1: Set3Pair.Triset}
     (fun _p _q h => bisimDl.IsBisimDef.toIsBisimPos h)
     isBD
 
-def Triset.IsBisimPos.toIsBisimDef {ts0 ts1: Set3Pair.Triset}
-  (hc0: Set3Pair.Triset.Hc ts0)
-  (hc1: Set3Pair.Triset.Hc ts1)
+def Triset.IsBisimPos.toIsBisimDef {ts0 ts1: Pair.Triset}
+  (hc0: Pair.Triset.Hc ts0)
+  (hc1: Pair.Triset.Hc ts1)
   (isBP: Triset.IsBisimPos ts0 ts1)
 :
   Triset.IsBisimDef ts0 ts1
 :=
   Quotient.inductionOn₂
     (motive := fun t0 t1 =>
-      Set3Pair.Triset.Hc t0 →
-      Set3Pair.Triset.Hc t1 →
+      Pair.Triset.Hc t0 →
+      Pair.Triset.Hc t1 →
       Triset.IsBisimPos t0 t1 →
       Triset.IsBisimDef t0 t1)
     ts0 ts1
@@ -912,7 +912,7 @@ def Triset.IsBisimPos.toIsBisimDef {ts0 ts1: Set3Pair.Triset}
     hc0 hc1 isBP
 
 def Triset.IsBisimPos.refl
-  (ts: Set3Pair.Triset)
+  (ts: Pair.Triset)
 :
   Triset.IsBisimPos ts ts
 :=
@@ -920,11 +920,11 @@ def Triset.IsBisimPos.refl
     (motive := fun t => Triset.IsBisimPos t t)
     ts
     (fun p =>
-      let rflP := Set3Pair.trisetSetoid.iseqv.refl p
+      let rflP := Pair.PreTriset.setoid.iseqv.refl p
       bisimDl.IsBisimPos.of_bisim rflP)
 
-def Triset.IsBisimDef.refl_of_hc {ts: Set3Pair.Triset}
-  (hc: Set3Pair.Triset.Hc ts)
+def Triset.IsBisimDef.refl_of_hc {ts: Pair.Triset}
+  (hc: Pair.Triset.Hc ts)
 :
   Triset.IsBisimDef ts ts
 :=
@@ -932,8 +932,8 @@ def Triset.IsBisimDef.refl_of_hc {ts: Set3Pair.Triset}
 
 
 -- Assuming a hc triset, definite bisimilarity is equivalent to equality.
-def Triset.hc_isBisimDef_iff_eq {ts0 ts1: Set3Pair.Triset}
-  (hc0: Set3Pair.Triset.Hc ts0)
+def Triset.hc_isBisimDef_iff_eq {ts0 ts1: Pair.Triset}
+  (hc0: Pair.Triset.Hc ts0)
 :
   Triset.IsBisimDef ts0 ts1 ↔ ts0 = ts1
 :=
@@ -943,9 +943,9 @@ def Triset.hc_isBisimDef_iff_eq {ts0 ts1: Set3Pair.Triset}
 
 -- Assuming two hc trisets, possible bisimilarity is equivalent to
 -- definite bisimilarity.
-def Triset.hc_isBisimPos_iff_isBisimDef {ts0 ts1: Set3Pair.Triset}
-  (hc0: Set3Pair.Triset.Hc ts0)
-  (hc1: Set3Pair.Triset.Hc ts1)
+def Triset.hc_isBisimPos_iff_isBisimDef {ts0 ts1: Pair.Triset}
+  (hc0: Pair.Triset.Hc ts0)
+  (hc1: Pair.Triset.Hc ts1)
 :
   Triset.IsBisimPos ts0 ts1 ↔ Triset.IsBisimDef ts0 ts1
 :=
@@ -955,9 +955,9 @@ def Triset.hc_isBisimPos_iff_isBisimDef {ts0 ts1: Set3Pair.Triset}
 
 -- Assuming two hc trisets, possible bisimilarity is equivalent to
 -- equality.
-def Triset.hc_isBisimPos_iff_eq {ts0 ts1: Set3Pair.Triset}
-  (hc0: Set3Pair.Triset.Hc ts0)
-  (hc1: Set3Pair.Triset.Hc ts1)
+def Triset.hc_isBisimPos_iff_eq {ts0 ts1: Pair.Triset}
+  (hc0: Pair.Triset.Hc ts0)
+  (hc1: Pair.Triset.Hc ts1)
 :
   Triset.IsBisimPos ts0 ts1 ↔ ts0 = ts1
 :=
