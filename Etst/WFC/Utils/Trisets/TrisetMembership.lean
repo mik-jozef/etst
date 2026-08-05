@@ -1,3 +1,17 @@
+/-
+  Here we define WFC's notion of membership for the "sets" of WFC
+  (ie. indices of uniSetMap quotiented by bisimilarity), and show
+  the relation is well-defined on the quotient.
+  
+  This notion of membership is not the same as `Triset.ExactMem`
+  from `BisimQuotient.lean`. The exact membership treats the empty
+  triset and the undetermined triset as fully distinct trisets.
+  The membership defined here is "fuzzy" in that a set containing
+  one of these two trisets is considered to possibly contain the
+  other as well (since settling the membership of possible elements
+  of the undetermined set could produce the empty set).
+-/
+
 import Etst.WFC.Ch7_Polymorphism
 import Etst.WFC.Utils.Trisets.BisimQuotient
 
@@ -71,10 +85,23 @@ inductive bisimDl.NonBisimPos: (p q: Pair) → Prop where
   :
     bisimDl.NonBisimPos p q
 
+def bisimDl.IsBisimDef (p q: Pair): Prop := ¬ NonBisimPos p q
+def bisimDl.IsBisimPos (p q: Pair): Prop := ¬ NonBisimDef p q
+
+-- A Lean-native definition of `IsIn`'s definite-membership lane:
+-- `elem` is (a bisimilar copy of) a definite element of `set`.
+def bisimDl.IsInDef (set elem: Pair): Prop :=
+  ∃ elemX, IsBisimDef elem elemX ∧ Set3Pair.PreTriset.Ins set elemX
+
+-- A Lean-native definition of `IsIn`'s possible-membership lane:
+-- `elem` is (a bisimilar copy of) a possible element of `set`.
+def bisimDl.IsInPos (set elem: Pair): Prop :=
+  ∃ elemX, IsBisimPos elem elemX ∧ Set3Pair.PreTriset.Inw set elemX
+
 /-
   ## Section: proving equivalence of the Lean-native WFM defs
   
-  This is write-once, read-never code. You have been warned.
+  This section is write-once, read-never code. You have been warned.
 -/
 def bisimDl.wfm_uniSetMap_eq:
   bisimDl.wfm bisimDl.consts.uniSetMap = uniSetMap
@@ -386,5 +413,220 @@ def bisimDl.NonBisimPos.toPosMem {p q w}
                           (inVar rfl)))))))))
 
 /-
-  ## Section: <Name>
+  ## Section: lifting the Lean-native defs to the bisimilarity quotient
+
+  Since bisimilar pre-trisets have matching definite and possible
+  elements (up to bisimilarity), and `NonBisimDef` only inspects
+  membership through those two lanes, it respects bisimilarity in
+  both arguments.
 -/
+
+def bisimDl.NonBisimDef.respectsBisim:
+  {p q p' q': Pair} →
+  NonBisimDef p q →
+  Set3Pair.Bisim p p' →
+  Set3Pair.Bisim q q' →
+  NonBisimDef p' q'
+|
+  _p, _q, _p', _q', .ofP pp insP allQ, ⟨R, isBisimP, Rpp'⟩, qBisim =>
+    let ⟨pp', insP', RppPp'⟩ := isBisimP.left .ins _ _ pp Rpp' insP
+    .ofP pp' insP' fun qq' inwQ' =>
+      let ⟨Rq, isBisimQ, Rqq'⟩ := qBisim
+      let ⟨qq, inwQ, RqqQq'⟩ := isBisimQ.right .inw _ _ qq' Rqq' inwQ'
+      (allQ qq inwQ).respectsBisim
+        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
+|
+  _p, _q, _p', _q', .ofQ qq insQ allP, pBisim, ⟨Rq, isBisimQ, Rqq'⟩ =>
+    let ⟨qq', insQ', RqqQq'⟩ := isBisimQ.left .ins _ _ qq Rqq' insQ
+    .ofQ qq' insQ' fun pp' inwP' =>
+      let ⟨R, isBisimP, Rpp'⟩ := pBisim
+      let ⟨pp, inwP, RppPp'⟩ := isBisimP.right .inw _ _ pp' Rpp' inwP'
+      (allP pp inwP).respectsBisim
+        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
+
+def bisimDl.NonBisimPos.respectsBisim:
+  {p q p' q': Pair} →
+  NonBisimPos p q →
+  Set3Pair.Bisim p p' →
+  Set3Pair.Bisim q q' →
+  NonBisimPos p' q'
+|
+  _p, _q, _p', _q', .ofP pp inwP allQ, ⟨R, isBisimP, Rpp'⟩, qBisim =>
+    let ⟨pp', inwP', RppPp'⟩ := isBisimP.left .inw _ _ pp Rpp' inwP
+    .ofP pp' inwP' fun qq' insQ' =>
+      let ⟨Rq, isBisimQ, Rqq'⟩ := qBisim
+      let ⟨qq, insQ, RqqQq'⟩ := isBisimQ.right .ins _ _ qq' Rqq' insQ'
+      (allQ qq insQ).respectsBisim
+        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
+|
+  _p, _q, _p', _q', .ofQ qq inwQ allP, pBisim, ⟨Rq, isBisimQ, Rqq'⟩ =>
+    let ⟨qq', inwQ', RqqQq'⟩ := isBisimQ.left .inw _ _ qq Rqq' inwQ
+    .ofQ qq' inwQ' fun pp' insP' =>
+      let ⟨R, isBisimP, Rpp'⟩ := pBisim
+      let ⟨pp, insP, RppPp'⟩ := isBisimP.right .ins _ _ pp' Rpp' insP'
+      (allP pp insP).respectsBisim
+        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
+
+
+def Triset.NonBisimDef (a b: Set3Pair.Triset) :=
+  let respects
+    a0 b0 a1 b1
+    (aBisim: Set3Pair.trisetSetoid.r a0 a1)
+    (bBisim: Set3Pair.trisetSetoid.r b0 b1)
+  :
+    bisimDl.NonBisimDef a0 b0 = bisimDl.NonBisimDef a1 b1
+  :=
+    propext (Iff.intro
+      (fun nbi => nbi.respectsBisim aBisim bBisim)
+      (fun nbi =>
+        nbi.respectsBisim
+          (Set3Pair.trisetSetoid.iseqv.symm aBisim)
+          (Set3Pair.trisetSetoid.iseqv.symm bBisim)))
+  Quotient.lift₂ bisimDl.NonBisimDef respects a b
+
+def Triset.NonBisimPos (a b: Set3Pair.Triset) :=
+  let respects
+    a0 b0 a1 b1
+    (aBisim: Set3Pair.trisetSetoid.r a0 a1)
+    (bBisim: Set3Pair.trisetSetoid.r b0 b1)
+  :
+    bisimDl.NonBisimPos a0 b0 = bisimDl.NonBisimPos a1 b1
+  :=
+    propext (Iff.intro
+      (fun nbi => nbi.respectsBisim aBisim bBisim)
+      (fun nbi =>
+        nbi.respectsBisim
+          (Set3Pair.trisetSetoid.iseqv.symm aBisim)
+          (Set3Pair.trisetSetoid.iseqv.symm bBisim)))
+  Quotient.lift₂ bisimDl.NonBisimPos respects a b
+
+
+/-
+  ## Section: the `IsBisim` lanes
+
+  `IsBisim` is the complement of `NonBisim`. Respecting bisimilarity
+  is preserved under negation, so both lanes lift to the quotient.
+-/
+
+def bisimDl.IsBisimDef.respectsBisim {p q p' q': Pair}
+  (isB: IsBisimDef p q)
+  (pBisim: Set3Pair.Bisim p p')
+  (qBisim: Set3Pair.Bisim q q')
+:
+  IsBisimDef p' q'
+:=
+  fun nbi =>
+    isB
+      (nbi.respectsBisim
+        (Set3Pair.trisetSetoid.iseqv.symm pBisim)
+        (Set3Pair.trisetSetoid.iseqv.symm qBisim))
+
+def bisimDl.IsBisimPos.respectsBisim {p q p' q': Pair}
+  (isB: IsBisimPos p q)
+  (pBisim: Set3Pair.Bisim p p')
+  (qBisim: Set3Pair.Bisim q q')
+:
+  IsBisimPos p' q'
+:=
+  fun nbi =>
+    isB
+      (nbi.respectsBisim
+        (Set3Pair.trisetSetoid.iseqv.symm pBisim)
+        (Set3Pair.trisetSetoid.iseqv.symm qBisim))
+
+
+def Triset.IsBisimDef (a b: Set3Pair.Triset) :=
+  let respects
+    a0 b0 a1 b1
+    (aBisim: Set3Pair.trisetSetoid.r a0 a1)
+    (bBisim: Set3Pair.trisetSetoid.r b0 b1)
+  :
+    bisimDl.IsBisimDef a0 b0 = bisimDl.IsBisimDef a1 b1
+  :=
+    propext (Iff.intro
+      (fun isB => isB.respectsBisim aBisim bBisim)
+      (fun isB =>
+        isB.respectsBisim
+          (Set3Pair.trisetSetoid.iseqv.symm aBisim)
+          (Set3Pair.trisetSetoid.iseqv.symm bBisim)))
+  Quotient.lift₂ bisimDl.IsBisimDef respects a b
+
+def Triset.IsBisimPos (a b: Set3Pair.Triset) :=
+  let respects
+    a0 b0 a1 b1
+    (aBisim: Set3Pair.trisetSetoid.r a0 a1)
+    (bBisim: Set3Pair.trisetSetoid.r b0 b1)
+  :
+    bisimDl.IsBisimPos a0 b0 = bisimDl.IsBisimPos a1 b1
+  :=
+    propext (Iff.intro
+      (fun isB => isB.respectsBisim aBisim bBisim)
+      (fun isB =>
+        isB.respectsBisim
+          (Set3Pair.trisetSetoid.iseqv.symm aBisim)
+          (Set3Pair.trisetSetoid.iseqv.symm bBisim)))
+  Quotient.lift₂ bisimDl.IsBisimPos respects a b
+
+
+/-
+  ## Section: the `IsIn` lanes
+
+  `IsIn set elem` says `elem` bisimulates some element of `set`.
+-/
+
+def bisimDl.IsInDef.respectsBisim {set elem set' elem': Pair}
+  (isIn: IsInDef set elem)
+  (setBisim: Set3Pair.Bisim set set')
+  (elemBisim: Set3Pair.Bisim elem elem')
+:
+  IsInDef set' elem'
+:=
+  let ⟨elemX, isB, ins⟩ := isIn
+  let ⟨R, isBisimSet, Rss'⟩ := setBisim
+  let ⟨elemX', ins', RxX'⟩ := isBisimSet.left .ins _ _ elemX Rss' ins
+  ⟨elemX', isB.respectsBisim elemBisim ⟨R, isBisimSet, RxX'⟩, ins'⟩
+
+def bisimDl.IsInPos.respectsBisim {set elem set' elem': Pair}
+  (isIn: IsInPos set elem)
+  (setBisim: Set3Pair.Bisim set set')
+  (elemBisim: Set3Pair.Bisim elem elem')
+:
+  IsInPos set' elem'
+:=
+  let ⟨elemX, isB, inw⟩ := isIn
+  let ⟨R, isBisimSet, Rss'⟩ := setBisim
+  let ⟨elemX', inw', RxX'⟩ := isBisimSet.left .inw _ _ elemX Rss' inw
+  ⟨elemX', isB.respectsBisim elemBisim ⟨R, isBisimSet, RxX'⟩, inw'⟩
+
+
+def Triset.IsInDef (set elem: Set3Pair.Triset) :=
+  let respects
+    s0 e0 s1 e1
+    (sBisim: Set3Pair.trisetSetoid.r s0 s1)
+    (eBisim: Set3Pair.trisetSetoid.r e0 e1)
+  :
+    bisimDl.IsInDef s0 e0 = bisimDl.IsInDef s1 e1
+  :=
+    propext (Iff.intro
+      (fun isIn => isIn.respectsBisim sBisim eBisim)
+      (fun isIn =>
+        isIn.respectsBisim
+          (Set3Pair.trisetSetoid.iseqv.symm sBisim)
+          (Set3Pair.trisetSetoid.iseqv.symm eBisim)))
+  Quotient.lift₂ bisimDl.IsInDef respects set elem
+
+def Triset.IsInPos (set elem: Set3Pair.Triset) :=
+  let respects
+    s0 e0 s1 e1
+    (sBisim: Set3Pair.trisetSetoid.r s0 s1)
+    (eBisim: Set3Pair.trisetSetoid.r e0 e1)
+  :
+    bisimDl.IsInPos s0 e0 = bisimDl.IsInPos s1 e1
+  :=
+    propext (Iff.intro
+      (fun isIn => isIn.respectsBisim sBisim eBisim)
+      (fun isIn =>
+        isIn.respectsBisim
+          (Set3Pair.trisetSetoid.iseqv.symm sBisim)
+          (Set3Pair.trisetSetoid.iseqv.symm eBisim)))
+  Quotient.lift₂ bisimDl.IsInPos respects set elem
