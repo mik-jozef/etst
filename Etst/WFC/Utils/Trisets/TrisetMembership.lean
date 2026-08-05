@@ -10,6 +10,12 @@
   one of these two trisets is considered to possibly contain the
   other as well (since settling the membership of possible elements
   of the undetermined set could produce the empty set).
+  
+  We also show that
+  - the definite-lane bisimilarity implies actual bisimilarity of
+    pre-trisets (and therefore equality of trisets).
+  - for hereditarily classical trisets, definite-lane bisimilarity
+    equals possible-lane bisimilarity equals equality of trisets.
 -/
 
 import Etst.WFC.Ch7_Polymorphism
@@ -630,3 +636,330 @@ def Triset.IsInPos (set elem: Set3Pair.Triset) :=
           (Set3Pair.trisetSetoid.iseqv.symm sBisim)
           (Set3Pair.trisetSetoid.iseqv.symm eBisim)))
   Quotient.lift₂ bisimDl.IsInPos respects set elem
+
+
+/-
+  ## Section: definite bisimilarity implies equality
+
+  We show `IsBisimDef p q → Set3Pair.Bisim p q`, hence at the quotient
+  level `Triset.IsBisimDef ts0 ts1 → ts0 = ts1`.
+
+  Note this needs NEITHER the requested `IsBisimPos` hypothesis NOR any
+  (hereditary) classicality assumption. The reason: `IsBisimDef` unfolds
+  (classically) to the statement that every *possible* element of `p` is
+  matched by a *definite* element of `q` (and symmetrically). That is a
+  strictly stronger requirement than a bisimulation needs, so `IsBisimDef`
+  is itself a bisimulation, i.e. definite bisimilarity is contained in
+  exact bisimilarity. The `Hc` hypothesis only becomes relevant for the
+  converse direction (`Bisim → IsBisimDef`), which fails in general but
+  holds for hereditarily classical trisets.
+
+  The `IsBisimPos ↔ IsBisimDef ↔ Eq` collapse for hereditarily classical
+  trisets is proved in the next section (`Triset.hc_isBisimPos_iff_eq`);
+  `toEq` supplies its `IsBisimDef → Eq` half.
+-/
+
+-- Every possible element of `p` is matched, via `IsBisimDef`, by some
+-- definite element of `q`. (Contrapositive of `NonBisimPos.ofP`.)
+def bisimDl.IsBisimDef.matchDef {p q p': Pair}
+  (isBD: IsBisimDef p q)
+  (posP: (uniSetMap.call p).posMem p')
+:
+  ∃ q', (uniSetMap.call q).defMem q' ∧ IsBisimDef p' q'
+:=
+  Classical.byContradiction fun h =>
+    isBD (NonBisimPos.ofP p' posP fun q' defQ =>
+      Classical.byContradiction fun notNbi => h ⟨q', defQ, notNbi⟩)
+
+-- The symmetric statement. (Contrapositive of `NonBisimPos.ofQ`.)
+def bisimDl.IsBisimDef.matchDef' {p q q': Pair}
+  (isBD: IsBisimDef p q)
+  (posQ: (uniSetMap.call q).posMem q')
+:
+  ∃ p', (uniSetMap.call p).defMem p' ∧ IsBisimDef p' q'
+:=
+  Classical.byContradiction fun h =>
+    isBD (NonBisimPos.ofQ q' posQ fun p' defP =>
+      Classical.byContradiction fun notNbi => h ⟨p', defP, notNbi⟩)
+
+-- `IsBisimDef` is itself a bisimulation, so it is contained in `Bisim`.
+def bisimDl.IsBisimDef.toBisim {p q: Pair}
+  (isBD: IsBisimDef p q)
+:
+  Set3Pair.Bisim p q
+:=
+  ⟨
+    bisimDl.IsBisimDef,
+    ⟨
+      fun l a _b a' isB trans =>
+        match l, trans with
+        | .ins, trans =>
+          let transPos: (uniSetMap.call a).posMem a' :=
+            (show (uniSetMap.call a).defMem a' from trans).toPos
+          let ⟨b', defB, isB'⟩ := bisimDl.IsBisimDef.matchDef isB transPos
+          ⟨b', defB, isB'⟩
+        | .inw, trans =>
+          let transPos: (uniSetMap.call a).posMem a' := trans
+          let ⟨b', defB, isB'⟩ := bisimDl.IsBisimDef.matchDef isB transPos
+          ⟨b', defB.toPos, isB'⟩,
+      fun l a _b a' isB trans =>
+        match l, trans with
+        | .ins, trans =>
+          let transPos: (uniSetMap.call a).posMem a' :=
+            (show (uniSetMap.call a).defMem a' from trans).toPos
+          let ⟨b', defB, isB'⟩ := bisimDl.IsBisimDef.matchDef' isB transPos
+          ⟨b', defB, isB'⟩
+        | .inw, trans =>
+          let transPos: (uniSetMap.call a).posMem a' := trans
+          let ⟨b', defB, isB'⟩ := bisimDl.IsBisimDef.matchDef' isB transPos
+          ⟨b', defB.toPos, isB'⟩,
+    ⟩,
+    isBD,
+  ⟩
+
+-- Bisimilar pre-trisets are equal in the quotient.
+def Triset.IsBisimDef.toEq {ts0 ts1: Set3Pair.Triset}
+  (isBisim: Triset.IsBisimDef ts0 ts1)
+:
+  ts0 = ts1
+:=
+  Quotient.inductionOn₂
+    (motive := fun t0 t1 => Triset.IsBisimDef t0 t1 → t0 = t1)
+    ts0 ts1
+    (fun _p _q isBD => Quot.sound (bisimDl.IsBisimDef.toBisim isBD))
+    isBisim
+
+
+/-
+  ## Section: `IsBisimPos` collapses to `IsBisimDef` (hence `Eq`) on Hc trisets
+
+  `IsBisimDef` always implies `IsBisimPos`: definite bisimilarity is the
+  stronger relation. The converse fails in general — a possible-only
+  element has no definite counterpart to be matched against, so
+  `IsBisimPos` cannot upgrade its witnesses. For hereditarily classical
+  trisets there are no such elements: every possible element is definite
+  (up to bisimilarity) and is itself hereditarily classical. Hence both
+  lanes coincide there, and by `toEq` both coincide with equality:
+
+    `Hc ts0 → Hc ts1 → (IsBisimPos ts0 ts1 ↔ IsBisimDef ts0 ts1 ↔ ts0 = ts1)`.
+-/
+
+-- Transporting a definite/possible transition across a bisimulation.
+def Set3Pair.Bisim.symm {a b: Set3Pair.PreTriset}
+  (bisim: Set3Pair.Bisim a b)
+:
+  Set3Pair.Bisim b a
+:=
+  Set3Pair.trisetSetoid.iseqv.symm bisim
+
+def Set3Pair.Bisim.ins {a b x: Set3Pair.PreTriset}
+  (bisim: Set3Pair.Bisim a b)
+  (ins: Set3Pair.PreTriset.Ins a x)
+:
+  ∃ y, Set3Pair.PreTriset.Ins b y ∧ Set3Pair.Bisim x y
+:=
+  let ⟨R, isBisim, Rab⟩ := bisim
+  let ⟨y, insY, Rxy⟩ := isBisim.left .ins a b x Rab ins
+  ⟨y, insY, R, isBisim, Rxy⟩
+
+def Set3Pair.Bisim.inw {a b x: Set3Pair.PreTriset}
+  (bisim: Set3Pair.Bisim a b)
+  (inw: Set3Pair.PreTriset.Inw a x)
+:
+  ∃ y, Set3Pair.PreTriset.Inw b y ∧ Set3Pair.Bisim x y
+:=
+  let ⟨R, isBisim, Rab⟩ := bisim
+  let ⟨y, inwY, Rxy⟩ := isBisim.left .inw a b x Rab inw
+  ⟨y, inwY, R, isBisim, Rxy⟩
+
+
+-- `NonBisimDef` is the stronger lane: it always entails `NonBisimPos`.
+def bisimDl.NonBisimDef.toNonBisimPos:
+  {p q: Pair} → NonBisimDef p q → NonBisimPos p q
+| _, _, .ofP p' inP allQ =>
+    .ofP p' inP.toPos fun q' defQ => (allQ q' defQ.toPos).toNonBisimPos
+| _, _, .ofQ q' inQ allP =>
+    .ofQ q' inQ.toPos fun p' defP => (allP p' defP.toPos).toNonBisimPos
+
+def bisimDl.IsBisimDef.toIsBisimPos {p q: Pair}
+  (isBD: IsBisimDef p q)
+:
+  IsBisimPos p q
+:=
+  fun nbd => isBD nbd.toNonBisimPos
+
+
+-- Bisimilar pre-trisets are never `NonBisimDef`, so `Bisim ⊆ IsBisimPos`.
+def bisimDl.NonBisimDef.not_bisim:
+  {p q: Pair} → NonBisimDef p q → ¬ Set3Pair.Bisim p q
+| _, _, .ofP _p' inP allQ, bisim =>
+    let ⟨q', insQ', bisimP'Q'⟩ := bisim.ins inP
+    (allQ q' insQ'.toPos).not_bisim bisimP'Q'
+| _, _, .ofQ _q' inQ allP, bisim =>
+    let ⟨p', insP', bisimQ'P'⟩ := bisim.symm.ins inQ
+    (allP p' insP'.toPos).not_bisim bisimQ'P'.symm
+
+def bisimDl.IsBisimPos.of_bisim {p q: Pair}
+  (bisim: Set3Pair.Bisim p q)
+:
+  IsBisimPos p q
+:=
+  fun nbd => nbd.not_bisim bisim
+
+
+-- On an Hc triset, every possible element is a definite element up to
+-- bisimilarity. (If not, the pre-triset witnesses `Nhc` via `notClassical`.)
+def Set3Pair.Triset.hc_ins_of_inw {p p': Set3Pair.PreTriset}
+  (hc: Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p))
+  (inw: Set3Pair.PreTriset.Inw p p')
+:
+  ∃ p'', Set3Pair.PreTriset.Ins p p'' ∧ Set3Pair.Bisim p' p''
+:=
+  Classical.byContradiction fun h =>
+    hc (Set3Pair.Triset.Nhc.notClassical
+      (elem := Quotient.mk Set3Pair.trisetSetoid p')
+      ⟨p, p', rfl, rfl, inw⟩
+      fun exIns =>
+        let ⟨preTs, preElem, tsEq, elemEq, ins⟩ := exIns
+        let bisimPre: Set3Pair.Bisim p preTs := Quotient.exact tsEq
+        let bisimElem: Set3Pair.Bisim p' preElem := Quotient.exact elemEq
+        let ⟨p'', insP'', bisimPreElem⟩ := bisimPre.symm.ins ins
+        h ⟨p'', insP'',
+          Set3Pair.trisetSetoid.iseqv.trans bisimElem bisimPreElem⟩)
+
+-- On an Hc triset, every possible element is itself Hc.
+-- (Otherwise the pre-triset witnesses `Nhc` via `containsNhc`.)
+def Set3Pair.Triset.hc_hered {p p': Set3Pair.PreTriset}
+  (hc: Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p))
+  (inw: Set3Pair.PreTriset.Inw p p')
+:
+  Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p')
+:=
+  fun nhc' =>
+    hc (Set3Pair.Triset.Nhc.containsNhc ⟨p, p', rfl, rfl, inw⟩ nhc')
+
+
+-- On Hc trisets possible non-bisimilarity implies the definite one.
+def bisimDl.NonBisimPos.toNonBisimDef:
+  {p q: Pair} →
+  NonBisimPos p q →
+  Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p) →
+  Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid q) →
+  NonBisimDef p q
+| _p, _q, .ofP _p' inwP allQ, hcP, hcQ =>
+    let ⟨p'', insP'', bisimP'⟩ := Set3Pair.Triset.hc_ins_of_inw hcP inwP
+    .ofP p'' insP'' fun _q' inwQ' =>
+      let ⟨q'', insQ'', bisimQ'⟩ := Set3Pair.Triset.hc_ins_of_inw hcQ inwQ'
+      let hcP' := Set3Pair.Triset.hc_hered hcP inwP
+      let hcQ' := Set3Pair.Triset.hc_hered hcQ inwQ'
+      let hcQ'':
+        Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid q'')
+      :=
+        (@Quotient.sound _ Set3Pair.trisetSetoid _ _ bisimQ') ▸ hcQ'
+      let nbd := (allQ q'' insQ'').toNonBisimDef hcP' hcQ''
+      nbd.respectsBisim bisimP' bisimQ'.symm
+| _p, _q, .ofQ _q' inwQ allP, hcP, hcQ =>
+    let ⟨q'', insQ'', bisimQ'⟩ := Set3Pair.Triset.hc_ins_of_inw hcQ inwQ
+    .ofQ q'' insQ'' fun _p' inwP' =>
+      let ⟨p'', insP'', bisimP'⟩ := Set3Pair.Triset.hc_ins_of_inw hcP inwP'
+      let hcQ' := Set3Pair.Triset.hc_hered hcQ inwQ
+      let hcP' := Set3Pair.Triset.hc_hered hcP inwP'
+      let hcP'':
+        Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p'')
+      :=
+        (@Quotient.sound _ Set3Pair.trisetSetoid _ _ bisimP') ▸ hcP'
+      let nbd := (allP p'' insP'').toNonBisimDef hcP'' hcQ'
+      nbd.respectsBisim bisimP'.symm bisimQ'
+
+def bisimDl.IsBisimPos.toIsBisimDef {p q: Pair}
+  (hcP: Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid p))
+  (hcQ: Set3Pair.Triset.Hc (Quotient.mk Set3Pair.trisetSetoid q))
+  (isBP: IsBisimPos p q)
+:
+  IsBisimDef p q
+:=
+  fun nbp => isBP (nbp.toNonBisimDef hcP hcQ)
+
+
+-- Lifting the collapse to the quotient, and packaging the equivalences.
+def Triset.IsBisimDef.toIsBisimPos {ts0 ts1: Set3Pair.Triset}
+  (isBD: Triset.IsBisimDef ts0 ts1)
+:
+  Triset.IsBisimPos ts0 ts1
+:=
+  Quotient.inductionOn₂
+    (motive :=
+      fun t0 t1 => Triset.IsBisimDef t0 t1 → Triset.IsBisimPos t0 t1)
+    ts0 ts1
+    (fun _p _q h => bisimDl.IsBisimDef.toIsBisimPos h)
+    isBD
+
+def Triset.IsBisimPos.toIsBisimDef {ts0 ts1: Set3Pair.Triset}
+  (hc0: Set3Pair.Triset.Hc ts0)
+  (hc1: Set3Pair.Triset.Hc ts1)
+  (isBP: Triset.IsBisimPos ts0 ts1)
+:
+  Triset.IsBisimDef ts0 ts1
+:=
+  Quotient.inductionOn₂
+    (motive := fun t0 t1 =>
+      Set3Pair.Triset.Hc t0 →
+      Set3Pair.Triset.Hc t1 →
+      Triset.IsBisimPos t0 t1 →
+      Triset.IsBisimDef t0 t1)
+    ts0 ts1
+    (fun _p _q hcp hcq h => bisimDl.IsBisimPos.toIsBisimDef hcp hcq h)
+    hc0 hc1 isBP
+
+def Triset.IsBisimPos.refl
+  (ts: Set3Pair.Triset)
+:
+  Triset.IsBisimPos ts ts
+:=
+  Quotient.inductionOn
+    (motive := fun t => Triset.IsBisimPos t t)
+    ts
+    (fun p =>
+      let rflP := Set3Pair.trisetSetoid.iseqv.refl p
+      bisimDl.IsBisimPos.of_bisim rflP)
+
+def Triset.IsBisimDef.refl_of_hc {ts: Set3Pair.Triset}
+  (hc: Set3Pair.Triset.Hc ts)
+:
+  Triset.IsBisimDef ts ts
+:=
+  (Triset.IsBisimPos.refl ts).toIsBisimDef hc hc
+
+
+-- Assuming a hc triset, definite bisimilarity is equivalent to equality.
+def Triset.hc_isBisimDef_iff_eq {ts0 ts1: Set3Pair.Triset}
+  (hc0: Set3Pair.Triset.Hc ts0)
+:
+  Triset.IsBisimDef ts0 ts1 ↔ ts0 = ts1
+:=
+  Iff.intro
+    Triset.IsBisimDef.toEq
+    (fun eq => eq ▸ Triset.IsBisimDef.refl_of_hc hc0)
+
+-- Assuming two hc trisets, possible bisimilarity is equivalent to
+-- definite bisimilarity.
+def Triset.hc_isBisimPos_iff_isBisimDef {ts0 ts1: Set3Pair.Triset}
+  (hc0: Set3Pair.Triset.Hc ts0)
+  (hc1: Set3Pair.Triset.Hc ts1)
+:
+  Triset.IsBisimPos ts0 ts1 ↔ Triset.IsBisimDef ts0 ts1
+:=
+  Iff.intro
+    (fun isBP => isBP.toIsBisimDef hc0 hc1)
+    Triset.IsBisimDef.toIsBisimPos
+
+-- Assuming two hc trisets, possible bisimilarity is equivalent to
+-- equality.
+def Triset.hc_isBisimPos_iff_eq {ts0 ts1: Set3Pair.Triset}
+  (hc0: Set3Pair.Triset.Hc ts0)
+  (hc1: Set3Pair.Triset.Hc ts1)
+:
+  Triset.IsBisimPos ts0 ts1 ↔ ts0 = ts1
+:=
+  (Triset.hc_isBisimPos_iff_isBisimDef hc0 hc1).trans
+    (Triset.hc_isBisimDef_iff_eq hc0)

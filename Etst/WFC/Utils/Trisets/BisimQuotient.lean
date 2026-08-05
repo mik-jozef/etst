@@ -99,4 +99,21 @@ namespace Set3Pair
     | ⟨preTs, preElem, ⟨tsEq, elemEq, ins⟩⟩ =>
       ⟨preTs, preElem, ⟨tsEq, elemEq, ins.toPos⟩⟩
   
+  
+  -- Not hereditarily classical.
+  inductive Triset.Nhc: Triset → Prop
+  | notClassical {ts elem: Triset}
+      (isPos: ts.ExactInw elem)
+      (notDef: ¬ ts.ExactIns elem)
+    :
+      Triset.Nhc ts
+  | containsNhc {ts elem: Triset}
+      (isPos: ts.ExactInw elem)
+      (isNhc: Triset.Nhc elem)
+    :
+      Triset.Nhc ts
+  
+  -- Hereditarily classical.
+  def Triset.Hc (ts: Triset): Prop := ¬ Triset.Nhc ts
+  
 end Set3Pair
