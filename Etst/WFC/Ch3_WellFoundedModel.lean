@@ -339,11 +339,10 @@ def DefList.wfm_eq_def
 
 
 /-
-  A triset is definable in aebra if there exists a finitely
-  bounded definition list whose well-founded model contains the
-  triset.
+  A triset is definable in WFC if there exists a finitely bounded
+  definition list whose well-founded model contains the triset.
   
-  See `DefList.IsFinBounded` from Chapter 3.
+  See `DefList.IsFinBounded` from Chapter 1.
 -/
 def DefList.IsDefinable
   (set: Set3 Pair)
