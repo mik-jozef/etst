@@ -82,6 +82,15 @@ namespace Expr
     arbUn (ifThen (ir (prod any (var 0)) expr) (var 0))
   
   /-
+    Assumes `expr` codes a triset of n-tuples, (zero-tuple
+    being null, n+1-tuple being `(value, n-tuple)`).
+  -/
+  def nth (n: Nat) (expr: Expr E): Expr E :=
+    match n with
+    | 0 => zth expr
+    | n+1 => fst (nth n expr)
+  
+  /-
     Let `fn` and `arg` be expressions that represent
     sets of pairs `sFn` and `sArg` (under some valuation).
     The expression `call fn arg` then represents

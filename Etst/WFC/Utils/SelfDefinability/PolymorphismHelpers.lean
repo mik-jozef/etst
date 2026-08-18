@@ -25,7 +25,7 @@ namespace Pair
   :=
     uniSetMapIndex
       uniSetMapDl.toDefList
-      (uniSetMapDl.consts.uniSetMap + 1)
+      uniSetMapDl.size
       []
       ((uniSetMapDl.uniSetMapConst.call fn.toExpr).call arg.toExpr)
   
