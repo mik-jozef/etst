@@ -227,6 +227,7 @@ def SingleLaneExpr.intp2
         (intp2 left fv b c p)
         (intp2 rite fv b c p)
   | .full body =>
+    -- Contains all elements iff the body contains all elements.
     fun _ => ∀ pB, intp2 body fv b c pB
   | .compl body =>
     -- Note the swap of b and c.

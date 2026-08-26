@@ -57,10 +57,10 @@ namespace Pair
       | .ins, a, b => a.Ins b
       | .inw, a, b => a.Inw b
     
-    def Bisim := transitionSystem.IsBisimilar
+    def IsBisim := transitionSystem.IsBisimilar
     
     def setoid: Setoid PreTriset where
-      r := Bisim
+      r := IsBisim
       iseqv := transitionSystem.IsBisimilar_is_equivalence
   end PreTriset
   
