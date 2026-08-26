@@ -88,7 +88,7 @@ namespace Expr
   def nth (n: Nat) (expr: Expr E): Expr E :=
     match n with
     | 0 => zth expr
-    | n+1 => fst (nth n expr)
+    | n+1 => nth n (fst expr)
   
   /-
     Let `fn` and `arg` be expressions that represent
