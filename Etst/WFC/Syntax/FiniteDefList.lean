@@ -355,8 +355,8 @@ namespace pair_def_list
         `({
           expr := $expr
           name := $(mkStrLit name.getId.toString)
-          constsLt := (by decide: ($expr).ConstsLt $size)
-          isClean := by decide
+          constsLt := (by decide +kernel: ($expr).ConstsLt $size)
+          isClean := by decide +kernel
         })
       | stx => termStxErr stx "s3 in pairDefList"
     

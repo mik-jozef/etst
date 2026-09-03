@@ -53,7 +53,6 @@ end TrisetPairEncoding
   ie the function mapping an operator index to the index of the
   `encStep`-image under that operator.
 -/
-set_option maxRecDepth 8192 in
 pairDefList trisetPairEncDl extends trisetPairEncHelpersDl
   s3 encOp :=
     Ex iFn, iFn × callEnc <[TrisetPairEncoding.encStepIndex.toExpr]> iFn
