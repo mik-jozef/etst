@@ -4,8 +4,8 @@
   the relation is well-defined on the quotient.
   
   This notion of membership is not the same as `Triset.ExactMem`
-  from `BisimQuotient.lean`. The exact membership treats the empty
-  triset and the undetermined triset as fully distinct trisets.
+  from `Triset.lean`. The exact membership treats the empty triset
+  and the undetermined triset as fully distinct trisets.
   The membership defined here is "fuzzy" in that a set containing
   one of these two trisets is considered to possibly contain the
   other as well (since settling the membership of possible elements
@@ -19,7 +19,7 @@
 -/
 
 import Etst.WFC.Ch7_Polymorphism
-import Etst.WFC.Utils.Trisets.BisimQuotient
+import Etst.WFC.Utils.Trisets.Triset
 
 namespace Etst
 

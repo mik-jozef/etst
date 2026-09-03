@@ -1,6 +1,6 @@
 /-
-  Here we quotient indices of uniSetMap bisimilarity to define the "sets"
-  of WFC.
+  Here we quotient indices of uniSetMap by bisimilarity to define the
+  "sets" of WFC.
   
   This quotient is based on the actual ("exact") bisimilarity defined
   as a Lean property, and is not WFC-definable (as WFC cannot treat the

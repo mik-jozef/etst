@@ -133,4 +133,7 @@ namespace Valuation
   :=
     Set3.posMem ∘ v
   
+  
+  def just (f: Nat → D): Valuation D := Set3.just ∘ f
+  
 end Valuation

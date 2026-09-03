@@ -1,4 +1,4 @@
-import Etst.WFC.Utils.Trisets.BisimQuotient
+import Etst.WFC.Utils.Trisets.Triset
 
 namespace Etst
 
