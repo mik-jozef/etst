@@ -2,7 +2,8 @@ import Etst.WFC.Utils.Trisets.TrisetPair
 import Etst.WFC.Utils.Trisets.TrisetPairEncoding
 
 /-
-  An embedding of `Triset` into `TrisetPair`.
+  An embedding of `Triset` into `TrisetPair` (defined internally
+  in WFC).
 -/
 
 namespace Etst
