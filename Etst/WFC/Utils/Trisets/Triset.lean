@@ -62,6 +62,45 @@ namespace Pair
     def setoid: Setoid PreTriset where
       r := IsBisim
       iseqv := transitionSystem.IsBisimilar_is_equivalence
+    
+    
+    def empty: PreTriset :=
+      uniSetMapIndex
+        FiniteDefList.empty.toDefList
+        FiniteDefList.empty.size
+        []
+        (.none)
+    
+    
+    -- Equal `uniSetMap`-images are bisimilar.
+    def isBisim_of_uniSetMap_call_eq {u v: Pair}
+      (eq: uniSetMap.call u = uniSetMap.call v)
+    :
+      IsBisim u v
+    :=
+      ⟨fun uu vv => uniSetMap.call uu = uniSetMap.call vv,
+        ⟨fun l uu vv uu' eq trans =>
+          ⟨uu',
+           match l, trans with
+           | .ins, t =>
+             show (uniSetMap.call vv).defMem uu' from
+               eq ▸ (show (uniSetMap.call uu).defMem uu' from t)
+           | .inw, t =>
+             show (uniSetMap.call vv).posMem uu' from
+               eq ▸ (show (uniSetMap.call uu).posMem uu' from t),
+           rfl⟩,
+        fun l uu vv uu' eq trans =>
+          ⟨uu',
+           match l, trans with
+           | .ins, t =>
+             show (uniSetMap.call vv).defMem uu' from
+               eq ▸ (show (uniSetMap.call uu).defMem uu' from t)
+           | .inw, t =>
+             show (uniSetMap.call vv).posMem uu' from
+               eq ▸ (show (uniSetMap.call uu).posMem uu' from t),
+           rfl⟩⟩,
+       eq⟩
+    
   end PreTriset
   
   def Triset := Quotient PreTriset.setoid

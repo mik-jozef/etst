@@ -19,6 +19,8 @@ import Etst.WFC.Utils.Trisets.TrisetBisimilarity
 
 namespace Etst
 
+open SingleLaneExpr
+
 
 pairDefList isInDl extends bisimDl
   s3 IsIn :=
@@ -39,6 +41,143 @@ def isInDl.IsInDef (set elem: Pair): Prop :=
 -- `elem` is (a bisimilar copy of) a possible element of `set`.
 def isInDl.IsInPos (set elem: Pair): Prop :=
   ∃ elemX, bisimDl.IsBisimPos elem elemX ∧ Pair.PreTriset.Inw set elemX
+
+
+/-
+  ## Section: inherited constants are unaffected by `isInDl`
+-/
+
+def isInDl.wfm_uniSetMap_eq:
+  isInDl.wfm isInDl.consts.uniSetMap = uniSetMap
+:=
+  (FiniteDefList.extend_wfm_eq_of_lt
+    bisimDl isInDl rfl rfl (by decide)).symm.trans
+    bisimDl.wfm_uniSetMap_eq
+
+def isInDl.wfm_isBisim_eq:
+  isInDl.wfm isInDl.consts.IsBisim = bisimDl.wfm bisimDl.consts.IsBisim
+:=
+  (FiniteDefList.extend_wfm_eq_of_lt
+    bisimDl isInDl rfl rfl (by decide)).symm
+
+
+/-
+  ## Section: WFM characterization of `IsIn`
+-/
+
+def isInDl.IsInDef_of_defMem {set elem w}
+  (h: ((isInDl.vals.IsIn.call set).call elem).defMem w)
+:
+  isInDl.IsInDef set elem
+:=
+  let h2 :=
+    DefList.InWfm.in_def_no_fv (lane := .defLane)
+      (Set3.inCallElim (lane := .defLane)
+        (Set3.inCallElim (lane := .defLane) h))
+  let ⟨setA, h2⟩ := inArbUnElim h2
+  let ⟨elemA, h2⟩ := inArbUnElim h2
+  let ⟨hSet, h2⟩ := inProdElim h2
+  let ⟨hElem, h2⟩ := inProdElim h2
+  let setEq: setA = set := (inVarElim hSet rfl).symm
+  let elemEq: elemA = elem := (inVarElim hElem rfl).symm
+  let ⟨elemX, hIr⟩ := inArbUnElim h2
+  let ⟨hIsB, hSome⟩ := inIrElim hIr
+  let ⟨pA1, hFn, hArg⟩ := inCallElim hIsB
+  let pA1Eq: pA1 = elemX := inVarElim hArg rfl
+  let ⟨pA2, hFn2, hArg2⟩ := inCallElim (pA1Eq ▸ hFn)
+  let pA2Eq: pA2 = elemA := inVarElim hArg2 rfl
+  let hIsBW: (isInDl.wfm isInDl.consts.IsBisim).defMem _ :=
+    elemEq ▸ pA2Eq ▸ hFn2
+  let isB: bisimDl.IsBisimDef elem elemX :=
+    bisimDl.IsBisimDef_of_defMem (wfm_isBisim_eq ▸ hIsBW)
+  let ⟨w', hP⟩ := inSomeElim hSome
+  let ⟨hVarX, hCall⟩ := inIrElim hP
+  let w'Eq: w' = elemX := inVarElim hVarX rfl
+  let ⟨pA3, hFn3, hArg3⟩ := inCallElim hCall
+  let pA3Eq: pA3 = setA := inVarElim hArg3 rfl
+  let hU := w'Eq ▸ pA3Eq ▸ hFn3
+  let ins: uniSetMap.defMem (.pair set elemX) :=
+    setEq ▸ wfm_uniSetMap_eq ▸ hU
+  ⟨elemX, isB, ins⟩
+
+def isInDl.IsInDef.toDefMem {set elem w}
+  (isIn: isInDl.IsInDef set elem)
+:
+  ((isInDl.vals.IsIn.call set).call elem).defMem w
+:=
+  let ⟨elemX, isB, ins⟩ := isIn
+  let hIsB: (isInDl.wfm isInDl.consts.IsBisim).defMem _ :=
+    wfm_isBisim_eq ▸ isB.toDefMem
+  let hUni: (isInDl.wfm isInDl.consts.uniSetMap).defMem _ :=
+    wfm_uniSetMap_eq ▸ ins
+  DefList.InWfm.of_in_def_no_fv (lane := .defLane)
+    (inArbUn set
+      (inArbUn elem
+        (inProd (inVar rfl)
+          (inProd (inVar rfl)
+            (inArbUn elemX
+              (inIr
+                (inCall (inCall hIsB (inVar rfl)) (inVar rfl))
+                (inSome w
+                  (inIr (inVar rfl)
+                    (inCall hUni (inVar rfl))))))))))
+
+def isInDl.IsInPos_of_posMem {set elem w}
+  (h: ((isInDl.vals.IsIn.call set).call elem).posMem w)
+:
+  isInDl.IsInPos set elem
+:=
+  let h2 :=
+    DefList.InWfm.in_def_no_fv (lane := .posLane)
+      (Set3.inCallElim (lane := .posLane)
+        (Set3.inCallElim (lane := .posLane) h))
+  let ⟨setA, h2⟩ := inArbUnElim h2
+  let ⟨elemA, h2⟩ := inArbUnElim h2
+  let ⟨hSet, h2⟩ := inProdElim h2
+  let ⟨hElem, h2⟩ := inProdElim h2
+  let setEq: setA = set := (inVarElim hSet rfl).symm
+  let elemEq: elemA = elem := (inVarElim hElem rfl).symm
+  let ⟨elemX, hIr⟩ := inArbUnElim h2
+  let ⟨hIsB, hSome⟩ := inIrElim hIr
+  let ⟨pA1, hFn, hArg⟩ := inCallElim hIsB
+  let pA1Eq: pA1 = elemX := inVarElim hArg rfl
+  let ⟨pA2, hFn2, hArg2⟩ := inCallElim (pA1Eq ▸ hFn)
+  let pA2Eq: pA2 = elemA := inVarElim hArg2 rfl
+  let hIsBW: (isInDl.wfm isInDl.consts.IsBisim).posMem _ :=
+    elemEq ▸ pA2Eq ▸ hFn2
+  let isB: bisimDl.IsBisimPos elem elemX :=
+    bisimDl.IsBisimPos_of_posMem (wfm_isBisim_eq ▸ hIsBW)
+  let ⟨w', hP⟩ := inSomeElim hSome
+  let ⟨hVarX, hCall⟩ := inIrElim hP
+  let w'Eq: w' = elemX := inVarElim hVarX rfl
+  let ⟨pA3, hFn3, hArg3⟩ := inCallElim hCall
+  let pA3Eq: pA3 = setA := inVarElim hArg3 rfl
+  let hU := w'Eq ▸ pA3Eq ▸ hFn3
+  let inw: uniSetMap.posMem (.pair set elemX) :=
+    setEq ▸ wfm_uniSetMap_eq ▸ hU
+  ⟨elemX, isB, inw⟩
+
+def isInDl.IsInPos.toPosMem {set elem w}
+  (isIn: isInDl.IsInPos set elem)
+:
+  ((isInDl.vals.IsIn.call set).call elem).posMem w
+:=
+  let ⟨elemX, isB, inw⟩ := isIn
+  let hIsB: (isInDl.wfm isInDl.consts.IsBisim).posMem _ :=
+    wfm_isBisim_eq ▸ isB.toPosMem
+  let hUni: (isInDl.wfm isInDl.consts.uniSetMap).posMem _ :=
+    wfm_uniSetMap_eq ▸ inw
+  DefList.InWfm.of_in_def_no_fv (lane := .posLane)
+    (inArbUn set
+      (inArbUn elem
+        (inProd (inVar rfl)
+          (inProd (inVar rfl)
+            (inArbUn elemX
+              (inIr
+                (inCall (inCall hIsB (inVar rfl)) (inVar rfl))
+                (inSome w
+                  (inIr (inVar rfl)
+                    (inCall hUni (inVar rfl))))))))))
 
 
 /-
@@ -103,3 +242,37 @@ def Triset.IsInPos (set elem: Pair.Triset) :=
           (Pair.PreTriset.setoid.iseqv.symm sBisim)
           (Pair.PreTriset.setoid.iseqv.symm eBisim)))
   Quotient.lift₂ isInDl.IsInPos respects set elem
+
+
+/-
+  ## Section: the lanes coincide on hereditarily classical trisets
+-/
+
+def Triset.isInPos_iff_isInDef_of_hc {ts x: Pair.Triset}
+  (hcTs: Pair.Triset.Hc ts)
+  (hcX: Pair.Triset.Hc x)
+:
+  Triset.IsInPos ts x ↔ Triset.IsInDef ts x
+:=
+  Quotient.inductionOn₂
+    (motive := fun t0 t1 =>
+      Pair.Triset.Hc t0 →
+      Pair.Triset.Hc t1 →
+      (Triset.IsInPos t0 t1 ↔ Triset.IsInDef t0 t1))
+    ts x
+    (fun _a p hcTs hcX =>
+      Iff.intro
+        (fun ⟨x', isBP, inw⟩ =>
+          let hcX': Pair.Triset.Hc ⟦x'⟧ := Pair.Triset.hc_hered hcTs inw
+          let isBD: bisimDl.IsBisimDef p x' :=
+            bisimDl.IsBisimPos.toIsBisimDef hcX hcX' isBP
+          let ⟨x'', ins'', bisimX''⟩ := Pair.Triset.hc_ins_of_inw hcTs inw
+          let isBD'': bisimDl.IsBisimDef p x'' :=
+            fun nbp =>
+              isBD
+                (nbp.respectsBisim
+                  (Pair.PreTriset.setoid.iseqv.refl p)
+                  bisimX''.symm)
+          ⟨x'', isBD'', ins''⟩)
+        (fun ⟨x', isBD, ins⟩ => ⟨x', isBD.toIsBisimPos, ins.toPos⟩))
+    hcTs hcX

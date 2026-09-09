@@ -206,6 +206,19 @@ namespace Set3
     defLePos _d ddIn dd := (ddIn dd).toPos
   }
   
+  /-- The pointwise image of a triset under a function. -/
+  def image {D} (f: D → D) (s: Set3 D): Set3 D where
+    defMem := f '' s.defMem
+    posMem := f '' s.posMem
+    defLePos := fun _ ⟨x, hx, eq⟩ => ⟨x, hx.toPos, eq⟩
+  
+  
+  instance unionInst (D: Type u): Union (Set3 D) where
+    union := union
+  
+  instance interInst (D: Type u): Inter (Set3 D) where
+    inter := inter
+  
   def compl_inj_eq
     {D} {s0 s1: Set3 D}
     (eq: compl s0 = compl s1)
@@ -218,13 +231,6 @@ namespace Set3
   
   def compl_inj_neq {D} {s0 s1: Set3 D} (neq: s0 ≠ s1): compl s0 ≠ compl s1 :=
     compl_inj_eq.mt neq
-  
-  
-  instance unionInst (D: Type u): Union (Set3 D) where
-    union := union
-  
-  instance interInst (D: Type u): Inter (Set3 D) where
-    inter := inter
   
   
   def ninPos.ninDef {D} {s: Set3 D} {d} (dNin: d ∉ s.posMem): d ∉ s.defMem :=

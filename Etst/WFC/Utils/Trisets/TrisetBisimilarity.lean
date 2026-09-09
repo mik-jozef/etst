@@ -57,7 +57,7 @@ inductive bisimDl.NonBisimDef: (p q: Pair) → Prop where
   :
     bisimDl.NonBisimDef p q
 
--- A Lean-native definition of `NonBisim`'s necessary-membership lane.
+-- A Lean-native definition of `NonBisim`'s definite-membership lane.
 inductive bisimDl.NonBisimPos: (p q: Pair) → Prop where
 | ofP {p q}
     (p': Pair)
@@ -395,6 +395,88 @@ def bisimDl.NonBisimPos.toPosMem {p q w}
                           (inCall (allP p' inDef).toPosMem (inVar rfl))
                           (inVar rfl)))))))))
 
+
+def bisimDl.IsBisimDef_of_defMem {p q w}
+  (h: ((bisimDl.vals.IsBisim.call p).call q).defMem w)
+:
+  bisimDl.IsBisimDef p q
+:=
+  let h2 :=
+    DefList.InWfm.in_def_no_fv (lane := .defLane)
+      (Set3.inCallElim (lane := .defLane)
+        (Set3.inCallElim (lane := .defLane) h))
+  let ⟨pA, h2⟩ := inArbUnElim h2
+  let ⟨qA, h2⟩ := inArbUnElim h2
+  let ⟨hP, h2⟩ := inProdElim h2
+  let ⟨hQ, hCompl⟩ := inProdElim h2
+  let pEq: pA = p := (inVarElim hP rfl).symm
+  let qEq: qA = q := (inVarElim hQ rfl).symm
+  fun nbp =>
+    let hPos := pEq ▸ qEq ▸ nbp.toPosMem
+    hCompl (inCall (inCall hPos (inVar rfl)) (inVar rfl))
+
+def bisimDl.IsBisimDef.toDefMem {p q w}
+  (isB: bisimDl.IsBisimDef p q)
+:
+  ((bisimDl.vals.IsBisim.call p).call q).defMem w
+:=
+  DefList.InWfm.of_in_def_no_fv (lane := .defLane)
+    (inArbUn p
+      (inArbUn q
+        (inProd (inVar rfl)
+          (inProd (inVar rfl)
+            (inCompl fun hMem =>
+              let ⟨pA1, hFn, hArg⟩ := inCallElim hMem
+              let pA1Eq: pA1 = q := inVarElim hArg rfl
+              let ⟨pA2, hFn2, hArg2⟩ := inCallElim (pA1Eq ▸ hFn)
+              let pA2Eq: pA2 = p := inVarElim hArg2 rfl
+              let hPos:
+                ((bisimDl.vals.NonBisim.call p).call q).posMem w
+              :=
+                pA2Eq ▸ hFn2
+              isB (NonBisimPos_of_posMem hPos))))))
+
+def bisimDl.IsBisimPos_of_posMem {p q w}
+  (h: ((bisimDl.vals.IsBisim.call p).call q).posMem w)
+:
+  bisimDl.IsBisimPos p q
+:=
+  let h2 :=
+    DefList.InWfm.in_def_no_fv (lane := .posLane)
+      (Set3.inCallElim (lane := .posLane)
+        (Set3.inCallElim (lane := .posLane) h))
+  let ⟨pA, h2⟩ := inArbUnElim h2
+  let ⟨qA, h2⟩ := inArbUnElim h2
+  let ⟨hP, h2⟩ := inProdElim h2
+  let ⟨hQ, hCompl⟩ := inProdElim h2
+  let pEq: pA = p := (inVarElim hP rfl).symm
+  let qEq: qA = q := (inVarElim hQ rfl).symm
+  fun nbd =>
+    let hDef := pEq ▸ qEq ▸ nbd.toDefMem
+    hCompl (inCall (inCall hDef (inVar rfl)) (inVar rfl))
+
+def bisimDl.IsBisimPos.toPosMem {p q w}
+  (isB: bisimDl.IsBisimPos p q)
+:
+  ((bisimDl.vals.IsBisim.call p).call q).posMem w
+:=
+  DefList.InWfm.of_in_def_no_fv (lane := .posLane)
+    (inArbUn p
+      (inArbUn q
+        (inProd (inVar rfl)
+          (inProd (inVar rfl)
+            (inCompl fun hMem =>
+              let ⟨pA1, hFn, hArg⟩ := inCallElim hMem
+              let pA1Eq: pA1 = q := inVarElim hArg rfl
+              let ⟨pA2, hFn2, hArg2⟩ := inCallElim (pA1Eq ▸ hFn)
+              let pA2Eq: pA2 = p := inVarElim hArg2 rfl
+              let hDef:
+                ((bisimDl.vals.NonBisim.call p).call q).defMem w
+              :=
+                pA2Eq ▸ hFn2
+              isB (NonBisimDef_of_defMem hDef))))))
+
+
 /-
   ## Section: lifting the Lean-native defs to the bisimilarity quotient
 
@@ -688,7 +770,7 @@ def bisimDl.IsBisimDef.toIsBisimPos {p q: Pair}
   fun nbd => isBD nbd.toNonBisimPos
 
 
--- Bisimilar pre-trisets are never `NonBisimDef`, so `Bisim ⊆ IsBisimPos`.
+-- Bisimilar pre-trisets are never `NonBisimDef`, so `IsBisim ⊆ IsBisimPos`.
 def bisimDl.NonBisimDef.not_bisim:
   {p q: Pair} → NonBisimDef p q → ¬ Pair.PreTriset.IsBisim p q
 | _, _, .ofP _p' inP allQ, bisim =>
@@ -707,7 +789,7 @@ def bisimDl.IsBisimPos.of_bisim {p q: Pair}
 
 
 -- On an Hc triset, every possible element is a definite element up to
--- bisimilarity. (If not, the pre-triset witnesses `Nhc` via `notClassical`.)
+-- bisimilarity.
 def Pair.Triset.hc_ins_of_inw {p p': Pair.PreTriset}
   (hc: Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid p))
   (inw: Pair.PreTriset.Inw p p')
@@ -727,7 +809,6 @@ def Pair.Triset.hc_ins_of_inw {p p': Pair.PreTriset}
           Pair.PreTriset.setoid.iseqv.trans bisimElem bisimPreElem⟩)
 
 -- On an Hc triset, every possible element is itself Hc.
--- (Otherwise the pre-triset witnesses `Nhc` via `containsNhc`.)
 def Pair.Triset.hc_hered {p p': Pair.PreTriset}
   (hc: Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid p))
   (inw: Pair.PreTriset.Inw p p')

@@ -48,6 +48,16 @@ namespace LabeledTransitionSystem
   :=
     ∃ R, lts.IsBisimulation R ∧ R p q
   
+  def IsBisimilar_isSimulation {L T}
+    (lts: LabeledTransitionSystem L T)
+  :
+    lts.IsSimulation lts.IsBisimilar
+  :=
+    fun l p q p' bisimPQ trans =>
+      let ⟨R, bisimR, rpq⟩ := bisimPQ
+      let ⟨q', t', rp'q'⟩ := bisimR.left l p q p' rpq trans
+      ⟨q', t', ⟨R, bisimR, rp'q'⟩⟩
+  
   
   def IsSimulation.comp {L T}
     {lts: LabeledTransitionSystem L T}
