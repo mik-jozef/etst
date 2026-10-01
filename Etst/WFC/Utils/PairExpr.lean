@@ -116,6 +116,44 @@ namespace Expr
   def nat: Nat → Expr E
   | Nat.zero => null
   | Nat.succ pred => succ (nat pred)
+  
+  /-
+    `nonemptify x = null | (x, null)`, guaranteeing nonemptiness,
+    and reversibility (with `zth`).
+  -/
+  def nonemptify {E} (expr: Expr E): Expr E :=
+    un null (prod expr null)
+  
+  def losslessProd (left rite: Expr E): Expr E :=
+    prod (nonemptify left) (nonemptify rite)
+  
+  /-
+    The cartesian product `T0 × T1 × ... × Tn` represents the empty
+    set if any of the `Ti` are empty, losing information about the
+    other non-empty components.
+    
+    To encode N values completely independently of each other, we can
+    represent them as
+    
+        nonemptify T0 × nonemptify T1 × ... × nonemptify Tn \,.
+    
+    Usage for `n = 3`:
+    
+        losslessProdCons expr0
+          (losslessProdCons expr1
+            (losslessProdCons expr2
+              null))
+  -/
+  def losslessProdCons (head tail: Expr E): Expr E :=
+    prod (nonemptify head) tail
+
+  def losslessProdList: List (Expr E) → Expr E
+  | [] => null
+  | head :: tail => losslessProdCons head (losslessProdList tail)
+  
+  -- Like `nth`, but works with lossless products.
+  def losslessProdAt (n: Nat) (expr: Expr E): Expr E :=
+    zth (nth n expr)
 end Expr
 
 

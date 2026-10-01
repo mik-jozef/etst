@@ -64,12 +64,7 @@ namespace Pair
       iseqv := transitionSystem.IsBisimilar_is_equivalence
     
     
-    def empty: PreTriset :=
-      uniSetMapIndex
-        FiniteDefList.empty.toDefList
-        FiniteDefList.empty.size
-        []
-        (.none)
+    def empty: PreTriset := uniSetMapIndex.emptyIndex
     
     
     -- Equal `uniSetMap`-images are bisimilar.
@@ -106,7 +101,7 @@ namespace Pair
   def Triset := Quotient PreTriset.setoid
   
   namespace Triset
-    structure ExactInsStruct
+    structure DirectInsStruct
       (ts elem: Triset)
       (preTs preElem: PreTriset)
     :
@@ -116,7 +111,7 @@ namespace Pair
       elemEq: elem = ⟦preElem⟧
       ins: preTs.Ins preElem
     
-    structure ExactInwStruct
+    structure DirectInwStruct
       (ts elem: Triset)
       (preTs preElem: PreTriset)
     :
@@ -126,15 +121,15 @@ namespace Pair
       elemEq: elem = ⟦preElem⟧
       inw: preTs.Inw preElem
     
-    def ExactIns (ts elem: Triset): Prop :=
-      ∃ preTs preElem, ExactInsStruct ts elem preTs preElem
+    def DirectIns (ts elem: Triset): Prop :=
+      ∃ preTs preElem, DirectInsStruct ts elem preTs preElem
     
-    def ExactInw (ts elem: Triset): Prop :=
-      ∃ preTs preElem, ExactInwStruct ts elem preTs preElem
+    def DirectInw (ts elem: Triset): Prop :=
+      ∃ preTs preElem, DirectInwStruct ts elem preTs preElem
     
-    def ExactMem: TriRelation Triset where
-      RelDef := ExactIns
-      RelPos := ExactInw
+    def DirectMem: TriRelation Triset where
+      RelDef := DirectIns
+      RelPos := DirectInw
       def_le_pos
       | ⟨preTs, preElem, ⟨tsEq, elemEq, ins⟩⟩ =>
         ⟨preTs, preElem, ⟨tsEq, elemEq, ins.toPos⟩⟩
@@ -143,12 +138,12 @@ namespace Pair
     -- Not hereditarily classical.
     inductive Nhc: Triset → Prop
     | notClassical {ts elem: Triset}
-        (isPos: ts.ExactInw elem)
-        (notDef: ¬ ts.ExactIns elem)
+        (isPos: ts.DirectInw elem)
+        (notDef: ¬ ts.DirectIns elem)
       :
         Nhc ts
     | containsNhc {ts elem: Triset}
-        (isPos: ts.ExactInw elem)
+        (isPos: ts.DirectInw elem)
         (isNhc: Nhc elem)
       :
         Nhc ts

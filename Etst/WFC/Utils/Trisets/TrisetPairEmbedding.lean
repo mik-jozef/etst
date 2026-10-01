@@ -1,5 +1,5 @@
 import Etst.WFC.Utils.Trisets.TrisetPair
-import Etst.WFC.Utils.Trisets.TrisetPairEncoding
+import Etst.WFC.Utils.Trisets.TrisetEmbedding
 
 /-
   An embedding of `Triset` into `TrisetPair` (defined internally
@@ -10,16 +10,15 @@ namespace Etst
 
 
 namespace Pair
-  open TrisetPairEncoding
+  open TrisetEmbedding
   
   namespace PreTriset
     /--
-      The embedding on representatives: re-encode the triset
-      so that its members are TrisetPair encodings, then wrap
-      it in the `set` constructor.
+      The embedding on representatives: embed the triset so that its
+      members are TrisetPair codes, then wrap it in the `set` constructor.
     -/
     def toPreTrisetPair (t: PreTriset): PreTrisetPair :=
-      .set (encode t)
+      .set (embed t)
     
     /-
       If two trisets are bisimilar, so are their embeddings.
@@ -47,11 +46,11 @@ namespace Pair
           PreTrisetPair.noConfusion hEq
         | .ins, _, _, el, ⟨t0, t1, r01, rfl, rfl⟩, ins =>
           let ⟨e0, e0In, e0Eq⟩ :=
-            encode_elim_def (show Ins (encode t0) el.toPair from ins)
+            embed_elim_def (show Ins (embed t0) el.toPair from ins)
           let ⟨e1, e1In, rE⟩ := simLR .ins t0 t1 e0 r01 e0In
           ⟨
             e1.toPreTrisetPair,
-            encode_ins e1In,
+            embed_ins e1In,
             e0,
             e1,
             rE,
@@ -60,11 +59,11 @@ namespace Pair
           ⟩
         | .inw, _, _, el, ⟨t0, t1, r01, rfl, rfl⟩, inw =>
           let ⟨e0, e0In, e0Eq⟩ :=
-            encode_elim_pos (show Inw (encode t0) el.toPair from inw)
+            embed_elim_pos (show Inw (embed t0) el.toPair from inw)
           let ⟨e1, e1In, rE⟩ := simLR .inw t0 t1 e0 r01 e0In
           ⟨
             e1.toPreTrisetPair,
-            encode_inw e1In,
+            embed_inw e1In,
             e0,
             e1,
             rE,
@@ -82,11 +81,11 @@ namespace Pair
           PreTrisetPair.noConfusion hEq
         | .ins, _, _, el, ⟨t0, t1, r01, rfl, rfl⟩, ins =>
           let ⟨e1, e1In, e1Eq⟩ :=
-            encode_elim_def (show Ins (encode t1) el.toPair from ins)
+            embed_elim_def (show Ins (embed t1) el.toPair from ins)
           let ⟨e0, e0In, rE⟩ := simRL .ins t1 t0 e1 r01 e1In
           ⟨
             e0.toPreTrisetPair,
-            encode_ins e0In,
+            embed_ins e0In,
             e0,
             e1,
             rE,
@@ -95,11 +94,11 @@ namespace Pair
           ⟩
         | .inw, _, _, el, ⟨t0, t1, r01, rfl, rfl⟩, inw =>
           let ⟨e1, e1In, e1Eq⟩ :=
-            encode_elim_pos (show Inw (encode t1) el.toPair from inw)
+            embed_elim_pos (show Inw (embed t1) el.toPair from inw)
           let ⟨e0, e0In, rE⟩ := simRL .inw t1 t0 e1 r01 e1In
           ⟨
             e0.toPreTrisetPair,
-            encode_inw e0In,
+            embed_inw e0In,
             e0,
             e1,
             rE,
@@ -126,9 +125,9 @@ namespace Pair
             simLR .ins
               a.toPreTrisetPair b.toPreTrisetPair e.toPreTrisetPair
               rab
-              (encode_ins ins)
+              (embed_ins ins)
           let ⟨e', e'In, qEq⟩ :=
-            encode_elim_def (show Ins (encode b) q.toPair from qIn)
+            embed_elim_def (show Ins (embed b) q.toPair from qIn)
           let qEncEq: q = toPreTrisetPair e' :=
             PreTrisetPair.toPair_inj qEq
           ⟨
@@ -142,9 +141,9 @@ namespace Pair
             simLR .inw
               a.toPreTrisetPair b.toPreTrisetPair e.toPreTrisetPair
               rab
-              (encode_inw inw)
+              (embed_inw inw)
           let ⟨e', e'In, qEq⟩ :=
-            encode_elim_pos (show Inw (encode b) q.toPair from qIn)
+            embed_elim_pos (show Inw (embed b) q.toPair from qIn)
           let qEncEq: q = toPreTrisetPair e' :=
             PreTrisetPair.toPair_inj qEq
           ⟨
@@ -159,9 +158,9 @@ namespace Pair
             simRL .ins
               a.toPreTrisetPair b.toPreTrisetPair e.toPreTrisetPair
               rab
-              (encode_ins ins)
+              (embed_ins ins)
           let ⟨e', e'In, qEq⟩ :=
-            encode_elim_def (show Ins (encode b) q.toPair from qIn)
+            embed_elim_def (show Ins (embed b) q.toPair from qIn)
           let qEncEq: q = toPreTrisetPair e' :=
             PreTrisetPair.toPair_inj qEq
           ⟨
@@ -175,9 +174,9 @@ namespace Pair
             simRL .inw
               a.toPreTrisetPair b.toPreTrisetPair e.toPreTrisetPair
               rab
-              (encode_inw inw)
+              (embed_inw inw)
           let ⟨e', e'In, qEq⟩ :=
-            encode_elim_pos (show Inw (encode b) q.toPair from qIn)
+            embed_elim_pos (show Inw (embed b) q.toPair from qIn)
           let qEncEq: q = toPreTrisetPair e' :=
             PreTrisetPair.toPair_inj qEq
           ⟨
@@ -193,7 +192,7 @@ namespace Pair
   namespace Triset
     /--
       The embedding of `Triset` into `TrisetPair`: the class of
-      a triset index `t` is sent to the class of `set (encode t)`.
+      a triset index `t` is sent to the class of `set (embed t)`.
     -/
     def toTrisetPair: Triset → TrisetPair :=
       Quotient.lift
@@ -220,34 +219,108 @@ namespace Pair
                 (Quotient.exact eq))
     
     -- The embedding preserves definitive membership (PreTriset version).
-    def exactIns_toTrisetPair_pre {t e: PreTriset} (ins: t.Ins e):
-      TrisetPair.ExactIns (toTrisetPair ⟦t⟧) (toTrisetPair ⟦e⟧)
+    def directIns_toTrisetPair_pre {t e: PreTriset} (ins: t.Ins e):
+      (toTrisetPair ⟦t⟧).DirectIns (toTrisetPair ⟦e⟧)
     :=
-      ⟨t.toPreTrisetPair, e.toPreTrisetPair, rfl, rfl, encode_ins ins⟩
+      ⟨t.toPreTrisetPair, e.toPreTrisetPair, rfl, rfl, embed_ins ins⟩
     
     -- The embedding preserves possible membership (PreTriset version).
-    def exactInw_toTrisetPair_pre {t e: PreTriset} (inw: t.Inw e):
-      TrisetPair.ExactInw (toTrisetPair ⟦t⟧) (toTrisetPair ⟦e⟧)
+    def directInw_toTrisetPair_pre {t e: PreTriset} (inw: t.Inw e):
+      (toTrisetPair ⟦t⟧).DirectInw (toTrisetPair ⟦e⟧)
     :=
-      ⟨t.toPreTrisetPair, e.toPreTrisetPair, rfl, rfl, encode_inw inw⟩
+      ⟨t.toPreTrisetPair, e.toPreTrisetPair, rfl, rfl, embed_inw inw⟩
     
     -- The embedding preserves definitive membership.
-    def exactIns_toTrisetPair {ts elem: Triset}
-      (ins: ts.ExactIns elem)
+    def directIns_toTrisetPair {ts elem: Triset}
+      (ins: ts.DirectIns elem)
     :
-      TrisetPair.ExactIns (toTrisetPair ts) (toTrisetPair elem)
+      ts.toTrisetPair.DirectIns elem.toTrisetPair
     :=
       let ⟨_, _, tsEq, elemEq, ins⟩ := ins
-      tsEq ▸ elemEq ▸ exactIns_toTrisetPair_pre ins
+      tsEq ▸ elemEq ▸ directIns_toTrisetPair_pre ins
     
     -- The embedding preserves possible membership.
-    def exactInw_toTrisetPair {ts elem: Triset}
-      (inw: ts.ExactInw elem)
+    def directInw_toTrisetPair {ts elem: Triset}
+      (inw: ts.DirectInw elem)
     :
-      TrisetPair.ExactInw (toTrisetPair ts) (toTrisetPair elem)
+      ts.toTrisetPair.DirectInw elem.toTrisetPair
     :=
       let ⟨_, _, tsEq, elemEq, inw⟩ := inw
-      tsEq ▸ elemEq ▸ exactInw_toTrisetPair_pre inw
+      tsEq ▸ elemEq ▸ directInw_toTrisetPair_pre inw
+    
+    -- The embedding reflects definitive membership.
+    def directIns_of_toTrisetPair {ts elem: Triset}
+      (ins: ts.toTrisetPair.DirectIns elem.toTrisetPair)
+    :
+      ts.DirectIns elem
+    :=
+      Quotient.inductionOn₂
+        (motive := fun (ts elem: Triset) =>
+          ts.toTrisetPair.DirectIns elem.toTrisetPair → ts.DirectIns elem)
+        ts
+        elem
+        (fun t e ⟨preA, preB, aEq, bEq, st⟩ =>
+          let aBisim: t.toPreTrisetPair.IsBisim preA := Quotient.exact aEq
+          let bBisim: e.toPreTrisetPair.IsBisim preB := Quotient.exact bEq
+          let ⟨q, qIn, qBisim⟩ :=
+            PreTrisetPair.transitionSystem.IsBisimilar_isSimulation
+              .ins _ _ _ (PreTrisetPair.setoid.iseqv.symm aBisim) st
+          let ⟨(e': PreTriset), e'In, qEq⟩ :=
+            embed_elim_def (show PreTriset.Ins (embed t) q.toPair from qIn)
+          let qEq: q = e'.toPreTrisetPair := PreTrisetPair.toPair_inj qEq
+          let qBisim: preB.IsBisim e'.toPreTrisetPair := qEq ▸ qBisim
+          ⟨
+            t,
+            e',
+            rfl,
+            Quotient.sound
+              (PreTriset.bisim_of_toPreTrisetPair_bisim
+                (PreTrisetPair.setoid.iseqv.trans bBisim qBisim)),
+            e'In,
+          ⟩)
+        ins
+    
+    -- The embedding reflects possible membership.
+    def directInw_of_toTrisetPair {ts elem: Triset}
+      (inw: ts.toTrisetPair.DirectInw elem.toTrisetPair)
+    :
+      ts.DirectInw elem
+    :=
+      Quotient.inductionOn₂
+        (motive := fun (ts elem: Triset) =>
+          ts.toTrisetPair.DirectInw elem.toTrisetPair → ts.DirectInw elem)
+        ts
+        elem
+        (fun t e ⟨preA, preB, aEq, bEq, st⟩ =>
+          let aBisim: t.toPreTrisetPair.IsBisim preA := Quotient.exact aEq
+          let bBisim: e.toPreTrisetPair.IsBisim preB := Quotient.exact bEq
+          let ⟨q, qIn, qBisim⟩ :=
+            PreTrisetPair.transitionSystem.IsBisimilar_isSimulation
+              .inw _ _ _ (PreTrisetPair.setoid.iseqv.symm aBisim) st
+          let ⟨(e': PreTriset), e'In, qEq⟩ :=
+            embed_elim_pos (show PreTriset.Inw (embed t) q.toPair from qIn)
+          let qEq: q = e'.toPreTrisetPair := PreTrisetPair.toPair_inj qEq
+          let qBisim: preB.IsBisim e'.toPreTrisetPair := qEq ▸ qBisim
+          ⟨
+            t,
+            e',
+            rfl,
+            Quotient.sound
+              (PreTriset.bisim_of_toPreTrisetPair_bisim
+                (PreTrisetPair.setoid.iseqv.trans bBisim qBisim)),
+            e'In,
+          ⟩)
+        inw
+    
+    def directIns_iff_toTrisetPair {ts elem: Triset}:
+      ts.DirectIns elem ↔ ts.toTrisetPair.DirectIns elem.toTrisetPair
+    :=
+      ⟨directIns_toTrisetPair, directIns_of_toTrisetPair⟩
+    
+    def directInw_iff_toTrisetPair {ts elem: Triset}:
+      ts.DirectInw elem ↔ ts.toTrisetPair.DirectInw elem.toTrisetPair
+    :=
+      ⟨directInw_toTrisetPair, directInw_of_toTrisetPair⟩
     
   end Triset
 end Pair

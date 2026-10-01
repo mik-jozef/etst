@@ -5,16 +5,16 @@ namespace Etst
 
 namespace Pair
   /-
-    A `PreTrisetPair` is either null, a pair of `PreTrisetPair`s,
-    or a triset of `PreTrisetPair`s.
+    A `PreTrisetPair` is either a triset of `PreTrisetPair`s, null,
+    or a pair of `PreTrisetPair`s.
     
     Trisets are nonwellfounded, pairs are. (Does this mean that
     pairs are inductive and trisets coinductive?)
   -/
   inductive PreTrisetPair where
+  | set (ts: PreTriset)
   | null
   | pair (zth fst: PreTrisetPair)
-  | set (ts: PreTriset)
   
   namespace PreTrisetPair
     /-
@@ -22,20 +22,20 @@ namespace Pair
       Contrast with `PreTriset`, where all pairs code trisets.
     -/
     def toPair: PreTrisetPair → Pair
-    | .null => .pair (.nat 0) .null
-    | .pair p0 p1 => .pair (.nat 0) (.pair p0.toPair p1.toPair)
-    | .set ts => .pair (.nat 1) ts
+    | .set ts => .pair (.nat 0) ts
+    | .null => .pair (.nat 1) .null
+    | .pair p0 p1 => .pair (.nat 1) (.pair p0.toPair p1.toPair)
     
     -- The encoding of `PreTrisetPair`s as raw pairs is injective.
     def toPair_inj {a b: PreTrisetPair} (h: a.toPair = b.toPair): a = b :=
       match a, b, h with
+      | .set _, .set _, h =>
+          congrArg set (Pair.noConfusion h fun _ hr => hr)
       | .null, .null, _ => rfl
       | .pair a0 a1, .pair b0 b1, h => by
           injection h with hTag h01
           injection h01 with h0 h1
           exact congrArg₂ pair (toPair_inj h0) (toPair_inj h1)
-      | .set _, .set _, h =>
-          congrArg set (Pair.noConfusion h fun _ hr => hr)
     
     
     -- Strong (a la "definite") membership, `a ∈ b`.
@@ -87,7 +87,7 @@ namespace Pair
   def TrisetPair := Quotient PreTrisetPair.setoid
   
   namespace TrisetPair
-    structure ExactTransStruct
+    structure DirectTransStruct
       (label: PreTrisetPair.TransitionLabels)
       (a b: TrisetPair)
       (preA preB: PreTrisetPair)
@@ -98,39 +98,39 @@ namespace Pair
       bEq: b = ⟦preB⟧
       trans: PreTrisetPair.transitionSystem label preA preB
     
-    def ExactTrans
+    def DirectTrans
       (label: PreTrisetPair.TransitionLabels)
       (a b: TrisetPair)
     :
       Prop
     :=
-      ∃ preA preB, ExactTransStruct label a b preA preB
+      ∃ preA preB, DirectTransStruct label a b preA preB
     
     
     -- `ts` is a triset with definite member `elem`.
-    def ExactIns (ts elem: TrisetPair): Prop :=
-      ExactTrans .ins ts elem
+    def DirectIns (ts elem: TrisetPair): Prop :=
+      DirectTrans .ins ts elem
     
     -- `ts` is a triset with possible member `elem`.
-    def ExactInw (ts elem: TrisetPair): Prop :=
-      ExactTrans .inw ts elem
+    def DirectInw (ts elem: TrisetPair): Prop :=
+      DirectTrans .inw ts elem
     
     -- `p` is a pair with zeroth component `zth`.
-    def ExactZth (p zth: TrisetPair): Prop :=
-      ExactTrans .zth p zth
+    def DirectZth (p zth: TrisetPair): Prop :=
+      DirectTrans .zth p zth
     
     -- `p` is a pair with first component `fst`.
-    def ExactFst (p fst: TrisetPair): Prop :=
-      ExactTrans .fst p fst
+    def DirectFst (p fst: TrisetPair): Prop :=
+      DirectTrans .fst p fst
     
     -- `p` is null.
-    def ExactNull (p: TrisetPair): Prop :=
-      ExactTrans .isNull p p
+    def DirectNull (p: TrisetPair): Prop :=
+      DirectTrans .isNull p p
     
     
-    def ExactMem: TriRelation TrisetPair where
-      RelDef := ExactIns
-      RelPos := ExactInw
+    def DirectMem: TriRelation TrisetPair where
+      RelDef := DirectIns
+      RelPos := DirectInw
       def_le_pos
       | ⟨preA, preB, ⟨aEq, bEq, ins⟩⟩ =>
         ⟨preA, preB, ⟨aEq, bEq, PreTrisetPair.insLeInw preA ins⟩⟩

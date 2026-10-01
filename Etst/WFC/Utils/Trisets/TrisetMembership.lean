@@ -3,8 +3,8 @@
   (ie. indices of uniSetMap quotiented by bisimilarity), and show
   the relation is well-defined on the quotient.
   
-  This notion of membership is not the same as `Triset.ExactMem`
-  from `Triset.lean`. The exact membership treats the empty triset
+  This notion of membership is not the same as `Triset.DirectMem`
+  from `Triset.lean`. The direct membership treats the empty triset
   and the undetermined triset as fully distinct trisets.
   The membership defined here is "fuzzy" in that a set containing
   one of these two trisets is considered to possibly contain the

@@ -107,4 +107,18 @@ namespace LabeledTransitionSystem
           ⟨_, IsBisimulation.comp bisim1 bisim2, _, r1, r2⟩,
     }
   
+  def isBisimulation_of_symm {L T}
+    {lts: LabeledTransitionSystem L T}
+    {R: T → T → Prop}
+    (symm: ∀ {x y}, R x y → R y x)
+    (sim: lts.IsSimulation R)
+  :
+    lts.IsBisimulation R
+  := ⟨
+    sim,
+    fun l _ _ x' r t =>
+      let ⟨y', t', r'⟩ := sim l _ _ x' (symm r) t
+      ⟨y', t', symm r'⟩,
+  ⟩
+  
 end LabeledTransitionSystem
