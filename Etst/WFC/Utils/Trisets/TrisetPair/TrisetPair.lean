@@ -1,3 +1,7 @@
+/-
+  See `Triset.lean`.
+-/
+
 import Etst.WFC.Utils.Trisets.Triset
 
 namespace Etst

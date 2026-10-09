@@ -13,6 +13,44 @@
   the operations on them respect their intended semantics, so that we
   don't, for example, treat two pairs coding empty sets differently just
   because they are different pairs.
+  
+  ## Some in-progress notes
+  There is also TrisetPair, from before I realized I can represent
+  pairs as `{ {{}, {A}}, {{{}}, {{B}}} }` (the standard Kuratowski
+  `{{A}, {A, B}}` does not work for non-classical sets, we cannot
+  reliably get both the zeroth and first elements of the pair).
+  There is also a (WFC-definable) embedding from Triset to TrisetPair.
+  
+  Even though I figured out pairs, it seems that with Triset, there
+  cannot be a way to represent functions & function calls that would
+  - be general enough that that would work with arbitrary trisets as
+    arguments,
+  - map classical inputs to classical outputs.
+  
+  (The following paragraph will treat a triset of pairs as identical
+  to a triset of triset encodings of pairs for simplicity.)
+  
+  This means that even a trivial type like List (of T, that accepts
+  an arbitrary T) cannot be defined as a triset. WFC can easily define
+  it if function application is the ordinary `Expr.call`. The only issue
+  is that `Expr.call` does not in general respect bisimilarity. It does,
+  however, respect bisimilarity if the function is defined using
+  bisimilarity-preserving operations *and* every code is a part of its
+  domain.
+  
+  So the options are:
+  - To resign to `Triset`, and accept that a user wanting to define List
+    that preserves classicalness will have to pick a some classical triset
+    serving as a type universe, to limit its domain. Different type universes
+    would have to have their own List definitions.
+  - Since a general and classical-preserving List is easily definable in
+    WFC, to try to extend `Triset` in a way that would accomodate these
+    definitions.
+  
+  I consider the zeroth option to be severely impractical. That's my
+  motivation for trying to define yet another variation on trisets,
+  TrisetFn. An instance of TrisetFn would be either a triset of TrisetFn
+  instances, or a function from TrisetFn to TrisetFn.
 -/
 
 import Etst.WFC.Ch7_Polymorphism

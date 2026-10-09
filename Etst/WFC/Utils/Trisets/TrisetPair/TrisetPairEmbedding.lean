@@ -1,5 +1,5 @@
-import Etst.WFC.Utils.Trisets.TrisetPair
 import Etst.WFC.Utils.Trisets.TrisetEmbedding
+import Etst.WFC.Utils.Trisets.TrisetPair.TrisetPair
 
 /-
   An embedding of `Triset` into `TrisetPair` (defined internally
