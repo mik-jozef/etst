@@ -444,31 +444,13 @@ namespace Pair
       Quotient.lift PreTrisetFn.IsFn fun _ _ b =>
         propext ⟨IsBisim.isFn b, IsBisim.isFn (IsBisim.symm b)⟩
     
-    structure DirectInsStruct
-      (ts elem: TrisetFn)
-      (preTs preElem: PreTrisetFn)
-    :
-      Prop
-    where
-      tsEq: ts = ⟦preTs⟧
-      elemEq: elem = ⟦preElem⟧
-      ins: preTs.Ins preElem
-    
-    structure DirectInwStruct
-      (ts elem: TrisetFn)
-      (preTs preElem: PreTrisetFn)
-    :
-      Prop
-    where
-      tsEq: ts = ⟦preTs⟧
-      elemEq: elem = ⟦preElem⟧
-      inw: preTs.Inw preElem
-    
+    -- `ts` is a triset with a definite member `elem`.
     def DirectIns (ts elem: TrisetFn): Prop :=
-      ∃ preTs preElem, DirectInsStruct ts elem preTs preElem
+      DirectRel PreTrisetFn.Ins ts elem
     
+    -- `ts` is a triset with a possible member `elem`.
     def DirectInw (ts elem: TrisetFn): Prop :=
-      ∃ preTs preElem, DirectInwStruct ts elem preTs preElem
+      DirectRel PreTrisetFn.Inw ts elem
     
     def DirectMem: TriRelation TrisetFn where
       RelDef := DirectIns
@@ -477,35 +459,13 @@ namespace Pair
       | ⟨preTs, preElem, ⟨tsEq, elemEq, ins⟩⟩ =>
         ⟨preTs, preElem, ⟨tsEq, elemEq, insLeInw ins⟩⟩
     
-    structure DirectCallInsStruct
-      (f arg res: TrisetFn)
-      (preF preArg preRes: PreTrisetFn)
-    :
-      Prop
-    where
-      fEq: f = ⟦preF⟧
-      argEq: arg = ⟦preArg⟧
-      resEq: res = ⟦preRes⟧
-      ins: preF.InsEntry preArg preRes
-    
-    structure DirectCallInwStruct
-      (f arg res: TrisetFn)
-      (preF preArg preRes: PreTrisetFn)
-    :
-      Prop
-    where
-      fEq: f = ⟦preF⟧
-      argEq: arg = ⟦preArg⟧
-      resEq: res = ⟦preRes⟧
-      inw: preF.InwEntry preArg preRes
-    
     -- `res` is a definite member of the result of applying `f` to `arg`.
     def DirectCallIns (f arg res: TrisetFn): Prop :=
-      ∃ preF preArg preRes, DirectCallInsStruct f arg res preF preArg preRes
+      DirectRel₃ PreTrisetFn.InsEntry f arg res
     
     -- `res` is a possible member of the result of applying `f` to `arg`.
     def DirectCallInw (f arg res: TrisetFn): Prop :=
-      ∃ preF preArg preRes, DirectCallInwStruct f arg res preF preArg preRes
+      DirectRel₃ PreTrisetFn.InwEntry f arg res
     
     def DirectCallIns.toInw {f arg res: TrisetFn}
       (ins: f.DirectCallIns arg res)

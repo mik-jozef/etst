@@ -123,24 +123,13 @@ namespace Pair
   def TrisetPair := Quotient PreTrisetPair.setoid
   
   namespace TrisetPair
-    structure DirectTransStruct
-      (label: PreTrisetPair.TransitionLabels)
-      (a b: TrisetPair)
-      (preA preB: PreTrisetPair)
-    :
-      Prop
-    where
-      aEq: a = ⟦preA⟧
-      bEq: b = ⟦preB⟧
-      trans: PreTrisetPair.transitionSystem label preA preB
-    
     def DirectTrans
       (label: PreTrisetPair.TransitionLabels)
       (a b: TrisetPair)
     :
       Prop
     :=
-      ∃ preA preB, DirectTransStruct label a b preA preB
+      DirectRel (PreTrisetPair.transitionSystem label) a b
     
     
     -- `ts` is a triset with definite member `elem`.

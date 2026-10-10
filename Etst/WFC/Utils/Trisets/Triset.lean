@@ -71,6 +71,62 @@ where
   satDef: P rel.RelDef
   satPos: P rel.RelPos
 
+/--
+  Witnesses that the relation `rel` on representatives holds for
+  given representatives of the classes `a` and `b`.
+-/
+structure DirectRelStruct
+  {PreT: Type*} (s: Setoid PreT)
+  (rel: PreT → PreT → Prop)
+  (a b: let _ := s; Quotient s)
+  (preA preB: PreT)
+:
+  Prop
+where
+  aEq: a = ⟦preA⟧
+  bEq: b = ⟦preB⟧
+  rel: rel preA preB
+
+/--
+  The quotient lift of a relation on representatives: `a` and `b`
+  are related if some of their representatives are.
+-/
+def DirectRel
+  {PreT: Type*} {s: Setoid PreT}
+  (rel: PreT → PreT → Prop)
+  (a b: Quotient s)
+:
+  Prop
+:=
+  ∃ preA preB, DirectRelStruct s rel a b preA preB
+
+/--
+  The ternary variant of `DirectRelStruct` (eg. the graph of
+  a function application).
+-/
+structure DirectRelStruct₃
+  {PreT: Type*} (s: Setoid PreT)
+  (rel: PreT → PreT → PreT → Prop)
+  (a b c: let _ := s; Quotient s)
+  (preA preB preC: PreT)
+:
+  Prop
+where
+  aEq: a = ⟦preA⟧
+  bEq: b = ⟦preB⟧
+  cEq: c = ⟦preC⟧
+  rel: rel preA preB preC
+
+/-- The ternary variant of `DirectRel`. -/
+def DirectRel₃
+  {PreT: Type*} {s: Setoid PreT}
+  (rel: PreT → PreT → PreT → Prop)
+  (a b c: Quotient s)
+:
+  Prop
+:=
+  ∃ preA preB preC, DirectRelStruct₃ s rel a b c preA preB preC
+
 
 namespace Pair
   def PreTriset := Pair
@@ -139,31 +195,13 @@ namespace Pair
   def Triset := Quotient PreTriset.setoid
   
   namespace Triset
-    structure DirectInsStruct
-      (ts elem: Triset)
-      (preTs preElem: PreTriset)
-    :
-      Prop
-    where
-      tsEq: ts = ⟦preTs⟧
-      elemEq: elem = ⟦preElem⟧
-      ins: preTs.Ins preElem
-    
-    structure DirectInwStruct
-      (ts elem: Triset)
-      (preTs preElem: PreTriset)
-    :
-      Prop
-    where
-      tsEq: ts = ⟦preTs⟧
-      elemEq: elem = ⟦preElem⟧
-      inw: preTs.Inw preElem
-    
+    -- `ts` is a triset with definite member `elem`.
     def DirectIns (ts elem: Triset): Prop :=
-      ∃ preTs preElem, DirectInsStruct ts elem preTs preElem
+      DirectRel PreTriset.Ins ts elem
     
+    -- `ts` is a triset with possible member `elem`.
     def DirectInw (ts elem: Triset): Prop :=
-      ∃ preTs preElem, DirectInwStruct ts elem preTs preElem
+      DirectRel PreTriset.Inw ts elem
     
     def DirectMem: TriRelation Triset where
       RelDef := DirectIns
