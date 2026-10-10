@@ -156,15 +156,26 @@ namespace Pair
         ts
         PreTriset.not_isFn_toPreTrisetFn
     
+    -- The embedding preserves definitive membership (PreTriset version).
+    def directIns_toTrisetFn_pre {t e: PreTriset} (ins: t.Ins e):
+      (toTrisetFn ⟦t⟧).DirectIns (toTrisetFn ⟦e⟧)
+    :=
+      ⟨t.toPreTrisetFn, e.toPreTrisetFn, rfl, rfl, PreTriset.ins_toPreTrisetFn ins⟩
+    
+    -- The embedding preserves possible membership (PreTriset version).
+    def directInw_toTrisetFn_pre {t e: PreTriset} (inw: t.Inw e):
+      (toTrisetFn ⟦t⟧).DirectInw (toTrisetFn ⟦e⟧)
+    :=
+      ⟨t.toPreTrisetFn, e.toPreTrisetFn, rfl, rfl, PreTriset.inw_toPreTrisetFn inw⟩
+    
     -- The embedding preserves definitive membership.
     def directIns_toTrisetFn {ts elem: Triset}
       (ins: ts.DirectIns elem)
     :
       ts.toTrisetFn.DirectIns elem.toTrisetFn
     :=
-      let ⟨t, e, tsEq, elemEq, ins⟩ := ins
-      tsEq ▸ elemEq ▸
-        ⟨t.toPreTrisetFn, e.toPreTrisetFn, rfl, rfl, PreTriset.ins_toPreTrisetFn ins⟩
+      let ⟨_, _, tsEq, elemEq, ins⟩ := ins
+      tsEq ▸ elemEq ▸ directIns_toTrisetFn_pre ins
     
     -- The embedding preserves possible membership.
     def directInw_toTrisetFn {ts elem: Triset}
@@ -172,9 +183,8 @@ namespace Pair
     :
       ts.toTrisetFn.DirectInw elem.toTrisetFn
     :=
-      let ⟨t, e, tsEq, elemEq, inw⟩ := inw
-      tsEq ▸ elemEq ▸
-        ⟨t.toPreTrisetFn, e.toPreTrisetFn, rfl, rfl, PreTriset.inw_toPreTrisetFn inw⟩
+      let ⟨_, _, tsEq, elemEq, inw⟩ := inw
+      tsEq ▸ elemEq ▸ directInw_toTrisetFn_pre inw
     
     -- The embedding reflects definitive membership.
     def directIns_of_toTrisetFn {ts elem: Triset}

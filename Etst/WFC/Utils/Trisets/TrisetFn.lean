@@ -87,7 +87,7 @@ namespace Pair
       match f with
       | fn _ => Set3.defMem.toPos ins
     
-    def not_insEntry_of_not_isFn {f a r: PreTrisetFn}
+    def not_inwEntry_of_not_isFn {f a r: PreTrisetFn}
       (notFn: ¬ f.IsFn)
       (ins: f.InwEntry a r)
     :
@@ -336,9 +336,9 @@ namespace Pair
             let ⟨_, inw', b⟩ := inwST e inw
             ⟨_, .inw inw', .inl b⟩
           | _, _, .inr (.inr (.inl ⟨_, _, _, _, ins⟩)) =>
-            (not_insEntry_of_not_isFn sNotFn (insEntryLeInwEntry ins)).elim
+            (not_inwEntry_of_not_isFn sNotFn (insEntryLeInwEntry ins)).elim
           | _, _, .inr (.inr (.inr (.inl ⟨_, _, _, _, inw⟩))) =>
-            (not_insEntry_of_not_isFn sNotFn inw).elim
+            (not_inwEntry_of_not_isFn sNotFn inw).elim
           | _, _, .inr (.inr (.inr (.inr ⟨_, _, isFn⟩))) =>
             (sNotFn isFn).elim)
         (fun l y' st =>
@@ -350,9 +350,9 @@ namespace Pair
             let ⟨_, inw', b⟩ := inwTS e inw
             ⟨_, .inw inw', .inl b⟩
           | _, _, .inr (.inr (.inl ⟨_, _, _, _, ins⟩)) =>
-            (not_insEntry_of_not_isFn tNotFn (insEntryLeInwEntry ins)).elim
+            (not_inwEntry_of_not_isFn tNotFn (insEntryLeInwEntry ins)).elim
           | _, _, .inr (.inr (.inr (.inl ⟨_, _, _, _, inw⟩))) =>
-            (not_insEntry_of_not_isFn tNotFn inw).elim
+            (not_inwEntry_of_not_isFn tNotFn inw).elim
           | _, _, .inr (.inr (.inr (.inr ⟨_, _, isFn⟩))) =>
             (tNotFn isFn).elim)
     

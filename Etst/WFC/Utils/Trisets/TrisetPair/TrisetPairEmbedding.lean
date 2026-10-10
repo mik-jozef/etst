@@ -20,6 +20,40 @@ namespace Pair
     def toPreTrisetPair (t: PreTriset): PreTrisetPair :=
       .set (embed t)
     
+    -- The embedding preserves definitive membership.
+    def ins_toPreTrisetPair {t e: PreTriset}
+      (ins: t.Ins e)
+    :
+      t.toPreTrisetPair.Ins e.toPreTrisetPair
+    :=
+      embed_ins ins
+    
+    -- The embedding preserves possible membership.
+    def inw_toPreTrisetPair {t e: PreTriset}
+      (inw: t.Inw e)
+    :
+      t.toPreTrisetPair.Inw e.toPreTrisetPair
+    :=
+      embed_inw inw
+    
+    -- Definitive members of an embedding are embeddings.
+    def ins_toPreTrisetPair_elim {t: PreTriset} {e: PreTrisetPair}
+      (ins: t.toPreTrisetPair.Ins e)
+    :
+      ∃ e0: PreTriset, t.Ins e0 ∧ e = e0.toPreTrisetPair
+    :=
+      let ⟨e0, e0In, eq⟩ := embed_elim_def (t := t) (p := e.toPair) ins
+      ⟨e0, e0In, PreTrisetPair.toPair_inj (b := toPreTrisetPair e0) eq⟩
+    
+    -- Possible members of an embedding are embeddings.
+    def inw_toPreTrisetPair_elim {t: PreTriset} {e: PreTrisetPair}
+      (inw: t.toPreTrisetPair.Inw e)
+    :
+      ∃ e0: PreTriset, t.Inw e0 ∧ e = e0.toPreTrisetPair
+    :=
+      let ⟨e0, e0In, eq⟩ := embed_elim_pos (t := t) (p := e.toPair) inw
+      ⟨e0, e0In, PreTrisetPair.toPair_inj (b := toPreTrisetPair e0) eq⟩
+    
     /-
       If two trisets are bisimilar, so are their embeddings.
     -/
@@ -28,84 +62,46 @@ namespace Pair
     :
       t.toPreTrisetPair.IsBisim t'.toPreTrisetPair
     :=
-      let ⟨R, ⟨simLR, simRL⟩, r⟩ := bisim
-      let R': PreTrisetPair → PreTrisetPair → Prop :=
-        fun a b =>
-          ∃ t0 t1: PreTriset,
-            R t0 t1
-              ∧
-            a = t0.toPreTrisetPair
-              ∧
-            b = t1.toPreTrisetPair
-      let simL: PreTrisetPair.transitionSystem.IsSimulation R' := fun
+      let R (x y: PreTrisetPair): Prop :=
+        ∃ t0 t1: PreTriset,
+          t0.IsBisim t1 ∧
+          x = t0.toPreTrisetPair ∧
+          y = t1.toPreTrisetPair
+      let symm {x y} (r: R x y): R y x :=
+        let ⟨t0, t1, b, xEq, yEq⟩ := r
+        ⟨t1, t0, PreTriset.setoid.iseqv.symm b, yEq, xEq⟩
+      let sim: PreTrisetPair.transitionSystem.IsSimulation R := fun
+        | .ins, _, _, _, ⟨t0, t1, b, rfl, rfl⟩, ins =>
+          let ⟨e0, e0In, eEq⟩ := ins_toPreTrisetPair_elim ins
+          let ⟨e1, e1In, be⟩ :=
+            PreTriset.transitionSystem.IsBisimilar_isSimulation
+              .ins t0 t1 e0 b e0In
+          ⟨
+            e1.toPreTrisetPair,
+            ins_toPreTrisetPair e1In,
+            e0, e1, be, eEq, rfl,
+          ⟩
+        | .inw, _, _, _, ⟨t0, t1, b, rfl, rfl⟩, inw =>
+          let ⟨e0, e0In, eEq⟩ := inw_toPreTrisetPair_elim inw
+          let ⟨e1, e1In, be⟩ :=
+            PreTriset.transitionSystem.IsBisimilar_isSimulation
+              .inw t0 t1 e0 b e0In
+          ⟨
+            e1.toPreTrisetPair,
+            inw_toPreTrisetPair e1In,
+            e0, e1, be, eEq, rfl,
+          ⟩
         | .zth, _, _, _, ⟨_, _, _, rfl, rfl⟩, ⟨_, hEq⟩ =>
           PreTrisetPair.noConfusion hEq
         | .fst, _, _, _, ⟨_, _, _, rfl, rfl⟩, ⟨_, hEq⟩ =>
           PreTrisetPair.noConfusion hEq
         | .isNull, _, _, _, ⟨_, _, _, rfl, rfl⟩, ⟨hEq, _⟩ =>
           PreTrisetPair.noConfusion hEq
-        | .ins, _, _, el, ⟨t0, t1, r01, rfl, rfl⟩, ins =>
-          let ⟨e0, e0In, e0Eq⟩ :=
-            embed_elim_def (show Ins (embed t0) el.toPair from ins)
-          let ⟨e1, e1In, rE⟩ := simLR .ins t0 t1 e0 r01 e0In
-          ⟨
-            e1.toPreTrisetPair,
-            embed_ins e1In,
-            e0,
-            e1,
-            rE,
-            PreTrisetPair.toPair_inj e0Eq,
-            rfl
-          ⟩
-        | .inw, _, _, el, ⟨t0, t1, r01, rfl, rfl⟩, inw =>
-          let ⟨e0, e0In, e0Eq⟩ :=
-            embed_elim_pos (show Inw (embed t0) el.toPair from inw)
-          let ⟨e1, e1In, rE⟩ := simLR .inw t0 t1 e0 r01 e0In
-          ⟨
-            e1.toPreTrisetPair,
-            embed_inw e1In,
-            e0,
-            e1,
-            rE,
-            PreTrisetPair.toPair_inj e0Eq,
-            rfl
-          ⟩
-      let simR:
-        PreTrisetPair.transitionSystem.IsSimulation (Function.swap R')
-      := fun
-        | .zth, _, _, _, ⟨_, _, _, rfl, rfl⟩, ⟨_, hEq⟩ =>
-          PreTrisetPair.noConfusion hEq
-        | .fst, _, _, _, ⟨_, _, _, rfl, rfl⟩, ⟨_, hEq⟩ =>
-          PreTrisetPair.noConfusion hEq
-        | .isNull, _, _, _, ⟨_, _, _, rfl, rfl⟩, ⟨hEq, _⟩ =>
-          PreTrisetPair.noConfusion hEq
-        | .ins, _, _, el, ⟨t0, t1, r01, rfl, rfl⟩, ins =>
-          let ⟨e1, e1In, e1Eq⟩ :=
-            embed_elim_def (show Ins (embed t1) el.toPair from ins)
-          let ⟨e0, e0In, rE⟩ := simRL .ins t1 t0 e1 r01 e1In
-          ⟨
-            e0.toPreTrisetPair,
-            embed_ins e0In,
-            e0,
-            e1,
-            rE,
-            rfl,
-            PreTrisetPair.toPair_inj e1Eq
-          ⟩
-        | .inw, _, _, el, ⟨t0, t1, r01, rfl, rfl⟩, inw =>
-          let ⟨e1, e1In, e1Eq⟩ :=
-            embed_elim_pos (show Inw (embed t1) el.toPair from inw)
-          let ⟨e0, e0In, rE⟩ := simRL .inw t1 t0 e1 r01 e1In
-          ⟨
-            e0.toPreTrisetPair,
-            embed_inw e0In,
-            e0,
-            e1,
-            rE,
-            rfl,
-            PreTrisetPair.toPair_inj e1Eq
-          ⟩
-      ⟨R', ⟨simL, simR⟩, t, t', r, rfl, rfl⟩
+      ⟨
+        R,
+        LabeledTransitionSystem.isBisimulation_of_symm symm sim,
+        t, t', bisim, rfl, rfl,
+      ⟩
     
     /-
       If the embeddings of two trisets are bisimilar, so are the
@@ -116,76 +112,34 @@ namespace Pair
     :
       t.IsBisim t'
     :=
-      let ⟨R', ⟨simLR, simRL⟩, r⟩ := bisim
-      let R: PreTriset → PreTriset → Prop :=
-        fun a b => R' a.toPreTrisetPair b.toPreTrisetPair
-      let simL: transitionSystem.IsSimulation R := fun
-        | .ins, a, b, e, rab, ins =>
-          let ⟨q, qIn, rq⟩ :=
-            simLR .ins
-              a.toPreTrisetPair b.toPreTrisetPair e.toPreTrisetPair
-              rab
-              (embed_ins ins)
-          let ⟨e', e'In, qEq⟩ :=
-            embed_elim_def (show Ins (embed b) q.toPair from qIn)
-          let qEncEq: q = toPreTrisetPair e' :=
-            PreTrisetPair.toPair_inj qEq
+      let R (a b: PreTriset): Prop :=
+        a.toPreTrisetPair.IsBisim b.toPreTrisetPair
+      let sim: PreTriset.transitionSystem.IsSimulation R := fun
+        | .ins, _, _, e, rab, ins =>
+          let ⟨_, ins', be⟩ :=
+            PreTrisetPair.IsBisim.ins rab (ins_toPreTrisetPair ins)
+          let ⟨e1, e1In, eq⟩ := ins_toPreTrisetPair_elim ins'
           ⟨
-            e',
-            e'In,
-            show R' (toPreTrisetPair e) (toPreTrisetPair e')
-              from qEncEq ▸ rq,
+            e1,
+            e1In,
+            show e.toPreTrisetPair.IsBisim e1.toPreTrisetPair from eq ▸ be,
           ⟩
-        | .inw, a, b, e, rab, inw =>
-          let ⟨q, qIn, rq⟩ :=
-            simLR .inw
-              a.toPreTrisetPair b.toPreTrisetPair e.toPreTrisetPair
-              rab
-              (embed_inw inw)
-          let ⟨e', e'In, qEq⟩ :=
-            embed_elim_pos (show Inw (embed b) q.toPair from qIn)
-          let qEncEq: q = toPreTrisetPair e' :=
-            PreTrisetPair.toPair_inj qEq
+        | .inw, _, _, e, rab, inw =>
+          let ⟨_, inw', be⟩ :=
+            PreTrisetPair.IsBisim.inw rab (inw_toPreTrisetPair inw)
+          let ⟨e1, e1In, eq⟩ := inw_toPreTrisetPair_elim inw'
           ⟨
-            e',
-            e'In,
-            show R' (toPreTrisetPair e) (toPreTrisetPair e')
-              from qEncEq ▸ rq,
+            e1,
+            e1In,
+            show e.toPreTrisetPair.IsBisim e1.toPreTrisetPair from eq ▸ be,
           ⟩
-      let simR: transitionSystem.IsSimulation (Function.swap R) := fun
-        | .ins, a, b, e, rab, ins =>
-          let ⟨q, qIn, rq⟩ :=
-            simRL .ins
-              a.toPreTrisetPair b.toPreTrisetPair e.toPreTrisetPair
-              rab
-              (embed_ins ins)
-          let ⟨e', e'In, qEq⟩ :=
-            embed_elim_def (show Ins (embed b) q.toPair from qIn)
-          let qEncEq: q = toPreTrisetPair e' :=
-            PreTrisetPair.toPair_inj qEq
-          ⟨
-            e',
-            e'In,
-            show R' (toPreTrisetPair e') (toPreTrisetPair e)
-              from qEncEq ▸ rq,
-          ⟩
-        | .inw, a, b, e, rab, inw =>
-          let ⟨q, qIn, rq⟩ :=
-            simRL .inw
-              a.toPreTrisetPair b.toPreTrisetPair e.toPreTrisetPair
-              rab
-              (embed_inw inw)
-          let ⟨e', e'In, qEq⟩ :=
-            embed_elim_pos (show Inw (embed b) q.toPair from qIn)
-          let qEncEq: q = toPreTrisetPair e' :=
-            PreTrisetPair.toPair_inj qEq
-          ⟨
-            e',
-            e'In,
-            show R' (toPreTrisetPair e') (toPreTrisetPair e)
-              from qEncEq ▸ rq,
-          ⟩
-      ⟨R, ⟨simL, simR⟩, r⟩
+      ⟨
+        R,
+        LabeledTransitionSystem.isBisimulation_of_symm
+          (fun r => PreTrisetPair.setoid.iseqv.symm r)
+          sim,
+        bisim,
+      ⟩
     
   end PreTriset
   
@@ -222,13 +176,25 @@ namespace Pair
     def directIns_toTrisetPair_pre {t e: PreTriset} (ins: t.Ins e):
       (toTrisetPair ⟦t⟧).DirectIns (toTrisetPair ⟦e⟧)
     :=
-      ⟨t.toPreTrisetPair, e.toPreTrisetPair, rfl, rfl, embed_ins ins⟩
+      ⟨
+        t.toPreTrisetPair,
+        e.toPreTrisetPair,
+        rfl,
+        rfl,
+        PreTriset.ins_toPreTrisetPair ins,
+      ⟩
     
     -- The embedding preserves possible membership (PreTriset version).
     def directInw_toTrisetPair_pre {t e: PreTriset} (inw: t.Inw e):
       (toTrisetPair ⟦t⟧).DirectInw (toTrisetPair ⟦e⟧)
     :=
-      ⟨t.toPreTrisetPair, e.toPreTrisetPair, rfl, rfl, embed_inw inw⟩
+      ⟨
+        t.toPreTrisetPair,
+        e.toPreTrisetPair,
+        rfl,
+        rfl,
+        PreTriset.inw_toPreTrisetPair inw,
+      ⟩
     
     -- The embedding preserves definitive membership.
     def directIns_toTrisetPair {ts elem: Triset}
@@ -259,24 +225,16 @@ namespace Pair
           ts.toTrisetPair.DirectIns elem.toTrisetPair → ts.DirectIns elem)
         ts
         elem
-        (fun t e ⟨preA, preB, aEq, bEq, st⟩ =>
-          let aBisim: t.toPreTrisetPair.IsBisim preA := Quotient.exact aEq
-          let bBisim: e.toPreTrisetPair.IsBisim preB := Quotient.exact bEq
-          let ⟨q, qIn, qBisim⟩ :=
-            PreTrisetPair.transitionSystem.IsBisimilar_isSimulation
-              .ins _ _ _ (PreTrisetPair.setoid.iseqv.symm aBisim) st
-          let ⟨(e': PreTriset), e'In, qEq⟩ :=
-            embed_elim_def (show PreTriset.Ins (embed t) q.toPair from qIn)
-          let qEq: q = e'.toPreTrisetPair := PreTrisetPair.toPair_inj qEq
-          let qBisim: preB.IsBisim e'.toPreTrisetPair := qEq ▸ qBisim
+        (fun t _ ins =>
+          let ⟨_, ins', be⟩ := TrisetPair.directIns_mk_iff.mp ins
+          let ⟨e1, e1In, eq⟩ := PreTriset.ins_toPreTrisetPair_elim ins'
           ⟨
             t,
-            e',
+            e1,
             rfl,
             Quotient.sound
-              (PreTriset.bisim_of_toPreTrisetPair_bisim
-                (PreTrisetPair.setoid.iseqv.trans bBisim qBisim)),
-            e'In,
+              (PreTriset.bisim_of_toPreTrisetPair_bisim (eq ▸ be)),
+            e1In,
           ⟩)
         ins
     
@@ -291,24 +249,16 @@ namespace Pair
           ts.toTrisetPair.DirectInw elem.toTrisetPair → ts.DirectInw elem)
         ts
         elem
-        (fun t e ⟨preA, preB, aEq, bEq, st⟩ =>
-          let aBisim: t.toPreTrisetPair.IsBisim preA := Quotient.exact aEq
-          let bBisim: e.toPreTrisetPair.IsBisim preB := Quotient.exact bEq
-          let ⟨q, qIn, qBisim⟩ :=
-            PreTrisetPair.transitionSystem.IsBisimilar_isSimulation
-              .inw _ _ _ (PreTrisetPair.setoid.iseqv.symm aBisim) st
-          let ⟨(e': PreTriset), e'In, qEq⟩ :=
-            embed_elim_pos (show PreTriset.Inw (embed t) q.toPair from qIn)
-          let qEq: q = e'.toPreTrisetPair := PreTrisetPair.toPair_inj qEq
-          let qBisim: preB.IsBisim e'.toPreTrisetPair := qEq ▸ qBisim
+        (fun t _ inw =>
+          let ⟨_, inw', be⟩ := TrisetPair.directInw_mk_iff.mp inw
+          let ⟨e1, e1In, eq⟩ := PreTriset.inw_toPreTrisetPair_elim inw'
           ⟨
             t,
-            e',
+            e1,
             rfl,
             Quotient.sound
-              (PreTriset.bisim_of_toPreTrisetPair_bisim
-                (PreTrisetPair.setoid.iseqv.trans bBisim qBisim)),
-            e'In,
+              (PreTriset.bisim_of_toPreTrisetPair_bisim (eq ▸ be)),
+            e1In,
           ⟩)
         inw
     

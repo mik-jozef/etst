@@ -86,6 +86,38 @@ namespace Pair
       r := IsBisim
       iseqv := transitionSystem.IsBisimilar_is_equivalence
     
+    def IsBisim.refl (a: PreTrisetPair): a.IsBisim a :=
+      transitionSystem.IsBisimilar_is_equivalence.refl _
+    
+    def IsBisim.symm {a b: PreTrisetPair} (h: a.IsBisim b): b.IsBisim a :=
+      transitionSystem.IsBisimilar_is_equivalence.symm h
+    
+    def IsBisim.trans {a b c: PreTrisetPair}
+      (h0: a.IsBisim b)
+      (h1: b.IsBisim c)
+    :
+      a.IsBisim c
+    :=
+      transitionSystem.IsBisimilar_is_equivalence.trans h0 h1
+    
+    -- Bisimilar values have matching definitive members.
+    def IsBisim.ins {a b e: PreTrisetPair}
+      (bisim: a.IsBisim b)
+      (ins: a.Ins e)
+    :
+      ∃ e', b.Ins e' ∧ e.IsBisim e'
+    :=
+      transitionSystem.IsBisimilar_isSimulation .ins a b e bisim ins
+    
+    -- Bisimilar values have matching possible members.
+    def IsBisim.inw {a b e: PreTrisetPair}
+      (bisim: a.IsBisim b)
+      (inw: a.Inw e)
+    :
+      ∃ e', b.Inw e' ∧ e.IsBisim e'
+    :=
+      transitionSystem.IsBisimilar_isSimulation .inw a b e bisim inw
+    
   end PreTrisetPair
   
   def TrisetPair := Quotient PreTrisetPair.setoid
@@ -138,6 +170,33 @@ namespace Pair
       def_le_pos
       | ⟨preA, preB, ⟨aEq, bEq, ins⟩⟩ =>
         ⟨preA, preB, ⟨aEq, bEq, PreTrisetPair.insLeInw preA ins⟩⟩
+    
+    
+    -- ## The direct relations on representatives
+    
+    def directIns_mk_iff {s e: PreTrisetPair}:
+      DirectIns ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Ins e' ∧ e.IsBisim e'
+    :=
+      ⟨
+        fun ⟨_, _, aEq, bEq, ins⟩ =>
+          let sB: s.IsBisim _ := Quotient.exact aEq
+          let eB: e.IsBisim _ := Quotient.exact bEq
+          let ⟨e', ins', b⟩ := sB.symm.ins ins
+          ⟨e', ins', eB.trans b⟩,
+        fun ⟨e', ins', b⟩ => ⟨s, e', rfl, Quotient.sound b, ins'⟩,
+      ⟩
+    
+    def directInw_mk_iff {s e: PreTrisetPair}:
+      DirectInw ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Inw e' ∧ e.IsBisim e'
+    :=
+      ⟨
+        fun ⟨_, _, aEq, bEq, inw⟩ =>
+          let sB: s.IsBisim _ := Quotient.exact aEq
+          let eB: e.IsBisim _ := Quotient.exact bEq
+          let ⟨e', inw', b⟩ := sB.symm.inw inw
+          ⟨e', inw', eB.trans b⟩,
+        fun ⟨e', inw', b⟩ => ⟨s, e', rfl, Quotient.sound b, inw'⟩,
+      ⟩
     
   end TrisetPair
 end Pair
