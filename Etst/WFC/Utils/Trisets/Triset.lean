@@ -76,9 +76,9 @@ where
   given representatives of the classes `a` and `b`.
 -/
 structure DirectRelStruct
-  {PreT: Type*} (s: Setoid PreT)
+  {PreT: Type*} {s: Setoid PreT}
   (rel: PreT → PreT → Prop)
-  (a b: let _ := s; Quotient s)
+  (a b: Quotient s)
   (preA preB: PreT)
 :
   Prop
@@ -98,16 +98,16 @@ def DirectRel
 :
   Prop
 :=
-  ∃ preA preB, DirectRelStruct s rel a b preA preB
+  ∃ preA preB, DirectRelStruct rel a b preA preB
 
 /--
   The ternary variant of `DirectRelStruct` (eg. the graph of
   a function application).
 -/
 structure DirectRelStruct₃
-  {PreT: Type*} (s: Setoid PreT)
+  {PreT: Type*} {s: Setoid PreT}
   (rel: PreT → PreT → PreT → Prop)
-  (a b c: let _ := s; Quotient s)
+  (a b c: Quotient s)
   (preA preB preC: PreT)
 :
   Prop
@@ -125,7 +125,7 @@ def DirectRel₃
 :
   Prop
 :=
-  ∃ preA preB preC, DirectRelStruct₃ s rel a b c preA preB preC
+  ∃ preA preB preC, DirectRelStruct₃ rel a b c preA preB preC
 
 
 namespace Pair
