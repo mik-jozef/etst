@@ -6,17 +6,19 @@
   For the full proofs, see the file
   `/Etst/WFC/Utils/MembershipPs/Helpers.lean`.
 -/
-
+module
+public import Etst.WFC.Ch4_S0_MembershipPs
 import Etst.WFC.Utils.MembershipPs.Helpers
 
+public section
 namespace Etst
 
 
 mutual
-def DefList.Ins.isSound {dl x p}
+theorem DefList.Ins.isSound {dl x p}
   (ins: Ins dl x p)
 :
-  (dl.wfm x).defMem p
+  p ∈ (dl.wfm x).defMem
 :=
   match ins with
   | Ins.intro _ _ _ isCause insCins outBout =>
@@ -26,10 +28,10 @@ def DefList.Ins.isSound {dl x p}
       boutSat h := Out.isSound (outBout h)
     }
 
-def DefList.Out.isSound {dl x p}
+theorem DefList.Out.isSound {dl x p}
   (out: Out dl x p)
 :
-  ¬(dl.wfm x).posMem p
+  ¬ p ∈ (dl.wfm x).posMem
 :=
   match out with
   | .intro cycle isEmptyCycle inCycle =>
@@ -45,65 +47,71 @@ def DefList.Out.isSound {dl x p}
 end
 
 
-def DefList.Ins.isComplete {dl x p}
-  (ins: (dl.wfm x).defMem p)
+theorem DefList.Ins.isComplete {dl x p}
+  (ins: p ∈ (dl.wfm x).defMem)
 :
   Ins dl x p
 :=
   (completenessProofB dl).insIsComplete ins
 
-def DefList.Out.isComplete {dl x p}
-  (out: ¬(dl.wfm x).posMem p)
+theorem DefList.Out.isComplete {dl x p}
+  (out: ¬ p ∈ (dl.wfm x).posMem)
 :
   Out dl x p
 :=
   (completenessProofB dl).outIsComplete out
 
 
-def DefList.Ins.nopeOut {P dl x p}
+theorem DefList.Ins.nopeOut {dl x p}
   (isIns: Ins dl x p)
   (isOut: Out dl x p)
+  {P: Prop}
 :
   P
 :=
-  False.elim (isOut.isSound isIns.isSound.toPos)
+  False.elim (isOut.isSound (Set3.defToPos isIns.isSound))
 
-def DefList.Ins.nopeNotDef {P dl x p}
+theorem DefList.Ins.nopeNotDef {dl x p}
   (isIns: Ins dl x p)
-  (notDef: ¬(dl.wfm x).defMem p)
+  (notDef: ¬ p ∈ (dl.wfm x).defMem)
+  {P: Prop}
 :
   P
 :=
   False.elim (notDef isIns.isSound)
 
-def DefList.Ins.nopeNotPos {P dl x p}
+theorem DefList.Ins.nopeNotPos {dl x p}
   (isIns: Ins dl x p)
-  (notPos: ¬(dl.wfm x).posMem p)
+  (notPos: ¬ p ∈ (dl.wfm x).posMem)
+  {P: Prop}
 :
   P
 :=
-  False.elim (notPos isIns.isSound.toPos)
+  False.elim (notPos (Set3.defToPos isIns.isSound))
 
 
-def DefList.Out.nopeIns {P dl x p}
+theorem DefList.Out.nopeIns {dl x p}
   (isOut: Out dl x p)
   (isIns: Ins dl x p)
+  {P: Prop}
 :
   P
 :=
-  False.elim (isOut.isSound isIns.isSound.toPos)
+  False.elim (isOut.isSound (Set3.defToPos isIns.isSound))
 
-def DefList.Out.nopeDef {P dl x p}
+theorem DefList.Out.nopeDef {dl x p}
   (isOut: Out dl x p)
-  (isDef: (dl.wfm x).defMem p)
+  (isDef: p ∈ (dl.wfm x).defMem)
+  {P: Prop}
 :
   P
 :=
-  False.elim (isOut.isSound isDef.toPos)
+  False.elim (isOut.isSound (Set3.defToPos isDef))
 
-def DefList.Out.nopePos {P dl x p}
+theorem DefList.Out.nopePos {dl x p}
   (isOut: Out dl x p)
-  (isPos: (dl.wfm x).posMem p)
+  (isPos: p ∈ (dl.wfm x).posMem)
+  {P: Prop}
 :
   P
 :=

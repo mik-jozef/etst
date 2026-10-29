@@ -11,8 +11,8 @@
   The interested reader is free to explore the details there, however
   they are not necessary for understanding the proof system itself.
 -/
-
-import Etst.WFC.Ch3_WellFoundedModel
+module
+public import Etst.WFC.Ch3_WellFoundedModel
 import Etst.WFC.Utils.RulesOfInference
 
 namespace Etst
@@ -26,36 +26,36 @@ variable {D: Type*}
   that element. For this reason, we may call `d ∈ a ∧ d ∈ c`
   a cause of `d ∈ a & (b | c)`.
   
-  We encode the causes as sets of elements that need to exist in
-  the respective constants. There are two kinds of such sets:
+  We encode the causes as predicates of elements that need to exist
+  in the respective constants. There are two kinds:
   - those that need to be present in the context, and
   - those that need to be absent in the background.
 -/
-structure Cause (D: Type*) where
-  cins: Nat → Set D
-  bout: Nat → Set D
+public structure Cause (D: Type*) where
+  cins: Nat → D → Prop
+  bout: Nat → D → Prop
 
-structure Cause.IsStronglySatisfiedBy
+public structure Cause.IsStronglySatisfiedBy
   (cause: Cause D)
   (b c: Valuation D)
 :
   Prop
 where
   cinsSat:
-    ∀ {x d}, cause.cins x d → (c x).defMem d
+    ∀ {x d}, cause.cins x d → d ∈ (c x).defMem
   boutSat:
-    ∀ {x d}, cause.bout x d → ¬(b x).posMem d
+    ∀ {x d}, cause.bout x d → ¬ d ∈ (b x).posMem
 
-structure Cause.IsWeaklySatisfiedBy
+public structure Cause.IsWeaklySatisfiedBy
   (cause: Cause D)
   (b c: Valuation D)
 :
   Prop
 where
   cinsSat:
-    ∀ {x d}, cause.cins x d → (c x).posMem d
+    ∀ {x d}, cause.cins x d → d ∈ (c x).posMem
   boutSat:
-    ∀ {x d}, cause.bout x d → ¬(b x).defMem d
+    ∀ {x d}, cause.bout x d → ¬ d ∈ (b x).defMem
 
 /-
   `Is[X]Cause cause p expr` means that for every pair of
@@ -63,7 +63,7 @@ where
   (with `b` and `c` serving as background and context valuations,
   respectively).
 -/
-def Cause.IsStrongCauseFv
+exposed def Cause.IsStrongCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
   (expr: BasicExpr)
@@ -73,9 +73,9 @@ def Cause.IsStrongCauseFv
 :=
   ⦃b c: Valuation Pair⦄ →
   cause.IsStronglySatisfiedBy b c →
-  expr.triIntp2Def fv b c p
+  p ∈ expr.triIntp2Def fv b c
 
-def Cause.IsWeakCauseFv
+exposed def Cause.IsWeakCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
   (expr: BasicExpr)
@@ -85,9 +85,9 @@ def Cause.IsWeakCauseFv
 :=
   ⦃b c: Valuation Pair⦄ →
   cause.IsWeaklySatisfiedBy b c →
-  expr.triIntp2Pos fv b c p
+  p ∈ expr.triIntp2Pos fv b c
 
-abbrev Cause.IsStrongCause
+public abbrev Cause.IsStrongCause
   (cause: Cause Pair)
   (expr: BasicExpr)
   (p: Pair)
@@ -96,7 +96,7 @@ abbrev Cause.IsStrongCause
 :=
   IsStrongCauseFv cause [] expr p
 
-abbrev Cause.IsWeakCause
+public abbrev Cause.IsWeakCause
   (cause: Cause Pair)
   (expr: BasicExpr)
   (p: Pair)
@@ -120,7 +120,7 @@ mutual
   
   then `p` is provably a member of `x`.
 -/
-inductive DefList.Ins
+public inductive DefList.Ins
   (dl: DefList)
 :
   Nat → Pair → Prop
@@ -151,16 +151,16 @@ inductive DefList.Ins
   
   that do not contain any elements in the well-founded model.
 -/
-inductive DefList.IsCauseInapplicable
+public inductive DefList.IsCauseInapplicable
   (dl: DefList)
 :
-  (Nat → Set Pair) →
+  (Nat → Pair → Prop) →
   Cause Pair →
   Prop
 |
   blockedCins
   (cause: Cause Pair)
-  {x p} (inContext: cause.cins x p)
+  {x p} (inContext:  cause.cins x p)
   {cycle} (inCycle: cycle x p)
 :
   IsCauseInapplicable dl cycle cause
@@ -182,13 +182,13 @@ inductive DefList.IsCauseInapplicable
   TODO: Could `Out` be defined coinductively?
     Also see the commit that added this todo for more info.
 -/
-inductive DefList.Out
+public inductive DefList.Out
   (dl: DefList)
 :
   Nat → Pair → Prop
 |
   intro {x p}
-  (cycle: Nat → Set Pair)
+  (cycle: Nat → Pair → Prop)
   (isEmptyCycle:
     ∀ {x p},
     cycle x p →

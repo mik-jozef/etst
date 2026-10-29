@@ -1,6 +1,10 @@
-import Etst.WFC.Utils.MembershipPs.OutIntro3
-import Etst.WFC.Utils.SelfDefinability.UniSetMapHelpers
+module
+public import Etst.WFC.Ch4_S0_MembershipPs
+public import Etst.WFC.Utils.SelfDefinability.UniSetMapHelpers
+public import Etst.WFC.Utils.MembershipPs.OutIntro3
+import Etst.WFC.Utils.RulesOfInference
 
+public section
 namespace Etst.uniSetMapDl
 open SingleLaneExpr
 
@@ -14,7 +18,7 @@ def CinsIh
 :=
   {x p: _} →
   intCause.cins x p →
-  vals.uniSetMap.defMem (.pair (uniSetMapIndexDef dl n x) p)
+  .pair (uniSetMapIndexDef dl n x) p ∈ vals.uniSetMap.defMem
 
 def BoutIh
   (dl: DefList)
@@ -25,13 +29,13 @@ def BoutIh
 :=
   {x p: _} →
   intCause.bout x p →
-  ¬ vals.uniSetMap.posMem (.pair (uniSetMapIndexDef dl n x) p)
+  ¬ .pair (uniSetMapIndexDef dl n x) p ∈ vals.uniSetMap.posMem
   
 
 def IntCauseIsInappIh
   (dl: DefList)
   (n: Nat)
-  (intCycle: Nat → Set Pair)
+  (intCycle: Nat → Pair → Prop)
   (intCause: Cause Pair)
 :
   Prop
@@ -39,13 +43,13 @@ def IntCauseIsInappIh
   intCause.IsInapplicable
     intCycle
     (fun xInt pInt =>
-      vals.uniSetMap.defMem
+      vals.uniSetMap.defMem.Mem
         (.pair (uniSetMapIndexDef dl n xInt) pInt))
 
 def AllIntCausesInappIh
   (dl: DefList)
   (n: Nat)
-  (intCycle: Nat → Set Pair)
+  (intCycle: Nat → Pair → Prop)
   (fv: List Pair)
   (expr: BasicExpr)
   (p: Pair)
@@ -57,7 +61,7 @@ def AllIntCausesInappIh
 def extOfIntCycle
   (dl: DefList)
   (n: Nat)
-  (intCycle: Nat → Set Pair)
+  (intCycle: Nat → Pair → Prop)
   (xExt: Nat)
   (pExt: Pair)
 :
@@ -74,7 +78,7 @@ def extOfIntCycle
   Taking out the largest branch because we're getting timeouts
   at whnf.
 -/
-def internalCauseElimComplProd {dl n fv left rite p}
+theorem internalCauseElimComplProd {dl n fv left rite p}
   {intCause: Cause Pair}
   (intIsCause:
     intCause.IsStrongCauseFv fv
@@ -83,12 +87,12 @@ def internalCauseElimComplProd {dl n fv left rite p}
     ∀ pL pR: Pair,
     p = .pair pL pR →
     Or
-      (vals.uniSetMap.defMem
+      (vals.uniSetMap.defMem.Mem
         (.pair (uniSetMapIndex dl n fv left.compl) pL))
-      (vals.uniSetMap.defMem
+      (vals.uniSetMap.defMem.Mem
         (.pair (uniSetMapIndex dl n fv rite.compl) pR)))
 :
-  vals.uniSetMap.defMem
+  vals.uniSetMap.defMem.Mem
     (.pair (uniSetMapIndex dl n fv (.compl (.prod left rite))) p)
   
 :=
@@ -102,8 +106,7 @@ def internalCauseElimComplProd {dl n fv left rite p}
     match p with
     | .null =>
       let atNull:
-        (usmWfm consts.uniSetMap).getLane
-          .defLane
+        ((usmWfm consts.uniSetMap).getLane .defLane).Mem
           ((uniSetMapIndex dl n fv .null).pair .null)
       :=
         InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAtNull)
@@ -120,6 +123,7 @@ def internalCauseElimComplProd {dl n fv left rite p}
                     (InWfm.of_in_def_no_fv
                       (isInMap
                         (isAtProd
+                          (lane := .defLane)
                           ihL
                           (InWfm.of_in_def_no_fv
                             (isInMap isAtAny))))))))))
@@ -136,15 +140,15 @@ def internalCauseElimComplProd {dl n fv left rite p}
                           (InWfm.of_in_def_no_fv
                             (isInMap isAtAny))
                           ihR))))))))
-  InWfm.of_in_def_no_fv (lane := .defLane) (isInMap (isAt))
+  InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
 
-def internalCauseElim {dl n fv expr p}
+theorem internalCauseElim {dl n fv expr p}
   {intCause: Cause Pair}
   (intIsCause: intCause.IsStrongCauseFv fv expr p)
   (cinsIh: CinsIh dl n intCause)
   (boutIh: BoutIh dl n intCause)
 :
-  vals.uniSetMap.defMem (.pair (uniSetMapIndex dl n fv expr) p)
+  .pair (uniSetMapIndex dl n fv expr) p ∈ vals.uniSetMap.defMem
 :=
   open DefList in
   match expr with
@@ -155,7 +159,7 @@ def internalCauseElim {dl n fv expr p}
       -- indenting the function body is good actually, because even
       -- whitespace sensitive parsing would still be unambiguous.
       byContradiction fun nLt =>
-      False.elim (notAtDefGeN nLt inDefExt.toPos)
+      False.elim (notAtDefGeN nLt (Set3.defToPos inDefExt))
     let insGetNth := getNthDl xLt
     let isAt := isAtConst (lane := .defLane) inDefExt insGetNth
     InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
@@ -293,7 +297,7 @@ def internalCauseElim {dl n fv expr p}
     InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
   | .compl (.compl body) =>
     show
-      vals.uniSetMap.defMem ((uniSetMapIndex dl n fv body).pair p)
+      (uniSetMapIndex dl n fv body).pair p ∈ vals.uniSetMap.defMem
     from
       internalCauseElim
         intIsCause.complComplElim
@@ -301,7 +305,7 @@ def internalCauseElim {dl n fv expr p}
         boutIh
 termination_by sizeOf expr
 
-def allCausesInappElim {dl n fv intCycle expr p}
+theorem allCausesInappElim {dl n fv intCycle expr p}
   (allInapp: AllIntCausesInappIh dl n intCycle fv expr p)
   (intCauseInappIh:
     {x p: _} →
@@ -350,7 +354,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
           DefList.Ins.isComplete (getNthDl (lane:=.defLane) h)
         .blockedBout inBoutGetNth.dne insNth
       else
-        False.elim (notAtDefGeN h ins.toPos)
+        False.elim (notAtDefGeN h (Set3.defToPos ins))
     | Or.inr inBout =>
       .blockedBout inBout.dne (DefList.Ins.isComplete ins)
   | .var x =>
@@ -446,7 +450,7 @@ def allCausesInappElim {dl n fv intCycle expr p}
           allInapp fun b c isSat inProdP =>
             let innerLeft := BasicExpr.toPosLane (.prod left.compl .any)
             let innerRite := BasicExpr.toPosLane (.prod .any rite.compl)
-            have isInner: (un innerLeft innerRite).intp2 fv b c p :=
+            have isInner: p ∈ (un innerLeft innerRite).intp2 fv b c :=
               -- (why tf is by exact needed here?)
               by exact isCauseInner isSat
             match inUnElim (isInner) with
@@ -561,10 +565,10 @@ def allCausesInappElim {dl n fv intCycle expr p}
 
 
 mutual
-def internalInsElim {dl n x p}
+theorem internalInsElim {dl n x p}
   (ins: (DefList.prefix dl n).Ins x p)
 :
-  vals.uniSetMap.defMem (.pair (uniSetMapIndexDef dl n x) p)
+  .pair (uniSetMapIndexDef dl n x) p ∈ vals.uniSetMap.defMem
 :=
   match ins with
   | .intro _ _ _ isCause cinsIns boutOut =>
@@ -573,10 +577,10 @@ def internalInsElim {dl n x p}
       (fun inCins => internalInsElim (cinsIns inCins))
       (fun inBout => internalOutElim (boutOut inBout))
 
-def internalOutElim {dl n x p}
+theorem internalOutElim {dl n x p}
   (out: (DefList.prefix dl n).Out x p)
 :
-  ¬ vals.uniSetMap.posMem (.pair (uniSetMapIndexDef dl n x) p)
+  ¬ .pair (uniSetMapIndexDef dl n x) p ∈ vals.uniSetMap.posMem
 :=
   match out with
   | .intro intCycle intCycleIsEmpty inIntCycle =>
@@ -610,7 +614,7 @@ def internalOutElim {dl n x p}
 end
 
 
-def uniSetMapAt_ge
+theorem uniSetMapAt_ge
   (dl: DefList)
   (n: Nat)
   (fv: List Pair)
@@ -623,11 +627,11 @@ def uniSetMapAt_ge
       (Cause.IsStrongCauseFv.ofValDef isDef)
       (internalInsElim ∘ DefList.Ins.isComplete)
       (internalOutElim ∘ DefList.Out.isComplete)
-  posLe x (isPos: (uniSetMapAt dl n fv expr).posMem x) :=
+  posLe x (isPos: x ∈ (uniSetMapAt dl n fv expr).posMem) :=
     byContradiction fun
-      (notPos: ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem x)
+      (notPos: ¬ x ∈ (expr.triIntp fv (dl.prefix n).wfm).posMem)
     =>
-      let intCycle: Nat → Set Pair := (dl.prefix n).Out
+      let intCycle: Nat → Pair → Prop := (dl.prefix n).Out
       let allInapp: AllIntCausesInappIh dl n intCycle fv expr x :=
         fun isCause =>
           match isCause.isInapplicableOfIsNonmember notPos with

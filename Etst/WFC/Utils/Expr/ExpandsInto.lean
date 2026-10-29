@@ -1,7 +1,10 @@
-import Etst.WFC.Ch4_S1_MembershipPs
+module
+public import Etst.WFC.Ch3_WellFoundedModel
+public import Etst.WFC.Utils.General.LfpStages
 import Etst.WFC.Utils.Expr.FreeVars
 import Etst.WFC.Utils.InterpretationMono
 
+public section
 namespace Etst
 
 
@@ -76,7 +79,7 @@ namespace DefList.ExpandsInto
   :=
     compl (arbIr (compl (Bool.not_not _ ▸ exp)))
   
-  def isClean_expands
+  theorem isClean_expands
     {ed a b}
     (exp: ExpandsInto dl ed a b)
     (shift: Nat)
@@ -110,7 +113,7 @@ namespace DefList.ExpandsInto
   
   
   open BasicExpr in
-  def triIntp_eq_wfm {ed left rite}
+  theorem triIntp_eq_wfm {ed left rite}
     (dl: DefList)
     (fv: List Pair)
   :
@@ -141,7 +144,7 @@ namespace DefList.ExpandsInto
   
   open BasicExpr in
   open SingleLaneExpr in
-  def lfpStage_le_std {ed l r}
+  theorem lfpStage_le_std {ed l r}
     (expInto: ExpandsInto dl ed l r)
     (fv: List Pair)
     (n: Ordinal.{0})

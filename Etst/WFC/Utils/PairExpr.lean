@@ -1,7 +1,9 @@
-import Etst.WFC.Ch3_WellFoundedModel
-import Etst.WFC.Utils.Pair
+module
+public import Etst.WFC.Ch3_WellFoundedModel
+public import Etst.WFC.Utils.Pair
 import Etst.WFC.Utils.RulesOfInference
 
+public section
 namespace Etst
 
 variable
@@ -14,15 +16,15 @@ variable
 
 
 namespace Expr
-  def impl (left rite: Expr E) := un left.compl rite
+  exposed def impl (left rite: Expr E) := un left.compl rite
   
-  def ifThen (cond body: Expr E): Expr E :=
+  exposed def ifThen (cond body: Expr E): Expr E :=
     ir (some cond) body
   
-  def ifElse (cond body: Expr E): Expr E :=
+  exposed def ifElse (cond body: Expr E): Expr E :=
     ir (full cond.compl) body
   
-  def ite (cond yes no: Expr E): Expr E :=
+  exposed def ite (cond yes no: Expr E): Expr E :=
     un (ifThen cond yes) (ifElse cond no)
   
   
@@ -66,7 +68,7 @@ namespace Expr
     `zth` introduces an existential quantifier, the
     variables of `expr` need to be incremented.
   -/
-  def zth (expr: Expr E): Expr E :=
+  exposed def zth (expr: Expr E): Expr E :=
     arbUn (ifThen (ir (prod (var 0) any) expr) (var 0))
   
   /-
@@ -78,7 +80,7 @@ namespace Expr
     `fst` introduces an existential quantifier, the
     variables of `expr` need to be incremented.
   -/
-  def fst (expr: Expr E): Expr E :=
+  exposed def fst (expr: Expr E): Expr E :=
     arbUn (ifThen (ir (prod any (var 0)) expr) (var 0))
   
   /-
@@ -103,7 +105,7 @@ namespace Expr
     `call` introduces an existential quantifier, the
     variables of `fn` and `arg` need to be incremented.
   -/
-  def call (fn arg: Expr E): Expr E :=
+  exposed def call (fn arg: Expr E): Expr E :=
     arbUn (ifThen (ir fn (prod arg (var 0))) (var 0))
   
   /-
@@ -111,9 +113,9 @@ namespace Expr
     `succ nEnc` represents the encoding of `n + 1`.
     (Note 0 is reprezented by `Pair.null`.)
   -/
-  def succ (expr: Expr E): Expr E := prod expr null
+  exposed def succ (expr: Expr E): Expr E := prod expr null
   
-  def nat: Nat → Expr E
+  exposed def nat: Nat → Expr E
   | Nat.zero => null
   | Nat.succ pred => succ (nat pred)
   
@@ -161,21 +163,21 @@ namespace SingleLaneExpr
   open Expr
   variable {expr exprA exprB domain body: SingleLaneExpr}
   
-  def inImpl
+  theorem inImpl
     -- Note the swapped valuations in the domain.
-    (inFn: intp2 exprA fv c b p → intp2 exprB fv b c p)
+    (inFn: p ∈ intp2 exprA fv c b → p ∈ intp2 exprB fv b c)
   :
-    intp2 (impl exprA exprB) fv b c p
+    p ∈ intp2 (impl exprA exprB) fv b c
   :=
-    match Classical.em (intp2 exprA fv c b p) with
+    match Classical.em (p ∈ intp2 exprA fv c b) with
     | Or.inl inA => inUnR (inFn inA)
     | Or.inr notInA => inUnL notInA
   
-  def inImplElim
-    (inImpl: intp2 (impl exprA exprB) fv b c p)
+  theorem inImplElim
+    (inImpl: p ∈ intp2 (impl exprA exprB) fv b c)
   :
     -- Note the swapped valuations in the domain.
-    (intp2 exprA fv c b p → intp2 exprB fv b c p)
+    (p ∈ intp2 exprA fv c b → p ∈ intp2 exprB fv b c)
   :=
     fun inA =>
       (inUnElim inImpl).elim
@@ -183,22 +185,22 @@ namespace SingleLaneExpr
         id
   
   
-  def inIfThen
+  theorem inIfThen
     {cond: SingleLaneExpr}
-    (inCond: intp2 cond fv b c pC)
-    (inBody: intp2 body fv b c p)
+    (inCond: pC ∈ intp2 cond fv b c)
+    (inBody: p ∈ intp2 body fv b c)
   :
-    intp2 (ifThen cond body) fv b c p
+    p ∈ intp2 (ifThen cond body) fv b c
   :=
     inIr (inSome pC inCond) inBody
   
-  def inIfThenElim
+  theorem inIfThenElim
     {cond: SingleLaneExpr}
-    (inIfThen: intp2 (ifThen cond body) fv b c p)
+    (inIfThen: p ∈ intp2 (ifThen cond body) fv b c)
   :
     And
-      (∃ pC, intp2 cond fv b c pC)
-      (intp2 body fv b c p)
+      (∃ pC, pC ∈ intp2 cond fv b c)
+      (p ∈ intp2 body fv b c)
   :=
     let ⟨inCond, inBody⟩ := inIrElim inIfThen
     And.intro (inSomeElim inCond) inBody
@@ -209,13 +211,11 @@ namespace SingleLaneExpr
     too. It's unfortunate, but inevitable -- have a look at the
     implementation of `arbUnDom` to see for yourself.
   -/
-  def inUnDom {pDom}
-    (inDomain:
-      intp2 domain (pDom :: fv) b c pDom)
-    (inBody:
-      intp2 body (pDom :: fv) b c p)
+  theorem inUnDom {pDom}
+    (inDomain: pDom ∈ intp2 domain (pDom :: fv) b c)
+    (inBody: p ∈ intp2 body (pDom :: fv) b c)
   :
-    intp2 (arbUnDom domain body) fv b c p
+    p ∈ intp2 (arbUnDom domain body) fv b c
   :=
     inArbUn pDom (inIr (inSome pDom ⟨rfl, inDomain⟩) inBody)
   
@@ -232,11 +232,11 @@ namespace SingleLaneExpr
     (domain body: SingleLaneExpr)
     (p: Pair): Prop
   where
-    inDomain: intp2 domain (pBnd :: fv) b c pBnd
-    inBody: intp2 body (pBnd :: fv) b c p
+    inDomain: pBnd ∈ intp2 domain (pBnd :: fv) b c
+    inBody: p ∈ intp2 body (pBnd :: fv) b c
   
-  def inUnDomElim
-    (inUnDom: intp2 (arbUnDom domain body) fv b c p)
+  theorem inUnDomElim
+    (inUnDom: p ∈ intp2 (arbUnDom domain body) fv b c)
   :
     ∃ pBound, InsUnDomElim fv b c x pBound domain body p
   :=
@@ -247,12 +247,12 @@ namespace SingleLaneExpr
     ⟨pBound, { inDomain := fvEq ▸ inDom, inBody }⟩
   
   
-  def inFinUn
+  theorem inFinUn
     {list: List SingleLaneExpr}
     (exprIn: expr ∈ list)
-    (inExpr: intp2 expr fv b c p)
+    (inExpr: p ∈ intp2 expr fv b c)
   :
-    intp2 (finUn list) fv b c p
+    p ∈ intp2 (finUn list) fv b c
   :=
     match list with
     | [_e0] =>
@@ -268,7 +268,7 @@ namespace SingleLaneExpr
     The return type of `inFinUnElim`.
     Like the type of `Or.elim p`, but n-ary instead of binary.
   -/
-  def InFinUnElim
+  exposed def InFinUnElim
     (fv: List Pair)
     (b c: Valuation Pair)
     (p: Pair)
@@ -277,10 +277,10 @@ namespace SingleLaneExpr
     List SingleLaneExpr → Prop
   | List.nil => P
   | List.cons head tail =>
-    (intp2 head fv b c p → P) → InFinUnElim fv b c p P tail
+    (p ∈ intp2 head fv b c → P) → InFinUnElim fv b c p P tail
   
-  def inFinUnElim {P list}
-    (inFinUn: intp2 (finUn list) fv b c p)
+  theorem inFinUnElim {P list}
+    (inFinUn: p ∈ intp2 (finUn list) fv b c)
   :
     InFinUnElim fv b c p P list
   :=
@@ -301,26 +301,26 @@ namespace SingleLaneExpr
   
   
   
-  def inZth
-    (inExpr: intp2 expr (pA :: fv) b c (Pair.pair pA pB))
+  theorem inZth
+    (inExpr: .pair pA pB ∈ intp2 expr (pA :: fv) b c)
   :
-    intp2 (zth expr) fv b c pA
+    pA ∈ intp2 (zth expr) fv b c
   :=
     inArbUn pA (inIfThen (inIr (inProd rfl inAny) inExpr) rfl)
   
   
-  def inFst
-    (inExpr: intp2 expr (pB :: fv) b c (Pair.pair pA pB))
+  theorem inFst
+    (inExpr: .pair pA pB ∈ intp2 expr (pB :: fv) b c)
   :
-    intp2 (fst expr) fv b c pB
+    pB ∈ intp2 (fst expr) fv b c
   :=
     inArbUn pB (inIfThen (inIr (inProd inAny rfl) inExpr) rfl)
   
   
-  def inZthElim {p0}
-    (inZth: intp2 (zth expr) fv b c p0)
+  theorem inZthElim {p0}
+    (inZth: p0 ∈ intp2 (zth expr) fv b c)
   :
-    ∃ p1, intp2 expr (p0 :: fv) b c (Pair.pair p0 p1)
+    ∃ p1, .pair p0 p1 ∈ intp2 expr (p0 :: fv) b c
   :=
     let ⟨pZth, ⟨inCond, inBody⟩⟩ := inArbUnElim inZth
     let ⟨pCond, ⟨inProdCond, pCondInExpr⟩⟩ := inSomeElim inCond
@@ -333,10 +333,10 @@ namespace SingleLaneExpr
       let eqPZth: p0 = pZth := inVarElim inBody rfl
       ⟨pCondFst, eqPZth ▸ eqPCondZth ▸ pCondInExpr⟩
   
-  def inFstElim {p1}
-    (inFst: intp2 (fst expr) fv b c p1)
+  theorem inFstElim {p1}
+    (inFst: p1 ∈ intp2 (fst expr) fv b c)
   :
-    ∃ p0, intp2 expr (p1 :: fv) b c (Pair.pair p0 p1)
+    ∃ p0, .pair p0 p1 ∈ intp2 expr (p1 :: fv) b c
   :=
     let ⟨pFst, ⟨inCond, inBody⟩⟩ := inArbUnElim inFst
     let ⟨pCond, ⟨inProdCond, pCondInExpr⟩⟩ := inSomeElim inCond
@@ -349,12 +349,12 @@ namespace SingleLaneExpr
       let eqPFst: p1 = pFst := inVarElim inBody rfl
       ⟨pCondZth, eqPFst ▸ eqPCondFst ▸ pCondInExpr⟩
   
-  def inZthFstElim {p0 p1}
-    (inZth: intp2 (zth (const lane x)) fv b c p0)
-    (inFst: intp2 (fst (const lane x)) fv b c p1)
+  theorem inZthFstElim {p0 p1}
+    (inZth: p0 ∈ intp2 (zth (const lane x)) fv b c)
+    (inFst: p1 ∈ intp2 (fst (const lane x)) fv b c)
     (isUnit: c x = Set3.just p)
   :
-    intp2 (Expr.const lane x) fv b c (.pair p0 p1)
+    .pair p0 p1 ∈ intp2 (Expr.const lane x) fv b c
   :=
     let ⟨fstB, inFstB⟩ := inZthElim inZth
     let ⟨zthB, inZthB⟩ := inFstElim inFst
@@ -372,11 +372,11 @@ namespace SingleLaneExpr
     eqR ▸ inZthB
   
   
-  def inCall {fn arg}
-    (inFn: intp2 fn (pB :: fv) b c (Pair.pair pA pB))
-    (inArg: intp2 arg (pB :: fv) b c pA)
+  theorem inCall {fn arg}
+    (inFn: .pair pA pB ∈ intp2 fn (pB :: fv) b c)
+    (inArg: pA ∈ intp2 arg (pB :: fv) b c)
   :
-    intp2 (call fn arg) fv b c pB
+    pB ∈ intp2 (call fn arg) fv b c
   :=
     inArbUn
       pB
@@ -385,13 +385,13 @@ namespace SingleLaneExpr
         (inVar rfl))
   
   
-  def inCallElim {fn arg}
-    (inCall: intp2 (call fn arg) fv b c pB)
+  theorem inCallElim {fn arg}
+    (inCall: pB ∈ intp2 (call fn arg) fv b c)
   :
     ∃ pA,
       And
-        (intp2 fn (pB :: fv) b c (Pair.pair pA pB))
-        (intp2 arg (pB :: fv) b c pA)
+        (.pair pA pB ∈ intp2 fn (pB :: fv) b c)
+        (pA ∈ intp2 arg (pB :: fv) b c)
   :=
     let ⟨_res, inIfThen⟩ := inArbUnElim inCall
     let ⟨⟨fnP, inFn, inProdFn⟩, inVarRes⟩ := inIfThenElim inIfThen
@@ -403,11 +403,11 @@ namespace SingleLaneExpr
       let fnResEq := inVarElim inFnRes rfl
       ⟨_, And.intro (pbEq ▸ fnResEq ▸ inFn) (pbEq ▸ inFnArg)⟩
   
-  def inCallElimSingle {fn arg}
-    (inCall: intp2 (call fn arg) fv b c pB)
+  theorem inCallElimSingle {fn arg}
+    (inCall: pB ∈ intp2 (call fn arg) fv b c)
     (isSingleton: intp2 arg (pB :: fv) b c = {pA})
   :
-    intp2 fn (pB :: fv) b c (Pair.pair pA pB)
+    .pair pA pB ∈ intp2 fn (pB :: fv) b c
   :=
     let ⟨aAlias, ⟨inFn, inArg⟩⟩ := inCallElim inCall
     let eq: aAlias = pA :=
@@ -415,17 +415,17 @@ namespace SingleLaneExpr
     eq ▸ inFn
   
   
-  def inNat {b c}
+  theorem inNat {b c}
     (n: Nat)
   :
-    intp2 (nat n) fv b c (Pair.nat n)
+    .nat n ∈ intp2 (nat n) fv b c
   :=
     match n with
     | Nat.zero => inNull
     | Nat.succ pred => inProd (inNat pred) inNull
   
-  def inNatElim {n p}
-    (inNatExpr: intp2 (nat n) fv b c p)
+  theorem inNatElim {n p}
+    (inNatExpr: p ∈ intp2 (nat n) fv b c)
   :
     p = Pair.nat n
   :=
@@ -437,40 +437,40 @@ namespace SingleLaneExpr
       (inNatElim l) ▸ (inNullElim r) ▸ rfl
   
   def inNatElimNope {P n m}
-    (inNat: intp2 (nat n) fv b c (.nat m))
+    (inNat: .nat m ∈ intp2 (nat n) fv b c)
     (neq: n ≠ m)
   :
     P
   :=
     (neq (Pair.nat_inj_eq (Eq.symm (inNatElim inNat)))).elim
   
-  def inNatElimDepth {n p}
-    (inNat: intp2 (nat n) fv b c p)
+  theorem inNatElimDepth {n p}
+    (inNat: p ∈ intp2 (nat n) fv b c)
   :
     p.depth = n
   :=
     (inNatElim inNat) ▸ (Pair.nat_depth_eq n)
   
-  def inNatElimDecode {n p}
-    (inNatExpr: intp2 (nat n) fv b c p)
+  theorem inNatElimDecode {n p}
+    (inNatExpr: p ∈ intp2 (nat n) fv b c)
   :
     p.depth = n
   :=
     inNatElimDepth inNatExpr
   
   
-  def inToExpr {lane fv b c}
+  theorem inToExpr {lane fv b c}
     (p: Pair)
   :
-    (p.toExpr.toLane lane).intp2 fv b c p
+    p ∈ (p.toExpr.toLane lane).intp2 fv b c
   :=
     match p with
     | .null => inNull
     | .pair l r => inProd (inToExpr l) (inToExpr r)
   
-  def inToExprElim {lane fv b c}
+  theorem inToExprElim {lane fv b c}
     {pExpr p: Pair}
-    (inExpr: (pExpr.toExpr.toLane lane).intp2 fv b c p)
+    (inExpr: p ∈ (pExpr.toExpr.toLane lane).intp2 fv b c)
   :
     pExpr = p
   :=
@@ -480,7 +480,7 @@ namespace SingleLaneExpr
       let ⟨inL, inR⟩ := inProdElim inExpr
       (Pair.eq (inToExprElim inL) (inToExprElim inR))
   
-  def intp2_toExpr_eq_singleton {lane fv b c}
+  theorem intp2_toExpr_eq_singleton {lane fv b c}
     (p: Pair)
   :
     intp2 (p.toExpr.toLane lane) fv b c = {p}

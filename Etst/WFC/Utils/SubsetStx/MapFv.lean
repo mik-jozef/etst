@@ -1,5 +1,7 @@
-import Etst.WFC.Ch5_SubsethoodPs
+module
+public import Etst.WFC.Ch5_SubsethoodPs
 
+public section
 namespace Etst
 open Expr
 
@@ -7,7 +9,7 @@ open Expr
 namespace DefList.SubsetStx
   variable {dl: DefList}
   
-  private def subsingle_body_subst
+  private theorem subsingle_body_subst
     (t: SingleLaneExpr)
     (map: Nat → Nat)
   :
@@ -19,7 +21,7 @@ namespace DefList.SubsetStx
       (fun e => impl (some (ir e (var 0))) (full (impl e (var 0))))
       (lift_substVar_eq t map)
   
-  private def subsingle_subst
+  private theorem subsingle_subst
     (t: SingleLaneExpr)
     (map: Nat → Nat)
   :
@@ -29,13 +31,13 @@ namespace DefList.SubsetStx
     rw [←substVar_liftFvMapVar_subst t.isSubsingleton_body map]
     exact subsingle_body_subst t map
   
-  private def substVar_hypothesify_map
+  private theorem substVar_hypothesify_map {dl: DefList}
     (desc: MutIndDescriptor dl)
     (map: Nat → Nat)
     (depth: Nat)
     (ed: Bool)
     (expr: SingleLaneExpr)
-    (varLt: ∀ x ∈ expr.UsesFreeVar, x < depth)
+    (varLt: ∀ x, expr.UsesFreeVar x → x < depth)
   :
     let mapDesc d: InductionDescriptor dl := {
       lane := d.lane
@@ -107,7 +109,12 @@ namespace DefList.SubsetStx
           | [] => rfl
           | head :: tail => by
             let ih := hypo_map tail
-            dsimp [MutIndDescriptor.hypothesis, InductionDescriptor.hypothesis]
+            dsimp [
+              MutIndDescriptor.hypothesis,
+              InductionDescriptor.hypothesis,
+              List.map,
+              List.foldr
+            ]
             split_ifs with h
             · exact congrArg₂ Expr.ir (substVar_lift_depth_eq head.expr) ih
             · exact ih
@@ -283,7 +290,7 @@ namespace DefList.SubsetStx
           d.expandsInto.isClean_expands
             0
             (fun x h => (dl.isClean d.x) (x + 0) h)
-        let varLt: ∀ x ∈ UsesFreeVar expr, x < 0 :=
+        let varLt: ∀ x, UsesFreeVar expr x → x < 0 :=
           fun x h =>
             let iff := BasicExpr.toLane_UsesFreeVar d.expansion d.lane x
             False.elim (expClean x (iff.mp h))

@@ -2,18 +2,18 @@
   Defines instances for deciding whether all constants or free
   variables in an expression satisfy a given predicate.
 -/
+module
+public import Etst.WFC.Ch1_ExprDefList
 
-import Etst.WFC.Ch1_ExprDefList
-
+public section
 namespace Etst
-
 universe u
 variable {E: Type u}
 
 
 namespace Expr
   abbrev ConstsSat (expr: Expr E) (P: Nat → Prop): Prop :=
-    ∀ x ∈ expr.UsesConst, P x
+    ∀ x, expr.UsesConst x → P x
   
   abbrev ConstsLt (expr: Expr E) (bound: Nat): Prop :=
     expr.ConstsSat (· < bound)

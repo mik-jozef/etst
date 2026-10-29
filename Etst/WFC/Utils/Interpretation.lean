@@ -1,6 +1,8 @@
-import Etst.WFC.Utils.Expr.Basic
-import Etst.WFC.Utils.Valuation
+module
+public import Etst.WFC.Utils.Expr.Basic
+public import Etst.WFC.Utils.Valuation
 
+public section
 namespace Etst
 
 
@@ -13,7 +15,7 @@ namespace Etst
   at even and odd complement depth, respectively. When one of them
   is `.none`, that parity is left unconstrained.
 -/
-def SingleLaneExpr.intp2_mono_std {fv}
+theorem SingleLaneExpr.intp2_mono_std {fv}
   {even odd: Option Set3.Lane}
   {b0 b1 c0 c1}
   (bLe: Valuation.LaneLe b1 b0 odd)
@@ -50,7 +52,7 @@ def SingleLaneExpr.intp2_mono_std {fv}
     | .arbIr _ =>
       fun pX => intp2_mono_std bLe cLe laneEq.elimArbIr (pIn pX)
 
-def BasicExpr.triIntp2_mono_std_defMem
+theorem BasicExpr.triIntp2_mono_std_defMem
   {b0 b1} (bLePos: ∀ x, (b1 x).posMem ≤ (b0 x).posMem)
   {c0 c1} (cLeDef: ∀ x, (c0 x).defMem ≤ (c1 x).defMem)
   {expr: BasicExpr}
@@ -67,7 +69,7 @@ def BasicExpr.triIntp2_mono_std_defMem
     cLeDef
     (expr.laneEq .defLane)
 
-def BasicExpr.triIntp2_mono_std_posMem
+theorem BasicExpr.triIntp2_mono_std_posMem
   {b0 b1} (bLeDef: ∀ x, (b1 x).defMem ≤ (b0 x).defMem)
   {c0 c1} (cLePos: ∀ x, (c0 x).posMem ≤ (c1 x).posMem)
   {expr: BasicExpr}
@@ -84,7 +86,7 @@ def BasicExpr.triIntp2_mono_std_posMem
     cLePos
     (expr.laneEq .posLane)
 
-def BasicExpr.triIntp2_mono_std
+theorem BasicExpr.triIntp2_mono_std
   {b0 b1} (bLe: b1 ≤ b0)
   {c0 c1} (cLe: c0 ≤ c1)
   {expr: BasicExpr}
@@ -103,7 +105,7 @@ def BasicExpr.triIntp2_mono_std
         (fun x => (cLe x).posLe)
   }
 
-def DefList.intpDefs2_mono_std
+theorem DefList.intpDefs2_mono_std
   {dl: DefList}
   {b0 b1} (bLe: b1 ≤ b0)
   {c0 c1} (cLe: c0 ≤ c1)
@@ -113,7 +115,7 @@ def DefList.intpDefs2_mono_std
   fun _ => BasicExpr.triIntp2_mono_std bLe cLe
 
 
-def BasicExpr.triIntp2_mono_apx
+theorem BasicExpr.triIntp2_mono_apx
   {expr: BasicExpr}
   {fv b0 b1 c0 c1}
   (bLe: b0 ⊑ b1)
@@ -169,7 +171,7 @@ def BasicExpr.triIntp2_mono_apx
         posLe _p pIn pXPos0 := (ih pXPos0).posLe (pIn pXPos0)
       }
 
-def BasicExpr.triIntp2_mono_apx_defMem
+theorem BasicExpr.triIntp2_mono_apx_defMem
   {expr: BasicExpr}
   {b0 b1} (bLe: b0 ⊑ b1)
   {c0 c1} (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
@@ -186,7 +188,7 @@ def BasicExpr.triIntp2_mono_apx_defMem
     cLeDef
   isMonoB.defLe.trans isMonoC
 
-def BasicExpr.triIntp2_mono_apx_posMem
+theorem BasicExpr.triIntp2_mono_apx_posMem
   {expr: BasicExpr}
   {b0 b1} (bLe: b0 ⊑ b1)
   {c0 c1} (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
@@ -203,7 +205,7 @@ def BasicExpr.triIntp2_mono_apx_posMem
     cLePos
   isMonoB.posLe.trans isMonoC
 
-def DefList.intpDefs2_mono_apx
+theorem DefList.intpDefs2_mono_apx
   {dl: DefList}
   {b0 b1 c0 c1: Valuation Pair}
   (bLe: b0 ⊑ b1)
@@ -214,7 +216,7 @@ def DefList.intpDefs2_mono_apx
   fun _ => BasicExpr.triIntp2_mono_apx bLe cLe
 
 
-def BasicExpr.triIntp2_getLane_eq {fv b c lane}
+theorem BasicExpr.triIntp2_getLane_eq {fv b c lane}
   (expr: BasicExpr)
 :
   Eq

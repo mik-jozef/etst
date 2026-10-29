@@ -1,9 +1,11 @@
+module
+public import Mathlib.SetTheory.Ordinal.Arithmetic
 import Mathlib.Data.Set.Basic
-import Mathlib.Data.Finite.Defs
-import Mathlib.SetTheory.Ordinal.Arithmetic
+import Mathlib.Basic.Finite.Defs
+import Etst.BasicUtils
 
+public section
 open Classical
-
 universe u
 
 
@@ -27,7 +29,7 @@ namespace Tuple.Nat2
     A tape `index` is eventually zero in `tuple` if there is a stage
     beyond which all tapes of the tuple carry `Two.zero` at `index`.
   -/
-  def IsEventuallyZeroAtIndex (tuple: Tuple Nat2) (index: Nat): Prop :=
+  exposed def IsEventuallyZeroAtIndex (tuple: Tuple Nat2) (index: Nat): Prop :=
     ∃ lowerBound: Ordinal,
       lowerBound < tuple.length ∧
       ∀ i: tuple.length,
@@ -38,7 +40,7 @@ namespace Tuple.Nat2
     The limit superior of a tuple of tapes: at each index it is
     `Two.zero` iff the index is eventually zero along the tuple.
   -/
-  noncomputable def limSup (tuple: Tuple Nat2): Nat2 :=
+  exposed noncomputable def limSup (tuple: Tuple Nat2): Nat2 :=
     fun n =>
       if IsEventuallyZeroAtIndex tuple n then Two.zero else Two.one
 
@@ -46,7 +48,7 @@ namespace Tuple.Nat2
     If a tuple is eventually constantly `res` (from `lowerBound` on),
     then its `limSup` is `res`.
   -/
-  def limSup.eqOfEventuallyConstant
+  theorem limSup.eqOfEventuallyConstant
     (t: Tuple Nat2)
     (res: Nat2)
     (lowerBound: Ordinal)
@@ -65,7 +67,7 @@ namespace Tuple.Nat2
             lbLt,
             fun i le => (congrFun (constantAbove i le) n).trans hRes,
           ⟩
-        if_pos isEv
+        ite_eq_left isEv
       | Two.one =>
         let notEv: ¬ IsEventuallyZeroAtIndex t n :=
           fun ⟨lb, lbLt', hZero⟩ =>
@@ -75,7 +77,7 @@ namespace Tuple.Nat2
             let eqZero: t.elements i n = Two.zero :=
               hZero i (le_max_right _ _)
             Two.noConfusion (eqOne.symm.trans eqZero)
-        if_neg notEv
+        ite_eq_right notEv
 end Tuple.Nat2
 
 
@@ -88,7 +90,7 @@ inductive Dir
   The new head position after moving in a direction, or `none` if
   the machine crashes (moving left off the zeroth cell).
 -/
-def Dir.shift: Dir → Nat → Option Nat
+exposed def Dir.shift: Dir → Nat → Option Nat
 | Dir.left, 0 => Option.none
 | Dir.left, x + 1 => some x
 | Dir.right, x => some (x + 1)
@@ -137,7 +139,7 @@ namespace HamkinsMachine
     tape: Nat2
     head: Nat
 
-  def nextMove
+  exposed def nextMove
     (hm: HamkinsMachine)
     (config: hm.Configuration)
   :
@@ -145,7 +147,7 @@ namespace HamkinsMachine
   :=
     hm.getMove config.state (config.tape config.head)
 
-  def step
+  exposed def step
     (hm: HamkinsMachine)
     (config: hm.Configuration)
   :
@@ -164,7 +166,7 @@ namespace HamkinsMachine
       }
 
   -- Stepping a halted configuration leaves it unchanged.
-  def haltStepIsId
+  theorem haltStepIsId
     (hm: HamkinsMachine)
     (config: hm.Configuration)
     (isHalt: config.state = hm.haltState)
@@ -194,7 +196,7 @@ namespace HamkinsMachine
     - at a limit the tape is the `limSup` of the previous tapes, and
       the machine halts if it has halted at any earlier stage.
   -/
-  noncomputable def stage
+  exposed noncomputable def stage
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
@@ -222,7 +224,7 @@ namespace HamkinsMachine
         head := 0
       })
 
-  noncomputable def stagesUpTo
+  exposed noncomputable def stagesUpTo
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
@@ -252,7 +254,7 @@ namespace HamkinsMachine
   :
     hm.stage input (Order.succ n) = hm.step (hm.stage input n)
   :=
-    Ordinal.limitRecOn_succ ..
+    Ordinal.limitRecOn_add_one ..
 
   theorem stage_limit
     (hm: HamkinsMachine)
@@ -272,7 +274,7 @@ namespace HamkinsMachine
   :=
     Ordinal.limitRecOn_limit n _ _ _ h
 
-  def stage.IsHaltedAt
+  exposed def stage.IsHaltedAt
     (hm: HamkinsMachine)
     (input: Nat2)
     (n: Ordinal)
@@ -282,7 +284,7 @@ namespace HamkinsMachine
     (hm.stage input n).state = hm.haltState
 
   -- Halting is preserved by taking one more step.
-  def stage.haltPreservedSucc
+  theorem stage.haltPreservedSucc
     {hm: HamkinsMachine}
     {input: Nat2}
     {n: Ordinal}
@@ -295,7 +297,7 @@ namespace HamkinsMachine
     exact h
 
   -- Once halted, always halted.
-  def stage.isHaltedAtGe
+  theorem stage.isHaltedAtGe
     {hm: HamkinsMachine}
     {input: Nat2}
     {n: Ordinal}
@@ -309,7 +311,7 @@ namespace HamkinsMachine
       intro le
       have hz: n = 0 := nonpos_iff_eq_zero.mp le
       exact hz ▸ hAt
-    | succ o ih =>
+    | add_one o ih =>
       intro le
       rcases le.lt_or_eq with hlt | heq
       · exact stage.haltPreservedSucc (ih (Order.lt_succ_iff.mp hlt))
@@ -319,7 +321,7 @@ namespace HamkinsMachine
       rcases le.lt_or_eq with hlt | heq
       · show (hm.stage input o).state = hm.haltState
         rw [hm.stage_limit input hlim]
-        exact if_pos ⟨⟨n, hlt⟩, hAt⟩
+        exact ite_eq_left ⟨⟨n, hlt⟩, hAt⟩
       · exact heq ▸ hAt
 
   structure stage.IsHaltedAtWith
@@ -333,7 +335,7 @@ namespace HamkinsMachine
     tapeEq: (hm.stage input n).tape = output
 
   -- Halting outputs are stable under one step.
-  def stage.haltsConsistent.step
+  theorem stage.haltsConsistent.step
     {hm: HamkinsMachine}
     {input output0 output1: Nat2}
     {n: Ordinal}
@@ -350,7 +352,7 @@ namespace HamkinsMachine
     The output of a halted computation does not depend on the (large
     enough) stage at which we read it off.
   -/
-  def stage.haltsConsistent.le
+  theorem stage.haltsConsistent.le
     {hm: HamkinsMachine}
     {input output0: Nat2}
     {n0: Ordinal}
@@ -366,7 +368,7 @@ namespace HamkinsMachine
       have hz: n0 = 0 := nonpos_iff_eq_zero.mp le
       subst hz
       rw [← hw0.tapeEq, ← hw1.tapeEq]
-    | succ o ih =>
+    | add_one o ih =>
       intro output1 hw1 le
       rcases le.lt_or_eq with hlt | heq
       · have leO: n0 ≤ o := Order.lt_succ_iff.mp hlt
@@ -398,7 +400,7 @@ namespace HamkinsMachine
       · subst heq
         rw [← hw0.tapeEq, ← hw1.tapeEq]
 
-  def stage.haltsConsistent
+  theorem stage.haltsConsistent
     {hm: HamkinsMachine}
     {input output0 output1: Nat2}
     {n0 n1: Ordinal.{u}}
@@ -445,7 +447,7 @@ namespace HamkinsMachine
   := by
     have ex: ∃ output, Computes hm input output := ⟨output, n, hw⟩
     obtain ⟨n', hw'⟩ := ex.choose_spec
-    exact (dif_pos ex).trans (congrArg some (stage.haltsConsistent hw' hw))
+    exact (dite_eq_left ex).trans (congrArg some (stage.haltsConsistent hw' hw))
 
   def Halts (hm: HamkinsMachine) (input: Nat2): Prop :=
     ∃ n: Ordinal.{u}, stage.IsHaltedAt hm input n

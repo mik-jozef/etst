@@ -1,9 +1,12 @@
+module
+public meta import Mathlib.Data.List.Monad
+public meta import Etst.WFC.Ch1_ExprDefList
+public meta import Etst.WFC.Utils.DefList
+public import Lean.Elab
+public import Etst.WFC.Utils.DefList
 import Lean
-import Lean.Elab
 import Lean.Parser.Term
-
 import Etst.WFC.Ch3_WellFoundedModel
-import Etst.WFC.Utils.DefList
 import Etst.WFC.Utils.PairExpr
 
 namespace Etst
@@ -42,7 +45,7 @@ syntax:00 "All " ident+ ", " s3_pair_expr : s3_pair_expr
 syntax:00 "All " ident ": " s3_pair_expr ", " s3_pair_expr : s3_pair_expr
 
 
-private partial def mkNestedEx
+private meta partial def mkNestedEx
   (xs: List (TSyntax `ident))
   (body: TSyntax `s3_pair_expr)
 :
@@ -55,7 +58,7 @@ private partial def mkNestedEx
     let tail ← mkNestedEx xs body
     `(s3_pair_expr| Ex $x, $tail)
 
-private partial def mkNestedAll
+private meta partial def mkNestedAll
   (xs: List (TSyntax `ident))
   (body: TSyntax `s3_pair_expr)
 :
@@ -105,7 +108,28 @@ macro_rules
 -- Definitions
 syntax "s3 " ident " := " s3_pair_expr : s3_pair_def
 
--- The namespace
+/--
+  Declares a `FiniteDefList` from `s3` definitions, together with
+  `consts`/`vals`/`defs` accessors for each named definition:
+  
+  ```
+  pairDefList MyDl
+    s3 X := Ex x, x
+    s3 Y := X × X
+  pairDefList.
+  ```
+  
+  With `extends parent`, the new list's definitions may refer to
+  `parent`'s definitions by name, in addition to their own.
+  
+  Note: `extends` evaluates the parent's constant names at elaboration
+  time (via `evalExpr` in `getFinDlDefNames`). Under the module system,
+  such elaboration-time evaluation may only reference constants
+  visible in meta code, so the module defining `parent` must be
+  imported with `meta import` (in addition to any regular `import`).
+  
+  TODO perhaps remove the whole custom syntax and use plain Lean?
+-/
 syntax (name := pair_def_list)
   "pairDefList " ident (" extends "  ident)?
     s3_pair_def*
@@ -114,7 +138,7 @@ syntax (name := pair_def_list)
 
 namespace pair_def_list
   
-  def termStxErr {T}
+  meta def termStxErr {T}
     (stx: Syntax)
     (item: String)
   :
@@ -124,7 +148,7 @@ namespace pair_def_list
       stx
       s!"Implementation error: unexpected syntax for {item}."
   
-  def cmdStxErr {T}
+  meta def cmdStxErr {T}
     (stx: Syntax)
     (item: String)
   :
@@ -134,12 +158,12 @@ namespace pair_def_list
       stx
       s!"Implementation error: unexpected syntax for {item}."
   
-  inductive Ident
+  meta inductive Ident
   | const (x: Nat)
   | var (x: Nat)
   deriving DecidableEq
   
-  def identsPushVar
+  meta def identsPushVar
     (idents: String → Option Ident)
     (name: String)
   :
@@ -155,7 +179,7 @@ namespace pair_def_list
         | .some (.var n) => .some (.var (n + 1))
   
   -- Convert `s3_pair_expr` syntax to a Lean term representing `Expr`
-  partial def makeExpr
+  meta partial def makeExpr
     (idents: String → Option Ident)
   :
     Syntax →
@@ -249,14 +273,14 @@ namespace pair_def_list
   
   abbrev DefNames := List String
   
-  def DefNames.empty: DefNames := []
+  meta def DefNames.empty: DefNames := []
   
-  def DefNames.enc (names: DefNames) (x: String): Option Ident :=
+  meta def DefNames.enc (names: DefNames) (x: String): Option Ident :=
     match names.idxOf? x with
     | none => none
     | some n => some (.const n)
   
-  def DefNames.push
+  meta def DefNames.push
     (names: DefNames)
     (nameStx: TSyntax `ident)
   :
@@ -279,7 +303,7 @@ namespace pair_def_list
       ...
     ```
   -/
-  def DefNames.mkAccessors
+  meta def DefNames.mkAccessors
     (names: DefNames)
     (dlName: Name)
   :
@@ -294,14 +318,14 @@ namespace pair_def_list
       let defName := mkIdent ((dlName.append `defs).append name.toName)
       let dlIdent := mkIdent dlName
       
-      cmds := cmds.push (← `(def $constName := $num))
-      cmds := cmds.push (← `(noncomputable def $valName := ($dlIdent).wfm $num))
-      cmds := cmds.push (← `(def $defName := ($dlIdent).getDef $num))
+      cmds := cmds.push (← `(@[expose] public def $constName := $num))
+      cmds := cmds.push (← `(@[expose] public noncomputable def $valName := ($dlIdent).wfm $num))
+      cmds := cmds.push (← `(@[expose] public def $defName := ($dlIdent).getDef $num))
       i := i + 1
     return cmds
       
   
-  def DefNames.appendNames
+  meta def DefNames.appendNames
     (names: DefNames)
     (toAppend: List Syntax)
   :
@@ -313,7 +337,7 @@ namespace pair_def_list
         names.push name
       | stx => termStxErr stx "s3 in pairDefList"
   
-  def getFinDlDefNames
+  meta def getFinDlDefNames
     (defListName: Option (TSyntax `ident))
   :
     TermElabM DefNames
@@ -341,7 +365,7 @@ namespace pair_def_list
           DefNames.empty
   
   
-  def processDefs
+  meta def processDefs
     (names: DefNames)
     (defs: List Syntax)
   :
@@ -363,7 +387,7 @@ namespace pair_def_list
     let defTermsArray := defTerms.toArray
     `([$defTermsArray,*])
   
-  def getParentName
+  meta def getParentName
     (parentName: Option (TSyntax `ident))
   :
     CommandElabM (TSyntax `term)
@@ -373,7 +397,7 @@ namespace pair_def_list
     | some parentName => `($parentName)
   
   @[command_elab pair_def_list]
-  def pairDefListImpl: CommandElab :=
+  public meta def pairDefListImpl: CommandElab :=
     Command.adaptExpander fun stx => do
       match stx with
       | `(pairDefList $name $[extends $parentName]?
@@ -390,7 +414,7 @@ namespace pair_def_list
           logInfo s!"Declared identifiers: {repr names}"
         
         let mainDef ← `(
-          def $name : FiniteDefList :=
+          @[expose] public def $name : FiniteDefList :=
             let parent := $(← getParentName parentName)
             let defs := $(← liftTermElabM $ processDefs names defs)
             

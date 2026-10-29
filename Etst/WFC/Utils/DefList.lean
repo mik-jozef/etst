@@ -1,7 +1,12 @@
+module
+public import Etst.WFC.Ch2_Interpretation
+public import Etst.WFC.Utils.Expr.ConstRenaming
+public import Etst.WFC.Utils.Expr.ConstsVarsSat
 import Etst.WFC.Ch3_WellFoundedModel
-import Etst.WFC.Utils.Expr.ConstRenaming
 import Etst.WFC.Utils.Expr.ConstsVarsSat
+import Etst.WFC.Utils.General.LfpStages
 
+public section
 namespace Etst
 
 
@@ -30,10 +35,10 @@ namespace DefListEq
   :
     Prop
   :=
-    ∀ x ∈ names, ∀ y ∈ (dl.getDef x).UsesConst, y ∈ names
+    ∀ x ∈ names, ∀ y, (dl.getDef x).UsesConst y → y ∈ names
   
   
-  def intpDefs2_eqOn {map dlSrc dlDst names bSrc bDst cSrc cDst}
+  theorem intpDefs2_eqOn {map dlSrc dlDst names bSrc bDst cSrc cDst}
     (defsEq: EqDefsOn dlSrc dlDst map names)
     (closed: ClosedUnderUses dlSrc names)
     (eqB: InvariantOn map names bSrc bDst)
@@ -51,7 +56,7 @@ namespace DefListEq
     eq.symm.trans (defsEq x xIn ▸ rfl)
   
   
-  def operatorC_lfp_eqOn {map names dlSrc dlDst bSrc bDst}
+  theorem operatorC_lfp_eqOn {map names dlSrc dlDst bSrc bDst}
     (defsEq: EqDefsOn dlSrc dlDst map names)
     (closed: ClosedUnderUses dlSrc names)
     (eqB: InvariantOn map names bSrc bDst)
@@ -98,7 +103,7 @@ namespace DefListEq
 end DefListEq
 
 open DefListEq in
-def DefList.eq_defs_eq_vals
+theorem DefList.eq_defs_eq_vals
   {dlSrc dlDst: DefList}
   {map: Nat → Nat}
   {names: Set Nat}
@@ -163,27 +168,27 @@ def DefList.prefix
   getDef x := if x < n then dl.getDef x else .none
   isClean x :=
     if h: x < n
-    then if_pos h ▸ dl.isClean x
-    else if_neg h ▸ nofun
+    then ite_eq_left h ▸ dl.isClean x
+    else ite_eq_right h ▸ nofun
 }
 
-def DefList.prefix_eq_at
+theorem DefList.prefix_eq_at
   {dl: DefList}
   {n x} (lt: x < n)
 :
   (dl.prefix n).getDef x = dl.getDef x
 :=
-  if_pos lt
+  ite_eq_left lt
 
-def DefList.prefix_none_at
+theorem DefList.prefix_none_at
   {dl: DefList}
   {n x} (nlt: ¬ x < n)
 :
   (dl.prefix n).getDef x = .none
 :=
-  if_neg nlt
+  ite_eq_right nlt
 
-def DefList.eq {dlSrc dlDst: DefList}
+theorem DefList.eq {dlSrc dlDst: DefList}
   (getDefEq: dlSrc.getDef = dlDst.getDef)
 :
   dlSrc = dlDst
@@ -192,12 +197,12 @@ def DefList.eq {dlSrc dlDst: DefList}
   | ⟨_, _⟩, _, rfl => rfl
 
 
-def FinBoundedDl.ex_expr_uses_bound
+theorem FinBoundedDl.ex_expr_uses_bound
   (dl: FinBoundedDl)
   (expr: BasicExpr)
 :
   ∃ n,
-  ∀ x ∈ expr.UsesConst,
+  ∀ x, expr.UsesConst x →
     x < n ∧ DefList.IsDefBoundedBy dl.getDef x n
 :=
   match expr with
@@ -240,7 +245,7 @@ def FinBoundedDl.ex_expr_uses_bound
   | .arbIr body => dl.ex_expr_uses_bound body
 
 
-def FinBoundedDl.prefix_wfm_eq_of_lt
+theorem FinBoundedDl.prefix_wfm_eq_of_lt
   (dl: FinBoundedDl)
   {x n: Nat}
   (xLtN: x < n)
@@ -248,7 +253,7 @@ def FinBoundedDl.prefix_wfm_eq_of_lt
 :
   (dl.prefix n).wfm x = dl.wfm x
 :=
-  let names y := y = x ∨ DefList.DependsOn dl.getDef x y
+  let names := { y | y = x ∨ DefList.DependsOn dl.getDef x y }
   let defsEq:
     DefListEq.EqDefsOn dl.toDefList (dl.prefix n) id names
   :=
@@ -267,7 +272,7 @@ def FinBoundedDl.prefix_wfm_eq_of_lt
   let eqAtN := DefList.eq_defs_eq_vals defsEq closed x (Or.inl rfl)
   eqAtN.symm
 
-def FinBoundedDl.ex_prefix_wfm_eq
+theorem FinBoundedDl.ex_prefix_wfm_eq
   (dl: FinBoundedDl)
   (x: Nat)
 :
@@ -283,7 +288,7 @@ def FinBoundedDl.ex_prefix_wfm_eq
     Nat.lt_of_lt_of_le (depsLt depOn) (Nat.le_max_right _ _)
   ⟨n, dl.prefix_wfm_eq_of_lt xLtN depsLtN⟩
 
-def FinBoundedDl.ex_prefix_wfm_eq_expr
+theorem FinBoundedDl.ex_prefix_wfm_eq_expr
   (dl: FinBoundedDl)
   (fv: List Pair)
   (expr: BasicExpr)
@@ -300,14 +305,14 @@ def FinBoundedDl.ex_prefix_wfm_eq_expr
   ⟩
 
 
-def Expr.noneLtSize {E: Type*}
+theorem Expr.noneLtSize {E: Type*}
   (size: Nat)
 :
   (none (E := E)).ConstsLt size
 :=
   nofun
 
-def DefList.DependsOn.toUsesConst {getDef a b}
+theorem DefList.DependsOn.toUsesConst {getDef a b}
   (depOn: DependsOn getDef a b)
 :
   ∃ x, (getDef x).UsesConst b
@@ -316,24 +321,24 @@ def DefList.DependsOn.toUsesConst {getDef a b}
   | Base usesVar => ⟨_, usesVar⟩
   | Rec _ depOn => depOn.toUsesConst
 
-def DefList.IsExprBoundedBy
+exposed def DefList.IsExprBoundedBy
   (dl: DefList)
   (expr: BasicExpr)
   (ub: Nat)
 :
   Prop
 :=
-  ∀ x ∈ expr.UsesConst, DefList.IsDefBoundedBy dl.getDef x ub
+  ∀ x, expr.UsesConst x → DefList.IsDefBoundedBy dl.getDef x ub
 
 
 namespace FiniteDefList
-  def ConstsLt
+  exposed def ConstsLt
     (getDef: DefList.GetDef)
     (size: Nat)
   :=
     ∀ x, (getDef x).ConstsLt size
   
-  def isFinBounded_of_constsLt {getDef size}
+  theorem isFinBounded_of_constsLt {getDef size}
     (constsLt: ConstsLt getDef size)
   :
     DefList.IsFinBounded getDef
@@ -353,12 +358,12 @@ structure FiniteDefList extends FinBoundedDl where
   isFinBounded := FiniteDefList.isFinBounded_of_constsLt constsLt
 
 namespace FiniteDefList
-  def size
+  exposed def size
     (dl: FiniteDefList)
   :=
     dl.constNames.length
   
-  def empty: FiniteDefList := {
+  exposed def empty: FiniteDefList := {
     getDef _ := Expr.none
     constNames := []
     constsLt _ := Expr.noneLtSize _
@@ -366,7 +371,7 @@ namespace FiniteDefList
     isClean _ := by decide
   }
   
-  def emptySizeZero: empty.size = 0 := rfl
+  theorem emptySizeZero: empty.size = 0 := rfl
   
   structure Def (size: Nat) where
     name: String
@@ -374,7 +379,7 @@ namespace FiniteDefList
     constsLt: expr.ConstsLt size
     isClean: expr.IsClean
   
-  def defsGetNth {ub} 
+  exposed def defsGetNth {ub} 
     (defs: List (Def ub))
     (n: Nat)
   :
@@ -387,14 +392,14 @@ namespace FiniteDefList
       isClean := by decide
     }
   
-  def defsToGetDef {ub}
+  exposed def defsToGetDef {ub}
     (defs: List (Def ub))
   :
     DefList.GetDef
   :=
     fun x => (defsGetNth defs x).expr
 
-  def defsToGetDef_gt_none {ub}
+  theorem defsToGetDef_gt_none {ub}
     (defs: List (Def ub))
     {x: Nat}
     (xGe: defs.length ≤ x)
@@ -405,7 +410,7 @@ namespace FiniteDefList
     rw [List.getElem?_eq_none_iff.mpr xGe]
     rfl
   
-  def extend {ub}
+  exposed def extend {ub}
     (dl: FiniteDefList)
     (defs: List (Def ub))
     (ubEq: ub = dl.size + defs.length)
@@ -425,11 +430,11 @@ namespace FiniteDefList
           unfold getDef at usesVar
           rw [List.length_append]
           if h: x < dl.size then
-            rw [if_pos h] at usesVar
+            rw [ite_eq_left h] at usesVar
             apply Nat.lt_add_right
             exact dl.constsLt x y usesVar
           else
-            rw [if_neg h] at usesVar
+            rw [ite_eq_right h] at usesVar
             unfold size at ubEq
             rw [List.length_map, ←ubEq]
             exact (defsGetNth defs (x - dl.size)).constsLt _ usesVar
@@ -439,17 +444,17 @@ namespace FiniteDefList
           False.elim (Nat.not_lt_of_ge xGe (Nat.lt_of_lt_of_le h le))
         else by
           unfold getDef
-          rw [if_neg h]
+          rw [ite_eq_right h]
           apply defsToGetDef_gt_none
           exact Nat.le_sub_of_add_le (by
             simpa [size, Nat.add_comm] using xGe)
       isClean x := by
         unfold getDef
         if h: x < dl.size then
-          rw [if_pos h]
+          rw [ite_eq_left h]
           exact dl.isClean x
         else
-          rw [if_neg h]
+          rw [ite_eq_right h]
           exact (defsGetNth defs (x - dl.size)).isClean
     }
   
@@ -479,7 +484,7 @@ namespace FiniteDefList
       }
     ] rfl
   
-  def isExprBoundedBy
+  theorem isExprBoundedBy
     (dl: FiniteDefList)
     (expr: BasicExpr)
   :
@@ -490,7 +495,7 @@ namespace FiniteDefList
       dl.constsLt y dep usesConst
 
 
-  def prefix_size_eq
+  theorem prefix_size_eq
     (dl: FiniteDefList)
   :
     dl.toDefList = dl.toDefList.prefix dl.size
@@ -503,7 +508,7 @@ namespace FiniteDefList
       DefList.prefix_none_at h ▸
       dl.noneAboveSize (le_of_not_gt h)
 
-  def prefix_size_wfm_eq
+  theorem prefix_size_wfm_eq
     (dl: FiniteDefList)
   :
     (dl.toDefList.prefix dl.size).wfm = dl.wfm
@@ -511,7 +516,7 @@ namespace FiniteDefList
     dl.prefix_size_eq ▸ rfl
   
   
-  def extend_wfm_eq_of_lt {ub}
+  theorem extend_wfm_eq_of_lt {ub}
     (dlParent dlChild: FiniteDefList)
     {defs: List (Def ub)}
     (ubEq: ub = dlParent.size + defs.length)
@@ -521,7 +526,8 @@ namespace FiniteDefList
   :
     dlParent.wfm x = dlChild.wfm x
   :=
-    let names y := y = x ∨ DefList.DependsOn dlParent.getDef x y
+    let names :=
+      { y | y = x ∨ DefList.DependsOn dlParent.getDef x y }
     let defsEq:
       DefListEq.EqDefsOn
         dlParent.toDefList
@@ -540,7 +546,7 @@ namespace FiniteDefList
           (dlParent.extend defs ubEq).getDef y = dlParent.getDef y
         := by
           show (if y < dlParent.size then _ else _) = dlParent.getDef y
-          rw [if_pos yLt]
+          rw [ite_eq_left yLt]
         (Expr.mapConst_eq_id _).trans eqAtY.symm
     let closed _ yIn _ zUsed :=
       match yIn with

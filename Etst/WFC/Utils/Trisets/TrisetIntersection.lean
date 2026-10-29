@@ -19,9 +19,11 @@
   The intersection of hereditarily classical trisets is shown to be
   hereditarily classical.
 -/
+module
+public import Etst.WFC.Ch6_SelfDefinability
+public import Etst.WFC.Utils.Trisets.TrisetMembership
 
-import Etst.WFC.Utils.Trisets.TrisetMembership
-
+public section
 namespace Etst
 
 open SingleLaneExpr
@@ -39,7 +41,7 @@ open SingleLaneExpr
 
 namespace Pair.PreTriset
   
-  def interExpr (a b: Pair): BasicExpr :=
+  exposed def interExpr (a b: Pair): BasicExpr :=
     .un
       (.ir
         (.call (.const () isInDl.consts.uniSetMap) a.toExpr)
@@ -48,62 +50,68 @@ namespace Pair.PreTriset
         (.call (.const () isInDl.consts.uniSetMap) b.toExpr)
         (.zth (.call (.const () isInDl.consts.IsIn) a.toExpr)))
   
-  def inter (a b: Pair): Pair :=
+  exposed def inter (a b: Pair): Pair :=
     uniSetMapIndex
       isInDl.toDefList
       isInDl.size
       []
       (interExpr a b)
   
-  def inter_wfm_eq (a b: Pair):
+  theorem inter_wfm_eq (a b: Pair):
     uniSetMap.call (inter a b) = (interExpr a b).triIntp [] isInDl.wfm
   :=
     FiniteDefList.uniSetMapAt_eq isInDl [] (interExpr a b)
   
-  def inter_defMem_iff {a b x: Pair}:
-    (uniSetMap.call (inter a b)).defMem x ↔
-      Or
-        (((uniSetMap.call a).defMem x) ∧ (isInDl.IsInDef b x))
-        (((uniSetMap.call b).defMem x) ∧ (isInDl.IsInDef a x))
+  theorem inter_defMem_iff {a b x: Pair}:
+    Iff
+      (x ∈ (uniSetMap.call (inter a b)).defMem)
+      (Or
+        (x ∈ (uniSetMap.call a).defMem ∧ isInDl.IsInDef b x)
+        (x ∈ (uniSetMap.call b).defMem ∧ isInDl.IsInDef a x))
   :=
     inter_wfm_eq a b ▸
-      Iff.intro
-        (fun h =>
-          match inUnElim h with
-          | .inl hIr =>
-            let ⟨hCallU, hZth⟩ := inIrElim hIr
-            let hU := inCallElimSingle hCallU (intp2_toExpr_eq_singleton a)
-            let ⟨_, hC⟩ := inZthElim hZth
-            let hI := inCallElimSingle hC (intp2_toExpr_eq_singleton b)
-            .inl ⟨isInDl.wfm_uniSetMap_eq ▸ hU, isInDl.IsInDef_of_defMem hI⟩
-          | .inr hIr =>
-            let ⟨hCallU, hZth⟩ := inIrElim hIr
-            let hU := inCallElimSingle hCallU (intp2_toExpr_eq_singleton b)
-            let ⟨_, hC⟩ := inZthElim hZth
-            let hI := inCallElimSingle hC (intp2_toExpr_eq_singleton a)
-            .inr ⟨isInDl.wfm_uniSetMap_eq ▸ hU, isInDl.IsInDef_of_defMem hI⟩)
-        (fun h =>
-          match h with
-          | .inl ⟨hU, hI⟩ =>
-            inUnL (inIr
-              (inCall
-                (show (isInDl.wfm isInDl.consts.uniSetMap).defMem (.pair a x)
-                from isInDl.wfm_uniSetMap_eq ▸ hU)
-                (inToExpr a))
-              (inZth (inCall (hI.toDefMem (w := .null)) (inToExpr b))))
-          | .inr ⟨hU, hI⟩ =>
-            inUnR (inIr
-              (inCall
-                (show (isInDl.wfm isInDl.consts.uniSetMap).defMem (.pair b x)
-                from isInDl.wfm_uniSetMap_eq ▸ hU)
-                (inToExpr b))
-              (inZth (inCall (hI.toDefMem (w := .null)) (inToExpr a)))))
+    Iff.intro
+      (fun h =>
+        match inUnElim h with
+        | .inl hIr =>
+          let ⟨hCallU, hZth⟩ := inIrElim hIr
+          let hU := inCallElimSingle hCallU (intp2_toExpr_eq_singleton a)
+          let ⟨_, hC⟩ := inZthElim hZth
+          let hI := inCallElimSingle hC (intp2_toExpr_eq_singleton b)
+          .inl ⟨isInDl.wfm_uniSetMap_eq ▸ hU, isInDl.IsInDef_of_defMem hI⟩
+        | .inr hIr =>
+          let ⟨hCallU, hZth⟩ := inIrElim hIr
+          let hU := inCallElimSingle hCallU (intp2_toExpr_eq_singleton b)
+          let ⟨_, hC⟩ := inZthElim hZth
+          let hI := inCallElimSingle hC (intp2_toExpr_eq_singleton a)
+          .inr ⟨isInDl.wfm_uniSetMap_eq ▸ hU, isInDl.IsInDef_of_defMem hI⟩)
+      (fun h =>
+        match h with
+        | .inl ⟨hU, hI⟩ =>
+          inUnL (inIr
+            (inCall
+              (show
+                .pair a x ∈ (isInDl.wfm isInDl.consts.uniSetMap).defMem
+              from
+                isInDl.wfm_uniSetMap_eq ▸ hU)
+              (inToExpr a))
+            (inZth (inCall (hI.toDefMem (w := .null)) (inToExpr b))))
+        | .inr ⟨hU, hI⟩ =>
+          inUnR (inIr
+            (inCall
+              (show
+                .pair b x ∈ (isInDl.wfm isInDl.consts.uniSetMap).defMem
+              from
+                isInDl.wfm_uniSetMap_eq ▸ hU)
+              (inToExpr b))
+            (inZth (inCall (hI.toDefMem (w := .null)) (inToExpr a)))))
   
-  def inter_posMem_iff {a b x: Pair}:
-    (uniSetMap.call (inter a b)).posMem x ↔
-      Or
-        (((uniSetMap.call a).posMem x) ∧ (isInDl.IsInPos b x))
-        (((uniSetMap.call b).posMem x) ∧ (isInDl.IsInPos a x))
+  theorem inter_posMem_iff {a b x: Pair}:
+    Iff
+      (x ∈ (uniSetMap.call (inter a b)).posMem)
+      (Or
+        (x ∈ (uniSetMap.call a).posMem ∧ isInDl.IsInPos b x)
+        (x ∈ (uniSetMap.call b).posMem ∧ isInDl.IsInPos a x))
   :=
     inter_wfm_eq a b ▸
       Iff.intro
@@ -126,15 +134,19 @@ namespace Pair.PreTriset
           | .inl ⟨hU, hI⟩ =>
             inUnL (inIr
               (inCall
-                (show (isInDl.wfm isInDl.consts.uniSetMap).posMem (.pair a x)
-                  from isInDl.wfm_uniSetMap_eq ▸ hU)
+                (show
+                  .pair a x ∈ (isInDl.wfm isInDl.consts.uniSetMap).posMem
+                from
+                  isInDl.wfm_uniSetMap_eq ▸ hU)
                 (inToExpr a))
               (inZth (inCall (hI.toPosMem (w := .null)) (inToExpr b))))
           | .inr ⟨hU, hI⟩ =>
             inUnR (inIr
               (inCall
-                (show (isInDl.wfm isInDl.consts.uniSetMap).posMem (.pair b x)
-                  from isInDl.wfm_uniSetMap_eq ▸ hU)
+                (show
+                  .pair b x ∈ (isInDl.wfm isInDl.consts.uniSetMap).posMem
+                from
+                  isInDl.wfm_uniSetMap_eq ▸ hU)
                 (inToExpr b))
               (inZth (inCall (hI.toPosMem (w := .null)) (inToExpr a)))))
   
@@ -143,7 +155,7 @@ namespace Pair.PreTriset
     (The possible-lane version only holds on Hc trisets —
     `IsBisimPos` is not transitive off Hc.)
   -/
-  def isInDef_inter_iff {a b x: Pair}:
+  theorem isInDef_inter_iff {a b x: Pair}:
     isInDl.IsInDef (inter a b) x ↔ isInDl.IsInDef a x ∧ isInDl.IsInDef b x
   :=
     Iff.intro
@@ -161,7 +173,7 @@ namespace Pair.PreTriset
            (.inl ⟨hInsA, hIsInB.respectsBisim (setoid.iseqv.refl b) isB1.toBisim⟩)⟩)
   
   -- Transitions of `inter a b` land in `inter a' b'`, up to bisimilarity.
-  def inter_respects_sim {a a' b b': Pair}
+  theorem inter_respects_sim {a a' b b': Pair}
     (ha: IsBisim a a')
     (hb: IsBisim b b')
   :
@@ -185,7 +197,7 @@ namespace Pair.PreTriset
       let ⟨x', hInwB', bisimX⟩ := hb.inw hInwB
       ⟨x', inter_posMem_iff.mpr (.inr ⟨hInwB', hIsInA.respectsBisim ha bisimX⟩), bisimX⟩
   
-  def inter_respectsBisim {a a' b b': Pair}
+  theorem inter_respectsBisim {a a' b b': Pair}
     (ha: IsBisim a a')
     (hb: IsBisim b b')
   :
@@ -211,7 +223,7 @@ namespace Pair.PreTriset
      .inl ⟨rfl, rfl⟩⟩
   
   -- The two disjuncts commute.
-  def inter_call_comm (a b: Pair):
+  theorem inter_call_comm (a b: Pair):
     uniSetMap.call (inter a b) = uniSetMap.call (inter b a)
   :=
     Set3.ordApx.le_antisymm _ _
@@ -220,7 +232,7 @@ namespace Pair.PreTriset
       ⟨fun _x h => inter_defMem_iff.mpr (inter_defMem_iff.mp h).symm,
        fun _x h => inter_posMem_iff.mpr (inter_posMem_iff.mp h).symm⟩
   
-  def inter_comm_bisim (a b: Pair):
+  theorem inter_comm_bisim (a b: Pair):
     IsBisim (inter a b) (inter b a)
   :=
     isBisim_of_uniSetMap_call_eq (inter_call_comm a b)
@@ -234,7 +246,7 @@ end Pair.PreTriset
 
 namespace Triset
   
-  def inter (tsA tsB: Pair.Triset): Pair.Triset :=
+  exposed def inter (tsA tsB: Pair.Triset): Pair.Triset :=
     Quotient.lift₂
       (fun a b => ⟦Pair.PreTriset.inter a b⟧)
       (fun _a _b _a' _b' ha hb =>
@@ -242,7 +254,7 @@ namespace Triset
       tsA tsB
   
   /-- The fuzzy characteristic equation of intersection, definite lane. -/
-  def isInDef_inter_iff {tsA tsB x: Pair.Triset}:
+  theorem isInDef_inter_iff {tsA tsB x: Pair.Triset}:
     Iff
       (Triset.IsInDef (inter tsA tsB) x)
       (Triset.IsInDef tsA x ∧ Triset.IsInDef tsB x)
@@ -255,7 +267,7 @@ namespace Triset
       tsA tsB x
       (fun _a _b _x => Pair.PreTriset.isInDef_inter_iff)
   
-  def inter_comm
+  theorem inter_comm
     (tsA tsB: Pair.Triset)
   :
     inter tsA tsB = inter tsB tsA
@@ -266,7 +278,7 @@ namespace Triset
       (fun a b => Quot.sound (Pair.PreTriset.inter_comm_bisim a b))
   
   /-- The intersection of Hc trisets is Hc. -/
-  def hc_inter {tsA tsB: Pair.Triset}
+  theorem hc_inter {tsA tsB: Pair.Triset}
     (hcA: Pair.Triset.Hc tsA)
     (hcB: Pair.Triset.Hc tsB)
   :
@@ -279,73 +291,73 @@ namespace Triset
         Pair.Triset.Hc (inter tsA tsB))
       tsA tsB
       (fun a b hA hB nhc =>
-        match nhc with
-        | .notClassical isPos notDef =>
-          let ⟨_preTs, _preElem, tsEq, elemEq, inw⟩ := isPos
-          let bisim := (Quotient.exact tsEq).symm
-          let ⟨y, inwI, bisimEY⟩ := bisim.inw inw
-          match Pair.PreTriset.inter_posMem_iff.mp inwI with
-          | .inl ⟨inwA, isInPosB⟩ =>
-            let ⟨_y1, isBPy1, inwB1⟩ := isInPosB
-            let ⟨y2, insB2, bisim12⟩ := Pair.Triset.hc_ins_of_inw hB inwB1
-            let ⟨y3, insA3, bisimY3⟩ := Pair.Triset.hc_ins_of_inw hA inwA
-            let hcY3: Pair.Triset.Hc ⟦y3⟧ := Pair.Triset.hc_hered hA insA3.toPos
-            let hcY2: Pair.Triset.Hc ⟦y2⟧ := Pair.Triset.hc_hered hB insB2.toPos
-            let hcY: Pair.Triset.Hc ⟦y⟧ :=
-              Quotient.sound (s := Pair.PreTriset.setoid) bisimY3 ▸ hcY3
-            let isBPy2: bisimDl.IsBisimPos y y2 :=
-              isBPy1.respectsBisim (Pair.PreTriset.setoid.iseqv.refl y) bisim12
-            let isBDy2: bisimDl.IsBisimDef y y2 :=
-              bisimDl.IsBisimPos.toIsBisimDef hcY hcY2 isBPy2
-            let isInDefB: isInDl.IsInDef b y := ⟨y2, isBDy2, insB2⟩
-            let isInDefB3: isInDl.IsInDef b y3 :=
-              isInDefB.respectsBisim (Pair.PreTriset.setoid.iseqv.refl b) bisimY3
-            let insI: Pair.PreTriset.Ins (Pair.PreTriset.inter a b) y3 :=
-              Pair.PreTriset.inter_defMem_iff.mpr (.inl ⟨insA3, isInDefB3⟩)
-            notDef
-              ⟨Pair.PreTriset.inter a b, y3,
-               rfl,
-               elemEq.trans
-                 ((Quot.sound bisimEY).trans (Quot.sound bisimY3)),
-               insI⟩
-          | .inr ⟨inwB, isInPosA⟩ =>
-            let ⟨_y1, isBPy1, inwA1⟩ := isInPosA
-            let ⟨y2, insA2, bisim12⟩ := Pair.Triset.hc_ins_of_inw hA inwA1
-            let ⟨y3, insB3, bisimY3⟩ := Pair.Triset.hc_ins_of_inw hB inwB
-            let hcY3: Pair.Triset.Hc ⟦y3⟧ := Pair.Triset.hc_hered hB insB3.toPos
-            let hcY2: Pair.Triset.Hc ⟦y2⟧ := Pair.Triset.hc_hered hA insA2.toPos
-            let hcY: Pair.Triset.Hc ⟦y⟧ :=
-              Quotient.sound (s := Pair.PreTriset.setoid) bisimY3 ▸ hcY3
-            let isBPy2: bisimDl.IsBisimPos y y2 :=
-              isBPy1.respectsBisim (Pair.PreTriset.setoid.iseqv.refl y) bisim12
-            let isBDy2: bisimDl.IsBisimDef y y2 :=
-              bisimDl.IsBisimPos.toIsBisimDef hcY hcY2 isBPy2
-            let isInDefA: isInDl.IsInDef a y := ⟨y2, isBDy2, insA2⟩
-            let isInDefA3: isInDl.IsInDef a y3 :=
-              isInDefA.respectsBisim (Pair.PreTriset.setoid.iseqv.refl a) bisimY3
-            let insI: Pair.PreTriset.Ins (Pair.PreTriset.inter a b) y3 :=
-              Pair.PreTriset.inter_defMem_iff.mpr (.inr ⟨insB3, isInDefA3⟩)
-            notDef
-              ⟨Pair.PreTriset.inter a b, y3,
-               rfl,
-               elemEq.trans
-                 ((Quot.sound bisimEY).trans (Quot.sound bisimY3)),
-               insI⟩
-        | .containsNhc isPos isNhc =>
-          let ⟨_preTs, preElem, tsEq, elemEq, inw⟩ := isPos
-          let bisim := (Quotient.exact tsEq).symm
-          let ⟨y, inwI, bisimEY⟩ := bisim.inw inw
+      match nhc with
+      | .notClassical isPos notDef =>
+        let ⟨_preTs, _preElem, tsEq, elemEq, inw⟩ := isPos
+        let bisim := (Quotient.exact tsEq).symm
+        let ⟨y, inwI, bisimEY⟩ := bisim.inw inw
+        match Pair.PreTriset.inter_posMem_iff.mp inwI with
+        | .inl ⟨inwA, isInPosB⟩ =>
+          let ⟨_y1, isBPy1, inwB1⟩ := isInPosB
+          let ⟨y2, insB2, bisim12⟩ := Pair.Triset.hc_ins_of_inw hB inwB1
+          let ⟨y3, insA3, bisimY3⟩ := Pair.Triset.hc_ins_of_inw hA inwA
+          let hcY3: Pair.Triset.Hc ⟦y3⟧ := Pair.Triset.hc_hered hA (Set3.defToPos insA3)
+          let hcY2: Pair.Triset.Hc ⟦y2⟧ := Pair.Triset.hc_hered hB (Set3.defToPos insB2)
           let hcY: Pair.Triset.Hc ⟦y⟧ :=
-            match Pair.PreTriset.inter_posMem_iff.mp inwI with
-            | .inl ⟨inwA, _⟩ => Pair.Triset.hc_hered hA inwA
-            | .inr ⟨inwB, _⟩ => Pair.Triset.hc_hered hB inwB
-          let hcElem: Pair.Triset.Hc ⟦preElem⟧ :=
-            Quotient.sound (s := Pair.PreTriset.setoid) bisimEY ▸ hcY
-          (elemEq ▸ hcElem) isNhc)
-      hcA hcB
+            Quotient.sound (s := Pair.PreTriset.setoid) bisimY3 ▸ hcY3
+          let isBPy2: bisimDl.IsBisimPos y y2 :=
+            isBPy1.respectsBisim (Pair.PreTriset.setoid.iseqv.refl y) bisim12
+          let isBDy2: bisimDl.IsBisimDef y y2 :=
+            bisimDl.IsBisimPos.toIsBisimDef hcY hcY2 isBPy2
+          let isInDefB: isInDl.IsInDef b y := ⟨y2, isBDy2, insB2⟩
+          let isInDefB3: isInDl.IsInDef b y3 :=
+            isInDefB.respectsBisim (Pair.PreTriset.setoid.iseqv.refl b) bisimY3
+          let insI: Pair.PreTriset.Ins (Pair.PreTriset.inter a b) y3 :=
+            Pair.PreTriset.inter_defMem_iff.mpr (.inl ⟨insA3, isInDefB3⟩)
+          notDef
+            ⟨Pair.PreTriset.inter a b, y3,
+              rfl,
+              elemEq.trans
+                ((Quot.sound bisimEY).trans (Quot.sound bisimY3)),
+              insI⟩
+        | .inr ⟨inwB, isInPosA⟩ =>
+          let ⟨_y1, isBPy1, inwA1⟩ := isInPosA
+          let ⟨y2, insA2, bisim12⟩ := Pair.Triset.hc_ins_of_inw hA inwA1
+          let ⟨y3, insB3, bisimY3⟩ := Pair.Triset.hc_ins_of_inw hB inwB
+          let hcY3: Pair.Triset.Hc ⟦y3⟧ := Pair.Triset.hc_hered hB (Set3.defToPos insB3)
+          let hcY2: Pair.Triset.Hc ⟦y2⟧ := Pair.Triset.hc_hered hA (Set3.defToPos insA2)
+          let hcY: Pair.Triset.Hc ⟦y⟧ :=
+            Quotient.sound (s := Pair.PreTriset.setoid) bisimY3 ▸ hcY3
+          let isBPy2: bisimDl.IsBisimPos y y2 :=
+            isBPy1.respectsBisim (Pair.PreTriset.setoid.iseqv.refl y) bisim12
+          let isBDy2: bisimDl.IsBisimDef y y2 :=
+            bisimDl.IsBisimPos.toIsBisimDef hcY hcY2 isBPy2
+          let isInDefA: isInDl.IsInDef a y := ⟨y2, isBDy2, insA2⟩
+          let isInDefA3: isInDl.IsInDef a y3 :=
+            isInDefA.respectsBisim (Pair.PreTriset.setoid.iseqv.refl a) bisimY3
+          let insI: Pair.PreTriset.Ins (Pair.PreTriset.inter a b) y3 :=
+            Pair.PreTriset.inter_defMem_iff.mpr (.inr ⟨insB3, isInDefA3⟩)
+          notDef
+            ⟨Pair.PreTriset.inter a b, y3,
+              rfl,
+              elemEq.trans
+                ((Quot.sound bisimEY).trans (Quot.sound bisimY3)),
+              insI⟩
+      | .containsNhc isPos isNhc =>
+        let ⟨_preTs, preElem, tsEq, elemEq, inw⟩ := isPos
+        let bisim := (Quotient.exact tsEq).symm
+        let ⟨y, inwI, bisimEY⟩ := bisim.inw inw
+        let hcY: Pair.Triset.Hc ⟦y⟧ :=
+          match Pair.PreTriset.inter_posMem_iff.mp inwI with
+          | .inl ⟨inwA, _⟩ => Pair.Triset.hc_hered hA inwA
+          | .inr ⟨inwB, _⟩ => Pair.Triset.hc_hered hB inwB
+        let hcElem: Pair.Triset.Hc ⟦preElem⟧ :=
+          Quotient.sound (s := Pair.PreTriset.setoid) bisimEY ▸ hcY
+        (elemEq ▸ hcElem) isNhc)
+    hcA hcB
   
   /-- The fuzzy characteristic equation, possible lane, on Hc trisets. -/
-  def isInPos_inter_iff_of_hc {tsA tsB tsX: Pair.Triset}
+  theorem isInPos_inter_iff_of_hc {tsA tsB tsX: Pair.Triset}
     (hcA: Pair.Triset.Hc tsA)
     (hcB: Pair.Triset.Hc tsB)
     (hcX: Pair.Triset.Hc tsX)

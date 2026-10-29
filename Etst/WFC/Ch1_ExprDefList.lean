@@ -1,10 +1,10 @@
 -- # Chapter 1: Expressions and Definition Lists
-
+module
 import Mathlib.SetTheory.Ordinal.Basic
 import Mathlib.SetTheory.Ordinal.Arithmetic
-
 import Etst.WFC.Ch0_Set3
 
+public section
 namespace Etst
 
 
@@ -18,7 +18,7 @@ namespace Etst
   The variables use de Bruijn indices, ie. `var 0` refers to the
   innermost quantifier, `var 1` to the next outer one, and so on.
 -/
-inductive Expr (E: Type*) where
+public inductive Expr (E: Type*) where
 | const (e: E) (x: Nat)
 | var (x: Nat)
 | null
@@ -29,16 +29,19 @@ inductive Expr (E: Type*) where
 | arbIr (body: Expr E)
 deriving DecidableEq
 
+exposed section
 def Expr.un {E} (left rite: Expr E): Expr E :=
   compl (ir (compl left) (compl rite))
 def Expr.some {E} (body: Expr E): Expr E :=
   compl (full (compl body))
 def Expr.arbUn {E} (body: Expr E): Expr E :=
   compl (arbIr (compl body))
+end
 
 
-abbrev BasicExpr := Expr Unit
+public abbrev BasicExpr := Expr Unit
 
+exposed section
 -- Convenience definitions for preserving the `BasicExpr` type in arguments.
 def BasicExpr.const (x: Nat): BasicExpr := Expr.const () x
 def BasicExpr.var (x: Nat): BasicExpr := Expr.var x
@@ -59,41 +62,40 @@ def BasicExpr.arbUn (body: BasicExpr): BasicExpr :=
   Expr.arbUn body
 def BasicExpr.arbIr (body: BasicExpr): BasicExpr :=
   Expr.arbIr body
+end
 
 namespace Expr
-  def UsesConst {E} (expr: Expr E): Set Nat :=
-    fun x =>
-      match expr with
-        | const _ v => x = v
-        | var _ => False
-        | null => False
-        | prod left rite => left.UsesConst x ∨ rite.UsesConst x
-        | ir left rite => left.UsesConst x ∨ rite.UsesConst x
-        | full body => body.UsesConst x
-        | compl body => body.UsesConst x
-        | arbIr body => body.UsesConst x
+  exposed def UsesConst {E} (expr: Expr E) (x: Nat): Prop :=
+    match expr with
+      | const _ v => x = v
+      | var _ => False
+      | null => False
+      | prod left rite => left.UsesConst x ∨ rite.UsesConst x
+      | ir left rite => left.UsesConst x ∨ rite.UsesConst x
+      | full body => body.UsesConst x
+      | compl body => body.UsesConst x
+      | arbIr body => body.UsesConst x
   
-  def UsesFreeVar {E} (expr: Expr E): Set Nat :=
-    fun x =>
-      match expr with
-        | const _ _ => False
-        | var v => x = v
-        | null => False
-        | prod left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
-        | ir left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
-        | full body => body.UsesFreeVar x
-        | compl body => body.UsesFreeVar x
-        | arbIr body => body.UsesFreeVar (x + 1)
+  exposed def UsesFreeVar {E} (expr: Expr E) (x: Nat): Prop :=
+    match expr with
+      | const _ _ => False
+      | var v => x = v
+      | null => False
+      | prod left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
+      | ir left rite => left.UsesFreeVar x ∨ rite.UsesFreeVar x
+      | full body => body.UsesFreeVar x
+      | compl body => body.UsesFreeVar x
+      | arbIr body => body.UsesFreeVar (x + 1)
   
-  abbrev FreeVarsSat {E} (expr: Expr E) (P: Nat → Prop): Prop :=
-    ∀ x ∈ expr.UsesFreeVar, P x
+  exposed def FreeVarsSat {E} (expr: Expr E) (P: Nat → Prop): Prop :=
+    ∀ x: Nat, expr.UsesFreeVar x → P x
   
   
   /-
     A positive expression only refers to constants under an even
     number of complements.
   -/
-  def IsPositive {E} (expr: Expr E) (isEvenD := true): Prop :=
+  exposed def IsPositive {E} (expr: Expr E) (isEvenD := true): Prop :=
     match expr with
     | const _ _ => isEvenD
     | var _ => True
@@ -108,16 +110,16 @@ namespace Expr
 
   
   -- `any` contains all elements, under any valuation.
-  def any {E}: Expr E := arbUn (var 0)
+  exposed def any {E}: Expr E := arbUn (var 0)
   -- `none` contains no elements, under any valuation.
-  def none {E}: Expr E := arbIr (compl (var 0))
+  exposed def none {E}: Expr E := arbIr (compl (var 0))
   
   
   /-
     Increments all free variables by `liftBy`. `depth` represents
     inside how many quantifiers we are.
   -/
-  def lift {E}
+  exposed def lift {E}
     (expr: Expr E)
     (depth := 0)
     (liftBy := 1)
@@ -136,7 +138,7 @@ namespace Expr
     Transforms a map of free variables to one that is equivalent
     inside a single quantifier.
   -/
-  def liftFvMap {E}
+  exposed def liftFvMap {E}
     (fvMap: Nat → Expr E)
   :
     Nat → Expr E
@@ -144,7 +146,7 @@ namespace Expr
   | n + 1 => (fvMap n).lift
   
   -- Replaces free variables according to a given map.
-  def subst {E}
+  exposed def subst {E}
     (fvMap: Nat → Expr E)
   :
     Expr E → Expr E
@@ -162,29 +164,25 @@ namespace Expr
   | .arbIr body =>
     .arbIr (subst (liftFvMap fvMap) body)
   
-  -- Removes all free variables.
-  def clearFreeVars {E}: Expr E → Expr E :=
-    subst fun _ => none
-  
-  abbrev IsClean {E} (expr: Expr E): Prop :=
+  public abbrev IsClean {E} (expr: Expr E): Prop :=
     expr.FreeVarsSat fun _ => False
   
 end Expr
 
 
-def DefList.GetDef := Nat → BasicExpr
+public abbrev DefList.GetDef := Nat → BasicExpr
 
 /-
   A definition list is a map from natural numbers to expressions.
   It is used to allow recursive definitions -- the constants
   in a definition refer to other definitions of the definition list.
 -/
-structure DefList where
+public structure DefList where
   getDef: DefList.GetDef
   isClean: ∀ name, (getDef name).IsClean
 
 -- The definition x depends on y iff x contains y, possibly transitively.
-inductive DefList.DependsOn
+public inductive DefList.DependsOn
   (getDef: GetDef)
 :
   Nat → Nat → Prop
@@ -203,7 +201,7 @@ where
   If `a` depends on `b`, and `b` has a free constant `c`, then `a`
   also depends on `c`.
 -/
-def DefList.DependsOn.push
+public theorem DefList.DependsOn.push
   {getDef: GetDef} {a b c}
   (dependsOn: DependsOn getDef a b)
   (isFree: (getDef b).UsesConst c)
@@ -214,7 +212,7 @@ def DefList.DependsOn.push
   | Base b => Rec b (Base isFree)
   | Rec head tail => Rec head (push tail isFree)
 
-def DefList.IsDefBoundedBy
+exposed def DefList.IsDefBoundedBy
   (getDef: GetDef)
   (x ub: Nat)
 :
@@ -234,7 +232,7 @@ def DefList.IsDefBoundedBy
     ...
   ```
 -/
-def DefList.IsFinBounded (getDef: GetDef): Prop :=
+exposed def DefList.IsFinBounded (getDef: GetDef): Prop :=
   ∀ name,
   ∃ upperBound,
   IsDefBoundedBy getDef name upperBound

@@ -4,8 +4,11 @@
   are that the valuations are ordered, here we assume that the
   interpretations of the sub-expressions are ordered.
 -/
-import Etst.WFC.Utils.PairExpr
+module
+public import Etst.WFC.Utils.PairExpr
+import Etst.WFC.Utils.RulesOfInference
 
+public section
 namespace Etst
 
 variable {b0 b1 c0 c1: Valuation Pair}
@@ -16,7 +19,7 @@ namespace SingleLaneExpr
   open Expr
   variable {l0 l1 r0 r1 e0 e1: SingleLaneExpr}
   
-  def intp2_mono_std_prod
+  theorem intp2_mono_std_prod
     {l0 l1 r0 r1: SingleLaneExpr}
     (leL: intp2 l0 fv0 b0 c0 ≤ intp2 l1 fv1 b1 c1)
     (leR: intp2 r0 fv0 b0 c0 ≤ intp2 r1 fv1 b1 c1)
@@ -28,7 +31,7 @@ namespace SingleLaneExpr
       let ⟨insL, insR⟩ := inProdElim isDef
       inProd (leL insL) (leR insR)
   
-  def eq_intp2_prod_of_eq
+  theorem eq_intp2_prod_of_eq
     (eqL: intp2 l0 fv0 b0 c0 = intp2 l1 fv1 b1 c1)
     (eqR: intp2 r0 fv0 b0 c0 = intp2 r1 fv1 b1 c1)
   :
@@ -39,7 +42,7 @@ namespace SingleLaneExpr
       (intp2_mono_std_prod (le_of_eq eqL.symm) (le_of_eq eqR.symm))
   
   
-  def intp2_mono_std_un
+  theorem intp2_mono_std_un
     (leL: intp2 l0 fv0 b0 c0 ≤ intp2 l1 fv1 b1 c1)
     (leR: intp2 r0 fv0 b0 c0 ≤ intp2 r1 fv1 b1 c1)
   :
@@ -50,7 +53,7 @@ namespace SingleLaneExpr
         (fun insL => inUnL (leL insL))
         (fun insR => inUnR (leR insR))
   
-  def eq_intp2_un_of_eq
+  theorem eq_intp2_un_of_eq
     (eqL: intp2 l0 fv0 b0 c0 = intp2 l1 fv1 b1 c1)
     (eqR: intp2 r0 fv0 b0 c0 = intp2 r1 fv1 b1 c1)
   :
@@ -61,7 +64,7 @@ namespace SingleLaneExpr
       (intp2_mono_std_un (le_of_eq eqL.symm) (le_of_eq eqR.symm))
   
   
-  def intp2_mono_std_ir
+  theorem intp2_mono_std_ir
     (leL: intp2 l0 fv0 b0 c0 ≤ intp2 l1 fv1 b1 c1)
     (leR: intp2 r0 fv0 b0 c0 ≤ intp2 r1 fv1 b1 c1)
   :
@@ -71,7 +74,7 @@ namespace SingleLaneExpr
       let ⟨insL, insR⟩ := inIrElim ins
       inIr (leL insL) (leR insR)
   
-  def eq_intp2_ir_of_eq
+  theorem eq_intp2_ir_of_eq
     (eqL: intp2 l0 fv0 b0 c0 = intp2 l1 fv1 b1 c1)
     (eqR: intp2 r0 fv0 b0 c0 = intp2 r1 fv1 b1 c1)
   :
@@ -82,7 +85,7 @@ namespace SingleLaneExpr
       (intp2_mono_std_ir (le_of_eq eqL.symm) (le_of_eq eqR.symm))
   
   
-  def intp2_mono_std_some
+  theorem intp2_mono_std_some
     (le: intp2 e0 fv0 b0 c0 ≤ intp2 e1 fv1 b1 c1)
   :
     intp2 (some e0) fv0 b0 c0 ⊆ intp2 (some e1) fv1 b1 c1
@@ -91,7 +94,7 @@ namespace SingleLaneExpr
       let ⟨_, insE⟩ := inSomeElim ins (p := .null)
       inSome .null (le insE)
   
-  def eq_intp2_some_of_eq
+  theorem eq_intp2_some_of_eq
     (eq: intp2 e0 fv0 b0 c0 = intp2 e1 fv1 b1 c1)
   :
     intp2 (some e0) fv0 b0 c0 = intp2 (some e1) fv1 b1 c1
@@ -101,7 +104,7 @@ namespace SingleLaneExpr
       (intp2_mono_std_some (le_of_eq eq.symm))
   
   
-  def intp2_mono_std_full
+  theorem intp2_mono_std_full
     (le: intp2 e0 fv0 b0 c0 ≤ intp2 e1 fv1 b1 c1)
   :
     intp2 (full e0) fv0 b0 c0 ⊆ intp2 (full e1) fv1 b1 c1
@@ -110,7 +113,7 @@ namespace SingleLaneExpr
       let insE := inFullElim ins
       inFull .null (fun p => le (insE p))
   
-  def eq_intp2_full_of_eq
+  theorem eq_intp2_full_of_eq
     (eq: intp2 e0 fv0 b0 c0 = intp2 e1 fv1 b1 c1)
   :
     intp2 (full e0) fv0 b0 c0 = intp2 (full e1) fv1 b1 c1
@@ -120,7 +123,7 @@ namespace SingleLaneExpr
       (intp2_mono_std_full (le_of_eq eq.symm))
   
   
-  def intp2_mono_std_compl
+  theorem intp2_mono_std_compl
     (le:
       Set.Subset
         (e1.intp2 fv1 c1 b1)
@@ -133,7 +136,7 @@ namespace SingleLaneExpr
     fun _ ins =>
       inCompl (fun isPos => inComplElim ins (le isPos))
   
-  def intp2_mono_std_compl_elim
+  theorem intp2_mono_std_compl_elim
     (le:
       Set.Subset
         ((compl e0).intp2 fv0 b0 c0)
@@ -147,7 +150,7 @@ namespace SingleLaneExpr
       byContradiction
         (fun nin => inComplElim (le (inCompl nin)) ins)
   
-  def eq_intp2_compl_of_eq
+  theorem eq_intp2_compl_of_eq
     (eq:
       Eq
         (e0.intp2 fv0 c0 b0)
@@ -161,7 +164,7 @@ namespace SingleLaneExpr
       (intp2_mono_std_compl (le_of_eq eq.symm))
       (intp2_mono_std_compl (le_of_eq eq))
   
-  def eq_intp2_of_eq_compl
+  theorem eq_intp2_of_eq_compl
     (eq:
       Eq
         ((compl e0).intp2 fv0 b0 c0)
@@ -175,17 +178,17 @@ namespace SingleLaneExpr
       (intp2_mono_std_compl_elim (le_of_eq eq.symm))
       (intp2_mono_std_compl_elim (le_of_eq eq))
   
-  def intp2_compl_compl_eq
+  theorem intp2_compl_compl_eq
     (expr: SingleLaneExpr)
     (fv: List Pair)
     (b c: Valuation Pair)
   :
     intp2 (.compl (.compl expr)) fv b c = intp2 expr fv b c
   :=
-    funext fun _ => propext ⟨Not.dne, not_not_intro⟩
+    Set.ext fun _ => ⟨Not.dne, not_not_intro⟩
   
   
-  def intp2_mono_std_arbIr
+  theorem intp2_mono_std_arbIr
     {fv0 fv1: List Pair}
     {b0 c0 b1 c1: Valuation Pair}
     (le:
@@ -200,7 +203,7 @@ namespace SingleLaneExpr
   :=
     fun _ h pB => (le pB) (h pB)
   
-  def eq_intp2_arbIr_of_eq
+  theorem eq_intp2_arbIr_of_eq
     {fv0 fv1: List Pair}
     {b0 c0 b1 c1: Valuation Pair}
     (eq:
@@ -223,7 +226,7 @@ namespace BasicExpr
   open SingleLaneExpr
   variable {l0 l1 r0 r1 e0 e1: BasicExpr}
   
-  def triIntp2_mono_std_prod
+  theorem triIntp2_mono_std_prod
     (leL: triIntp2 l0 fv0 b0 c0 ≤ triIntp2 l1 fv1 b1 c1)
     (leR: triIntp2 r0 fv0 b0 c0 ≤ triIntp2 r1 fv1 b1 c1)
   :
@@ -233,7 +236,7 @@ namespace BasicExpr
     posLe := intp2_mono_std_prod leL.posLe leR.posLe
   }
   
-  def eq_triIntp2_prod_of_eq
+  theorem eq_triIntp2_prod_of_eq
     (eqL: triIntp2 l0 fv0 b0 c0 = triIntp2 l1 fv1 b1 c1)
     (eqR: triIntp2 r0 fv0 b0 c0 = triIntp2 r1 fv1 b1 c1)
   :
@@ -244,7 +247,7 @@ namespace BasicExpr
       (eq_intp2_prod_of_eq (Set3.pos_eq eqL) (Set3.pos_eq eqR))
   
   
-  def triIntp2_mono_std_un
+  theorem triIntp2_mono_std_un
     (leL: triIntp2 l0 fv0 b0 c0 ≤ triIntp2 l1 fv1 b1 c1)
     (leR: triIntp2 r0 fv0 b0 c0 ≤ triIntp2 r1 fv1 b1 c1)
   :
@@ -254,7 +257,7 @@ namespace BasicExpr
     posLe := intp2_mono_std_un leL.posLe leR.posLe
   }
   
-  def eq_triIntp2_un_of_eq
+  theorem eq_triIntp2_un_of_eq
     (eqL: triIntp2 l0 fv0 b0 c0 = triIntp2 l1 fv1 b1 c1)
     (eqR: triIntp2 r0 fv0 b0 c0 = triIntp2 r1 fv1 b1 c1)
   :
@@ -265,7 +268,7 @@ namespace BasicExpr
       (eq_intp2_un_of_eq (Set3.pos_eq eqL) (Set3.pos_eq eqR))
   
   
-  def triIntp2_mono_std_ir
+  theorem triIntp2_mono_std_ir
     (leL: triIntp2 l0 fv0 b0 c0 ≤ triIntp2 l1 fv1 b1 c1)
     (leR: triIntp2 r0 fv0 b0 c0 ≤ triIntp2 r1 fv1 b1 c1)
   :
@@ -275,7 +278,7 @@ namespace BasicExpr
     posLe := intp2_mono_std_ir leL.posLe leR.posLe
   }
   
-  def eq_triIntp2_ir_of_eq
+  theorem eq_triIntp2_ir_of_eq
     (eqL: triIntp2 l0 fv0 b0 c0 = triIntp2 l1 fv1 b1 c1)
     (eqR: triIntp2 r0 fv0 b0 c0 = triIntp2 r1 fv1 b1 c1)
   :
@@ -286,7 +289,7 @@ namespace BasicExpr
       (eq_intp2_ir_of_eq (Set3.pos_eq eqL) (Set3.pos_eq eqR))
   
   
-  def triIntp2_mono_std_some
+  theorem triIntp2_mono_std_some
     (le: triIntp2 e0 fv0 b0 c0 ≤ triIntp2 e1 fv1 b1 c1)
   :
     triIntp2 (some e0) fv0 b0 c0 ≤ triIntp2 (some e1) fv1 b1 c1
@@ -295,7 +298,7 @@ namespace BasicExpr
     posLe := intp2_mono_std_some le.posLe
   }
   
-  def eq_triIntp2_some_of_eq
+  theorem eq_triIntp2_some_of_eq
     (eq: triIntp2 e0 fv0 b0 c0 = triIntp2 e1 fv1 b1 c1)
   :
     triIntp2 (some e0) fv0 b0 c0 = triIntp2 (some e1) fv1 b1 c1
@@ -305,7 +308,7 @@ namespace BasicExpr
       (eq_intp2_some_of_eq (Set3.pos_eq eq))
   
   
-  def triIntp2_mono_std_full
+  theorem triIntp2_mono_std_full
     (le: triIntp2 e0 fv0 b0 c0 ≤ triIntp2 e1 fv1 b1 c1)
   :
     triIntp2 (full e0) fv0 b0 c0 ≤ triIntp2 (full e1) fv1 b1 c1
@@ -314,7 +317,7 @@ namespace BasicExpr
     posLe := intp2_mono_std_full le.posLe
   }
   
-  def eq_triIntp2_full_of_eq
+  theorem eq_triIntp2_full_of_eq
     (eq: triIntp2 e0 fv0 b0 c0 = triIntp2 e1 fv1 b1 c1)
   :
     triIntp2 (full e0) fv0 b0 c0 = triIntp2 (full e1) fv1 b1 c1
@@ -324,7 +327,7 @@ namespace BasicExpr
       (eq_intp2_full_of_eq (Set3.pos_eq eq))
   
   
-  def triIntp2_mono_std_compl
+  theorem triIntp2_mono_std_compl
     (le: triIntp2 e1 fv1 c1 b1 ≤ triIntp2 e0 fv0 c0 b0)
   :
     triIntp2 (compl e0) fv0 b0 c0 ≤ triIntp2 (compl e1) fv1 b1 c1
@@ -333,7 +336,7 @@ namespace BasicExpr
     posLe := intp2_mono_std_compl le.defLe
   }
 
-  def eq_triIntp2_compl_of_eq
+  theorem eq_triIntp2_compl_of_eq
     (eq: triIntp2 e0 fv0 c0 b0 = triIntp2 e1 fv1 c1 b1)
   :
     triIntp2 (compl e0) fv0 b0 c0 = triIntp2 (compl e1) fv1 b1 c1
@@ -343,7 +346,7 @@ namespace BasicExpr
       (eq_intp2_compl_of_eq (Set3.def_eq eq))
   
   
-  def triIntp2_mono_std_arbIr
+  theorem triIntp2_mono_std_arbIr
     (le:
       ∀ pB,
       triIntp2 e0 (pB :: fv0) b0 c0 ≤ triIntp2 e1 (pB :: fv1) b1 c1)
@@ -354,7 +357,7 @@ namespace BasicExpr
     posLe := intp2_mono_std_arbIr (fun (pB: Pair) => (le pB).posLe)
   }
   
-  def eq_triIntp2_arbIr_of_eq
+  theorem eq_triIntp2_arbIr_of_eq
     (eq:
       ∀ pB,
       triIntp2 e0 (pB :: fv0) b0 c0 = triIntp2 e1 (pB :: fv1) b1 c1)

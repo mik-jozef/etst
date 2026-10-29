@@ -1,11 +1,12 @@
-import Etst.WFC.Utils.Trisets.TrisetFn
-import Etst.WFC.Utils.Trisets.TrisetEmbedding
-
 /-
   An embedding of `Triset` into `TrisetFn`. The triset `t` is sent to
   `set (embed t)`, whose members are again embedded trisets.
 -/
+module
+public import Etst.WFC.Utils.Trisets.TrisetFn
+public import Etst.WFC.Utils.Trisets.TrisetEmbedding
 
+public section
 namespace Etst
 
 
@@ -13,13 +14,13 @@ namespace Pair
   open TrisetEmbedding
   
   namespace PreTriset
-    def toPreTrisetFn (t: PreTriset): PreTrisetFn := .set (embed t)
+    exposed def toPreTrisetFn (t: PreTriset): PreTrisetFn := .set (embed t)
     
-    def not_isFn_toPreTrisetFn (t: PreTriset): ¬ t.toPreTrisetFn.IsFn :=
+    theorem not_isFn_toPreTrisetFn (t: PreTriset): ¬ t.toPreTrisetFn.IsFn :=
       id
     
     -- The embedding preserves definitive membership.
-    def ins_toPreTrisetFn {t e: PreTriset}
+    theorem ins_toPreTrisetFn {t e: PreTriset}
       (ins: t.Ins e)
     :
       t.toPreTrisetFn.Ins e.toPreTrisetFn
@@ -27,7 +28,7 @@ namespace Pair
       embed_ins ins
     
     -- The embedding preserves possible membership.
-    def inw_toPreTrisetFn {t e: PreTriset}
+    theorem inw_toPreTrisetFn {t e: PreTriset}
       (inw: t.Inw e)
     :
       t.toPreTrisetFn.Inw e.toPreTrisetFn
@@ -35,7 +36,7 @@ namespace Pair
       embed_inw inw
     
     -- Definitive members of an embedding are embeddings.
-    def ins_toPreTrisetFn_elim {t: PreTriset} {e: PreTrisetFn}
+    theorem ins_toPreTrisetFn_elim {t: PreTriset} {e: PreTrisetFn}
       (ins: t.toPreTrisetFn.Ins e)
     :
       ∃ e0: PreTriset, t.Ins e0 ∧ e = e0.toPreTrisetFn
@@ -44,7 +45,7 @@ namespace Pair
       ⟨e0, e0In, PreTrisetFn.toPair_inj (b := toPreTrisetFn e0) eq⟩
     
     -- Possible members of an embedding are embeddings.
-    def inw_toPreTrisetFn_elim {t: PreTriset} {e: PreTrisetFn}
+    theorem inw_toPreTrisetFn_elim {t: PreTriset} {e: PreTrisetFn}
       (inw: t.toPreTrisetFn.Inw e)
     :
       ∃ e0: PreTriset, t.Inw e0 ∧ e = e0.toPreTrisetFn
@@ -53,7 +54,7 @@ namespace Pair
       ⟨e0, e0In, PreTrisetFn.toPair_inj (b := toPreTrisetFn e0) eq⟩
     
     -- If two trisets are bisimilar, so are their embeddings.
-    def toPreTrisetFn_bisim {t t': PreTriset}
+    theorem toPreTrisetFn_bisim {t t': PreTriset}
       (bisim: t.IsBisim t')
     :
       t.toPreTrisetFn.IsBisim t'.toPreTrisetFn
@@ -99,7 +100,7 @@ namespace Pair
       ⟩
     
     -- If the embeddings of two trisets are bisimilar, so are the trisets.
-    def bisim_of_toPreTrisetFn_bisim {t t': PreTriset}
+    theorem bisim_of_toPreTrisetFn_bisim {t t': PreTriset}
       (bisim: t.toPreTrisetFn.IsBisim t'.toPreTrisetFn)
     :
       t.IsBisim t'
@@ -134,13 +135,13 @@ namespace Pair
   end PreTriset
   
   namespace Triset
-    def toTrisetFn: Triset → TrisetFn :=
+    exposed def toTrisetFn: Triset → TrisetFn :=
       Quotient.lift
         (fun t => ⟦t.toPreTrisetFn⟧)
         (fun _ _ bisim =>
           Quotient.sound (PreTriset.toPreTrisetFn_bisim bisim))
     
-    def toTrisetFn_inj: Function.Injective toTrisetFn :=
+    theorem toTrisetFn_inj: Function.Injective toTrisetFn :=
       fun a b eq =>
         a.exists_rep.elim fun t aEq =>
         b.exists_rep.elim fun t' bEq => by
@@ -150,26 +151,26 @@ namespace Pair
             Quotient.sound
               (PreTriset.bisim_of_toPreTrisetFn_bisim (Quotient.exact eq))
     
-    def not_isFn_toTrisetFn (ts: Triset): ¬ ts.toTrisetFn.IsFn :=
+    theorem not_isFn_toTrisetFn (ts: Triset): ¬ ts.toTrisetFn.IsFn :=
       Quotient.inductionOn
         (motive := fun (ts: Triset) => ¬ ts.toTrisetFn.IsFn)
         ts
         PreTriset.not_isFn_toPreTrisetFn
     
     -- The embedding preserves definitive membership (PreTriset version).
-    def directIns_toTrisetFn_pre {t e: PreTriset} (ins: t.Ins e):
+    theorem directIns_toTrisetFn_pre {t e: PreTriset} (ins: t.Ins e):
       (toTrisetFn ⟦t⟧).DirectIns (toTrisetFn ⟦e⟧)
     :=
       ⟨t.toPreTrisetFn, e.toPreTrisetFn, rfl, rfl, PreTriset.ins_toPreTrisetFn ins⟩
     
     -- The embedding preserves possible membership (PreTriset version).
-    def directInw_toTrisetFn_pre {t e: PreTriset} (inw: t.Inw e):
+    theorem directInw_toTrisetFn_pre {t e: PreTriset} (inw: t.Inw e):
       (toTrisetFn ⟦t⟧).DirectInw (toTrisetFn ⟦e⟧)
     :=
       ⟨t.toPreTrisetFn, e.toPreTrisetFn, rfl, rfl, PreTriset.inw_toPreTrisetFn inw⟩
     
     -- The embedding preserves definitive membership.
-    def directIns_toTrisetFn {ts elem: Triset}
+    theorem directIns_toTrisetFn {ts elem: Triset}
       (ins: ts.DirectIns elem)
     :
       ts.toTrisetFn.DirectIns elem.toTrisetFn
@@ -178,7 +179,7 @@ namespace Pair
       tsEq ▸ elemEq ▸ directIns_toTrisetFn_pre ins
     
     -- The embedding preserves possible membership.
-    def directInw_toTrisetFn {ts elem: Triset}
+    theorem directInw_toTrisetFn {ts elem: Triset}
       (inw: ts.DirectInw elem)
     :
       ts.toTrisetFn.DirectInw elem.toTrisetFn
@@ -187,7 +188,7 @@ namespace Pair
       tsEq ▸ elemEq ▸ directInw_toTrisetFn_pre inw
     
     -- The embedding reflects definitive membership.
-    def directIns_of_toTrisetFn {ts elem: Triset}
+    theorem directIns_of_toTrisetFn {ts elem: Triset}
       (ins: ts.toTrisetFn.DirectIns elem.toTrisetFn)
     :
       ts.DirectIns elem
@@ -211,7 +212,7 @@ namespace Pair
         ins
     
     -- The embedding reflects possible membership.
-    def directInw_of_toTrisetFn {ts elem: Triset}
+    theorem directInw_of_toTrisetFn {ts elem: Triset}
       (inw: ts.toTrisetFn.DirectInw elem.toTrisetFn)
     :
       ts.DirectInw elem
@@ -234,12 +235,12 @@ namespace Pair
           ⟩)
         inw
     
-    def directIns_iff_toTrisetFn {ts elem: Triset}:
+    theorem directIns_iff_toTrisetFn {ts elem: Triset}:
       ts.DirectIns elem ↔ ts.toTrisetFn.DirectIns elem.toTrisetFn
     :=
       ⟨directIns_toTrisetFn, directIns_of_toTrisetFn⟩
     
-    def directInw_iff_toTrisetFn {ts elem: Triset}:
+    theorem directInw_iff_toTrisetFn {ts elem: Triset}:
       ts.DirectInw elem ↔ ts.toTrisetFn.DirectInw elem.toTrisetFn
     :=
       ⟨directInw_toTrisetFn, directInw_of_toTrisetFn⟩

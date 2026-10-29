@@ -1,11 +1,13 @@
-import Etst.WFC.Ch2_Interpretation
+module
+public import Etst.WFC.Ch2_Interpretation
 
+public section
 namespace Etst
-
 universe u
 
 
 namespace SingleLaneExpr
+  @[expose] section
   def const (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
     Expr.const lane x
   def var (x: Nat): SingleLaneExpr :=
@@ -29,6 +31,7 @@ namespace SingleLaneExpr
     Expr.arbIr body
   def impl (left rite: SingleLaneExpr): SingleLaneExpr :=
     Expr.un left.compl rite
+  end
   
   
   /-
@@ -77,7 +80,7 @@ namespace SingleLaneExpr
       {even odd: Option Set3.Lane}
       {left rite body: SingleLaneExpr}
     
-    def elimProdLeft
+    theorem elimProdLeft
       (laneEq: LaneEq even odd (.prod left rite))
     :
       LaneEq even odd left
@@ -85,7 +88,7 @@ namespace SingleLaneExpr
       match laneEq with
       | .prod leftEq _ => leftEq
     
-    def elimProdRite
+    theorem elimProdRite
       (laneEq: LaneEq even odd (.prod left rite))
     :
       LaneEq even odd rite
@@ -93,7 +96,7 @@ namespace SingleLaneExpr
       match laneEq with
       | .prod _ riteEq => riteEq
     
-    def elimIrLeft
+    theorem elimIrLeft
       (laneEq: LaneEq even odd (Expr.ir left rite))
     :
       LaneEq even odd left
@@ -101,7 +104,7 @@ namespace SingleLaneExpr
       match laneEq with
       | .ir leftEq _ => leftEq
     
-    def elimIrRite
+    theorem elimIrRite
       (laneEq: LaneEq even odd (Expr.ir left rite))
     :
       LaneEq even odd rite
@@ -109,7 +112,7 @@ namespace SingleLaneExpr
       match laneEq with
       | .ir _ riteEq => riteEq
     
-    def elimFull
+    theorem elimFull
       (laneEq: LaneEq even odd (Expr.full body))
     :
       LaneEq even odd body
@@ -117,7 +120,7 @@ namespace SingleLaneExpr
       match laneEq with
       | .full bodyEq => bodyEq
     
-    def elimCompl
+    theorem elimCompl
       (laneEq: LaneEq even odd (Expr.compl body))
     :
       LaneEq odd even body
@@ -125,7 +128,7 @@ namespace SingleLaneExpr
       match laneEq with
       | .compl bodyEq => bodyEq
     
-    def elimArbIr
+    theorem elimArbIr
       (laneEq: LaneEq even odd (Expr.arbIr body))
     :
       LaneEq even odd body
@@ -135,7 +138,7 @@ namespace SingleLaneExpr
   end LaneEq
 end SingleLaneExpr
 
-def BasicExpr.laneEq
+theorem BasicExpr.laneEq
   (expr: BasicExpr)
   (lane: Set3.Lane)
 :

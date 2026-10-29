@@ -52,10 +52,12 @@
   TrisetFn. An instance of TrisetFn would be either a triset of TrisetFn
   instances, or a function from TrisetFn to TrisetFn.
 -/
-
-import Etst.WFC.Ch7_Polymorphism
+module
+public import Etst.WFC.Ch7_Polymorphism
+public import Etst.WFC.Utils.General.Bisimilarity
 import Etst.WFC.Utils.General.Bisimilarity
 
+public section
 namespace Etst
 
 
@@ -68,8 +70,8 @@ structure TriRelation.Sat {T: Type*}
   (rel: TriRelation T)
   (P: Set (T → T → Prop))
 where
-  satDef: P rel.RelDef
-  satPos: P rel.RelPos
+  satDef: rel.RelDef ∈ P
+  satPos: rel.RelPos ∈ P
 
 /--
   Witnesses that the relation `rel` on representatives holds for
@@ -87,11 +89,11 @@ where
   bEq: b = ⟦preB⟧
   rel: rel preA preB
 
-/--
+/-
   The quotient lift of a relation on representatives: `a` and `b`
   are related if some of their representatives are.
 -/
-def DirectRel
+exposed def DirectRel
   {PreT: Type*} {s: Setoid PreT}
   (rel: PreT → PreT → Prop)
   (a b: Quotient s)
@@ -117,8 +119,8 @@ where
   cEq: c = ⟦preC⟧
   rel: rel preA preB preC
 
-/-- The ternary variant of `DirectRel`. -/
-def DirectRel₃
+/- The ternary variant of `DirectRel`. -/
+exposed def DirectRel₃
   {PreT: Type*} {s: Setoid PreT}
   (rel: PreT → PreT → PreT → Prop)
   (a b c: Quotient s)
@@ -129,40 +131,40 @@ def DirectRel₃
 
 
 namespace Pair
-  def PreTriset := Pair
+  exposed def PreTriset := Pair
   
   namespace PreTriset
     -- Strong (a la "definite") membership, `a ∈ b`.
-    def Ins (ts elem: PreTriset): Prop :=
-      (uniSetMap.call ts).defMem elem
+    exposed def Ins (ts elem: PreTriset): Prop :=
+      elem ∈ (uniSetMap.call ts).defMem
     
     -- Weak (a la "possible") membership, `a ∈? b`.
-    def Inw (ts elem: PreTriset): Prop :=
-      (uniSetMap.call ts).posMem elem
+    exposed def Inw (ts elem: PreTriset): Prop :=
+      elem ∈ (uniSetMap.call ts).posMem
     
     inductive TransitionLabels where
     | ins
     | inw
     
     -- One can transition sets to their elements.
-    def transitionSystem:
+    exposed def transitionSystem:
       LabeledTransitionSystem TransitionLabels PreTriset
     := fun
       | .ins, a, b => a.Ins b
       | .inw, a, b => a.Inw b
     
-    def IsBisim := transitionSystem.IsBisimilar
+    exposed def IsBisim := transitionSystem.IsBisimilar
     
-    def setoid: Setoid PreTriset where
+    exposed def setoid: Setoid PreTriset where
       r := IsBisim
       iseqv := transitionSystem.IsBisimilar_is_equivalence
     
     
-    def empty: PreTriset := uniSetMapIndex.emptyIndex
+    exposed def empty: PreTriset := uniSetMapIndex.emptyIndex
     
     
     -- Equal `uniSetMap`-images are bisimilar.
-    def isBisim_of_uniSetMap_call_eq {u v: Pair}
+    theorem isBisim_of_uniSetMap_call_eq {u v: Pair}
       (eq: uniSetMap.call u = uniSetMap.call v)
     :
       IsBisim u v
@@ -172,43 +174,43 @@ namespace Pair
           ⟨uu',
            match l, trans with
            | .ins, t =>
-             show (uniSetMap.call vv).defMem uu' from
-               eq ▸ (show (uniSetMap.call uu).defMem uu' from t)
+             show uu' ∈ (uniSetMap.call vv).defMem from
+               eq ▸ (show uu' ∈ (uniSetMap.call uu).defMem from t)
            | .inw, t =>
-             show (uniSetMap.call vv).posMem uu' from
-               eq ▸ (show (uniSetMap.call uu).posMem uu' from t),
+             show uu' ∈ (uniSetMap.call vv).posMem from
+               eq ▸ (show uu' ∈ (uniSetMap.call uu).posMem from t),
            rfl⟩,
         fun l uu vv uu' eq trans =>
           ⟨uu',
            match l, trans with
            | .ins, t =>
-             show (uniSetMap.call vv).defMem uu' from
-               eq ▸ (show (uniSetMap.call uu).defMem uu' from t)
+             show uu' ∈ (uniSetMap.call vv).defMem from
+               eq ▸ (show uu' ∈ (uniSetMap.call uu).defMem from t)
            | .inw, t =>
-             show (uniSetMap.call vv).posMem uu' from
-               eq ▸ (show (uniSetMap.call uu).posMem uu' from t),
+             show uu' ∈ (uniSetMap.call vv).posMem from
+               eq ▸ (show uu' ∈ (uniSetMap.call uu).posMem from t),
            rfl⟩⟩,
        eq⟩
     
   end PreTriset
   
-  def Triset := Quotient PreTriset.setoid
+  exposed def Triset := Quotient PreTriset.setoid
   
   namespace Triset
     -- `ts` is a triset with definite member `elem`.
-    def DirectIns (ts elem: Triset): Prop :=
+    exposed def DirectIns (ts elem: Triset): Prop :=
       DirectRel PreTriset.Ins ts elem
     
     -- `ts` is a triset with possible member `elem`.
-    def DirectInw (ts elem: Triset): Prop :=
+    exposed def DirectInw (ts elem: Triset): Prop :=
       DirectRel PreTriset.Inw ts elem
     
-    def DirectMem: TriRelation Triset where
+    exposed def DirectMem: TriRelation Triset where
       RelDef := DirectIns
       RelPos := DirectInw
       def_le_pos
       | ⟨preTs, preElem, ⟨tsEq, elemEq, ins⟩⟩ =>
-        ⟨preTs, preElem, ⟨tsEq, elemEq, ins.toPos⟩⟩
+        ⟨preTs, preElem, ⟨tsEq, elemEq, Set3.defToPos ins⟩⟩
     
     
     -- Not hereditarily classical.
@@ -225,7 +227,7 @@ namespace Pair
         Nhc ts
     
     -- Hereditarily classical.
-    def Hc (ts: Triset): Prop := ¬ Nhc ts
+    exposed def Hc (ts: Triset): Prop := ¬ Nhc ts
     
   end Triset
 end Pair

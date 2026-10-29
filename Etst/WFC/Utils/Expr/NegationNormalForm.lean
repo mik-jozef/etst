@@ -1,6 +1,8 @@
-import Etst.WFC.Utils.InterpretationMono
+module
+public import Etst.WFC.Utils.InterpretationMono
 import Etst.WFC.Utils.RulesOfInference
 
+public section
 namespace Etst
 
 
@@ -33,7 +35,7 @@ namespace Etst
 -- | .compl (.arbIr body) =>
 --   .compl (.arbIr (.compl body.compl.toNnf))
 -- | .arbIr body => .arbIr body.toNnf
-def Expr.toNnfAux {E} : Expr E → Bool → Expr E
+exposed def Expr.toNnfAux {E} : Expr E → Bool → Expr E
 -- Positive context (isNegated = false)
 | .const e x, false => .const e x
 | .var x,     false => .var x
@@ -62,10 +64,10 @@ def Expr.toNnfAux {E} : Expr E → Bool → Expr E
 | .compl b,   true  => 
   b.toNnfAux false -- Double negation eliminated,
 
-def Expr.toNnf {E} (e : Expr E) : Expr E :=
+exposed def Expr.toNnf {E} (e : Expr E) : Expr E :=
   e.toNnfAux false
 
-def Expr.toNnfCcElim {E}
+theorem Expr.toNnfCcElim {E}
   (expr: Expr E)
 :
   expr.compl.compl.toNnf = expr.toNnf
@@ -73,7 +75,7 @@ def Expr.toNnfCcElim {E}
   rfl
 
 
-def SingleLaneExpr.intp2_toNnfAux_eq
+theorem SingleLaneExpr.intp2_toNnfAux_eq
   (expr: SingleLaneExpr)
   (fv: List Pair)
   (b c: Valuation Pair)
@@ -86,18 +88,18 @@ def SingleLaneExpr.intp2_toNnfAux_eq
   | .const _ _ => ⟨rfl, rfl⟩
   | .var _ => ⟨rfl, rfl⟩
   | .null => ⟨
-      funext fun _ => rfl,
-      funext fun
-      | .null => propext ⟨nofun, nofun⟩
-      | .pair _ _ => propext ⟨nofun, fun _ => inProd inAny inAny⟩,
+      Set.ext fun _ => Iff.rfl,
+      Set.ext fun
+      | .null => ⟨nofun, nofun⟩
+      | .pair _ _ => ⟨nofun, fun _ => inProd inAny inAny⟩,
     ⟩
   | .prod left rite =>
     let ⟨ihL, ihCL⟩ := left.intp2_toNnfAux_eq fv b c
     let ⟨ihR, ihCR⟩ := rite.intp2_toNnfAux_eq fv b c
     ⟨
       eq_intp2_prod_of_eq ihL ihR,
-      funext fun p =>
-      propext ⟨
+      Set.ext fun p =>
+      ⟨
         fun inUnNullPairPair =>
           match p with
           | .null => inCompl fun inProdNull => inProdElimNope inProdNull
@@ -171,7 +173,7 @@ def SingleLaneExpr.intp2_toNnfAux_eq
             (intp2_compl_compl_eq body (pX :: fv) c b))),
     ⟩
 
-def SingleLaneExpr.intp2_toNnf_eq
+theorem SingleLaneExpr.intp2_toNnf_eq
   (expr: SingleLaneExpr)
   (fv: List Pair)
   (b c: Valuation Pair)
@@ -182,7 +184,7 @@ def SingleLaneExpr.intp2_toNnf_eq
 
 
 -- A unary helper for termination when recursing on nnf expressions.
-def complUnaryLt {E} [SizeOf E]
+theorem complUnaryLt {E} [SizeOf E]
   (body: Expr E)
 :
   sizeOf (Expr.compl body) < 1 + (1 + (sizeOf body))
@@ -191,7 +193,7 @@ def complUnaryLt {E} [SizeOf E]
   exact lt_add_of_pos_of_le zero_lt_one le_rfl
 
 -- A left helper for termination when recursing on nnf expressions.
-def complBinLtL {E} [SizeOf E]
+theorem complBinLtL {E} [SizeOf E]
   (left rite: Expr E)
 :
   sizeOf (Expr.compl left) < 1 + (1 + sizeOf left + sizeOf rite)
@@ -200,7 +202,7 @@ def complBinLtL {E} [SizeOf E]
   exact Nat.lt_add_right _ (Nat.lt_add_left_iff_pos.mpr zero_lt_one)
 
 -- A rite helper for termination when recursing on nnf expressions.
-def complBinLtR {E} [SizeOf E]
+theorem complBinLtR {E} [SizeOf E]
   (left rite: Expr E)
 :
   sizeOf (Expr.compl rite) < 1 + (1 + sizeOf left + sizeOf rite)
@@ -226,9 +228,9 @@ inductive Expr.IsNnf {E}: Expr E → Prop
 | arbUn {body}: IsNnf body → IsNnf (.arbUn body)
 
 
-def Expr.IsNnf.any {E}: IsNnf (any (E := E)) := .arbUn .var
+theorem Expr.IsNnf.any {E}: IsNnf (any (E := E)) := .arbUn .var
 
-def Expr.isNnfAux {E}:
+theorem Expr.isNnfAux {E}:
   (expr: Expr E) →
   (isNegated: Bool) →
   IsNnf (expr.toNnfAux isNegated)
@@ -257,11 +259,11 @@ def Expr.isNnfAux {E}:
 | .arbIr b, false => .arbIr (isNnfAux b false)
 | .arbIr b, true => .arbUn (isNnfAux b true)
 
-def Expr.toNnf_isNnf {E} (expr: Expr E): expr.toNnf.IsNnf :=
+theorem Expr.toNnf_isNnf {E} (expr: Expr E): expr.toNnf.IsNnf :=
   isNnfAux expr false
 
 
-def Expr.IsNnf.toNnf_id {E} {expr: Expr E}:
+theorem Expr.IsNnf.toNnf_id {E} {expr: Expr E}:
   expr.IsNnf →
   expr.toNnf = expr
 |
@@ -292,7 +294,7 @@ def Expr.IsNnf.toNnf_id {E} {expr: Expr E}:
   show Expr.arbUn _ = _ from
   congr rfl b.toNnf_id
 
-def Expr.toNnf_idem {E}
+theorem Expr.toNnf_idem {E}
   (expr: Expr E)
 :
   expr.toNnf.toNnf = expr.toNnf
@@ -300,7 +302,7 @@ def Expr.toNnf_idem {E}
   expr.toNnf_isNnf.toNnf_id 
 
 
-def BasicExpr.toNnfAux_toLane_comm
+theorem BasicExpr.toNnfAux_toLane_comm
   (expr: BasicExpr)
   (isNegated: Bool)
   (lane: Set3.Lane)
@@ -369,7 +371,7 @@ def BasicExpr.toNnfAux_toLane_comm
     show Expr.arbUn _ = Expr.arbUn _ from
     congr rfl (teq.symm ▸ ih)
 
-def BasicExpr.toNnf_toLane_comm
+theorem BasicExpr.toNnf_toLane_comm
   (expr: BasicExpr)
   (lane: Set3.Lane)
 :
@@ -378,7 +380,7 @@ def BasicExpr.toNnf_toLane_comm
   expr.toNnfAux_toLane_comm false lane
 
 
-def BasicExpr.triIntp2_toNnf_eq
+theorem BasicExpr.triIntp2_toNnf_eq
   (expr: BasicExpr)
   (fv: List Pair)
   (b c: Valuation Pair)
@@ -394,7 +396,7 @@ def BasicExpr.triIntp2_toNnf_eq
       toNnf_toLane_comm _ _ ▸
       intp2_toNnf_eq _ _ _ _)
 
-def BasicExpr.triIntp_toNnf_eq
+theorem BasicExpr.triIntp_toNnf_eq
   (expr: BasicExpr)
   (fv: List Pair)
   (v: Valuation Pair)

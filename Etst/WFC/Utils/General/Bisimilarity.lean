@@ -1,8 +1,11 @@
-import Mathlib.Logic.Relation
-import Mathlib.Tactic.TypeStar
+module
+public import Mathlib.Logic.Relation
+import Etst.BasicUtils
+
+public section
 
 
-theorem Relation.swap_comp {A B C: Sort*}
+theorem Relation.swap_comp {A B C: Type*}
   (Ab: A → B → Prop)
   (Bc: B → C → Prop)
 :
@@ -24,7 +27,7 @@ abbrev LabeledTransitionSystem
   L → T → T → Prop
 
 namespace LabeledTransitionSystem
-  def IsSimulation {L T}
+  exposed def IsSimulation {L T}
     (lts: LabeledTransitionSystem L T)
     (R: T → T → Prop)
   :
@@ -32,7 +35,7 @@ namespace LabeledTransitionSystem
   :=
     ∀ l p q p', R p q → lts l p p' → ∃ q', lts l q q' ∧ R p' q'
 
-  def IsBisimulation {L T}
+  exposed def IsBisimulation {L T}
     (lts: LabeledTransitionSystem L T)
     (R: T → T → Prop)
   :
@@ -40,7 +43,7 @@ namespace LabeledTransitionSystem
   :=
     lts.IsSimulation R ∧ lts.IsSimulation (Function.swap R)
   
-  def IsBisimilar {L T}
+  exposed def IsBisimilar {L T}
     (lts: LabeledTransitionSystem L T)
     (p q: T)
   :
@@ -48,7 +51,7 @@ namespace LabeledTransitionSystem
   :=
     ∃ R, lts.IsBisimulation R ∧ R p q
   
-  def IsBisimilar_isSimulation {L T}
+  theorem IsBisimilar_isSimulation {L T}
     (lts: LabeledTransitionSystem L T)
   :
     lts.IsSimulation lts.IsBisimilar
@@ -59,7 +62,7 @@ namespace LabeledTransitionSystem
       ⟨q', t', ⟨R, bisimR, rp'q'⟩⟩
   
   
-  def IsSimulation.comp {L T}
+  theorem IsSimulation.comp {L T}
     {lts: LabeledTransitionSystem L T}
     {R0 R1: T → T → Prop}
     (sim1: lts.IsSimulation R0)
@@ -72,7 +75,7 @@ namespace LabeledTransitionSystem
       let ⟨c', ltsCc', r2b'c'⟩ := sim2 l b c b' r2bc ltsBb'
       ⟨c', ltsCc', b', r1a'b', r2b'c'⟩
   
-  def IsBisimulation.comp {L T}
+  theorem IsBisimulation.comp {L T}
     {lts: LabeledTransitionSystem L T}
     {R0 R1: T → T → Prop}
     (bisim1: lts.IsBisimulation R0)
@@ -85,7 +88,7 @@ namespace LabeledTransitionSystem
     IsSimulation.comp bisim2.right bisim1.right,
   ⟩
   
-  def IsBisimilar_is_equivalence {L T}
+  theorem IsBisimilar_is_equivalence {L T}
     (lts: LabeledTransitionSystem L T)
   :
     Equivalence (IsBisimilar lts)
@@ -107,7 +110,7 @@ namespace LabeledTransitionSystem
           ⟨_, IsBisimulation.comp bisim1 bisim2, _, r1, r2⟩,
     }
   
-  def isBisimulation_of_symm {L T}
+  theorem isBisimulation_of_symm {L T}
     {lts: LabeledTransitionSystem L T}
     {R: T → T → Prop}
     (symm: ∀ {x y}, R x y → R y x)

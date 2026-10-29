@@ -108,29 +108,38 @@
   
   [wfs-rec-types]: https://is.muni.cz/th/xr8vu/Well-founded-type-semantics.pdf
 -/
-
-import Etst.WFC.Ch2_Interpretation
+module
+public import Mathlib.Order.FixedPoints
+public import Etst.WFC.Ch2_Interpretation
+public import Etst.WFC.Utils.General.LfpStagesCc
+public import Etst.WFC.Utils.Interpretation
 import Etst.WFC.Utils.General.LfpStages
-import Etst.WFC.Utils.General.LfpStagesCc
-import Etst.WFC.Utils.Interpretation
 import Etst.WFC.Utils.SupPreservesOtherOrder
 
 namespace Etst
 
 
 -- Fuck type classes.
-abbrev IsMonotonic {A B} (ordA: PartialOrder A) (ordB: PartialOrder B) :=
+public abbrev IsMonotonic {A B}
+  (ordA: PartialOrder A)
+  (ordB: PartialOrder B)
+:=
   @Monotone _ _ ordA.toPreorder ordB.toPreorder
 
-abbrev OrderHomWrt {A B} (ordA: PartialOrder A) (ordB: PartialOrder B) :=
+public abbrev OrderHomWrt {A B}
+  (ordA: PartialOrder A)
+  (ordB: PartialOrder B)
+:=
   @OrderHom A B ordA.toPreorder ordB.toPreorder
 
-def isCcStd {T} := Valuation.ordStd.isChainComplete T
-def isCcApx {T} := Valuation.ordApx.isChainComplete T
+public theorem isCcStd {T}: IsChainComplete (Valuation.ordStd T) :=
+  Valuation.ordStd.isChainComplete T
+public theorem isCcApx {T}: IsChainComplete (Valuation.ordApx T) :=
+  Valuation.ordApx.isChainComplete T
 
 
 -- The family of operators C_b (often called "the" operator C).
-def operatorC
+exposed def operatorC
   (dl: DefList)
   (b: Valuation Pair)
 :
@@ -138,24 +147,24 @@ def operatorC
 :=
   -- :/
   -- https://github.com/leanprover/lean4/issues/952
-  let _ := Valuation.ordStd Pair
+  let := Valuation.ordStd Pair
   {
     toFun := dl.intpDefs2 b
     monotone' _ _ := dl.intpDefs2_mono_std (le_refl _)
   }
 
 -- The least fixed point of the operator C.
-def operatorC.lfp
+exposed def operatorC.lfp
   (dl: DefList)
   (b: Valuation Pair)
 :
   Valuation Pair
 :=
-  let _ := Valuation.ordStdLattice Pair
+  let := Valuation.ordStdLattice Pair
   (operatorC dl b).lfp
 
 -- The operator C is monotonic wrt. the standard order.
-def operatorC.mono_std
+public theorem operatorC.mono_std
   (dl: DefList)
   (b: Valuation Pair)
 :
@@ -164,12 +173,12 @@ def operatorC.mono_std
     (Valuation.ordStd Pair)
     (operatorC dl b)
 :=
-  let _ := Valuation.ordStd Pair
+  let := Valuation.ordStd Pair
   (operatorC dl b).monotone'
 
 -- The operator C is monotonic wrt. the approximation order (incl.
 -- across different background valuations).
-def operatorC.mono_apx
+public theorem operatorC.mono_apx
   (dl: DefList)
   {b0 b1: Valuation Pair}
   (bLe: b0 ⊑ b1)
@@ -181,14 +190,14 @@ def operatorC.mono_apx
   dl.intpDefs2_mono_apx bLe cLe
 
 
-def operatorB.monotone'
+public theorem operatorB.monotone'
   (dl: DefList)
   ⦃a b: Valuation Pair⦄
   (le: a ⊑ b)
 :
   operatorC.lfp dl a ⊑ operatorC.lfp dl b
 :=
-  let _ := Valuation.ordStdLattice Pair
+  let := Valuation.ordStdLattice Pair
   OrderHom.lfpStage_induction2
     (operatorC dl a)
     (operatorC dl b)
@@ -211,7 +220,7 @@ def operatorB.monotone'
       operatorC.mono_apx dl le (ih ⟨_, prevLt⟩))
 
 -- The operator B.
-noncomputable def operatorB
+exposed noncomputable def operatorB
   (dl: DefList)
 :
   OrderHomWrt (Valuation.ordApx Pair) (Valuation.ordApx Pair)
@@ -222,7 +231,7 @@ noncomputable def operatorB
     monotone' := operatorB.monotone' dl
   }
 
-noncomputable def operatorB.lfp
+exposed noncomputable def operatorB.lfp
   (dl: DefList)
 :
   Valuation Pair
@@ -234,33 +243,34 @@ noncomputable def operatorB.lfp
   A valuation is a model of a definition list `dl` if interpreting
   `dl` in the valuation gives the same valuation.
 -/
-def Valuation.IsModel
+public abbrev Valuation.IsModel
   (dl: DefList)
+  (v: Valuation Pair)
 :
-  Set (Valuation Pair)
+  Prop
 :=
-  fun v => v = dl.intpDefs v
+  v = dl.intpDefs v
 
 /-
   The well-founded model of a definition list `dl` defines the
   semantics of the definition list. It is the least fixed point
   of the operator B.
 -/
-noncomputable def DefList.wfm
+exposed noncomputable def DefList.wfm
   (dl: DefList)
 :
   Valuation Pair
 :=
-  (operatorB dl).lfpCc isCcApx
+  operatorB.lfp dl
 
-def DefList.wfm_is_fp_operatorB
+public theorem DefList.wfm_is_fp_operatorB
   (dl: DefList)
 :
   dl.wfm = operatorC.lfp dl dl.wfm
 :=
   ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
 
-noncomputable def DefList.triIntp
+exposed noncomputable def DefList.triIntp
   (dl: DefList)
   (fv: List Pair)
   (expr: BasicExpr)
@@ -274,21 +284,21 @@ noncomputable def DefList.triIntp
   A fixed point of the operator B is a model of the definition
   list.
 -/
-def operatorB.fp_is_model
+public theorem operatorB.fp_is_model
   (dl: DefList)
   {fp: Valuation Pair}
-  (isFp: Function.fixedPoints (operatorB dl) fp)
+  (isFp: fp ∈ Function.fixedPoints (operatorB dl))
 :
   fp.IsModel dl
 := by
-  let _ := Valuation.ordStdLattice Pair
+  let := Valuation.ordStdLattice Pair
   let eqC: fp = (operatorC dl fp).lfp := isFp.symm
   let eq: fp = operatorC.lfp dl fp := isFp.symm
   rw [operatorC.lfp, ←(operatorC dl fp).map_lfp] at eq
   conv at eq => rhs; rw [←eqC]
   exact eq
 
-def DefList.wfm_isLfpC
+public theorem DefList.wfm_isLfpC
   (dl: DefList)
 :
   IsLfp
@@ -296,13 +306,13 @@ def DefList.wfm_isLfpC
     (operatorC dl dl.wfm)
     dl.wfm
 := by
-  let _ := Valuation.ordStdLattice
+  let := Valuation.ordStdLattice
   let eq: dl.wfm = (operatorC dl dl.wfm).lfp :=
     ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
   conv => rhs; rw [eq]
   exact (operatorC dl dl.wfm).isLeast_lfp
 
-def DefList.wfm_eq_lfpC
+public theorem DefList.wfm_eq_lfpC
   (dl: DefList)
 :
   let := Valuation.ordStdLattice Pair
@@ -311,7 +321,7 @@ def DefList.wfm_eq_lfpC
   let := Valuation.ordStdLattice Pair
   IsLeast.unique dl.wfm_isLfpC (OrderHom.isLeast_lfp _)
 
-def DefList.wfm_isLfpB
+public theorem DefList.wfm_isLfpB
   (dl: DefList)
 :
   IsLfp
@@ -322,14 +332,14 @@ def DefList.wfm_isLfpB
   (operatorB dl).lfpCc_isLfp isCcApx
 
 -- The well-founded model is a model of the definition list.
-def DefList.wfm_isModel
+public theorem DefList.wfm_isModel
   (dl: DefList)
 :
   dl.wfm.IsModel dl
 :=
   operatorB.fp_is_model dl (wfm_isLfpB dl).left
 
-def DefList.wfm_eq_def
+public theorem DefList.wfm_eq_def
   (dl: DefList)
   (x: Nat)
 :
@@ -344,7 +354,7 @@ def DefList.wfm_eq_def
   
   See `DefList.IsFinBounded` from Chapter 1.
 -/
-def DefList.IsDefinable
+exposed def DefList.IsDefinable
   (set: Set3 Pair)
 :
   Prop
@@ -354,5 +364,5 @@ def DefList.IsDefinable
     set = dl.wfm x
 
 -- The type of definable trisets.
-def DefList.Definable: Type :=
+exposed def DefList.Definable: Type :=
   { set: Set3 Pair // IsDefinable set }

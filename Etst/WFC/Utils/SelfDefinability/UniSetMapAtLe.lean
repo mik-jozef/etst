@@ -1,13 +1,16 @@
-import Etst.WFC.Utils.MembershipPs.OutIntro3
-import Etst.WFC.Utils.SelfDefinability.UniSetMapHelpers
+module
+public import Etst.WFC.Utils.MembershipPs.OutIntro3
+public import Etst.WFC.Utils.SelfDefinability.UniSetMapHelpers
+import Etst.WFC.Utils.RulesOfInference
 
+public section
 namespace Etst.uniSetMapDl
 open SingleLaneExpr
 
 
 def IsInappExtIh
   (dl: DefList)
-  (extCycle: Nat → Set Pair)
+  (extCycle: Nat → Pair → Prop)
   (externalCause: Cause Pair)
 :
   Prop
@@ -17,13 +20,13 @@ def IsInappExtIh
       (({n fv expr pInt: _} →
         xExt = consts.uniSetMap →
         pExt = .pair (uniSetMapIndex dl n fv expr) pInt →
-        ((dl.prefix n).triIntp fv expr).defMem pInt))
-      (xExt = consts.getNth → vals.getNth.defMem pExt)
+        pInt ∈ ((dl.prefix n).triIntp fv expr).defMem))
+      (xExt = consts.getNth → pExt ∈ vals.getNth.defMem)
 
 def intOfExtCycle
   (dl: DefList)
   (n: Nat)
-  (extCycle: Nat → Set Pair)
+  (extCycle: Nat → Pair → Prop)
   (xInt: Nat)
   (pInt: Pair)
 :
@@ -35,9 +38,9 @@ def intOfExtCycle
       (.pair (uniSetMapIndexDef dl n xInt) pInt))
     (¬ xInt < n)
 
-def anyCycleNope
+theorem anyCycleNope
   {dl n fv}
-  {extCycle: Nat → Set Pair}
+  {extCycle: Nat → Pair → Prop}
   (extIsEmpty:
     ∀ {x p},
       extCycle x p →
@@ -76,9 +79,9 @@ def anyCycleNope
           (Nat.zero_lt_succ _)
       False.elim (out.isSound (xEq ▸ pEqGetNth ▸ insGetNth))
 
-def isInappOfInappUn
+theorem isInappOfInappUn
   {dl: DefList}
-  {cycle: Nat → Set Pair}
+  {cycle: Nat → Pair → Prop}
   {cause: Cause Pair}
   (isInapp:
     dl.IsCauseInapplicableExtended
@@ -98,8 +101,8 @@ def isInappOfInappUn
     isIns.nopeNotDef inBout
 
 
-def allInternalInapp {dl n fv expr p}
-  {extCycle: Nat → Set Pair}
+theorem allInternalInapp {dl n fv expr p}
+  {extCycle: Nat → Pair → Prop}
   (extIsEmpty:
     ∀ {x p},
       extCycle x p →
@@ -159,9 +162,7 @@ def allInternalInapp {dl n fv expr p}
     | .blockedCins _ inCins inCycle =>
       let ⟨xEq, pEqGetNth⟩ := inCins
       let out := DefList.Out.intro extCycle extIsEmpty inCycle
-      let insGetNth:
-        vals.getNth.posMem (getNthEnc fv x p)
-      :=
+      let insGetNth: getNthEnc fv x p ∈ vals.getNth.posMem :=
         pEq ▸ uniSetMapDl.getNth (list:=fv) (lane:=.posLane) xLt
       False.elim (out.isSound (xEq ▸ pEqGetNth ▸ insGetNth))
   | .compl (.var x) =>
@@ -170,10 +171,10 @@ def allInternalInapp {dl n fv expr p}
       extIsEmpty inExtCycle (causeComplVar fv x p) isWeakCauseComplVar
     with
     | .blockedBout _ ⟨xEq, pEq⟩ insGetNth =>
-      let inGetNth: (usmWfm consts.getNth).getLane _ _ :=
+      let inGetNth: _ ∈ (usmWfm consts.getNth).getLane _ :=
         xEq ▸ pEq ▸ insGetNth.isSound
       let inVar:
-        (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm p
+        p ∈ (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm
       :=
         inVar (getNthElim (lane := .defLane) inGetNth)
       False.elim (inBout inVar)
@@ -422,13 +423,13 @@ def allInternalInapp {dl n fv expr p}
   ```
 -/
 mutual
-def externalInsElimHelper {dl n fv index cst expr p}
+theorem externalInsElimHelper {dl n fv index cst expr p}
   (ins: uniSetMapDl.Ins cst index)
   (cstEq: cst = consts.uniSetMap)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
   (isNnf: expr.IsNnf)
 :
-(expr.triIntp fv (dl.prefix n).wfm).defMem p
+  p ∈ (expr.triIntp fv (dl.prefix n).wfm).defMem
 :=
   match ins with
   | .intro _ _ cause isCause cinsSat boutSat =>
@@ -456,7 +457,7 @@ def externalInsElimHelper {dl n fv index cst expr p}
         isAtOfInsDef (cstEq ▸ indexEq ▸ ins)
       let inCins := isAtConstElim insList (DefList.Ins.isSound ∘ cinsSat)
       let insDef := cinsSat (inCinsNnf inCins)
-      let ih: (BasicExpr.triIntp _ _ _).defMem _ :=
+      let ih: _ ∈ (BasicExpr.triIntp _ _ _).defMem :=
         BasicExpr.triIntp_toNnf_eq _ _ _ ▸
         externalInsElimHelper insDef rfl rfl (Expr.toNnf_isNnf _)
       DefList.InWfm.of_in_def_no_fv (lane := .defLane) ih
@@ -559,7 +560,7 @@ def externalInsElimHelper {dl n fv index cst expr p}
       let inBody := inCinsCcElim inBodyCc
       inArbUn pX (externalInsElimHelper (cinsSat inBody) rfl rfl nnfB)
 
-def externalOutElimHelper {dl n fv index cst expr p}
+theorem externalOutElimHelper {dl n fv index cst expr p}
   (out: uniSetMapDl.Out cst index)
   (cstEq: cst = consts.uniSetMap)
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
@@ -567,7 +568,7 @@ def externalOutElimHelper {dl n fv index cst expr p}
   -- some of the branches. But since it already works... ¯\_(ツ)_/¯
   (_isNnf: expr.IsNnf)
 :
-  ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
+  ¬ p ∈ (expr.triIntp fv (dl.prefix n).wfm).posMem
 :=
   match out with
   | .intro extCycle extIsEmpty inExtCycle =>
@@ -584,14 +585,14 @@ def externalOutElimHelper {dl n fv index cst expr p}
       | .blockedBout _ inBout ins =>
         .blockedBout inBout ⟨
           (fun {_ _ expr _} xEq dEq =>
-            show (expr.triIntp _ _).defMem _ from
+            show _ ∈ (expr.triIntp _ _).defMem from
             (expr.triIntp_toNnf_eq _ _).symm ▸
             externalInsElimHelper
               ins
               xEq
               (uniSetMapIndex_nnf_eq ▸ dEq)
               expr.toNnf_isNnf),
-          (fun xEq => show (usmWfm consts.getNth).defMem _ from
+          (fun xEq => show _ ∈ (usmWfm consts.getNth).defMem from
             xEq ▸ DefList.Ins.isSound ins)
         ⟩
     
@@ -625,13 +626,13 @@ def externalOutElimHelper {dl n fv index cst expr p}
 end
 
 
-def externalInsElim {dl n fv expr p}
+theorem externalInsElim {dl n fv expr p}
   (insExt:
     uniSetMapDl.Ins
       consts.uniSetMap
       (.pair (uniSetMapIndex dl n fv expr) p))
 :
-  (expr.triIntp fv (dl.prefix n).wfm).defMem p
+  p ∈ (expr.triIntp fv (dl.prefix n).wfm).defMem
 :=
   expr.triIntp_toNnf_eq fv _ ▸
   externalInsElimHelper
@@ -640,13 +641,13 @@ def externalInsElim {dl n fv expr p}
     rfl
     expr.toNnf_isNnf
 
-def externalOutElim {dl n fv expr p}
+theorem externalOutElim {dl n fv expr p}
   (outExt:
     uniSetMapDl.Out
       consts.uniSetMap
       (.pair (uniSetMapIndex dl n fv expr) p))
 :
-  ¬ (expr.triIntp fv (dl.prefix n).wfm).posMem p
+  ¬ p ∈ (expr.triIntp fv (dl.prefix n).wfm).posMem
 :=
   expr.triIntp_toNnf_eq fv _ ▸
   externalOutElimHelper
@@ -655,7 +656,7 @@ def externalOutElim {dl n fv expr p}
       rfl
       expr.toNnf_isNnf
 
-def uniSetMapAt_le
+theorem uniSetMapAt_le
   (dl: DefList)
   (n: Nat)
   (fv: List Pair)

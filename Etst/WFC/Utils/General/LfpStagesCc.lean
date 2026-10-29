@@ -1,9 +1,12 @@
+module
+public import Etst.WFC.Utils.General.IsLfp
+public import Etst.WFC.Utils.General.Ordinal
+public import Etst.WFC.Utils.General.PointwiseOrder
+
 import Mathlib.Order.FixedPoints
+import Etst.BasicUtils
 
-import Etst.WFC.Utils.General.IsLfp
-import Etst.WFC.Utils.General.Ordinal
-import Etst.WFC.Utils.General.PointwiseOrder
-
+public section
 universe u
 
 noncomputable def OrderHom.lfpStageCc
@@ -37,7 +40,7 @@ noncomputable abbrev OrderHom.lfpStageCcPrevious
 :=
   fun ⟨m, _⟩ => f.lfpStageCc isCc m
 
-def OrderHom.lfpStageCcPrevious_eq_iUnion
+theorem OrderHom.lfpStageCcPrevious_eq_iUnion
   {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
@@ -60,7 +63,7 @@ def OrderHom.lfpStageCcPrevious_eq_iUnion
       ⟨⟨mm, mmLt.trans mLt⟩, eqMm⟩,
   ⟩
 
-def OrderHom.lfpStageCc_eq_succ
+theorem OrderHom.lfpStageCc_eq_succ
   {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
@@ -70,9 +73,9 @@ def OrderHom.lfpStageCc_eq_succ
 :
   f.lfpStageCc isCc n = f (f.lfpStageCc isCc n.pred)
 := by
-  rw [lfpStageCc, dif_neg isSucc]
+  rw [lfpStageCc, dite_eq_right isSucc]
 
-def OrderHom.lfpStageCc_apply_eq_succ
+theorem OrderHom.lfpStageCc_apply_eq_succ
   {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
@@ -80,14 +83,15 @@ def OrderHom.lfpStageCc_apply_eq_succ
   (n: Ordinal)
 :
   f (f.lfpStageCc isCc n) = f.lfpStageCc isCc n.succ
-:= by
-  apply Eq.symm
-  let ret := f.lfpStageCc_eq_succ isCc (Order.not_isSuccPrelimit_succ n)
-  rw [Ordinal.pred_succ] at ret
-  exact ret
+:=
+  let ret: _ = f (f.lfpStageCc isCc (n + 1).pred) :=
+    f.lfpStageCc_eq_succ isCc (Order.not_isSuccPrelimit_succ n)
+  by
+  rw [Ordinal.pred_add_one] at ret
+  exact ret.symm
 
 
-def OrderHom.lfpStageCc_isChain_of_mono
+theorem OrderHom.lfpStageCc_isChain_of_mono
   {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
@@ -107,7 +111,7 @@ def OrderHom.lfpStageCc_isChain_of_mono
       (fun m1Le => eq0 ▸ eq1 ▸
         Or.inr (@isMono ⟨m1, m1Lt⟩ ⟨m0, m0Lt⟩ m1Le))
 
-def OrderHom.lfpStageCc_mono
+theorem OrderHom.lfpStageCc_mono
   {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
@@ -126,10 +130,10 @@ def OrderHom.lfpStageCc_mono
       f.lfpStageCc_isChain_of_mono isCc b (fun {a b} (ab: a ≤ b) =>
         have := b.property
         f.lfpStageCc_mono isCc ab)
-    rw [dif_pos hLim, dif_pos isChain]
+    rw [dite_eq_left hLim, dite_eq_left isChain]
     exact (isCc isChain).choose_spec.left ⟨⟨a, lt⟩, rfl⟩
   else
-    rw [dif_neg hLim]
+    rw [dite_eq_right hLim]
     let predLt := Ordinal.pred_lt hLim
     let ih := f.lfpStageCc_mono isCc (Ordinal.le_pred_of_lt lt)
     let predStageLe: lfpStageCc isCc f b.pred ≤ f (lfpStageCc isCc f b.pred) :=
@@ -138,7 +142,7 @@ def OrderHom.lfpStageCc_mono
           have := b.property.trans predLt
           f.lfpStageCc_mono isCc ab
         let isChainPred := f.lfpStageCc_isChain_of_mono isCc b.pred ihPred
-        conv => lhs; rw [lfpStageCc, dif_pos hPredLim, dif_pos isChainPred]
+        conv => lhs; rw [lfpStageCc, dite_eq_left hPredLim, dite_eq_left isChainPred]
         apply (isCc isChainPred).choose_spec.right
         intro t ⟨⟨m, mLtBPred⟩, eq⟩
         rw [←eq]
@@ -148,13 +152,13 @@ def OrderHom.lfpStageCc_mono
         let mLeSucc := f.lfpStageCc_mono isCc (Order.le_succ m)
         exact mLeSucc.trans fMLe
       else by
-        conv => lhs; rw [lfpStageCc, dif_neg hPredLim]
+        conv => lhs; rw [lfpStageCc, dite_eq_right hPredLim]
         apply f.monotone
         exact f.lfpStageCc_mono isCc (Ordinal.pred_le_self b.pred)
     exact ih.trans predStageLe
 termination_by b
 
-def OrderHom.lfpStageCc_isChain
+theorem OrderHom.lfpStageCc_isChain
   {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
@@ -166,7 +170,7 @@ def OrderHom.lfpStageCc_isChain
   f.lfpStageCc_isChain_of_mono isCc n (f.lfpStageCc_mono isCc)
 
 
-def OrderHom.lfpStageCc_eq_limit
+theorem OrderHom.lfpStageCc_eq_limit
   {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
@@ -178,12 +182,12 @@ def OrderHom.lfpStageCc_eq_limit
 := by
   rw [
     lfpStageCc,
-    dif_pos isLimit,
-    dif_pos (f.lfpStageCc_isChain isCc n)
+    dite_eq_left isLimit,
+    dite_eq_left (f.lfpStageCc_isChain isCc n)
   ]
 
 
-def OrderHom.lfpStageCc_le_fp
+theorem OrderHom.lfpStageCc_le_fp
   {T} [Inhabited T]
   {ord: PartialOrder T}
   (isCc: IsChainComplete ord)
@@ -220,7 +224,7 @@ inductive DistinctOrdinalsEqualStageCc
     (nLt: n0 < n1)
     (eqAt: f.lfpStageCc isCc n0 = f.lfpStageCc isCc n1)
 
-def OrderHom.lfpStageCc_ex_fp
+theorem OrderHom.lfpStageCc_ex_fp
   {T: Type u}
   [Inhabited T]
   {ord: PartialOrder T}
@@ -276,7 +280,7 @@ noncomputable def OrderHom.lfpCc
 :=
   f.lfpStageCc isCc (f.lfpStageCc_ex_fp isCc).choose
 
-noncomputable def OrderHom.lfpCc_isLfp
+theorem OrderHom.lfpCc_isLfp
   {T: Type u}
   [Inhabited T]
   {ord: PartialOrder T}
@@ -288,7 +292,7 @@ noncomputable def OrderHom.lfpCc_isLfp
   let n := (f.lfpStageCc_ex_fp isCc).choose
   (f.lfpStageCc_ex_fp isCc).choose_spec n le_rfl
 
-def OrderHom.lfpStageCc_induction
+theorem OrderHom.lfpStageCc_induction
   {T: Type u}
   [Inhabited T]
   {ord: PartialOrder T}
@@ -323,7 +327,7 @@ def OrderHom.lfpStageCc_induction
   
   p _
 
-def OrderHom.lfpStageCc_induction2
+theorem OrderHom.lfpStageCc_induction2
   {T0 T1: Type u}
   [Inhabited T0]
   [Inhabited T1]

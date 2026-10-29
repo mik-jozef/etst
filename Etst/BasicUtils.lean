@@ -4,11 +4,16 @@
   could improve them a little).
   Plus making `Classical.propDecidable` always available.
 -/
-
+module
 import Mathlib.Tactic.TypeStar
 
 
-noncomputable def Exists.unwrap
+macro "exposed " cmd:command : command =>
+  `(@[expose] public section
+    $cmd:command
+    end)
+
+public noncomputable def Exists.unwrap
   {T} {P: T → Prop} (ex: ∃ t, P t)
 :
   { t // P t }
@@ -16,24 +21,29 @@ noncomputable def Exists.unwrap
   Classical.indefiniteDescription P ex
 
 -- EM go brr
-noncomputable instance propDecidable (P: Prop): Decidable P :=
+public noncomputable instance (priority := low) propDecidable
+  (P: Prop)
+:
+  Decidable P
+:=
   Classical.propDecidable P
 
-def byContradiction {P: Prop} := @Classical.byContradiction P
+public theorem byContradiction {P: Prop}: ¬¬ P → P :=
+  @Classical.byContradiction P
 
 
 -- The square le/lt relation: `x ⊑ y` / `x ⊏ y`.
-class SqLE.{u} (T : Type u) where le : T → T → Prop
-class SqLT.{u} (T : Type u) where lt : T → T → Prop
+public class SqLE.{u} (T : Type u) where le : T → T → Prop
+public class SqLT.{u} (T : Type u) where lt : T → T → Prop
 
 infix:50 " ⊑ " => SqLE.le
 infix:50 " ⊏ " => SqLT.lt
 
 
-def Not.dne {P: Prop} (h: ¬¬P): P :=
+public theorem Not.dne {P: Prop} (h: ¬¬P): P :=
   (Classical.em P).elim id (absurd · h)
 
-def Not.toAll {T} {P: T → Prop} {ImpliedByNotP: T → Sort*}
+public def Not.toAll {T} {P: T → Prop} {ImpliedByNotP: T → Sort*}
   (nEx: ¬(∃ t: T, P t))
   (nptImpl: ∀ t, ¬P t → ImpliedByNotP t)
 :
@@ -41,7 +51,7 @@ def Not.toAll {T} {P: T → Prop} {ImpliedByNotP: T → Sort*}
 :=
   fun t =>  nptImpl t (Classical.byContradiction fun nnpt => nEx ⟨t, nnpt.dne⟩)
 
-def Not.toEx {T} {P ImpliedByNotP: T → Prop}
+public theorem Not.toEx {T} {P ImpliedByNotP: T → Prop}
   (nAll: ¬(∀ t: T, P t))
   (nptImpl: ∀ t, ¬P t → ImpliedByNotP t)
 :
@@ -51,16 +61,16 @@ def Not.toEx {T} {P ImpliedByNotP: T → Prop}
     nAll (fun t => byContradiction fun npt => nEx ⟨t, nptImpl t npt⟩)
 
 
-def Iff.nmp {P Q: Prop} (h: P ↔ Q) : ¬P → ¬Q :=
+public theorem Iff.nmp {P Q: Prop} (h: P ↔ Q) : ¬P → ¬Q :=
   fun np q => np (h.mpr q)
 
-def Iff.nmpr {P Q: Prop} (h: P ↔ Q) : ¬Q → ¬P :=
+public theorem Iff.nmpr {P Q: Prop} (h: P ↔ Q) : ¬Q → ¬P :=
   fun qq p => qq (h.mp p)
 
 
-abbrev List.Index {T} (l: List T) := Fin l.length
+public abbrev List.Index {T} (l: List T) := Fin l.length
 
-def List.Index.map
+exposed def List.Index.map
   {A} {list: List A}
   (i: list.Index)
   {B} (f: A → B)
@@ -71,7 +81,7 @@ def List.Index.map
   by rw [List.length_map]; exact i.isLt
 ⟩
 
-def List.Index.unmap
+exposed def List.Index.unmap
   {A} {list: List A}
   {B} {f: A → B}
   (i: (list.map f).Index)
@@ -82,7 +92,7 @@ def List.Index.unmap
   by rw [←List.length_map f]; exact i.isLt
 ⟩
 
-noncomputable def List.Mem.index 
+public theorem List.Mem.index 
   {T} {l: List T} {t}
 :
   t ∈ l → ∃ i: List.Index l, l[i] = t
@@ -91,7 +101,7 @@ noncomputable def List.Mem.index
   let ⟨i, eq⟩ := index memTail
   ⟨⟨.succ i, Nat.succ_lt_succ i.isLt⟩, eq⟩
 
-def List.Index.indexedTail
+exposed def List.Index.indexedTail
   {T} {P: T → Sort*} {h t}
   (indexedFn: (i: (h :: t).Index) → P (h :: t)[i])
 :
@@ -99,7 +109,7 @@ def List.Index.indexedTail
 :=
   fun ⟨i, ilt⟩ => indexedFn ⟨i.succ, Nat.succ_lt_succ ilt⟩
 
-def List.Mem.toOr
+public theorem List.Mem.toOr
   {T} {t head: T} {rest}
   (mem: List.Mem t (head :: rest))
 :
@@ -109,17 +119,18 @@ def List.Mem.toOr
   | Mem.head a => Or.inl rfl
   | Mem.tail a b => Or.inr b
 
-def List.Mem.elim
+public theorem List.Mem.elim
   {T} {t head: T} {rest}
   (mem: List.Mem t (head :: rest))
-  {C} (left: t = head → C)
+  {C: Prop}
+  (left: t = head → C)
   (rite: t ∈ rest → C)
 :
   C
 :=
   mem.toOr.elim left rite
 
-def List.length_le_append_rite
+public theorem List.length_le_append_rite
   {T} (l r: List T)
 :
   l.length ≤ (l ++ r).length
@@ -130,7 +141,7 @@ def List.length_le_append_rite
     Nat.succ_le_succ (List.length_le_append_rite tail r)
 
 
-def String.append_inj_left
+public theorem String.append_inj_left
   {a0 a1 b0 b1: String}
   (eq: a0 ++ b0 = a1 ++ b1)
   (eqLength: a0.length = a1.length)
@@ -144,7 +155,7 @@ def String.append_inj_left
   rw [←String.toList_append, ←String.toList_append]
   exact congr rfl eq
 
-def String.append_inj_rite
+public theorem String.append_inj_rite
   {a0 a1 b0 b1: String}
   (eq: a0 ++ b0 = a1 ++ b1)
   (eqLength: a0.length = a1.length)

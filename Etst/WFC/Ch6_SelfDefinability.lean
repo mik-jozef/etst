@@ -28,15 +28,17 @@
   may look at the utility files in the folder
   `/Etst/WFC/Utils/SelfDefinability/` for the details.
 -/
-
-import Etst.WFC.Utils.DefList
+module
+public import Etst.WFC.Utils.DefList
+public import Etst.WFC.Utils.SelfDefinability.UniSetMapDl
 import Etst.WFC.Utils.SelfDefinability.UniSetMapAtLe
 import Etst.WFC.Utils.SelfDefinability.UniSetMapAtGe
 
+public section
 namespace Etst
 
 
-def uniSetMapDl.uniSetMapAt_eq
+theorem uniSetMapDl.uniSetMapAt_eq
   (dl: DefList)
   (n: Nat)
   (fv: List Pair)
@@ -49,7 +51,7 @@ def uniSetMapDl.uniSetMapAt_eq
     (uniSetMapAt_le dl n fv expr)
     (uniSetMapAt_ge dl n fv expr)
 
-def uniSetMapDl.ex_uniSetMapAt_eq
+theorem uniSetMapDl.ex_uniSetMapAt_eq
   (dl: FinBoundedDl)
   (fv: List Pair)
   (expr: BasicExpr)
@@ -60,7 +62,7 @@ def uniSetMapDl.ex_uniSetMapAt_eq
   ⟨n, (uniSetMapAt_eq dl.toDefList n fv expr).trans eqAtN⟩
 
 
-def uniSetMap.isUniversal {s}
+theorem uniSetMap.isUniversal {s}
   (isDef: DefList.IsDefinable s)
 :
   s ∈ uniSetMap
@@ -70,17 +72,17 @@ def uniSetMap.isUniversal {s}
   let i := uniSetMapIndex dl.toDefList n [] (.const x)
   ⟨i, eqAtI.trans sEq.symm⟩
 
-def uniSetMap.isDefinable: DefList.IsDefinable uniSetMap := ⟨
+theorem uniSetMap.isDefinable: DefList.IsDefinable uniSetMap := ⟨
   uniSetMapDl.toFinBoundedDl,
   uniSetMapDl.consts.uniSetMap,
   rfl,
 ⟩
 
-def uniSetMap.containsItself: uniSetMap ∈ uniSetMap :=
+theorem uniSetMap.containsItself: uniSetMap ∈ uniSetMap :=
   uniSetMap.isUniversal uniSetMap.isDefinable
 
 
-def FiniteDefList.uniSetMapAt_eq
+theorem FiniteDefList.uniSetMapAt_eq
   (dl: FiniteDefList)
   (fv: List Pair)
   (expr: BasicExpr)

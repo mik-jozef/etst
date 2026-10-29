@@ -1,8 +1,11 @@
-import Mathlib.Order.FixedPoints
+module
+public import Mathlib.Order.FixedPoints
+public import Etst.WFC.Utils.General.Ordinal
 
+import Etst.BasicUtils
 import Etst.WFC.Utils.General.IsLfp
-import Etst.WFC.Utils.General.Ordinal
 
+public section
 universe u
 
 
@@ -30,7 +33,7 @@ noncomputable abbrev OrderHom.lfpStagePrevious
 :=
   fun ⟨m, _⟩ => f.lfpStage m
 
-def OrderHom.lfpStage_eq_limit
+theorem OrderHom.lfpStage_eq_limit
   {T} {ord: CompleteLattice T}
   (f: T →o T)
   {n: Ordinal}
@@ -38,9 +41,9 @@ def OrderHom.lfpStage_eq_limit
 :
   f.lfpStage n = iSup (f.lfpStagePrevious n)
 := by
-  rw [lfpStage, dif_pos isLimit]
+  rw [lfpStage, dite_eq_left isLimit]
 
-def OrderHom.lfpStage_eq_succ
+theorem OrderHom.lfpStage_eq_succ
   {T} {ord: CompleteLattice T}
   (f: T →o T)
   {n: Ordinal}
@@ -48,22 +51,23 @@ def OrderHom.lfpStage_eq_succ
 :
   f.lfpStage n = f (f.lfpStage n.pred)
 := by
-  rw [lfpStage, dif_neg isSucc]
+  rw [lfpStage, dite_eq_right isSucc]
 
-def OrderHom.lfpStage_apply_eq_succ
+theorem OrderHom.lfpStage_apply_eq_succ
   {T} {ord: CompleteLattice T}
   (f: T →o T)
   (n: Ordinal)
 :
   f (f.lfpStage n) = f.lfpStage n.succ
-:= by
-  apply Eq.symm
-  let ret := f.lfpStage_eq_succ (Order.not_isSuccPrelimit_succ n)
-  rw [Ordinal.pred_succ] at ret
-  exact ret
+:=
+  let ret: _ = f (f.lfpStage ((n + 1).pred)) :=
+    f.lfpStage_eq_succ (Order.not_isSuccPrelimit_succ n)
+  by
+  rw [Ordinal.pred_add_one] at ret
+  exact ret.symm
 
 
-def OrderHom.lfpStage_mono
+theorem OrderHom.lfpStage_mono
   {T} {ord: CompleteLattice T}
   (f: T →o T)
   {a b: Ordinal}
@@ -100,7 +104,7 @@ def OrderHom.lfpStage_mono
     ih.trans predStageLe
 termination_by b
 
-def OrderHom.lfpStage_le_lfp
+theorem OrderHom.lfpStage_le_lfp
   {T} {ord: CompleteLattice T}
   (f: T →o T)
   (n: Ordinal)
@@ -131,7 +135,7 @@ inductive DistinctOrdinalsEqualStage
     (nLt: n0 < n1)
     (eqAt: f.lfpStage n0 = f.lfpStage n1)
 
-def OrderHom.lfpStage_ex_fp
+theorem OrderHom.lfpStage_ex_fp
   {T: Type u}
   {ord: CompleteLattice T}
   (f: T →o T)
@@ -175,7 +179,7 @@ def OrderHom.lfpStage_ex_fp
   
   ⟨n0, fun _m n0LeM => (eqN0 n0LeM).symm.trans eqLfp⟩
 
-def OrderHom.lfpStage_induction_stages
+theorem OrderHom.lfpStage_induction_stages
   {T: Type u}
   {ord: CompleteLattice T}
   (f: T →o T)
@@ -204,7 +208,7 @@ def OrderHom.lfpStage_induction_stages
     hSucc n h (Ordinal.pred_lt h) ih
 termination_by n
 
-def OrderHom.lfpStage_induction
+theorem OrderHom.lfpStage_induction
   {T: Type u}
   {ord: CompleteLattice T}
   (f: T →o T)
@@ -226,7 +230,7 @@ def OrderHom.lfpStage_induction
   let ⟨n, eqAt⟩ := f.lfpStage_ex_fp
   eqAt n le_rfl ▸ lfpStage_induction_stages f P hLim hSucc n
 
-def OrderHom.lfpStage_induction_stages2
+theorem OrderHom.lfpStage_induction_stages2
   {T0 T1: Type u}
   {ord: CompleteLattice T0}
   {ord: CompleteLattice T1}
@@ -261,7 +265,7 @@ def OrderHom.lfpStage_induction_stages2
     hSucc n h (Ordinal.pred_lt h) ih
 termination_by n
 
-def OrderHom.lfpStage_induction2
+theorem OrderHom.lfpStage_induction2
   {T0 T1: Type u}
   {ord: CompleteLattice T0}
   {ord: CompleteLattice T1}

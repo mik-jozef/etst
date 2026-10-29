@@ -2,9 +2,10 @@
   Proves that structurally identical definitions define the same
   (three-valued) sets.
 -/
+module
+public import Etst.WFC.Utils.InterpretationMono
 
-import Etst.WFC.Utils.InterpretationMono
-
+public section
 namespace Etst
 
 
@@ -31,7 +32,7 @@ def Expr.mapConst {E}
   expr.substConst (fun e x => .const e (map x))
 
 
-def Expr.substConst_eq_id {E}
+theorem Expr.substConst_eq_id {E}
   (expr: Expr E)
   {map: E → Nat → Expr E}
   (isId: (e x: _) → map e x = .const e x)
@@ -57,7 +58,7 @@ def Expr.substConst_eq_id {E}
   | .arbIr body =>
     congrArg arbIr (body.substConst_eq_id isId)
 
-def Expr.mapConst_eq_id {E}
+theorem Expr.mapConst_eq_id {E}
   (expr: Expr E)
 :
   expr.mapConst id = expr
@@ -70,16 +71,16 @@ def Expr.mapConst_eq_id {E}
   each replacement expression has the same interpretation as the
   original constant in both complement polarities.
 -/
-def SingleLaneExpr.substConst_intp2 {fv bSrc bDst cSrc cDst}
+theorem SingleLaneExpr.substConst_intp2 {fv bSrc bDst cSrc cDst}
   (map: Set3.Lane → Nat → SingleLaneExpr)
   {expr: SingleLaneExpr}
   (eqBC:
     ∀ fv lane x,
-      x ∈ expr.UsesConst →
+      expr.UsesConst x →
       intp2 (map lane x) fv bDst cDst = (cSrc x).getLane lane)
   (eqCB:
     ∀ fv lane x,
-      x ∈ expr.UsesConst →
+      expr.UsesConst x →
       intp2 (map lane x) fv cDst bDst = (bSrc x).getLane lane)
 :
   intp2 (expr.substConst map) fv bDst cDst = intp2 expr fv bSrc cSrc
@@ -111,11 +112,11 @@ def SingleLaneExpr.substConst_intp2 {fv bSrc bDst cSrc cDst}
   | .arbIr _ =>
     eq_intp2_arbIr_of_eq fun _ => substConst_intp2 map eqBC eqCB
 
-def SingleLaneExpr.mapConst_intp2 {fv bSrc bDst cSrc cDst}
+theorem SingleLaneExpr.mapConst_intp2 {fv bSrc bDst cSrc cDst}
   (map: Nat → Nat)
   {expr: SingleLaneExpr}
-  (eqB: ∀ x ∈ expr.UsesConst, bSrc x = bDst (map x))
-  (eqC: ∀ x ∈ expr.UsesConst, cSrc x = cDst (map x))
+  (eqB: ∀ x, expr.UsesConst x → bSrc x = bDst (map x))
+  (eqC: ∀ x, expr.UsesConst x → cSrc x = cDst (map x))
 :
   intp2 (expr.mapConst map) fv bDst cDst = intp2 expr fv bSrc cSrc
 :=
@@ -128,7 +129,7 @@ def SingleLaneExpr.mapConst_intp2 {fv bSrc bDst cSrc cDst}
 
 
 namespace BasicExpr
-  def toLane_UsesConst
+  theorem toLane_UsesConst
     (expr: BasicExpr)
     (lane: Set3.Lane)
   :
@@ -165,7 +166,7 @@ namespace BasicExpr
         exact propext <| Iff.intro (ih lane).mp (ih lane).mpr
   
   
-  def toLane_substConst
+  theorem toLane_substConst
     (expr: BasicExpr)
     (lane: Set3.Lane)
     (map: Nat → BasicExpr)
@@ -195,7 +196,7 @@ namespace BasicExpr
     | .arbIr body =>
       congrArg SingleLaneExpr.arbIr (toLane_substConst body lane map)
   
-  def toLane_mapConst
+  theorem toLane_mapConst
     (expr: BasicExpr)
     (lane: Set3.Lane)
     (map: Nat → Nat)
@@ -207,18 +208,18 @@ namespace BasicExpr
     toLane_substConst expr lane (.const ∘ map)
   
   
-  def substConst_triIntp2
+  theorem substConst_triIntp2
     (map: Nat → BasicExpr)
     {expr: BasicExpr}
     {fv: List Pair}
     {bSrc bDst cSrc cDst: Valuation Pair}
     (eqBC:
       ∀ fv x,
-        x ∈ expr.UsesConst →
+        expr.UsesConst x →
         triIntp2 (map x) fv bDst cDst = cSrc x)
     (eqCB:
       ∀ fv x,
-        x ∈ expr.UsesConst →
+        expr.UsesConst x →
         triIntp2 (map x) fv cDst bDst = bSrc x)
   :
     Eq
@@ -256,13 +257,13 @@ namespace BasicExpr
             (fun s => s.getLane lane)
             (eqCB fv x ((congrFun (usesEq .posLane) x).mp hx))))
   
-  def mapConst_triIntp2
+  theorem mapConst_triIntp2
     (map: Nat → Nat)
     {expr: BasicExpr}
     {fv: List Pair}
     {bSrc bDst cSrc cDst: Valuation Pair}
-    (eqB: ∀ x ∈ expr.UsesConst, bSrc x = bDst (map x))
-    (eqC: ∀ x ∈ expr.UsesConst, cSrc x = cDst (map x))
+    (eqB: ∀ x, expr.UsesConst x → bSrc x = bDst (map x))
+    (eqC: ∀ x, expr.UsesConst x → cSrc x = cDst (map x))
   :
     Eq
       (triIntp2 (expr.mapConst map) fv bDst cDst)

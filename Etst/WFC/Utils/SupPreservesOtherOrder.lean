@@ -1,5 +1,7 @@
-import Etst.WFC.Utils.Valuation
+module
+public import Etst.WFC.Utils.Valuation
 
+public section
 namespace Etst
 
 variable {T: Type*}
@@ -18,7 +20,7 @@ def LubPreservesOtherOrder
   Nonempty s →
   ordOther.le lub ub
 
-def LubsPreserveOtherOrder
+exposed def LubsPreserveOtherOrder
   (ord: PartialOrder T)
   (ordOther: PartialOrder T)
 :
@@ -33,7 +35,7 @@ def LubsPreserveOtherOrder
   ordOther.le lubA lubB
 
 
-def Valuation.ordStd.lubPreservesLeApxLub:
+theorem Valuation.ordStd.lubPreservesLeApxLub:
   LubsPreserveOtherOrder
     (Valuation.ordStd T)
     (Valuation.ordApx T)
@@ -59,7 +61,7 @@ def Valuation.ordStd.lubPreservesLeApxLub:
           ((valBLe x).posLe dInAtX)
   }
 
-def Valuation.ordStd.lubPreservesLeApx:
+theorem Valuation.ordStd.lubPreservesLeApx:
   LubPreservesOtherOrder
     (Valuation.ordStd T)
     (Valuation.ordApx T)

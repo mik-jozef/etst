@@ -1,11 +1,12 @@
-import Etst.WFC.Utils.Trisets.TrisetEmbedding
-import Etst.WFC.Utils.Trisets.TrisetPair.TrisetPair
-
 /-
   An embedding of `Triset` into `TrisetPair` (defined internally
   in WFC).
 -/
+module
+public import Etst.WFC.Utils.Trisets.TrisetEmbedding
+public import Etst.WFC.Utils.Trisets.TrisetPair.TrisetPair
 
+public section
 namespace Etst
 
 
@@ -13,15 +14,15 @@ namespace Pair
   open TrisetEmbedding
   
   namespace PreTriset
-    /--
+    /-
       The embedding on representatives: embed the triset so that its
       members are TrisetPair codes, then wrap it in the `set` constructor.
     -/
-    def toPreTrisetPair (t: PreTriset): PreTrisetPair :=
+    exposed def toPreTrisetPair (t: PreTriset): PreTrisetPair :=
       .set (embed t)
     
     -- The embedding preserves definitive membership.
-    def ins_toPreTrisetPair {t e: PreTriset}
+    theorem ins_toPreTrisetPair {t e: PreTriset}
       (ins: t.Ins e)
     :
       t.toPreTrisetPair.Ins e.toPreTrisetPair
@@ -29,7 +30,7 @@ namespace Pair
       embed_ins ins
     
     -- The embedding preserves possible membership.
-    def inw_toPreTrisetPair {t e: PreTriset}
+    theorem inw_toPreTrisetPair {t e: PreTriset}
       (inw: t.Inw e)
     :
       t.toPreTrisetPair.Inw e.toPreTrisetPair
@@ -37,7 +38,7 @@ namespace Pair
       embed_inw inw
     
     -- Definitive members of an embedding are embeddings.
-    def ins_toPreTrisetPair_elim {t: PreTriset} {e: PreTrisetPair}
+    theorem ins_toPreTrisetPair_elim {t: PreTriset} {e: PreTrisetPair}
       (ins: t.toPreTrisetPair.Ins e)
     :
       ∃ e0: PreTriset, t.Ins e0 ∧ e = e0.toPreTrisetPair
@@ -46,7 +47,7 @@ namespace Pair
       ⟨e0, e0In, PreTrisetPair.toPair_inj (b := toPreTrisetPair e0) eq⟩
     
     -- Possible members of an embedding are embeddings.
-    def inw_toPreTrisetPair_elim {t: PreTriset} {e: PreTrisetPair}
+    theorem inw_toPreTrisetPair_elim {t: PreTriset} {e: PreTrisetPair}
       (inw: t.toPreTrisetPair.Inw e)
     :
       ∃ e0: PreTriset, t.Inw e0 ∧ e = e0.toPreTrisetPair
@@ -57,7 +58,7 @@ namespace Pair
     /-
       If two trisets are bisimilar, so are their embeddings.
     -/
-    def toPreTrisetPair_bisim {t t': PreTriset}
+    theorem toPreTrisetPair_bisim {t t': PreTriset}
       (bisim: t.IsBisim t')
     :
       t.toPreTrisetPair.IsBisim t'.toPreTrisetPair
@@ -107,7 +108,7 @@ namespace Pair
       If the embeddings of two trisets are bisimilar, so are the
       trisets themselves.
     -/
-    def bisim_of_toPreTrisetPair_bisim {t t': PreTriset}
+    theorem bisim_of_toPreTrisetPair_bisim {t t': PreTriset}
       (bisim: t.toPreTrisetPair.IsBisim t'.toPreTrisetPair)
     :
       t.IsBisim t'
@@ -144,24 +145,24 @@ namespace Pair
   end PreTriset
   
   namespace Triset
-    /--
+    /-
       The embedding of `Triset` into `TrisetPair`: the class of
       a triset index `t` is sent to the class of `set (embed t)`.
     -/
-    def toTrisetPair: Triset → TrisetPair :=
+    exposed def toTrisetPair: Triset → TrisetPair :=
       Quotient.lift
         (fun t => ⟦PreTriset.toPreTrisetPair t⟧)
         (fun _ _ bisim =>
           Quot.sound (PreTriset.toPreTrisetPair_bisim bisim))
     
     /-- The embedding applied to a class of an index. -/
-    def toTrisetPair_eq (t: PreTriset):
+    theorem toTrisetPair_eq (t: PreTriset):
       toTrisetPair ⟦t⟧ = ⟦t.toPreTrisetPair⟧
     :=
       rfl
     
     /-- The embedding is injective. -/
-    def toTrisetPair_inj: Function.Injective toTrisetPair :=
+    theorem toTrisetPair_inj: Function.Injective toTrisetPair :=
       fun a b eq =>
         a.exists_rep.elim fun t aEq =>
         b.exists_rep.elim fun t' bEq => by
@@ -173,7 +174,7 @@ namespace Pair
                 (Quotient.exact eq))
     
     -- The embedding preserves definitive membership (PreTriset version).
-    def directIns_toTrisetPair_pre {t e: PreTriset} (ins: t.Ins e):
+    theorem directIns_toTrisetPair_pre {t e: PreTriset} (ins: t.Ins e):
       (toTrisetPair ⟦t⟧).DirectIns (toTrisetPair ⟦e⟧)
     :=
       ⟨
@@ -185,7 +186,7 @@ namespace Pair
       ⟩
     
     -- The embedding preserves possible membership (PreTriset version).
-    def directInw_toTrisetPair_pre {t e: PreTriset} (inw: t.Inw e):
+    theorem directInw_toTrisetPair_pre {t e: PreTriset} (inw: t.Inw e):
       (toTrisetPair ⟦t⟧).DirectInw (toTrisetPair ⟦e⟧)
     :=
       ⟨
@@ -197,7 +198,7 @@ namespace Pair
       ⟩
     
     -- The embedding preserves definitive membership.
-    def directIns_toTrisetPair {ts elem: Triset}
+    theorem directIns_toTrisetPair {ts elem: Triset}
       (ins: ts.DirectIns elem)
     :
       ts.toTrisetPair.DirectIns elem.toTrisetPair
@@ -206,7 +207,7 @@ namespace Pair
       tsEq ▸ elemEq ▸ directIns_toTrisetPair_pre ins
     
     -- The embedding preserves possible membership.
-    def directInw_toTrisetPair {ts elem: Triset}
+    theorem directInw_toTrisetPair {ts elem: Triset}
       (inw: ts.DirectInw elem)
     :
       ts.toTrisetPair.DirectInw elem.toTrisetPair
@@ -215,7 +216,7 @@ namespace Pair
       tsEq ▸ elemEq ▸ directInw_toTrisetPair_pre inw
     
     -- The embedding reflects definitive membership.
-    def directIns_of_toTrisetPair {ts elem: Triset}
+    theorem directIns_of_toTrisetPair {ts elem: Triset}
       (ins: ts.toTrisetPair.DirectIns elem.toTrisetPair)
     :
       ts.DirectIns elem
@@ -239,7 +240,7 @@ namespace Pair
         ins
     
     -- The embedding reflects possible membership.
-    def directInw_of_toTrisetPair {ts elem: Triset}
+    theorem directInw_of_toTrisetPair {ts elem: Triset}
       (inw: ts.toTrisetPair.DirectInw elem.toTrisetPair)
     :
       ts.DirectInw elem
@@ -262,12 +263,12 @@ namespace Pair
           ⟩)
         inw
     
-    def directIns_iff_toTrisetPair {ts elem: Triset}:
+    theorem directIns_iff_toTrisetPair {ts elem: Triset}:
       ts.DirectIns elem ↔ ts.toTrisetPair.DirectIns elem.toTrisetPair
     :=
       ⟨directIns_toTrisetPair, directIns_of_toTrisetPair⟩
     
-    def directInw_iff_toTrisetPair {ts elem: Triset}:
+    theorem directInw_iff_toTrisetPair {ts elem: Triset}:
       ts.DirectInw elem ↔ ts.toTrisetPair.DirectInw elem.toTrisetPair
     :=
       ⟨directInw_toTrisetPair, directInw_of_toTrisetPair⟩

@@ -32,9 +32,10 @@
   of work, would likely depend on the precise syntactic class of codes,
   and who knows whether the result would even be natural. It is what it is.
 -/
+module
+public import Etst.WFC.Utils.Trisets.Triset
 
-import Etst.WFC.Utils.Trisets.Triset
-
+public section
 namespace Etst
 
 
@@ -44,50 +45,50 @@ namespace Pair
   | fn (graph: PreTriset)
   
   namespace PreTrisetFn
-    def toPair: PreTrisetFn → Pair
+    exposed def toPair: PreTrisetFn → Pair
     | .set ts => .pair (.nat 0) ts
     | .fn graph => .pair (.nat 1) graph
     
-    def toPair_inj {a b: PreTrisetFn} (h: a.toPair = b.toPair): a = b :=
+    theorem toPair_inj {a b: PreTrisetFn} (h: a.toPair = b.toPair): a = b :=
       match a, b, h with
       | .set _, .set _, h => congrArg set (Pair.noConfusion h fun _ hr => hr)
       | .fn _, .fn _, h => congrArg fn (Pair.noConfusion h fun _ hr => hr)
     
-    def IsFn: PreTrisetFn → Prop
+    exposed def IsFn: PreTrisetFn → Prop
     | fn _ => True
     | set _ => False
     
-    def Ins: PreTrisetFn → PreTrisetFn → Prop
+    exposed def Ins: PreTrisetFn → PreTrisetFn → Prop
     | set ts, e => ts.Ins e.toPair
     | fn _, _ => False
     
-    def Inw: PreTrisetFn → PreTrisetFn → Prop
+    exposed def Inw: PreTrisetFn → PreTrisetFn → Prop
     | set ts, e => ts.Inw e.toPair
     | fn _, _ => False
     
     -- `(a, r)` is a definite entry of the graph of `f`.
-    def InsEntry: PreTrisetFn → PreTrisetFn → PreTrisetFn → Prop
+    exposed def InsEntry: PreTrisetFn → PreTrisetFn → PreTrisetFn → Prop
     | fn graph, a, r => graph.Ins (.pair a.toPair r.toPair)
     | set _, _, _ => False
     
     -- `(a, r)` is a possible entry of the graph of `f`.
-    def InwEntry: PreTrisetFn → PreTrisetFn → PreTrisetFn → Prop
+    exposed def InwEntry: PreTrisetFn → PreTrisetFn → PreTrisetFn → Prop
     | fn graph, a, r => graph.Inw (.pair a.toPair r.toPair)
     | set _, _, _ => False
     
-    def insLeInw {s e: PreTrisetFn} (ins: s.Ins e): s.Inw e :=
+    theorem insLeInw {s e: PreTrisetFn} (ins: s.Ins e): s.Inw e :=
       match s with
-      | set _ => Set3.defMem.toPos ins
+      | set _ => Set3.defToPos ins
     
-    def insEntryLeInwEntry {f a r: PreTrisetFn}
+    theorem insEntryLeInwEntry {f a r: PreTrisetFn}
       (ins: f.InsEntry a r)
     :
       f.InwEntry a r
     :=
       match f with
-      | fn _ => Set3.defMem.toPos ins
+      | fn _ => Set3.defToPos ins
     
-    def not_inwEntry_of_not_isFn {f a r: PreTrisetFn}
+    theorem not_inwEntry_of_not_isFn {f a r: PreTrisetFn}
       (notFn: ¬ f.IsFn)
       (ins: f.InwEntry a r)
     :
@@ -96,7 +97,7 @@ namespace Pair
       match f with
       | fn _ => notFn trivial
     
-    def not_inw_of_isFn {s e: PreTrisetFn}
+    theorem not_inw_of_isFn {s e: PreTrisetFn}
       (isFn: s.IsFn)
       (inw: s.Inw e)
     :
@@ -134,11 +135,11 @@ namespace Pair
     :=
       Step
     
-    def Step.ofIsFn {v: PreTrisetFn} (isFn: v.IsFn): Step .isFn (.val v) (.val v) :=
+    theorem Step.ofIsFn {v: PreTrisetFn} (isFn: v.IsFn): Step .isFn (.val v) (.val v) :=
       match v with
       | fn graph => .isFn graph
     
-    def Step.fromVal {l v x'} (st: Step l (.val v) x'):
+    theorem Step.fromVal {l v x'} (st: Step l (.val v) x'):
       Or (∃ e, l = .ins ∧ x' = .val e ∧ Ins v e) <|
       Or (∃ e, l = .inw ∧ x' = .val e ∧ Inw v e) <|
       Or (∃ a r, l = .insEntry ∧ x' = .entry a r ∧ InsEntry v a r) <|
@@ -152,23 +153,23 @@ namespace Pair
       | .inwEntry h => .inr (.inr (.inr (.inl ⟨_, _, rfl, rfl, h⟩)))
       | .isFn _ => .inr (.inr (.inr (.inr ⟨rfl, rfl, trivial⟩)))
     
-    def Step.fromEntry {l a r x'} (st: Step l (.entry a r) x'):
+    theorem Step.fromEntry {l a r x'} (st: Step l (.entry a r) x'):
       Or (l = .arg ∧ x' = .val a) (l = .res ∧ x' = .val r)
     :=
       match st with
       | .arg _ _ => .inl ⟨rfl, rfl⟩
       | .res _ _ => .inr ⟨rfl, rfl⟩
     
-    def IsBisim (a b: PreTrisetFn): Prop :=
+    exposed def IsBisim (a b: PreTrisetFn): Prop :=
       transitionSystem.IsBisimilar (.val a) (.val b)
     
-    def IsBisim.refl (a: PreTrisetFn): a.IsBisim a :=
+    theorem IsBisim.refl (a: PreTrisetFn): a.IsBisim a :=
       transitionSystem.IsBisimilar_is_equivalence.refl _
     
-    def IsBisim.symm {a b: PreTrisetFn} (h: a.IsBisim b): b.IsBisim a :=
+    theorem IsBisim.symm {a b: PreTrisetFn} (h: a.IsBisim b): b.IsBisim a :=
       transitionSystem.IsBisimilar_is_equivalence.symm h
     
-    def IsBisim.trans {a b c: PreTrisetFn}
+    theorem IsBisim.trans {a b c: PreTrisetFn}
       (h0: a.IsBisim b)
       (h1: b.IsBisim c)
     :
@@ -176,7 +177,7 @@ namespace Pair
     :=
       transitionSystem.IsBisimilar_is_equivalence.trans h0 h1
     
-    def setoid: Setoid PreTrisetFn where
+    exposed def setoid: Setoid PreTrisetFn where
       r := IsBisim
       iseqv := ⟨IsBisim.refl, IsBisim.symm, IsBisim.trans⟩
     
@@ -185,7 +186,7 @@ namespace Pair
       Two nodes are bisimilar if their steps match, landing either in
       bisimilar nodes, or back in the pair itself.
     -/
-    def isBisimilar_of_steps {x0 y0: Node}
+    theorem isBisimilar_of_steps {x0 y0: Node}
       (fwd:
         ∀ l x', Step l x0 x' →
         ∃ y', Step l y0 y' ∧
@@ -214,7 +215,7 @@ namespace Pair
         | l, _, _, y', .inr ⟨rfl, rfl⟩, st => bwd l y' st
       ⟨R, ⟨simL, simR⟩, .inr ⟨rfl, rfl⟩⟩
     
-    def isBisimilar_entry {a a' r r': PreTrisetFn}
+    theorem isBisimilar_entry {a a' r r': PreTrisetFn}
       (ha: a.IsBisim a')
       (hr: r.IsBisim r')
     :
@@ -230,7 +231,7 @@ namespace Pair
           | _, _, .inl ⟨rfl, rfl⟩ => ⟨_, .arg a r, .inl ha⟩
           | _, _, .inr ⟨rfl, rfl⟩ => ⟨_, .res a r, .inl hr⟩)
     
-    def IsBisim.entryArg {a r a' r': PreTrisetFn}
+    theorem IsBisim.entryArg {a r a' r': PreTrisetFn}
       (h: transitionSystem.IsBisimilar (.entry a r) (.entry a' r'))
     :
       a.IsBisim a'
@@ -240,7 +241,7 @@ namespace Pair
       match y', Step.fromEntry st, hy with
       | _, .inl ⟨_, rfl⟩, hy => hy
     
-    def IsBisim.entryRes {a r a' r': PreTrisetFn}
+    theorem IsBisim.entryRes {a r a' r': PreTrisetFn}
       (h: transitionSystem.IsBisimilar (.entry a r) (.entry a' r'))
     :
       r.IsBisim r'
@@ -253,7 +254,7 @@ namespace Pair
     
     -- ## Bisimilar values have matching members, entries and kinds
     
-    def IsBisim.ins {s s' e: PreTrisetFn}
+    theorem IsBisim.ins {s s' e: PreTrisetFn}
       (b: s.IsBisim s')
       (ins: s.Ins e)
     :
@@ -264,7 +265,7 @@ namespace Pair
       match y', Step.fromVal st, hy with
       | _, .inl ⟨e', _, rfl, ins'⟩, hy => ⟨e', ins', hy⟩
     
-    def IsBisim.inw {s s' e: PreTrisetFn}
+    theorem IsBisim.inw {s s' e: PreTrisetFn}
       (b: s.IsBisim s')
       (inw: s.Inw e)
     :
@@ -275,7 +276,7 @@ namespace Pair
       match y', Step.fromVal st, hy with
       | _, .inr (.inl ⟨e', _, rfl, inw'⟩), hy => ⟨e', inw', hy⟩
     
-    def IsBisim.insEntry {f f' a r: PreTrisetFn}
+    theorem IsBisim.insEntry {f f' a r: PreTrisetFn}
       (b: f.IsBisim f')
       (ins: f.InsEntry a r)
     :
@@ -288,7 +289,7 @@ namespace Pair
       | _, .inr (.inr (.inl ⟨a', r', _, rfl, ins'⟩)), hy =>
         ⟨a', r', ins', IsBisim.entryArg hy, IsBisim.entryRes hy⟩
     
-    def IsBisim.inwEntry {f f' a r: PreTrisetFn}
+    theorem IsBisim.inwEntry {f f' a r: PreTrisetFn}
       (b: f.IsBisim f')
       (inw: f.InwEntry a r)
     :
@@ -301,7 +302,7 @@ namespace Pair
       | _, .inr (.inr (.inr (.inl ⟨a', r', _, rfl, inw'⟩))), hy =>
         ⟨a', r', inw', IsBisim.entryArg hy, IsBisim.entryRes hy⟩
     
-    def IsBisim.isFn {v v': PreTrisetFn}
+    theorem IsBisim.isFn {v v': PreTrisetFn}
       (b: v.IsBisim v')
       (isFn: v.IsFn)
     :
@@ -316,7 +317,7 @@ namespace Pair
     
     -- ## Extensionality on representatives
     
-    def isBisim_of_members {s t: PreTrisetFn}
+    theorem isBisim_of_members {s t: PreTrisetFn}
       (sNotFn: ¬ s.IsFn)
       (tNotFn: ¬ t.IsFn)
       (insST: ∀ e, s.Ins e → ∃ e', t.Ins e' ∧ e.IsBisim e')
@@ -356,7 +357,7 @@ namespace Pair
           | _, _, .inr (.inr (.inr (.inr ⟨_, _, isFn⟩))) =>
             (tNotFn isFn).elim)
     
-    def isBisim_of_entries {f g: PreTrisetFn}
+    theorem isBisim_of_entries {f g: PreTrisetFn}
       (fFn: f.IsFn)
       (gFn: g.IsFn)
       (insFG:
@@ -418,41 +419,41 @@ namespace Pair
         ∀ {a a' r}, a.IsBisim a' → f.InwEntry a r →
         ∃ r', f.InwEntry a' r' ∧ r.IsBisim r'
     
-    def insEntry_iff_call {graph a r: PreTrisetFn}:
+    theorem insEntry_iff_call {graph a r: PreTrisetFn}:
       (fn graph.toPair).InsEntry a r
         ↔
-      ((uniSetMap.call graph.toPair).call a.toPair).defMem r.toPair
+      r.toPair ∈ ((uniSetMap.call graph.toPair).call a.toPair).defMem
     :=
       Iff.rfl
     
-    def inwEntry_iff_call {graph a r: PreTrisetFn}:
+    theorem inwEntry_iff_call {graph a r: PreTrisetFn}:
       (fn graph.toPair).InwEntry a r
         ↔
-      ((uniSetMap.call graph.toPair).call a.toPair).posMem r.toPair
+      r.toPair ∈ ((uniSetMap.call graph.toPair).call a.toPair).posMem
     :=
       Iff.rfl
     
   end PreTrisetFn
   
   
-  def TrisetFn := Quotient PreTrisetFn.setoid
+  exposed def TrisetFn := Quotient PreTrisetFn.setoid
   
   namespace TrisetFn
     open PreTrisetFn
     
-    def IsFn: TrisetFn → Prop :=
+    exposed def IsFn: TrisetFn → Prop :=
       Quotient.lift PreTrisetFn.IsFn fun _ _ b =>
         propext ⟨IsBisim.isFn b, IsBisim.isFn (IsBisim.symm b)⟩
     
     -- `ts` is a triset with a definite member `elem`.
-    def DirectIns (ts elem: TrisetFn): Prop :=
+    exposed def DirectIns (ts elem: TrisetFn): Prop :=
       DirectRel PreTrisetFn.Ins ts elem
     
     -- `ts` is a triset with a possible member `elem`.
-    def DirectInw (ts elem: TrisetFn): Prop :=
+    exposed def DirectInw (ts elem: TrisetFn): Prop :=
       DirectRel PreTrisetFn.Inw ts elem
     
-    def DirectMem: TriRelation TrisetFn where
+    exposed def DirectMem: TriRelation TrisetFn where
       RelDef := DirectIns
       RelPos := DirectInw
       def_le_pos
@@ -460,14 +461,14 @@ namespace Pair
         ⟨preTs, preElem, ⟨tsEq, elemEq, insLeInw ins⟩⟩
     
     -- `res` is a definite member of the result of applying `f` to `arg`.
-    def DirectCallIns (f arg res: TrisetFn): Prop :=
+    exposed def DirectCallIns (f arg res: TrisetFn): Prop :=
       DirectRel₃ PreTrisetFn.InsEntry f arg res
     
     -- `res` is a possible member of the result of applying `f` to `arg`.
-    def DirectCallInw (f arg res: TrisetFn): Prop :=
+    exposed def DirectCallInw (f arg res: TrisetFn): Prop :=
       DirectRel₃ PreTrisetFn.InwEntry f arg res
     
-    def DirectCallIns.toInw {f arg res: TrisetFn}
+    theorem DirectCallIns.toInw {f arg res: TrisetFn}
       (ins: f.DirectCallIns arg res)
     :
       f.DirectCallInw arg res
@@ -478,7 +479,7 @@ namespace Pair
     
     -- ## The direct relations on representatives
     
-    def directIns_mk_iff {s e: PreTrisetFn}:
+    theorem directIns_mk_iff {s e: PreTrisetFn}:
       DirectIns ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Ins e' ∧ e.IsBisim e'
     :=
       ⟨
@@ -490,7 +491,7 @@ namespace Pair
         fun ⟨e', ins', b⟩ => ⟨s, e', rfl, Quotient.sound b, ins'⟩,
       ⟩
     
-    def directInw_mk_iff {s e: PreTrisetFn}:
+    theorem directInw_mk_iff {s e: PreTrisetFn}:
       DirectInw ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Inw e' ∧ e.IsBisim e'
     :=
       ⟨
@@ -502,7 +503,7 @@ namespace Pair
         fun ⟨e', inw', b⟩ => ⟨s, e', rfl, Quotient.sound b, inw'⟩,
       ⟩
     
-    def directCallIns_mk_iff {f a r: PreTrisetFn}:
+    theorem directCallIns_mk_iff {f a r: PreTrisetFn}:
       DirectCallIns ⟦f⟧ ⟦a⟧ ⟦r⟧
         ↔
       ∃ a' r', f.InsEntry a' r' ∧ a.IsBisim a' ∧ r.IsBisim r'
@@ -518,7 +519,7 @@ namespace Pair
           ⟨f, a', r', rfl, Quotient.sound ba, Quotient.sound br, ins'⟩,
       ⟩
     
-    def directCallInw_mk_iff {f a r: PreTrisetFn}:
+    theorem directCallInw_mk_iff {f a r: PreTrisetFn}:
       DirectCallInw ⟦f⟧ ⟦a⟧ ⟦r⟧
         ↔
       ∃ a' r', f.InwEntry a' r' ∧ a.IsBisim a' ∧ r.IsBisim r'
@@ -535,7 +536,7 @@ namespace Pair
       ⟩
     
     -- For saturated graphs, the exact code of the argument suffices.
-    def directCallIns_mk_iff_of_saturated {f a r: PreTrisetFn}
+    theorem directCallIns_mk_iff_of_saturated {f a r: PreTrisetFn}
       (sat: f.Saturated)
     :
       DirectCallIns ⟦f⟧ ⟦a⟧ ⟦r⟧ ↔ ∃ r', f.InsEntry a r' ∧ r.IsBisim r'
@@ -549,7 +550,7 @@ namespace Pair
           directCallIns_mk_iff.mpr ⟨a, r', ins, IsBisim.refl a, br⟩,
       ⟩
     
-    def directCallInw_mk_iff_of_saturated {f a r: PreTrisetFn}
+    theorem directCallInw_mk_iff_of_saturated {f a r: PreTrisetFn}
       (sat: f.Saturated)
     :
       DirectCallInw ⟦f⟧ ⟦a⟧ ⟦r⟧ ↔ ∃ r', f.InwEntry a r' ∧ r.IsBisim r'
@@ -567,7 +568,7 @@ namespace Pair
     -- ## Extensionality
     
     -- Trisets with the same members are equal.
-    def eq_of_directMem {s t: TrisetFn}
+    theorem eq_of_directMem {s t: TrisetFn}
       (sNotFn: ¬ s.IsFn)
       (tNotFn: ¬ t.IsFn)
       (ins: ∀ e, s.DirectIns e ↔ t.DirectIns e)
@@ -608,7 +609,7 @@ namespace Pair
         inw
     
     -- Functions with the same input-output behavior are equal.
-    def eq_of_directCall {f g: TrisetFn}
+    theorem eq_of_directCall {f g: TrisetFn}
       (fFn: f.IsFn)
       (gFn: g.IsFn)
       (ins: ∀ a r, f.DirectCallIns a r ↔ g.DirectCallIns a r)

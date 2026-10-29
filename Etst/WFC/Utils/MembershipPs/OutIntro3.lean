@@ -1,10 +1,13 @@
-import Etst.WFC.Ch4_S1_MembershipPs
+module
+public import Etst.WFC.Ch4_S1_MembershipPs
 
+public section
 namespace Etst
+
 
 inductive DefList.IsCauseInapplicableExtended
   (dl: DefList)
-  (cycle: Nat → Set Pair)
+  (cycle: Nat → Pair → Prop)
   (cause: Cause Pair)
 :
   Prop
@@ -30,9 +33,9 @@ inductive DefList.IsCauseInapplicableExtended
 :
   IsCauseInapplicableExtended dl cycle cause
 
-def DefList.Out.intro3
+theorem DefList.Out.intro3
   {dl: DefList}
-  (cycle: Nat → Set Pair)
+  (cycle: Nat → Pair → Prop)
   (isEmptyCycle:
     ∀ {x p},
     cycle x p →
@@ -44,7 +47,7 @@ def DefList.Out.intro3
 :
   DefList.Out dl x p
 :=
-  let largeCycle x p := cycle x p ∨ ¬(dl.wfm x).posMem p
+  let largeCycle x p := cycle x p ∨ ¬ p ∈ (dl.wfm x).posMem
 
   DefList.Out.intro
     largeCycle

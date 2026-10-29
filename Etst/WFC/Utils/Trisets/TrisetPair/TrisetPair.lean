@@ -1,9 +1,10 @@
 /-
   See `Triset.lean`.
 -/
+module
+public import Etst.WFC.Utils.Trisets.Triset
 
-import Etst.WFC.Utils.Trisets.Triset
-
+public section
 namespace Etst
 
 
@@ -25,13 +26,13 @@ namespace Pair
       Encodes a `PreTrisetPair` as a raw pair.
       Contrast with `PreTriset`, where all pairs code trisets.
     -/
-    def toPair: PreTrisetPair → Pair
+    exposed def toPair: PreTrisetPair → Pair
     | .set ts => .pair (.nat 0) ts
     | .null => .pair (.nat 1) .null
     | .pair p0 p1 => .pair (.nat 1) (.pair p0.toPair p1.toPair)
     
     -- The encoding of `PreTrisetPair`s as raw pairs is injective.
-    def toPair_inj {a b: PreTrisetPair} (h: a.toPair = b.toPair): a = b :=
+    theorem toPair_inj {a b: PreTrisetPair} (h: a.toPair = b.toPair): a = b :=
       match a, b, h with
       | .set _, .set _, h =>
           congrArg set (Pair.noConfusion h fun _ hr => hr)
@@ -43,19 +44,19 @@ namespace Pair
     
     
     -- Strong (a la "definite") membership, `a ∈ b`.
-    def Ins: PreTrisetPair → PreTrisetPair → Prop
+    exposed def Ins: PreTrisetPair → PreTrisetPair → Prop
     | set ts, elem => ts.Ins elem.toPair
     | _, _ => False
     
     -- Weak (a la "possible") membership, `a ∈? b`.
-    def Inw: PreTrisetPair → PreTrisetPair → Prop
+    exposed def Inw: PreTrisetPair → PreTrisetPair → Prop
     | set ts, elem => ts.Inw elem.toPair
     | _, _ => False
     
     -- Definite membership implies possible membership.
-    def insLeInw {elem: PreTrisetPair}:
+    theorem insLeInw {elem: PreTrisetPair}:
       (ts: PreTrisetPair) → ts.Ins elem → ts.Inw elem
-    | set _, ins => ins.toPos
+    | set _, ins => Set3.defToPos ins
     | .null, ins => ins.elim
     | pair _ _, ins => ins.elim
     
@@ -71,7 +72,7 @@ namespace Pair
       One can transition a triset to its elements, a pair
       to its components, and null to itself.
     -/
-    def transitionSystem:
+    exposed def transitionSystem:
       LabeledTransitionSystem TransitionLabels PreTrisetPair
     := fun
       | .ins, a, b => a.Ins b
@@ -80,19 +81,19 @@ namespace Pair
       | .fst, a, b => ∃ a0, a = pair a0 b
       | .isNull, a, b => a = .null ∧ b = .null
     
-    def IsBisim := transitionSystem.IsBisimilar
+    exposed def IsBisim := transitionSystem.IsBisimilar
     
-    def setoid: Setoid PreTrisetPair where
+    exposed def setoid: Setoid PreTrisetPair where
       r := IsBisim
       iseqv := transitionSystem.IsBisimilar_is_equivalence
     
-    def IsBisim.refl (a: PreTrisetPair): a.IsBisim a :=
+    theorem IsBisim.refl (a: PreTrisetPair): a.IsBisim a :=
       transitionSystem.IsBisimilar_is_equivalence.refl _
     
-    def IsBisim.symm {a b: PreTrisetPair} (h: a.IsBisim b): b.IsBisim a :=
+    theorem IsBisim.symm {a b: PreTrisetPair} (h: a.IsBisim b): b.IsBisim a :=
       transitionSystem.IsBisimilar_is_equivalence.symm h
     
-    def IsBisim.trans {a b c: PreTrisetPair}
+    theorem IsBisim.trans {a b c: PreTrisetPair}
       (h0: a.IsBisim b)
       (h1: b.IsBisim c)
     :
@@ -101,7 +102,7 @@ namespace Pair
       transitionSystem.IsBisimilar_is_equivalence.trans h0 h1
     
     -- Bisimilar values have matching definitive members.
-    def IsBisim.ins {a b e: PreTrisetPair}
+    theorem IsBisim.ins {a b e: PreTrisetPair}
       (bisim: a.IsBisim b)
       (ins: a.Ins e)
     :
@@ -110,7 +111,7 @@ namespace Pair
       transitionSystem.IsBisimilar_isSimulation .ins a b e bisim ins
     
     -- Bisimilar values have matching possible members.
-    def IsBisim.inw {a b e: PreTrisetPair}
+    theorem IsBisim.inw {a b e: PreTrisetPair}
       (bisim: a.IsBisim b)
       (inw: a.Inw e)
     :
@@ -120,10 +121,10 @@ namespace Pair
     
   end PreTrisetPair
   
-  def TrisetPair := Quotient PreTrisetPair.setoid
+  exposed def TrisetPair := Quotient PreTrisetPair.setoid
   
   namespace TrisetPair
-    def DirectTrans
+    exposed def DirectTrans
       (label: PreTrisetPair.TransitionLabels)
       (a b: TrisetPair)
     :
@@ -133,27 +134,27 @@ namespace Pair
     
     
     -- `ts` is a triset with definite member `elem`.
-    def DirectIns (ts elem: TrisetPair): Prop :=
+    exposed def DirectIns (ts elem: TrisetPair): Prop :=
       DirectTrans .ins ts elem
     
     -- `ts` is a triset with possible member `elem`.
-    def DirectInw (ts elem: TrisetPair): Prop :=
+    exposed def DirectInw (ts elem: TrisetPair): Prop :=
       DirectTrans .inw ts elem
     
     -- `p` is a pair with zeroth component `zth`.
-    def DirectZth (p zth: TrisetPair): Prop :=
+    exposed def DirectZth (p zth: TrisetPair): Prop :=
       DirectTrans .zth p zth
     
     -- `p` is a pair with first component `fst`.
-    def DirectFst (p fst: TrisetPair): Prop :=
+    exposed def DirectFst (p fst: TrisetPair): Prop :=
       DirectTrans .fst p fst
     
     -- `p` is null.
-    def DirectNull (p: TrisetPair): Prop :=
+    exposed def DirectNull (p: TrisetPair): Prop :=
       DirectTrans .isNull p p
     
     
-    def DirectMem: TriRelation TrisetPair where
+    exposed def DirectMem: TriRelation TrisetPair where
       RelDef := DirectIns
       RelPos := DirectInw
       def_le_pos
@@ -163,7 +164,7 @@ namespace Pair
     
     -- ## The direct relations on representatives
     
-    def directIns_mk_iff {s e: PreTrisetPair}:
+    theorem directIns_mk_iff {s e: PreTrisetPair}:
       DirectIns ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Ins e' ∧ e.IsBisim e'
     :=
       ⟨
@@ -175,7 +176,7 @@ namespace Pair
         fun ⟨e', ins', b⟩ => ⟨s, e', rfl, Quotient.sound b, ins'⟩,
       ⟩
     
-    def directInw_mk_iff {s e: PreTrisetPair}:
+    theorem directInw_mk_iff {s e: PreTrisetPair}:
       DirectInw ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Inw e' ∧ e.IsBisim e'
     :=
       ⟨

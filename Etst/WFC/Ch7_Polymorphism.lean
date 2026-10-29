@@ -93,9 +93,10 @@
     zerost number." No particular reason for the quotation is given.
     https://tex.stackexchange.com/questions/325340/
 -/
+module
+public import Etst.WFC.Utils.SelfDefinability.PolymorphismHelpers
 
-import Etst.WFC.Utils.SelfDefinability.PolymorphismHelpers
-
+public section
 namespace Etst
 
 
@@ -106,7 +107,7 @@ namespace Etst
   of `iFn`.
 -/
 open opFixDl in
-def trisetFixIndex_fix
+theorem trisetFixIndex_fix
   (iFn: Pair)
 :
   Eq
@@ -121,7 +122,7 @@ def trisetFixIndex_fix
   The fixed point `trisetFixIndex iFn` is definable internally.
 -/
 open opFixDl in
-def trisetFix_eq (iFn: Pair):
+theorem trisetFix_eq (iFn: Pair):
   Eq
     (vals.trisetFix.call iFn)
     ((uniSetMap.call iFn).call (trisetFixIndex iFn))
@@ -137,7 +138,7 @@ def indexFixIndex (iOp: Pair): Pair :=
   opFixDl.trisetFixIndex (composeIndex iOp)
 
 open opFixDl in
-def indexFixIndex_fix (iOp: Pair):
+theorem indexFixIndex_fix (iOp: Pair):
   Eq
     (uniSetMap.call (indexFixIndex iOp))
     (uniSetMap.flatCall ((uniSetMap.call iOp).call (indexFixIndex iOp)))
@@ -149,7 +150,7 @@ def indexFixIndex_fix (iOp: Pair):
   The fixed point `indexFixIndex iOp` is definable internally.
 -/
 open opFixDl in
-def indexFix_eq (iOp: Pair):
+theorem indexFix_eq (iOp: Pair):
   Eq
     (vals.indexFix.call iOp)
     (uniSetMap.flatCall ((uniSetMap.call iOp).call (indexFixIndex iOp)))
@@ -163,7 +164,7 @@ def indexFix_eq (iOp: Pair):
   the fixed point input: if its output there is a single index `p`,
   then `indexFixIndex iOp` and `p` denote the same triset.
 -/
-def indexFixIndex_fix_of_just
+theorem indexFixIndex_fix_of_just
   (iOp: Pair)
   {p: Pair}
   (hJust: (uniSetMap.call iOp).call (indexFixIndex iOp) = Set3.just p)
@@ -180,7 +181,7 @@ def indexFixIndex_fix_of_just
   `f: Pair → Pair`. Then `indexFixIndex iOp` denotes the same
   triset as `f` applied to it.
 -/
-def indexFixIndex_fix_of_fn
+theorem indexFixIndex_fix_of_fn
   (iOp: Pair)
   (f: Pair → Pair)
   (hFn: ∀ arg, (uniSetMap.call iOp).call arg = Set3.just (f arg))

@@ -1,7 +1,10 @@
 -- # Chapter 2: Interpretation of Expressions
+module
+public import Etst.WFC.Ch0_Set3
+public import Etst.WFC.Ch1_ExprDefList
+public import Etst.WFC.Utils.General.PointwiseOrder
+public import Etst.WFC.Utils.Set3
 
-import Etst.WFC.Ch1_ExprDefList
-import Etst.WFC.Utils.Set3
 
 namespace Etst
 
@@ -13,7 +16,7 @@ universe u
 /-
   A valuation is a function from constants to trisets of values.
 -/
-def Valuation (D: Type u) := Nat → Set3 D
+exposed def Valuation (D: Type u) := Nat → Set3 D
 
 namespace Valuation
   variable {D: Type u}
@@ -21,30 +24,30 @@ namespace Valuation
     In the empty valuation, every constant represents the empty
     triset.
   -/
-  def empty: Valuation D := fun _ => Set3.empty
+  exposed def empty: Valuation D := fun _ => Set3.empty
   
   /-
     In the undetermined valuation, every constant represents
     the undetermined triset.
   -/
-  def undetermined: Valuation D := fun _ => Set3.undetermined
+  exposed def undetermined: Valuation D := fun _ => Set3.undetermined
   
   /-
     In the full valuation, every constant represents the full
     triset.
   -/
-  def univ: Valuation D := fun _ => Set3.univ
+  exposed def univ: Valuation D := fun _ => Set3.univ
   
   -- The approximation order on valuations is defined pointwise.
-  @[reducible]
-  def ordApx (D: Type u):
+  @[expose, reducible]
+  public def ordApx (D: Type u):
     PartialOrder (Valuation D)
   :=
     PartialOrder.pointwise Nat (Set3.ordApx D)
   
   -- The standard order on valuations is defined pointwise.
-  @[reducible]
-  def ordStd (D: Type u)
+  @[expose, reducible]
+  public def ordStd (D: Type u)
   :
     PartialOrder (Valuation D)
   :=
@@ -52,32 +55,52 @@ namespace Valuation
   
   
   -- The lte relation of the approximation order is denoted using ⊑.
-  instance instSqle (D: Type u): SqLE (Valuation D) where
+  public instance instSqle (D: Type u): SqLE (Valuation D) where
     le := (ordApx D).le
   
   -- The lt relation of the approximation order is denoted using ⊏.
-  instance instSqlt (D: Type u): SqLT (Valuation D) where
+  public instance instSqlt (D: Type u): SqLT (Valuation D) where
     lt := (ordApx D).lt
   
   -- The lte relation of the standard order is denoted using ≤.
-  instance instLe (D: Type u): LE (Valuation D) where
+  public instance instLe (D: Type u): LE (Valuation D) where
     le := (ordStd D).le
   
   -- The lt relation of the standard order is denoted using <.
-  instance instLt (D: Type u): LT (Valuation D) where
+  public instance instLt (D: Type u): LT (Valuation D) where
     lt := (ordStd D).lt
   
   
-  def ordStd.IsLeast (s: Set (Valuation D)) (a: Valuation D): Prop :=
+  exposed def ordStd.IsLeast
+    (s: Set (Valuation D))
+    (a: Valuation D)
+  :
+    Prop
+  :=
     @_root_.IsLeast _ (ordStd D).toLE s a
   
-  def ordApx.IsLeast (s: Set (Valuation D)) (a: Valuation D): Prop :=
+  exposed def ordApx.IsLeast
+    (s: Set (Valuation D))
+    (a: Valuation D)
+  :
+    Prop
+  :=
     @_root_.IsLeast _ (ordApx D).toLE s a
   
-  def ordStd.IsLUB (s: Set (Valuation D)) (a: Valuation D): Prop :=
+  exposed def ordStd.IsLUB
+    (s: Set (Valuation D))
+    (a: Valuation D)
+  :
+    Prop
+  :=
     @_root_.IsLUB _ (ordStd D).toLE s a
   
-  def ordApx.IsLUB (s: Set (Valuation D)) (a: Valuation D): Prop :=
+  exposed def ordApx.IsLUB
+    (s: Set (Valuation D))
+    (a: Valuation D)
+  :
+    Prop
+  :=
     @_root_.IsLUB _ (ordApx D).toLE s a
   
   
@@ -85,7 +108,9 @@ namespace Valuation
     The empty valuation is the least element of the standard
     order.
   -/
-  def ordStd.empty_least {D}: IsLeast (D := D) Set.univ empty := ⟨
+  public theorem ordStd.empty_least {D}:
+    IsLeast (D := D) Set.univ empty
+  := ⟨
     trivial,
     fun _v _valInFull _x => {
       defLe := nofun
@@ -97,7 +122,9 @@ namespace Valuation
     The undetermined valuation is the least element of the
     approximation order.
   -/
-  def ordApx.undetermined_least {D}: IsLeast (D := D) Set.univ undetermined := ⟨
+  public theorem ordApx.undetermined_least {D}:
+    IsLeast (D := D) Set.univ undetermined
+  := ⟨
     trivial,
     fun _v _valInFull _x => {
       defLe := nofun
@@ -117,7 +144,7 @@ namespace Valuation
   :=
     isChain.pointwiseSup (Set3.ordStd.isChainComplete D)
   
-  def ordStd.sup_isLUB
+  theorem ordStd.sup_isLUB
     {ch}
     (isChain: IsChain (ordStd D).le ch)
   :
@@ -138,7 +165,7 @@ namespace Valuation
   :=
     isChain.pointwiseSup (Set3.ordApx.isChainComplete D)
   
-  def ordApx.sup_isLUB
+  theorem ordApx.sup_isLUB
     {ch}
     (isChain: IsChain (ordApx D).le ch)
   :
@@ -148,14 +175,14 @@ namespace Valuation
   
   
   -- The standard order is chain complete.
-  def ordStd.isChainComplete (D: Type u)
+  public theorem ordStd.isChainComplete (D: Type u)
   :
     IsChainComplete (Valuation.ordStd D)
   :=
     fun _ isChain => ⟨sup isChain, sup_isLUB isChain⟩
   
   -- The approximation order is chain complete.
-  def ordApx.isChainComplete (D: Type u)
+  public theorem ordApx.isChainComplete (D: Type u)
   :
     IsChainComplete (Valuation.ordApx D)
   :=
@@ -166,14 +193,14 @@ end Valuation
 
 -- ## Section 3: The Interpretation Function
 
-inductive Pair where
+public inductive Pair where
 | null -- Null is considered an improper pair.
 | pair (a b: Pair)
 
 
-abbrev SingleLaneExpr := Expr Set3.Lane
+public abbrev SingleLaneExpr := Expr Set3.Lane
 
-def SingleLaneExpr.intpVar
+exposed def SingleLaneExpr.intpVar
   (fv: List Pair)
   (x: Nat)
 :
@@ -204,7 +231,7 @@ def SingleLaneExpr.intpVar
   
   [ref][https://leanprover.zulipchat.com/#narrow/channel/270676-lean4/topic/RFC.3A.20pattern.20matching.20on.20.28syntactically.20equal.29.20functions]
 -/
-def SingleLaneExpr.intp2
+exposed def SingleLaneExpr.intp2
   (expr: SingleLaneExpr)
   (fv: List Pair)
   (b c: Valuation Pair)
@@ -216,26 +243,26 @@ def SingleLaneExpr.intp2
   | .var x => intpVar fv x
   | .null => {.null}
   | .prod left rite =>
-    fun p =>
+    .ofPred fun p =>
       ∃ pL pR,
         p = .pair pL pR ∧
-        intp2 left fv b c pL ∧
-        intp2 rite fv b c pR
+        pL ∈ intp2 left fv b c ∧
+        pR ∈ intp2 rite fv b c
   | .ir left rite =>
-    fun p =>
+    .ofPred fun p =>
       And
-        (intp2 left fv b c p)
-        (intp2 rite fv b c p)
+        (p ∈ intp2 left fv b c)
+        (p ∈ intp2 rite fv b c)
   | .full body =>
     -- Contains all elements iff the body contains all elements.
-    fun _ => ∀ pB, intp2 body fv b c pB
+    .ofPred fun _ => ∀ pB, pB ∈ intp2 body fv b c
   | .compl body =>
     -- Note the swap of b and c.
     (intp2 body fv c b).compl
   | .arbIr body =>
-    fun p => ∀ pX, intp2 body (pX :: fv) b c p
+    .ofPred fun p => ∀ pX, p ∈ intp2 body (pX :: fv) b c
 
-abbrev SingleLaneExpr.intp
+public abbrev SingleLaneExpr.intp
   (expr: SingleLaneExpr)
   (fv: List Pair)
   (v: Valuation Pair)
@@ -244,7 +271,7 @@ abbrev SingleLaneExpr.intp
 
 
 -- Note the lane gets toggled inside complements.
-def BasicExpr.toLane
+exposed def BasicExpr.toLane
   (expr: BasicExpr)
   (lane: Set3.Lane)
 :
@@ -260,13 +287,13 @@ def BasicExpr.toLane
   | .compl body => .compl (body.toLane lane.toggle)
   | .arbIr body => .arbIr (body.toLane lane)
 
-def BasicExpr.toDefLane (expr: BasicExpr): SingleLaneExpr :=
+exposed def BasicExpr.toDefLane (expr: BasicExpr): SingleLaneExpr :=
   expr.toLane .defLane
 
-def BasicExpr.toPosLane (expr: BasicExpr): SingleLaneExpr :=
+exposed def BasicExpr.toPosLane (expr: BasicExpr): SingleLaneExpr :=
   expr.toLane .posLane
 
-def BasicExpr.triIntp2Def
+exposed def BasicExpr.triIntp2Def
   (expr: BasicExpr)
   (fv: List Pair)
   (b c: Valuation Pair)
@@ -275,7 +302,7 @@ def BasicExpr.triIntp2Def
 :=
   (expr.toLane .defLane).intp2 fv b c
 
-def BasicExpr.triIntp2Pos
+exposed def BasicExpr.triIntp2Pos
   (expr: BasicExpr)
   (fv: List Pair)
   (b c: Valuation Pair)
@@ -285,12 +312,12 @@ def BasicExpr.triIntp2Pos
   (expr.toLane .posLane).intp2 fv b c
 
 -- A proof that definite membership implies possible membership.
-def BasicExpr.triIntp2_defLePos
+public theorem BasicExpr.triIntp2_defLePos
   {fv b c p}
   (expr: BasicExpr)
-  (isDef: expr.triIntp2Def fv b c p)
+  (isDef: p ∈ expr.triIntp2Def fv b c)
 :
-  expr.triIntp2Pos fv b c p
+  p ∈ expr.triIntp2Pos fv b c
 :=
   match expr, isDef with
   | .const x, isDef => (c x).defLePos isDef
@@ -322,7 +349,7 @@ def BasicExpr.triIntp2_defLePos
   a *possible* member of `expr`, and vice versa. This is handled
   in `toLane` by toggling the lane of constants inside complements.
 -/
-def BasicExpr.triIntp2
+exposed def BasicExpr.triIntp2
   (expr: BasicExpr)
   (fv: List Pair)
   (b c: Valuation Pair)
@@ -334,7 +361,7 @@ def BasicExpr.triIntp2
   defLePos _ := triIntp2_defLePos expr
 }
 
-abbrev BasicExpr.triIntp
+public abbrev BasicExpr.triIntp
   (expr: BasicExpr)
   (fv: List Pair)
   (v: Valuation Pair)
@@ -342,7 +369,7 @@ abbrev BasicExpr.triIntp
   expr.triIntp2 fv v v
 
 -- Interpretation on definition lists is defined pointwise.
-def DefList.intpDefs2
+public abbrev DefList.intpDefs2
   (dl: DefList)
   (b c: Valuation Pair)
 :
@@ -350,7 +377,7 @@ def DefList.intpDefs2
 :=
   fun x => (dl.getDef x).triIntp2 [] b c
 
-abbrev DefList.intpDefs
+public abbrev DefList.intpDefs
   (dl: DefList)
   (v: Valuation Pair)
 :=

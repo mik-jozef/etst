@@ -1,10 +1,13 @@
-import Etst.WFC.Ch2_Interpretation
+module
+public import Etst.WFC.Ch2_Interpretation
+import Mathlib.Order.MinMax
 
+public section
 namespace Etst
 
 
 namespace Pair
-  protected def eq {l0 l1 r0 r1}:
+  protected theorem eq {l0 l1 r0 r1}:
     l0 = l1 → r0 = r1 → pair l0 r0 = pair l1 r1
   | rfl, rfl => rfl
   
@@ -12,14 +15,14 @@ namespace Pair
     `Pair.null` encodes the number zero, while `Pair.pair n zero`
     encodes the successor of `n`.
   -/
-  def IsNatEncoding: Set Pair
+  def IsNatEncoding: Pair → Prop
   | null => True
   | pair a b => (IsNatEncoding a) ∧ b = null
   
   def NatEncoding := { p // IsNatEncoding p }
   
   
-  def nat: Nat → Pair
+  exposed def nat: Nat → Pair
   | .zero => Pair.null
   | .succ n => Pair.pair (nat n) null
   
@@ -41,12 +44,12 @@ namespace Pair
     
     where `tail` is the list encoded by `tailEncoding`.
   -/
-  def listEncoding: List Pair → Pair
+  exposed def listEncoding: List Pair → Pair
   | [] => .null
   | p :: ps => .pair p (listEncoding ps)
   
   
-  def nat_inj_eq {n m}
+  theorem nat_inj_eq {n m}
     (eq: nat n = nat m)
   :
     n = m
@@ -60,13 +63,13 @@ namespace Pair
         Pair.noConfusion eq fun predEq _ => predEq
       congrArg Nat.succ (nat_inj_eq eqFromPred)
   
-  def nat_inj_neq {n m}:
+  theorem nat_inj_neq {n m}:
     n ≠ m → nat n ≠ nat m
   :=
     not_imp_not.mpr nat_inj_eq
   
   
-  def depth_cases_eq (a b: Pair):
+  theorem depth_cases_eq (a b: Pair):
     Or
       (And
         ((pair a b).depth = Nat.succ a.depth)
@@ -79,17 +82,17 @@ namespace Pair
       (fun ⟨eq, le⟩ => Or.inl (And.intro (congr rfl eq) le))
       (fun ⟨eq, lt⟩ => Or.inr (And.intro (congr rfl eq) lt))
   
-  def depth_null_left (a: Pair):
+  theorem depth_null_left (a: Pair):
     depth (pair null a) = a.depth.succ
   :=
     Nat.succ_inj.mpr (Nat.zero_max a.depth)
   
-  def depth_null_rite (a: Pair):
+  theorem depth_null_rite (a: Pair):
     depth (pair a null) = a.depth.succ
   :=
     Nat.succ_inj.mpr (Nat.max_zero a.depth)
   
-  def nat_depth_eq: (n: Nat) → (Pair.nat n).depth = n
+  theorem nat_depth_eq: (n: Nat) → (Pair.nat n).depth = n
   | Nat.zero => rfl
   | Nat.succ pred =>
     (depth_cases_eq (nat pred) null).elim
@@ -111,7 +114,7 @@ namespace Pair
   }
   
   
-  def toExpr: Pair → BasicExpr
+  exposed def toExpr: Pair → BasicExpr
   | .null => .null
   | .pair l r => .prod l.toExpr r.toExpr
   
@@ -125,24 +128,25 @@ end Pair
   You can think of `fn` as a set of input-output pairs representing
   a function `f: Pair → Set3 Pair`.
 -/
-def Set3.call
+exposed def Set3.call
   (fn: Set3 Pair)
   (arg: Pair)
 :
   Set3 Pair
 := {
-  defMem p := fn.defMem (.pair arg p)
-  posMem p := fn.posMem (.pair arg p)
-  defLePos _ inDef := inDef.toPos
+  defMem := { p | .pair arg p ∈ fn.defMem }
+  posMem := { p | .pair arg p ∈ fn.posMem }
+  defLePos _ := defToPos
 }
 
-def Set3.flatCall (fn args: Set3 Pair): Set3 Pair := {
-  defMem p := ∃ arg, args.defMem arg ∧ (fn.call arg).defMem p,
-  posMem p := ∃ arg, args.posMem arg ∧ (fn.call arg).posMem p,
-  defLePos _ := fun ⟨arg, hp, hq⟩ => ⟨arg, hp.toPos, hq.toPos⟩
+exposed def Set3.flatCall (fn args: Set3 Pair): Set3 Pair := {
+  defMem := { p | ∃ arg, arg ∈ args.defMem ∧ p ∈ (fn.call arg).defMem },
+  posMem := { p | ∃ arg, arg ∈ args.posMem ∧ p ∈ (fn.call arg).posMem },
+  defLePos _ :=
+    fun ⟨arg, hp, hq⟩ => ⟨arg, defToPos hp, defToPos hq⟩
 }
 
-def Set3.PairMem
+exposed def Set3.PairMem
   (s e: Set3 Pair)
 :
   Prop
@@ -155,45 +159,45 @@ instance Set3.pairInstMem:
   ⟨Set3.PairMem⟩
 
 
-def Set3.inCall {s lane arg res}
-  (inS: s.getLane lane (.pair arg res))
+theorem Set3.inCall {s lane arg res}
+  (inS: .pair arg res ∈ s.getLane lane)
 :
-  (call s arg).getLane lane res
+  res ∈ (call s arg).getLane lane
 :=
   match lane with
   | .defLane => inS
   | .posLane => inS
 
-def Set3.inCallElim {s lane arg res}
-  (inCall: (call s arg).getLane lane res)
+theorem Set3.inCallElim {s lane arg res}
+  (inCall: res ∈ (call s arg).getLane lane)
 :
-  s.getLane lane (.pair arg res)
+  .pair arg res ∈ s.getLane lane
 :=
   match lane with
   | .defLane => inCall
   | .posLane => inCall
 
 
-def Set3.inFlatCall {fn args lane arg res}
-  (inArg: args.getLane lane arg)
-  (inFn: fn.getLane lane (.pair arg res))
+theorem Set3.inFlatCall {fn args lane arg res}
+  (inArg: arg ∈ args.getLane lane)
+  (inFn: .pair arg res ∈ fn.getLane lane)
 :
-  (flatCall fn args).getLane lane res
+  res ∈ (flatCall fn args).getLane lane
 :=
   match lane with
   | .defLane => ⟨arg, inArg, inFn⟩
   | .posLane => ⟨arg, inArg, inFn⟩
 
-def Set3.inFlatCallElim {fn args lane res}
-  (inFlat: (flatCall fn args).getLane lane res)
+theorem Set3.inFlatCallElim {fn args lane res}
+  (inFlat: res ∈ (flatCall fn args).getLane lane)
 :
-  ∃ arg, args.getLane lane arg ∧ fn.getLane lane (.pair arg res)
+  ∃ arg, arg ∈ args.getLane lane ∧ .pair arg res ∈ fn.getLane lane
 :=
   match lane with
   | .defLane => inFlat
   | .posLane => inFlat
 
-def Set3.flatCall_just (fn: Set3 Pair) (p: Pair):
+theorem Set3.flatCall_just (fn: Set3 Pair) (p: Pair):
   flatCall fn (just p) = fn.call p
 :=
   Set3.eq4

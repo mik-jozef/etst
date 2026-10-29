@@ -1,13 +1,15 @@
-import Mathlib.Data.Set.Basic
-import Mathlib.Order.CompleteLattice.Defs
-import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Order.Preorder.Chain
-import Mathlib.Logic.Function.Basic
+module
+public import Mathlib.Order.CompleteLattice.Defs
+public import Mathlib.Order.Defs.PartialOrder
+public import Mathlib.Order.Preorder.Chain
 
+import Mathlib.Data.Set.Basic
 import Etst.BasicUtils
 
+public section
 
-def IsChainComplete {T} (ord: PartialOrder T): Prop :=
+
+exposed def IsChainComplete {T} (ord: PartialOrder T): Prop :=
   ∀ ⦃ch⦄, IsChain ord.le ch → ∃ t: T, IsLUB ch t
 
 noncomputable def IsChainComplete.sup
@@ -20,7 +22,7 @@ noncomputable def IsChainComplete.sup
 :=
   (isCc isChain).choose
 
-def IsChain.iUnion_of_subset
+theorem IsChain.iUnion_of_subset
   {I T} {Le}
   (s: I → Set T)
   (areChains: ∀ i: I, IsChain Le (s i))
@@ -42,7 +44,7 @@ def IsChain.iUnion_of_subset
         areChains i0 t0In (s1Le t1In) neq)
 
 
-@[reducible]
+@[expose, reducible]
 def PartialOrder.pointwise
   {Y} (X: Type*)
   (_: PartialOrder Y)
@@ -57,7 +59,7 @@ where
   le_trans _ _ _ ab bc v := Preorder.le_trans _ _ _ (ab v) (bc v)
 
 
-def Set.pointwiseImage
+exposed def Set.pointwiseImage
   {D} {I: Type*}
   (set: Set (I → D))
   (i: I)
@@ -66,16 +68,16 @@ def Set.pointwiseImage
 :=
   set.image fun f => f i
 
-def PartialOrder.isUB_pointwise_isUB
+theorem PartialOrder.isUB_pointwise_isUB
   {D I} {ord: PartialOrder D} {set: Set (I → D)} {ub}
-  (isUb: upperBounds set ub)
+  (isUb: ub ∈ upperBounds set)
   (i: I)
 :
-  upperBounds (set.pointwiseImage i) (ub i)
+  ub i ∈ upperBounds (set.pointwiseImage i)
 :=
   fun _d ⟨_f, fIn, eq⟩ => eq ▸ isUb fIn i
 
-def PartialOrder.isLUB_pointwise_isLUB
+theorem PartialOrder.isLUB_pointwise_isLUB
   {D I} {ord: PartialOrder D} {set: Set (I → D)} {lub}
   (isLub: IsLUB set lub)
   (i: I)
@@ -101,7 +103,7 @@ def PartialOrder.isLUB_pointwise_isLUB
       (lubLe i).trans lubUpdatedLe)
 
 
-def IsChain.pointwiseImage
+theorem IsChain.pointwiseImage
   {D I} {ord: PartialOrder D} {ch}
   (isChain: IsChain (ord.pointwise I).le ch)
   (i: I)
@@ -123,7 +125,7 @@ noncomputable def IsChain.pointwiseSup
 :=
   fun i => (isCc (isChain.pointwiseImage i)).unwrap
 
-def IsChain.pointwiseSup_sup_at_point
+theorem IsChain.pointwiseSup_sup_at_point
   {D I} {ord: PartialOrder D} {ch}
   (isChain: IsChain (ord.pointwise I).le ch)
   (isCc: IsChainComplete ord)
@@ -133,7 +135,7 @@ def IsChain.pointwiseSup_sup_at_point
 :=
   (isCc (isChain.pointwiseImage i)).unwrap.property
 
-def IsChain.pointwiseSup_isLUB
+theorem IsChain.pointwiseSup_isLUB
   {D I} {ord: PartialOrder D} {ch}
   (isChain: IsChain (ord.pointwise I).le ch)
   (isCc: IsChainComplete ord)
@@ -149,7 +151,7 @@ def IsChain.pointwiseSup_isLUB
       isLeUb fun _d ⟨_f1, f1In, eq⟩ => eq ▸ f0In f1In i)
 
 
-@[reducible]
+@[expose, reducible]
 def CompleteLattice.pointwise
   {Y} (X: Type*)
   (cl: CompleteLattice Y)

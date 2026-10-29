@@ -23,13 +23,15 @@
   However, I am still a little uneasy about this. Hopefully, this
   was the right choice.
 -/
-
+module
+public import Etst.WFC.Ch4_S1_MembershipPs
+public import Etst.WFC.Utils.Expr.FreeVars
+public import Etst.WFC.Utils.PairExpr
+public import Etst.WFC.Utils.SubsetStx.Induction
 import Mathlib.Algebra.Order.BigOperators.Group.List
-
-import Etst.WFC.Ch4_S1_MembershipPs
 import Etst.WFC.Utils.RulesOfInference
-import Etst.WFC.Utils.SubsetStx.Induction
 
+public section
 namespace Etst
 open Expr
 
@@ -53,13 +55,13 @@ abbrev DefList.Subset
     dl.SubsetFv fv a b
 
 
-def Expr.isSubsingleton_body {E} (e: Expr E): Expr E :=
+exposed def Expr.isSubsingleton_body {E} (e: Expr E): Expr E :=
   impl (some (ir e.lift (var 0))) (full (impl e.lift (var 0)))
 
-def Expr.isSubsingleton {E} (e: Expr E) : Expr E :=
+exposed def Expr.isSubsingleton {E} (e: Expr E) : Expr E :=
   arbIr e.isSubsingleton_body
 
-def Expr.isSubsingleton_freeVarUb_pos {E}
+theorem Expr.isSubsingleton_freeVarUb_pos {E}
   (e: Expr E)
 :
   0 < e.isSubsingleton_body.freeVarUb
@@ -263,16 +265,16 @@ inductive DefList.SubsetStx
     dl.SubsetStx x (full (impl a p))
 
 
-def DefList.SubsetFv.subsetOfFullImpl {dl fv x a b p}
+theorem DefList.SubsetFv.subsetOfFullImpl {dl fv x a b p}
   (h: SubsetFv dl fv x (.full (.impl a b)))
-  (isIn: p ∈ x.intp fv dl.wfm)
+  (isInX: p ∈ x.intp fv dl.wfm)
 :
   dl.SubsetFv fv a b
 :=
   open SingleLaneExpr in
-  fun p' inA => inImplElim (inFullElim (h isIn) p') inA
+  fun p' inA => inImplElim (inFullElim (h isInX) p') inA
 
-def DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
+theorem DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
   (h: SubsetFv dl fv a b)
 :
   SubsetFv dl fv x (.full (.impl a b))
@@ -280,7 +282,7 @@ def DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
   open SingleLaneExpr in
   fun _ _ => inFull .null fun _ => inImpl fun inA => h inA
 
-def DefList.Subset.call {dl a b}
+theorem DefList.Subset.call {dl a b}
   (sub: Subset dl a b)
   (fv: List Pair)
   (leA: a.freeVarUb ≤ fv.length)
@@ -301,10 +303,10 @@ def DefList.Subset.call {dl a b}
   sub fvPad leAPad leBPad isInPad
 
 
-def SingleLaneExpr.isSubsingleton_intp_eq
+theorem SingleLaneExpr.isSubsingleton_intp_eq
   {expr fv v p pS}
-  (inSubs: intp expr.isSubsingleton fv v pS)
-  (inExpr: intp expr fv v p)
+  (inSubs: pS ∈ intp expr.isSubsingleton fv v)
+  (inExpr: p ∈ intp expr fv v)
 :
   intp expr fv v = {p}
 :=
@@ -331,7 +333,7 @@ namespace DefList.SubsetStx
   def context {x e} (_: SubsetStx dl x e) := x
   def conclusion {x e} (_: SubsetStx dl x e) := e
   
-  def isSound {x e}
+  theorem isSound {x e}
     (sub: dl.SubsetStx x e)
   :
     dl.Subset x e
@@ -553,7 +555,7 @@ namespace DefList.SubsetStx
           padLen ▸ Nat.le_add_left_of_le (Nat.le_max_left _ _)
         let isInPad := intp_bv_append leX _ ▸ isIn
         
-        let tIsSub: intp t.isSubsingleton fvPad dl.wfm p :=
+        let tIsSub: p ∈ intp t.isSubsingleton fvPad dl.wfm :=
           isSubsin.isSound fvPad lePadX lePadSubsin isInPad
         
         let ⟨pBound, inT⟩ :=
@@ -619,7 +621,7 @@ namespace DefList.SubsetStx
               (freeVarUb_bin_le leE leE))
             leE
         let ind := (sub.isSound fv leX leE).subsetOfFullImpl isIn
-        let rec inP: (p: Pair) → intp prop fv dl.wfm p
+        let rec inP: (p: Pair) → p ∈ intp prop fv dl.wfm
         | Pair.null => ind (inUnL inNull)
         | .pair pa pb => ind (inUnR (inProd (inP pa) (inP pb)))
         DefList.SubsetFv.fullImplOfSubset
