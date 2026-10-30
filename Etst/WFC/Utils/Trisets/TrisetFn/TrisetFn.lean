@@ -31,6 +31,17 @@
   codes are valid. However, this feels ad hoc, would presumably be a lot
   of work, would likely depend on the precise syntactic class of codes,
   and who knows whether the result would even be natural. It is what it is.
+  
+  TODO: It would be really nice to have some results that reduce TrisetFn
+  to Triset somehow. Trisets are simpler, and while TrisetFn aren't really
+  a conservative extension (at least in a naive way; a triset cannot
+  simulate exact call), it would be nice if we could bound the differences
+  between them, and find a way to port results about one to results about
+  the other.
+  
+  For example, it could be a nice result if any type universe of TrisetFn,
+  when restricted to itself (ie. we restrict the domains of functions),
+  is also a type universe of Triset (when functions are coded).
 -/
 module
 public import Etst.WFC.Utils.Trisets.Triset
