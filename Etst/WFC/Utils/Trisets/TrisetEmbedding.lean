@@ -84,19 +84,15 @@ namespace trisetEmbedHelpersDl
     trisetEmbedHelpersDl.wfm consts.uniSetMap = uniSetMap
   :=
     Eq.symm <|
-      (uniSetMapDl.extend_wfm_eq_of_lt
-        opFixHelpersDl rfl rfl (by decide)).trans
-        ((opFixHelpersDl.extend_wfm_eq_of_lt
-          opFixDl rfl rfl (by decide)).trans
-          (opFixDl.extend_wfm_eq_of_lt
-            trisetEmbedHelpersDl rfl rfl (by decide)))
+      (uniSetMapDl.extend_wfm_eq_of_lt rfl (by decide)).trans
+        ((opFixHelpersDl.extend_wfm_eq_of_lt rfl (by decide)).trans
+          (opFixDl.extend_wfm_eq_of_lt rfl (by decide)))
   
   /-- The `callEnc` constant of this deflist denotes `callEnc`. -/
   theorem wfm_callEnc_eq:
     trisetEmbedHelpersDl.wfm consts.callEnc = opFixDl.vals.callEnc
   :=
-    (opFixDl.extend_wfm_eq_of_lt
-      trisetEmbedHelpersDl rfl rfl (by decide)).symm
+    (opFixDl.extend_wfm_eq_of_lt rfl (by decide)).symm
   
   /-
     If `e` is a member of `t`, then `(0, iFn.callEnc e)` is a
@@ -374,10 +370,8 @@ namespace trisetEmbedDl
   theorem wfm_callEnc_eq:
     trisetEmbedDl.wfm consts.callEnc = opFixDl.vals.callEnc
   :=
-    ((opFixDl.extend_wfm_eq_of_lt
-        trisetEmbedHelpersDl rfl rfl (by decide)).trans
-      (trisetEmbedHelpersDl.extend_wfm_eq_of_lt
-        trisetEmbedDl rfl rfl (by decide))).symm
+    ((opFixDl.extend_wfm_eq_of_lt rfl (by decide)).trans
+      (trisetEmbedHelpersDl.extend_wfm_eq_of_lt rfl (by decide))).symm
   
   /-- `embedOp` maps `iFn` to `embedStepIndex.callEnc iFn` (intro). -/
   theorem embedOp_ins_def {iFn: Pair}:

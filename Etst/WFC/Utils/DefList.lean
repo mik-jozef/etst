@@ -458,6 +458,16 @@ namespace FiniteDefList
           exact (defsGetNth defs (x - dl.size)).isClean
     }
   
+  theorem extend_size {ub}
+    (dl: FiniteDefList)
+    (defs: List (Def ub))
+    (ubEq: ub = dl.size + defs.length)
+  :
+    (dl.extend defs ubEq).size = dl.size + defs.length
+  := by
+    unfold extend size
+    simp only [List.length_append, List.length_map]
+  
   def ofDefs {ub}
     (defs: List (Def ub))
     (ubEq: ub = defs.length)
@@ -517,21 +527,20 @@ namespace FiniteDefList
   
   
   theorem extend_wfm_eq_of_lt {ub}
-    (dlParent dlChild: FiniteDefList)
+    (dl: FiniteDefList)
     {defs: List (Def ub)}
-    (ubEq: ub = dlParent.size + defs.length)
-    (childEq: dlChild = dlParent.extend defs ubEq)
+    (ubEq: ub = dl.size + defs.length)
     {x: Nat}
-    (xLt: x < dlParent.size)
+    (xLt: x < dl.size)
   :
-    dlParent.wfm x = dlChild.wfm x
+    dl.wfm x = (dl.extend defs ubEq).wfm x
   :=
     let names :=
-      { y | y = x ∨ DefList.DependsOn dlParent.getDef x y }
+      { y | y = x ∨ DefList.DependsOn dl.getDef x y }
     let defsEq:
       DefListEq.EqDefsOn
-        dlParent.toDefList
-        (dlParent.extend defs ubEq).toDefList
+        dl.toDefList
+        (dl.extend defs ubEq).toDefList
         id
         names
     :=
@@ -541,11 +550,11 @@ namespace FiniteDefList
           | Or.inl yEq => yEq ▸ xLt
           | Or.inr depOn =>
             let ⟨z, usesConst⟩ := depOn.toUsesConst
-            dlParent.constsLt z y usesConst
+            dl.constsLt z y usesConst
         let eqAtY:
-          (dlParent.extend defs ubEq).getDef y = dlParent.getDef y
+          (dl.extend defs ubEq).getDef y = dl.getDef y
         := by
-          show (if y < dlParent.size then _ else _) = dlParent.getDef y
+          show (if y < dl.size then _ else _) = dl.getDef y
           rw [ite_eq_left yLt]
         (Expr.mapConst_eq_id _).trans eqAtY.symm
     let closed _ yIn _ zUsed :=
@@ -554,7 +563,6 @@ namespace FiniteDefList
         Or.inr <| yEq ▸ DefList.DependsOn.Base zUsed
       | Or.inr depOn =>
         Or.inr <| depOn.push zUsed
-    let eqAtX := DefList.eq_defs_eq_vals defsEq closed x (Or.inl rfl)
-    childEq ▸ eqAtX
+    DefList.eq_defs_eq_vals defsEq closed x (Or.inl rfl)
   
 end FiniteDefList

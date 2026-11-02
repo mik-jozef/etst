@@ -53,14 +53,14 @@ theorem isInDl.wfm_uniSetMap_eq:
   isInDl.wfm isInDl.consts.uniSetMap = uniSetMap
 :=
   (FiniteDefList.extend_wfm_eq_of_lt
-    bisimDl isInDl rfl rfl (by decide)).symm.trans
+    bisimDl rfl (by decide)).symm.trans
     bisimDl.wfm_uniSetMap_eq
 
 theorem isInDl.wfm_isBisim_eq:
   isInDl.wfm isInDl.consts.IsBisim = bisimDl.wfm bisimDl.consts.IsBisim
 :=
   (FiniteDefList.extend_wfm_eq_of_lt
-    bisimDl isInDl rfl rfl (by decide)).symm
+    bisimDl rfl (by decide)).symm
 
 
 /-

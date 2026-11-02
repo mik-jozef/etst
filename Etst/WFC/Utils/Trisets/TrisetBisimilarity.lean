@@ -93,7 +93,7 @@ theorem bisimDl.wfm_uniSetMap_eq:
   bisimDl.wfm bisimDl.consts.uniSetMap = uniSetMap
 :=
   (FiniteDefList.extend_wfm_eq_of_lt
-    uniSetMapDl bisimDl rfl rfl (by decide)).symm
+    uniSetMapDl rfl (by decide)).symm
 
 theorem bisimDl.NonBisimDef_of_Ins {cst index p q w}
   (ins: bisimDl.Ins cst index)
