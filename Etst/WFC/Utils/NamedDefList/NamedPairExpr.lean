@@ -16,54 +16,183 @@ import Lean
 
 namespace Etst
 
-public inductive NamedPairExpr (E: Type*) where
-| ident (e: E) (x: String)
-| null
-| prod (left rite: NamedPairExpr E)
-| ir (left rite: NamedPairExpr E)
-| full (body: NamedPairExpr E)
-| compl (body: NamedPairExpr E)
-| arbIr (x: String) (body: NamedPairExpr E)
+public inductive NamedPairExprRaw.{u} (E: Type u):
+  (List String) → Type u
+where
+| ident (e: E) (x: String) {vars}: NamedPairExprRaw E vars
+| null {vars}: NamedPairExprRaw E vars
+| prod {vars} (left rite: NamedPairExprRaw E vars): NamedPairExprRaw E vars
+| ir {vars} (left rite: NamedPairExprRaw E vars): NamedPairExprRaw E vars
+| full {vars} (body: NamedPairExprRaw E vars): NamedPairExprRaw E vars
+| compl {vars} (body: NamedPairExprRaw E vars): NamedPairExprRaw E vars
+| arbIr {vars}
+    (x: String)
+    (body: NamedPairExprRaw E (x :: vars))
+  :
+    NamedPairExprRaw E vars
 deriving DecidableEq
 
+exposed def NamedPairExprRaw.vars {E vars}
+  (_: NamedPairExprRaw E vars)
+:=
+  vars
+
+exposed def NamedPairExprRaw.IsWF {E vars}
+  (expr: NamedPairExprRaw E vars)
+  (consts: List String)
+:=
+  match expr with
+  | ident _ x => x ∈ vars ∨ x ∈ consts
+  | null => True
+  | prod left rite => left.IsWF consts ∧ rite.IsWF consts
+  | ir left rite => left.IsWF consts ∧ rite.IsWF consts
+  | full body => body.IsWF consts
+  | compl body => body.IsWF consts
+  | arbIr _ body => body.IsWF consts
+
+public abbrev NamedPairExpr E vars consts :=
+  { expr: NamedPairExprRaw E vars // expr.IsWF consts }
 public abbrev BasicNamedPairExpr := NamedPairExpr Unit
 
-namespace NamedPairExpr
-  exposed def un {E} (l r: NamedPairExpr E) : NamedPairExpr E :=
+namespace NamedPairExprRaw
+  variable {E vars}
+  
+  exposed def un
+    (l r: NamedPairExprRaw E vars)
+  :
+    NamedPairExprRaw E vars
+  :=
     .compl (.ir (.compl l) (.compl r))
   
-  exposed def some {E} (expr: NamedPairExpr E) : NamedPairExpr E :=
+  exposed def some
+    (expr: NamedPairExprRaw E vars)
+  :
+    NamedPairExprRaw E vars
+  :=
     .compl (.full (.compl expr))
   
-  exposed def arbUn {E}
+  exposed def arbUn
     (x: String)
-    (body: NamedPairExpr E)
+    (body: NamedPairExprRaw E (x :: vars))
+  :
+    NamedPairExprRaw E vars
   :=
-    NamedPairExpr.compl (.arbIr x (.compl body))
+    compl (.arbIr x (.compl body))
   
-  exposed def nat {E}: Nat → NamedPairExpr E
+  exposed def nat: Nat → NamedPairExprRaw E vars
   | 0 => .null
   | n+1 => .prod (.nat n) .null
   
+end NamedPairExprRaw
+
+namespace NamedPairExpr
+  variable {E vars csts}
   
-  public abbrev IsValid {E}
-    (e: NamedPairExpr E)
-    (idents: List String)
-  :
-    Prop
+  exposed def consts {E vars consts}
+    (_: NamedPairExpr E vars consts)
   :=
-    match e with
-    | ident _ x => x ∈ idents
-    | null => True
-    | prod left rite => IsValid left idents ∧ IsValid rite idents
-    | ir left rite => IsValid left idents ∧ IsValid rite idents
-    | full body => IsValid body idents
-    | compl body => IsValid body idents
-    | arbIr x body => IsValid body (x :: idents)
+    consts
   
-  exposed def compile {E}
-    (expr: NamedPairExpr E)
-    (consts vars: List String)
+  exposed def ident
+    (e: E)
+    (x: String)
+    (isIn: x ∈ vars ∨ x ∈ csts := by decide)
+  :
+    NamedPairExpr E vars csts
+  :=
+    ⟨.ident e x, isIn⟩
+  
+  exposed def null: NamedPairExpr E vars csts :=
+    ⟨.null, trivial⟩
+  
+  exposed def prod
+    (l r: NamedPairExpr E vars csts)
+  :
+    NamedPairExpr E vars csts
+  :=
+    ⟨.prod l r, l.property, r.property⟩
+  
+  exposed def ir
+    (l r: NamedPairExpr E vars csts)
+  :
+    NamedPairExpr E vars csts
+  :=
+    ⟨.ir l r, l.property, r.property⟩
+  
+  exposed def full
+    (body: NamedPairExpr E vars csts)
+  :
+    NamedPairExpr E vars csts
+  :=
+    ⟨.full body, body.property⟩
+  
+  exposed def compl
+    (body: NamedPairExpr E vars csts)
+  :
+    NamedPairExpr E vars csts
+  :=
+    ⟨.compl body, body.property⟩
+  
+  exposed def arbIr
+    (x: String)
+    (body: NamedPairExpr E (x :: vars) csts)
+  :
+    NamedPairExpr E vars csts
+  :=
+    ⟨.arbIr x body, body.property⟩
+  
+  
+  exposed def un
+    (l r: NamedPairExpr E vars csts)
+  :
+    NamedPairExpr E vars csts
+  := ⟨
+    .un l r,
+    .intro l.property r.property,
+  ⟩
+  
+  exposed def some
+    (body: NamedPairExpr E vars csts)
+  :
+    NamedPairExpr E vars csts
+  := ⟨
+    .some body,
+    body.property
+  ⟩
+  
+  exposed def arbUn
+    (x: String)
+    (body: NamedPairExpr E (x :: vars) csts)
+  :
+    NamedPairExpr E vars csts
+  := ⟨
+    .arbUn x body,
+    body.property
+  ⟩
+  
+  exposed def nat (n: Nat): NamedPairExpr E vars csts := ⟨
+    .nat n,
+    let rec go:
+      (m: Nat) → (@NamedPairExprRaw.nat E vars m).IsWF csts
+    | 0 => trivial
+    | m+1 => .intro (go m) trivial
+    go n,  
+  ⟩
+  
+end NamedPairExpr
+
+namespace NamedPairExprRaw
+  exposed def check {E vars consts}
+    (expr: NamedPairExprRaw E vars)
+    (isWf: expr.IsWF consts := by decide)
+  :
+    NamedPairExpr E vars consts
+  :=
+    ⟨expr, isWf⟩
+  
+  exposed def compile {E vars}
+    (expr: NamedPairExprRaw E vars)
+    (consts: List String)
   :
     Expr E
   :=
@@ -75,28 +204,23 @@ namespace NamedPairExpr
         .const e (consts.idxOf x)
     | null => .null
     | prod left rite =>
-        .prod
-          (left.compile consts vars)
-          (rite.compile consts vars)
+      .prod (left.compile consts) (rite.compile consts)
     | ir left rite =>
-        .ir
-          (left.compile consts vars)
-          (rite.compile consts vars)
-    | full body => .full (body.compile consts vars)
-    | compl body => .compl (body.compile consts vars)
-    | arbIr x body => .arbIr (body.compile consts (x :: vars))
+      .ir (left.compile consts) (rite.compile consts)
+    | full body => .full (body.compile consts)
+    | compl body => .compl (body.compile consts)
+    | arbIr _ body => .arbIr (body.compile consts)
   
-  public theorem IsValid.compile_sat_lt {E}
-    {expr: NamedPairExpr E}
-    {consts vars}
-    (isValid: IsValid expr (vars ++ consts))
+  public theorem compile_sat_lt {E vars}
+    (expr: NamedPairExprRaw E vars)
+    (consts: List String)
   :
-    (compile expr consts vars).FreeVarsSat (· < vars.length)
+    (compile expr consts).FreeVarsSat (· < vars.length)
   :=
     fun x isUsed =>
     match expr with
     | ident _ x =>
-      by unfold NamedPairExpr.compile at isUsed; exact
+      by unfold compile at isUsed; exact
       match Classical.em (x ∈ vars) with
       | Or.inl xIn => by
         rw [ite_eq_left xIn] at isUsed
@@ -106,148 +230,139 @@ namespace NamedPairExpr
         exact isUsed.elim
     | null => nomatch isUsed
     | prod left rite =>
-      let ⟨isValidL, isValidR⟩ := isValid
       isUsed.elim
-        (fun isUsedL => isValidL.compile_sat_lt x isUsedL)
-        (fun isUsedR => isValidR.compile_sat_lt x isUsedR)
+        (fun isUsedL => compile_sat_lt left consts x isUsedL)
+        (fun isUsedR => compile_sat_lt rite consts x isUsedR)
     | ir left rite =>
-      let ⟨isValidL, isValidR⟩ := isValid
       isUsed.elim
-        (fun isUsedL => isValidL.compile_sat_lt x isUsedL)
-        (fun isUsedR => isValidR.compile_sat_lt x isUsedR)
+        (fun isUsedL => compile_sat_lt left consts x isUsedL)
+        (fun isUsedR => compile_sat_lt rite consts x isUsedR)
     | full body =>
-      let isValid: IsValid body (vars ++ consts) := isValid
-      isValid.compile_sat_lt x isUsed
+      compile_sat_lt body consts x isUsed
     | compl body =>
-      let isValid: IsValid body (vars ++ consts) := isValid
-      isValid.compile_sat_lt x isUsed
+      compile_sat_lt body consts x isUsed
     | arbIr xB body =>
-      let isValid: IsValid body ((xB :: vars) ++ consts) := isValid
-      Nat.lt_of_succ_lt_succ (isValid.compile_sat_lt (x + 1) isUsed)
+      Nat.lt_of_succ_lt_succ
+        (compile_sat_lt body consts (x + 1) isUsed)
   
-  public theorem IsValid.compile_constsLt {E}
-    {expr: NamedPairExpr E}
-    {consts vars}
-    (isValid: IsValid expr (vars ++ consts))
+  public theorem compile_constsLt {E vars consts}
+    (expr: NamedPairExprRaw E vars)
+    (isWf: expr.IsWF consts)
   :
-    (compile expr consts vars).ConstsLt consts.length
+    (compile expr consts).ConstsLt consts.length
   :=
     fun x isUsed =>
-    match expr with
-    | ident _ x =>
-      by unfold NamedPairExpr.compile at isUsed; exact
+    match expr, isWf with
+    | ident _ x, isWf =>
+      by unfold compile at isUsed; exact
       match Classical.em (x ∈ vars) with
       | Or.inl xIn => by
         rw [ite_eq_left xIn] at isUsed
         exact isUsed.elim
       | Or.inr xNin => by
         rw [ite_eq_right xNin] at isUsed
-        let xInConsts: x ∈ consts :=
-          (List.mem_append.mp isValid).resolve_left xNin
+        let xInConsts: x ∈ consts := isWf.elim xNin.elim id
         exact isUsed ▸ List.idxOf_lt_length_of_mem xInConsts
-    | null => nomatch isUsed
-    | prod left rite =>
-      let ⟨isValidL, isValidR⟩ := isValid
+    | null, _ => nomatch isUsed
+    | prod left rite, ⟨isWfL, isWfR⟩ =>
       isUsed.elim
-        (fun isUsedL => isValidL.compile_constsLt x isUsedL)
-        (fun isUsedR => isValidR.compile_constsLt x isUsedR)
-    | ir left rite =>
-      let ⟨isValidL, isValidR⟩ := isValid
+        (fun isUsedL => compile_constsLt left isWfL x isUsedL)
+        (fun isUsedR => compile_constsLt rite isWfR x isUsedR)
+    | ir left rite, ⟨isWfL, isWfR⟩ =>
       isUsed.elim
-        (fun isUsedL => isValidL.compile_constsLt x isUsedL)
-        (fun isUsedR => isValidR.compile_constsLt x isUsedR)
-    | full body =>
-      let isValid: IsValid body (vars ++ consts) := isValid
-      isValid.compile_constsLt x isUsed
-    | compl body =>
-      let isValid: IsValid body (vars ++ consts) := isValid
-      isValid.compile_constsLt x isUsed
-    | arbIr xB body =>
-      let isValid: IsValid body ((xB :: vars) ++ consts) := isValid
-      isValid.compile_constsLt x isUsed
+        (fun isUsedL => compile_constsLt left isWfL x isUsedL)
+        (fun isUsedR => compile_constsLt rite isWfR x isUsedR)
+    | full body, isWf =>
+      compile_constsLt body isWf x isUsed
+    | compl body, isWf =>
+      compile_constsLt body isWf x isUsed
+    | arbIr xB body, isWf =>
+      compile_constsLt body isWf x isUsed
   
-end NamedPairExpr
+end NamedPairExprRaw
 
 public abbrev NamedExprTools.pair:
   NamedExprTools BasicNamedPairExpr
 := {
-  IsValid := NamedPairExpr.IsValid,
-  compile := (NamedPairExpr.compile · · [])
-  valid_compiles_clean isValid :=
-    let vars := []
-    let satLt := isValid.compile_sat_lt (vars := vars)
-    let eq: (· < vars.length) = fun _ => False :=
+  compile expr := NamedPairExprRaw.compile expr.val expr.consts
+  compiles_clean expr :=
+    let satLt := expr.val.compile_sat_lt expr.consts
+    let eq: (· < 0) = fun _ => False :=
       funext fun _ => propext (Iff.intro nofun nofun)
     by unfold Expr.IsClean; exact eq ▸ satLt
-  valid_compiles_constsLt isValid := isValid.compile_constsLt
+  compiles_constsLt expr := expr.val.compile_constsLt expr.property
 }
 
-public instance decIsValid {E}:
-    (e: NamedPairExpr E) →
-    (consts: List String) →
-    Decidable (e.IsValid consts)
-| .ident _ x, consts => inferInstanceAs (Decidable (x ∈ consts))
+public instance NamedPairExprRaw.isWF {E vars}:
+  (e: NamedPairExprRaw E vars) →
+  (consts: List String) →
+  Decidable (e.IsWF consts)
+| .ident _ x, consts =>
+  inferInstanceAs (Decidable (x ∈ vars ∨ x ∈ consts))
 | .null, _ => inferInstanceAs (Decidable True)
 | .prod l r, consts =>
-  match decIsValid l consts, decIsValid r consts with
+  match isWF l consts, isWF r consts with
   | isTrue hl, isTrue hr => isTrue ⟨hl, hr⟩
   | isFalse hl, _ => isFalse fun ⟨h, _⟩ => hl h
   | _, isFalse hr => isFalse fun ⟨_, h⟩ => hr h
 | .ir l r, consts =>
-  match decIsValid l consts, decIsValid r consts with
+  match isWF l consts, isWF r consts with
   | isTrue hl, isTrue hr => isTrue ⟨hl, hr⟩
   | isFalse hl, _ => isFalse fun ⟨h, _⟩ => hl h
   | _, isFalse hr => isFalse fun ⟨_, h⟩ => hr h
-| .full b, consts => decIsValid b consts
-| .compl b, consts => decIsValid b consts
-| .arbIr x b, consts => decIsValid b (x :: consts)
+| .full b, consts => isWF b consts
+| .compl b, consts => isWF b consts
+| .arbIr _ b, consts => isWF b consts
 
-exposed def Pair.toNamedExpr: Pair → BasicNamedPairExpr
+exposed def Pair.toNamedExpr {vars consts}:
+  Pair → BasicNamedPairExpr vars consts
 | .null => .null
 | .pair l r => .prod l.toNamedExpr r.toNamedExpr
 
 public theorem Pair.toExpr_eq_named
   (p: Pair)
-  (consts vars: List String)
+  (vars consts: List String)
 :
-  p.toExpr = p.toNamedExpr.compile consts vars
+  let named := p.toNamedExpr (vars := vars) (consts := consts)
+  p.toExpr = named.val.compile consts
 :=
   match p with
   | .null => rfl
   | .pair l r =>
     congrArg₂
       BasicExpr.prod
-      (l.toExpr_eq_named consts vars)
-      (r.toExpr_eq_named consts vars)
+      (l.toExpr_eq_named vars consts)
+      (r.toExpr_eq_named vars consts)
 
 namespace SingleLaneExpr
   public theorem inToNamedExpr {lane fv b c consts vars}
     (p: Pair)
   :
-    let expr := p.toNamedExpr.compile consts vars
+    let expr :=
+      (@Pair.toNamedExpr vars consts p).val.compile consts
     p ∈ (BasicExpr.toLane expr lane).intp2 fv b c
   :=
-    p.toExpr_eq_named consts vars ▸
+    p.toExpr_eq_named vars consts ▸
     inToExpr p
   
   public theorem inToNamedExprElim {lane fv b c consts vars}
-    {pExpr p: Pair}
+    {p pIn: Pair}
     (inExpr:
-      let expr := pExpr.toNamedExpr.compile consts vars
-      p ∈ (BasicExpr.toLane expr lane).intp2 fv b c)
+      let expr := (@Pair.toNamedExpr vars consts p).val.compile consts
+      pIn ∈ (BasicExpr.toLane expr lane).intp2 fv b c)
   :
-    pExpr = p
+    p = pIn
   := by
-    rw [←pExpr.toExpr_eq_named consts vars] at inExpr
+    rw [←p.toExpr_eq_named vars consts] at inExpr
     exact inToExprElim inExpr
   
   public theorem intp2_toNamedExpr_eq_singleton {lane fv b c consts vars}
     (p: Pair)
   :
-    let expr := p.toNamedExpr.compile consts vars
+    let expr := (@Pair.toNamedExpr vars consts p).val.compile consts
     intp2 (BasicExpr.toLane expr lane) fv b c = {p}
   :=
-    p.toExpr_eq_named consts vars ▸
+    p.toExpr_eq_named vars consts ▸
     intp2_toExpr_eq_singleton p
   
 end SingleLaneExpr
@@ -281,65 +396,75 @@ syntax:00 "Ex " ident ": " p3_expr ", " p3_expr : p3_expr
 syntax:00 "All " ident+ ", " p3_expr : p3_expr
 syntax:00 "All " ident ": " p3_expr ", " p3_expr : p3_expr
 
-
--- p3(expr) elaborates a p3_expr into a NamedPairExpr.
+syntax "p3_inner(" p3_expr ")" : term
 syntax "p3(" p3_expr ")" : term
+syntax "p3(" ident,* ";" p3_expr ")" : term
+
+open Lean in
+macro_rules
+-- Public entry points: ascribe exactly once, then hand off to the inner rules
+| `(p3( $e:p3_expr )) =>
+  `((p3_inner($e) : NamedPairExprRaw _ []))
+| `(p3( $ids:ident,* ; $e:p3_expr )) => do
+  let namesRev : Array (TSyntax `term) :=
+    ids.getElems.map fun i => quote i.getId.toString
+  `((p3_inner($e) : NamedPairExprRaw _ [$namesRev.reverse,*]))
 
 open Lean in
 macro_rules
 -- Parentheses removal
-| `(p3( ($expr) )) => `(p3($expr))
+| `(p3_inner( ($expr) )) => `(p3_inner($expr))
 -- Function application
-| `(p3( $fn $arg )) =>
-  `(p3( Ex res, $fn & ($arg × res) then res ))
+| `(p3_inner( $fn $arg )) =>
+  `(p3_inner( Ex res, $fn & ($arg × res) then res ))
 -- Remove leading "|"
-| `(p3( | $a | $b )) => `(p3( $a | $b ))
+| `(p3_inner( | $a | $b )) => `(p3_inner( $a | $b ))
 -- Remove leading "&"
-| `(p3( & $a & $b )) => `(p3( $a & $b ))
+| `(p3_inner( & $a & $b )) => `(p3_inner( $a & $b ))
 -- Remove leading "×"
-| `(p3( × $a × $b )) => `(p3( $a × $b ))
+| `(p3_inner( × $a × $b )) => `(p3_inner( $a × $b ))
 -- Then to some
-| `(p3( $a then $b )) => `(p3( (?some $a) & $b ))
+| `(p3_inner( $a then $b )) => `(p3_inner( (?some $a) & $b ))
 -- Implication (->) to disjunction
-| `(p3( $a -> $b )) => `(p3( !$a | $b ))
+| `(p3_inner( $a -> $b )) => `(p3_inner( !$a | $b ))
 -- Equivalence (<->) to conjunction of implications
-| `(p3( $a <-> $b )) => `(p3( ($a -> $b) & ($b -> $a) ))
+| `(p3_inner( $a <-> $b )) => `(p3_inner( ($a -> $b) & ($b -> $a) ))
 -- Multi-variable existential quantifier
-| `(p3( Ex $x:ident $y:ident $xs:ident*, $body )) =>
-  `(p3( Ex $x, Ex $y $xs*, $body ))
+| `(p3_inner( Ex $x:ident $y:ident $xs:ident*, $body )) =>
+  `(p3_inner( Ex $x, Ex $y $xs*, $body ))
 -- Bounded existential quantifier
-| `(p3( Ex $x:ident: $domain, $body )) =>
-  `(p3( Ex $x, $x:ident & $domain then $body ))
+| `(p3_inner( Ex $x:ident: $domain, $body )) =>
+  `(p3_inner( Ex $x, $x:ident & $domain then $body ))
 -- Multi-variable universal quantifier
-| `(p3( All $x:ident $y:ident $xs:ident*, $body )) =>
-  `(p3( All $x, All $y $xs*, $body ))
+| `(p3_inner( All $x:ident $y:ident $xs:ident*, $body )) =>
+  `(p3_inner( All $x, All $y $xs*, $body ))
 -- Bounded universal quantifier
-| `(p3( All $x:ident: $domain, $body )) =>
-  `(p3( All $x, (?some ($x:ident & !$domain)) | $body ))
+| `(p3_inner( All $x:ident: $domain, $body )) =>
+  `(p3_inner( All $x, (?some ($x:ident & !$domain)) | $body ))
 -- Identifiers
-| `(p3( $x:ident )) =>
-  `(NamedPairExpr.ident () $(quote x.getId.toString))
-| `(p3( . $x:ident )) =>
-  `(NamedPairExpr.ident Set3.Lane.posLane $(quote x.getId.toString))
-| `(p3( : $x:ident )) =>
-  `(NamedPairExpr.ident Set3.Lane.defLane $(quote x.getId.toString))
+| `(p3_inner( $x:ident )) =>
+  `(.ident () $(quote x.getId.toString))
+| `(p3_inner( . $x:ident )) =>
+  `(.ident Set3.Lane.posLane $(quote x.getId.toString))
+| `(p3_inner( : $x:ident )) =>
+  `(.ident Set3.Lane.defLane $(quote x.getId.toString))
 -- Numbers
-| `(p3( $n:num )) => `(NamedPairExpr.nat $n)
+| `(p3_inner( $n:num )) => `(.nat $n)
 -- Null
-| `(p3( null )) => `(NamedPairExpr.null)
+| `(p3_inner( null )) => `(.null)
 -- Escape hatch
-| `(p3( <[$t]> )) => pure t
+| `(p3_inner( <[$t]> )) => pure t
 -- Kernel constructors
-| `(p3( $a × $b )) => `(NamedPairExpr.prod p3($a) p3($b))
-| `(p3( $a & $b )) => `(NamedPairExpr.ir p3($a) p3($b))
-| `(p3( $a | $b )) => `(NamedPairExpr.un p3($a) p3($b))
-| `(p3( (?some $a) )) => `(NamedPairExpr.some p3($a))
-| `(p3( (?full $a) )) => `(NamedPairExpr.full p3($a))
-| `(p3( ! $a )) => `(NamedPairExpr.compl p3($a))
-| `(p3( Ex $x:ident, $body )) =>
-  `(NamedPairExpr.arbUn $(quote x.getId.toString) p3($body))
-| `(p3( All $x:ident, $body )) =>
-  `(NamedPairExpr.arbIr $(quote x.getId.toString) p3($body))
+| `(p3_inner( $a × $b )) => `(.prod p3_inner($a) p3_inner($b))
+| `(p3_inner( $a & $b )) => `(.ir p3_inner($a) p3_inner($b))
+| `(p3_inner( $a | $b )) => `(.un p3_inner($a) p3_inner($b))
+| `(p3_inner( (?some $a) )) => `(.some p3_inner($a))
+| `(p3_inner( (?full $a) )) => `(.full p3_inner($a))
+| `(p3_inner( ! $a )) => `(.compl p3_inner($a))
+| `(p3_inner( Ex $x:ident, $body )) =>
+  `(.arbUn $(quote x.getId.toString) p3_inner($body))
+| `(p3_inner( All $x:ident, $body )) =>
+  `(.arbIr $(quote x.getId.toString) p3_inner($body))
 
 
 declare_syntax_cat p3_defList
@@ -358,7 +483,7 @@ meta def expandPairDefEntries
     | `(p3_defList| p3 $x:ident := $e) =>
       body ←
         `(NamedDefListSection.const
-            $(quote x.getId.toString) p3($e) $body)
+            $(quote x.getId.toString) p3_inner($e) $body)
     | _ => Macro.throwUnsupported
   return body
 
@@ -408,15 +533,17 @@ namespace Examples
   def testStx2 := p3(All x: X, x then x)
   def testStx3 := p3(A <-> !B)
   def testStx4 := p3(f (3 × B))
-  def testStx5: BasicNamedPairExpr := p3(<[NamedPairExpr.null]>)
+  def testStx5 :=
+    p3(<[NamedPairExprRaw.null (E := Unit) (vars := [])]>)
   
   public pairDefList exampleStx0
     p3 X := X × A
     p3 A := X × 3
+    p3 B := <[testStx3.check]>
   pairDefList.
 
   @[expose] public pairDefList exampleStx1 extends exampleStx0
-    p3 B := A
+    p3 C := A
   pairDefList.
   
 end Examples

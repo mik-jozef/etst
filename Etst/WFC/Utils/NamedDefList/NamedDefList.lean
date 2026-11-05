@@ -19,23 +19,23 @@ import Lean
 
 namespace Etst
 
-public structure NamedExprTools (NamedExpr: Type) where
-  IsValid: NamedExpr → (consts: List String) → Prop
-  compile
-    (expr: NamedExpr)
-    (consts: List String)
+public structure NamedExprTools
+  (NamedExpr: (vars consts: List String) → Type)
+where
+  compile {vars consts}
+    (expr: NamedExpr vars consts)
   :
     BasicExpr
   
-  valid_compiles_clean {expr consts}
-    (isValid: IsValid expr consts)
+  compiles_clean {consts}
+    (expr: NamedExpr [] consts)
   :
-    (compile expr consts).IsClean
+    (compile expr).IsClean
   
-  valid_compiles_constsLt {expr consts}
-    (isValid: IsValid expr consts)
+  compiles_constsLt {consts}
+    (expr: NamedExpr [] consts)
   :
-    (compile expr consts).ConstsLt consts.length
+    (compile expr).ConstsLt consts.length
 
 
 public inductive NamedDefListSection {Expr}
@@ -46,14 +46,10 @@ public inductive NamedDefListSection {Expr}
 | empty {outerConsts}: NamedDefListSection tools outerConsts []
 | const
     (const: String)
-    {outerConsts innerConsts: List String}
-    (body: Expr)
+    {outerConsts innerConsts}
+    (body: Expr [] (outerConsts ++ (const :: innerConsts)))
     (tail:
       NamedDefListSection tools (outerConsts.concat const) innerConsts)
-    (isValid:
-      tools.IsValid body (outerConsts ++ (const :: innerConsts))
-    :=
-      by decide)
     (nameUnique: const ∉ outerConsts := by decide)
   :
     NamedDefListSection tools outerConsts (const :: innerConsts)
@@ -69,7 +65,7 @@ namespace NamedDefListSection
   :=
     match segment with
     | .empty => 0
-    | .const _ _ tail _ _ => tail.length + 1
+    | .const _ _ tail _ => tail.length + 1
   
   public theorem toDefs_ub_rec {cst ub}
     {o i: List String}
@@ -90,16 +86,16 @@ namespace NamedDefListSection
   :=
     match segment with
     | .empty => []
-    | .const (innerConsts:=innerRest) cst body tail isValid _ =>
+    | .const (innerConsts:=innerRest) cst body tail _ =>
       let head := {
         name := cst
-        expr := tools.compile body (o ++ (cst :: innerRest))
-        isClean := tools.valid_compiles_clean isValid
+        expr := tools.compile body
+        isClean := tools.compiles_clean body
         constsLt :=
           let lenEq: ub = (o ++ cst :: innerRest).length := by
             rw [ubEq, List.length_append]
           lenEq ▸
-          tools.valid_compiles_constsLt isValid
+          tools.compiles_constsLt body
       }
       head :: tail.toDefs ub (toDefs_ub_rec ubEq)
   
@@ -112,7 +108,7 @@ namespace NamedDefListSection
   :=
     match i, segment with
     | [], .empty => rfl
-    | _, .const _ _ tail _ _ =>
+    | _, .const _ _ tail _ =>
       Nat.succ_inj.mpr
         (toDefs_length_inner tail _ (toDefs_ub_rec ubEq))
   
