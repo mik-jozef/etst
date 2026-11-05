@@ -1,5 +1,7 @@
-import Etst.WFC.Utils.SubsetStx.MapFv
+module
+public import Etst.WFC.Utils.SubsetStx.MapFv
 
+@[expose] public section
 namespace Etst
 open Expr
 

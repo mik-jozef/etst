@@ -370,7 +370,7 @@ namespace SingleLaneExpr
   theorem inToggle2Elim' {expr lane lane'}
     (n: Nat)
     (inToggle: p ∈ (BasicExpr.toLane expr lane').intp2 fv b c)
-    (laneEq: lane' = SingleLaneExpr.toggle2N lane n)
+    (laneEq: lane' = toggle2N lane n)
   :
     p ∈ (BasicExpr.toLane expr lane).intp2 fv b c
   :=

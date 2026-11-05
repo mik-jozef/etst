@@ -1,6 +1,7 @@
-import Etst.WFC.Utils.SubsetStx.Basic
-import Etst.WFC.Syntax.FiniteDefList
+module
+public import Etst.WFC.Utils.SubsetStx.Basic
 
+public section
 namespace Etst
 open Expr
 

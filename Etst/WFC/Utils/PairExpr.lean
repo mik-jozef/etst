@@ -37,7 +37,7 @@ namespace Expr
     that the variables of `domain` need to be incremented. In
     particular, `.var 0` should never be used in `domain`.
   -/
-  def arbUnDom (domain body: Expr E): Expr E :=
+  exposed def arbUnDom (domain body: Expr E): Expr E :=
     arbUn (ifThen (ir (.var 0) domain) body)
   
   /-
@@ -49,11 +49,11 @@ namespace Expr
     that the variables of `domain` need to be incremented. In
     particular, `.var 0` should never be used in `domain`.
   -/
-  def arbIrDom (domain body: Expr E): Expr E :=
+  exposed def arbIrDom (domain body: Expr E): Expr E :=
     arbIr (un body (ifElse (ir (.var 0) domain) any))
   
   -- A union of finitely many expressions.
-  def finUn: List (Expr E) → Expr E
+  exposed def finUn: List (Expr E) → Expr E
   | [] => none
   | [expr] => expr
   | expr :: tail =>
@@ -123,10 +123,10 @@ namespace Expr
     `nonemptify x = null | (x, null)`, guaranteeing nonemptiness,
     and reversibility (with `zth`).
   -/
-  def nonemptify {E} (expr: Expr E): Expr E :=
+  exposed def nonemptify {E} (expr: Expr E): Expr E :=
     un null (prod expr null)
   
-  def losslessProd (left rite: Expr E): Expr E :=
+  exposed def losslessProd (left rite: Expr E): Expr E :=
     prod (nonemptify left) (nonemptify rite)
   
   /-
@@ -146,15 +146,15 @@ namespace Expr
             (losslessProdCons expr2
               null))
   -/
-  def losslessProdCons (head tail: Expr E): Expr E :=
+  exposed def losslessProdCons (head tail: Expr E): Expr E :=
     prod (nonemptify head) tail
 
-  def losslessProdList: List (Expr E) → Expr E
+  exposed def losslessProdList: List (Expr E) → Expr E
   | [] => null
   | head :: tail => losslessProdCons head (losslessProdList tail)
   
   -- Like `nth`, but works with lossless products.
-  def losslessProdAt (n: Nat) (expr: Expr E): Expr E :=
+  exposed def losslessProdAt (n: Nat) (expr: Expr E): Expr E :=
     zth (nth n expr)
 end Expr
 

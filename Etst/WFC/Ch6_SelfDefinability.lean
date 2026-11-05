@@ -73,8 +73,8 @@ theorem uniSetMap.isUniversal {s}
   ⟨i, eqAtI.trans sEq.symm⟩
 
 theorem uniSetMap.isDefinable: DefList.IsDefinable uniSetMap := ⟨
-  uniSetMapDl.toFinBoundedDl,
-  uniSetMapDl.consts.uniSetMap,
+  uniSetMapDl.dl.toFinBoundedDl,
+  uniSetMapDl.const "uniSetMap",
   rfl,
 ⟩
 

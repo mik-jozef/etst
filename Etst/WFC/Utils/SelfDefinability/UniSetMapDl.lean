@@ -1,6 +1,6 @@
 module
 public import Etst.WFC.Ch4_S1_MembershipPs
-public import Etst.WFC.Syntax.FiniteDefList
+public import Etst.WFC.Utils.NamedDefList.NamedPairExpr
 public import Etst.WFC.Utils.Expr.NegationNormalForm
 import Etst.WFC.Utils.DefList
 import Etst.WFC.Utils.RulesOfInference
@@ -54,117 +54,101 @@ open SingleLaneExpr
 -/
 
 namespace uniSetMapDl
-  exposed def getNthConst: BasicExpr := .const 0
-  exposed def uniSetMapConst: BasicExpr := .const 1
-  
-  exposed def exprEncConst: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncConst: BasicNamedPairExpr :=
+    p3(
       Ex x,
       & (?some 0 × x & expr)
-      & <[uniSetMapConst]> (dl × null × <[getNthConst]> dl x)
+      & uniSetMap (dl × null × getNth dl x)
     )
   
-  exposed def exprEncComplConst: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncComplConst: BasicNamedPairExpr :=
+    p3(
       Ex x,
       & (?some 1 × x & expr)
-      & ! <[uniSetMapConst]> (dl × null × <[getNthConst]> dl x)
+      & ! uniSetMap (dl × null × getNth dl x)
     )
   
-  exposed def exprEncVar: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncVar: BasicNamedPairExpr :=
+    p3(
       Ex x,
       & (?some 2 × x & expr)
-      & <[getNthConst]> fv x
+      & getNth fv x
     )
   
-  exposed def exprEncComplVar: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncComplVar: BasicNamedPairExpr :=
+    p3(
       Ex x,
       & (?some 3 × x & expr)
-      & ! <[getNthConst]> fv x
+      & ! getNth fv x
     )
   
-  exposed def exprEncNull: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncNull: BasicNamedPairExpr :=
+    p3(
       & (?some 4 × null & expr)
       & null
     )
   
-  exposed def exprEncProd: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncProd: BasicNamedPairExpr :=
+    p3(
       Ex left,
       Ex rite,
       & (?some 5 × left × rite & expr)
       & (
-        × <[uniSetMapConst]> (dl × fv × left)
-        × <[uniSetMapConst]> (dl × fv × rite)
+        × uniSetMap (dl × fv × left)
+        × uniSetMap (dl × fv × rite)
       )
     )
   
-  exposed def exprEncIr: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncIr: BasicNamedPairExpr :=
+    p3(
       Ex left,
       Ex rite,
       & (?some 6 × left × rite & expr)
-      & <[uniSetMapConst]> (dl × fv × left)
-      & <[uniSetMapConst]> (dl × fv × rite)
+      & uniSetMap (dl × fv × left)
+      & uniSetMap (dl × fv × rite)
     )
   
-  exposed def exprEncUn: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncUn: BasicNamedPairExpr :=
+    p3(
       Ex left,
       Ex rite,
       & (?some 7 × left × rite & expr)
       & (
-        | <[uniSetMapConst]> (dl × fv × left)
-        | <[uniSetMapConst]> (dl × fv × rite)
+        | uniSetMap (dl × fv × left)
+        | uniSetMap (dl × fv × rite)
       )
     )
   
-  exposed def exprEncFull: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncFull: BasicNamedPairExpr :=
+    p3(
       Ex body,
       & (?some 8 × body & expr)
-      & (?full <[uniSetMapConst]> (dl × fv × body))
+      & (?full uniSetMap (dl × fv × body))
     )
   
-  exposed def exprEncSome: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncSome: BasicNamedPairExpr :=
+    p3(
       Ex body,
       & (?some 9 × body & expr)
-      & (?some <[uniSetMapConst]> (dl × fv × body))
+      & (?some uniSetMap (dl × fv × body))
     )
   
-  exposed def exprEncArbIr: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncArbIr: BasicNamedPairExpr :=
+    p3(
       Ex body,
       & (?some 10 × body & expr)
-      & (All p, <[uniSetMapConst]> (dl × (p × fv) × body))
+      & (All p, uniSetMap (dl × (p × fv) × body))
     )
   
-  exposed def exprEncArbUn: BasicExpr :=
-    s3(
-      null; dl, fv, expr;
+  exposed def exprEncArbUn: BasicNamedPairExpr :=
+    p3(
       Ex body,
       & (?some 11 × body & expr)
-      & (Ex p, <[uniSetMapConst]> (dl × (p × fv) × body))
+      & (Ex p, uniSetMap (dl × (p × fv) × body))
     )
   
-  exposed def exprEncList: BasicExpr :=
-    s3(
-      null,
+  exposed def exprEncList: BasicNamedPairExpr :=
+    p3(
       | <[exprEncConst]>
       | <[exprEncComplConst]>
       | <[exprEncVar]>
@@ -178,11 +162,12 @@ namespace uniSetMapDl
       | <[exprEncArbIr]>
       | <[exprEncArbUn]>
     )
+  
 end uniSetMapDl
 
 open uniSetMapDl in
-pairDefList uniSetMapDl
-  s3 getNth :=
+exposed pairDefList uniSetMapDl
+  p3 getNth :=
     Ex head,
     Ex tail,
     | (head × tail) × 0 × head
@@ -200,15 +185,69 @@ pairDefList uniSetMapDl
     `(dl, ([], const x))`
     that serves as an index for it in `uniSetMap`.
   -/
-  s3 uniSetMap :=
+  p3 uniSetMap :=
     Ex dl, Ex fv, Ex expr, (dl × fv × expr) × <[exprEncList]>
 pairDefList.
 
 namespace uniSetMapDl
-  -- Assert the correctness of the consts.
-  example: .const consts.getNth = getNthConst := rfl
-  example: .const consts.uniSetMap = uniSetMapConst := rfl
+  exposed def exprEncConstRaw: BasicExpr :=
+    exprEncConst.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+  
+  exposed def exprEncComplConstRaw: BasicExpr :=
+    exprEncComplConst.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+  
+  exposed def exprEncVarRaw: BasicExpr :=
+    exprEncVar.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+  
+  exposed def exprEncComplVarRaw: BasicExpr :=
+    exprEncComplVar.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+  
+  exposed def exprEncNullRaw: BasicExpr :=
+    exprEncNull.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+  
+  exposed def exprEncProdRaw: BasicExpr :=
+    exprEncProd.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+
+  exposed def exprEncIrRaw: BasicExpr :=
+    exprEncIr.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+
+  exposed def exprEncUnRaw: BasicExpr :=
+    exprEncUn.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+
+  exposed def exprEncFullRaw: BasicExpr :=
+    exprEncFull.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+
+  exposed def exprEncSomeRaw: BasicExpr :=
+    exprEncSome.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+
+  exposed def exprEncArbIrRaw: BasicExpr :=
+    exprEncArbIr.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+
+  exposed def exprEncArbUnRaw: BasicExpr :=
+    exprEncArbUn.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+  
+  exposed def exprEncListRaw: BasicExpr :=
+    exprEncList.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+  
+  
+  -- Expose "const" in the namespace.
+  exposed def cst
+    (x: String)
+    (isIn: x ∈ uniSetMapDl.consts := by decide)
+  :
+    Nat
+  :=
+    uniSetMapDl.const x isIn
+  
+  exposed def cstExpr
+    (x: String)
+    (isIn: x ∈ uniSetMapDl.consts := by decide)
+  :
+    BasicExpr
+  :=
+    .const (cst x isIn)
 end uniSetMapDl
+
 
 -- Any pair not in the codomain encodes `none`.
 exposed def BasicExpr.encodingNnf: BasicExpr → Pair
@@ -309,7 +348,10 @@ theorem DefList.prefixList_at_eq
 
 
 exposed noncomputable def uniSetMap: Set3 Pair :=
-  uniSetMapDl.vals.uniSetMap
+  uniSetMapDl.val "uniSetMap"
+
+exposed noncomputable def uniSetMapGetNth: Set3 Pair :=
+  uniSetMapDl.val "getNth"
 
 exposed def uniSetMapIndex
   (dl: DefList)
@@ -381,7 +423,7 @@ namespace uniSetMapDl
   theorem getNth {list i lane}
     (lt: i < list.length)
   :
-    getNthEnc list i list[i] ∈ vals.getNth.getLane lane
+    getNthEnc list i list[i] ∈ uniSetMapGetNth.getLane lane
   :=
     match list with
     | listH :: listT =>
@@ -408,7 +450,7 @@ namespace uniSetMapDl
   theorem getNthDl {dl n i lane}
     (lt: i < n)
   :
-    getDefNthEnc dl n i ∈ vals.getNth.getLane lane
+    getDefNthEnc dl n i ∈ uniSetMapGetNth.getLane lane
   := by
     let lt := (dl.prefixList_length_eq 0 n).symm ▸ lt
     unfold getDefNthEnc
@@ -417,7 +459,7 @@ namespace uniSetMapDl
     exact getNth (i:=i) lt
   
   theorem getNthElim {list i valEnc lane}
-    (inGetDef: getNthEnc list i valEnc ∈ vals.getNth.getLane lane)
+    (inGetDef: getNthEnc list i valEnc ∈ uniSetMapGetNth.getLane lane)
   :
     list[i]? = valEnc
   :=
@@ -454,7 +496,7 @@ namespace uniSetMapDl
   
   theorem getNthElimLt {list i valEnc lane}
     (inGetDef:
-      getNthEnc list i valEnc ∈ vals.getNth.getLane lane)
+      getNthEnc list i valEnc ∈ uniSetMapGetNth.getLane lane)
   :
     i < list.length
   :=
@@ -462,9 +504,9 @@ namespace uniSetMapDl
     (List.getElem?_eq_some_iff.mp eqSome).choose
   
   theorem getNthLaneSwap {list i valEnc laneA laneB}
-    (inGetDef: getNthEnc list i valEnc ∈ vals.getNth.getLane laneA)
+    (inGetDef: getNthEnc list i valEnc ∈ uniSetMapGetNth.getLane laneA)
   :
-    getNthEnc list i valEnc ∈ vals.getNth.getLane laneB
+    getNthEnc list i valEnc ∈ uniSetMapGetNth.getLane laneB
   :=
     let lt := getNthElimLt inGetDef
     let valEq := getNthElim inGetDef
@@ -474,8 +516,12 @@ namespace uniSetMapDl
   
   theorem getNthClassical {list i valEnc}:
     Or
-      (uniSetMapDl.Ins consts.getNth (getNthEnc list i valEnc))
-      (uniSetMapDl.Out consts.getNth (getNthEnc list i valEnc))
+      (uniSetMapDl.dl.Ins
+        (uniSetMapDl.const "getNth")
+        (getNthEnc list i valEnc))
+      (uniSetMapDl.dl.Out
+        (uniSetMapDl.const "getNth")
+        (getNthEnc list i valEnc))
   :=
     Classical.or_iff_not_imp_left.mpr fun nins =>
       DefList.Out.isComplete fun isPos =>
@@ -484,7 +530,7 @@ namespace uniSetMapDl
         nins (DefList.Ins.isComplete isDef)
   
   theorem getNthElimD {list i valEnc lane df}
-    (inGetDef: getNthEnc list i valEnc ∈ vals.getNth.getLane lane)
+    (inGetDef: getNthEnc list i valEnc ∈ uniSetMapGetNth.getLane lane)
   :
     list[i]?.getD df = valEnc
   :=
@@ -492,7 +538,7 @@ namespace uniSetMapDl
   
   theorem getNthEq {dl: DefList} {n x exprEnc lane}
     (inGetNth:
-      (vals.getNth.getLane lane).Mem
+      (uniSetMapGetNth.getLane lane).Mem
         (getNthEnc (dl.prefixList 0 n) x exprEnc))
   :
     exprEnc = ((dl.prefix n).getDef x).encoding
