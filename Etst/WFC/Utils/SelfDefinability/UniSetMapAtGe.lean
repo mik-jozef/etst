@@ -80,10 +80,6 @@ def extOfIntCycle
 -- Taking out the branches because we're getting timeouts at whnf.
 namespace internalCauseElim
   theorem internalCauseElimComplProd {dl n fv left rite p}
-    {intCause: Cause Pair}
-    (intIsCause:
-      intCause.IsStrongCauseFv fv
-        (.compl (.prod left rite)) p)
     (ih:
       ∀ pL pR: Pair,
       p = .pair pL pR →
@@ -110,15 +106,15 @@ namespace internalCauseElim
             ((uniSetMapIndex dl n fv .null).pair .null)
         :=
           InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAtNull)
-        isAtUn (Or.inl atNull)
+        isAtUnNnf (Or.inl atNull)
       | .pair pL pR =>
         match ih pL pR rfl with
         | Or.inl ihL =>
-          isAtUn
+          isAtUnNnf
           (Or.inr
           (InWfm.of_in_def_no_fv
           (isInMap
-          (isAtUn
+          (isAtUnNnf
           (Or.inl
           (InWfm.of_in_def_no_fv
           (isInMap
@@ -128,11 +124,11 @@ namespace internalCauseElim
           (InWfm.of_in_def_no_fv
           (isInMap isAtAny))))))))))
         | Or.inr ihR =>
-          isAtUn
+          isAtUnNnf
           (Or.inr
           (InWfm.of_in_def_no_fv
           (isInMap
-          (isAtUn
+          (isAtUnNnf
           (Or.inr
           (InWfm.of_in_def_no_fv
           (isInMap
@@ -340,7 +336,6 @@ theorem internalCauseElim {dl n fv expr p}
         (internalCauseElim isCauseR cinsIh boutIh)
   | .compl (.prod left rite) =>
     internalCauseElimComplProd
-      intIsCause
       (fun _ _ eq =>
         match p with
         | .pair _ _ =>
@@ -493,7 +488,7 @@ theorem allCausesInappElim {dl n fv intCycle expr p}
           extCause.maximalBackgroundApx
           extCause.maximalContextApx
           (.prod .any .any)
-          .defLane
+          .posLane
           .null
       :=
         isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
@@ -531,7 +526,7 @@ theorem allCausesInappElim {dl n fv intCycle expr p}
         p
     :=
       isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
-    match isAtComplIrElim isAt with
+    match isAtUnElim isAt with
     | Or.inl inCinsComplComplNull =>
       let allInappNull:
         AllIntCausesInappIh dl n intCycle fv .null p

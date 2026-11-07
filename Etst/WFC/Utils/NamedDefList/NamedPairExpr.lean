@@ -190,6 +190,14 @@ namespace NamedPairExprRaw
   :=
     ⟨expr, isWf⟩
   
+  public theorem check_id {E vars consts}
+    (expr: NamedPairExprRaw E vars)
+    {isWF: expr.IsWF consts}
+  :
+    check expr isWF = expr
+  :=
+    rfl
+  
   exposed def compile {E vars}
     (expr: NamedPairExprRaw E vars)
     (consts: List String)
@@ -284,7 +292,9 @@ end NamedPairExprRaw
 public abbrev NamedExprTools.pair:
   NamedExprTools BasicNamedPairExpr
 := {
-  compile expr := NamedPairExprRaw.compile expr.val expr.consts
+  compile :=
+    fun {vars consts} expr =>
+      NamedPairExprRaw.compile expr.val consts
   compiles_clean expr :=
     let satLt := expr.val.compile_sat_lt expr.consts
     let eq: (· < 0) = fun _ => False :=

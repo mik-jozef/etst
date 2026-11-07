@@ -54,44 +54,49 @@ open SingleLaneExpr
 -/
 
 namespace uniSetMapDl
-  exposed def exprEncConst: BasicNamedPairExpr :=
+  exposed def exprEncConst :=
     p3(
+      dl, fv, expr;
       Ex x,
       & (?some 0 × x & expr)
       & uniSetMap (dl × null × getNth dl x)
     )
   
-  exposed def exprEncComplConst: BasicNamedPairExpr :=
+  exposed def exprEncComplConst :=
     p3(
+      dl, fv, expr;
       Ex x,
       & (?some 1 × x & expr)
       & ! uniSetMap (dl × null × getNth dl x)
     )
   
-  exposed def exprEncVar: BasicNamedPairExpr :=
+  exposed def exprEncVar :=
     p3(
+      dl, fv, expr;
       Ex x,
       & (?some 2 × x & expr)
       & getNth fv x
     )
   
-  exposed def exprEncComplVar: BasicNamedPairExpr :=
+  exposed def exprEncComplVar :=
     p3(
+      dl, fv, expr;
       Ex x,
       & (?some 3 × x & expr)
       & ! getNth fv x
     )
   
-  exposed def exprEncNull: BasicNamedPairExpr :=
+  exposed def exprEncNull :=
     p3(
+      dl, fv, expr;
       & (?some 4 × null & expr)
       & null
     )
   
-  exposed def exprEncProd: BasicNamedPairExpr :=
+  exposed def exprEncProd :=
     p3(
-      Ex left,
-      Ex rite,
+      dl, fv, expr;
+      Ex left rite,
       & (?some 5 × left × rite & expr)
       & (
         × uniSetMap (dl × fv × left)
@@ -99,19 +104,19 @@ namespace uniSetMapDl
       )
     )
   
-  exposed def exprEncIr: BasicNamedPairExpr :=
+  exposed def exprEncIr :=
     p3(
-      Ex left,
-      Ex rite,
+      dl, fv, expr;
+      Ex left rite,
       & (?some 6 × left × rite & expr)
       & uniSetMap (dl × fv × left)
       & uniSetMap (dl × fv × rite)
     )
   
-  exposed def exprEncUn: BasicNamedPairExpr :=
+  exposed def exprEncUn :=
     p3(
-      Ex left,
-      Ex rite,
+      dl, fv, expr;
+      Ex left rite,
       & (?some 7 × left × rite & expr)
       & (
         | uniSetMap (dl × fv × left)
@@ -119,36 +124,41 @@ namespace uniSetMapDl
       )
     )
   
-  exposed def exprEncFull: BasicNamedPairExpr :=
+  exposed def exprEncFull :=
     p3(
+      dl, fv, expr;
       Ex body,
       & (?some 8 × body & expr)
       & (?full uniSetMap (dl × fv × body))
     )
   
-  exposed def exprEncSome: BasicNamedPairExpr :=
+  exposed def exprEncSome :=
     p3(
+      dl, fv, expr;
       Ex body,
       & (?some 9 × body & expr)
       & (?some uniSetMap (dl × fv × body))
     )
   
-  exposed def exprEncArbIr: BasicNamedPairExpr :=
+  exposed def exprEncArbIr :=
     p3(
+      dl, fv, expr;
       Ex body,
       & (?some 10 × body & expr)
       & (All p, uniSetMap (dl × (p × fv) × body))
     )
   
-  exposed def exprEncArbUn: BasicNamedPairExpr :=
+  exposed def exprEncArbUn :=
     p3(
+      dl, fv, expr;
       Ex body,
       & (?some 11 × body & expr)
       & (Ex p, uniSetMap (dl × (p × fv) × body))
     )
   
-  exposed def exprEncList: BasicNamedPairExpr :=
+  exposed def exprEncList :=
     p3(
+      dl, fv, expr;
       | <[exprEncConst]>
       | <[exprEncComplConst]>
       | <[exprEncVar]>
@@ -186,48 +196,48 @@ exposed pairDefList uniSetMapDl
     that serves as an index for it in `uniSetMap`.
   -/
   p3 uniSetMap :=
-    Ex dl, Ex fv, Ex expr, (dl × fv × expr) × <[exprEncList]>
+    Ex dl, Ex fv, Ex expr, (dl × fv × expr) × <[exprEncList.check]>
 pairDefList.
 
 namespace uniSetMapDl
   exposed def exprEncConstRaw: BasicExpr :=
-    exprEncConst.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncConst.compile uniSetMapDl.consts
   
   exposed def exprEncComplConstRaw: BasicExpr :=
-    exprEncComplConst.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncComplConst.compile uniSetMapDl.consts
   
   exposed def exprEncVarRaw: BasicExpr :=
-    exprEncVar.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncVar.compile uniSetMapDl.consts
   
   exposed def exprEncComplVarRaw: BasicExpr :=
-    exprEncComplVar.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncComplVar.compile uniSetMapDl.consts
   
   exposed def exprEncNullRaw: BasicExpr :=
-    exprEncNull.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncNull.compile uniSetMapDl.consts
   
   exposed def exprEncProdRaw: BasicExpr :=
-    exprEncProd.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncProd.compile uniSetMapDl.consts
 
   exposed def exprEncIrRaw: BasicExpr :=
-    exprEncIr.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncIr.compile uniSetMapDl.consts
 
   exposed def exprEncUnRaw: BasicExpr :=
-    exprEncUn.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncUn.compile uniSetMapDl.consts
 
   exposed def exprEncFullRaw: BasicExpr :=
-    exprEncFull.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncFull.compile uniSetMapDl.consts
 
   exposed def exprEncSomeRaw: BasicExpr :=
-    exprEncSome.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncSome.compile uniSetMapDl.consts
 
   exposed def exprEncArbIrRaw: BasicExpr :=
-    exprEncArbIr.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncArbIr.compile uniSetMapDl.consts
 
   exposed def exprEncArbUnRaw: BasicExpr :=
-    exprEncArbUn.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncArbUn.compile uniSetMapDl.consts
   
   exposed def exprEncListRaw: BasicExpr :=
-    exprEncList.compile uniSetMapDl.consts ["expr", "fv", "dl"]
+    exprEncList.compile uniSetMapDl.consts
   
   
   -- Expose "const" in the namespace.

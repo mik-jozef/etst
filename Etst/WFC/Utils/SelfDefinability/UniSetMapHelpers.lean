@@ -723,6 +723,21 @@ theorem isAtComplIrElim {dl n fv b c left rite lane p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtCallEncNope · (by decide))
+
+/-- The NNF-shaped eliminator corresponding to `isAtUnNnf`. -/
+theorem isAtUnElim {dl n fv b c left rite lane p}
+  (ins: InUniSetMapAt dl n fv b c (.un left rite) lane p)
+:
+  Or
+    (((c (cst "uniSetMap")).getLane lane).Mem
+      (.pair (uniSetMapIndex dl n fv left) p))
+    (((c (cst "uniSetMap")).getLane lane).Mem
+      (.pair (uniSetMapIndex dl n fv rite) p))
+:=
+  (isAtComplIrElim (left := left.compl) (rite := rite.compl) ins).elim
+    .inl
+    .inr
 
 theorem isAtFullElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.full body) lane p)
@@ -858,14 +873,13 @@ theorem isAtComplArbIrElim {dl n fv b c body lane p}
   ## Section: Expression encoding constructors
 -/
 
-
-theorem isInMap {dl n fv b c expr lane p}
+theorem isInMap {dl n fv fvI b c expr lane p}
   (isAt: InUniSetMapAt dl n fv b c expr lane p)
 :
   Set.Mem
     (intp2
       ((uniSetMapDl.getDef "uniSetMap").toLane lane)
-      fv
+      fvI
       b
       c)
     (.pair (uniSetMapIndex dl n fv expr) p)
@@ -1109,6 +1123,26 @@ theorem isAtUn {dl n fv b c left rite lane p}
               (inProd (inVar rfl) (inVar rfl)))
             rfl))
         ins))))))))))
+
+/--
+  An NNF-shaped variant of `isAtUn`. The statements of `isAtUn` and
+  `isAtComplIrElim` mention the pre-NNF shape `.compl (.ir left rite)`,
+  which never matches `.un`-headed goals syntactically; the defeq
+  fallback then normalizes the compiled `exprEncListRaw`, which blows
+  `maxRecDepth`. Use this variant (and `isAtUnElim`) at `.un`-headed
+  use sites to keep unification syntactic.
+-/
+theorem isAtUnNnf {dl n fv b c left rite lane p}
+  (ins:
+    Or
+      (((c (cst "uniSetMap")).getLane lane).Mem
+        (.pair (uniSetMapIndex dl n fv left) p))
+      (((c (cst "uniSetMap")).getLane lane).Mem
+        (.pair (uniSetMapIndex dl n fv rite) p)))
+:
+  InUniSetMapAt dl n fv b c (.un left rite) lane p
+:=
+  isAtUn (ins.elim .inl .inr)
 
 theorem isAtFull {dl n fv b c body lane p}
   (insBody:
@@ -1368,21 +1402,20 @@ exposed def causeArbUn
     (cst "uniSetMap")
     (.pair (uniSetMapIndex dl n (dX :: fv) body) dInt)
 
-
-theorem isWeakCauseConst {dl n fv x d}:
-  (causeConst dl n x d).IsWeakCause
+theorem isWeakCauseConst {dl n fv x p}:
+  (causeConst dl n x p).IsWeakCause
     (uniSetMapDl.getDef "uniSetMap")
-    (.pair (uniSetMapIndex dl n fv (.const x)) d)
+    (.pair (uniSetMapIndex dl n fv (.const x)) p)
 :=
   fun _ _ isSat =>
     let insGetNth := isSat.cinsSat (Or.inl ⟨rfl, rfl⟩)
     let ins := isSat.cinsSat (Or.inr ⟨rfl, rfl⟩)
     isInMap (isAtConst ins insGetNth)
 
-theorem isWeakCauseComplConst {dl n fv x d}:
-  (causeComplConst dl n x d).IsWeakCause
+theorem isWeakCauseComplConst {dl n fv x p}:
+  (causeComplConst dl n x p).IsWeakCause
     (uniSetMapDl.getDef "uniSetMap")
-    (.pair (uniSetMapIndex dl n fv (.compl (.const x))) d)
+    (.pair (uniSetMapIndex dl n fv (.compl (.const x))) p)
 :=
   fun _ _ isSat =>
     let ninGetNth :=
@@ -1397,19 +1430,19 @@ theorem isWeakCauseComplConst {dl n fv x d}:
           inMap
     isInMap (isAtComplConst ninGetNth ninMap)
 
-theorem isWeakCauseVar {dl n fv x d}:
-  (causeVar fv x d).IsWeakCause
+theorem isWeakCauseVar {dl n fv x p}:
+  (causeVar fv x p).IsWeakCause
     (uniSetMapDl.getDef "uniSetMap")
-    (.pair (uniSetMapIndex dl n fv (.var x)) d)
+    (.pair (uniSetMapIndex dl n fv (.var x)) p)
 :=
   fun _ _ isSat =>
     let inGetNth := isSat.cinsSat ⟨rfl, rfl⟩
     isInMap (isAtVar inGetNth)
 
-theorem isWeakCauseComplVar {dl n fv x d}:
-  (causeComplVar fv x d).IsWeakCause
+theorem isWeakCauseComplVar {dl n fv x p}:
+  (causeComplVar fv x p).IsWeakCause
     (uniSetMapDl.getDef "uniSetMap")
-    (.pair (uniSetMapIndex dl n fv (.compl (.var x))) d)
+    (.pair (uniSetMapIndex dl n fv (.compl (.var x))) p)
 :=
   fun _ _ isSat =>
     let ninGetNth :=
@@ -1486,18 +1519,18 @@ theorem isWeakCauseSome {dl n fv p}
     let inBody := isSat.cinsSat ⟨rfl, rfl⟩
     isInMap (isAtSome dBody inBody)
 
-theorem isWeakCauseArbIr {dl n fv body d}:
-  (causeArbIr dl n fv body d).IsWeakCause
+theorem isWeakCauseArbIr {dl n fv body p}:
+  (causeArbIr dl n fv body p).IsWeakCause
     (uniSetMapDl.getDef "uniSetMap")
-    (.pair (uniSetMapIndex dl n fv (.arbIr body)) d)
+    (.pair (uniSetMapIndex dl n fv (.arbIr body)) p)
 :=
   fun _ _ isSat =>
     isInMap (isAtArbIr fun dX => isSat.cinsSat ⟨dX, rfl, rfl⟩)
 
-theorem isWeakCauseArbUn {dl n fv body dX d}:
-  (causeArbUn dl n fv body dX d).IsWeakCause
+theorem isWeakCauseArbUn {dl n fv body dX p}:
+  (causeArbUn dl n fv body dX p).IsWeakCause
     (uniSetMapDl.getDef "uniSetMap")
-    (.pair (uniSetMapIndex dl n fv (.arbUn body)) d)
+    (.pair (uniSetMapIndex dl n fv (.arbUn body)) p)
 :=
   fun _ _ isSat =>
     let inBody := isSat.cinsSat ⟨rfl, rfl⟩
