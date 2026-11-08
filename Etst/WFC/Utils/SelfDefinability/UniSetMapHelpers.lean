@@ -1,20 +1,48 @@
 module
 public import Etst.WFC.Utils.SelfDefinability.UniSetMapDl
 public import Etst.WFC.Utils.Cause
-import Etst.WFC.Utils.RulesOfInference
+public import Etst.WFC.Utils.RulesOfInference
 
 public section
 namespace Etst.uniSetMapDl
 open SingleLaneExpr
 
-
-exposed def InUniSetMapAt (dl n fv b c expr lane p) :=
+exposed def InUniSetMapAtEnc (dl n fv b c exprEnc lane p) :=
   let vars := [
-    BasicExpr.encoding expr,
+    exprEnc,
     Pair.listEncoding fv,
     DefList.prefixEncoding dl n,
   ]
   p ∈ (exprEncListRaw.toLane lane).intp2 vars b c
+
+exposed def InUniSetMapAt (dl n fv b c expr lane p) :=
+  InUniSetMapAtEnc dl n fv b c (BasicExpr.encoding expr) lane p
+
+-- TODO improve perf
+-- set_option maxRecDepth 700 in
+theorem isAtOfInsDefEnc {dl n fv b c lane exprEnc p}
+  (ins:
+    Set.Mem
+      (((uniSetMapDl.dl.getDef (cst "uniSetMap")).toLane lane).intp2
+        []
+        b
+        c)
+      (.pair (uniSetMapIndexEnc dl n fv exprEnc) p))
+:
+  InUniSetMapAtEnc dl n fv b c exprEnc lane p
+:=
+  let ⟨dlEnc, ins⟩ := inArbUnElim ins
+  let ⟨fvEnc, ins⟩ := inArbUnElim ins
+  let ⟨exprEncAlias, ins⟩ := inArbUnElim ins
+  let ⟨insEnc, insAt⟩ := inProdElim ins
+  let ⟨insDl, ins⟩ := inProdElim insEnc
+  let ⟨insFv, insExpr⟩ := inProdElim ins
+  let dlEncEq := inVarElim insDl rfl
+  let fvEncEq := inVarElim insFv rfl
+  let exprEncEq := inVarElim insExpr rfl
+  by
+  unfold InUniSetMapAtEnc
+  exact dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ inToggle2Elim 3 insAt
 
 theorem isAtOfInsDef {dl n fv b c lane expr p}
   (ins:
@@ -27,18 +55,8 @@ theorem isAtOfInsDef {dl n fv b c lane expr p}
 :
   InUniSetMapAt dl n fv b c expr lane p
 :=
-  let ⟨dlEnc, ins⟩ := inArbUnElim ins
-  let ⟨fvEnc, ins⟩ := inArbUnElim ins
-  let ⟨exprEnc, ins⟩ := inArbUnElim ins
-  let ⟨insEnc, insAt⟩ := inProdElim ins
-  let ⟨insDl, ins⟩ := inProdElim insEnc
-  let ⟨insFv, insExpr⟩ := inProdElim ins
-  let dlEncEq := inVarElim insDl rfl
-  let fvEncEq := inVarElim insFv rfl
-  let exprEncEq := inVarElim insExpr rfl
-  by
-  unfold InUniSetMapAt
-  exact dlEncEq ▸ fvEncEq ▸ exprEncEq ▸ inToggle2Elim 3 insAt
+  isAtOfInsDefEnc ins
+
 
 
 /-
@@ -277,7 +295,40 @@ theorem isAtArbUnNope {fv b c lane i enc p}
   let ⟨insExprGuard, _⟩ := inIrElim ins
   isAtIndexNope insExprGuard rfl (inNatElim (n := 11)) indexNeq
 
-private theorem exprEncListElim {fv b c lane p}
+theorem isAtUniSetMapNope {fv b c lane i enc p}
+  (ins:
+    Set.Mem
+      ((exprEncUniSetMapRaw.toLane lane).intp2
+        (.pair (.nat i) enc :: fv)
+        b
+        c)
+      p)
+  (indexNeq: i ≠ 12)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 12)) indexNeq
+
+theorem isAtToEncodingNope {fv b c lane i enc p}
+  (ins:
+    Set.Mem
+      ((exprEncToEncodingRaw.toLane lane).intp2
+        (.pair (.nat i) enc :: fv)
+        b
+        c)
+      p)
+  (indexNeq: i ≠ 13)
+  {P: Prop}
+:
+  P
+:=
+  let ⟨_, ins⟩ := inArbUnElim ins
+  let ⟨insExprGuard, _⟩ := inIrElim ins
+  isAtIndexNope insExprGuard rfl (inNatElim (n := 13)) indexNeq
+
+theorem exprEncListElim {fv b c lane p}
   {P: Prop}
   (ins: p ∈ (exprEncListRaw.toLane lane).intp2 fv b c)
   (onConst: p ∈ (exprEncConstRaw.toLane (toggle2N lane 1)).intp2 fv b c → P)
@@ -291,7 +342,9 @@ private theorem exprEncListElim {fv b c lane p}
   (onFull: p ∈ (exprEncFullRaw.toLane (toggle2N lane 9)).intp2 fv b c → P)
   (onSome: p ∈ (exprEncSomeRaw.toLane (toggle2N lane 10)).intp2 fv b c → P)
   (onArbIr: p ∈ (exprEncArbIrRaw.toLane (toggle2N lane 11)).intp2 fv b c → P)
-  (onArbUn: p ∈ (exprEncArbUnRaw.toLane (toggle2N lane 11)).intp2 fv b c → P)
+  (onArbUn: p ∈ (exprEncArbUnRaw.toLane (toggle2N lane 12)).intp2 fv b c → P)
+  (onUniSetMap: p ∈ (exprEncUniSetMapRaw.toLane (toggle2N lane 13)).intp2 fv b c → P)
+  (onToEncoding: p ∈ (exprEncToEncodingRaw.toLane (toggle2N lane 13)).intp2 fv b c → P)
 :
   P
 :=
@@ -327,7 +380,13 @@ private theorem exprEncListElim {fv b c lane p}
   | Or.inr ins =>
   match inUnElim ins with
   | Or.inl ins => onArbIr ins
-  | Or.inr ins => onArbUn ins
+  | Or.inr ins =>
+  match inUnElim ins with
+  | Or.inl ins => onArbUn ins
+  | Or.inr ins =>
+  match inUnElim ins with
+  | Or.inl ins => onUniSetMap ins
+  | Or.inr ins => onToEncoding ins
 
 
 /-
@@ -420,7 +479,7 @@ private theorem inMapCallElim
     let eqFvAlias := evalFv insFvAlias
     let eqExprAlias := evalExpr insExprAlias
     by
-    unfold uniSetMapIndex
+    unfold uniSetMapIndex uniSetMapIndexEnc
     rw [←eqDlAlias, ←eqFvAlias, exprEncEq, ←eqExprAlias]
     exact inToggle2Elim toggleCount inMap
 
@@ -458,7 +517,7 @@ theorem isAtConstElim {dl n fv b c lane x p}
         dl.prefixList_at_eq n x ▸
         getNthElimD (lane := .defLane) insGetDef
       by
-      unfold uniSetMapIndexDef uniSetMapIndex
+      unfold uniSetMapIndexDef uniSetMapIndex uniSetMapIndexEnc
       exact
         exprAliasEq ▸ eqFvAlias ▸ eqDlAlias ▸ inToggle2Elim 4 inMap
   exprEncListElim
@@ -475,6 +534,8 @@ theorem isAtConstElim {dl n fv b c lane x p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtComplConstElim {dl n fv b c lane x p}
   (ins: InUniSetMapAt dl n fv b c (.compl (.const x)) lane p)
@@ -520,6 +581,8 @@ theorem isAtComplConstElim {dl n fv b c lane x p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtVarElim {dl n fv b c lane x p}
   (ins: InUniSetMapAt dl n fv b c (.var x) lane p)
@@ -548,6 +611,8 @@ theorem isAtVarElim {dl n fv b c lane x p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtComplVarElim {dl n fv b c lane x p}
   (ins: InUniSetMapAt dl n fv b c (.compl (.var x)) lane p)
@@ -579,6 +644,8 @@ theorem isAtComplVarElim {dl n fv b c lane x p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtNullElim {dl n fv b c lane p}
   (ins: InUniSetMapAt dl n fv b c .null lane p)
@@ -603,6 +670,8 @@ theorem isAtNullElim {dl n fv b c lane p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtProdElim {dl n fv b c left rite lane p}
   (ins: InUniSetMapAt dl n fv b c (.prod left rite) lane p)
@@ -642,6 +711,8 @@ theorem isAtProdElim {dl n fv b c left rite lane p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtIrElim {dl n fv b c left rite lane p}
   (ins: InUniSetMapAt dl n fv b c (.ir left rite) lane p)
@@ -681,6 +752,8 @@ theorem isAtIrElim {dl n fv b c left rite lane p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtComplIrElim {dl n fv b c left rite lane p}
   (ins:
@@ -723,7 +796,8 @@ theorem isAtComplIrElim {dl n fv b c left rite lane p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
-    (isAtCallEncNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 /-- The NNF-shaped eliminator corresponding to `isAtUnNnf`. -/
 theorem isAtUnElim {dl n fv b c left rite lane p}
@@ -766,6 +840,8 @@ theorem isAtFullElim {dl n fv b c body lane p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtComplFullElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.compl (.full body)) lane p)
@@ -797,6 +873,8 @@ theorem isAtComplFullElim {dl n fv b c body lane p}
     main
     (isAtArbIrNope · (by decide))
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtArbIrElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.arbIr body) lane p)
@@ -831,6 +909,8 @@ theorem isAtArbIrElim {dl n fv b c body lane p}
     (isAtSomeNope · (by decide))
     main
     (isAtArbUnNope · (by decide))
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 theorem isAtComplArbIrElim {dl n fv b c body lane p}
   (ins: InUniSetMapAt dl n fv b c (.compl (.arbIr body)) lane p)
@@ -845,7 +925,7 @@ theorem isAtComplArbIrElim {dl n fv b c body lane p}
     let bodyEncEq := exprGuardElimUnary (i := .nat 11) insExprGuard
     let ⟨pX, insArg⟩ := inArbUnElim ins
     ⟨pX,
-      inMapCallElim 15 insArg bodyEncEq
+      inMapCallElim 16 insArg bodyEncEq
         (inVarElim · rfl)
         (fun h =>
           let ⟨_vL, _vR, hEq, hL, hR⟩ := inProdElimEx h
@@ -867,11 +947,36 @@ theorem isAtComplArbIrElim {dl n fv b c body lane p}
     (isAtSomeNope · (by decide))
     (isAtArbIrNope · (by decide))
     main
+    (isAtUniSetMapNope · (by decide))
+    (isAtToEncodingNope · (by decide))
 
 
 /-
   ## Section: Expression encoding constructors
 -/
+
+-- TODO improve perf
+-- set_option maxRecDepth 700 in
+theorem isInMapEnc {dl n fv fvI b c exprEnc lane p}
+  (isAt: InUniSetMapAtEnc dl n fv b c exprEnc lane p)
+:
+  Set.Mem
+    (intp2
+      ((uniSetMapDl.getDef "uniSetMap").toLane lane)
+      fvI
+      b
+      c)
+    (.pair (uniSetMapIndexEnc dl n fv exprEnc) p)
+:=
+  inArbUn
+    (dl.prefixEncoding n)
+    (inArbUn
+      (.listEncoding fv)
+      (inArbUn
+        exprEnc
+        (inProd
+          (inProd rfl (inProd rfl rfl))
+          (inToggle2 3 isAt))))
 
 theorem isInMap {dl n fv fvI b c expr lane p}
   (isAt: InUniSetMapAt dl n fv b c expr lane p)
@@ -884,15 +989,7 @@ theorem isInMap {dl n fv fvI b c expr lane p}
       c)
     (.pair (uniSetMapIndex dl n fv expr) p)
 :=
-  inArbUn
-    (dl.prefixEncoding n)
-    (inArbUn
-      (.listEncoding fv)
-      (inArbUn
-        expr.encoding
-        (inProd
-          (inProd rfl (inProd rfl rfl))
-          (inToggle2 3 isAt))))
+  isInMapEnc isAt
 
 theorem isAtConst {dl n fv b c x lane p}
   (ins:
@@ -1248,6 +1345,7 @@ theorem isAtArbUn {dl n fv b c body lane p}
   (inUnR
   (inUnR
   (inUnR
+  (inUnL
   (inArbUn
     body.compl.encoding
     (inIr
@@ -1255,12 +1353,108 @@ theorem isAtArbUn {dl n fv b c body lane p}
       (inArbUn
         dX
         (inCall
-          (inToggle2 15 insBody)
+          (inToggle2 16 insBody)
           (inProd
             rfl
             (inProd
               (inProd rfl rfl)
-              rfl))))))))))))))))
+              rfl)))))))))))))))))
+
+/-
+  ## Section: The extension encodings
+
+  `(12, null)` denotes `uniSetMap` itself, and `(13, b)` denotes the
+  singleton triset containing the encoding of `b` as an expression.
+-/
+
+theorem isAtUniSetMap
+  {dl n fv b c lane p}
+  (ins: ((c (cst "uniSetMap")).getLane lane).Mem p)
+:
+  InUniSetMapAtEnc dl n fv b c (.pair (.nat 12) .null) lane p
+:=
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnL <|
+  inIr
+    (inSome p (inIr (inProd (inNat 12) inNull) (inVar rfl)))
+    (inToggle2 13 ins)
+
+theorem isAtToEncodingNull
+  {dl n fv b c lane}
+:
+  InUniSetMapAtEnc
+    dl n fv b c (.pair (.nat 13) .null) lane
+    (.pair (.nat 4) .null)
+:=
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inUnR <|
+  inArbUn .null <|
+  inIr
+    (inSome _ (inIr (inProd (inNat 13) (inVar rfl)) (inVar rfl)))
+    (inUnL <|
+      inIr
+        (inSome _ (inIr (inVar rfl) inNull))
+        (inProd (inNat 4) inNull))
+
+
+theorem isAtToEncodingPair
+  {dl n fv b c lane pL pR qL qR}
+  (insL:
+    ((c (cst "uniSetMap")).getLane lane).Mem
+      (.pair (uniSetMapIndexEnc dl n fv (.pair (.nat 13) pL)) qL))
+  (insR:
+    ((c (cst "uniSetMap")).getLane lane).Mem
+      (.pair (uniSetMapIndexEnc dl n fv (.pair (.nat 13) pR)) qR))
+:
+  InUniSetMapAtEnc
+    dl n fv b c (.pair (.nat 13) (.pair pL pR)) lane
+    (.pair (.nat 5) (.pair qL qR))
+:=
+  inUnR <| inUnR <| inUnR <| inUnR <| inUnR <| inUnR <|
+  inUnR <| inUnR <| inUnR <| inUnR <| inUnR <| inUnR <|
+  inUnR <|
+  inArbUn (.pair pL pR) <|
+  inIr
+    (inSome _
+      (inIr (inProd (inNat 13) (inVar rfl)) (inVar rfl)))
+    (inUnR <|
+      inArbUn pL <|
+      inArbUn pR <|
+      inIr
+        (inSome _
+          (inIr (inVar rfl) (inProd (inVar rfl) (inVar rfl))))
+        (inProd
+          (inNat 5)
+          (inProd
+            (inCall
+              (inToggle2 19 insL)
+              (inProd rfl (inProd rfl (inProd (inNat 13) (inVar rfl)))))
+            (inCall
+              (inToggle2 19 insR)
+              (inProd rfl (inProd rfl (inProd (inNat 13) (inVar rfl))))))))
+
 
 
 /-

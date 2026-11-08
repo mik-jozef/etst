@@ -1,3 +1,15 @@
+/-
+  A note for the future: If I were to redo ch6, I would probably
+  want to refactor it:
+  - split into multiple, smaller modules,
+  - decompose some of the large proofs, think about organisation
+    of the whole thing in general,
+  - improve the naming, namespaces etc.
+  - make uniSetMapIndexEnc irreducible?
+  
+  (Most of?) the content of the Ch6 utility files is meant to be
+  private (unless exposed in Ch6 itself).
+-/
 module
 public import Etst.WFC.Ch4_S1_MembershipPs
 public import Etst.WFC.Utils.NamedDefList.NamedPairExpr
@@ -33,15 +45,40 @@ open SingleLaneExpr
     | arbUn body      => (11, body)
   ```
   
-  Any pair that does not conform to one of the above encodings is
-  considered as defining (an expression denoting) the empty triset.
+  A (finite prefix of a) definition list (the initial `n` definitions)
+  is encoded as a list of expression encodings.
   
-  A definition list (with all but finitely many definitions at the
-  start being empty) is encoded as a list of expression encodings.
+  An index is a pair `(dlEnc, (fv, exprEnc))`, where `dlEnc` encodes
+  a definition list, `fv` is a list of free variables, and `exprEnc`
+  is an encoding of an expression. It represents the interpretation of
+  that expression using the definition list and `fv`.
   
-  Note: we need to use negation normal form because the definitions
-  below have different semantics, while `uniSetMap` below would
-  otherwise effectively convert one to the other:
+  `uniSetMap` interprets indices -- `uniSetMap i` evaluates to the
+  triset the index represents.
+  
+  For convenience, `uniSetMap` supports two extra encoding cases that
+  do not directly correspond to any expression encoding.
+  
+  ```
+    | uniSetMap => (12, null)
+    | toEncoding b => (13, b)
+  ```
+  
+  - `(12, null)` represents the triset `uniSetMap` (without the index
+    having to define it explicitly in its definition list), and
+  - `(13, b)` represents the singleton triset containing the encoding
+    of `b`. Eg. `(13, null)` represents `{ (4, null) }`.
+  
+  Although these are a conservative extension, we include them because
+  they considerably reduce the size of the indices for some use cases
+  (see eg. Chapters 7 and 8).
+  
+  Any pair that is not a valid index defines the empty triset.
+  
+  
+  Note: We need to use negation normal form because the definitions
+  below have different semantics, while `uniSetMap` would otherwise
+  effectively convert one to the other:
   
   ```
     -- The empty set
@@ -52,6 +89,23 @@ open SingleLaneExpr
     let B := ~A
   ```
 -/
+
+namespace Pair
+  exposed def constEnc (n: Nat): Pair := .pair (.nat 0) (.nat n)
+  exposed def complConstEnc (n: Nat): Pair := .pair (.nat 1) (.nat n)
+  exposed def varEnc (n: Nat): Pair := .pair (.nat 2) (.nat n)
+  exposed def complVarEnc (n: Nat): Pair := .pair (.nat 3) (.nat n)
+  exposed def nullEnc: Pair := .pair (.nat 4) (.nat 0)
+  exposed def prodEnc (a b: Pair): Pair := .pair (.nat 5) (.pair a b)
+  exposed def irEnc (a b: Pair): Pair := .pair (.nat 6) (.pair a b)
+  exposed def unEnc (a b: Pair): Pair := .pair (.nat 7) (.pair a b)
+  exposed def fullEnc (a: Pair): Pair := .pair (.nat 8) a
+  exposed def someEnc (a: Pair): Pair := .pair (.nat 9) a
+  exposed def arbIrEnc (a: Pair): Pair := .pair (.nat 10) a
+  exposed def arbUnEnc (a: Pair): Pair := .pair (.nat 11) a
+  exposed def uniSetMapEnc: Pair := .pair (.nat 12) .null
+  exposed def toEncodingEnc (b: Pair): Pair := .pair (.nat 13) b
+end Pair
 
 namespace uniSetMapDl
   exposed def exprEncConst :=
@@ -156,6 +210,34 @@ namespace uniSetMapDl
       & (Ex p, uniSetMap (dl × (p × fv) × body))
     )
   
+  exposed def exprEncUniSetMap :=
+    p3(
+      dl, fv, expr;
+      & (?some 12 × null & expr)
+      & uniSetMap
+    )
+  
+  /-
+    `(13, b)` encodes the singleton triset `{ b.toExpr.encoding }`, ie.
+    the encoding of the expression that evaluates to `b`. As `b` may be
+    the value of a runtime variable, its encoding has to be computed
+    recursively, using the `(13, _)` case itself on the sub-pairs.
+  -/
+  exposed def exprEncToEncoding :=
+    p3(
+      dl, fv, expr;
+      Ex b,
+      & (?some 13 × b & expr)
+      & (
+          (b & null then 4 × null)
+          |
+          (Ex l r,
+          (b & l × r then
+            5 × (uniSetMap (dl × fv × (13 × l))
+                × uniSetMap (dl × fv × (13 × r)))))
+        )
+    )
+  
   exposed def exprEncList :=
     p3(
       dl, fv, expr;
@@ -171,6 +253,8 @@ namespace uniSetMapDl
       | <[exprEncSome]>
       | <[exprEncArbIr]>
       | <[exprEncArbUn]>
+      | <[exprEncUniSetMap]>
+      | <[exprEncToEncoding]>
     )
   
 end uniSetMapDl
@@ -235,6 +319,12 @@ namespace uniSetMapDl
   
   exposed def exprEncArbUnRaw: BasicExpr :=
     exprEncArbUn.compile uniSetMapDl.consts
+  
+  exposed def exprEncUniSetMapRaw: BasicExpr :=
+    exprEncUniSetMap.compile uniSetMapDl.consts
+  
+  exposed def exprEncToEncodingRaw: BasicExpr :=
+    exprEncToEncoding.compile uniSetMapDl.consts
   
   exposed def exprEncListRaw: BasicExpr :=
     exprEncList.compile uniSetMapDl.consts
@@ -363,6 +453,18 @@ exposed noncomputable def uniSetMap: Set3 Pair :=
 exposed noncomputable def uniSetMapGetNth: Set3 Pair :=
   uniSetMapDl.val "getNth"
 
+exposed def uniSetMapIndexEnc
+  (dl: DefList)
+  (n: Nat)
+  (fv: List Pair)
+  (exprEnc: Pair)
+:
+  Pair
+:=
+  Pair.pair
+    (dl.prefixEncoding n)
+    (.pair (.listEncoding fv) exprEnc)
+
 exposed def uniSetMapIndex
   (dl: DefList)
   (n: Nat)
@@ -371,9 +473,7 @@ exposed def uniSetMapIndex
 :
   Pair
 :=
-  Pair.pair
-    (dl.prefixEncoding n)
-    (.pair (.listEncoding fv) expr.encoding)
+  uniSetMapIndexEnc dl n fv expr.encoding
 
 exposed def uniSetMapIndexDef
   (dl: DefList)
@@ -403,7 +503,8 @@ def uniSetMapIndex.emptyIndex: Pair :=
 
 
 theorem uniSetMapIndex_nnf_eq {dl n fv expr}:
-  uniSetMapIndex dl n fv expr = uniSetMapIndex dl n fv expr.toNnf
+  uniSetMapIndex dl n fv expr =
+    uniSetMapIndex dl n fv expr.toNnf
 := by
   unfold uniSetMapIndex BasicExpr.encoding
   rw [expr.toNnf_idem]

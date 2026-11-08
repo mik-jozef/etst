@@ -1,3 +1,5 @@
+-- TODO rewrite this file with the extra encoding cases to reduce
+-- the huge size of opFixDl
 module
 -- The `meta` import is required because
 -- `pairDefList opFixHelpersDl extends uniSetMapDl` below evaluates
