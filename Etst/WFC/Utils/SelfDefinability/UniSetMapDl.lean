@@ -217,22 +217,22 @@ namespace uniSetMapDl
   
   exposed def exprEncProdRaw: BasicExpr :=
     exprEncProd.compile uniSetMapDl.consts
-
+  
   exposed def exprEncIrRaw: BasicExpr :=
     exprEncIr.compile uniSetMapDl.consts
-
+  
   exposed def exprEncUnRaw: BasicExpr :=
     exprEncUn.compile uniSetMapDl.consts
-
+  
   exposed def exprEncFullRaw: BasicExpr :=
     exprEncFull.compile uniSetMapDl.consts
-
+  
   exposed def exprEncSomeRaw: BasicExpr :=
     exprEncSome.compile uniSetMapDl.consts
-
+  
   exposed def exprEncArbIrRaw: BasicExpr :=
     exprEncArbIr.compile uniSetMapDl.consts
-
+  
   exposed def exprEncArbUnRaw: BasicExpr :=
     exprEncArbUn.compile uniSetMapDl.consts
   

@@ -61,6 +61,16 @@ theorem uniSetMapDl.ex_uniSetMapAt_eq
   let ⟨n, eqAtN⟩ := dl.ex_prefix_wfm_eq_expr fv expr
   ⟨n, (uniSetMapAt_eq dl.toDefList n fv expr).trans eqAtN⟩
 
+theorem FiniteDefList.uniSetMapAt_eq
+  (dl: FiniteDefList)
+  (fv: List Pair)
+  (expr: BasicExpr)
+:
+  uniSetMapAt dl.toDefList dl.size fv expr = expr.triIntp fv dl.wfm
+:=
+  (uniSetMapDl.uniSetMapAt_eq dl.toDefList dl.size fv expr).trans
+    (congrArg (expr.triIntp fv) dl.prefix_size_wfm_eq)
+
 
 theorem uniSetMap.isUniversal {s}
   (isDef: DefList.IsDefinable s)
@@ -80,14 +90,3 @@ theorem uniSetMap.isDefinable: DefList.IsDefinable uniSetMap := ⟨
 
 theorem uniSetMap.containsItself: uniSetMap ∈ uniSetMap :=
   uniSetMap.isUniversal uniSetMap.isDefinable
-
-
-theorem FiniteDefList.uniSetMapAt_eq
-  (dl: FiniteDefList)
-  (fv: List Pair)
-  (expr: BasicExpr)
-:
-  uniSetMapAt dl.toDefList dl.size fv expr = expr.triIntp fv dl.wfm
-:=
-  (uniSetMapDl.uniSetMapAt_eq dl.toDefList dl.size fv expr).trans
-    (congrArg (expr.triIntp fv) dl.prefix_size_wfm_eq)
