@@ -18,22 +18,22 @@ is spelled.
 Named version (the namespace of an abbreviation):
 ```
 @[specialized_namespace] abbrev BasicExpr (sig: Signature) := Expr sig Unit
-def BasicExpr.intp2 ... := ...
+def BasicExpr.intp ... := ...
 ```
 
 Bare version (an anonymous namespace `C.«(T)»`, where `C` is the head of `T`):
 ```
 namespace {sig} (Expr sig Unit)
-  def intp2 ... := ...
+  def intp ... := ...
 end (Expr sig Unit)
 
 namespace {sig} (Expr sig Unit) in
-def intp2 ... := ...
+def intp ... := ...
 
 open {sig} (Expr sig Unit)
 ```
 
-Both make `x.intp2` work for any `x: Expr sig Unit`, and `(Expr sig Unit).intp2`
+Both make `x.intp` work for any `x: Expr sig Unit`, and `(Expr sig Unit).intp`
 refers to the declaration without calling it.
 
 `P.(h args)` qualifies the head `h` by the namespace `P` when `P` is an
@@ -637,7 +637,7 @@ syntax nsTarget := lookahead((ident noWs ".(") <|> "(") term:max
   
   ```
   namespace {sig} (Expr sig Unit)
-    def intp2 ... := ...
+    def intp ... := ...
   end (Expr sig Unit)
   ```
   

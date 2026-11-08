@@ -38,7 +38,7 @@ namespace DefListEq
     ∀ x ∈ names, ∀ y, (dl.getDef x).UsesConst y → y ∈ names
   
   
-  theorem intpDefs2_eqOn {map dlSrc dlDst names bSrc bDst cSrc cDst}
+  theorem intpDefs_eqOn {map dlSrc dlDst names bSrc bDst cSrc cDst}
     (defsEq: EqDefsOn dlSrc dlDst map names)
     (closed: ClosedUnderUses dlSrc names)
     (eqB: InvariantOn map names bSrc bDst)
@@ -46,10 +46,10 @@ namespace DefListEq
     {x: Nat}
     (xIn: x ∈ names)
   :
-    dlSrc.intpDefs2 bSrc cSrc x = dlDst.intpDefs2 bDst cDst (map x)
+    dlSrc.intpDefs bSrc cSrc x = dlDst.intpDefs bDst cDst (map x)
   :=
     let eq :=
-      BasicExpr.mapConst_triIntp2
+      BasicExpr.mapConst_triIntp
         map
         (fun y yUsed => eqB y (closed x xIn y yUsed))
         (fun y yUsed => eqC y (closed x xIn y yUsed))
@@ -98,7 +98,7 @@ namespace DefListEq
         exact (IsLUB.unique isLubSrc (atEq ▸ isLubDst)))
       (fun _ _ predLt ih x xIn =>
         let eqC y yIn := ih ⟨_, predLt⟩ y yIn
-        intpDefs2_eqOn defsEq closed eqB eqC xIn)
+        intpDefs_eqOn defsEq closed eqB eqC xIn)
   
 end DefListEq
 
@@ -301,7 +301,7 @@ theorem FinBoundedDl.ex_prefix_wfm_eq_expr
     dl.prefix_wfm_eq_of_lt xLtN depsLtN
   ⟨n, by
     conv => rhs; rw [←Expr.mapConst_eq_id expr]
-    exact (BasicExpr.mapConst_triIntp2 (map := id) eqAtN eqAtN).symm
+    exact (BasicExpr.mapConst_triIntp (map := id) eqAtN eqAtN).symm
   ⟩
 
 

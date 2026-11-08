@@ -198,17 +198,40 @@ public inductive Pair where
 | pair (a b: Pair)
 
 
-public abbrev SingleLaneExpr := Expr Set3.Lane
-
-exposed def SingleLaneExpr.intpVar
+exposed def Expr.intpVar
   (fv: List Pair)
   (x: Nat)
 :
   Set Pair
 :=
   match fv[x]? with
-  | none => {}
-  | some p => {p}
+  | .none => {}
+  | .some p => {p}
+
+exposed def ExprKind.Lane: ExprKind → Type
+| .basic => Set3.Lane
+| .lane => Unit
+
+exposed def ExprKind.Lane.toggle
+  {kind: ExprKind}
+  (lane: kind.Lane)
+:
+  kind.Lane
+:=
+  match kind with
+  | .basic => Set3.Lane.toggle lane
+  | .lane => lane
+
+exposed def ExprKind.ConstTag.getLane
+  {kind: ExprKind}
+  (tag: kind.ConstTag)
+  (lane: kind.Lane)
+:
+  Set3.Lane
+:=
+  match kind with
+  | .basic => lane
+  | .lane => tag
 
 /-
   The interpretation of an expression is defined using two valuations
@@ -231,112 +254,65 @@ exposed def SingleLaneExpr.intpVar
   
   [ref][https://leanprover.zulipchat.com/#narrow/channel/270676-lean4/topic/RFC.3A.20pattern.20matching.20on.20.28syntactically.20equal.29.20functions]
 -/
-exposed def SingleLaneExpr.intp2
-  (expr: SingleLaneExpr)
-  (fv: List Pair)
+exposed def Expr.intp {kind}
+  (expr: Expr kind)
+  (lane: kind.Lane)
   (b c: Valuation Pair)
+  (fv: List Pair)
 :
   Set Pair
 :=
   match expr with
-  | .const lane x => (c x).getLane lane
+  | .const tag x => (c x).getLane (tag.getLane lane)
   | .var x => intpVar fv x
   | .null => {.null}
   | .prod left rite =>
     .ofPred fun p =>
       ∃ pL pR,
         p = .pair pL pR ∧
-        pL ∈ intp2 left fv b c ∧
-        pR ∈ intp2 rite fv b c
+        pL ∈ left.intp lane b c fv ∧
+        pR ∈ rite.intp lane b c fv
   | .ir left rite =>
     .ofPred fun p =>
       And
-        (p ∈ intp2 left fv b c)
-        (p ∈ intp2 rite fv b c)
+        (p ∈ left.intp lane b c fv)
+        (p ∈ rite.intp lane b c fv)
   | .full body =>
     -- Contains all elements iff the body contains all elements.
-    .ofPred fun _ => ∀ pB, pB ∈ intp2 body fv b c
+    .ofPred fun _ => ∀ pB, pB ∈ body.intp lane b c fv
   | .compl body =>
     -- Note the swap of b and c.
-    (intp2 body fv c b).compl
+    (body.intp lane.toggle c b fv).compl
   | .arbIr body =>
-    .ofPred fun p => ∀ pX, p ∈ intp2 body (pX :: fv) b c
+    .ofPred fun p => ∀ pX, p ∈ body.intp lane b c (pX :: fv)
 
-public abbrev SingleLaneExpr.intp
-  (expr: SingleLaneExpr)
-  (fv: List Pair)
-  (v: Valuation Pair)
-:=
-  expr.intp2 fv v v
-
-
--- Note the lane gets toggled inside complements.
-exposed def BasicExpr.toLane
-  (expr: BasicExpr)
-  (lane: Set3.Lane)
-:
-  SingleLaneExpr
-:=
-  match expr with
-  | .const a => .const lane a
-  | .var a => .var a
-  | .null => .null
-  | .prod left rite => .prod (left.toLane lane) (rite.toLane lane)
-  | .ir left rite => .ir (left.toLane lane) (rite.toLane lane)
-  | .full body => .full (body.toLane lane)
-  | .compl body => .compl (body.toLane lane.toggle)
-  | .arbIr body => .arbIr (body.toLane lane)
-
-exposed def BasicExpr.toDefLane (expr: BasicExpr): SingleLaneExpr :=
-  expr.toLane .defLane
-
-exposed def BasicExpr.toPosLane (expr: BasicExpr): SingleLaneExpr :=
-  expr.toLane .posLane
-
-exposed def BasicExpr.triIntp2Def
-  (expr: BasicExpr)
-  (fv: List Pair)
-  (b c: Valuation Pair)
-:
-  Set Pair
-:=
-  (expr.toLane .defLane).intp2 fv b c
-
-exposed def BasicExpr.triIntp2Pos
-  (expr: BasicExpr)
-  (fv: List Pair)
-  (b c: Valuation Pair)
-:
-  Set Pair
-:=
-  (expr.toLane .posLane).intp2 fv b c
 
 -- A proof that definite membership implies possible membership.
-public theorem BasicExpr.triIntp2_defLePos
-  {fv b c p}
-  (expr: BasicExpr)
-  (isDef: p ∈ expr.triIntp2Def fv b c)
+public theorem Expr.triIntp_defLePos
+  (expr: Expr .basic)
+  {b c fv p}
+  (isDef: p ∈ expr.intp .defLane b c fv)
 :
-  p ∈ expr.triIntp2Pos fv b c
+  p ∈ expr.intp .posLane b c fv
 :=
   match expr, isDef with
-  | .const x, isDef => (c x).defLePos isDef
+  | .const _ x, isDef => (c x).defLePos isDef
   | .var _, isDef => isDef
   | .null, isDef => isDef
   | .prod left rite, ⟨pl, pr, eq, isDefL, isDefR⟩ =>
-    let ihL := triIntp2_defLePos left isDefL
-    let ihR := triIntp2_defLePos rite isDefR
+    let ihL := triIntp_defLePos left isDefL
+    let ihR := triIntp_defLePos rite isDefR
     ⟨pl, pr, eq, ihL, ihR⟩
   | .ir left rite, ⟨isDefL, isDefR⟩ => ⟨
-      triIntp2_defLePos left isDefL,
-      triIntp2_defLePos rite isDefR
+      triIntp_defLePos left isDefL,
+      triIntp_defLePos rite isDefR
     ⟩
   | .full body, isDef => fun pB =>
-    triIntp2_defLePos body (isDef pB)
+    triIntp_defLePos body (isDef pB)
   | .compl body, isDef => fun isPos =>
-      isDef (triIntp2_defLePos body isPos)
+      isDef (triIntp_defLePos body isPos)
   | .arbIr body, isDef => fun pX =>
-    triIntp2_defLePos body (isDef pX)
+    triIntp_defLePos body (isDef pX)
 
 /-
   A three-valued interpretation is an intuitive extension of single-lane
@@ -349,36 +325,22 @@ public theorem BasicExpr.triIntp2_defLePos
   a *possible* member of `expr`, and vice versa. This is handled
   in `toLane` by toggling the lane of constants inside complements.
 -/
-exposed def BasicExpr.triIntp2
-  (expr: BasicExpr)
-  (fv: List Pair)
+exposed def Expr.triIntp
+  (expr: Expr .basic)
   (b c: Valuation Pair)
+  (fv: List Pair)
 :
   Set3 Pair
 := {
-  defMem := expr.triIntp2Def fv b c
-  posMem := expr.triIntp2Pos fv b c
-  defLePos _ := triIntp2_defLePos expr
+  defMem := expr.intp .defLane b c fv
+  posMem := expr.intp .posLane b c fv
+  defLePos _ := triIntp_defLePos expr
 }
-
-public abbrev BasicExpr.triIntp
-  (expr: BasicExpr)
-  (fv: List Pair)
-  (v: Valuation Pair)
-:=
-  expr.triIntp2 fv v v
-
 -- Interpretation on definition lists is defined pointwise.
-public abbrev DefList.intpDefs2
+public abbrev DefList.intpDefs
   (dl: DefList)
   (b c: Valuation Pair)
 :
   Valuation Pair
 :=
-  fun x => (dl.getDef x).triIntp2 [] b c
-
-public abbrev DefList.intpDefs
-  (dl: DefList)
-  (v: Valuation Pair)
-:=
-  dl.intpDefs2 v v
+  fun x => (dl.getDef x).triIntp b c []

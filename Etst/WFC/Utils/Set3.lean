@@ -873,4 +873,19 @@ namespace Set3
     | .defLane => defToPos inLane
     | .posLane => inLane
   
+  theorem Lane.toggle_toggle_eq:
+    (lane: Set3.Lane) → lane.toggle.toggle = lane
+  | .posLane => rfl
+  | .defLane => rfl
+  
+  theorem Lane.toggle_eq_iff {lane other: Set3.Lane}:
+    lane.toggle = other ↔ lane ≠ other
+  := by
+    cases lane <;> cases other <;> decide
+  
+  theorem Lane.toggle_ne_iff {lane other: Set3.Lane}:
+    lane.toggle ≠ other ↔ lane = other
+  := by
+    cases lane <;> cases other <;> decide
+
 end Set3

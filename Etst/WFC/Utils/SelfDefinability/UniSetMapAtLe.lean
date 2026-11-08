@@ -175,7 +175,7 @@ theorem allInternalInapp {dl n fv expr p}
       let inGetNth: _ ∈ (usmWfm (cst "getNth")).getLane _ :=
         xEq ▸ pEq ▸ insGetNth.isSound
       let inVar:
-        p ∈ (var x).intp2 fv (dl.prefix n).wfm (dl.prefix n).wfm
+        p ∈ (var x).intp fv (dl.prefix n).wfm (dl.prefix n).wfm
       :=
         inVar (getNthElim (lane := .defLane) inGetNth)
       False.elim (inBout inVar)

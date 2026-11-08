@@ -106,10 +106,11 @@ theorem bisimDl.NonBisimDef_of_Ins {cst index p q w}
   | .intro _ _ cause isCause cinsSat boutSat =>
     let ins:
       Set.Mem
-        ((bisimDl.getDef bisimDl.consts.NonBisim).triIntp2Def
-          []
+        ((bisimDl.getDef bisimDl.consts.NonBisim).intp
+          .defLane
           cause.leastBackgroundApx
           cause.leastContextApx)
+          []
         (.pair p (.pair q w))
     :=
       indexEq ▸ cstEq ▸ isCause cause.leastValsApxAreSat
@@ -246,10 +247,11 @@ theorem bisimDl.NonBisimPos.cycleIsEmpty
   let ⟨xEq, P, Q, W, elemEq, notNbi⟩ := inCycle
   let ins:
     Set.Mem
-      ((bisimDl.getDef bisimDl.consts.NonBisim).triIntp2Pos
-        []
+      ((bisimDl.getDef bisimDl.consts.NonBisim).intp
+        .posLane
         cause.maximalBackgroundApx
         cause.maximalContextApx)
+        []
       (.pair P (.pair Q W))
   :=
     elemEq ▸ xEq ▸ isCause cause.maximalValsApxAreSat

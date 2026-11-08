@@ -124,22 +124,22 @@ namespace DefList.ExpandsInto
   | .const x expr =>
     let ih := expr.triIntp_eq_wfm (fv := fv)
     let eqDef := dl.wfm_eq_def x
-    let eqFv := dl.intpDefs2_eq_fv x [] fv dl.wfm dl.wfm
+    let eqFv := dl.intpDefs_eq_fv x [] fv dl.wfm dl.wfm
     eqDef.trans (eqFv.trans ih)
   | .prod left rite =>
-    eq_triIntp2_prod_of_eq
+    eq_triIntp_prod_of_eq
       (left.triIntp_eq_wfm dl fv)
       (rite.triIntp_eq_wfm dl fv)
   | .full expr =>
-    eq_triIntp2_full_of_eq (expr.triIntp_eq_wfm dl fv)
+    eq_triIntp_full_of_eq (expr.triIntp_eq_wfm dl fv)
   | .ir left rite =>
-    eq_triIntp2_ir_of_eq
+    eq_triIntp_ir_of_eq
       (left.triIntp_eq_wfm dl fv)
       (rite.triIntp_eq_wfm dl fv)
   | .compl expr =>
-    eq_triIntp2_compl_of_eq (expr.triIntp_eq_wfm dl fv)
+    eq_triIntp_compl_of_eq (expr.triIntp_eq_wfm dl fv)
   | .arbIr expr =>
-    eq_triIntp2_arbIr_of_eq
+    eq_triIntp_arbIr_of_eq
       (fun pB => expr.triIntp_eq_wfm dl (pB :: fv))
   
   open BasicExpr in
@@ -151,8 +151,8 @@ namespace DefList.ExpandsInto
   :
     let _ := Valuation.ordStdLattice
     let op := operatorC dl dl.wfm
-    let triIntpE e fv := e.triIntp2 fv dl.wfm (op.lfpStage n)
-    let triIntpO e fv := e.triIntp2 fv (op.lfpStage n) dl.wfm
+    let triIntpE e fv := e.triIntp fv dl.wfm (op.lfpStage n)
+    let triIntpO e fv := e.triIntp fv (op.lfpStage n) dl.wfm
     
     if ed
     then triIntpE l fv ≤ triIntpE r fv
@@ -175,7 +175,7 @@ namespace DefList.ExpandsInto
         let eqNext: triIntpE defX [] = op.lfpStage n.succ x :=
           congr (op.lfpStage_apply_eq_succ n) _root_.rfl
         let eqClear: triIntpE defX [] = triIntpE (dl.getDef x) fv :=
-          dl.intpDefs2_eq_fv _ _ _ _ _
+          dl.intpDefs_eq_fv _ _ _ _ _
         
         eqClear ▸ eqNext ▸ op.lfpStage_mono (Order.le_succ n) x
       leNextStage.trans ih
@@ -184,35 +184,35 @@ namespace DefList.ExpandsInto
       | true =>
         let leLeft := left.lfpStage_le_std fv n
         let leRite := rite.lfpStage_le_std fv n
-        triIntp2_mono_std_prod leLeft leRite
+        triIntp_mono_std_prod leLeft leRite
       | false =>
         let leLeft := left.lfpStage_le_std fv n
         let leRite := rite.lfpStage_le_std fv n
-        triIntp2_mono_std_prod leLeft leRite
+        triIntp_mono_std_prod leLeft leRite
     | ir left rite =>
       match ed with
       | true =>
         let leLeft := left.lfpStage_le_std fv n
         let leRite := rite.lfpStage_le_std fv n
-        triIntp2_mono_std_ir leLeft leRite
+        triIntp_mono_std_ir leLeft leRite
       | false =>
         let leLeft := left.lfpStage_le_std fv n
         let leRite := rite.lfpStage_le_std fv n
-        triIntp2_mono_std_ir leLeft leRite
+        triIntp_mono_std_ir leLeft leRite
     | full exp =>
       match ed with
-      | true => triIntp2_mono_std_full (exp.lfpStage_le_std fv n)
-      | false => triIntp2_mono_std_full (exp.lfpStage_le_std fv n)
+      | true => triIntp_mono_std_full (exp.lfpStage_le_std fv n)
+      | false => triIntp_mono_std_full (exp.lfpStage_le_std fv n)
     | compl exp =>
       match ed with
-      | true => triIntp2_mono_std_compl (exp.lfpStage_le_std fv n)
-      | false => triIntp2_mono_std_compl (exp.lfpStage_le_std fv n)
+      | true => triIntp_mono_std_compl (exp.lfpStage_le_std fv n)
+      | false => triIntp_mono_std_compl (exp.lfpStage_le_std fv n)
     | arbIr exp =>
       match ed with
       | true =>
-        triIntp2_mono_std_arbIr (fun pB =>
+        triIntp_mono_std_arbIr (fun pB =>
           exp.lfpStage_le_std (pB :: fv) n)
       | false =>
-        triIntp2_mono_std_arbIr (fun pB =>
+        triIntp_mono_std_arbIr (fun pB =>
           exp.lfpStage_le_std (pB :: fv) n)
 end DefList.ExpandsInto

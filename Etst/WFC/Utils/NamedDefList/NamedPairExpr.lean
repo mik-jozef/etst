@@ -50,7 +50,7 @@ exposed def NamedPairExprRaw.IsWF {E vars}
   | compl body => body.IsWF consts
   | arbIr _ body => body.IsWF consts
 
-public abbrev NamedPairExpr E vars consts :=
+public abbrev NamedPairExpr kind vars consts :=
   { expr: NamedPairExprRaw E vars // expr.IsWF consts }
 public abbrev BasicNamedPairExpr := NamedPairExpr Unit
 
@@ -89,7 +89,7 @@ namespace NamedPairExpr
   variable {E vars csts}
   
   exposed def consts {E vars consts}
-    (_: NamedPairExpr E vars consts)
+    (_: NamedPairExpr kind vars consts)
   :=
     consts
   
@@ -98,63 +98,63 @@ namespace NamedPairExpr
     (x: String)
     (isIn: x ∈ vars ∨ x ∈ csts := by decide)
   :
-    NamedPairExpr E vars csts
+    NamedPairExpr kind vars csts
   :=
     ⟨.ident e x, isIn⟩
   
-  exposed def null: NamedPairExpr E vars csts :=
+  exposed def null: NamedPairExpr kind vars csts :=
     ⟨.null, trivial⟩
   
   exposed def prod
-    (l r: NamedPairExpr E vars csts)
+    (l r: NamedPairExpr kind vars csts)
   :
-    NamedPairExpr E vars csts
+    NamedPairExpr kind vars csts
   :=
     ⟨.prod l r, l.property, r.property⟩
   
   exposed def ir
-    (l r: NamedPairExpr E vars csts)
+    (l r: NamedPairExpr kind vars csts)
   :
-    NamedPairExpr E vars csts
+    NamedPairExpr kind vars csts
   :=
     ⟨.ir l r, l.property, r.property⟩
   
   exposed def full
-    (body: NamedPairExpr E vars csts)
+    (body: NamedPairExpr kind vars csts)
   :
-    NamedPairExpr E vars csts
+    NamedPairExpr kind vars csts
   :=
     ⟨.full body, body.property⟩
   
   exposed def compl
-    (body: NamedPairExpr E vars csts)
+    (body: NamedPairExpr kind vars csts)
   :
-    NamedPairExpr E vars csts
+    NamedPairExpr kind vars csts
   :=
     ⟨.compl body, body.property⟩
   
   exposed def arbIr
     (x: String)
-    (body: NamedPairExpr E (x :: vars) csts)
+    (body: NamedPairExpr kind (x :: vars) csts)
   :
-    NamedPairExpr E vars csts
+    NamedPairExpr kind vars csts
   :=
     ⟨.arbIr x body, body.property⟩
   
   
   exposed def un
-    (l r: NamedPairExpr E vars csts)
+    (l r: NamedPairExpr kind vars csts)
   :
-    NamedPairExpr E vars csts
+    NamedPairExpr kind vars csts
   := ⟨
     .un l r,
     .intro l.property r.property,
   ⟩
   
   exposed def some
-    (body: NamedPairExpr E vars csts)
+    (body: NamedPairExpr kind vars csts)
   :
-    NamedPairExpr E vars csts
+    NamedPairExpr kind vars csts
   := ⟨
     .some body,
     body.property
@@ -162,15 +162,15 @@ namespace NamedPairExpr
   
   exposed def arbUn
     (x: String)
-    (body: NamedPairExpr E (x :: vars) csts)
+    (body: NamedPairExpr kind (x :: vars) csts)
   :
-    NamedPairExpr E vars csts
+    NamedPairExpr kind vars csts
   := ⟨
     .arbUn x body,
     body.property
   ⟩
   
-  exposed def nat (n: Nat): NamedPairExpr E vars csts := ⟨
+  exposed def nat (n: Nat): NamedPairExpr kind vars csts := ⟨
     .nat n,
     let rec go:
       (m: Nat) → (@NamedPairExprRaw.nat E vars m).IsWF csts
@@ -186,7 +186,7 @@ namespace NamedPairExprRaw
     (expr: NamedPairExprRaw E vars)
     (isWf: expr.IsWF consts := by decide)
   :
-    NamedPairExpr E vars consts
+    NamedPairExpr kind vars consts
   :=
     ⟨expr, isWf⟩
   
@@ -202,14 +202,14 @@ namespace NamedPairExprRaw
     (expr: NamedPairExprRaw E vars)
     (consts: List String)
   :
-    Expr E
+    Expr kind
   :=
     match expr with
     | ident e x =>
       if x ∈ vars then
         .var (vars.idxOf x)
       else
-        .const e (consts.idxOf x)
+        .const tag (consts.idxOf x)
     | null => .null
     | prod left rite =>
       .prod (left.compile consts) (rite.compile consts)
@@ -345,35 +345,35 @@ public theorem Pair.toExpr_eq_named
       (r.toExpr_eq_named vars consts)
 
 namespace SingleLaneExpr
-  public theorem inToNamedExpr {lane fv b c consts vars}
+  public theorem inToNamedExpr {lane b c fv consts vars}
     (p: Pair)
   :
     let expr :=
       (@Pair.toNamedExpr vars consts p).val.compile consts
-    p ∈ (BasicExpr.toLane expr lane).intp2 fv b c
+    p ∈ (BasicExpr.toLane expr lane).intp b c fv
   :=
     p.toExpr_eq_named vars consts ▸
     inToExpr p
   
-  public theorem inToNamedExprElim {lane fv b c consts vars}
+  public theorem inToNamedExprElim {lane b c fv consts vars}
     {p pIn: Pair}
     (inExpr:
       let expr := (@Pair.toNamedExpr vars consts p).val.compile consts
-      pIn ∈ (BasicExpr.toLane expr lane).intp2 fv b c)
+      pIn ∈ (BasicExpr.toLane expr lane).intp b c fv)
   :
     p = pIn
   := by
     rw [←p.toExpr_eq_named vars consts] at inExpr
     exact inToExprElim inExpr
   
-  public theorem intp2_toNamedExpr_eq_singleton {lane fv b c consts vars}
+  public theorem intp_toNamedExpr_eq_singleton {lane b c fv consts vars}
     (p: Pair)
   :
     let expr := (@Pair.toNamedExpr vars consts p).val.compile consts
-    intp2 (BasicExpr.toLane expr lane) fv b c = {p}
+    intp (BasicExpr.toLane expr lane) b c fv = {p}
   :=
     p.toExpr_eq_named vars consts ▸
-    intp2_toExpr_eq_singleton p
+    intp_toExpr_eq_singleton p
   
 end SingleLaneExpr
 

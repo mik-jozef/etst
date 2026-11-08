@@ -24,7 +24,7 @@ theorem every_cause_inapplicable_preserves_definitive_nonmember
   (outSetIsEmpty:
     ∀ {x p}, outSet x p → ¬ p ∈ (c x).posMem)
 :
-  ¬ p ∈ (expr.triIntp2 [] b c).posMem
+  ¬ p ∈ (expr.triIntp [] b c).posMem
 :=
   let isSat := Cause.IsWeaklySatisfiedBy.ofValPos b c
   let isApp := isSat.toIsApplicable outSet outSetIsEmpty
@@ -106,7 +106,7 @@ theorem completenessProofC {dl b}
           
           let isCause: cause.IsStrongCause (dl.getDef x) p :=
             fun _ _ isSat =>
-              BasicExpr.triIntp2_mono_std_defMem
+              BasicExpr.triIntp_mono_std_defMem
                 (fun _ _ isDef =>
                   byContradiction (isSat.boutSat · isDef))
                 (fun _ _ => isSat.cinsSat)

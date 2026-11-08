@@ -205,9 +205,4 @@ namespace Set3
     | .posLane => s3.posMem
     | .defLane => s3.defMem
   
-  public theorem Lane.toggle_toggle_eq:
-    (lane: Set3.Lane) → lane.toggle.toggle = lane
-  | .posLane => rfl
-  | .defLane => rfl
-  
 end Set3

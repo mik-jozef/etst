@@ -73,7 +73,7 @@ exposed def Cause.IsStrongCauseFv
 :=
   ⦃b c: Valuation Pair⦄ →
   cause.IsStronglySatisfiedBy b c →
-  p ∈ expr.triIntp2Def fv b c
+  p ∈ expr.intp .defLane b c fv
 
 exposed def Cause.IsWeakCauseFv
   (cause: Cause Pair)
@@ -85,7 +85,7 @@ exposed def Cause.IsWeakCauseFv
 :=
   ⦃b c: Valuation Pair⦄ →
   cause.IsWeaklySatisfiedBy b c →
-  p ∈ expr.triIntp2Pos fv b c
+  p ∈ expr.intp .posLane b c fv
 
 public abbrev Cause.IsStrongCause
   (cause: Cause Pair)

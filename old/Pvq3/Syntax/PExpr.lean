@@ -136,13 +136,13 @@ def PExpr.intp
 :=
   a.toExpr.intp v
 
-  def PExpr.intp2
+  def PExpr.intp
     (a: PExpr E)
     (b c: Valuation Pair)
   :
     Set3 Pair
   :=
-    a.toExpr.intp2 b c
+    a.toExpr.intp b c
 
 
 def PExpr.mono_un_pos_left

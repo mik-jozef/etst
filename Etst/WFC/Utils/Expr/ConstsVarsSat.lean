@@ -8,18 +8,18 @@ public import Etst.WFC.Ch1_ExprDefList
 public section
 namespace Etst
 universe u
-variable {E: Type u}
+variable {kind: ExprKind}
 
 
 namespace Expr
-  abbrev ConstsSat (expr: Expr E) (P: Nat → Prop): Prop :=
+  abbrev ConstsSat (expr: Expr kind) (P: Nat → Prop): Prop :=
     ∀ x, expr.UsesConst x → P x
   
-  abbrev ConstsLt (expr: Expr E) (bound: Nat): Prop :=
+  abbrev ConstsLt (expr: Expr kind) (bound: Nat): Prop :=
     expr.ConstsSat (· < bound)
   
   instance constsSat
-    (expr: Expr E)
+    (expr: Expr kind)
     (P: Nat → Prop)
     [DecidablePred P]
   :
@@ -65,7 +65,7 @@ namespace Expr
     | .arbIr expr => constsSat expr P
   
   instance usesFreeVar
-    (expr: Expr E)
+    (expr: Expr kind)
     (x: Nat)
   :
     Decidable (expr.UsesFreeVar x)
@@ -99,7 +99,7 @@ namespace Expr
   
   
   instance freeVarsSat
-    (expr: Expr E)
+    (expr: Expr kind)
     (P: Nat → Prop)
     [DecidablePred P]
   :

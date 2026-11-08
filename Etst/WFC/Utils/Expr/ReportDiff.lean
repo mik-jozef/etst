@@ -11,7 +11,7 @@ instance: ToString Set3.Lane where
 def reportDiff {E}
   [DecidableEq E]
   [ToString E]
-  (a b: Expr E)
+  (a b: Expr kind)
   (path: String := "")
 :
   Option String

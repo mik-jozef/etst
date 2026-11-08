@@ -65,25 +65,25 @@ theorem BasicExpr.prod_call_expr_call_eq
   (b c: Valuation Pair)
 :
   Eq
-    (BasicExpr.triIntp2 (fn.call arg.toExpr) fv b c)
-    ((fn.triIntp2 fv b c).call arg)
+    (BasicExpr.triIntp (fn.call arg.toExpr) b c fv)
+    ((fn.triIntp b c fv).call arg)
 :=
   open SingleLaneExpr in
   Set3.eq4
     (fun _ inCall =>
-      show _ ∈ (fn.toLane .defLane).intp2 fv b c from
-      (fnIsClean.toLane .defLane).intp2_eq ▸
-      inCallElimSingle inCall (intp2_toExpr_eq_singleton arg))
+      show _ ∈ (fn.toLane .defLane).intp b c fv from
+      (fnIsClean.toLane .defLane).intp_eq ▸
+      inCallElimSingle inCall (intp_toExpr_eq_singleton arg))
     (fun _ inFn =>
-      let inFnShifted := (fnIsClean.toLane .defLane).intp2_eq ▸ inFn
+      let inFnShifted := (fnIsClean.toLane .defLane).intp_eq ▸ inFn
       inCall inFnShifted (inToExpr arg))
     (fun _ inCall =>
-      show _ ∈ (fn.toLane .posLane).intp2 fv b c from
-      (fnIsClean.toLane .posLane).intp2_eq ▸
-      inCallElimSingle inCall (intp2_toExpr_eq_singleton arg))
+      show _ ∈ (fn.toLane .posLane).intp b c fv from
+      (fnIsClean.toLane .posLane).intp_eq ▸
+      inCallElimSingle inCall (intp_toExpr_eq_singleton arg))
     (fun _ inFn =>
-      let inFnShifted: _ ∈ (fn.toLane .posLane).intp2 _ _ _ :=
-        (fnIsClean.toLane .posLane).intp2_eq ▸ inFn
+      let inFnShifted: _ ∈ (fn.toLane .posLane).intp _ _ _ :=
+        (fnIsClean.toLane .posLane).intp_eq ▸ inFn
       inCall inFnShifted (inToExpr arg))
 
 
@@ -470,13 +470,13 @@ namespace opFixDl
     (inFn:
       ∀ pRes,
         let fvFn := .pair iArg pRes :: pRes :: fv
-        fn.intp2 fvFn opFixDl.dl.wfm opFixDl.dl.wfm = {iFn})
+        fn.intp fvFn opFixDl.dl.wfm opFixDl.dl.wfm = {iFn})
     (inArg:
       ∀ pRes,
-      arg.intp2 (pRes :: fv) opFixDl.dl.wfm opFixDl.dl.wfm = {iArg})
+      arg.intp (pRes :: fv) opFixDl.dl.wfm opFixDl.dl.wfm = {iArg})
   :
     Eq
-      ((callEnc_call fn arg lane).intp2 fv opFixDl.dl.wfm opFixDl.dl.wfm)
+      ((callEnc_call fn arg lane).intp fv opFixDl.dl.wfm opFixDl.dl.wfm)
       {iFn.callEnc iArg}
   :=
     Set.ext fun p => Iff.intro
@@ -511,7 +511,7 @@ namespace opFixDl
     :=
       eqUni.symm ▸ (Set3.inCallElim (Set3.inCallElim ins))
     let insCallEnc:
-      _ ∈ ((BasicExpr.const 4).toLane lane).intp2 _ _ _
+      _ ∈ ((BasicExpr.const 4).toLane lane).intp _ _ _
     :=
       Set3.defMem_toLane (callEnc_ins iArg iArg)
     let inMagicCall :=
@@ -741,8 +741,8 @@ namespace opFixDl
   :=
     let callEncEq :=
       callEnc_eq_singleton
-        (fun _ => intp2_toNamedExpr_eq_singleton magicIndex)
-        (fun _ => intp2_var_eq_singleton rfl)
+        (fun _ => intp_toNamedExpr_eq_singleton magicIndex)
+        (fun _ => intp_var_eq_singleton rfl)
     Set3.inCall <|
     DefList.InWfm.of_in_def_no_fv <|
     inArbUn iFn <|
@@ -771,10 +771,10 @@ namespace opFixDl
     let ins := inToggle2Elim' 1 ins rfl
     let callEncEq :=
       callEnc_eq_singleton
-        (fun _ => intp2_toNamedExpr_eq_singleton magicIndex)
-        (fun _ => intp2_var_eq_singleton rfl)
+        (fun _ => intp_toNamedExpr_eq_singleton magicIndex)
+        (fun _ => intp_var_eq_singleton rfl)
     let ins := inCallElimSingle ins callEncEq
-    let ins := inCallElimSingle ins (intp2_var_eq_singleton rfl)
+    let ins := inCallElimSingle ins (intp_var_eq_singleton rfl)
     Set3.inCall (Set3.inCall (iEq ▸ (inToggle2Elim 4 ins)))
 
   theorem trisetFix_call_eq
@@ -813,8 +813,8 @@ namespace opFixDl
   :=
     let callEncEq :=
       callEnc_eq_singleton
-        (fun _ => intp2_toNamedExpr_eq_singleton composeOpIndex)
-        (fun _ => intp2_var_eq_singleton rfl)
+        (fun _ => intp_toNamedExpr_eq_singleton composeOpIndex)
+        (fun _ => intp_var_eq_singleton rfl)
     Set3.inCall <|
     DefList.InWfm.of_in_def_no_fv <|
     inArbUn iOp <|
@@ -837,8 +837,8 @@ namespace opFixDl
     let ins := inToggle2Elim' 1 ins rfl
     let callEncEq :=
       callEnc_eq_singleton
-        (fun _ => intp2_toNamedExpr_eq_singleton composeOpIndex)
-        (fun _ => intp2_var_eq_singleton rfl)
+        (fun _ => intp_toNamedExpr_eq_singleton composeOpIndex)
+        (fun _ => intp_var_eq_singleton rfl)
     let ins := inCallElimSingle ins callEncEq
     Set3.inCall (iEq ▸ inToggle2Elim 2 ins)
   

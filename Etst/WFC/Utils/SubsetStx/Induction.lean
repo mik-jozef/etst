@@ -10,12 +10,12 @@ namespace Etst
 
 
 exposed def Expr.replaceDepthEvenConsts {E}
-  (e: Expr E)
+  (e: Expr kind)
   (depth: Nat) -- number of quantifiers crossed so far
   (ed: Bool) -- "even depth", number of complements crossed so far
-  (replacer: (depth: Nat) → E → Nat → Expr E)
+  (replacer: (depth: Nat) → E → Nat → Expr kind)
 :
-  Expr E
+  Expr kind
 :=
   match e with
   | const i x => if ed then replacer depth i x else .const i x
@@ -141,8 +141,8 @@ theorem MutIndDescriptor.var_le_hypothesify {dl v x lane}
             ⟨0, Nat.zero_lt_succ _⟩
             inXHeadLane
         inIr
-          (show _ ∈ intp2 _ _ _ _ from
-          head.expr.intp2_lift_eq fv fvDepth dl.wfm dl.wfm ▸
+          (show _ ∈ intp _ _ _ _ from
+          head.expr.intp_lift_eq fv fvDepth dl.wfm dl.wfm ▸
           inRite)
           (rest.var_le_hypothesify fv fvDepth invTail v_le inXLane)
     else
@@ -166,31 +166,31 @@ mutual
     let exprHypothesified: SingleLaneExpr :=
       expr.replaceDepthEvenConsts fvDepth.length true desc.hypothesis
     Set.Subset
-      (expr.intp2 (fvDepth ++ fv) dl.wfm v)
+      (expr.intp (fvDepth ++ fv) dl.wfm v)
       (exprHypothesified.intp (fvDepth ++ fv) dl.wfm)
   :=
     open SingleLaneExpr in
     match expr with
     | .const _ _ =>
       var_le_hypothesify desc fv fvDepth inv v_le
-    | .var _ => le_refl ((intp2 _ _ _ _))
-    | .null => le_refl ((intp2 _ _ _ _))
+    | .var _ => le_refl ((intp _ _ _ _))
+    | .null => le_refl ((intp _ _ _ _))
     | .prod _ _ =>
-      intp2_mono_std_prod
+      intp_mono_std_prod
         (desc.le_hypothesify fv fvDepth inv laneEq.elimProdLeft v_le)
         (desc.le_hypothesify fv fvDepth inv laneEq.elimProdRite v_le)
     | .ir _ _ =>
-      intp2_mono_std_ir
+      intp_mono_std_ir
         (desc.le_hypothesify fv fvDepth inv laneEq.elimIrLeft v_le)
         (desc.le_hypothesify fv fvDepth inv laneEq.elimIrRite v_le)
     | .full _ =>
-      intp2_mono_std_full
+      intp_mono_std_full
         (desc.le_hypothesify fv fvDepth inv laneEq.elimFull v_le)
     | .compl _ =>
-      intp2_mono_std_compl
+      intp_mono_std_compl
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimCompl v_le)
     | .arbIr _ =>
-      intp2_mono_std_arbIr fun p =>
+      intp_mono_std_arbIr fun p =>
         desc.le_hypothesify fv (p :: fvDepth) inv laneEq.elimArbIr v_le
 
   theorem MutIndDescriptor.ge_hypothesify {dl v lane}
@@ -206,29 +206,29 @@ mutual
       expr.replaceDepthEvenConsts fvDepth.length false desc.hypothesis
     Set.Subset
       (exprHypothesified.intp (fvDepth ++ fv) dl.wfm)
-      (expr.intp2 (fvDepth ++ fv) v dl.wfm)
+      (expr.intp (fvDepth ++ fv) v dl.wfm)
   :=
     open SingleLaneExpr in
     match expr with
-    | .const _ _ => le_refl ((intp2 _ _ _ _))
-    | .var _ => le_refl ((intp2 _ _ _ _))
-    | .null => le_refl ((intp2 _ _ _ _))
+    | .const _ _ => le_refl ((intp _ _ _ _))
+    | .var _ => le_refl ((intp _ _ _ _))
+    | .null => le_refl ((intp _ _ _ _))
     | .prod _ _ =>
-      intp2_mono_std_prod
+      intp_mono_std_prod
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimProdLeft v_le)
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimProdRite v_le)
     | .ir _ _ =>
-      intp2_mono_std_ir
+      intp_mono_std_ir
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimIrLeft v_le)
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimIrRite v_le)
     | .full _ =>
-      intp2_mono_std_full
+      intp_mono_std_full
         (desc.ge_hypothesify fv fvDepth inv laneEq.elimFull v_le)
     | .compl _ =>
-      intp2_mono_std_compl
+      intp_mono_std_compl
         (desc.le_hypothesify fv fvDepth inv laneEq.elimCompl v_le)
     | .arbIr _ =>
-      intp2_mono_std_arbIr fun p =>
+      intp_mono_std_arbIr fun p =>
         desc.ge_hypothesify fv (p :: fvDepth) inv laneEq.elimArbIr v_le
 end
 
@@ -282,12 +282,12 @@ theorem MutIndDescriptor.isSound {dl}
           desc.le_hypothesify fv [] ihPred laneEq predStageLe
         let leExp := desc[i].expandsInto.lfpStage_le_std fv n.pred
         let isMemFv:
-          p ∈ ((dl.getDef desc[i].x).triIntp2 _ _ _).getLane _
+          p ∈ ((dl.getDef desc[i].x).triIntp _ _ _).getLane _
         := by
-          rw [←dl.intpDefs2_eq_fv desc[i].x [] fv dl.wfm predStage]
+          rw [←dl.intpDefs_eq_fv desc[i].x [] fv dl.wfm predStage]
           exact isMem
         let inExpansion :=
-          desc[i].expansion.triIntp2_getLane_eq ▸ leExp.memLe isMemFv
+          desc[i].expansion.triIntp_getLane_eq ▸ leExp.memLe isMemFv
         premisesHold i (lePremise inExpansion))
   
   by rw [←eq] at isDefSub; exact isDefSub i

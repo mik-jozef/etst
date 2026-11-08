@@ -546,7 +546,7 @@ theorem allCausesInappElim {dl n fv intCycle expr p}
           allInapp fun b c isSat inProdP =>
             let innerLeft := BasicExpr.toPosLane (.prod left.compl .any)
             let innerRite := BasicExpr.toPosLane (.prod .any rite.compl)
-            have isInner: p ∈ (un innerLeft innerRite).intp2 fv b c :=
+            have isInner: p ∈ (un innerLeft innerRite).intp b c fv :=
               -- (why tf is by exact needed here?)
               by exact isCauseInner isSat
             match inUnElim (isInner) with

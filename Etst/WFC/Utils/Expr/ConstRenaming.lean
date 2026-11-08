@@ -10,11 +10,11 @@ namespace Etst
 
 
 def Expr.substConst {E}
-  (map: E → Nat → Expr E)
+  (map: E → Nat → Expr kind)
 :
-  Expr E → Expr E
+  Expr kind → Expr kind
 |
-  .const e x => map e x
+  .const tag x => map e x
 | .var x => .var x
 | .null => .null
 | .prod l r => .prod (l.substConst map) (r.substConst map)
@@ -25,22 +25,22 @@ def Expr.substConst {E}
 
 def Expr.mapConst {E}
   (map: Nat → Nat)
-  (expr: Expr E)
+  (expr: Expr kind)
 :
-  Expr E
+  Expr kind
 :=
-  expr.substConst (fun e x => .const e (map x))
+  expr.substConst (fun e x => .const tag (map x))
 
 
 theorem Expr.substConst_eq_id {E}
-  (expr: Expr E)
-  {map: E → Nat → Expr E}
-  (isId: (e x: _) → map e x = .const e x)
+  (expr: Expr kind)
+  {map: E → Nat → Expr kind}
+  (isId: (e x: _) → map e x = .const tag x)
 :
   expr.substConst map = expr
 :=
   match expr with
-  | .const e x => isId e x
+  | .const tag x => isId e x
   | .var _ => rfl
   | .null => rfl
   | .prod left rite =>
@@ -59,7 +59,7 @@ theorem Expr.substConst_eq_id {E}
     congrArg arbIr (body.substConst_eq_id isId)
 
 theorem Expr.mapConst_eq_id {E}
-  (expr: Expr E)
+  (expr: Expr kind)
 :
   expr.mapConst id = expr
 :=
@@ -71,56 +71,56 @@ theorem Expr.mapConst_eq_id {E}
   each replacement expression has the same interpretation as the
   original constant in both complement polarities.
 -/
-theorem SingleLaneExpr.substConst_intp2 {fv bSrc bDst cSrc cDst}
+theorem SingleLaneExpr.substConst_intp {fv bSrc bDst cSrc cDst}
   (map: Set3.Lane → Nat → SingleLaneExpr)
   {expr: SingleLaneExpr}
   (eqBC:
     ∀ fv lane x,
       expr.UsesConst x →
-      intp2 (map lane x) fv bDst cDst = (cSrc x).getLane lane)
+      intp (map lane x) fv bDst cDst = (cSrc x).getLane lane)
   (eqCB:
     ∀ fv lane x,
       expr.UsesConst x →
-      intp2 (map lane x) fv cDst bDst = (bSrc x).getLane lane)
+      intp (map lane x) fv cDst bDst = (bSrc x).getLane lane)
 :
-  intp2 (expr.substConst map) fv bDst cDst = intp2 expr fv bSrc cSrc
+  intp (expr.substConst map) fv bDst cDst = intp expr fv bSrc cSrc
 :=
   match expr with
   | .const lane x => eqBC fv lane x rfl
   | .var _ => rfl
   | .null => rfl
   | .prod _ _ =>
-    eq_intp2_prod_of_eq
-      (substConst_intp2 map
+    eq_intp_prod_of_eq
+      (substConst_intp map
         (fun fv lane x h => eqBC fv lane x (Or.inl h))
         (fun fv lane x h => eqCB fv lane x (Or.inl h)))
-      (substConst_intp2 map
+      (substConst_intp map
         (fun fv lane x h => eqBC fv lane x (Or.inr h))
         (fun fv lane x h => eqCB fv lane x (Or.inr h)))
   | .ir _ _ =>
-    eq_intp2_ir_of_eq
-      (substConst_intp2 map
+    eq_intp_ir_of_eq
+      (substConst_intp map
         (fun fv lane x h => eqBC fv lane x (Or.inl h))
         (fun fv lane x h => eqCB fv lane x (Or.inl h)))
-      (substConst_intp2 map
+      (substConst_intp map
         (fun fv lane x h => eqBC fv lane x (Or.inr h))
         (fun fv lane x h => eqCB fv lane x (Or.inr h)))
   | .full _ =>
-    eq_intp2_full_of_eq (substConst_intp2 map eqBC eqCB)
+    eq_intp_full_of_eq (substConst_intp map eqBC eqCB)
   | .compl _ =>
-    eq_intp2_compl_of_eq (substConst_intp2 map eqCB eqBC)
+    eq_intp_compl_of_eq (substConst_intp map eqCB eqBC)
   | .arbIr _ =>
-    eq_intp2_arbIr_of_eq fun _ => substConst_intp2 map eqBC eqCB
+    eq_intp_arbIr_of_eq fun _ => substConst_intp map eqBC eqCB
 
-theorem SingleLaneExpr.mapConst_intp2 {fv bSrc bDst cSrc cDst}
+theorem SingleLaneExpr.mapConst_intp {fv bSrc bDst cSrc cDst}
   (map: Nat → Nat)
   {expr: SingleLaneExpr}
   (eqB: ∀ x, expr.UsesConst x → bSrc x = bDst (map x))
   (eqC: ∀ x, expr.UsesConst x → cSrc x = cDst (map x))
 :
-  intp2 (expr.mapConst map) fv bDst cDst = intp2 expr fv bSrc cSrc
+  intp (expr.mapConst map) fv bDst cDst = intp expr fv bSrc cSrc
 :=
-  substConst_intp2
+  substConst_intp
     (fun lane x => .const lane (map x))
     (fun _ lane x h =>
       (congrArg (fun s => s.getLane lane) (eqC x h)).symm)
@@ -208,7 +208,7 @@ namespace BasicExpr
     toLane_substConst expr lane (.const ∘ map)
   
   
-  theorem substConst_triIntp2
+  theorem substConst_triIntp
     (map: Nat → BasicExpr)
     {expr: BasicExpr}
     {fv: List Pair}
@@ -216,48 +216,48 @@ namespace BasicExpr
     (eqBC:
       ∀ fv x,
         expr.UsesConst x →
-        triIntp2 (map x) fv bDst cDst = cSrc x)
+        triIntp (map x) fv bDst cDst = cSrc x)
     (eqCB:
       ∀ fv x,
         expr.UsesConst x →
-        triIntp2 (map x) fv cDst bDst = bSrc x)
+        triIntp (map x) fv cDst bDst = bSrc x)
   :
     Eq
-      (triIntp2 (expr.substConst (fun _ => map)) fv bDst cDst)
-      (expr.triIntp2 fv bSrc cSrc)
+      (triIntp (expr.substConst (fun _ => map)) fv bDst cDst)
+      (expr.triIntp fv bSrc cSrc)
   :=
     let usesEq := toLane_UsesConst expr
     Set3.eq
-      (show SingleLaneExpr.intp2 _ _ _ _ = _ from
+      (show SingleLaneExpr.intp _ _ _ _ = _ from
       toLane_substConst expr .defLane map ▸
-      SingleLaneExpr.substConst_intp2
+      SingleLaneExpr.substConst_intp
         (fun lane x => (map x).toLane lane)
         (fun fv lane x hx =>
-          BasicExpr.triIntp2_getLane_eq (expr := map x) ▸
+          BasicExpr.triIntp_getLane_eq (expr := map x) ▸
           congrArg
             (fun s => s.getLane lane)
             (eqBC fv x ((congrFun (usesEq .defLane) x).mp hx)))
         (fun fv lane x hx =>
-          BasicExpr.triIntp2_getLane_eq (expr := map x) ▸
+          BasicExpr.triIntp_getLane_eq (expr := map x) ▸
           congrArg
             (fun s => s.getLane lane)
             (eqCB fv x ((congrFun (usesEq .defLane) x).mp hx))))
-      (show SingleLaneExpr.intp2 _ _ _ _ = _ from
+      (show SingleLaneExpr.intp _ _ _ _ = _ from
       toLane_substConst expr .posLane map ▸
-      SingleLaneExpr.substConst_intp2
+      SingleLaneExpr.substConst_intp
         (fun lane x => (map x).toLane lane)
         (fun fv lane x hx =>
-          BasicExpr.triIntp2_getLane_eq (expr := map x) ▸
+          BasicExpr.triIntp_getLane_eq (expr := map x) ▸
           congrArg
             (fun s => s.getLane lane)
             (eqBC fv x ((congrFun (usesEq .posLane) x).mp hx)))
         (fun fv lane x hx =>
-          BasicExpr.triIntp2_getLane_eq (expr := map x) ▸
+          BasicExpr.triIntp_getLane_eq (expr := map x) ▸
           congrArg
             (fun s => s.getLane lane)
             (eqCB fv x ((congrFun (usesEq .posLane) x).mp hx))))
   
-  theorem mapConst_triIntp2
+  theorem mapConst_triIntp
     (map: Nat → Nat)
     {expr: BasicExpr}
     {fv: List Pair}
@@ -266,10 +266,10 @@ namespace BasicExpr
     (eqC: ∀ x, expr.UsesConst x → cSrc x = cDst (map x))
   :
     Eq
-      (triIntp2 (expr.mapConst map) fv bDst cDst)
-      (expr.triIntp2 fv bSrc cSrc)
+      (triIntp (expr.mapConst map) fv bDst cDst)
+      (expr.triIntp fv bSrc cSrc)
   :=
-    substConst_triIntp2
+    substConst_triIntp
       (fun x => .const (map x))
       (fun _ x hx => (eqC x hx).symm)
       (fun _ x hx => (eqB x hx).symm)

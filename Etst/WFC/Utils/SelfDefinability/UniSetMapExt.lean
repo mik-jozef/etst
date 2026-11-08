@@ -102,7 +102,7 @@ theorem uniSetMapIndexEnc_uniSetMapEnc
 
 theorem toEncodingNullElim {dl n fv bm c lane p}
   (insList:
-    p ∈ (exprEncToEncodingRaw.toLane (toggle2N lane 13)).intp2
+    p ∈ (exprEncToEncodingRaw.toLane (toggle2N lane 13)).intp
       (.pair (.nat 13) .null :: Pair.listEncoding fv
         :: DefList.prefixEncoding dl n :: []) bm c)
 :
@@ -134,7 +134,7 @@ theorem toEncodingNullElim {dl n fv bm c lane p}
 -- set_option maxHeartbeats 300000 in
 theorem toEncodingPairElim {dl n fv lane l r p}
   (insList:
-    p ∈ (exprEncToEncodingRaw.toLane (toggle2N lane 13)).intp2
+    p ∈ (exprEncToEncodingRaw.toLane (toggle2N lane 13)).intp
       (.pair (.nat 13) (.pair l r) :: Pair.listEncoding fv
         :: DefList.prefixEncoding dl n :: [])
       uniSetMapDl.dl.wfm uniSetMapDl.dl.wfm)

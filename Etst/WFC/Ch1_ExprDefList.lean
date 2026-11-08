@@ -1,71 +1,56 @@
 -- # Chapter 1: Expressions and Definition Lists
 module
+public import Etst.WFC.Ch0_Set3
 import Mathlib.SetTheory.Ordinal.Basic
 import Mathlib.SetTheory.Ordinal.Arithmetic
-import Etst.WFC.Ch0_Set3
 
 public section
 namespace Etst
 
 
+inductive ExprKind
+| basic
+| lane
+deriving DecidableEq
+
+abbrev ExprKind.ConstTag: ExprKind → Type
+| basic => Unit
+| lane => Set3.Lane
+
+instance: (kind: ExprKind) → DecidableEq kind.ConstTag
+| .basic => inferInstance
+| .lane  => inferInstance
+
 /-
   An expression is an inductive structure that (as we later define)
   can be evaluated to a triset.
   
-  `E` (extra info) is for storing arbitrary extra information in each
-  constant.
-  
   The variables use de Bruijn indices, ie. `var 0` refers to the
   innermost quantifier, `var 1` to the next outer one, and so on.
 -/
-public inductive Expr (E: Type*) where
-| const (e: E) (x: Nat)
+public inductive Expr (kind: ExprKind) where
+| const (tag: kind.ConstTag) (x: Nat)
 | var (x: Nat)
 | null
-| prod (left rite: Expr E)
-| ir (left rite: Expr E)
-| full (body: Expr E)
-| compl (body: Expr E)
-| arbIr (body: Expr E)
+| prod (left rite: Expr kind)
+| ir (left rite: Expr kind)
+| full (body: Expr kind)
+| compl (body: Expr kind)
+| arbIr (body: Expr kind)
 deriving DecidableEq
 
 exposed section
-def Expr.un {E} (left rite: Expr E): Expr E :=
+def Expr.un {kind} (left rite: Expr kind): Expr kind :=
   compl (ir (compl left) (compl rite))
-def Expr.some {E} (body: Expr E): Expr E :=
+def Expr.some {kind} (body: Expr kind): Expr kind :=
   compl (full (compl body))
-def Expr.arbUn {E} (body: Expr E): Expr E :=
+def Expr.arbUn {kind} (body: Expr kind): Expr kind :=
   compl (arbIr (compl body))
 end
 
 
-public abbrev BasicExpr := Expr Unit
-
-exposed section
--- Convenience definitions for preserving the `BasicExpr` type in arguments.
-def BasicExpr.const (x: Nat): BasicExpr := Expr.const () x
-def BasicExpr.var (x: Nat): BasicExpr := Expr.var x
-def BasicExpr.null: BasicExpr := Expr.null
-def BasicExpr.prod (left rite: BasicExpr): BasicExpr :=
-  Expr.prod left rite
-def BasicExpr.un (left rite: BasicExpr): BasicExpr :=
-  Expr.un left rite
-def BasicExpr.ir (left rite: BasicExpr): BasicExpr :=
-  Expr.ir left rite
-def BasicExpr.some (body: BasicExpr): BasicExpr :=
-  Expr.some body
-def BasicExpr.full (body: BasicExpr): BasicExpr :=
-  Expr.full body
-def BasicExpr.compl (body: BasicExpr): BasicExpr :=
-  Expr.compl body
-def BasicExpr.arbUn (body: BasicExpr): BasicExpr :=
-  Expr.arbUn body
-def BasicExpr.arbIr (body: BasicExpr): BasicExpr :=
-  Expr.arbIr body
-end
-
 namespace Expr
-  exposed def UsesConst {E} (expr: Expr E) (x: Nat): Prop :=
+  exposed def UsesConst {kind} (expr: Expr kind) (x: Nat): Prop :=
     match expr with
       | const _ v => x = v
       | var _ => False
@@ -76,7 +61,7 @@ namespace Expr
       | compl body => body.UsesConst x
       | arbIr body => body.UsesConst x
   
-  exposed def UsesFreeVar {E} (expr: Expr E) (x: Nat): Prop :=
+  exposed def UsesFreeVar {kind} (expr: Expr kind) (x: Nat): Prop :=
     match expr with
       | const _ _ => False
       | var v => x = v
@@ -87,7 +72,7 @@ namespace Expr
       | compl body => body.UsesFreeVar x
       | arbIr body => body.UsesFreeVar (x + 1)
   
-  exposed def FreeVarsSat {E} (expr: Expr E) (P: Nat → Prop): Prop :=
+  exposed def FreeVarsSat {kind} (expr: Expr kind) (P: Nat → Prop): Prop :=
     ∀ x: Nat, expr.UsesFreeVar x → P x
   
   
@@ -95,7 +80,7 @@ namespace Expr
     A positive expression only refers to constants under an even
     number of complements.
   -/
-  exposed def IsPositive {E} (expr: Expr E) (isEvenD := true): Prop :=
+  exposed def IsPositive {kind} (expr: Expr kind) (isEvenD := true): Prop :=
     match expr with
     | const _ _ => isEvenD
     | var _ => True
@@ -110,17 +95,17 @@ namespace Expr
 
   
   -- `any` contains all elements, under any valuation.
-  exposed def any {E}: Expr E := arbUn (var 0)
+  exposed def any {kind}: Expr kind := arbUn (var 0)
   -- `none` contains no elements, under any valuation.
-  exposed def none {E}: Expr E := arbIr (compl (var 0))
+  exposed def none {kind}: Expr kind := arbIr (compl (var 0))
   
   
   /-
     Increments all free variables by `liftBy`. `depth` represents
     inside how many quantifiers we are.
   -/
-  exposed def lift {E}
-    (expr: Expr E)
+  exposed def lift {kind}
+    (expr: Expr kind)
     (depth := 0)
     (liftBy := 1)
   :=
@@ -138,19 +123,19 @@ namespace Expr
     Transforms a map of free variables to one that is equivalent
     inside a single quantifier.
   -/
-  exposed def liftFvMap {E}
-    (fvMap: Nat → Expr E)
+  exposed def liftFvMap {kind}
+    (fvMap: Nat → Expr kind)
   :
-    Nat → Expr E
+    Nat → Expr kind
   | 0 => .var 0
   | n + 1 => (fvMap n).lift
   
   -- Replaces free variables according to a given map.
-  exposed def subst {E}
-    (fvMap: Nat → Expr E)
+  exposed def subst {kind}
+    (fvMap: Nat → Expr kind)
   :
-    Expr E → Expr E
-  | .const e x => .const e x
+    Expr kind → Expr kind
+  | .const tag x => .const tag x
   | .var x => fvMap x
   | .null => .null
   | .prod left rite =>
@@ -164,13 +149,13 @@ namespace Expr
   | .arbIr body =>
     .arbIr (subst (liftFvMap fvMap) body)
   
-  public abbrev IsClean {E} (expr: Expr E): Prop :=
+  public abbrev IsClean {kind} (expr: Expr kind): Prop :=
     expr.FreeVarsSat fun _ => False
   
 end Expr
 
 
-public abbrev DefList.GetDef := Nat → BasicExpr
+public abbrev DefList.GetDef := Nat → Expr .basic
 
 /-
   A definition list is a map from natural numbers to expressions.

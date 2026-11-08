@@ -254,24 +254,24 @@ theorem Cause.IsWeaklySatisfiedBy.ofValPos
 }
 
 
-theorem Cause.IsWeakCauseFv.ofValPos {expr fv b c p}
-  (isPos: p ∈ (expr.triIntp2 fv b c).posMem)
+theorem Cause.IsWeakCauseFv.ofValPos {expr b c fv p}
+  (isPos: p ∈ (expr.triIntp b c fv).posMem)
 :
   (Cause.ofValPos b c).IsWeakCauseFv fv expr p
 :=
   fun _ _ isSat =>
-    BasicExpr.triIntp2_mono_std_posMem
+    BasicExpr.triIntp_mono_std_posMem
       (fun _ _ isDef => byContradiction (isSat.boutSat · isDef))
       (fun _ _ => isSat.cinsSat)
       isPos
 
-theorem Cause.IsStrongCauseFv.ofValDef {expr fv b c p}
-  (isDef: p ∈ (expr.triIntp2 fv b c).defMem)
+theorem Cause.IsStrongCauseFv.ofValDef {expr b c fv p}
+  (isDef: p ∈ (expr.triIntp b c fv).defMem)
 :
   (Cause.ofValDef b c).IsStrongCauseFv fv expr p
 :=
   fun _ _ isSat =>
-    BasicExpr.triIntp2_mono_std_defMem
+    BasicExpr.triIntp_mono_std_defMem
       (fun _ _ isDef => byContradiction (isSat.boutSat · isDef))
       (fun _ _ => isSat.cinsSat)
       isDef
@@ -283,7 +283,7 @@ theorem Cause.IsWeakCauseFv.isPosOfIsApplicable {fv p expr}
   {b c}
   (isApp: ¬ cause.IsInapplicable c.DefNonMem b.DefMem)
 :
-  p ∈ (expr.triIntp2 fv b c).posMem
+  p ∈ (expr.triIntp b c fv).posMem
 :=
   isCause (Cause.IsInapplicable.Not.toIsWeaklySatisfiedBy isApp)
 
@@ -291,7 +291,7 @@ theorem Cause.IsWeakCauseFv.isInapplicableOfIsNonmember {fv p expr}
   {cause: Cause Pair}
   (isCause: cause.IsWeakCauseFv fv expr p)
   {b c: Valuation Pair}
-  (notPos: ¬ p ∈ (expr.triIntp2 fv b c).posMem)
+  (notPos: ¬ p ∈ (expr.triIntp b c fv).posMem)
 :
   cause.IsInapplicable c.DefNonMem b.DefMem
 :=
@@ -387,7 +387,7 @@ theorem Cause.IsStrongCauseFv.ofLeastCompl {fv expr p}
   (notPos:
     let lc := cause.leastContextApx
     let lb := cause.leastBackgroundApx
-    ¬ p ∈ expr.triIntp2Pos fv lc lb)
+    ¬ p ∈ expr.triIntpPos fv lc lb)
 :
   cause.IsStrongCauseFv fv (.compl expr) p
 :=
@@ -398,7 +398,7 @@ theorem Cause.IsStrongCauseFv.ofLeastCompl {fv expr p}
         posLe _ _ := trivial
       }
     let posLe :=
-      BasicExpr.triIntp2_mono_apx_posMem
+      BasicExpr.triIntp_mono_apx_posMem
         (expr := expr)
         (c0 := cause.leastBackgroundApx)
         bgLe
@@ -483,7 +483,7 @@ theorem Cause.IsWeakCauseFv.complProdElim {fv l r pL pR}
   match not_and_or.mp (fun inProd => isCause isSat ⟨pL, pR, rfl, inProd.left, inProd.right⟩) with
   | Or.inl isPosL =>
     Or.inl (fun _ _ isSat =>
-      BasicExpr.triIntp2_mono_std_posMem
+      BasicExpr.triIntp_mono_std_posMem
         (expr := .compl l)
         (b0 := causeUn.maximalBackgroundApx)
         (c0 := causeUn.maximalContextApx)
@@ -492,7 +492,7 @@ theorem Cause.IsWeakCauseFv.complProdElim {fv l r pL pR}
         isPosL)
   | Or.inr isPosR =>
     Or.inr (fun _ _ isSat =>
-      BasicExpr.triIntp2_mono_std_posMem
+      BasicExpr.triIntp_mono_std_posMem
         (expr := .compl r)
         (b0 := causeUn.maximalBackgroundApx)
         (c0 := causeUn.maximalContextApx)
@@ -544,7 +544,7 @@ theorem Cause.IsWeakCauseFv.complIrElim {fv l r p}
   match not_and_or.mp (isCause isSat) with
   | Or.inl isPosL =>
     Or.inl (fun _ _ isSat =>
-      BasicExpr.triIntp2_mono_std_posMem
+      BasicExpr.triIntp_mono_std_posMem
         (expr := .compl l)
         (b0 := causeUn.maximalBackgroundApx)
         (c0 := causeUn.maximalContextApx)
@@ -553,7 +553,7 @@ theorem Cause.IsWeakCauseFv.complIrElim {fv l r p}
         isPosL)
   | Or.inr isPosR =>
     Or.inr (fun _ _ isSat =>
-      BasicExpr.triIntp2_mono_std_posMem
+      BasicExpr.triIntp_mono_std_posMem
         (expr := .compl r)
         (b0 := causeUn.maximalBackgroundApx)
         (c0 := causeUn.maximalContextApx)
@@ -590,7 +590,7 @@ theorem Cause.IsWeakCauseFv.complFullElim {fv body p}
   match Classical.not_forall.mp (isCause isSat) with
   | ⟨pB, notDefBody⟩ =>
     ⟨pB, fun _ _ isSat =>
-      BasicExpr.triIntp2_mono_std_posMem
+      BasicExpr.triIntp_mono_std_posMem
         (expr := body.compl)
         (b0 := causeUn.maximalBackgroundApx)
         (c0 := causeUn.maximalContextApx)
@@ -652,7 +652,7 @@ theorem Cause.IsWeakCauseFv.complArbIrElim {fv body p}
   match Classical.not_forall.mp (isCause isSat) with
   | ⟨pX, notDefBody⟩ =>
     ⟨pX, fun _ _ isSat =>
-      BasicExpr.triIntp2_mono_std_posMem
+      BasicExpr.triIntp_mono_std_posMem
         (expr := body.compl)
         (b0 := causeUn.maximalBackgroundApx)
         (c0 := causeUn.maximalContextApx)

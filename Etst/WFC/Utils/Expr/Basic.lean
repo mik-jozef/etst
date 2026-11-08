@@ -5,173 +5,133 @@ public section
 namespace Etst
 universe u
 
+  
+/-
+  For expressions with lanes, `LaneEq even odd expr` constrains the
+  lanes of constants in `expr` by parity. At even depth, constants
+  must use the `even` lane when that option is present. At odd depth,
+  the constraint is given by `odd`.
+  
+  For expressions without lanes, `LaneEq` always holds.
+-/
+inductive Expr.LaneEq:
+  {kind: ExprKind} →
+  Expr kind →
+  (even odd: Option Set3.Lane) →
+  Prop
+| constBasic {x even odd}:
+    (const (kind := .basic) () x).LaneEq even odd
+| constLaneNone {lane x odd}:
+    (const (kind := .lane) lane x).LaneEq .none odd
+| constLaneSome {lane x odd}:
+    (const (kind := .lane) lane x).LaneEq (.some lane) odd
+| var {x even odd}:
+    (var x).LaneEq even odd
+| null {even odd}:
+    (null).LaneEq even odd
+| prod {left rite even odd}
+    (leftEq: left.LaneEq even odd)
+    (riteEq: rite.LaneEq even odd)
+  :
+    (prod left rite).LaneEq even odd
+| ir {left rite even odd}
+    (leftEq: left.LaneEq even odd)
+    (riteEq: rite.LaneEq even odd)
+  :
+    (ir left rite).LaneEq even odd
+| full {body even odd}
+    (bodyEq: body.LaneEq even odd)
+  :
+    (full body).LaneEq even odd
+| compl {body even odd}
+    (bodyEq: body.LaneEq odd even)
+  :
+    (compl body).LaneEq even odd
+| arbIr {body even odd}
+    (bodyEq: body.LaneEq even odd)
+  :
+    (arbIr body).LaneEq even odd
 
-namespace SingleLaneExpr
-  @[expose] section
-  def const (lane: Set3.Lane) (x: Nat): SingleLaneExpr :=
-    Expr.const lane x
-  def var (x: Nat): SingleLaneExpr :=
-    Expr.var x
-  def null: SingleLaneExpr := Expr.null
-  def prod (left rite: SingleLaneExpr): SingleLaneExpr :=
-    Expr.prod left rite
-  def un (left rite: SingleLaneExpr): SingleLaneExpr :=
-    Expr.un left rite
-  def ir (left rite: SingleLaneExpr): SingleLaneExpr :=
-    Expr.ir left rite
-  def some (body: SingleLaneExpr): SingleLaneExpr :=
-    Expr.some body
-  def full (body: SingleLaneExpr): SingleLaneExpr :=
-    Expr.full body
-  def compl (body: SingleLaneExpr): SingleLaneExpr :=
-    Expr.compl body
-  def arbUn (body: SingleLaneExpr): SingleLaneExpr :=
-    Expr.arbUn body
-  def arbIr (body: SingleLaneExpr): SingleLaneExpr :=
-    Expr.arbIr body
-  def impl (left rite: SingleLaneExpr): SingleLaneExpr :=
-    Expr.un left.compl rite
-  end
+namespace Expr.LaneEq
+  variable
+    {kind: ExprKind}
+    {even odd: Option Set3.Lane}
+    {left rite body: Expr kind}
+  
+  theorem of_basic {even odd}:
+    (expr: Expr .basic) → expr.LaneEq even odd
+  | .const _ _ => constBasic
+  | .var _ => var
+  | .null => null
+  | .prod left rite => prod (of_basic left) (of_basic rite)
+  | .ir left rite => ir (of_basic left) (of_basic rite)
+  | .full body => full (of_basic body)
+  | .compl body => compl (of_basic body)
+  | .arbIr body => arbIr (of_basic body)
   
   
-  /-
-    `LaneEq even odd expr` constrains the lanes of constants in
-    `expr` by parity. At even depth, constants must use `even`
-    when that option is present. At odd depth, the constraint is
-    given by `odd`.
-  -/
-  inductive LaneEq:
-    (even odd: Option Set3.Lane) →
-    SingleLaneExpr →
-    Prop
-  | constNone {odd lane x}:
-      LaneEq .none odd (const lane x)
-  | constSome {odd lane x}:
-      LaneEq (.some lane) odd (const lane x)
-  | var {even odd x}:
-      LaneEq even odd (var x)
-  | null {even odd}:
-      LaneEq even odd null
-  | prod {even odd left rite}
-      (leftEq: LaneEq even odd left)
-      (riteEq: LaneEq even odd rite)
-    :
-      LaneEq even odd (prod left rite)
-  | ir {even odd left rite}
-      (leftEq: LaneEq even odd left)
-      (riteEq: LaneEq even odd rite)
-    :
-      LaneEq even odd (ir left rite)
-  | full {even odd body}
-      (bodyEq: LaneEq even odd body)
-    :
-      LaneEq even odd (full body)
-  | compl {even odd body}
-      (bodyEq: LaneEq odd even body)
-    :
-      LaneEq even odd (compl body)
-  | arbIr {even odd body}
-      (bodyEq: LaneEq even odd body)
-    :
-      LaneEq even odd (arbIr body)
+  theorem elimProdLeft
+    (laneEq: LaneEq (.prod left rite) even odd)
+  :
+    left.LaneEq even odd
+  :=
+    match laneEq with
+    | .prod leftEq _ => leftEq
   
-  namespace LaneEq
-    variable
-      {even odd: Option Set3.Lane}
-      {left rite body: SingleLaneExpr}
-    
-    theorem elimProdLeft
-      (laneEq: LaneEq even odd (.prod left rite))
-    :
-      LaneEq even odd left
-    :=
-      match laneEq with
-      | .prod leftEq _ => leftEq
-    
-    theorem elimProdRite
-      (laneEq: LaneEq even odd (.prod left rite))
-    :
-      LaneEq even odd rite
-    :=
-      match laneEq with
-      | .prod _ riteEq => riteEq
-    
-    theorem elimIrLeft
-      (laneEq: LaneEq even odd (Expr.ir left rite))
-    :
-      LaneEq even odd left
-    :=
-      match laneEq with
-      | .ir leftEq _ => leftEq
-    
-    theorem elimIrRite
-      (laneEq: LaneEq even odd (Expr.ir left rite))
-    :
-      LaneEq even odd rite
-    :=
-      match laneEq with
-      | .ir _ riteEq => riteEq
-    
-    theorem elimFull
-      (laneEq: LaneEq even odd (Expr.full body))
-    :
-      LaneEq even odd body
-    :=
-      match laneEq with
-      | .full bodyEq => bodyEq
-    
-    theorem elimCompl
-      (laneEq: LaneEq even odd (Expr.compl body))
-    :
-      LaneEq odd even body
-    :=
-      match laneEq with
-      | .compl bodyEq => bodyEq
-    
-    theorem elimArbIr
-      (laneEq: LaneEq even odd (Expr.arbIr body))
-    :
-      LaneEq even odd body
-    :=
-      match laneEq with
-      | .arbIr bodyEq => bodyEq
-  end LaneEq
-end SingleLaneExpr
+  theorem elimProdRite
+    (laneEq: LaneEq (.prod left rite) even odd)
+  :
+    rite.LaneEq even odd
+  :=
+    match laneEq with
+    | .prod _ riteEq => riteEq
+  
+  theorem elimIrLeft
+    (laneEq: LaneEq (.ir left rite) even odd)
+  :
+    left.LaneEq even odd
+  :=
+    match laneEq with
+    | .ir leftEq _ => leftEq
+  
+  theorem elimIrRite
+    (laneEq: LaneEq (.ir left rite) even odd)
+  :
+    rite.LaneEq even odd
+  :=
+    match laneEq with
+    | .ir _ riteEq => riteEq
+  
+  theorem elimFull
+    (laneEq: LaneEq (.full body) even odd)
+  :
+    body.LaneEq even odd
+  :=
+    match laneEq with
+    | .full bodyEq => bodyEq
+  
+  theorem elimCompl
+    (laneEq: LaneEq (.compl body) even odd)
+  :
+    body.LaneEq odd even
+  :=
+    match laneEq with
+    | .compl bodyEq => bodyEq
+  
+  theorem elimArbIr
+    (laneEq: LaneEq (.arbIr body) even odd)
+  :
+    body.LaneEq even odd
+  :=
+    match laneEq with
+    | .arbIr bodyEq => bodyEq
+end Expr.LaneEq
 
-theorem BasicExpr.laneEq
-  (expr: BasicExpr)
-  (lane: Set3.Lane)
+
+def Expr.toString {kind}
+  (serializeVar: kind.ConstTag → Nat → String)
 :
-  SingleLaneExpr.LaneEq
-    (.some lane)
-    (.some lane.toggle)
-    (expr.toLane lane)
-:=
-  match expr, lane with
-  | .const _, .defLane => .constSome
-  | .const _, .posLane => .constSome
-  | .var _, .defLane => .var
-  | .var _, .posLane => .var
-  | .null, .defLane => .null
-  | .null, .posLane => .null
-  | .prod left rite, .defLane =>
-    .prod (left.laneEq .defLane) (rite.laneEq .defLane)
-  | .prod left rite, .posLane =>
-    .prod (left.laneEq .posLane) (rite.laneEq .posLane)
-  | .ir left rite, .defLane =>
-    .ir (left.laneEq .defLane) (rite.laneEq .defLane)
-  | .ir left rite, .posLane =>
-    .ir (left.laneEq .posLane) (rite.laneEq .posLane)
-  | .full body, .defLane => .full (body.laneEq .defLane)
-  | .full body, .posLane => .full (body.laneEq .posLane)
-  | .compl body, .defLane => .compl (body.laneEq .posLane)
-  | .compl body, .posLane => .compl (body.laneEq .defLane)
-  | .arbIr body, .defLane => .arbIr (body.laneEq .defLane)
-  | .arbIr body, .posLane => .arbIr (body.laneEq .posLane)
-
-
-def Expr.toString {E} (serializeVar: E → Nat → String):
-  Expr E → String
+  Expr kind → String
 | .un left rite =>
   let left := left.toString serializeVar
   let rite := rite.toString serializeVar
@@ -204,19 +164,16 @@ def Expr.toString {E} (serializeVar: E → Nat → String):
   let bodyStr := body.toString serializeVar
   s!"All ({bodyStr})"
 
-def BasicExpr.toString: BasicExpr → String :=
+def Expr.toStringBasic: Expr .basic → String :=
   Expr.toString fun _ x => s!"{x}"
 
-def SingleLaneExpr.toString: SingleLaneExpr → String :=
+def Expr.toStringLane: Expr .lane → String :=
   Expr.toString fun
     | .defLane, x => s!":{x}"
     | .posLane, x => s!".{x}"
 
-instance: ToString BasicExpr where
-  toString := BasicExpr.toString
+instance: ToString (Expr .basic) where
+  toString := Expr.toStringBasic
 
-instance: ToString SingleLaneExpr where
-  toString := SingleLaneExpr.toString
-
-instance: ToString (Expr Unit) := instToStringBasicExpr
-instance: ToString (Expr Set3.Lane) := instToStringSingleLaneExpr
+instance: ToString (Expr .lane) where
+  toString := Expr.toStringLane

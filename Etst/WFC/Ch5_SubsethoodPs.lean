@@ -55,14 +55,14 @@ abbrev DefList.Subset
     dl.SubsetFv fv a b
 
 
-exposed def Expr.isSubsingleton_body {E} (e: Expr E): Expr E :=
+exposed def Expr.isSubsingleton_body {E} (e: Expr kind): Expr kind :=
   impl (some (ir e.lift (var 0))) (full (impl e.lift (var 0)))
 
-exposed def Expr.isSubsingleton {E} (e: Expr E) : Expr E :=
+exposed def Expr.isSubsingleton {E} (e: Expr kind) : Expr kind :=
   arbIr e.isSubsingleton_body
 
 theorem Expr.isSubsingleton_freeVarUb_pos {E}
-  (e: Expr E)
+  (e: Expr kind)
 :
   0 < e.isSubsingleton_body.freeVarUb
 :=
@@ -321,10 +321,10 @@ theorem SingleLaneExpr.isSubsingleton_intp_eq
               (inSome
                 .null
                 (inIr
-                  (intp2_lift_eq expr fv [p] v v ▸ inExpr)
+                  (intp_lift_eq expr fv [p] v v ▸ inExpr)
                   (inVar rfl)))
               pE)
-            (intp2_lift_eq expr fv [p] v v ▸ isIn))
+            (intp_lift_eq expr fv [p] v v ▸ isIn))
           rfl))
 
 namespace DefList.SubsetStx
@@ -439,7 +439,7 @@ namespace DefList.SubsetStx
         eq ▸ inProd
           (inArbIr fun pX =>
             (inProdElim (eq ▸ inArbIrElim inArbIrArg pX)).left)
-          ((intp2_lift_eq b fv [.null] dl.wfm dl.wfm).symm ▸ inBLift0)
+          ((intp_lift_eq b fv [.null] dl.wfm dl.wfm).symm ▸ inBLift0)
       | prodArbIrR (a:=a) (b:=b) sub =>
         let ⟨leA, leArbIrB⟩ := freeVarUb_bin_le_elim leE
         let leB := Nat.le_add_of_sub_le leArbIrB
@@ -449,7 +449,7 @@ namespace DefList.SubsetStx
         let inArbIrArg := sub.isSound fv leX leArbIrInner isIn
         let ⟨pA, pB, eq, inALift0, _⟩ := inProdElimEx (inArbIrElim inArbIrArg .null)
         eq ▸ inProd
-          ((intp2_lift_eq a fv [.null] dl.wfm dl.wfm).symm ▸ inALift0)
+          ((intp_lift_eq a fv [.null] dl.wfm dl.wfm).symm ▸ inALift0)
           (inArbIr fun pX =>
             (inProdElim (eq ▸ inArbIrElim inArbIrArg pX)).right)
       | complProd sub (a:=a) (b:=b) => fun inProdAB =>
@@ -465,13 +465,13 @@ namespace DefList.SubsetStx
               let ⟨eqA, _⟩ :=
                 Pair.noConfusion (eq.symm.trans eq') And.intro
               (inComplElim inCplA)
-                (eqA ▸ intp2_bv_append leA _ ▸ inA))
+                (eqA ▸ intp_bv_append leA _ ▸ inA))
             (fun inProdR =>
               let ⟨_, _, eq', _, inCplB⟩ := inProdElimEx inProdR
               let ⟨_, eqB⟩ :=
                 Pair.noConfusion (eq.symm.trans eq') And.intro
               (inComplElim inCplB)
-                (eqB ▸ intp2_bv_append leB _ ▸ inB)))
+                (eqB ▸ intp_bv_append leB _ ▸ inB)))
       | complProdElim sub (a:=a) (b:=b) =>
         let leInner := freeVarUb_bin_le_elimR leE
         let ⟨lePairCA, lePairAC⟩ := freeVarUb_bin_le_elim leInner
