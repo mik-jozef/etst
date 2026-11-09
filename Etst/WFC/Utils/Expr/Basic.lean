@@ -128,6 +128,60 @@ namespace Expr.LaneEq
 end Expr.LaneEq
 
 
+/-
+  Tags every constant in `expr` with `lane`, toggling the lane inside
+  complements.
+-/
+exposed def Expr.toLane
+  (expr: Expr .basic)
+  (lane: Set3.Lane)
+:
+  Expr .lane
+:=
+  match expr with
+  | .const _ x => .const lane x
+  | .var x => .var x
+  | .null => .null
+  | .prod left rite => .prod (left.toLane lane) (rite.toLane lane)
+  | .ir left rite => .ir (left.toLane lane) (rite.toLane lane)
+  | .full body => .full (body.toLane lane)
+  | .compl body => .compl (body.toLane lane.toggle)
+  | .arbIr body => .arbIr (body.toLane lane)
+
+theorem Expr.toLane_UsesFreeVar
+  (expr: Expr .basic)
+  (lane: Set3.Lane)
+  (x: Nat)
+:
+  (expr.toLane lane).UsesFreeVar x ↔ expr.UsesFreeVar x
+:=
+  match expr with
+  | .const _ _ => Iff.rfl
+  | .var _ => Iff.rfl
+  | .null => Iff.rfl
+  | .prod left rite =>
+    or_congr
+      (left.toLane_UsesFreeVar lane x)
+      (rite.toLane_UsesFreeVar lane x)
+  | .ir left rite =>
+    or_congr
+      (left.toLane_UsesFreeVar lane x)
+      (rite.toLane_UsesFreeVar lane x)
+  | .full body => body.toLane_UsesFreeVar lane x
+  | .compl body => body.toLane_UsesFreeVar lane.toggle x
+  | .arbIr body => body.toLane_UsesFreeVar lane (x + 1)
+
+theorem Expr.IsClean.toLane
+  {expr: Expr .basic}
+  (isClean: Expr.IsClean expr)
+  (lane: Set3.Lane)
+:
+  Expr.IsClean (expr.toLane lane)
+:=
+  fun _ isCleanLane =>
+    isClean _ ((expr.toLane_UsesFreeVar lane _).mp isCleanLane)
+
+
 def Expr.toString {kind}
   (serializeVar: kind.ConstTag → Nat → String)
 :

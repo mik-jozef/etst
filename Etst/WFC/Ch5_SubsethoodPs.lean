@@ -12,7 +12,7 @@
 /-
   Historical note: initially, I had hoped to avoid explicitly
   distinguishing between possible and definite membership; with
-  `SubsetStx` using `BasicExpr` instead of `SingleLaneExpr`, and
+  `SubsetStx` using `Expr .basic` instead of `Expr .lane`, and
   an expression `a ⊆ b` implicitly having the meaning "every
   possible member of `a` is a definite member of `b`". However,
   this kind of subsethood turned out not to be closed under
@@ -40,14 +40,16 @@ open Expr
 abbrev DefList.SubsetFv
   (dl: DefList)
   (fv: List Pair)
-  (a b: SingleLaneExpr)
+  (a b: Expr .lane)
 :=
-  Set.Subset (a.intp fv dl.wfm) (b.intp fv dl.wfm)
+  Set.Subset
+    (a.intp () dl.wfm dl.wfm fv)
+    (b.intp () dl.wfm dl.wfm fv)
 
 -- Semantic entailment.
 abbrev DefList.Subset
   (dl: DefList)
-  (a b: SingleLaneExpr)
+  (a b: Expr .lane)
 :=
   ∀ fv,
     a.freeVarUb ≤ fv.length →
@@ -55,13 +57,13 @@ abbrev DefList.Subset
     dl.SubsetFv fv a b
 
 
-exposed def Expr.isSubsingleton_body {E} (e: Expr kind): Expr kind :=
+exposed def Expr.isSubsingleton_body {kind} (e: Expr kind): Expr kind :=
   impl (some (ir e.lift (var 0))) (full (impl e.lift (var 0)))
 
-exposed def Expr.isSubsingleton {E} (e: Expr kind) : Expr kind :=
+exposed def Expr.isSubsingleton {kind} (e: Expr kind) : Expr kind :=
   arbIr e.isSubsingleton_body
 
-theorem Expr.isSubsingleton_freeVarUb_pos {E}
+theorem Expr.isSubsingleton_freeVarUb_pos {kind}
   (e: Expr kind)
 :
   0 < e.isSubsingleton_body.freeVarUb
@@ -76,8 +78,8 @@ theorem Expr.isSubsingleton_freeVarUb_pos {E}
 inductive DefList.SubsetStx
   (dl: DefList)
 :
-  SingleLaneExpr →
-  SingleLaneExpr →
+  Expr .lane →
+  Expr .lane →
   Type
 |
   subId {a}:
@@ -267,11 +269,11 @@ inductive DefList.SubsetStx
 
 theorem DefList.SubsetFv.subsetOfFullImpl {dl fv x a b p}
   (h: SubsetFv dl fv x (.full (.impl a b)))
-  (isInX: p ∈ x.intp fv dl.wfm)
+  (isInX: p ∈ x.intp () dl.wfm dl.wfm fv)
 :
   dl.SubsetFv fv a b
 :=
-  open SingleLaneExpr in
+  open Expr in
   fun p' inA => inImplElim (inFullElim (h isInX) p') inA
 
 theorem DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
@@ -279,7 +281,7 @@ theorem DefList.SubsetFv.fullImplOfSubset {dl fv x a b}
 :
   SubsetFv dl fv x (.full (.impl a b))
 :=
-  open SingleLaneExpr in
+  open Expr in
   fun _ _ => inFull .null fun _ => inImpl fun inA => h inA
 
 theorem DefList.Subset.call {dl a b}
@@ -287,9 +289,9 @@ theorem DefList.Subset.call {dl a b}
   (fv: List Pair)
   (leA: a.freeVarUb ≤ fv.length)
   (p: Pair)
-  (isIn: p ∈ a.intp fv dl.wfm)
+  (isIn: p ∈ a.intp () dl.wfm dl.wfm fv)
 :
-  p ∈ b.intp (fv ++ List.replicate b.freeVarUb Pair.null) dl.wfm
+  p ∈ b.intp () dl.wfm dl.wfm (fv ++ List.replicate b.freeVarUb .null)
 :=
   let fvPad := fv ++ List.replicate b.freeVarUb Pair.null
   let padLen: fvPad.length = fv.length + b.freeVarUb :=
@@ -298,17 +300,17 @@ theorem DefList.Subset.call {dl a b}
     padLen ▸ Nat.le_add_right_of_le leA
   let leBPad: b.freeVarUb ≤ fvPad.length :=
     padLen ▸ Nat.le_add_left _ _
-  let isInPad: p ∈ a.intp fvPad dl.wfm :=
-    SingleLaneExpr.intp_bv_append leA _ ▸ isIn
+  let isInPad: p ∈ a.intp () dl.wfm dl.wfm fvPad :=
+    Expr.intp_bv_append leA _ ▸ isIn
   sub fvPad leAPad leBPad isInPad
 
 
-theorem SingleLaneExpr.isSubsingleton_intp_eq
-  {expr fv v p pS}
-  (inSubs: pS ∈ intp expr.isSubsingleton fv v)
-  (inExpr: p ∈ intp expr fv v)
+theorem Expr.isSubsingleton_intp_eq
+  {expr: Expr .lane} {v fv p pS}
+  (inSubs: pS ∈ (expr.isSubsingleton).intp () v v fv)
+  (inExpr: p ∈ expr.intp () v v fv)
 :
-  intp expr fv v = {p}
+  expr.intp () v v fv = {p}
 :=
   Set.eq_singleton_iff_unique_mem.mpr
     (And.intro
@@ -321,10 +323,10 @@ theorem SingleLaneExpr.isSubsingleton_intp_eq
               (inSome
                 .null
                 (inIr
-                  (intp_lift_eq expr fv [p] v v ▸ inExpr)
+                  (expr.intp_lift_eq () v v fv [p] ▸ inExpr)
                   (inVar rfl)))
               pE)
-            (intp_lift_eq expr fv [p] v v ▸ isIn))
+            (expr.intp_lift_eq () v v fv [p] ▸ isIn))
           rfl))
 
 namespace DefList.SubsetStx
@@ -338,7 +340,7 @@ namespace DefList.SubsetStx
   :
     dl.Subset x e
   :=
-    open List SingleLaneExpr in
+    open List Expr in
     fun fv leX leE p isIn =>
       match sub with
       | subId => isIn
@@ -439,7 +441,7 @@ namespace DefList.SubsetStx
         eq ▸ inProd
           (inArbIr fun pX =>
             (inProdElim (eq ▸ inArbIrElim inArbIrArg pX)).left)
-          ((intp_lift_eq b fv [.null] dl.wfm dl.wfm).symm ▸ inBLift0)
+          ((b.intp_lift_eq () dl.wfm dl.wfm fv [.null]).symm ▸ inBLift0)
       | prodArbIrR (a:=a) (b:=b) sub =>
         let ⟨leA, leArbIrB⟩ := freeVarUb_bin_le_elim leE
         let leB := Nat.le_add_of_sub_le leArbIrB
@@ -449,7 +451,7 @@ namespace DefList.SubsetStx
         let inArbIrArg := sub.isSound fv leX leArbIrInner isIn
         let ⟨pA, pB, eq, inALift0, _⟩ := inProdElimEx (inArbIrElim inArbIrArg .null)
         eq ▸ inProd
-          ((intp_lift_eq a fv [.null] dl.wfm dl.wfm).symm ▸ inALift0)
+          ((a.intp_lift_eq () dl.wfm dl.wfm fv [.null]).symm ▸ inALift0)
           (inArbIr fun pX =>
             (inProdElim (eq ▸ inArbIrElim inArbIrArg pX)).right)
       | complProd sub (a:=a) (b:=b) => fun inProdAB =>
@@ -532,7 +534,7 @@ namespace DefList.SubsetStx
             (pX :: fv)
             (freeVarUb_le_lift leX)
             (Nat.le_add_of_sub_le leE)
-            (intp_lift_eq x fv [pX] dl.wfm ▸ isIn)
+            (x.intp_lift_eq () dl.wfm dl.wfm fv [pX] ▸ isIn)
       | arbIrElim (x:=x) (t:=t) (a:=a) sub isSome isSubsin =>
         let bUb :=
           Nat.max
@@ -555,30 +557,29 @@ namespace DefList.SubsetStx
           padLen ▸ Nat.le_add_left_of_le (Nat.le_max_left _ _)
         let isInPad := intp_bv_append leX _ ▸ isIn
         
-        let tIsSub: p ∈ intp t.isSubsingleton fvPad dl.wfm :=
+        let tIsSub: p ∈ (t.isSubsingleton).intp () dl.wfm dl.wfm fvPad :=
           isSubsin.isSound fvPad lePadX lePadSubsin isInPad
         
         let ⟨pBound, inT⟩ :=
           inSomeElim (isSome.isSound fvPad lePadX lePadT isInPad)
         
-        let tIntpEq: intp t fvPad dl.wfm = {pBound} :=
+        let tIntpEq: t.intp () dl.wfm dl.wfm fvPad = {pBound} :=
           isSubsingleton_intp_eq tIsSub inT
         
         let inArbIrA := sub.isSound fvPad lePadX lePadA isInPad
         let inA := inArbIrElim inArbIrA pBound
-        let inInst := intp_instantiateVar_eq a t tIntpEq ▸ inA
+        let inInst := intp_instantiateVar_eq a t tIntpEq tIntpEq ▸ inA
         
         intp_bv_append leE (List.replicate bUb Pair.null) ▸
         inInst
       
       | noneElim sub =>
         inNoneElim (sub.isSound fv leX (Nat.zero_le _) isIn)
-      | unfold sub =>
-        DefList.InWfm.in_def
+      | unfold (c:=c) sub =>
+        DefList.InWfm.in_def_toLane
           (sub.isSound fv leX (Nat.zero_le _) isIn)
-      | fold (c:=c) (lane:=lane) sub =>
-        DefList.InWfm.of_in_def
-          (sub.isSound.call fv leX _ isIn)
+      | fold (c:=c) sub =>
+        DefList.InWfm.of_in_def_toLane (sub.isSound.call fv leX _ isIn)
       | trans (b:=b) ab bc =>
         let inB := ab.isSound.call fv leX _ isIn
         let leB := by
@@ -621,7 +622,7 @@ namespace DefList.SubsetStx
               (freeVarUb_bin_le leE leE))
             leE
         let ind := (sub.isSound fv leX leE).subsetOfFullImpl isIn
-        let rec inP: (p: Pair) → p ∈ intp prop fv dl.wfm
+        let rec inP: (p: Pair) → p ∈ prop.intp () dl.wfm dl.wfm fv
         | Pair.null => ind (inUnL inNull)
         | .pair pa pb => ind (inUnR (inProd (inP pa) (inP pb)))
         DefList.SubsetFv.fullImplOfSubset

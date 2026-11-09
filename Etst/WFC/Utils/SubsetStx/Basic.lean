@@ -2112,7 +2112,7 @@ namespace DefList.SubsetStx
   :
     dl.SubsetStx x (prod a b).isSubsingleton
   :=
-    let l3 (e: SingleLaneExpr) := e.lift.lift.lift
+    let l3 (e: Expr .lane) := e.lift.lift.lift
     let subPairSome:
       dl.SubsetStx
         (some (ir (l3 (prod a b)) (prod (var 1) (var 0))))

@@ -22,8 +22,8 @@ structure IndCoindDescriptor (dl: DefList) where
   type: IndCoindDescriptor.Type
   lane: Set3.Lane
   x: Nat
-  expr: SingleLaneExpr
-  expansion: BasicExpr
+  expr: Expr .lane
+  expansion: Expr .basic
   expandsInto: dl.ExpandsInto true (dl.getDef x) expansion
 
 namespace IndCoindDescriptor
@@ -33,19 +33,19 @@ namespace IndCoindDescriptor
     complemented; inductive ones pass through.
   -/
   def Type.exprFor:
-    IndCoindDescriptor.Type → SingleLaneExpr → SingleLaneExpr
+    IndCoindDescriptor.Type → Expr .lane → Expr .lane
   | .induction, e => e
   | .coinduction, e => .compl e
   
   def Type.premiseFor:
     IndCoindDescriptor.Type →
-    (e: SingleLaneExpr) → (hypo: SingleLaneExpr) → SingleLaneExpr
+    (e: Expr .lane) → (hypo: Expr .lane) → Expr .lane
   | .induction, e, hypo => impl hypo e
   | .coinduction, e, hypo => impl e (.compl hypo)
   
   def Type.conclusionFor:
     IndCoindDescriptor.Type →
-    Set3.Lane → Nat → SingleLaneExpr → SingleLaneExpr
+    Set3.Lane → Nat → Expr .lane → Expr .lane
   | .induction, lane, x, e => impl (const lane x) e
   | .coinduction, lane, x, e => impl e (compl (const lane x))
   
@@ -88,7 +88,7 @@ namespace MutIndCoindDescriptor
     {dl} (desc: MutIndCoindDescriptor dl)
     (i: desc.Index)
   :
-    SingleLaneExpr
+    Expr .lane
   :=
     desc[i].type.premiseFor
       desc[i].expr
@@ -100,7 +100,7 @@ namespace MutIndCoindDescriptor
     {dl} (desc: MutIndCoindDescriptor dl)
     (i: desc.Index)
   :
-    SingleLaneExpr
+    Expr .lane
   :=
     desc[i].type.conclusionFor desc[i].lane desc[i].x desc[i].expr
   

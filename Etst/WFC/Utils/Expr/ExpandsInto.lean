@@ -18,13 +18,13 @@ namespace Etst
 inductive DefList.ExpandsInto
   (dl: DefList)
 :
-  (isEvenDepth: Bool) → BasicExpr → BasicExpr → Type
+  (isEvenDepth: Bool) → Expr .basic → Expr .basic → Type
 
 | refl {ed} e: ExpandsInto dl ed e e
 | const {xExp} (x: Nat)
     (exp: ExpandsInto dl true (dl.getDef x) xExp)
   :
-    ExpandsInto dl true (.const x) xExp
+    ExpandsInto dl true (.const () x) xExp
 | prod {ed l lExp r rExp}
     (left: ExpandsInto dl ed l lExp)
     (rite: ExpandsInto dl ed r rExp)
@@ -112,38 +112,6 @@ namespace DefList.ExpandsInto
       fun x hx => isClean_expands exp (shift + 1) (fun x hx => h x hx) x hx
   
   
-  open BasicExpr in
-  theorem triIntp_eq_wfm {ed left rite}
-    (dl: DefList)
-    (fv: List Pair)
-  :
-    ExpandsInto dl ed left rite →
-    left.triIntp fv dl.wfm = rite.triIntp fv dl.wfm
-  
-  | .refl _ => _root_.rfl
-  | .const x expr =>
-    let ih := expr.triIntp_eq_wfm (fv := fv)
-    let eqDef := dl.wfm_eq_def x
-    let eqFv := dl.intpDefs_eq_fv x [] fv dl.wfm dl.wfm
-    eqDef.trans (eqFv.trans ih)
-  | .prod left rite =>
-    eq_triIntp_prod_of_eq
-      (left.triIntp_eq_wfm dl fv)
-      (rite.triIntp_eq_wfm dl fv)
-  | .full expr =>
-    eq_triIntp_full_of_eq (expr.triIntp_eq_wfm dl fv)
-  | .ir left rite =>
-    eq_triIntp_ir_of_eq
-      (left.triIntp_eq_wfm dl fv)
-      (rite.triIntp_eq_wfm dl fv)
-  | .compl expr =>
-    eq_triIntp_compl_of_eq (expr.triIntp_eq_wfm dl fv)
-  | .arbIr expr =>
-    eq_triIntp_arbIr_of_eq
-      (fun pB => expr.triIntp_eq_wfm dl (pB :: fv))
-  
-  open BasicExpr in
-  open SingleLaneExpr in
   theorem lfpStage_le_std {ed l r}
     (expInto: ExpandsInto dl ed l r)
     (fv: List Pair)
@@ -151,8 +119,8 @@ namespace DefList.ExpandsInto
   :
     let _ := Valuation.ordStdLattice
     let op := operatorC dl dl.wfm
-    let triIntpE e fv := e.triIntp fv dl.wfm (op.lfpStage n)
-    let triIntpO e fv := e.triIntp fv (op.lfpStage n) dl.wfm
+    let triIntpE e fv := e.triIntp dl.wfm (op.lfpStage n) fv
+    let triIntpO e fv := e.triIntp (op.lfpStage n) dl.wfm fv
     
     if ed
     then triIntpE l fv ≤ triIntpE r fv
@@ -170,12 +138,12 @@ namespace DefList.ExpandsInto
       let ih := exp.lfpStage_le_std fv n
       let defX := dl.getDef x
       let leNextStage:
-        triIntpE (.const x) [] ≤ triIntpE defX fv
+        triIntpE (.const () x) [] ≤ triIntpE defX fv
       :=
         let eqNext: triIntpE defX [] = op.lfpStage n.succ x :=
           congr (op.lfpStage_apply_eq_succ n) _root_.rfl
         let eqClear: triIntpE defX [] = triIntpE (dl.getDef x) fv :=
-          dl.intpDefs_eq_fv _ _ _ _ _
+          dl.triIntp_getDef_eq_fv x dl.wfm (op.lfpStage n) [] fv
         
         eqClear ▸ eqNext ▸ op.lfpStage_mono (Order.le_succ n) x
       leNextStage.trans ih
@@ -205,8 +173,8 @@ namespace DefList.ExpandsInto
       | false => triIntp_mono_std_full (exp.lfpStage_le_std fv n)
     | compl exp =>
       match ed with
-      | true => triIntp_mono_std_compl (exp.lfpStage_le_std fv n)
-      | false => triIntp_mono_std_compl (exp.lfpStage_le_std fv n)
+      | true => triIntp_antimono_std_compl (exp.lfpStage_le_std fv n)
+      | false => triIntp_antimono_std_compl (exp.lfpStage_le_std fv n)
     | arbIr exp =>
       match ed with
       | true =>

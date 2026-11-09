@@ -25,7 +25,7 @@ where
   compile {vars consts}
     (expr: NamedExpr vars consts)
   :
-    BasicExpr
+    Expr .basic
   
   compiles_clean {consts}
     (expr: NamedExpr [] consts)
@@ -38,8 +38,8 @@ where
     (compile expr).ConstsLt consts.length
 
 
-public inductive NamedDefListSection {Expr}
-  (tools: NamedExprTools Expr)
+public inductive NamedDefListSection {ExprT}
+  (tools: NamedExprTools ExprT)
 :
   (outerConsts innerConsts: List String) →
   Type
@@ -47,7 +47,7 @@ public inductive NamedDefListSection {Expr}
 | const
     (const: String)
     {outerConsts innerConsts}
-    (body: Expr [] (outerConsts ++ (const :: innerConsts)))
+    (body: ExprT [] (outerConsts ++ (const :: innerConsts)))
     (tail:
       NamedDefListSection tools (outerConsts.concat const) innerConsts)
     (nameUnique: const ∉ outerConsts := by decide)
@@ -55,8 +55,8 @@ public inductive NamedDefListSection {Expr}
     NamedDefListSection tools outerConsts (const :: innerConsts)
 
 namespace NamedDefListSection
-  variable {Expr}
-    {tools: NamedExprTools Expr}
+  variable {ExprT}
+    {tools: NamedExprTools ExprT}
   
   exposed def length {o i}
     (segment: NamedDefListSection tools o i)
@@ -114,8 +114,8 @@ namespace NamedDefListSection
   
 end NamedDefListSection
 
-public inductive NamedDefList {Expr}
-  (tools: NamedExprTools Expr)
+public inductive NamedDefList {ExprT}
+  (tools: NamedExprTools ExprT)
 :
   (outerConsts innerConsts: List String) →
   Type
@@ -129,11 +129,11 @@ where
     NamedDefList tools [] (baseConsts ++ childConsts)
 
 namespace NamedDefList
-  variable {Expr}
-    {tools: NamedExprTools Expr}
+  variable {ExprT}
+    {tools: NamedExprTools ExprT}
   
-  exposed def declare {Expr}
-    (tools: NamedExprTools Expr)
+  exposed def declare {ExprT}
+    (tools: NamedExprTools ExprT)
     {innerConsts}
     (segment: NamedDefListSection tools [] innerConsts)
   :
@@ -236,7 +236,7 @@ namespace NamedDefList
     (x: String)
     (_: x ∈ consts := by decide)
   :
-    BasicExpr
+    Expr .basic
   :=
     ndl.dl.getDef (consts.idxOf x)
   

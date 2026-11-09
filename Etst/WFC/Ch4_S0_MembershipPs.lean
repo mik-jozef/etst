@@ -66,7 +66,7 @@ where
 exposed def Cause.IsStrongCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
   (p: Pair)
 :
   Prop
@@ -78,7 +78,7 @@ exposed def Cause.IsStrongCauseFv
 exposed def Cause.IsWeakCauseFv
   (cause: Cause Pair)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
   (p: Pair)
 :
   Prop
@@ -89,7 +89,7 @@ exposed def Cause.IsWeakCauseFv
 
 public abbrev Cause.IsStrongCause
   (cause: Cause Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
   (p: Pair)
 :
   Prop
@@ -98,7 +98,7 @@ public abbrev Cause.IsStrongCause
 
 public abbrev Cause.IsWeakCause
   (cause: Cause Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
   (p: Pair)
 :
   Prop

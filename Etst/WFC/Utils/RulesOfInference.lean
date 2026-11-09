@@ -256,7 +256,7 @@ namespace Expr
   :=
     lane.toggle_toggle ▸ ninBody
   
-  theorem inComplT
+  theorem inComplToggle
     (ninBody: ¬ p ∈ body.intp lane b c fv)
   :
     p ∈ (compl body).intp lane.toggle c b fv
@@ -264,20 +264,30 @@ namespace Expr
     inCompl (lane.toggle_toggle ▸ ninBody)
   
   theorem inComplElim
-    (inCompl: p ∈ (compl body).intp lane.toggle b c fv)
-  :
-    ¬ p ∈ body.intp lane c b fv
-  :=
-    lane.toggle_toggle ▸ inCompl
-  
-  theorem inComplElimT
     (inCompl: p ∈ (compl body).intp lane b c fv)
   :
     ¬ p ∈ body.intp lane.toggle c b fv
   :=
     inCompl
   
+  theorem inComplToggleElim
+    (inCompl: p ∈ (compl body).intp lane.toggle b c fv)
+  :
+    ¬ p ∈ body.intp lane c b fv
+  :=
+    lane.toggle_toggle ▸ inCompl
+  
   theorem ninCompl
+    (inBody: p ∈ body.intp lane.toggle b c fv)
+  :
+    ¬ p ∈ (compl body).intp lane c b fv
+  :=
+    match kind, lane with
+    | .basic, .defLane => (· inBody)
+    | .basic, .posLane => (· inBody)
+    | .lane, _ => (· inBody)
+  
+  theorem ninComplToggle
     (inBody: p ∈ body.intp lane b c fv)
   :
     ¬ p ∈ (compl body).intp lane.toggle c b fv
@@ -411,15 +421,14 @@ namespace DefList
   :
     dl.InWfm (dl.getDef x) lane [] p
   :=
-    let v := dl.wfm
-    
-    let eqAtN: v x = dl.intpDefs v v x :=
+    let eqAtN: dl.wfm x = dl.intpDefs dl.wfm dl.wfm x :=
       congr (DefList.wfm_isModel dl) rfl
-    
     match lane with
     | .defLane =>
-        show p ∈ (dl.intpDefs v v x).defMem from eqAtN ▸ inConst
+        show p ∈ (dl.intpDefs dl.wfm dl.wfm x).defMem from
+        eqAtN ▸ inConst
     | .posLane =>
-        show p ∈ (dl.intpDefs v v x).posMem from eqAtN ▸ inConst
+        show p ∈ (dl.intpDefs dl.wfm dl.wfm x).posMem from
+        eqAtN ▸ inConst
   
 end DefList

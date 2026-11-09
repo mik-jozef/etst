@@ -10,7 +10,7 @@ namespace DefList.SubsetStx
   variable {dl: DefList}
   
   private theorem subsingle_body_subst
-    (t: SingleLaneExpr)
+    (t: Expr .lane)
     (map: Nat → Nat)
   :
     Eq
@@ -22,7 +22,7 @@ namespace DefList.SubsetStx
       (lift_substVar_eq t map)
   
   private theorem subsingle_subst
-    (t: SingleLaneExpr)
+    (t: Expr .lane)
     (map: Nat → Nat)
   :
     substVar map t.isSubsingleton = (substVar map t).isSubsingleton
@@ -36,7 +36,7 @@ namespace DefList.SubsetStx
     (map: Nat → Nat)
     (depth: Nat)
     (ed: Bool)
-    (expr: SingleLaneExpr)
+    (expr: Expr .lane)
     (varLt: ∀ x, expr.UsesFreeVar x → x < depth)
   :
     let mapDesc d: InductionDescriptor dl := {
@@ -76,7 +76,7 @@ namespace DefList.SubsetStx
       | dPred + 1 => congrArg Nat.succ map_var_ge
 
     let substVar_lift_depth_eq
-      (body: SingleLaneExpr)
+      (body: Expr .lane)
     :
       Eq
         (substVar (liftFvMapVarDepth depth map) (body.lift 0 depth))
@@ -163,7 +163,7 @@ namespace DefList.SubsetStx
         (substVar_liftFvMapVar_subst _ _ ▸ ih)
   
   def mapFv
-    {x a: SingleLaneExpr}
+    {x a: Expr .lane}
     (sub: dl.SubsetStx x a)
     (map: Nat → Nat)
   :
@@ -292,7 +292,7 @@ namespace DefList.SubsetStx
             (fun x h => (dl.isClean d.x) (x + 0) h)
         let varLt: ∀ x, UsesFreeVar expr x → x < 0 :=
           fun x h =>
-            let iff := BasicExpr.toLane_UsesFreeVar d.expansion d.lane x
+            let iff := d.expansion.toLane_UsesFreeVar d.lane x
             False.elim (expClean x (iff.mp h))
         substVar_hypothesify_map desc map 0 true expr varLt
       

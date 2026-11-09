@@ -49,7 +49,7 @@ namespace DefListEq
     dlSrc.intpDefs bSrc cSrc x = dlDst.intpDefs bDst cDst (map x)
   :=
     let eq :=
-      BasicExpr.mapConst_triIntp
+      Expr.mapConst_triIntp
         map
         (fun y yUsed => eqB y (closed x xIn y yUsed))
         (fun y yUsed => eqC y (closed x xIn y yUsed))
@@ -197,16 +197,16 @@ theorem DefList.eq {dlSrc dlDst: DefList}
   | ⟨_, _⟩, _, rfl => rfl
 
 
-theorem FinBoundedDl.ex_expr_uses_bound
+theorem FinBoundedDl.ex_expr_uses_bound {kind}
   (dl: FinBoundedDl)
-  (expr: BasicExpr)
+  (expr: Expr kind)
 :
   ∃ n,
   ∀ x, expr.UsesConst x →
     x < n ∧ DefList.IsDefBoundedBy dl.getDef x n
 :=
   match expr with
-  | .const x =>
+  | .const _ x =>
     let ⟨bound, depsLt⟩ := dl.isFinBounded x
     let n := max (x + 1) bound
     ⟨n, fun _ yEq =>
@@ -291,9 +291,12 @@ theorem FinBoundedDl.ex_prefix_wfm_eq
 theorem FinBoundedDl.ex_prefix_wfm_eq_expr
   (dl: FinBoundedDl)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
 :
-  ∃ n, expr.triIntp fv (dl.prefix n).wfm = expr.triIntp fv dl.wfm
+  ∃ n,
+    Eq
+      (expr.triIntp (dl.prefix n).wfm (dl.prefix n).wfm fv)
+      (expr.triIntp dl.wfm dl.wfm fv)
 :=
   let ⟨n, isBounded⟩ := dl.ex_expr_uses_bound expr
   let eqAtN x xIn :=
@@ -301,14 +304,14 @@ theorem FinBoundedDl.ex_prefix_wfm_eq_expr
     dl.prefix_wfm_eq_of_lt xLtN depsLtN
   ⟨n, by
     conv => rhs; rw [←Expr.mapConst_eq_id expr]
-    exact (BasicExpr.mapConst_triIntp (map := id) eqAtN eqAtN).symm
+    exact (Expr.mapConst_triIntp (map := id) eqAtN eqAtN).symm
   ⟩
 
 
-theorem Expr.noneLtSize {E: Type*}
+theorem Expr.noneLtSize {kind}
   (size: Nat)
 :
-  (none (E := E)).ConstsLt size
+  (none (kind := kind)).ConstsLt size
 :=
   nofun
 
@@ -321,9 +324,9 @@ theorem DefList.DependsOn.toUsesConst {getDef a b}
   | Base usesVar => ⟨_, usesVar⟩
   | Rec _ depOn => depOn.toUsesConst
 
-exposed def DefList.IsExprBoundedBy
+exposed def DefList.IsExprBoundedBy {kind}
   (dl: DefList)
-  (expr: BasicExpr)
+  (expr: Expr kind)
   (ub: Nat)
 :
   Prop
@@ -375,7 +378,7 @@ namespace FiniteDefList
   
   structure Def (size: Nat) where
     name: String
-    expr: BasicExpr
+    expr: Expr .basic
     constsLt: expr.ConstsLt size
     isClean: expr.IsClean
   
@@ -494,9 +497,9 @@ namespace FiniteDefList
       }
     ] rfl
   
-  theorem isExprBoundedBy
+  theorem isExprBoundedBy {kind}
     (dl: FiniteDefList)
-    (expr: BasicExpr)
+    (expr: Expr kind)
   :
     dl.IsExprBoundedBy expr dl.size
   :=

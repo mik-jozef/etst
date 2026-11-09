@@ -260,7 +260,7 @@ theorem Cause.IsWeakCauseFv.ofValPos {expr b c fv p}
   (Cause.ofValPos b c).IsWeakCauseFv fv expr p
 :=
   fun _ _ isSat =>
-    BasicExpr.triIntp_mono_std_posMem
+    Expr.intp_mono_std_posMem
       (fun _ _ isDef => byContradiction (isSat.boutSat · isDef))
       (fun _ _ => isSat.cinsSat)
       isPos
@@ -271,7 +271,7 @@ theorem Cause.IsStrongCauseFv.ofValDef {expr b c fv p}
   (Cause.ofValDef b c).IsStrongCauseFv fv expr p
 :=
   fun _ _ isSat =>
-    BasicExpr.triIntp_mono_std_defMem
+    Expr.intp_mono_std_defMem
       (fun _ _ isDef => byContradiction (isSat.boutSat · isDef))
       (fun _ _ => isSat.cinsSat)
       isDef
@@ -387,7 +387,7 @@ theorem Cause.IsStrongCauseFv.ofLeastCompl {fv expr p}
   (notPos:
     let lc := cause.leastContextApx
     let lb := cause.leastBackgroundApx
-    ¬ p ∈ expr.triIntpPos fv lc lb)
+    ¬ p ∈ expr.intp .posLane lc lb fv)
 :
   cause.IsStrongCauseFv fv (.compl expr) p
 :=
@@ -398,8 +398,7 @@ theorem Cause.IsStrongCauseFv.ofLeastCompl {fv expr p}
         posLe _ _ := trivial
       }
     let posLe :=
-      BasicExpr.triIntp_mono_apx_posMem
-        (expr := expr)
+      Expr.intp_mono_apx_posMem
         (c0 := cause.leastBackgroundApx)
         bgLe
         (fun _ _ isPos inBout => isSat.boutSat inBout isPos)
@@ -407,39 +406,39 @@ theorem Cause.IsStrongCauseFv.ofLeastCompl {fv expr p}
 
 
 theorem Cause.IsWeakCauseFv.const {fv x p}:
-  IsWeakCauseFv (Cause.cinsJust x p) fv (.const x) p
+  IsWeakCauseFv (Cause.cinsJust x p) fv (.const () x) p
 :=
   fun _ _ isSat => isSat.cinsSat ⟨rfl, rfl⟩
 
 theorem Cause.IsWeakCauseFv.constElim {fv x p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.const x) p)
+  (isCause: cause.IsWeakCauseFv fv (.const () x) p)
 :
   cause.cins x p
 :=
   isCause cause.maximalValsApxAreSat
 
 theorem Cause.IsWeakCauseFv.complConst {fv x p}:
-   IsWeakCauseFv (Cause.boutJust x p) fv (.compl (.const x)) p
+   IsWeakCauseFv (Cause.boutJust x p) fv (.compl (.const () x)) p
 :=
   fun _ _ isSat => isSat.boutSat ⟨rfl, rfl⟩
 
 theorem Cause.IsWeakCauseFv.complConstElim {fv x p}
   {cause: Cause Pair}
-  (isCause: cause.IsWeakCauseFv fv (.compl (.const x)) p)
+  (isCause: cause.IsWeakCauseFv fv (.compl (.const () x)) p)
 :
   cause.bout x p
 :=
   (isCause cause.maximalValsApxAreSat).dne
 
 theorem Cause.IsStrongCauseFv.const {fv x p}:
-  IsStrongCauseFv (Cause.cinsJust x p) fv (.const x) p
+  IsStrongCauseFv (Cause.cinsJust x p) fv (.const () x) p
 :=
   fun _ _ isSat => isSat.cinsSat ⟨rfl, rfl⟩
 
 theorem Cause.IsStrongCauseFv.constElim {fv x p}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.const x) p)
+  (isCause: cause.IsStrongCauseFv fv (.const () x) p)
 :
   cause.cins x p
 :=
@@ -447,7 +446,7 @@ theorem Cause.IsStrongCauseFv.constElim {fv x p}
 
 theorem Cause.IsStrongCauseFv.complConstElim {fv x p}
   {cause: Cause Pair}
-  (isCause: cause.IsStrongCauseFv fv (.compl (.const x)) p)
+  (isCause: cause.IsStrongCauseFv fv (.compl (.const () x)) p)
 :
   cause.bout x p
 :=
@@ -483,19 +482,15 @@ theorem Cause.IsWeakCauseFv.complProdElim {fv l r pL pR}
   match not_and_or.mp (fun inProd => isCause isSat ⟨pL, pR, rfl, inProd.left, inProd.right⟩) with
   | Or.inl isPosL =>
     Or.inl (fun _ _ isSat =>
-      BasicExpr.triIntp_mono_std_posMem
-        (expr := .compl l)
+      Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
-        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosL)
   | Or.inr isPosR =>
     Or.inr (fun _ _ isSat =>
-      BasicExpr.triIntp_mono_std_posMem
-        (expr := .compl r)
+      Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
-        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
@@ -544,19 +539,15 @@ theorem Cause.IsWeakCauseFv.complIrElim {fv l r p}
   match not_and_or.mp (isCause isSat) with
   | Or.inl isPosL =>
     Or.inl (fun _ _ isSat =>
-      BasicExpr.triIntp_mono_std_posMem
-        (expr := .compl l)
+      Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
-        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosL)
   | Or.inr isPosR =>
     Or.inr (fun _ _ isSat =>
-      BasicExpr.triIntp_mono_std_posMem
-        (expr := .compl r)
+      Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
-        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
@@ -590,10 +581,8 @@ theorem Cause.IsWeakCauseFv.complFullElim {fv body p}
   match Classical.not_forall.mp (isCause isSat) with
   | ⟨pB, notDefBody⟩ =>
     ⟨pB, fun _ _ isSat =>
-      BasicExpr.triIntp_mono_std_posMem
-        (expr := body.compl)
+      Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
-        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         notDefBody⟩
@@ -616,7 +605,7 @@ theorem Cause.IsWeakCauseFv.complCompl {fv body p}
 :
   cause.IsWeakCauseFv fv (.compl (.compl body)) p
 :=
-  open SingleLaneExpr in
+  open Expr in
   fun _ _ isSat => inCompl (ninCompl (isCause isSat))
 
 theorem Cause.IsWeakCauseFv.complComplElim {fv body p}
@@ -652,10 +641,8 @@ theorem Cause.IsWeakCauseFv.complArbIrElim {fv body p}
   match Classical.not_forall.mp (isCause isSat) with
   | ⟨pX, notDefBody⟩ =>
     ⟨pX, fun _ _ isSat =>
-      BasicExpr.triIntp_mono_std_posMem
-        (expr := body.compl)
+      Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
-        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         notDefBody⟩
@@ -680,8 +667,7 @@ theorem Cause.IsWeakCauseFv.noneElim {fv p}
 :
   P
 :=
-  SingleLaneExpr.inNoneElim
-    (isCause cause.maximalValsApxAreSat)
+  Expr.inNoneElim (isCause cause.maximalValsApxAreSat)
 
 theorem Cause.IsStrongCauseFv.noneElim {fv p}
   {cause: Cause Pair}
@@ -690,5 +676,4 @@ theorem Cause.IsStrongCauseFv.noneElim {fv p}
 :
   P
 :=
-  SingleLaneExpr.inNoneElim
-    (isCause cause.leastValsApxAreSat)
+  Expr.inNoneElim (isCause cause.leastValsApxAreSat)

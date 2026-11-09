@@ -873,7 +873,7 @@ namespace Set3
     | .defLane => defToPos inLane
     | .posLane => inLane
   
-  theorem Lane.toggle_toggle_eq:
+  theorem Lane.toggle_toggle:
     (lane: Set3.Lane) → lane.toggle.toggle = lane
   | .posLane => rfl
   | .defLane => rfl

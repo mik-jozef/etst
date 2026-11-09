@@ -220,15 +220,15 @@ theorem Expr.triIntp_mono_apx
         posLe _p pIn pXPos0 := (ih pXPos0).posLe (pIn pXPos0)
       }
 
-theorem Expr.triIntp_mono_apx_defMem
+theorem Expr.intp_mono_apx_defMem
   {expr: Expr .basic}
   {b0 b1} (bLe: b0 ⊑ b1)
   {c0 c1} (cLeDef: (x: Nat) → (c0 x).defMem ⊆ (c1 x).defMem)
   {fv}
 :
   Set.Subset
-    (expr.triIntp b0 c0 fv).defMem
-    (expr.triIntp b1 c1 fv).defMem
+    (expr.intp .defLane b0 c0 fv)
+    (expr.intp .defLane b1 c1 fv)
 :=
   let c0LeSelf := (Valuation.ordApx Pair).le_refl c0
   let isMonoB := triIntp_mono_apx bLe c0LeSelf
@@ -237,15 +237,15 @@ theorem Expr.triIntp_mono_apx_defMem
     cLeDef
   isMonoB.defLe.trans isMonoC
 
-theorem Expr.triIntp_mono_apx_posMem
+theorem Expr.intp_mono_apx_posMem
   {expr: Expr .basic}
   {b0 b1} (bLe: b0 ⊑ b1)
   {c0 c1} (cLePos: (x: Nat) → (c1 x).posMem ⊆ (c0 x).posMem)
   {fv}
 :
   Set.Subset
-    (expr.triIntp b1 c1 fv).posMem
-    (expr.triIntp b0 c0 fv).posMem
+    (expr.intp .posLane b1 c1 fv)
+    (expr.intp .posLane b0 c0 fv)
 :=
   let c0LeSelf := (Valuation.ordApx Pair).le_refl c1
   let isMonoB := triIntp_mono_apx bLe c0LeSelf
@@ -273,3 +273,42 @@ theorem Expr.triIntp_getLane_eq {b c fv lane}
   match lane with
   | .defLane => rfl
   | .posLane => rfl
+
+/-
+  `Expr.toLane` only changes the shape of constants, so interpreting
+  `expr.toLane lane` at the trivial lane agrees with interpreting
+  `expr` at `lane`.
+-/
+theorem Expr.toLane_intp
+  (expr: Expr .basic)
+  (lane: Set3.Lane)
+  (b c: Valuation Pair)
+  (fv: List Pair)
+:
+  (expr.toLane lane).intp () b c fv = expr.intp lane b c fv
+:=
+  match expr with
+  | .const _ _ => rfl
+  | .var _ => rfl
+  | .null => rfl
+  | .prod left rite =>
+    congrArg₂
+      (fun s t => Set.ofPred fun p =>
+        ∃ pL pR, p = Pair.pair pL pR ∧ pL ∈ s ∧ pR ∈ t)
+      (left.toLane_intp lane b c fv)
+      (rite.toLane_intp lane b c fv)
+  | .ir left rite =>
+    congrArg₂
+      (fun s t => Set.ofPred fun p => p ∈ s ∧ p ∈ t)
+      (left.toLane_intp lane b c fv)
+      (rite.toLane_intp lane b c fv)
+  | .full body =>
+    congrArg
+      (fun s => Set.ofPred fun _ => ∀ pB, pB ∈ s)
+      (body.toLane_intp lane b c fv)
+  | .compl body =>
+    congrArg Set.compl (body.toLane_intp lane.toggle c b fv)
+  | .arbIr body =>
+    congrArg
+      (fun s: Pair → Set Pair => Set.ofPred fun p => ∀ pX, p ∈ s pX)
+      (funext fun pX => body.toLane_intp lane b c (pX :: fv))

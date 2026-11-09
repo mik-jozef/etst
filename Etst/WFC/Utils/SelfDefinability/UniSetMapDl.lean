@@ -19,7 +19,6 @@ import Etst.WFC.Utils.RulesOfInference
 
 public section
 namespace Etst
-open SingleLaneExpr
 
 
 /-
@@ -284,49 +283,49 @@ exposed pairDefList uniSetMapDl
 pairDefList.
 
 namespace uniSetMapDl
-  exposed def exprEncConstRaw: BasicExpr :=
+  exposed def exprEncConstRaw: Expr .basic :=
     exprEncConst.compile uniSetMapDl.consts
   
-  exposed def exprEncComplConstRaw: BasicExpr :=
+  exposed def exprEncComplConstRaw: Expr .basic :=
     exprEncComplConst.compile uniSetMapDl.consts
   
-  exposed def exprEncVarRaw: BasicExpr :=
+  exposed def exprEncVarRaw: Expr .basic :=
     exprEncVar.compile uniSetMapDl.consts
   
-  exposed def exprEncComplVarRaw: BasicExpr :=
+  exposed def exprEncComplVarRaw: Expr .basic :=
     exprEncComplVar.compile uniSetMapDl.consts
   
-  exposed def exprEncNullRaw: BasicExpr :=
+  exposed def exprEncNullRaw: Expr .basic :=
     exprEncNull.compile uniSetMapDl.consts
   
-  exposed def exprEncProdRaw: BasicExpr :=
+  exposed def exprEncProdRaw: Expr .basic :=
     exprEncProd.compile uniSetMapDl.consts
   
-  exposed def exprEncIrRaw: BasicExpr :=
+  exposed def exprEncIrRaw: Expr .basic :=
     exprEncIr.compile uniSetMapDl.consts
   
-  exposed def exprEncUnRaw: BasicExpr :=
+  exposed def exprEncUnRaw: Expr .basic :=
     exprEncUn.compile uniSetMapDl.consts
   
-  exposed def exprEncFullRaw: BasicExpr :=
+  exposed def exprEncFullRaw: Expr .basic :=
     exprEncFull.compile uniSetMapDl.consts
   
-  exposed def exprEncSomeRaw: BasicExpr :=
+  exposed def exprEncSomeRaw: Expr .basic :=
     exprEncSome.compile uniSetMapDl.consts
   
-  exposed def exprEncArbIrRaw: BasicExpr :=
+  exposed def exprEncArbIrRaw: Expr .basic :=
     exprEncArbIr.compile uniSetMapDl.consts
   
-  exposed def exprEncArbUnRaw: BasicExpr :=
+  exposed def exprEncArbUnRaw: Expr .basic :=
     exprEncArbUn.compile uniSetMapDl.consts
   
-  exposed def exprEncUniSetMapRaw: BasicExpr :=
+  exposed def exprEncUniSetMapRaw: Expr .basic :=
     exprEncUniSetMap.compile uniSetMapDl.consts
   
-  exposed def exprEncToEncodingRaw: BasicExpr :=
+  exposed def exprEncToEncodingRaw: Expr .basic :=
     exprEncToEncoding.compile uniSetMapDl.consts
   
-  exposed def exprEncListRaw: BasicExpr :=
+  exposed def exprEncListRaw: Expr .basic :=
     exprEncList.compile uniSetMapDl.consts
   
   
@@ -343,16 +342,16 @@ namespace uniSetMapDl
     (x: String)
     (isIn: x ∈ uniSetMapDl.consts := by decide)
   :
-    BasicExpr
+    Expr .basic
   :=
-    .const (cst x isIn)
+    .const () (cst x isIn)
 end uniSetMapDl
 
 
 -- Any pair not in the codomain encodes `none`.
-exposed def BasicExpr.encodingNnf: BasicExpr → Pair
-| .const x => .pair (.nat 0) (.nat x)
-| .compl (.const x) => .pair (.nat 1) (.nat x)
+exposed def Expr.encodingNnf: Expr .basic → Pair
+| .const () x => .pair (.nat 0) (.nat x)
+| .compl (.const () x) => .pair (.nat 1) (.nat x)
 | .var x => .pair (.nat 2) (.nat x)
 | .compl (.var x) => .pair (.nat 3) (.nat x)
 | .null => .pair (.nat 4) .null
@@ -371,12 +370,12 @@ exposed def BasicExpr.encodingNnf: BasicExpr → Pair
   -- is a convenient choice.
   .pair (.nat 10) (.pair (.nat 3) (.nat 0))
 
-exposed def BasicExpr.encoding
-  (expr: BasicExpr)
+exposed def Expr.encoding
+  (expr: Expr .basic)
 :
   Pair
 :=
-  BasicExpr.encodingNnf expr.toNnf
+  Expr.encodingNnf expr.toNnf
 
 
 exposed def DefList.prefixList
@@ -415,7 +414,7 @@ theorem DefList.prefixList_at_eq_start
   Eq
     (Option.getD
       (dl.prefixList start length)[x]?
-      (BasicExpr.encoding .none))
+      (Expr.encoding .none))
     ((dl.prefix (start + length)).getDef (start + x)).encoding
 :=
   match length, x with
@@ -440,7 +439,7 @@ theorem DefList.prefixList_at_eq
   (n x: Nat)
 :
   Eq
-    ((dl.prefixList 0 n)[x]?.getD (BasicExpr.encoding .none))
+    ((dl.prefixList 0 n)[x]?.getD (Expr.encoding .none))
     ((dl.prefix n).getDef x).encoding
 := by
   conv => rhs; rw [←Nat.zero_add x, ←Nat.zero_add n]
@@ -469,7 +468,7 @@ exposed def uniSetMapIndex
   (dl: DefList)
   (n: Nat)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
 :
   Pair
 :=
@@ -488,7 +487,7 @@ exposed noncomputable def uniSetMapAt
   (dl: DefList)
   (n: Nat)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
 :
   Set3 Pair
 :=
@@ -506,11 +505,13 @@ theorem uniSetMapIndex_nnf_eq {dl n fv expr}:
   uniSetMapIndex dl n fv expr =
     uniSetMapIndex dl n fv expr.toNnf
 := by
-  unfold uniSetMapIndex BasicExpr.encoding
+  unfold uniSetMapIndex Expr.encoding
   rw [expr.toNnf_idem]
 
 
 namespace uniSetMapDl
+  open Expr
+  
   exposed def getNthEnc
     (list: List Pair)
     (i: Nat)
@@ -550,7 +551,7 @@ namespace uniSetMapDl
                 (inProd rfl rfl)
                 (inProd
                   (inProd rfl inNull)
-                  (inCall (inCall (inToggle2 8 ih) rfl) rfl))))
+                  (inCall (inCall ih rfl) rfl))))
       DefList.InWfm.of_in_def_no_fv
         (inArbUn
           listH

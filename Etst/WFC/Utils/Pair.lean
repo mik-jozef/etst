@@ -114,7 +114,7 @@ namespace Pair
   }
   
   
-  exposed def toExpr: Pair → BasicExpr
+  exposed def toExpr {kind}: Pair → Expr kind
   | .null => .null
   | .pair l r => .prod l.toExpr r.toExpr
   

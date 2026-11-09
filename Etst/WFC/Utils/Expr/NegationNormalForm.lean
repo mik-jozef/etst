@@ -35,7 +35,7 @@ namespace Etst
 -- | .compl (.arbIr body) =>
 --   .compl (.arbIr (.compl body.compl.toNnf))
 -- | .arbIr body => .arbIr body.toNnf
-exposed def Expr.toNnfAux {E} : Expr kind → Bool → Expr kind
+exposed def Expr.toNnfAux {kind}: Expr kind → Bool → Expr kind
 -- Positive context (isNegated = false)
 | .const tag x, false => .const tag x
 | .var x,     false => .var x
@@ -64,10 +64,10 @@ exposed def Expr.toNnfAux {E} : Expr kind → Bool → Expr kind
 | .compl b,   true  => 
   b.toNnfAux false -- Double negation eliminated,
 
-exposed def Expr.toNnf {E} (e : Expr kind) : Expr kind :=
+exposed def Expr.toNnf {kind} (e: Expr kind): Expr kind :=
   e.toNnfAux false
 
-theorem Expr.toNnfCcElim {E}
+theorem Expr.toNnfCcElim {kind}
   (expr: Expr kind)
 :
   expr.compl.compl.toNnf = expr.toNnf
@@ -75,14 +75,19 @@ theorem Expr.toNnfCcElim {E}
   rfl
 
 
-theorem SingleLaneExpr.intp_toNnfAux_eq
-  (expr: SingleLaneExpr)
-  (fv: List Pair)
+theorem Expr.intp_toNnfAux_eq {kind}
+  (expr: Expr kind)
+  (lane: kind.Lane)
   (b c: Valuation Pair)
+  (fv: List Pair)
 :
   And
-    (intp (expr.toNnfAux false) b c fv = intp expr b c fv)
-    (intp (expr.toNnfAux true) b c fv = intp (.compl expr) b c fv)
+    (Eq
+      ((expr.toNnfAux false).intp lane b c fv)
+      (expr.intp lane b c fv))
+    (Eq
+      ((expr.toNnfAux true).intp lane b c fv)
+      (expr.compl.intp lane b c fv))
 :=
   match expr with
   | .const _ _ => ⟨rfl, rfl⟩
@@ -94,8 +99,8 @@ theorem SingleLaneExpr.intp_toNnfAux_eq
       | .pair _ _ => ⟨nofun, fun _ => inProd inAny inAny⟩,
     ⟩
   | .prod left rite =>
-    let ⟨ihL, ihCL⟩ := left.intp_toNnfAux_eq b c fv
-    let ⟨ihR, ihCR⟩ := rite.intp_toNnfAux_eq b c fv
+    let ⟨ihL, ihCL⟩ := left.intp_toNnfAux_eq lane b c fv
+    let ⟨ihR, ihCR⟩ := rite.intp_toNnfAux_eq lane b c fv
     ⟨
       eq_intp_prod_of_eq ihL ihR,
       Set.ext fun p =>
@@ -136,64 +141,69 @@ theorem SingleLaneExpr.intp_toNnfAux_eq
       ⟩,
     ⟩
   | .ir left rite =>
-    let ⟨ihL, ihCL⟩ := left.intp_toNnfAux_eq b c fv
-    let ⟨ihR, ihCR⟩ := rite.intp_toNnfAux_eq b c fv
+    let ⟨ihL, ihCL⟩ := left.intp_toNnfAux_eq lane b c fv
+    let ⟨ihR, ihCR⟩ := rite.intp_toNnfAux_eq lane b c fv
     ⟨
       eq_intp_ir_of_eq ihL ihR,
-      eq_intp_compl_of_eq
-        (eq_intp_ir_of_eq
-          ((eq_intp_compl_of_eq ihCL.symm).symm.trans
-            ((intp_compl_compl_eq left fv c b)))
-          ((eq_intp_compl_of_eq ihCR.symm).symm.trans
-            ((intp_compl_compl_eq rite fv c b)))),
+      eq_intp_compl_of_eq <|
+      eq_intp_ir_of_eq
+        (eq_intp_of_eq_compl <|
+          (left.toNnfAux true).intp_compl_compl_eq lane b c fv ▸
+          ihCL)
+        (eq_intp_of_eq_compl <|
+          (rite.toNnfAux true).intp_compl_compl_eq lane b c fv ▸
+          ihCR)
     ⟩
   | .full body =>
-    let ⟨ih, ihC⟩ := body.intp_toNnfAux_eq b c fv
+    let ⟨ih, ihC⟩ := body.intp_toNnfAux_eq lane b c fv
     ⟨
       eq_intp_full_of_eq ih,
-      eq_intp_compl_of_eq
-        (eq_intp_full_of_eq
-          ((eq_intp_compl_of_eq ihC.symm).symm.trans
-            (intp_compl_compl_eq body fv c b))),
+      eq_intp_compl_of_eq <|
+      eq_intp_full_of_eq <|
+      eq_intp_of_eq_compl <|
+      (body.toNnfAux true).intp_compl_compl_eq lane b c fv ▸
+      ihC
     ⟩
   | .compl body =>
-    let ⟨ih, ihC⟩ := body.intp_toNnfAux_eq b c fv
+    let ⟨ih, ihC⟩ := body.intp_toNnfAux_eq lane b c fv
     ⟨
       ihC,
-      (ih.trans (intp_compl_compl_eq body b c fv).symm),
+      (ih.trans (body.intp_compl_compl_eq lane b c fv).symm),
     ⟩
   | .arbIr body =>
     ⟨
       eq_intp_arbIr_of_eq fun pB =>
-        (body.intp_toNnfAux_eq (pB :: fv) b c).left,
-      eq_intp_compl_of_eq
-        (eq_intp_arbIr_of_eq fun pX =>
-          let ⟨_, ihC⟩ := body.intp_toNnfAux_eq (pX :: fv) b c
-          ((eq_intp_compl_of_eq ihC.symm).symm.trans
-            (intp_compl_compl_eq body (pX :: fv) c b))),
+        (body.intp_toNnfAux_eq lane b c (pB :: fv)).left,
+      eq_intp_compl_of_eq <|
+      eq_intp_arbIr_of_eq fun pX =>
+      let ⟨_, ihC⟩ := body.intp_toNnfAux_eq lane b c (pX :: fv)
+      eq_intp_of_eq_compl <|
+      (body.toNnfAux true).intp_compl_compl_eq lane b c (pX :: fv) ▸
+      ihC
     ⟩
 
-theorem SingleLaneExpr.intp_toNnf_eq
-  (expr: SingleLaneExpr)
-  (fv: List Pair)
+theorem Expr.intp_toNnf_eq {kind}
+  (expr: Expr kind)
+  (lane: kind.Lane)
   (b c: Valuation Pair)
+  (fv: List Pair)
 :
-  intp expr.toNnf b c fv = intp expr b c fv
+  expr.toNnf.intp lane b c fv = expr.intp lane b c fv
 :=
-  (expr.intp_toNnfAux_eq b c fv).left
+  (expr.intp_toNnfAux_eq lane b c fv).left
 
 
 -- A unary helper for termination when recursing on nnf expressions.
-theorem complUnaryLt {E} [SizeOf E]
+theorem complUnaryLt {kind}
   (body: Expr kind)
 :
-  sizeOf (Expr.compl body) < 1 + (1 + (sizeOf body))
+  sizeOf body.compl < 1 + (1 + (sizeOf body))
 := by
   apply Nat.add_lt_add_left
   exact lt_add_of_pos_of_le zero_lt_one le_rfl
 
 -- A left helper for termination when recursing on nnf expressions.
-theorem complBinLtL {E} [SizeOf E]
+theorem complBinLtL {kind}
   (left rite: Expr kind)
 :
   sizeOf (Expr.compl left) < 1 + (1 + sizeOf left + sizeOf rite)
@@ -202,7 +212,7 @@ theorem complBinLtL {E} [SizeOf E]
   exact Nat.lt_add_right _ (Nat.lt_add_left_iff_pos.mpr zero_lt_one)
 
 -- A rite helper for termination when recursing on nnf expressions.
-theorem complBinLtR {E} [SizeOf E]
+theorem complBinLtR {kind}
   (left rite: Expr kind)
 :
   sizeOf (Expr.compl rite) < 1 + (1 + sizeOf left + sizeOf rite)
@@ -213,9 +223,9 @@ theorem complBinLtR {E} [SizeOf E]
   apply Nat.le_add_left
 
 
-inductive Expr.IsNnf {E}: Expr kind → Prop
-| const {e x}: IsNnf (.const tag x)
-| complConst {e x}: IsNnf (.compl (.const tag x))
+inductive Expr.IsNnf {kind}: Expr kind → Prop
+| const {tag x}: IsNnf (.const tag x)
+| complConst {tag x}: IsNnf (.compl (.const tag x))
 | var {x}: IsNnf (.var x)
 | complVar {x}: IsNnf (.compl (.var x))
 | null: IsNnf .null
@@ -228,9 +238,9 @@ inductive Expr.IsNnf {E}: Expr kind → Prop
 | arbUn {body}: IsNnf body → IsNnf (.arbUn body)
 
 
-theorem Expr.IsNnf.any {E}: IsNnf (any (E := E)) := .arbUn .var
+theorem Expr.IsNnf.any {kind}: IsNnf (any (kind := kind)) := .arbUn .var
 
-theorem Expr.isNnfAux {E}:
+theorem Expr.isNnfAux {kind}:
   (expr: Expr kind) →
   (isNegated: Bool) →
   IsNnf (expr.toNnfAux isNegated)
@@ -259,11 +269,11 @@ theorem Expr.isNnfAux {E}:
 | .arbIr b, false => .arbIr (isNnfAux b false)
 | .arbIr b, true => .arbUn (isNnfAux b true)
 
-theorem Expr.toNnf_isNnf {E} (expr: Expr kind): expr.toNnf.IsNnf :=
+theorem Expr.toNnf_isNnf {kind} (expr: Expr kind): expr.toNnf.IsNnf :=
   isNnfAux expr false
 
 
-theorem Expr.IsNnf.toNnf_id {E} {expr: Expr kind}:
+theorem Expr.IsNnf.toNnf_id {kind} {expr: Expr kind}:
   expr.IsNnf →
   expr.toNnf = expr
 |
@@ -294,7 +304,7 @@ theorem Expr.IsNnf.toNnf_id {E} {expr: Expr kind}:
   show Expr.arbUn _ = _ from
   congr rfl b.toNnf_id
 
-theorem Expr.toNnf_idem {E}
+theorem Expr.toNnf_idem {kind}
   (expr: Expr kind)
 :
   expr.toNnf.toNnf = expr.toNnf
@@ -302,105 +312,13 @@ theorem Expr.toNnf_idem {E}
   expr.toNnf_isNnf.toNnf_id 
 
 
-theorem BasicExpr.toNnfAux_toLane_comm
-  (expr: BasicExpr)
-  (isNegated: Bool)
-  (lane: Set3.Lane)
-:
-  let otherLane := if isNegated then lane.toggle else lane
-  Eq
-    (BasicExpr.toLane (expr.toNnfAux isNegated) lane)
-    ((expr.toLane otherLane).toNnfAux isNegated)
-:=
-  match expr, isNegated with
-  | .const x, false => rfl
-  | .const x, true => rfl
-  | .var x, false => rfl
-  | .var x, true => rfl
-  | .null, false => rfl
-  | .null, true => rfl
-  | .prod left rite, false =>
-    let ihL := toNnfAux_toLane_comm left false lane
-    let ihR := toNnfAux_toLane_comm rite false lane
-    show Expr.prod _ _ = Expr.prod _ _ from
-    congr (congr rfl ihL) ihR
-  | .prod left rite, true =>
-    let ihL := toNnfAux_toLane_comm left true lane
-    let ihR := toNnfAux_toLane_comm rite true lane
-    show .un _ (.un _ _) = Expr.un _ (.un _ _) from
-    let teq := Set3.Lane.toggle_toggle_eq lane
-    let teq2: lane = lane.toggle.toggle.toggle.toggle := by
-      conv => lhs; rw [←teq, ←teq]
-    congr
-      (congr rfl rfl)
-      (congr (congr rfl (teq2 ▸ ihL ▸ rfl)) (teq2 ▸ ihR ▸ rfl))
-  | .ir left rite, false =>
-    let ihL := toNnfAux_toLane_comm left false lane
-    let ihR := toNnfAux_toLane_comm rite false lane
-    show Expr.ir _ _ = Expr.ir _ _ from
-    congr (congr rfl ihL) ihR
-  | .ir left rite, true =>
-    let ihL := toNnfAux_toLane_comm left true lane
-    let ihR := toNnfAux_toLane_comm rite true lane
-    show Expr.un _ _ = Expr.un _ _ from
-    let teq := Set3.Lane.toggle_toggle_eq lane
-    congr (congr rfl (teq.symm ▸ ihL)) (teq.symm ▸ ihR)
-  | .full body, false =>
-    let ih := toNnfAux_toLane_comm body false lane
-    show Expr.full _ = Expr.full _ from
-    congr rfl ih
-  | .full body, true =>
-    let ih := toNnfAux_toLane_comm body true lane
-    let teq := Set3.Lane.toggle_toggle_eq lane
-    show Expr.some _ = Expr.some _ from
-    congr rfl (teq.symm ▸ ih)
-  | .compl body, false =>
-    toNnfAux_toLane_comm body true lane
-  | .compl body, true =>
-    let ih: _ = _ := toNnfAux_toLane_comm body false lane
-    let teq := Set3.Lane.toggle_toggle_eq lane
-    show _ = (body.toLane lane.toggle.toggle).toNnfAux false from
-    teq.symm ▸ ih
-  | .arbIr body, false =>
-    let ih := toNnfAux_toLane_comm body false lane
-    show Expr.arbIr _ = Expr.arbIr _ from
-    congr rfl ih
-  | .arbIr body, true =>
-    let ih := toNnfAux_toLane_comm body true lane
-    let teq := Set3.Lane.toggle_toggle_eq lane
-    show Expr.arbUn _ = Expr.arbUn _ from
-    congr rfl (teq.symm ▸ ih)
-
-theorem BasicExpr.toNnf_toLane_comm
-  (expr: BasicExpr)
-  (lane: Set3.Lane)
-:
-  BasicExpr.toLane expr.toNnf lane =  (expr.toLane lane).toNnf
-:=
-  expr.toNnfAux_toLane_comm false lane
-
-
-theorem BasicExpr.triIntp_toNnf_eq
-  (expr: BasicExpr)
+theorem Expr.triIntp_toNnf_eq
+  (expr: Expr .basic)
   (fv: List Pair)
   (b c: Valuation Pair)
 :
-  BasicExpr.triIntp expr.toNnf b c fv = expr.triIntp b c fv
+  expr.toNnf.triIntp b c fv = expr.triIntp b c fv
 :=
-  open SingleLaneExpr in
   Set3.eq
-    (show intp _ _ _ _ = _ from
-      toNnf_toLane_comm _ _ ▸
-      intp_toNnf_eq _ _ _ _)
-    (show intp _ _ _ _ = _ from
-      toNnf_toLane_comm _ _ ▸
-      intp_toNnf_eq _ _ _ _)
-
-theorem BasicExpr.triIntp_toNnf_eq
-  (expr: BasicExpr)
-  (fv: List Pair)
-  (v: Valuation Pair)
-:
-  BasicExpr.triIntp expr.toNnf fv v = expr.triIntp fv v
-:=
-  expr.triIntp_toNnf_eq fv v v
+    (expr.intp_toNnf_eq .defLane b c fv)
+    (expr.intp_toNnf_eq .posLane b c fv)
