@@ -121,6 +121,14 @@ namespace Pair
 end Pair
 
 
+exposed def Pair.setCall
+  (fn: Set Pair)
+  (arg: Pair)
+:
+  Set Pair
+:=
+  { p | .pair arg p ∈ fn }
+
 /-
   `fn.call arg` is the triset of pairs `b` such that
   `(arg, b)` is in `fn`.
@@ -134,8 +142,8 @@ exposed def Set3.call
 :
   Set3 Pair
 := {
-  defMem := { p | .pair arg p ∈ fn.defMem }
-  posMem := { p | .pair arg p ∈ fn.posMem }
+  defMem := Pair.setCall fn.defMem arg
+  posMem := Pair.setCall fn.posMem arg
   defLePos _ := defToPos
 }
 

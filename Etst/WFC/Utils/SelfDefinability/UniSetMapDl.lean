@@ -537,7 +537,7 @@ namespace uniSetMapDl
                 (inProd
                   (inProd rfl inNull)
                   (inCall (inCall ih rfl) rfl))))
-      DefList.InWfm.of_in_def_no_fv
+      DefList.in_def_no_fv
         (inArbUn
           listH
           (inArbUn
@@ -560,7 +560,7 @@ namespace uniSetMapDl
   :
     list[i]? = valEnc
   :=
-    let ins := DefList.InWfm.in_def_no_fv inGetDef
+    let ins := DefList.in_def_body_no_fv inGetDef
     let ⟨_, ins⟩ := inArbUnElim ins
     let ⟨_, ins⟩ := inArbUnElim ins
     (inUnElim ins).elim

@@ -1624,7 +1624,7 @@ theorem isAtAny {dl n fv p lane}:
 :=
   isAtArbUn
     p
-    (DefList.InWfm.of_in_def_no_fv
+    (DefList.in_def_no_fv
       (isInMap
         (isAtVar
           (uniSetMapDl.getNth
@@ -1641,7 +1641,7 @@ theorem notAtDefGeN {dl n x d}
   fun inMap =>
     let isAtNone :=
       DefList.prefix_none_at (dl:=dl) (n:=n) (x:=x) xNlt ▸
-      isAtOfInsDef (InWfm.in_def_no_fv (lane := .posLane) inMap)
+      isAtOfInsDef (in_def_body_no_fv (lane := .posLane) inMap)
     isAtComplVarElim
-      (isAtOfInsDef (InWfm.in_def_no_fv (isAtArbIrElim isAtNone d)))
+      (isAtOfInsDef (in_def_body_no_fv (isAtArbIrElim isAtNone d)))
       (uniSetMapDl.getNth (list:=[d]) zero_lt_one)

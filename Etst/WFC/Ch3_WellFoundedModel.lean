@@ -270,14 +270,15 @@ public theorem DefList.wfm_is_fp_operatorB
 :=
   ((operatorB dl).lfpCc_isLfp isCcApx).left.symm
 
-exposed noncomputable def DefList.triIntp
+exposed noncomputable abbrev DefList.intp {kind}
   (dl: DefList)
-  (expr: Expr .basic)
+  (expr: Expr kind)
+  (lane: kind.Lane)
   (fv: List Pair)
 :
-  Set3 Pair
+  Set Pair
 :=
-  expr.triIntp dl.wfm dl.wfm fv
+  expr.intp lane dl.wfm dl.wfm fv
 
 
 /-

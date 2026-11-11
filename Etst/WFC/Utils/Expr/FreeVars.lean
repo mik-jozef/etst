@@ -1116,45 +1116,44 @@ end DefList
 namespace DefList
   variable {dl: DefList}
   
-  theorem InWfm.of_in_def {x lane fv d}
-    (inDef: dl.InWfm (dl.getDef x) lane fv d)
+  theorem in_def {x lane fv p}
+    (inDefBody: p ∈ dl.intp (dl.getDef x) lane fv)
   :
-    dl.InWfm (.const () x) lane [] d
+    p ∈ (dl.wfm x).getLane lane
   :=
-    of_in_def_no_fv <|
-    show d ∈ (dl.getDef x).intp lane dl.wfm dl.wfm [] from
-    (dl.intp_getDef_eq_fv x lane dl.wfm dl.wfm fv []).symm ▸ inDef
-  
-  theorem InWfm.in_def {x lane fv d}
-    (inVar: dl.InWfm (.const () x) lane [] d)
-  :
-    dl.InWfm (dl.getDef x) lane fv d
-  :=
-    show d ∈ (dl.getDef x).intp lane dl.wfm dl.wfm fv from
+    in_def_no_fv <|
+    show p ∈ (dl.getDef x).intp lane dl.wfm dl.wfm [] from
     (dl.intp_getDef_eq_fv x lane dl.wfm dl.wfm fv []).symm ▸
-    in_def_no_fv inVar
+    inDefBody
+  
+  theorem in_def_body {x lane fv p}
+    (inDef: p ∈ (dl.wfm x).getLane lane)
+  :
+    p ∈ dl.intp (dl.getDef x) lane fv
+  :=
+    show p ∈ (dl.getDef x).intp lane dl.wfm dl.wfm fv from
+    (dl.intp_getDef_eq_fv x lane dl.wfm dl.wfm fv []).symm ▸
+    in_def_body_no_fv inDef
   
   -- Like the two lemmas above, but with a `Expr.toLane` conversion.
-  theorem InWfm.in_def_toLane {x lane fv d}
-    (inConst:
-      d ∈ (Expr.const (kind := .lane) lane x).intp () dl.wfm dl.wfm [])
+  theorem in_def_toLane {x lane fv p}
+    (inDefBody:
+      p ∈ ((dl.getDef x).toLane lane).intp () dl.wfm dl.wfm fv)
   :
-    d ∈ ((dl.getDef x).toLane lane).intp () dl.wfm dl.wfm fv
+    p ∈ (dl.wfm x).getLane lane
   :=
-    (Expr.toLane_intp (dl.getDef x) lane dl.wfm dl.wfm fv).symm ▸
-    (dl.intp_getDef_eq_fv x lane dl.wfm dl.wfm [] fv) ▸
-    in_def_no_fv inConst
-
-  theorem InWfm.of_in_def_toLane {x lane fv d}
-    (inDef:
-      d ∈ ((dl.getDef x).toLane lane).intp () dl.wfm dl.wfm fv)
-  :
-    d ∈ (Expr.const (kind := .lane) lane x).intp () dl.wfm dl.wfm []
-  :=
-    of_in_def_no_fv <|
-    show d ∈ (dl.getDef x).intp lane dl.wfm dl.wfm [] from
+    in_def_no_fv <|
+    show p ∈ (dl.getDef x).intp lane dl.wfm dl.wfm [] from
     (dl.intp_getDef_eq_fv x lane dl.wfm dl.wfm fv []).symm ▸
     (Expr.toLane_intp (dl.getDef x) lane dl.wfm dl.wfm fv) ▸
-    inDef
-
+    inDefBody
+  
+  theorem in_def_body_toLane {x lane fv p}
+    (inDef: p ∈ (dl.wfm x).getLane lane)
+  :
+    p ∈ ((dl.getDef x).toLane lane).intp () dl.wfm dl.wfm fv
+  :=
+    (Expr.toLane_intp (dl.getDef x) lane dl.wfm dl.wfm fv).symm ▸
+    in_def_body inDef
+  
 end DefList

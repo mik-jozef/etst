@@ -20,7 +20,7 @@ def IsInappExtIh
       (({n fv expr pInt: _} →
         xExt = (cst "uniSetMap") →
         pExt = .pair (uniSetMapIndex dl n fv expr) pInt →
-        pInt ∈ ((dl.prefix n).triIntp expr fv).defMem))
+        pInt ∈ (dl.prefix n).intp expr .defLane fv))
       (xExt = (cst "getNth") → pExt ∈ (uniSetMapDl.val "getNth").defMem)
 
 def intOfExtCycle
@@ -150,7 +150,7 @@ theorem allInternalInapp {dl n fv expr p}
         getNthElimD (lane := .defLane) inGetNth
       False.elim (neq encEq.symm)
     | .blockedBout (Or.inr ⟨xEq, pEq⟩) inDef =>
-      let inConst := DefList.InWfm.of_in_def_no_fv (inDef.left xEq pEq)
+      let inConst := DefList.in_def_no_fv (inDef.left xEq pEq)
       .blockedBout inBout (DefList.Ins.isComplete inConst)
   | .var x =>
     let inVar := intIsCause intCause.maximalValsApxAreSat
@@ -461,7 +461,7 @@ theorem externalInsElimHelper {dl n fv index const expr p}
       let ih: _ ∈ Expr.intp _ _ _ _ _ :=
         Expr.intp_toNnf_eq _ _ _ _ _ ▸
         externalInsElimHelper insDef rfl rfl (Expr.toNnf_isNnf _)
-      DefList.InWfm.of_in_def_no_fv (lane := .defLane) ih
+      DefList.in_def_no_fv (lane := .defLane) ih
     | .compl (.const () x), _ =>
       let insList := isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       fun inConst =>
@@ -474,7 +474,7 @@ theorem externalInsElimHelper {dl n fv index const expr p}
         else
           let inNone :=
             DefList.prefix_none_at h ▸
-            DefList.InWfm.in_def_no_fv (lane := .posLane) inConst
+            DefList.in_def_body_no_fv (lane := .posLane) inConst
           ninNone inNone
       | Or.inr inBout =>
         let df := (dl.prefix n).getDef x
@@ -490,7 +490,7 @@ theorem externalInsElimHelper {dl n fv index const expr p}
           rfl
           df.toNnf_isNnf
           ((Expr.intp_toNnf_eq _ _ _ _ _).symm ▸
-          DefList.InWfm.in_def_no_fv (lane := .posLane) inConst)
+          DefList.in_def_body_no_fv (lane := .posLane) inConst)
     | .var _, _ =>
       let insList: IsAt _ := isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       let ins := (cinsSat (isAtVarElim insList)).isSound

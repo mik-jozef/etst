@@ -17,6 +17,10 @@ abbrev ExprKind.ConstTag: ExprKind → Type
 | basic => Unit
 | lane => Set3.Lane
 
+exposed def ExprKind.ConstTag.basic: basic.ConstTag := ()
+exposed def ExprKind.ConstTag.defLane: lane.ConstTag := Set3.Lane.defLane
+exposed def ExprKind.ConstTag.posLane: lane.ConstTag := Set3.Lane.posLane
+
 instance: (kind: ExprKind) → DecidableEq kind.ConstTag
 | .basic => inferInstance
 | .lane  => inferInstance

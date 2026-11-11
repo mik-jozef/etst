@@ -103,38 +103,38 @@ namespace internalCauseElim
           ((usmWfm (cst "uniSetMap")).getLane .defLane).Mem
             ((uniSetMapIndex dl n fv .null).pair .null)
         :=
-          InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAtNull)
+          in_def_no_fv (lane := .defLane) (isInMap isAtNull)
         isAtUnNnf (Or.inl atNull)
       | .pair pL pR =>
         match ih pL pR rfl with
         | Or.inl ihL =>
           isAtUnNnf
           (Or.inr
-          (InWfm.of_in_def_no_fv
+          (in_def_no_fv
           (isInMap
           (isAtUnNnf
           (Or.inl
-          (InWfm.of_in_def_no_fv
+          (in_def_no_fv
           (isInMap
           (isAtProd
           (lane := .defLane)
           ihL
-          (InWfm.of_in_def_no_fv
+          (in_def_no_fv
           (isInMap isAtAny))))))))))
         | Or.inr ihR =>
           isAtUnNnf
           (Or.inr
-          (InWfm.of_in_def_no_fv
+          (in_def_no_fv
           (isInMap
           (isAtUnNnf
           (Or.inr
-          (InWfm.of_in_def_no_fv
+          (in_def_no_fv
           (isInMap
           (isAtProd
-            (InWfm.of_in_def_no_fv
+            (in_def_no_fv
               (isInMap isAtAny))
             ihR))))))))
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   
   theorem internalCauseElimProd {dl n fv left rite pL pR}
     (ihL:
@@ -153,7 +153,7 @@ namespace internalCauseElim
         (lane := .defLane)
         ihL
         ihR
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   
   theorem internalCauseElimComplIr {dl n fv left rite p}
     (ih:
@@ -171,7 +171,7 @@ namespace internalCauseElim
       isAtUn
         (lane := .defLane)
         ih
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   
   theorem internalCauseElimComplArbIr {p dl n fv body}
     (pX: Pair)
@@ -191,7 +191,7 @@ namespace internalCauseElim
         (lane := .defLane)
         pX
         ih
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   
   theorem internalCauseElimComplFull {dl n fv body p}
     (pB: Pair)
@@ -208,7 +208,7 @@ namespace internalCauseElim
         (lane := .defLane)
         pB
         ih
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   
   theorem internalCauseElimArbIr {dl n fv body p}
     (ih:
@@ -224,7 +224,7 @@ namespace internalCauseElim
       isAtArbIr
         (lane := .defLane)
         ih
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   
   theorem internalCauseElimFull {dl n fv body p}
     (ih:
@@ -240,7 +240,7 @@ namespace internalCauseElim
       isAtFull
         (lane := .defLane)
         ih
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   
   theorem internalCauseElimIr {dl n fv left rite p}
     (ihL:
@@ -259,7 +259,7 @@ namespace internalCauseElim
         (lane := .defLane)
         ihL
         ihR
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
 end internalCauseElim
 
 open internalCauseElim in
@@ -284,21 +284,21 @@ theorem internalCauseElim {p dl n fv expr}
       False.elim (notAtDefGeN nLt (Set3.defToPos inDefExt))
     let insGetNth := getNthDl xLt
     let isAt := isAtConst (lane := .defLane) inDefExt insGetNth
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   | .compl (.const () x) =>
     let isAt :=
       isAtComplConst
         (lane := .defLane)
         (fun exprNeq inGetNth => exprNeq (getNthEq inGetNth))
         (boutIh intIsCause.complConstElim)
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   | .var x =>
     let inVar := intIsCause intCause.leastValsApxAreSat
     let xLt: x < fv.length :=
       byContradiction fun nlt => (inVarNope inVar) nlt
     let pEq: fv[x] = p := inVarElimLt inVar xLt
     let isAt := isAtVar (pEq ▸ getNth xLt)
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
   | .compl (.var x) =>
     let isAt :=
       isAtComplVar
@@ -306,10 +306,10 @@ theorem internalCauseElim {p dl n fv expr}
           inComplElim
             (intIsCause intCause.leastValsApxAreSat)
             (inVar (getNthElim inGetNth)))
-    InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+    in_def_no_fv (lane := .defLane) (isInMap isAt)
     | .null =>
       let pEq := inNullElim (intIsCause intCause.leastValsApxAreSat)
-      pEq ▸ InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAtNull)
+      pEq ▸ in_def_no_fv (lane := .defLane) (isInMap isAtNull)
   | .compl .null =>
     match p with
     | .null =>
@@ -318,9 +318,9 @@ theorem internalCauseElim {p dl n fv expr}
     | .pair pL pR =>
       let isAt: InUniSetMapAt _ _ _ _ dl n fv (.prod .any .any) :=
         isAtProd
-          (InWfm.of_in_def_no_fv (isInMap isAtAny))
-          (InWfm.of_in_def_no_fv (isInMap isAtAny))
-      InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
+          (in_def_no_fv (isInMap isAtAny))
+          (in_def_no_fv (isInMap isAtAny))
+      in_def_no_fv (lane := .defLane) (isInMap isAt)
   | .prod left rite =>
     match p with
     | .null =>

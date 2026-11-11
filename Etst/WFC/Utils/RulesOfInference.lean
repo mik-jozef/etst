@@ -394,41 +394,37 @@ namespace Expr
 end Expr
 
 namespace DefList
-  abbrev InWfm {kind}
-    (dl: DefList)
-    (expr: Expr kind)
-    (lane: kind.Lane)
-    (fv: List Pair := [])
-    (p: Pair)
-  :
-    Prop
-  :=
-    p ∈ expr.intp lane dl.wfm dl.wfm fv
+  variable {dl: DefList}
   
-  theorem InWfm.of_in_def_no_fv {dl x lane p}
-    (inDef: InWfm dl (dl.getDef x) lane [] p)
+  theorem wfm_isModel_at
+    (dl: DefList)
+    (x: Nat)
   :
-    dl.InWfm (.const () x) lane [] p
+    dl.wfm x = dl.intpDefs dl.wfm dl.wfm x
+  :=
+    congr (DefList.wfm_isModel dl) rfl
+  
+  theorem in_def_no_fv {x lane p}
+    (inDefBody: p ∈ dl.intp (dl.getDef x) lane [])
+  :
+    p ∈ (dl.wfm x).getLane lane
   := by
     cases lane
     all_goals
-    unfold InWfm
     rw [DefList.wfm_isModel dl]
-    exact inDef
+    exact inDefBody
   
-  theorem InWfm.in_def_no_fv {dl x lane p}
-    (inConst: InWfm dl (.const () x) lane [] p)
+  theorem in_def_body_no_fv {x lane p}
+    (inDef: p ∈ (dl.wfm x).getLane lane)
   :
-    dl.InWfm (dl.getDef x) lane [] p
+    p ∈ dl.intp (dl.getDef x) lane []
   :=
-    let eqAtN: dl.wfm x = dl.intpDefs dl.wfm dl.wfm x :=
-      congr (DefList.wfm_isModel dl) rfl
     match lane with
     | .defLane =>
         show p ∈ (dl.intpDefs dl.wfm dl.wfm x).defMem from
-        eqAtN ▸ inConst
+        dl.wfm_isModel_at x ▸ inDef
     | .posLane =>
         show p ∈ (dl.intpDefs dl.wfm dl.wfm x).posMem from
-        eqAtN ▸ inConst
+        dl.wfm_isModel_at x ▸ inDef
   
 end DefList
