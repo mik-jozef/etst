@@ -1,10 +1,7 @@
--- TODO rewrite this file with the extra encoding cases to reduce
--- the huge size of opFixDl
+-- TODO eventually, rewrite this file with the extra encoding cases
+-- to reduce the huge size of opFixDl.
+-- See `Etst/WFC/Utils/SelfDefinability/UniSetMapExt.lean`
 module
--- The `meta` import is required because
--- `pairDefList opFixHelpersDl extends uniSetMapDl` below evaluates
--- `uniSetMapDl.constNames` at elaboration time. See the docstring
--- of `pair_def_list` in `FiniteDefList.lean`.
 public import Etst.WFC.Utils.SelfDefinability.UniSetMapDl
 public import Etst.WFC.Utils.RulesOfInference
 public import Etst.WFC.Utils.NamedDefList.NamedPairExpr
@@ -40,7 +37,8 @@ namespace Pair
       []
       (((uniSetMapDl.cstExpr "uniSetMap").call fn.toExpr).call arg.toExpr)
   
-  theorem toExpr_IsClean: (p: Pair) → p.toExpr.IsClean
+  theorem toExpr_IsClean {kind}:
+    (p: Pair) → (p.toExpr: Expr kind).IsClean
   | .null => fun _ => id
   | .pair left rite =>
     fun x usesX =>
@@ -49,42 +47,45 @@ namespace Pair
 end Pair
 
 theorem Expr.encodeCall_eq
-  (fn arg: BasicExpr)
+  (fn arg: Expr .basic)
 :
-  Eq
-    (fn.encoding.encodeCall arg.encoding)
-    (BasicExpr.encoding (fn.call arg))
+  fn.encoding.encodeCall arg.encoding = (fn.call arg).encoding
 :=
   rfl
 
-theorem BasicExpr.prod_call_expr_call_eq
-  (fn: BasicExpr)
+theorem Expr.prod_call_expr_call_eq {kind}
+  (fn: Expr kind)
   (fnIsClean: fn.IsClean)
   (arg: Pair)
-  (fv: List Pair)
+  (lane: kind.Lane)
   (b c: Valuation Pair)
+  (fv: List Pair)
 :
   Eq
-    (BasicExpr.triIntp (fn.call arg.toExpr) b c fv)
+    ((fn.call arg.toExpr).intp lane b c fv)
+    (Pair.setCall (fn.intp lane b c fv) arg)
+:=
+  Set.Subset.antisymm
+    (fun _ inCall =>
+      fnIsClean.intp_eq ▸
+      inCallElimSingle inCall (intp_toExpr_eq_singleton arg))
+    (fun _ inFn =>
+      inCall (fnIsClean.intp_eq ▸ inFn) (inToExpr arg))
+
+theorem Expr.prod_call_expr_call_eq3
+  (fn: Expr .basic)
+  (fnIsClean: fn.IsClean)
+  (arg: Pair)
+  (b c: Valuation Pair)
+  (fv: List Pair)
+:
+  Eq
+    ((fn.call arg.toExpr).triIntp b c fv)
     ((fn.triIntp b c fv).call arg)
 :=
-  open SingleLaneExpr in
-  Set3.eq4
-    (fun _ inCall =>
-      show _ ∈ (fn.toLane .defLane).intp b c fv from
-      (fnIsClean.toLane .defLane).intp_eq ▸
-      inCallElimSingle inCall (intp_toExpr_eq_singleton arg))
-    (fun _ inFn =>
-      let inFnShifted := (fnIsClean.toLane .defLane).intp_eq ▸ inFn
-      inCall inFnShifted (inToExpr arg))
-    (fun _ inCall =>
-      show _ ∈ (fn.toLane .posLane).intp b c fv from
-      (fnIsClean.toLane .posLane).intp_eq ▸
-      inCallElimSingle inCall (intp_toExpr_eq_singleton arg))
-    (fun _ inFn =>
-      let inFnShifted: _ ∈ (fn.toLane .posLane).intp _ _ _ :=
-        (fnIsClean.toLane .posLane).intp_eq ▸ inFn
-      inCall inFnShifted (inToExpr arg))
+  Set3.eq
+    (fn.prod_call_expr_call_eq fnIsClean arg .defLane b c fv)
+    (fn.prod_call_expr_call_eq fnIsClean arg .posLane b c fv)
 
 
 exposed def uniSetMapDlEncoding :=
@@ -127,14 +128,14 @@ exposed def opFixDl.magicIndex: Pair :=
     opFixHelpersDl.dl.toDefList
     opFixHelpersDl.dl.size
     []
-    (.const (opFixHelpersDl.const "magic")))
+    (.const () (opFixHelpersDl.const "magic")))
 
 exposed def composeOpIndex: Pair :=
   uniSetMapIndex
     opFixHelpersDl.dl.toDefList
     opFixHelpersDl.dl.size
     []
-    (.const (opFixHelpersDl.const "composeOp"))
+    (.const () (opFixHelpersDl.const "composeOp"))
 
 exposed def composeIndex (iOp: Pair): Pair :=
   composeOpIndex.callEnc iOp
@@ -153,14 +154,18 @@ pairDefList.
 
 
 namespace opFixDl
-  open SingleLaneExpr
+  open Expr
   
-  theorem encodeAsExpr_ins (p: Pair):
-    opFixDl.dl.InWfm []
-      (.const .defLane (opFixDl.const "encodeAsExpr"))
+  -- TODO should I cover both basic and lane expressions?
+  theorem encodeAsExpr_ins (p: Pair) {kind tag lane}:
+    Set.Mem
+      (opFixDl.dl.intp
+        (const (kind := kind) tag (opFixDl.const "encodeAsExpr"))
+        lane
+        [])
       (.pair p p.toExpr.encoding)
   :=
-    DefList.InWfm.of_in_def_no_fv
+    DefList.in_def_no_fv
     (match p with
     | .null => inUnL (inProd inNull (inProd (inNat 4) inNull))
     | .pair l r =>
@@ -169,18 +174,20 @@ namespace opFixDl
       let inRet := inProd (inNat 5) (inProd ihL ihR)
       inUnR (inArbUn l (inArbUn r (inProd (inProd rfl rfl) inRet))))
   
-  theorem encodeAsExpr_elim {p enc}
+  theorem encodeAsExpr_elim {kind tag lane p enc}
     (ins:
-      opFixDl.dl.InWfm []
-        (.const .posLane (opFixDl.const "encodeAsExpr"))
-        (.pair p enc)
-    )
+      Set.Mem
+        (opFixDl.dl.intp
+          (const (kind := kind) tag (opFixDl.const "encodeAsExpr"))
+          lane
+          [])
+        (.pair p enc))
   :
     p.toExpr.encoding = enc
   :=
     match p with
     | .null =>
-      let ins := DefList.InWfm.in_def_no_fv (lane := .posLane) ins
+      let ins := DefList.in_def_body_no_fv ins
       (inUnElim ins).elim
         (fun ins =>
           let ⟨_, inEnc⟩ := inProdElim ins
@@ -196,7 +203,7 @@ namespace opFixDl
           let ⟨inProdP, _⟩ := inProdElim ins
           inProdElimNope inProdP)
     | .pair l r =>
-      let ins := DefList.InWfm.in_def_no_fv (lane := .posLane) ins
+      let ins := DefList.in_def_body_no_fv ins
       (inUnElim ins).elim
         (fun ins =>
           let ⟨inProdP, _⟩ := inProdElim ins
@@ -223,11 +230,14 @@ namespace opFixDl
           lWitEq ▸ rWitEq ▸ tagEq ▸ ihL ▸ ihR ▸ rfl)
   
   
-  theorem encodeCall_ins
+  theorem encodeCall_ins {kind tag lane}
     (fn arg: Pair)
   :
-    opFixDl.dl.InWfm []
-      (.const .defLane (opFixDl.const "encodeCall"))
+    Set.Mem
+      (opFixDl.dl.intp
+          (const (kind := kind) tag (opFixDl.const "encodeCall"))
+          lane
+          [])
       (.pair fn (.pair arg (fn.encodeCall arg)))
   :=
     let inVar0 := inProd (inNat 2) (inNat 0)
@@ -237,18 +247,21 @@ namespace opFixDl
     let inEncBody := inProd (inNat 6) (inProd inEnc9 inVar0)
     let inEnc11 := inProd (inNat 11) inEncBody
     let inBody := inProd (inVar rfl) (inProd (inVar rfl) inEnc11)
-    DefList.InWfm.of_in_def_no_fv (inArbUn fn (inArbUn arg inBody))
+    DefList.in_def_no_fv (inArbUn fn (inArbUn arg inBody))
   
-  theorem encodeCall_elim {fn arg enc}
+  theorem encodeCall_elim {kind tag lane fn arg enc}
     (ins:
-      opFixDl.dl.InWfm []
-        (.const .posLane (opFixDl.const "encodeCall"))
+      Set.Mem
+        (opFixDl.dl.intp
+          (const (kind := kind) tag (opFixDl.const "encodeCall"))
+          lane
+          [])
         (.pair fn (.pair arg enc))
     )
   :
     fn.encodeCall arg = enc
   :=
-    let ins := DefList.InWfm.in_def_no_fv (lane := .posLane) ins
+    let ins := DefList.in_def_body_no_fv ins
     let ⟨fnWit, ins⟩ := inArbUnElim ins
     let ⟨argWit, ins⟩ := inArbUnElim ins
     let ⟨inFn, ins⟩ := inProdElim ins
@@ -313,11 +326,14 @@ namespace opFixDl
     fnEq ▸ argEq ▸ encEq
   
   
-  theorem callEnc_ins
+  theorem callEnc_ins {kind tag lane}
     (fn arg: Pair)
   :
-      opFixDl.dl.InWfm []
-      (.const .defLane (opFixDl.const "callEnc"))
+    Set.Mem
+      (opFixDl.dl.intp
+        (const (kind := kind) tag (opFixDl.const "callEnc"))
+        lane
+        [])
       (.pair fn (.pair arg (fn.callEnc arg)))
   :=
     let inUsmConstEnc :=
@@ -341,7 +357,7 @@ namespace opFixDl
             arg.toExpr.encoding)
           inInnerCall)
         inArgEnc
-    DefList.InWfm.of_in_def_no_fv
+    DefList.in_def_no_fv
     (inArbUn fn
     (inArbUn arg
     (inProd (inVar rfl)
@@ -349,12 +365,13 @@ namespace opFixDl
     (inProd (inToNamedExpr uniSetMapDlEncoding)
     (inProd inNull inExprEnc))))))
   
+  -- TODO perhaps generalize to arbitrary lanes?
   theorem callEnc_elim {fn arg enc}
     (ins: .pair fn (.pair arg enc) ∈ (opFixDl.val "callEnc").posMem)
   :
     fn.callEnc arg = enc
   :=
-    let ins := DefList.InWfm.in_def_no_fv (lane := .posLane) ins
+    let ins := DefList.in_def_body_no_fv (lane := .posLane) ins
     let ⟨fnWit, ins⟩ := inArbUnElim ins
     let ⟨argWit, ins⟩ := inArbUnElim ins
     let ⟨inFn, ins⟩ := inProdElim ins
@@ -431,7 +448,7 @@ namespace opFixDl
     let fullExpr := fnCallExpr.call arg.toExpr
     let fnCallExprClean: fnCallExpr.IsClean :=
       fun x
-        (usesX: ((BasicExpr.const 1).call fn.toExpr).UsesFreeVar x)
+        (usesX: ((Expr.const () 1).call fn.toExpr).UsesFreeVar x)
       =>
         usesX.elim
           (fun 
@@ -440,43 +457,44 @@ namespace opFixDl
           nofun
     let eqAt := uniSetMapDl.dl.uniSetMapAt_eq [] fullExpr
     let eqCall :=
-      BasicExpr.prod_call_expr_call_eq
+      Expr.prod_call_expr_call_eq3
         fnCallExpr
         fnCallExprClean
         arg
+        uniSetMapDl.dl.wfm
+        uniSetMapDl.dl.wfm
         []
-        uniSetMapDl.dl.wfm
-        uniSetMapDl.dl.wfm
     let eqFn :=
-      BasicExpr.prod_call_expr_call_eq
+      Expr.prod_call_expr_call_eq3
         (uniSetMapDl.cstExpr "uniSetMap")
         (by decide)
         fn
+        uniSetMapDl.dl.wfm
+        uniSetMapDl.dl.wfm
         []
-        uniSetMapDl.dl.wfm
-        uniSetMapDl.dl.wfm
     eqAt.trans (eqCall.trans (congrArg (fun s => s.call arg) eqFn))
   
-  def callEnc_call
-    (fn arg: SingleLaneExpr)
-    (lane: Set3.Lane)
+  def callEnc_call {kind}
+    (fn arg: Expr kind)
+    (tag: kind.ConstTag)
   :
-    SingleLaneExpr
+    Expr kind
   :=
-    ((const lane (opFixDl.const "callEnc")).call fn).call arg
+    ((const tag (opFixDl.const "callEnc")).call fn).call arg
   
-  theorem callEnc_eq_singleton {fv iFn iArg lane}
-    {fn arg: SingleLaneExpr}
+  theorem callEnc_eq_singleton {kind lane fv iFn iArg}
+    {fn arg: Expr kind}
+    {tag: kind.ConstTag}
     (inFn:
       ∀ pRes,
         let fvFn := .pair iArg pRes :: pRes :: fv
-        fn.intp fvFn opFixDl.dl.wfm opFixDl.dl.wfm = {iFn})
+        fn.intp lane opFixDl.dl.wfm opFixDl.dl.wfm fvFn = {iFn})
     (inArg:
       ∀ pRes,
-      arg.intp (pRes :: fv) opFixDl.dl.wfm opFixDl.dl.wfm = {iArg})
+      arg.intp lane opFixDl.dl.wfm opFixDl.dl.wfm (pRes :: fv) = {iArg})
   :
     Eq
-      ((callEnc_call fn arg lane).intp fv opFixDl.dl.wfm opFixDl.dl.wfm)
+      ((callEnc_call fn arg tag).intp lane opFixDl.dl.wfm opFixDl.dl.wfm fv)
       {iFn.callEnc iArg}
   :=
     Set.ext fun p => Iff.intro
@@ -489,7 +507,7 @@ namespace opFixDl
         pEq ▸
         inCall
           (inCall
-            (Set3.defMem_getLane (callEnc_ins iFn iArg))
+            (callEnc_ins iFn iArg)
             ((inFn (iFn.callEnc iArg)) ▸ rfl))
           ((inArg (iFn.callEnc iArg)) ▸ rfl))
   
@@ -511,25 +529,25 @@ namespace opFixDl
     :=
       eqUni.symm ▸ (Set3.inCallElim (Set3.inCallElim ins))
     let insCallEnc:
-      _ ∈ ((BasicExpr.const 4).toLane lane).intp _ _ _
+      _ ∈ (Expr.const (kind := .basic) () 4).intp lane _ _ _
     :=
-      Set3.defMem_getLane (callEnc_ins iArg iArg)
+      callEnc_ins iArg iArg
     let inMagicCall :=
       inCall
-        (inCall (inToggle2 4 ins) (inVar rfl))
+        (inCall ins (inVar rfl))
         (inCall
           (inCall
-            (inToggle2 6 insCallEnc)
+            insCallEnc
             (inVar rfl))
           (inVar rfl))
     Set3.inCall <|
     Set3.inCall <|
-    DefList.InWfm.of_in_def_no_fv <|
+    DefList.in_def_no_fv <|
     inArbUn iFn <|
     inArbUn iArg <|
     inProd
       (inVar rfl)
-      (inProd (inVar rfl) (inToggle2 2 inMagicCall))
+      (inProd (inVar rfl) inMagicCall)
   
   theorem magic_elim {iFn iArg lane p}
     (ins: p ∈ (((opFixDl.val "magic").call iFn).call iArg).getLane lane)
@@ -537,7 +555,7 @@ namespace opFixDl
     p ∈ ((uniSetMap.call iFn).call (iArg.callEnc iArg)).getLane lane
   :=
     let ins := Set3.inCallElim (Set3.inCallElim ins)
-    let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
+    let ins := DefList.in_def_body_no_fv ins
     let ⟨fnAlias, ins⟩ := inArbUnElim ins
     let ⟨argAlias, ins⟩ := inArbUnElim ins
     let ⟨inVarFn, ins⟩ := inProdElim ins
@@ -548,7 +566,6 @@ namespace opFixDl
     let callEncEq := callEnc_eq_singleton (fun _ => rfl) (fun _ => rfl)
     let ins := inCallElimSingle ins callEncEq
     let ins := inCallElimSingle ins rfl
-    let ins := inToggle2Elim 6 ins
     let eqU :=
       uniSetMapDl.extend_wfm_eq_of_lt _ (by decide)
     let eqH :=
@@ -593,7 +610,7 @@ namespace opFixDl
     let eqMagicParent :=
       (opFixHelpersDl.dl.uniSetMapAt_eq
         []
-        (.const (opFixHelpersDl.const "magic")))
+        (.const () (opFixHelpersDl.const "magic")))
     let eqMagicChild :=
       opFixHelpersDl.extend_wfm_eq_of_lt _ (by decide)
     eqOuter ▸
@@ -631,20 +648,20 @@ namespace opFixDl
       eqUni.symm ▸ inUsm
     let inComposeCall :=
       inCall
-        (inToggle2 2 insOuter)
+        insOuter
         (inCall
           (inCall
-            (inToggle2 6 insInner)
+            insInner
             (inVar rfl))
           (inVar rfl))
     Set3.inCall <|
     Set3.inCall <|
-    DefList.InWfm.of_in_def_no_fv <|
+    DefList.in_def_no_fv <|
     inArbUn iOp <|
     inArbUn iArg <|
     inProd
       (inVar rfl)
-      (inProd (inVar rfl) (inToggle2 2 inComposeCall))
+      (inProd (inVar rfl) inComposeCall)
   
   theorem composeOp_elim {iOp iArg lane p}
     (ins:
@@ -657,21 +674,18 @@ namespace opFixDl
       p
   :=
     let ins := Set3.inCallElim (Set3.inCallElim ins)
-    let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
+    let ins := DefList.in_def_body_no_fv (lane := lane) ins
     let ⟨opAlias, ins⟩ := inArbUnElim ins
     let ⟨argAlias, ins⟩ := inArbUnElim ins
     let ⟨inVarOp, ins⟩ := inProdElim ins
     let ⟨inVarArg, ins⟩ := inProdElim ins
     let opEq := inVarElim inVarOp rfl
     let argEq := inVarElim inVarArg rfl
-    let ins := inToggle2Elim 2 ins
     let ⟨qAlias, ⟨inOuterFn, inInnerCall⟩⟩ := inCallElim ins
     let ⟨argAlias2, ⟨inMidFn, inArgVar⟩⟩ := inCallElim inInnerCall
     let argAlias2Eq := inVarElim inArgVar rfl
     let ⟨opAlias2, ⟨inUsmConst, inOpVar⟩⟩ := inCallElim inMidFn
     let opAlias2Eq := inVarElim inOpVar rfl
-    let inUsmConst := inToggle2Elim 6 inUsmConst
-    let inOuterFn := inToggle2Elim 2 inOuterFn
     let eqU :=
       uniSetMapDl.extend_wfm_eq_of_lt _ (by decide)
     let eqH :=
@@ -717,7 +731,7 @@ namespace opFixDl
     let eqComposeOpParent :=
       opFixHelpersDl.dl.uniSetMapAt_eq
         []
-        (.const (opFixDl.const "composeOp"))
+        (.const () (opFixDl.const "composeOp"))
     let eqComposeOpChild :=
       opFixHelpersDl.extend_wfm_eq_of_lt _ (by decide)
     let eqHead:
@@ -744,13 +758,13 @@ namespace opFixDl
         (fun _ => intp_toNamedExpr_eq_singleton magicIndex)
         (fun _ => intp_var_eq_singleton rfl)
     Set3.inCall <|
-    DefList.InWfm.of_in_def_no_fv <|
+    DefList.in_def_no_fv <|
     inArbUn iFn <|
     inProd
       (inVar rfl)
       (inCall
         (inCall
-          (inToggle2 5 (Set3.inCallElim (Set3.inCallElim ins)))
+          (Set3.inCallElim (Set3.inCallElim ins))
           rfl)
         (callEncEq ▸ rfl))
 
@@ -764,18 +778,17 @@ namespace opFixDl
       p
   :=
     let ins := Set3.inCallElim ins
-    let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
+    let ins := DefList.in_def_body_no_fv (lane := lane) ins
     let ⟨_unused, ins⟩ := inArbUnElim ins
     let ⟨inVarI, ins⟩ := inProdElim ins
     let iEq := inVarElim inVarI rfl
-    let ins := inToggle2Elim' 1 ins rfl
     let callEncEq :=
       callEnc_eq_singleton
         (fun _ => intp_toNamedExpr_eq_singleton magicIndex)
         (fun _ => intp_var_eq_singleton rfl)
     let ins := inCallElimSingle ins callEncEq
     let ins := inCallElimSingle ins (intp_var_eq_singleton rfl)
-    Set3.inCall (Set3.inCall (iEq ▸ (inToggle2Elim 4 ins)))
+    Set3.inCall (Set3.inCall (iEq ▸ ins))
 
   theorem trisetFix_call_eq
     (iFn: Pair)
@@ -816,12 +829,12 @@ namespace opFixDl
         (fun _ => intp_toNamedExpr_eq_singleton composeOpIndex)
         (fun _ => intp_var_eq_singleton rfl)
     Set3.inCall <|
-    DefList.InWfm.of_in_def_no_fv <|
+    DefList.in_def_no_fv <|
     inArbUn iOp <|
     inProd
       (inVar rfl)
       (inCall
-        (inToggle2 3 (Set3.inCallElim ins))
+        (Set3.inCallElim ins)
         (callEncEq ▸ rfl))
   
   theorem indexFix_elim {iOp lane p}
@@ -830,17 +843,16 @@ namespace opFixDl
     p ∈ ((opFixDl.val "trisetFix").call (composeIndex iOp)).getLane lane
   :=
     let ins := Set3.inCallElim ins
-    let ins := DefList.InWfm.in_def_no_fv (lane := lane) ins
+    let ins := DefList.in_def_body_no_fv (lane := lane) ins
     let ⟨_unused, ins⟩ := inArbUnElim ins
     let ⟨inVarI, ins⟩ := inProdElim ins
     let iEq := inVarElim inVarI rfl
-    let ins := inToggle2Elim' 1 ins rfl
     let callEncEq :=
       callEnc_eq_singleton
         (fun _ => intp_toNamedExpr_eq_singleton composeOpIndex)
         (fun _ => intp_var_eq_singleton rfl)
     let ins := inCallElimSingle ins callEncEq
-    Set3.inCall (iEq ▸ inToggle2Elim 2 ins)
+    Set3.inCall (iEq ▸ ins)
   
   theorem indexFix_call_eq
     (iOp: Pair)

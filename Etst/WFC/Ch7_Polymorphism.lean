@@ -124,7 +124,7 @@ theorem trisetFixIndex_fix
 open opFixDl in
 theorem trisetFix_eq (iFn: Pair):
   Eq
-    (vals.trisetFix.call iFn)
+    ((opFixDl.val "trisetFix").call iFn)
     ((uniSetMap.call iFn).call (trisetFixIndex iFn))
 :=
   (trisetFix_call_eq iFn).trans (trisetFixIndex_fix iFn)
@@ -152,7 +152,7 @@ theorem indexFixIndex_fix (iOp: Pair):
 open opFixDl in
 theorem indexFix_eq (iOp: Pair):
   Eq
-    (vals.indexFix.call iOp)
+    ((opFixDl.val "indexFix").call iOp)
     (uniSetMap.flatCall ((uniSetMap.call iOp).call (indexFixIndex iOp)))
 :=
   (indexFix_call_eq iOp).trans
