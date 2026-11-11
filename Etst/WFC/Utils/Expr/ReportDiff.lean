@@ -8,9 +8,9 @@ instance: ToString Set3.Lane where
   | .posLane => "posLane"
   | .defLane => "defLane"
 
-def reportDiff {E}
-  [DecidableEq E]
-  [ToString E]
+def reportDiff {kind}
+  [DecidableEq kind.ConstTag]
+  [ToString kind.ConstTag]
   (a b: Expr kind)
   (path: String := "")
 :

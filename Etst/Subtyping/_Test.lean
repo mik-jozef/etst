@@ -1,4 +1,4 @@
-import Etst.WFC.Syntax.FiniteDefList
+import Etst.WFC.Utils.NamedDefList.NamedPairExpr
 import Etst.WFC.Utils.SubsetStx.Basic
 
 namespace Etst
@@ -8,73 +8,81 @@ open DefList.SubsetStx
 
 -- TODO fix and move to an appropriate place.
 
-pairDefList TestDl extends FiniteDefList.Prelude
-  s3 Pair := null | Pair × Pair
-  s3 Nat := null | Nat × null
+pairDefList TestDl
+  p3 Any := Ex t, t
+  p3 None := All t, !t
   
-  s3 Even := null | (Even × null) × null
-  s3 Odd := Even × null
+  p3 Pair := null | Pair × Pair
+  p3 Nat := null | Nat × null
   
-  s3 EvenMut := null | OddMut × null
-  s3 OddMut := EvenMut × null
+  p3 Even := null | (Even × null) × null
+  p3 Odd := Even × null
   
-  s3 EvenNeg := !(EvenNeg × null)
+  p3 EvenMut := null | OddMut × null
+  p3 OddMut := EvenMut × null
+  
+  p3 EvenNeg := !(EvenNeg × null)
   
   
-  s3 Eq := Ex t, t × t × Any
-  s3 EqSymm := All a, All b, Eq a b -> Eq b a
+  p3 Eq := Ex t, t × t × Any
+  p3 EqSymm := All a, All b, Eq a b -> Eq b a
   
-  s3 zth := Ex a, Ex b, (a × b) × a
-  s3 fst := Ex a, Ex b, (a × b) × b
+  p3 zth := Ex a, Ex b, (a × b) × a
+  p3 fst := Ex a, Ex b, (a × b) × b
   
-  s3 succ := Ex x: Nat, x × x × null
+  p3 succ := Ex x: Nat, x × x × null
   
-  s3 add :=
+  p3 add :=
     | (Ex n: Nat, n × null × n)
     | (Ex a: Nat,
       Ex b: Nat,
         a × succ b × succ (add a b))
   
-  s3 mul :=
+  p3 mul :=
     | (Ex n: Nat, n × null × null)
     | (Ex a: Nat,
       Ex b: Nat,
         a × succ b × add (mul a b) b)
   
   
-  s3 NatLe :=
+  p3 NatLe :=
     | null × Nat × Any
     | (Ex le: NatLe, succ (zth le) × succ (fst le) × Any)
   
-  s3 NatLeZero := NatLe null
-  s3 AllNatLeZero := All n: Nat, NatLeZero n
+  p3 NatLeZero := NatLe null
+  p3 AllNatLeZero := All n: Nat, NatLeZero n
   
-  s3 ThenNatLeZero := Ex n: Nat, NatLeZero n then n
-  s3 ThoseNatLeZero := Ex n: Nat, n × NatLeZero n
+  p3 ThenNatLeZero := Ex n: Nat, NatLeZero n then n
+  p3 ThoseNatLeZero := Ex n: Nat, n × NatLeZero n
   
-  s3 Prime :=
+  p3 Prime :=
     & !succ null
     & (Ex n: Nat,
       All m: Nat,
         mul m Nat & n then (?some m & succ null) | (?some m & n) then n)
   
-  s3 InList :=
+  p3 InList :=
     Ex e,
     Ex tail,
     | e × (e × tail) × Any
     | (Ex h,
       InList e tail then e × h × tail)
   
-  s3 PrimesInf := All list, Ex p: Prime, !InList p list
+  p3 PrimesInf := All list, Ex p: Prime, !InList p list
 pairDefList.
 
-local macro "s3(" e:s3_pair_expr ")" : term => `(s3(TestDl, $e))
+-- local macro "p3(" e:s3_pair_expr ")" : term => `(p3(TestDl, $e))
 
 
-abbrev IsSub := SubsetStx TestDl.toDefList
+abbrev IsSub
+  (a b: NamedPairExpr ExprKind.lane [])
+:=
+  TestDl.dl.SubsetStx
+    (a.compile TestDl.consts)
+    (b.compile TestDl.consts)
 
 
-def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
+def SubsetStx.natSub: IsSub p3(.Nat) p3(:Nat) :=
   subSimpleInduction
     (fold
       (subId.unElimSub
@@ -86,14 +94,14 @@ def SubsetStx.natSub: IsSub s3(.Nat) s3(:Nat) :=
               subId)
             subId))))
 
-def SubsetStx.natNotNat: IsSub s3(.Any) s3(:Nat | !.Nat) :=
+def SubsetStx.natNotNat: IsSub p3(.Any) p3(:Nat | !.Nat) :=
   em.unElimSub
     (unL natSub)
     (unR subId)
 
 
 /-
-def natLeZeroThen: IsSub s3(.Nat) s3(:ThenNatLeZero) :=
+def natLeZeroThen: IsSub p3(.Nat) p3(:ThenNatLeZero) :=
   fold
     (unCtx
       sorry
@@ -110,23 +118,22 @@ def natLeZeroThen: IsSub s3(.Nat) s3(:ThenNatLeZero) :=
 
 
 def SubsetStx.AddSymm :=
-  BasicExpr.toDefLane
-    s3(All a: Nat, All b: Nat, Eq (add a b) (add b a))
+  p3(All a: Nat, All b: Nat, Eq (add a b) (add b a))
 
 /-
 def SubsetStx.addSymmNat:
-  IsSub s3(.Nat) AddSymm
+  IsSub p3(.Nat) AddSymm
 :=
   sorry
 
 def SubsetStx.addSymm:
-  IsSub s3(:Any) AddSymm
+  IsSub p3(:Any) AddSymm
 :=
   sorry
 
 
 def SubsetStx.infinitudeOfPrimes:
-  IsSub s3(.Any) s3(:PrimesInf)
+  IsSub p3(.Any) p3(:PrimesInf)
 :=
   sorry
 -/

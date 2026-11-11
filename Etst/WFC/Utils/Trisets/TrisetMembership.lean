@@ -20,11 +20,11 @@ public import Etst.WFC.Utils.Trisets.TrisetBisimilarity
 public section
 namespace Etst
 
-open SingleLaneExpr
+open Expr
 
 
-pairDefList isInDl extends bisimDl
-  s3 IsIn :=
+exposed pairDefList isInDl extends bisimDl
+  p3 IsIn :=
     Ex set elem,
     × set
     × elem
@@ -49,17 +49,15 @@ exposed def isInDl.IsInPos (set elem: Pair): Prop :=
 -/
 
 theorem isInDl.wfm_uniSetMap_eq:
-  isInDl.wfm isInDl.consts.uniSetMap = uniSetMap
+  isInDl.val "uniSetMap" = uniSetMap
 :=
-  (FiniteDefList.extend_wfm_eq_of_lt
-    bisimDl rfl (by decide)).symm.trans
+  (bisimDl.extend_wfm_eq_of_lt _ (by decide)).symm.trans
     bisimDl.wfm_uniSetMap_eq
 
 theorem isInDl.wfm_isBisim_eq:
-  isInDl.wfm isInDl.consts.IsBisim = bisimDl.wfm bisimDl.consts.IsBisim
+  isInDl.val "IsBisim" = bisimDl.val "IsBisim"
 :=
-  (FiniteDefList.extend_wfm_eq_of_lt
-    bisimDl rfl (by decide)).symm
+  (bisimDl.extend_wfm_eq_of_lt _ (by decide)).symm
 
 
 /-
@@ -67,12 +65,12 @@ theorem isInDl.wfm_isBisim_eq:
 -/
 
 theorem isInDl.IsInDef_of_defMem {set elem w}
-  (h: w ∈ ((isInDl.vals.IsIn.call set).call elem).defMem)
+  (h: w ∈ (((isInDl.val "IsIn").call set).call elem).defMem)
 :
   isInDl.IsInDef set elem
 :=
   let h2 :=
-    DefList.InWfm.in_def_no_fv (lane := .defLane)
+    DefList.in_def_body_no_fv (lane := .defLane)
       (Set3.inCallElim (lane := .defLane)
         (Set3.inCallElim (lane := .defLane) h))
   let ⟨setA, h2⟩ := inArbUnElim h2
@@ -87,7 +85,7 @@ theorem isInDl.IsInDef_of_defMem {set elem w}
   let pA1Eq: pA1 = elemX := inVarElim hArg rfl
   let ⟨pA2, hFn2, hArg2⟩ := inCallElim (pA1Eq ▸ hFn)
   let pA2Eq: pA2 = elemA := inVarElim hArg2 rfl
-  let hIsBW: _ ∈ (isInDl.wfm isInDl.consts.IsBisim).defMem :=
+  let hIsBW: _ ∈ (isInDl.val "IsBisim").defMem :=
     elemEq ▸ pA2Eq ▸ hFn2
   let isB: bisimDl.IsBisimDef elem elemX :=
     bisimDl.IsBisimDef_of_defMem (wfm_isBisim_eq ▸ hIsBW)
@@ -104,14 +102,14 @@ theorem isInDl.IsInDef_of_defMem {set elem w}
 theorem isInDl.IsInDef.toDefMem {set elem w}
   (isIn: isInDl.IsInDef set elem)
 :
-  w ∈ ((isInDl.vals.IsIn.call set).call elem).defMem
+  w ∈ (((isInDl.val "IsIn").call set).call elem).defMem
 :=
   let ⟨elemX, isB, ins⟩ := isIn
-  let hIsB: _ ∈ (isInDl.wfm isInDl.consts.IsBisim).defMem :=
+  let hIsB: _ ∈ (isInDl.val "IsBisim").defMem :=
     wfm_isBisim_eq ▸ isB.toDefMem
-  let hUni: _ ∈ (isInDl.wfm isInDl.consts.uniSetMap).defMem :=
+  let hUni: _ ∈ (isInDl.val "uniSetMap").defMem :=
     wfm_uniSetMap_eq ▸ ins
-  DefList.InWfm.of_in_def_no_fv (lane := .defLane)
+  DefList.in_def_no_fv (lane := .defLane)
     (inArbUn set
       (inArbUn elem
         (inProd (inVar rfl)
@@ -124,12 +122,12 @@ theorem isInDl.IsInDef.toDefMem {set elem w}
                     (inCall hUni (inVar rfl))))))))))
 
 theorem isInDl.IsInPos_of_posMem {set elem w}
-  (h: w ∈ ((isInDl.vals.IsIn.call set).call elem).posMem)
+  (h: w ∈ (((isInDl.val "IsIn").call set).call elem).posMem)
 :
   isInDl.IsInPos set elem
 :=
   let h2 :=
-    DefList.InWfm.in_def_no_fv (lane := .posLane)
+    DefList.in_def_body_no_fv (lane := .posLane)
       (Set3.inCallElim (lane := .posLane)
         (Set3.inCallElim (lane := .posLane) h))
   let ⟨setA, h2⟩ := inArbUnElim h2
@@ -144,7 +142,7 @@ theorem isInDl.IsInPos_of_posMem {set elem w}
   let pA1Eq: pA1 = elemX := inVarElim hArg rfl
   let ⟨pA2, hFn2, hArg2⟩ := inCallElim (pA1Eq ▸ hFn)
   let pA2Eq: pA2 = elemA := inVarElim hArg2 rfl
-  let hIsBW: _ ∈ (isInDl.wfm isInDl.consts.IsBisim).posMem :=
+  let hIsBW: _ ∈ (isInDl.val "IsBisim").posMem :=
     elemEq ▸ pA2Eq ▸ hFn2
   let isB: bisimDl.IsBisimPos elem elemX :=
     bisimDl.IsBisimPos_of_posMem (wfm_isBisim_eq ▸ hIsBW)
@@ -161,14 +159,14 @@ theorem isInDl.IsInPos_of_posMem {set elem w}
 theorem isInDl.IsInPos.toPosMem {set elem w}
   (isIn: isInDl.IsInPos set elem)
 :
-  w ∈ ((isInDl.vals.IsIn.call set).call elem).posMem
+  w ∈ (((isInDl.val "IsIn").call set).call elem).posMem
 :=
   let ⟨elemX, isB, inw⟩ := isIn
-  let hIsB: _ ∈ (isInDl.wfm isInDl.consts.IsBisim).posMem :=
+  let hIsB: _ ∈ (isInDl.val "IsBisim").posMem :=
     wfm_isBisim_eq ▸ isB.toPosMem
-  let hUni: _ ∈ (isInDl.wfm isInDl.consts.uniSetMap).posMem :=
+  let hUni: _ ∈ (isInDl.val "uniSetMap").posMem :=
     wfm_uniSetMap_eq ▸ inw
-  DefList.InWfm.of_in_def_no_fv (lane := .posLane)
+  DefList.in_def_no_fv (lane := .posLane)
     (inArbUn set
       (inArbUn elem
         (inProd (inVar rfl)
