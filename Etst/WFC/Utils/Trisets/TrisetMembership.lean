@@ -51,13 +51,13 @@ exposed def isInDl.IsInPos (set elem: Pair): Prop :=
 theorem isInDl.wfm_uniSetMap_eq:
   isInDl.val "uniSetMap" = uniSetMap
 :=
-  (bisimDl.extend_wfm_eq_of_lt _ (by decide)).symm.trans
+  (isInDl.extend_wfm_eq bisimDl "uniSetMap").trans
     bisimDl.wfm_uniSetMap_eq
 
 theorem isInDl.wfm_isBisim_eq:
   isInDl.val "IsBisim" = bisimDl.val "IsBisim"
 :=
-  (bisimDl.extend_wfm_eq_of_lt _ (by decide)).symm
+  isInDl.extend_wfm_eq bisimDl "IsBisim"
 
 
 /-

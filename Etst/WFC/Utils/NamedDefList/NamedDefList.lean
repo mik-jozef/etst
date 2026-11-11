@@ -198,4 +198,142 @@ namespace NamedDefList
   :=
     ndl.dl.getDef (consts.idxOf x)
   
+  
+  /-
+    Structural equality on expressions. Faster than what the
+    "deriving DecidableEq" in Ch1 gives.
+  -/
+  exposed def Expr.eqBool: Expr .basic → Expr .basic → Bool
+  | .const t1 x1, .const t2 x2 => decide (t1 = t2) && decide (x1 = x2)
+  | .var x1, .var x2 => decide (x1 = x2)
+  | .null, .null => true
+  | .prod l1 r1, .prod l2 r2 => eqBool l1 l2 && eqBool r1 r2
+  | .ir l1 r1, .ir l2 r2 => eqBool l1 l2 && eqBool r1 r2
+  | .full body1, .full body2 => eqBool body1 body2
+  | .compl body1, .compl body2 => eqBool body1 body2
+  | .arbIr body1, .arbIr body2 => eqBool body1 body2
+  | _, _ => false
+  
+  public theorem Expr.eqBool_eq {a b: Expr .basic}
+    (h: Expr.eqBool a b = true)
+  :
+    a = b
+  :=
+    match a, b with
+    | .const _ _, .const _ _ => congr rfl (decide_eq_true_eq.mp h)
+    | .var _, .var _ => congr rfl (decide_eq_true_eq.mp h)
+    | .null, .null => rfl
+    | .prod _ _, .prod _ _ =>
+      let ihL := Expr.eqBool_eq (Bool.and_elim_left h)
+      let ihR := Expr.eqBool_eq (Bool.and_elim_right h)
+      congr (congr rfl ihL) ihR
+    | .ir _ _, .ir _ _ =>
+      let ihL := Expr.eqBool_eq (Bool.and_elim_left h)
+      let ihR := Expr.eqBool_eq (Bool.and_elim_right h)
+      congr (congr rfl ihL) ihR
+    | .full _, .full _ => congr rfl (Expr.eqBool_eq h)
+    | .compl _, .compl _ => congr rfl (Expr.eqBool_eq h)
+    | .arbIr _, .arbIr _ => congr rfl (Expr.eqBool_eq h)
+  
+  /-
+    Checks that the first `n` definitions of the two lists are
+    syntactically equal (both being `Expr.none` counts as equal).
+  -/
+  exposed def defsAgreeBool
+    (a b: FiniteDefList)
+    (n: Nat)
+  :
+    Bool
+  :=
+    (List.range n).all fun y => Expr.eqBool (a.getDef y) (b.getDef y)
+
+  /-
+    If `a`'s definitions all agree with `b`'s, then the well-founded
+    models agree at every index of `a`.
+    
+    The set of indices of `a` is closed under `UsesConst` (that is
+    `FiniteDefList.constsLt`), which is exactly the closure hypothesis
+    of `DefList.eq_defs_eq_vals`.
+  -/
+  public theorem wfm_eq_of_defsAgreeBool
+    (a b: FiniteDefList)
+    {x: Nat}
+    (agrees: defsAgreeBool a b a.size = true)
+    (xLt: x < a.size)
+  :
+    a.wfm x = b.wfm x
+  :=
+    let names: Set Nat := { y | y < a.size }
+    let defsEq: DefListEq.EqDefsOn a.toDefList b.toDefList id names :=
+      fun y yIn =>
+        (Expr.mapConst_eq_id _).trans
+          (Expr.eqBool_eq
+            (List.all_eq_true.mp agrees y (List.mem_range.mpr yIn)))
+    let closed: DefListEq.ClosedUnderUses a.toDefList names :=
+      fun y _ z zUsed => a.constsLt y z zUsed
+    DefList.eq_defs_eq_vals defsEq closed x xLt
+  
+  /-
+    If `l` is a prefix of `m`, then an element of `l` has the same
+    index in both, so extending a definition list on the right keeps
+    the indices of the base's definitions.
+  -/
+  theorem idxOf_eq_of_isPrefix {l m: List String} {x: String}
+    (pfx: l.isPrefixOf m = true)
+    (xIn: x ∈ l)
+  :
+    m.idxOf x = l.idxOf x
+  :=
+    let isPrefix: l <+: m := List.isPrefixOf_iff_prefix.mp pfx
+    isPrefix.findIdx_eq_of_findIdx_lt_length
+      (List.idxOf_lt_length_iff.mpr xIn)
+  
+  /-
+    A decidable witness that the definition named `x` is shared by `a`
+    and `b`. Two conditions:
+    
+    - one list's constants are a prefix of the other's, which makes the
+      indices of the shared constants agree;
+    - the definitions at that prefix agree.
+  -/
+  public abbrev DefIsShared {aConsts bConsts}
+    (a: NamedDefList tools aConsts)
+    (b: NamedDefList tools bConsts)
+    (x: String)
+  :
+    Prop
+  :=
+    (x ∈ a.consts ∧ a.consts.isPrefixOf b.consts = true ∧
+      defsAgreeBool a.dl b.dl a.dl.size = true) ∨
+    (x ∈ b.consts ∧ b.consts.isPrefixOf a.consts = true ∧
+      defsAgreeBool b.dl a.dl b.dl.size = true)
+  
+  /-
+    A definition shared by two definition lists has the same value in
+    both. `shareX` is decidable, so the common case (one list extends
+    the other) can be discharged with `by decide`.
+  -/
+  public theorem extend_wfm_eq {aConsts bConsts}
+    (a: NamedDefList tools aConsts)
+    (b: NamedDefList tools bConsts)
+    (x: String)
+    (shareX: DefIsShared a b x := by decide)
+  :
+    a.dl.wfm (aConsts.idxOf x) = b.dl.wfm (bConsts.idxOf x)
+  :=
+    match shareX with
+    | .inl ⟨xIn, pfx, agrees⟩ =>
+      let xInA: x ∈ aConsts := xIn
+      let idxLt: aConsts.idxOf x < a.dl.size :=
+        (dlWithSize a).property.symm ▸ List.idxOf_lt_length_iff.mpr xInA
+      (wfm_eq_of_defsAgreeBool a.dl b.dl agrees idxLt).trans
+        (congrArg b.dl.wfm (idxOf_eq_of_isPrefix pfx xInA).symm)
+    | .inr ⟨xIn, pfx, agrees⟩ =>
+      let xInB: x ∈ bConsts := xIn
+      let idxLt: bConsts.idxOf x < b.dl.size :=
+        (dlWithSize b).property.symm ▸ List.idxOf_lt_length_iff.mpr xInB
+      Eq.symm <|
+        (wfm_eq_of_defsAgreeBool b.dl a.dl agrees idxLt).trans
+          (congrArg a.dl.wfm (idxOf_eq_of_isPrefix pfx xInB)).symm
+  
 end NamedDefList

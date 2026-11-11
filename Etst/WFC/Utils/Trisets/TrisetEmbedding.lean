@@ -82,16 +82,13 @@ namespace trisetEmbedHelpersDl
   theorem wfm_uniSetMap_eq:
     trisetEmbedHelpersDl.val "uniSetMap" = uniSetMap
   :=
-    Eq.symm <|
-      (uniSetMapDl.extend_wfm_eq_of_lt _ (by decide)).trans
-        ((opFixHelpersDl.extend_wfm_eq_of_lt _ (by decide)).trans
-          (opFixDl.extend_wfm_eq_of_lt _ (by decide)))
+    trisetEmbedHelpersDl.extend_wfm_eq uniSetMapDl "uniSetMap"
   
   /-- The `callEnc` constant of this deflist denotes `callEnc`. -/
   theorem wfm_callEnc_eq:
     trisetEmbedHelpersDl.val "callEnc" = opFixDl.val "callEnc"
   :=
-    (opFixDl.extend_wfm_eq_of_lt _ (by decide)).symm
+    trisetEmbedHelpersDl.extend_wfm_eq opFixDl "callEnc"
   
   /-
     If `e` is a member of `t`, then `(0, iFn.callEnc e)` is a
@@ -387,8 +384,7 @@ namespace trisetEmbedDl
   theorem wfm_callEnc_eq:
     trisetEmbedDl.val "callEnc" = opFixDl.val "callEnc"
   :=
-    ((opFixDl.extend_wfm_eq_of_lt _ (by decide)).trans
-      (trisetEmbedHelpersDl.extend_wfm_eq_of_lt _ (by decide))).symm
+    trisetEmbedDl.extend_wfm_eq opFixDl "callEnc"
   
   /-- `embedOp` maps `iFn` to `embedStepIndex.callEnc iFn` (intro). -/
   theorem embedOp_ins_def {iFn: Pair}:

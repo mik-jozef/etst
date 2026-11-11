@@ -518,11 +518,7 @@ namespace opFixDl
   :
     p ∈ (((opFixDl.val "magic").call iFn).call iArg).getLane lane
   :=
-    let eqU :=
-      uniSetMapDl.extend_wfm_eq_of_lt _ (by decide)
-    let eqH :=
-      opFixHelpersDl.extend_wfm_eq_of_lt _ (by decide)
-    let eqUni := eqU.trans eqH
+    let eqUni := uniSetMapDl.extend_wfm_eq opFixDl "uniSetMap"
     let ins:
       ((opFixDl.dl.wfm (uniSetMapDl.const "uniSetMap")).getLane lane).Mem
         (.pair iFn (.pair (iArg.callEnc iArg) p))
@@ -566,11 +562,7 @@ namespace opFixDl
     let callEncEq := callEnc_eq_singleton (fun _ => rfl) (fun _ => rfl)
     let ins := inCallElimSingle ins callEncEq
     let ins := inCallElimSingle ins rfl
-    let eqU :=
-      uniSetMapDl.extend_wfm_eq_of_lt _ (by decide)
-    let eqH :=
-      opFixHelpersDl.extend_wfm_eq_of_lt _ (by decide)
-    let eqUni := eqU.trans eqH
+    let eqUni := uniSetMapDl.extend_wfm_eq opFixDl "uniSetMap"
     let ins:
       Set.Mem
         (Set3.getLane
@@ -611,8 +603,7 @@ namespace opFixDl
       (opFixHelpersDl.dl.uniSetMapAt_eq
         []
         (.const () (opFixHelpersDl.const "magic")))
-    let eqMagicChild :=
-      opFixHelpersDl.extend_wfm_eq_of_lt _ (by decide)
+    let eqMagicChild := opFixHelpersDl.extend_wfm_eq opFixDl "magic"
     eqOuter ▸
     eqInnerCall ▸
     congrArg
@@ -630,11 +621,7 @@ namespace opFixDl
     p ∈ (((opFixDl.val "composeOp").call iOp).call iArg).getLane lane
   :=
     let ⟨q, inQ, inUsm⟩ := Set3.inFlatCallElim ins
-    let eqU :=
-      uniSetMapDl.extend_wfm_eq_of_lt _ (by decide)
-    let eqH :=
-      opFixHelpersDl.extend_wfm_eq_of_lt _ (by decide)
-    let eqUni := eqU.trans eqH
+    let eqUni := uniSetMapDl.extend_wfm_eq opFixDl "uniSetMap"
     let insInner:
       ((opFixDl.dl.wfm (opFixDl.const "uniSetMap")).getLane lane).Mem
         (.pair iOp (.pair iArg q))
@@ -686,11 +673,7 @@ namespace opFixDl
     let argAlias2Eq := inVarElim inArgVar rfl
     let ⟨opAlias2, ⟨inUsmConst, inOpVar⟩⟩ := inCallElim inMidFn
     let opAlias2Eq := inVarElim inOpVar rfl
-    let eqU :=
-      uniSetMapDl.extend_wfm_eq_of_lt _ (by decide)
-    let eqH :=
-      opFixHelpersDl.extend_wfm_eq_of_lt _ (by decide)
-    let eqUni := eqU.trans eqH
+    let eqUni := uniSetMapDl.extend_wfm_eq opFixDl "uniSetMap"
     let inUsmConst:
       ((uniSetMapDl.dl.wfm (opFixDl.const "uniSetMap")).getLane lane).Mem
         (.pair opAlias2 (.pair argAlias2 qAlias))
@@ -733,7 +716,7 @@ namespace opFixDl
         []
         (.const () (opFixDl.const "composeOp"))
     let eqComposeOpChild :=
-      opFixHelpersDl.extend_wfm_eq_of_lt _ (by decide)
+      opFixHelpersDl.extend_wfm_eq opFixDl "composeOp"
     let eqHead:
       uniSetMap.call composeOpIndex = (opFixDl.val "composeOp")
     :=

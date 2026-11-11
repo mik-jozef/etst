@@ -91,7 +91,7 @@ exposed def bisimDl.IsBisimPos (p q: Pair): Prop := ¬ NonBisimDef p q
 theorem bisimDl.wfm_uniSetMap_eq:
   bisimDl.val "uniSetMap" = uniSetMap
 :=
-  (uniSetMapDl.extend_wfm_eq_of_lt _ (by decide)).symm
+  bisimDl.extend_wfm_eq uniSetMapDl "uniSetMap"
 
 /-
   `wfm_uniSetMap_eq` in the shape the proofs below actually need.
