@@ -283,50 +283,35 @@ exposed pairDefList uniSetMapDl
 pairDefList.
 
 namespace uniSetMapDl
-  exposed def exprEncConstRaw: Expr .basic :=
-    exprEncConst.compile uniSetMapDl.consts
+  exposed def compileExprEnc
+    (namedExpr: NamedPairExpr ExprKind.basic ["expr", "fv", "dl"])
+    (isWf: namedExpr.IsWF uniSetMapDl.consts := by decide)
+  :
+    Expr .basic
+  :=
+    /-
+      The const list is spelled out to be syntactically identical to
+      what uniSetMapDl definitions are actually compiled with.
+    -/
+    (namedExpr.check isWf).val.compile
+      ([] ++ (["getNth", "uniSetMap"]))
   
-  exposed def exprEncComplConstRaw: Expr .basic :=
-    exprEncComplConst.compile uniSetMapDl.consts
+  exposed def exprEncConstRaw := compileExprEnc exprEncConst
+  exposed def exprEncComplConstRaw := compileExprEnc exprEncComplConst
+  exposed def exprEncVarRaw := compileExprEnc exprEncVar
+  exposed def exprEncComplVarRaw := compileExprEnc exprEncComplVar
+  exposed def exprEncNullRaw := compileExprEnc exprEncNull
+  exposed def exprEncProdRaw := compileExprEnc exprEncProd
+  exposed def exprEncIrRaw := compileExprEnc exprEncIr
+  exposed def exprEncUnRaw := compileExprEnc exprEncUn
+  exposed def exprEncFullRaw := compileExprEnc exprEncFull
+  exposed def exprEncSomeRaw := compileExprEnc exprEncSome
+  exposed def exprEncArbIrRaw := compileExprEnc exprEncArbIr
+  exposed def exprEncArbUnRaw := compileExprEnc exprEncArbUn
+  exposed def exprEncUniSetMapRaw := compileExprEnc exprEncUniSetMap
+  exposed def exprEncToEncodingRaw := compileExprEnc exprEncToEncoding
+  exposed def exprEncListRaw := compileExprEnc exprEncList
   
-  exposed def exprEncVarRaw: Expr .basic :=
-    exprEncVar.compile uniSetMapDl.consts
-  
-  exposed def exprEncComplVarRaw: Expr .basic :=
-    exprEncComplVar.compile uniSetMapDl.consts
-  
-  exposed def exprEncNullRaw: Expr .basic :=
-    exprEncNull.compile uniSetMapDl.consts
-  
-  exposed def exprEncProdRaw: Expr .basic :=
-    exprEncProd.compile uniSetMapDl.consts
-  
-  exposed def exprEncIrRaw: Expr .basic :=
-    exprEncIr.compile uniSetMapDl.consts
-  
-  exposed def exprEncUnRaw: Expr .basic :=
-    exprEncUn.compile uniSetMapDl.consts
-  
-  exposed def exprEncFullRaw: Expr .basic :=
-    exprEncFull.compile uniSetMapDl.consts
-  
-  exposed def exprEncSomeRaw: Expr .basic :=
-    exprEncSome.compile uniSetMapDl.consts
-  
-  exposed def exprEncArbIrRaw: Expr .basic :=
-    exprEncArbIr.compile uniSetMapDl.consts
-  
-  exposed def exprEncArbUnRaw: Expr .basic :=
-    exprEncArbUn.compile uniSetMapDl.consts
-  
-  exposed def exprEncUniSetMapRaw: Expr .basic :=
-    exprEncUniSetMap.compile uniSetMapDl.consts
-  
-  exposed def exprEncToEncodingRaw: Expr .basic :=
-    exprEncToEncoding.compile uniSetMapDl.consts
-  
-  exposed def exprEncListRaw: Expr .basic :=
-    exprEncList.compile uniSetMapDl.consts
   
   
   -- Expose "const" in the namespace.

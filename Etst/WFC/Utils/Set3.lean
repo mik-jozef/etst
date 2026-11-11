@@ -855,7 +855,7 @@ namespace Set3
     | .defLane, .posLane => defToPos inA
     | .posLane, .posLane => inA
   
-  theorem defMem_toLane {D d lane} {s: Set3 D}
+  theorem defMem_getLane {D d lane} {s: Set3 D}
     (isDef: d ∈ s.defMem)
   :
     d ∈ s.getLane lane

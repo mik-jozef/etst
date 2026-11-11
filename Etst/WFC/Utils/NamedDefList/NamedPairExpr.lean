@@ -430,7 +430,7 @@ syntax "p3(" ident,* ";" p3_expr ")" : term
 
 open Lean in
 macro_rules
--- Public entry points: ascribe exactly once, then hand off to the inner rules
+-- Public entry points: ascribe once, then hand off to the inner rules
 | `(p3( $e:p3_expr )) =>
   `((p3_inner($e) : NamedPairExpr _ []))
 | `(p3( $ids:ident,* ; $e:p3_expr )) => do

@@ -6,8 +6,6 @@
     to a fallback value.
   - does not require specifying all variables upfront, allowing them
     to be named where they are used.
-  
-  TODO delete `FiniteDefList.lean` and replace its usages with this.
 -/
 module
 public import Mathlib.Data.Set.Defs
@@ -40,49 +38,35 @@ where
 
 public inductive NamedDefListSection {ExprT}
   (tools: NamedExprTools ExprT)
+  (baseConsts ownConsts: List String)
 :
+  -- This is a bookkeeping device to make `ownConsts` inferable.
   (outerConsts innerConsts: List String) →
   Type
-| empty {outerConsts}: NamedDefListSection tools outerConsts []
+| empty:
+    NamedDefListSection tools baseConsts ownConsts ownConsts []
 | const
     (const: String)
     {outerConsts innerConsts}
-    (body: ExprT [] (outerConsts ++ (const :: innerConsts)))
+    (body: ExprT [] (baseConsts ++ ownConsts))
     (tail:
-      NamedDefListSection tools (outerConsts.concat const) innerConsts)
+      NamedDefListSection tools baseConsts ownConsts
+        (outerConsts ++ [const])
+        innerConsts)
     (nameUnique: const ∉ outerConsts := by decide)
   :
-    NamedDefListSection tools outerConsts (const :: innerConsts)
+    NamedDefListSection tools baseConsts ownConsts
+      outerConsts
+      (const :: innerConsts)
 
 namespace NamedDefListSection
   variable {ExprT}
     {tools: NamedExprTools ExprT}
   
-  exposed def length {o i}
-    (segment: NamedDefListSection tools o i)
+  exposed def toDefs {base own o i}
+    (segment: NamedDefListSection tools base own o i)
   :
-    Nat
-  :=
-    match segment with
-    | .empty => 0
-    | .const _ _ tail _ => tail.length + 1
-  
-  public theorem toDefs_ub_rec {cst ub}
-    {o i: List String}
-    (ubEq: ub = o.length + (cst :: i).length)
-  :
-    ub = (o.concat cst).length + i.length
-  := by
-    apply ubEq.trans
-    simp only [List.length_cons, List.length_concat]
-    omega
-  
-  exposed def toDefs {o i}
-    (segment: NamedDefListSection tools o i)
-    (ub: Nat)
-    (ubEq: ub = o.length + i.length)
-  :
-    List (FiniteDefList.Def ub)
+    List (FiniteDefList.Def ((base ++ own).length))
   :=
     match segment with
     | .empty => []
@@ -91,42 +75,35 @@ namespace NamedDefListSection
         name := cst
         expr := tools.compile body
         isClean := tools.compiles_clean body
-        constsLt :=
-          let lenEq: ub = (o ++ cst :: innerRest).length := by
-            rw [ubEq, List.length_append]
-          lenEq ▸
-          tools.compiles_constsLt body
+        constsLt := tools.compiles_constsLt body
       }
-      head :: tail.toDefs ub (toDefs_ub_rec ubEq)
+      head :: tail.toDefs
   
-  public theorem toDefs_length_inner {o i}
-    (segment: NamedDefListSection tools o i)
-    (ub: Nat)
-    (ubEq: ub = o.length + i.length)
+  public theorem toDefs_length {base own o i}
+    (segment: NamedDefListSection tools base own o i)
   :
-    (segment.toDefs ub ubEq).length = i.length
+    segment.toDefs.length = i.length
   :=
     match i, segment with
     | [], .empty => rfl
     | _, .const _ _ tail _ =>
-      Nat.succ_inj.mpr
-        (toDefs_length_inner tail _ (toDefs_ub_rec ubEq))
+      Nat.succ_inj.mpr (toDefs_length tail)
   
 end NamedDefListSection
 
 public inductive NamedDefList {ExprT}
   (tools: NamedExprTools ExprT)
 :
-  (outerConsts innerConsts: List String) →
+  (consts: List String) →
   Type
 where
-| empty {outerConsts}: NamedDefList tools outerConsts []
+| empty: NamedDefList tools []
 | extend {baseConsts childConsts}
-    (base: NamedDefList tools [] baseConsts)
+    (base: NamedDefList tools baseConsts)
     (segment:
-      NamedDefListSection tools baseConsts childConsts)
+      NamedDefListSection tools baseConsts childConsts [] childConsts)
   :
-    NamedDefList tools [] (baseConsts ++ childConsts)
+    NamedDefList tools (baseConsts ++ childConsts)
 
 namespace NamedDefList
   variable {ExprT}
@@ -135,55 +112,33 @@ namespace NamedDefList
   exposed def declare {ExprT}
     (tools: NamedExprTools ExprT)
     {innerConsts}
-    (segment: NamedDefListSection tools [] innerConsts)
+    (segment: NamedDefListSection tools [] innerConsts [] innerConsts)
   :
-    NamedDefList tools [] innerConsts
+    NamedDefList tools innerConsts
   :=
     empty.extend segment
   
   
-  exposed def dlWithSizeExtend {baseConsts childConsts: List String}
-      (base: { f: FiniteDefList // f.size = baseConsts.length })
-      (segment: NamedDefListSection tools baseConsts childConsts)
-    :
-      { f: FiniteDefList // f.size = (baseConsts ++ childConsts).length }
-  :=
-    let defs := segment.toDefs _ rfl
-    let lengthEq:
-      Eq
-        (base.val.size + defs.length)
-        (baseConsts.length + childConsts.length)
-    :=
-      congr
-        (congr rfl base.property)
-        (segment.toDefs_length_inner _ rfl)
-    let dl := base.val.extend defs lengthEq.symm
-    let extendEq := base.val.extend_size defs lengthEq.symm
-    ⟨dl, extendEq ▸ List.length_append.symm ▸ lengthEq⟩
-  
-  exposed def dlWithSize {outerConsts innerConsts: List String}:
-    NamedDefList tools outerConsts innerConsts →
-    { f: FiniteDefList // f.size = innerConsts.length }
+  exposed def dlWithSize {consts: List String}:
+    NamedDefList tools consts →
+    { f: FiniteDefList // f.size = consts.length }
   | .empty => ⟨FiniteDefList.empty, rfl⟩
-  | .extend base segment => dlWithSizeExtend base.dlWithSize segment
+  | .extend (baseConsts := bc) (childConsts := cc) base segment =>
+    let ⟨dl, dlSizeEq⟩ := dlWithSize base
+    let defs := segment.toDefs
+    let ubEq: (bc ++ cc).length = dl.size + defs.length := by
+      conv => lhs; rw [List.length_append]
+      exact
+      congr_arg₂ Nat.add dlSizeEq.symm segment.toDefs_length.symm
+    let sizeEq := dl.extend_size defs _ ▸ ubEq.symm
+    ⟨dl.extend defs ubEq, sizeEq⟩
   
-  exposed def dl {innerConsts}
-    (dl: NamedDefList tools [] innerConsts)
+  exposed def dl {consts}
+    (ndl: NamedDefList tools consts)
   :
     FiniteDefList
   :=
-    dlWithSize dl
-  
-  theorem extend_dl_eq {baseConsts childConsts}
-    (base: NamedDefList tools [] baseConsts)
-    (segment: NamedDefListSection tools baseConsts childConsts)
-  :
-    Eq
-      (base.extend segment).dl
-      (dlWithSizeExtend base.dlWithSize segment).val
-  := by
-    show (dlWithSize (base.extend segment)).val = _
-    rw [dlWithSize]
+    dlWithSize ndl
   
   /-
     Extending a `NamedDefList` with a new section does not change
@@ -191,23 +146,26 @@ namespace NamedDefList
     A port of `FiniteDefList.extend_wfm_eq_of_lt`.
   -/
   public theorem extend_wfm_eq_of_lt {baseConsts childConsts}
-    (base: NamedDefList tools [] baseConsts)
-    (segment: NamedDefListSection tools baseConsts childConsts)
+    (base: NamedDefList tools baseConsts)
+    (segment:
+      NamedDefListSection tools baseConsts childConsts [] childConsts)
     {x: Nat}
     (xLt: x < base.dl.size)
   :
     base.dl.wfm x = (base.extend segment).dl.wfm x
   :=
-    extend_dl_eq base segment ▸
     FiniteDefList.extend_wfm_eq_of_lt
       base.dl
-      (congr
-        (congr rfl base.dlWithSize.property)
-        (segment.toDefs_length_inner _ rfl)).symm
+      (by
+      conv => lhs; rw [List.length_append];
+      exact
+      congr_arg₂ Nat.add
+        base.dlWithSize.property.symm
+        segment.toDefs_length.symm)
       xLt
   
   exposed noncomputable def val {consts}
-    (ndl: NamedDefList tools [] consts)
+    (ndl: NamedDefList tools consts)
     (const: String)
     (_: const ∈ consts := by decide)
   :
@@ -216,14 +174,14 @@ namespace NamedDefList
     ndl.dl.wfm (consts.idxOf const)
   
   exposed def consts {consts}
-    (_ndl: NamedDefList tools [] consts)
+    (_ndl: NamedDefList tools consts)
   :
     List String
   :=
     consts
   
   exposed def const {consts}
-    (_ndl: NamedDefList tools [] consts)
+    (_ndl: NamedDefList tools consts)
     (const: String)
     (_: const ∈ consts := by decide)
   :
@@ -232,7 +190,7 @@ namespace NamedDefList
     consts.idxOf const
   
   exposed def getDef {consts}
-    (ndl: NamedDefList tools [] consts)
+    (ndl: NamedDefList tools consts)
     (x: String)
     (_: x ∈ consts := by decide)
   :

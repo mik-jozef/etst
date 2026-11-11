@@ -5,7 +5,7 @@ import Etst.WFC.Utils.RulesOfInference
 
 public section
 namespace Etst.uniSetMapDl
-open SingleLaneExpr
+open Expr
 
 
 def IsInappExtIh
@@ -20,7 +20,7 @@ def IsInappExtIh
       (({n fv expr pInt: _} →
         xExt = (cst "uniSetMap") →
         pExt = .pair (uniSetMapIndex dl n fv expr) pInt →
-        pInt ∈ ((dl.prefix n).triIntp fv expr).defMem))
+        pInt ∈ ((dl.prefix n).triIntp expr fv).defMem))
       (xExt = (cst "getNth") → pExt ∈ (uniSetMapDl.val "getNth").defMem)
 
 def intOfExtCycle
@@ -127,7 +127,7 @@ theorem allInternalInapp {dl n fv expr p}
     intCause
 :=
   match expr with
-  | .const x =>
+  | .const () x =>
     if h: x < n then
       let isExtInapp := everyCauseInapp inExtCycle _ isWeakCauseConst
       match isExtInapp with
@@ -140,7 +140,7 @@ theorem allInternalInapp {dl n fv expr p}
         .blockedCinsCycle intIsCause.constElim (Or.inl inCycle)
     else
       .blockedCinsCycle intIsCause.constElim (Or.inr h)
-  | .compl (.const x) =>
+  | .compl (.const () x) =>
     let inBout := intIsCause.complConstElim
     match everyCauseInapp inExtCycle _ isWeakCauseComplConst with
     | .blockedBout (Or.inl ⟨enc, neq, xEq, pEq⟩) inDef =>
@@ -175,7 +175,7 @@ theorem allInternalInapp {dl n fv expr p}
       let inGetNth: _ ∈ (usmWfm (cst "getNth")).getLane _ :=
         xEq ▸ pEq ▸ insGetNth.isSound
       let inVar:
-        p ∈ (var x).intp fv (dl.prefix n).wfm (dl.prefix n).wfm
+        p ∈ (var x).intp .defLane (dl.prefix n).wfm (dl.prefix n).wfm fv
       :=
         inVar (getNthElim (lane := .defLane) inGetNth)
       False.elim (inBout inVar)
@@ -430,7 +430,7 @@ theorem externalInsElimHelper {dl n fv index const expr p}
   (indexEq: index = .pair (uniSetMapIndex dl n fv expr) p)
   (isNnf: expr.IsNnf)
 :
-  p ∈ (expr.triIntp fv (dl.prefix n).wfm).defMem
+  p ∈ expr.intp .defLane (dl.prefix n).wfm (dl.prefix n).wfm fv
 :=
   match ins with
   | .intro _ _ cause isCause cinsSat boutSat =>
@@ -450,19 +450,19 @@ theorem externalInsElimHelper {dl n fv index const expr p}
     
     let ins := isCause cause.leastValsApxAreSat
     -- TODO Lean, why can't I call `isAtOfInsDef` once before the match?
-    let IsAt :=
-      InUniSetMapAt dl n fv cause.leastBackgroundApx cause.leastContextApx
+    let b := cause.leastBackgroundApx
+    let c := cause.leastContextApx
+    let IsAt := InUniSetMapAt .defLane b c p dl n fv
     match expr, isNnf with
-    | .const x, _ =>
-      let insList: IsAt _ .defLane p :=
-        isAtOfInsDef (constEq ▸ indexEq ▸ ins)
+    | .const () x, _ =>
+      let insList: IsAt _ := isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       let inCins := isAtConstElim insList (DefList.Ins.isSound ∘ cinsSat)
       let insDef := cinsSat (inCinsNnf inCins)
-      let ih: _ ∈ (BasicExpr.triIntp _ _ _).defMem :=
-        BasicExpr.triIntp_toNnf_eq _ _ _ ▸
+      let ih: _ ∈ Expr.intp _ _ _ _ _ :=
+        Expr.intp_toNnf_eq _ _ _ _ _ ▸
         externalInsElimHelper insDef rfl rfl (Expr.toNnf_isNnf _)
       DefList.InWfm.of_in_def_no_fv (lane := .defLane) ih
-    | .compl (.const x), _ =>
+    | .compl (.const () x), _ =>
       let insList := isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       fun inConst =>
       match isAtComplConstElim insList with
@@ -489,16 +489,16 @@ theorem externalInsElimHelper {dl n fv index const expr p}
           rfl
           rfl
           df.toNnf_isNnf
-          ((BasicExpr.triIntp_toNnf_eq _ _ _).symm ▸
+          ((Expr.intp_toNnf_eq _ _ _ _ _).symm ▸
           DefList.InWfm.in_def_no_fv (lane := .posLane) inConst)
     | .var _, _ =>
-      let insList: IsAt _ .defLane p :=
-        isAtOfInsDef (constEq ▸ indexEq ▸ ins)
+      let insList: IsAt _ := isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       let ins := (cinsSat (isAtVarElim insList)).isSound
-      inVar (b:=.empty) (c:=.empty) (getNthElim (lane := .defLane) ins)
+      inVar
+        (lane := .defLane)
+        (getNthElim (lane := .defLane) ins)
     | .compl (.var x), _ =>
-      let insList: IsAt _ .defLane p :=
-        isAtOfInsDef (constEq ▸ indexEq ▸ ins)
+      let insList: IsAt _ := isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       inCompl fun inVar =>
         let xLt: x < fv.length :=
           byContradiction fun nlt => (inVarNope inVar) nlt
@@ -506,18 +506,17 @@ theorem externalInsElimHelper {dl n fv index const expr p}
         let out := boutSat (isAtComplVarElim insList).dne
         out.isSound (pEq ▸ getNth (lane:=.posLane) xLt)
     | .null, _ =>
-      let insList: IsAt _ .defLane p :=
-        isAtOfInsDef (constEq ▸ indexEq ▸ ins)
-      isAtNullElim insList
+      let insList: IsAt _ := isAtOfInsDef (constEq ▸ indexEq ▸ ins)
+      isAtNullElim (b := b) insList
     | .prod _ _, .prod nnfL nnfR =>
-      let insList: IsAt _ .defLane p :=
+      let insList: IsAt _ :=
         isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       let ⟨_pL, _pR, eqP, inLeft, inRite⟩ := isAtProdElim insList
       let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl nnfL
       let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl nnfR
       eqP ▸ inProd ihL ihR
     | .un left rite, .un nnfL nnfR =>
-      let insList: IsAt _ .defLane p :=
+      let insList: IsAt _ :=
         isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       match isAtComplIrElim insList with
       | Or.inl inLeftCc =>
@@ -527,14 +526,14 @@ theorem externalInsElimHelper {dl n fv index const expr p}
         let inRite := inCinsCcElim inRiteCc
         inUnR (externalInsElimHelper (cinsSat inRite) rfl rfl nnfR)
     | .ir _ _, .ir nnfL nnfR =>
-      let insList: IsAt _ .defLane p :=
+      let insList: IsAt _ :=
         isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       let ⟨inLeft, inRite⟩ := isAtIrElim insList
       let ihL := externalInsElimHelper (cinsSat inLeft) rfl rfl nnfL
       let ihR := externalInsElimHelper (cinsSat inRite) rfl rfl nnfR
       inIr ihL ihR
     | .full _, .full nnfB =>
-      let insList: IsAt _ .defLane p :=
+      let insList: IsAt _ :=
         isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       fun pB =>
         externalInsElimHelper
@@ -543,19 +542,19 @@ theorem externalInsElimHelper {dl n fv index const expr p}
           rfl
           nnfB
     | .some body, .some nnfB =>
-      let insList: IsAt _ .defLane p :=
+      let insList: IsAt _ :=
         isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       let ⟨pB, inBodyCc⟩ := isAtComplFullElim insList
       let inBody := inCinsCcElim inBodyCc
       inSome _ (externalInsElimHelper (cinsSat inBody) rfl rfl nnfB)
     | .arbIr _, .arbIr nnfB =>
-      let insList: IsAt _ .defLane p :=
+      let insList: IsAt _ :=
         isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       inArbIr fun pX =>
         let insBody := cinsSat (isAtArbIrElim insList pX)
         externalInsElimHelper insBody rfl rfl nnfB
     | .arbUn body, .arbUn nnfB =>
-      let insList: IsAt _ .defLane p :=
+      let insList: IsAt _ :=
         isAtOfInsDef (constEq ▸ indexEq ▸ ins)
       let ⟨pX, inBodyCc⟩ := isAtComplArbIrElim insList
       let inBody := inCinsCcElim inBodyCc
@@ -569,7 +568,7 @@ theorem externalOutElimHelper {dl n fv index const expr p}
   -- some of the branches. But since it already works... ¯\_(ツ)_/¯
   (_isNnf: expr.IsNnf)
 :
-  ¬ p ∈ (expr.triIntp fv (dl.prefix n).wfm).posMem
+  ¬ p ∈ expr.intp .posLane (dl.prefix n).wfm (dl.prefix n).wfm fv
 :=
   match out with
   | .intro extCycle extIsEmpty inExtCycle =>
@@ -586,8 +585,8 @@ theorem externalOutElimHelper {dl n fv index const expr p}
       | .blockedBout _ inBout ins =>
         .blockedBout inBout ⟨
           (fun {_ _ expr _} xEq dEq =>
-            show _ ∈ (expr.triIntp _ _).defMem from
-            (expr.triIntp_toNnf_eq _ _).symm ▸
+            show _ ∈ expr.intp _ _ _ _ from
+            (expr.intp_toNnf_eq _ _ _ _).symm ▸
             externalInsElimHelper
               ins
               xEq
@@ -633,9 +632,9 @@ theorem externalInsElim {dl n fv expr p}
       (cst "uniSetMap")
       (.pair (uniSetMapIndex dl n fv expr) p))
 :
-  p ∈ (expr.triIntp fv (dl.prefix n).wfm).defMem
+  p ∈ expr.intp .defLane (dl.prefix n).wfm (dl.prefix n).wfm fv
 :=
-  expr.triIntp_toNnf_eq fv _ ▸
+  expr.intp_toNnf_eq _ _ _ _ ▸
   externalInsElimHelper
     (uniSetMapIndex_nnf_eq ▸ insExt)
     rfl
@@ -648,9 +647,9 @@ theorem externalOutElim {dl n fv expr p}
       (cst "uniSetMap")
       (.pair (uniSetMapIndex dl n fv expr) p))
 :
-  ¬ p ∈ (expr.triIntp fv (dl.prefix n).wfm).posMem
+  ¬ p ∈ expr.intp .posLane (dl.prefix n).wfm (dl.prefix n).wfm fv
 :=
-  expr.triIntp_toNnf_eq fv _ ▸
+  expr.intp_toNnf_eq _ _ _ _ ▸
   externalOutElimHelper
       (uniSetMapIndex_nnf_eq ▸ outExt)
       rfl
@@ -661,9 +660,11 @@ theorem uniSetMapAt_le
   (dl: DefList)
   (n: Nat)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
 :
-  uniSetMapAt dl n fv expr ⊑ expr.triIntp fv (dl.prefix n).wfm
+  Set3.LeApx
+    (uniSetMapAt dl n fv expr)
+    (expr.triIntp (dl.prefix n).wfm (dl.prefix n).wfm fv)
 := {
   defLe _ := externalInsElim ∘ DefList.Ins.isComplete
   posLe _ :=

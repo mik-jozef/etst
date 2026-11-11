@@ -15,7 +15,6 @@
   (lane-wise). This file defines such an `embed` within WFC.
 -/
 module
-public meta import Etst.WFC.Utils.SelfDefinability.PolymorphismHelpers
 public import Etst.WFC.Ch6_SelfDefinability
 public import Etst.WFC.Ch7_Polymorphism
 import Etst.BasicUtils

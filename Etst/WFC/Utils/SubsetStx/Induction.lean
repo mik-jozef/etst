@@ -288,7 +288,7 @@ theorem MutIndDescriptor.isSound {dl}
         :=
           dl.triIntp_getDef_eq_fv desc[i].x dl.wfm predStage [] fv ▸ isMem
         let inExpansion :=
-          (Expr.toLane_intp desc[i].expansion desc[i].lane dl.wfm
+          (desc[i].expansion.toLane_intp desc[i].lane dl.wfm
             predStage fv).symm ▸
           Expr.triIntp_getLane_eq desc[i].expansion ▸
           leExp.memLe isMemFv

@@ -489,7 +489,7 @@ namespace opFixDl
         pEq ▸
         inCall
           (inCall
-            (Set3.defMem_toLane (callEnc_ins iFn iArg))
+            (Set3.defMem_getLane (callEnc_ins iFn iArg))
             ((inFn (iFn.callEnc iArg)) ▸ rfl))
           ((inArg (iFn.callEnc iArg)) ▸ rfl))
   
@@ -513,7 +513,7 @@ namespace opFixDl
     let insCallEnc:
       _ ∈ ((BasicExpr.const 4).toLane lane).intp _ _ _
     :=
-      Set3.defMem_toLane (callEnc_ins iArg iArg)
+      Set3.defMem_getLane (callEnc_ins iArg iArg)
     let inMagicCall :=
       inCall
         (inCall (inToggle2 4 ins) (inVar rfl))

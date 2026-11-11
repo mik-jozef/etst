@@ -38,55 +38,62 @@ public section
 namespace Etst
 
 
-theorem uniSetMapDl.uniSetMapAt_eq
+theorem DefList.uniSetMapAt_eq
   (dl: DefList)
   (n: Nat)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
 :
-  uniSetMapAt dl n fv expr = expr.triIntp fv (dl.prefix n).wfm
+  Eq
+    (uniSetMapAt dl n fv expr)
+    (expr.triIntp (dl.prefix n).wfm (dl.prefix n).wfm fv)
 :=
   Set3.ordApx.le_antisymm
     _ _
-    (uniSetMapAt_le dl n fv expr)
-    (uniSetMapAt_ge dl n fv expr)
+    (uniSetMapDl.uniSetMapAt_le dl n fv expr)
+    (uniSetMapDl.uniSetMapAt_ge dl n fv expr)
 
-theorem uniSetMapDl.ex_uniSetMapAt_eq
+theorem FinBoundedDl.ex_uniSetMapAt_eq
   (dl: FinBoundedDl)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
 :
-  ∃ n, uniSetMapAt dl.toDefList n fv expr = expr.triIntp fv dl.wfm
+  ∃ n,
+    Eq
+      (uniSetMapAt dl.toDefList n fv expr)
+      (expr.triIntp dl.wfm dl.wfm fv)
 :=
   let ⟨n, eqAtN⟩ := dl.ex_prefix_wfm_eq_expr fv expr
-  ⟨n, (uniSetMapAt_eq dl.toDefList n fv expr).trans eqAtN⟩
+  ⟨n, (dl.uniSetMapAt_eq n fv expr).trans eqAtN⟩
 
 theorem FiniteDefList.uniSetMapAt_eq
   (dl: FiniteDefList)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
 :
-  uniSetMapAt dl.toDefList dl.size fv expr = expr.triIntp fv dl.wfm
+  Eq
+    (uniSetMapAt dl.toDefList dl.size fv expr)
+    (expr.triIntp dl.wfm dl.wfm fv)
 :=
-  (uniSetMapDl.uniSetMapAt_eq dl.toDefList dl.size fv expr).trans
-    (congrArg (expr.triIntp fv) dl.prefix_size_wfm_eq)
+  dl.prefix_size_wfm_eq ▸
+  dl.toDefList.uniSetMapAt_eq dl.size fv expr
 
 
-theorem uniSetMap.isUniversal {s}
+theorem uniSetMap_isUniversal {s}
   (isDef: DefList.IsDefinable s)
 :
   s ∈ uniSetMap
 :=
   let ⟨dl, x, sEq⟩ := isDef
-  let ⟨n, eqAtI⟩ := uniSetMapDl.ex_uniSetMapAt_eq dl [] (.const x)
-  let i := uniSetMapIndex dl.toDefList n [] (.const x)
+  let ⟨n, eqAtI⟩ := dl.ex_uniSetMapAt_eq [] (.const () x)
+  let i := uniSetMapIndex dl.toDefList n [] (.const () x)
   ⟨i, eqAtI.trans sEq.symm⟩
 
-theorem uniSetMap.isDefinable: DefList.IsDefinable uniSetMap := ⟨
+theorem uniSetMap_isDefinable: DefList.IsDefinable uniSetMap := ⟨
   uniSetMapDl.dl.toFinBoundedDl,
   uniSetMapDl.const "uniSetMap",
   rfl,
 ⟩
 
-theorem uniSetMap.containsItself: uniSetMap ∈ uniSetMap :=
-  uniSetMap.isUniversal uniSetMap.isDefinable
+theorem uniSetMap_containsItself: uniSetMap ∈ uniSetMap :=
+  uniSetMap_isUniversal uniSetMap_isDefinable

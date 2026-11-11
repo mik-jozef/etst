@@ -13,7 +13,6 @@
     equals possible-lane bisimilarity equals equality of trisets.
 -/
 module
-public meta import Etst.WFC.Utils.SelfDefinability.UniSetMapDl
 public import Etst.WFC.Utils.MembershipPs.OutIntro3
 public import Etst.WFC.Utils.Trisets.Triset
 import Etst.WFC.Ch7_Polymorphism

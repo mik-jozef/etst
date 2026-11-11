@@ -15,7 +15,6 @@
   `TrisetBisimilarity.lean`.
 -/
 module
-public meta import Etst.WFC.Utils.SelfDefinability.UniSetMapDl
 public import Etst.WFC.Utils.Trisets.TrisetBisimilarity
 
 public section

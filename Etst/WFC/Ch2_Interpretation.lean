@@ -212,15 +212,20 @@ exposed def ExprKind.Lane: ExprKind → Type
 | .basic => Set3.Lane
 | .lane => Unit
 
-exposed def ExprKind.Lane.toggle
-  {kind: ExprKind}
-  (lane: kind.Lane)
-:
-  kind.Lane
-:=
-  match kind with
-  | .basic => Set3.Lane.toggle lane
-  | .lane => lane
+namespace ExprKind.Lane
+  exposed def defLane: ExprKind.basic.Lane := Set3.Lane.defLane
+  exposed def posLane: ExprKind.basic.Lane := Set3.Lane.posLane
+
+  exposed def toggle
+    {kind: ExprKind}
+    (lane: kind.Lane)
+  :
+    kind.Lane
+  :=
+    match kind with
+    | .basic => Set3.Lane.toggle lane
+    | .lane => lane
+end ExprKind.Lane
 
 exposed def ExprKind.ConstTag.getLane
   {kind: ExprKind}
@@ -315,15 +320,7 @@ public theorem Expr.triIntp_defLePos
     triIntp_defLePos body (isDef pX)
 
 /-
-  A three-valued interpretation is an intuitive extension of single-lane
-  expressions -- the definite members of an expression are defined in
-  terms of the definite members of its subexpressions, and the same
-  applies to the possible members.
-  
-  An interesting exception is the complement, where `p` is a
-  definite member of the complement of `expr` iff `p` is not
-  a *possible* member of `expr`, and vice versa. This is handled
-  in `toLane` by toggling the lane of constants inside complements.
+  A three-valued interpretation computes both lanes of a triset.
 -/
 exposed def Expr.triIntp
   (expr: Expr .basic)

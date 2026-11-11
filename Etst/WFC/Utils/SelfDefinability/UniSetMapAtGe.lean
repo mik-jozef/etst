@@ -6,7 +6,7 @@ import Etst.WFC.Utils.RulesOfInference
 
 public section
 namespace Etst.uniSetMapDl
-open SingleLaneExpr
+open Expr
 
 
 def CinsIh
@@ -54,7 +54,7 @@ def AllIntCausesInappIh
   (n: Nat)
   (intCycle: Nat → Pair → Prop)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
   (p: Pair)
 :=
   ∀ {intCause: Cause Pair},
@@ -94,10 +94,8 @@ namespace internalCauseElim
   :=
     open DefList in
     let isAt:
-      InUniSetMapAt dl n fv usmWfm usmWfm
+      InUniSetMapAt .defLane usmWfm usmWfm p dl n fv
         (.un .null (.un (.prod left.compl .any) (.prod .any rite.compl)))
-        .defLane
-        p
     :=
       match p with
       | .null =>
@@ -175,7 +173,7 @@ namespace internalCauseElim
         ih
     InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
   
-  theorem internalCauseElimComplArbIr {dl n fv body p}
+  theorem internalCauseElimComplArbIr {p dl n fv body}
     (pX: Pair)
     (ih:
       (uniSetMapDl.val "uniSetMap").defMem.Mem
@@ -187,7 +185,7 @@ namespace internalCauseElim
     open DefList in
     let wfm := uniSetMapDl.dl.wfm
     let isAt:
-      InUniSetMapAt dl n fv wfm wfm body.arbIr.compl .defLane p
+      InUniSetMapAt .defLane wfm wfm p dl n fv body.arbIr.compl
     :=
       isAtArbUn
         (lane := .defLane)
@@ -265,7 +263,7 @@ namespace internalCauseElim
 end internalCauseElim
 
 open internalCauseElim in
-theorem internalCauseElim {dl n fv expr p}
+theorem internalCauseElim {p dl n fv expr}
   {intCause: Cause Pair}
   (intIsCause: intCause.IsStrongCauseFv fv expr p)
   (cinsIh: CinsIh dl n intCause)
@@ -276,7 +274,7 @@ theorem internalCauseElim {dl n fv expr p}
 :=
   open DefList in
   match expr with
-  | .const x =>
+  | .const () x =>
     let inDefExt := cinsIh intIsCause.constElim
     let xLt: x < n :=
       -- Indentation note: if you ever make your own linter, then not
@@ -287,7 +285,7 @@ theorem internalCauseElim {dl n fv expr p}
     let insGetNth := getNthDl xLt
     let isAt := isAtConst (lane := .defLane) inDefExt insGetNth
     InWfm.of_in_def_no_fv (lane := .defLane) (isInMap isAt)
-  | .compl (.const x) =>
+  | .compl (.const () x) =>
     let isAt :=
       isAtComplConst
         (lane := .defLane)
@@ -318,7 +316,7 @@ theorem internalCauseElim {dl n fv expr p}
       let inCompl := intIsCause intCause.leastValsApxAreSat
       False.elim (inComplElim inCompl inNull)
     | .pair pL pR =>
-      let isAt: InUniSetMapAt dl n fv _ _ (.prod .any .any) _ _ :=
+      let isAt: InUniSetMapAt _ _ _ _ dl n fv (.prod .any .any) :=
         isAtProd
           (InWfm.of_in_def_no_fv (isInMap isAtAny))
           (InWfm.of_in_def_no_fv (isInMap isAtAny))
@@ -420,7 +418,7 @@ theorem allCausesInappElim {dl n fv intCycle expr p}
     extCause
 :=
   match expr with
-  | .const x =>
+  | .const () x =>
     byContradiction fun isApplicable =>
     let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
     let isAtDef :=
@@ -436,7 +434,7 @@ theorem allCausesInappElim {dl n fv intCycle expr p}
         intCauseInappIh (xEq ▸ pEq ▸ inCycle) (intCause := intCause)
       let isInExtCycle := ⟨rfl, ⟨_, _, _, allInapp _, rfl⟩⟩
       isApplicable (.blockedCinsCycle isAtDef isInExtCycle)
-  | .compl (.const x) =>
+  | .compl (.const () x) =>
     let isAt := isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
     
     match allInapp Cause.IsWeakCauseFv.complConst with
@@ -483,16 +481,13 @@ theorem allCausesInappElim {dl n fv intCycle expr p}
   | .compl .null =>
     match p with
     | .null =>
+      let b := extCause.maximalBackgroundApx
+      let c := extCause.maximalContextApx
       let isAtAny:
-        InUniSetMapAt dl n fv
-          extCause.maximalBackgroundApx
-          extCause.maximalContextApx
-          (.prod .any .any)
-          .posLane
-          .null
+        InUniSetMapAt .posLane b c .null dl n fv (.prod .any .any)
       :=
         isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
-      nomatch isAtProdElim isAtAny
+      nomatch isAtProdElim (b := b) isAtAny
     | .pair pL pR =>
       let inComplNull _ _ _ :=
         inCompl fun inNull => inNullElimNope inNull
@@ -518,12 +513,14 @@ theorem allCausesInappElim {dl n fv intCycle expr p}
         (Cause.IsInapplicable.Not.union isAppL isAppR isInappUnion)
   | .compl (.prod left rite) =>
     let isAt:
-      InUniSetMapAt dl n fv
+      InUniSetMapAt .posLane
         extCause.maximalBackgroundApx
         extCause.maximalContextApx
-        (.un .null (.un (.prod left.compl .any) (.prod .any rite.compl)))
-        .posLane
         p
+        dl
+        n
+        fv
+        (.un .null (.un (.prod left.compl .any) (.prod .any rite.compl)))
     :=
       isAtOfInsDef (isCause extCause.maximalValsApxAreSat)
     match isAtUnElim isAt with
@@ -544,11 +541,12 @@ theorem allCausesInappElim {dl n fv intCycle expr p}
       :=
         fun isCauseInner =>
           allInapp fun b c isSat inProdP =>
-            let innerLeft := BasicExpr.toPosLane (.prod left.compl .any)
-            let innerRite := BasicExpr.toPosLane (.prod .any rite.compl)
-            have isInner: p ∈ (un innerLeft innerRite).intp b c fv :=
-              -- (why tf is by exact needed here?)
-              by exact isCauseInner isSat
+            let innerLeft := .prod left.compl .any
+            let innerRite := .prod .any rite.compl
+            have isInner:
+              p ∈ (un innerLeft innerRite).intp .posLane b c fv
+            :=
+              isCauseInner isSat
             match inUnElim (isInner) with
             | .inl inLeft =>
               let ⟨pL, pR, pEq, inComplLeft, _⟩ := inProdElimEx inLeft
@@ -717,9 +715,11 @@ theorem uniSetMapAt_ge
   (dl: DefList)
   (n: Nat)
   (fv: List Pair)
-  (expr: BasicExpr)
+  (expr: Expr .basic)
 :
-  expr.triIntp fv (dl.prefix n).wfm ⊑ uniSetMapAt dl n fv expr
+  Set3.LeApx
+    (expr.triIntp (dl.prefix n).wfm (dl.prefix n).wfm fv)
+    (uniSetMapAt dl n fv expr)
 := {
   defLe _ isDef :=
     internalCauseElim
@@ -728,7 +728,8 @@ theorem uniSetMapAt_ge
       (internalOutElim ∘ DefList.Out.isComplete)
   posLe x (isPos: x ∈ (uniSetMapAt dl n fv expr).posMem) :=
     byContradiction fun
-      (notPos: ¬ x ∈ (expr.triIntp fv (dl.prefix n).wfm).posMem)
+      (notPos:
+        ¬ x ∈ expr.intp .posLane (dl.prefix n).wfm (dl.prefix n).wfm fv)
     =>
       let intCycle: Nat → Pair → Prop := (dl.prefix n).Out
       let allInapp: AllIntCausesInappIh dl n intCycle fv expr x :=
