@@ -96,7 +96,7 @@ exposed pairDefList opFixHelpersDl extends uniSetMapDl
   -- Converts a pair to an encoding of an expression that evaluates to it.
   p3 encodeAsExpr :=
   | null × 4 × null
-  | (Ex l r, (l × r) × 5 × encodeAsExpr l × encodeAsExpr r)
+  | Ex l r, (l × r) × 5 × encodeAsExpr l × encodeAsExpr r
   
   p3 encodeCall :=
     Ex aEnc bEnc,

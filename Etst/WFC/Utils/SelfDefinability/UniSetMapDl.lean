@@ -198,7 +198,7 @@ namespace uniSetMapDl
       dl, fv, expr;
       Ex body,
       & (?some 10 × body & expr)
-      & (All p, uniSetMap (dl × (p × fv) × body))
+      & All p, uniSetMap (dl × (p × fv) × body)
     )
   
   exposed def exprEncArbUn :=
@@ -206,7 +206,7 @@ namespace uniSetMapDl
       dl, fv, expr;
       Ex body,
       & (?some 11 × body & expr)
-      & (Ex p, uniSetMap (dl × (p × fv) × body))
+      & Ex p, uniSetMap (dl × (p × fv) × body)
     )
   
   exposed def exprEncUniSetMap :=

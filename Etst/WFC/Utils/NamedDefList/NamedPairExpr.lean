@@ -398,35 +398,54 @@ end Expr
 
 declare_syntax_cat p3_expr
 
--- Expressions
-syntax:90 ident : p3_expr
-syntax:90 "."ident : p3_expr
-syntax:90 ":"ident : p3_expr
-syntax:90 num : p3_expr
-syntax:90 "(?some " p3_expr ")" : p3_expr
-syntax:90 "(?full " p3_expr ")" : p3_expr
-syntax:90 "(" p3_expr ")" : p3_expr
-syntax:90 "null" : p3_expr
-syntax:90 "<[" term "]>" : p3_expr
-syntax:80 p3_expr:80 p3_expr:81 : p3_expr
-syntax:70 p3_expr:71 " × " p3_expr:70 : p3_expr
-syntax:70 " × " p3_expr:71 " × " p3_expr:70 : p3_expr
-syntax:60 "!" p3_expr:60 : p3_expr
-syntax:50 p3_expr:51 "|" p3_expr:50 : p3_expr
-syntax:50 "|" p3_expr:51 "|" p3_expr:50 : p3_expr
-syntax:40 p3_expr:41 "&" p3_expr:40 : p3_expr
-syntax:40 "&" p3_expr:41 "&" p3_expr:40 : p3_expr
-syntax:30 p3_expr:30 "then" p3_expr:31 : p3_expr
-syntax:20 p3_expr:21 "->" p3_expr:20 : p3_expr
-syntax:10 p3_expr:20 "<->" p3_expr:20 : p3_expr
-syntax:00 "Ex " ident+ ", " p3_expr : p3_expr
-syntax:00 "Ex " ident ": " p3_expr ", " p3_expr : p3_expr
-syntax:00 "All " ident+ ", " p3_expr : p3_expr
-syntax:00 "All " ident ": " p3_expr ", " p3_expr : p3_expr
+/-
+  Smart quantifier precedence. A quantifier is greedy but only for
+  lines that are indented at least as much as the quantifier's first token.
+-/
+namespace P3Parser
+  open Lean Parser
+  
+  public meta def colGe: Parser :=
+    checkColGe "p3 expression is less indented than the enclosing quantifier"
+  
+  /-- A `p3_expr` that ignores any enclosing indentation context. -/
+  public meta def expr: Parser :=
+    withoutPosition (categoryParser `p3_expr 0)
+  
+  /-- A quantifier body: a `p3_expr` bounded by its own indentation. -/
+  public meta def body: Parser :=
+    withPosition (categoryParser `p3_expr 0)
+end P3Parser
 
-syntax "p3_inner(" p3_expr ")" : term
-syntax "p3(" p3_expr ")" : term
-syntax "p3(" ident,* ";" p3_expr ")" : term
+-- Expressions
+syntax:90 P3Parser.colGe ident : p3_expr
+syntax:90 P3Parser.colGe "."ident : p3_expr
+syntax:90 P3Parser.colGe ":"ident : p3_expr
+syntax:90 P3Parser.colGe num : p3_expr
+syntax:90 "(?some " P3Parser.expr ")" : p3_expr
+syntax:90 "(?full " P3Parser.expr ")" : p3_expr
+syntax:90 "(" P3Parser.expr ")" : p3_expr
+syntax:90 P3Parser.colGe "null" : p3_expr
+syntax:90 P3Parser.colGe "<[" term "]>" : p3_expr
+syntax:80 p3_expr:80 P3Parser.colGe p3_expr:81 : p3_expr
+syntax:70 p3_expr:71 P3Parser.colGe " × " p3_expr:70 : p3_expr
+syntax:70 " × " p3_expr:71 P3Parser.colGe " × " p3_expr:70 : p3_expr
+syntax:60 P3Parser.colGe "!" p3_expr:60 : p3_expr
+syntax:50 p3_expr:51 P3Parser.colGe "|" p3_expr:50 : p3_expr
+syntax:50 "|" p3_expr:51 P3Parser.colGe "|" p3_expr:50 : p3_expr
+syntax:40 p3_expr:41 P3Parser.colGe "&" p3_expr:40 : p3_expr
+syntax:40 "&" p3_expr:41 P3Parser.colGe "&" p3_expr:40 : p3_expr
+syntax:30 p3_expr:30 P3Parser.colGe "then" p3_expr:31 : p3_expr
+syntax:20 p3_expr:21 P3Parser.colGe "->" p3_expr:20 : p3_expr
+syntax:10 p3_expr:20 P3Parser.colGe "<->" p3_expr:20 : p3_expr
+syntax:90 "Ex " ident+ ", " P3Parser.body : p3_expr
+syntax:90 "Ex " ident ": " p3_expr ", " P3Parser.body : p3_expr
+syntax:90 "All " ident+ ", " P3Parser.body : p3_expr
+syntax:90 "All " ident ": " p3_expr ", " P3Parser.body : p3_expr
+
+syntax "p3_inner(" P3Parser.expr ")" : term
+syntax "p3(" P3Parser.expr ")" : term
+syntax "p3(" ident,* ";" P3Parser.expr ")" : term
 
 open Lean in
 macro_rules
@@ -496,7 +515,7 @@ macro_rules
 
 
 declare_syntax_cat p3_defList
-syntax "p3 " ident " := " p3_expr : p3_defList
+syntax "p3 " ident " := " P3Parser.expr : p3_defList
 
 open Lean in
 meta def expandPairDefEntries
@@ -563,6 +582,43 @@ namespace Examples
   def testStx4 := p3(f (3 × B))
   def testStx5 :=
     p3(<[NamedPairExpr.null (kind := .basic) (vars := [])]>)
+  
+  -- Smart quantifier precedence: a quantifier may occur as an operand, and
+  -- its body ends at the first line indented less than its body's start.
+  example:
+    p3(
+      & Ex i, foo × bar
+      & All a,
+        All b,
+        | insideAll
+        | butOutsideEx
+    ) =
+    .ir
+      (.arbUn "i" (.prod (.ident () "foo") (.ident () "bar")))
+      (.arbIr "a"
+        (.arbIr "b"
+          (.un (.ident () "insideAll") (.ident () "butOutsideEx"))))
+  := rfl
+  
+  example:
+    p3(
+      | Ex i, foo
+      | bar
+    ) =
+    .un (.arbUn "i" (.ident () "foo")) (.ident () "bar")
+  := rfl
+
+  -- A body on its own line extends across equally indented lines, and a
+  -- dedented sibling ends it (even out of several nested quantifiers).
+  example:
+    p3(
+      Ex i,
+        Ex j,
+          foo
+      & bar
+    ) =
+    .ir (.arbUn "i" (.arbUn "j" (.ident () "foo"))) (.ident () "bar")
+  := rfl
   
   public pairDefList exampleStx0
     p3 X := X × A
