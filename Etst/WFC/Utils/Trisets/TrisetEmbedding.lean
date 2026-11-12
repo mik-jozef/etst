@@ -25,15 +25,15 @@ namespace Etst
 
 /-
   `embedStep` is the triset of tuples `(iFn, (t, (0, r)))` such that
-  `e ∈ uniSetMap.call t` and `r = iFn.callEnc e` for some `e`.
+  `e ∈ uniSetMap.call t` and `r = iFn.indexCall e` for some `e`.
 
-  Intuitively, `(trisetEmbedHelpersDl.val "embedStep".call iFn).call t` is the image of
-  `uniSetMap.call t` under the map `e ↦ (0, iFn.callEnc e)`.
+  Intuitively, `embedStep iFn t` is the image of `uniSetMap t` under
+  the map `e ↦ (0, iFn.indexCall e)`.
 -/
 exposed pairDefList trisetEmbedHelpersDl extends opFixDl
   p3 embedStep :=
     Ex iFn t e,
-      (uniSetMap t & e) then (iFn × t × 0 × callEnc iFn e)
+      (uniSetMap t & e) then (iFn × t × 0 × indexCall iFn e)
 pairDefList.
 
 
@@ -53,13 +53,13 @@ end TrisetEmbedding
 
 
 /-
-  `embedOp` is the triset of pairs `(iFn, embedStepIndex.callEnc iFn)`,
+  `embedOp` is the triset of pairs `(iFn, embedStepIndex.indexCall iFn)`,
   ie the function mapping an operator index to the index of the
   `embedStep`-image under that operator.
 -/
 exposed pairDefList trisetEmbedDl extends trisetEmbedHelpersDl
   p3 embedOp :=
-    Ex iFn, iFn × callEnc <[TrisetEmbedding.embedStepIndex.toNamedExpr]> iFn
+    Ex iFn, iFn × indexCall <[TrisetEmbedding.embedStepIndex.toNamedExpr]> iFn
 pairDefList.
 
 
@@ -84,21 +84,21 @@ namespace trisetEmbedHelpersDl
   :=
     trisetEmbedHelpersDl.extend_wfm_eq uniSetMapDl "uniSetMap"
   
-  /-- The `callEnc` constant of this deflist denotes `callEnc`. -/
-  theorem wfm_callEnc_eq:
-    trisetEmbedHelpersDl.val "callEnc" = opFixDl.val "callEnc"
+  /-- The `indexCall` constant of this deflist denotes `indexCall`. -/
+  theorem wfm_indexCall_eq:
+    trisetEmbedHelpersDl.val "indexCall" = opFixDl.val "indexCall"
   :=
-    trisetEmbedHelpersDl.extend_wfm_eq opFixDl "callEnc"
+    trisetEmbedHelpersDl.extend_wfm_eq opFixDl "indexCall"
   
   /-
-    If `e` is a member of `t`, then `(0, iFn.callEnc e)` is a
+    If `e` is a member of `t`, then `(0, iFn.indexCall e)` is a
     member of the `embedStep`-image of `t` under `iFn`.
   -/
   theorem embedStep_ins_def {iFn t e: Pair}
     (ins: e ∈ (uniSetMap.call t).defMem)
   :
     (((trisetEmbedHelpersDl.val "embedStep").call iFn).call t).defMem.Mem
-      (.pair (.nat 0) (iFn.callEnc e))
+      (.pair (.nat 0) (iFn.indexCall e))
   :=
     let inUsmWfm:
       .pair t e ∈ (trisetEmbedHelpersDl.val "uniSetMap").defMem
@@ -115,24 +115,24 @@ namespace trisetEmbedHelpersDl
         (.pair t e)
     :=
       inUsmWfm
-    let inCallEncWfm:
-      (trisetEmbedHelpersDl.val "callEnc").defMem.Mem
-        (.pair iFn (.pair e (iFn.callEnc e)))
+    let inIndexCallWfm:
+      (trisetEmbedHelpersDl.val "indexCall").defMem.Mem
+        (.pair iFn (.pair e (iFn.indexCall e)))
     :=
-      wfm_callEnc_eq ▸
-        opFixDl.callEnc_ins (tag := ()) (lane := .defLane)
+      wfm_indexCall_eq ▸
+        opFixDl.indexCall_ins (tag := ()) (lane := .defLane)
           iFn e
-    let inCallEnc:
+    let inIndexCall:
       Set.Mem
         ((Expr.const (kind := .basic) ()
-          (trisetEmbedHelpersDl.const "callEnc")).intp
+          (trisetEmbedHelpersDl.const "indexCall")).intp
           .defLane
           trisetEmbedHelpersDl.dl.wfm
           trisetEmbedHelpersDl.dl.wfm
-          [.pair e (iFn.callEnc e), iFn.callEnc e, e, t, iFn])
-        (.pair iFn (.pair e (iFn.callEnc e)))
+          [.pair e (iFn.indexCall e), iFn.indexCall e, e, t, iFn])
+        (.pair iFn (.pair e (iFn.indexCall e)))
     :=
-      inCallEncWfm
+      inIndexCallWfm
     Set3.inCall (lane := .defLane) <|
     Set3.inCall <|
     DefList.in_def_no_fv <|
@@ -146,9 +146,9 @@ namespace trisetEmbedHelpersDl
       (inProd (inVar rfl)
         (inProd (inVar rfl)
           (inProd (inNat 0)
-            (inCall (pA := e) (pB := iFn.callEnc e)
-              (inCall (pA := iFn) (pB := .pair e (iFn.callEnc e))
-                inCallEnc
+            (inCall (pA := e) (pB := iFn.indexCall e)
+              (inCall (pA := iFn) (pB := .pair e (iFn.indexCall e))
+                inIndexCall
                 (inVar rfl))
               (inVar rfl)))))
   
@@ -159,7 +159,7 @@ namespace trisetEmbedHelpersDl
     (ins: e ∈ (uniSetMap.call t).posMem)
   :
     (((trisetEmbedHelpersDl.val "embedStep").call iFn).call t).posMem.Mem
-      (.pair (.nat 0) (iFn.callEnc e))
+      (.pair (.nat 0) (iFn.indexCall e))
   :=
     let inUsmWfm:
       .pair t e ∈ (trisetEmbedHelpersDl.val "uniSetMap").posMem
@@ -176,25 +176,25 @@ namespace trisetEmbedHelpersDl
         (.pair t e)
     :=
       inUsmWfm
-    let inCallEncWfm:
-      (trisetEmbedHelpersDl.val "callEnc").posMem.Mem
-        (.pair iFn (.pair e (iFn.callEnc e)))
+    let inIndexCallWfm:
+      (trisetEmbedHelpersDl.val "indexCall").posMem.Mem
+        (.pair iFn (.pair e (iFn.indexCall e)))
     :=
-      wfm_callEnc_eq ▸
+      wfm_indexCall_eq ▸
         Set3.defToPos
-          (opFixDl.callEnc_ins (tag := ()) (lane := .defLane)
+          (opFixDl.indexCall_ins (tag := ()) (lane := .defLane)
             iFn e)
-    let inCallEnc:
+    let inIndexCall:
       Set.Mem
         ((Expr.const .basic
-          (trisetEmbedHelpersDl.const "callEnc")).intp
+          (trisetEmbedHelpersDl.const "indexCall")).intp
           .posLane
           trisetEmbedHelpersDl.dl.wfm
           trisetEmbedHelpersDl.dl.wfm
-          [.pair e (iFn.callEnc e), iFn.callEnc e, e, t, iFn])
-        (.pair iFn (.pair e (iFn.callEnc e)))
+          [.pair e (iFn.indexCall e), iFn.indexCall e, e, t, iFn])
+        (.pair iFn (.pair e (iFn.indexCall e)))
     :=
-      inCallEncWfm
+      inIndexCallWfm
     Set3.inCall (lane := .posLane) <|
     Set3.inCall <|
     DefList.in_def_no_fv <|
@@ -210,7 +210,7 @@ namespace trisetEmbedHelpersDl
           (inProd (inNat 0)
             (inCall
               (inCall
-                inCallEnc
+                inIndexCall
                 (inVar rfl))
               (inVar rfl)))))
   
@@ -219,7 +219,7 @@ namespace trisetEmbedHelpersDl
     (ins: e ∈ (uniSetMap.call t).getLane lane)
   :
     ((((trisetEmbedHelpersDl.val "embedStep").call iFn).call t).getLane lane).Mem
-      (.pair (.nat 0) (iFn.callEnc e))
+      (.pair (.nat 0) (iFn.indexCall e))
   :=
     match lane with
     | .defLane => embedStep_ins_def ins
@@ -227,7 +227,7 @@ namespace trisetEmbedHelpersDl
   
   /-
     If `(0, r)` is a definitive member of the `embedStep`-image of
-    `t` under `iFn`, then `r = iFn.callEnc e` for some definitive
+    `t` under `iFn`, then `r = iFn.indexCall e` for some definitive
     member `e` of `t`.
   -/
   theorem embedStep_elim_def {iFn t p: Pair}
@@ -236,7 +236,7 @@ namespace trisetEmbedHelpersDl
     ∃ e,
       And
         (e ∈ (uniSetMap.call t).defMem)
-        (p = .pair (.nat 0) (iFn.callEnc e))
+        (p = .pair (.nat 0) (iFn.indexCall e))
   :=
     let ins :=
       Set3.inCallElim (lane := .defLane)
@@ -252,21 +252,21 @@ namespace trisetEmbedHelpersDl
     let tEq: t = tA := inVarElim inTV rfl
     let ⟨pL, pR, pEq, inTag, inApp⟩ := inProdElimEx inRest2
     let pLEq: pL = .nat 0 := inNatElim inTag
-    let pREq: pR = iFnA.callEnc eA :=
+    let pREq: pR = iFnA.indexCall eA :=
       let h1 :=
         inCallElimSingle inApp (intp_var_eq_singleton rfl)
       let h2 :=
         inCallElimSingle h1 (intp_var_eq_singleton rfl)
       let h2w:
-        (trisetEmbedHelpersDl.val "callEnc").defMem.Mem
+        (trisetEmbedHelpersDl.val "indexCall").defMem.Mem
           (.pair iFnA (.pair eA pR))
       :=
         h2
       let h3:
-        .pair iFnA (.pair eA pR) ∈ (opFixDl.val "callEnc").posMem
+        .pair iFnA (.pair eA pR) ∈ (opFixDl.val "indexCall").posMem
       :=
-        Set3.defToPos (wfm_callEnc_eq ▸ h2w)
-      (opFixDl.callEnc_elim h3).symm
+        Set3.defToPos (wfm_indexCall_eq ▸ h2w)
+      (opFixDl.indexCall_elim h3).symm
     let ⟨inCallPart, inVarPart⟩ := inIrElim inCond
     let pCEq: pC = eA := inVarElim inVarPart rfl
     let inUsmConst :=
@@ -285,7 +285,7 @@ namespace trisetEmbedHelpersDl
     ∃ e,
       And
         (e ∈ (uniSetMap.call t).posMem)
-        (p = .pair (.nat 0) (iFn.callEnc e))
+        (p = .pair (.nat 0) (iFn.indexCall e))
   :=
     let ins :=
       Set3.inCallElim (lane := .posLane)
@@ -301,21 +301,21 @@ namespace trisetEmbedHelpersDl
     let tEq: t = tA := inVarElim inTV rfl
     let ⟨pL, pR, pEq, inTag, inApp⟩ := inProdElimEx inRest2
     let pLEq: pL = .nat 0 := inNatElim inTag
-    let pREq: pR = iFnA.callEnc eA :=
+    let pREq: pR = iFnA.indexCall eA :=
       let h1 :=
         inCallElimSingle inApp (intp_var_eq_singleton rfl)
       let h2 :=
         inCallElimSingle h1 (intp_var_eq_singleton rfl)
       let h2w:
-        (trisetEmbedHelpersDl.val "callEnc").posMem.Mem
+        (trisetEmbedHelpersDl.val "indexCall").posMem.Mem
           (.pair iFnA (.pair eA pR))
       :=
         h2
       let h3:
-        .pair iFnA (.pair eA pR) ∈ (opFixDl.val "callEnc").posMem
+        .pair iFnA (.pair eA pR) ∈ (opFixDl.val "indexCall").posMem
       :=
-        (wfm_callEnc_eq ▸ h2w)
-      (opFixDl.callEnc_elim h3).symm
+        (wfm_indexCall_eq ▸ h2w)
+      (opFixDl.indexCall_elim h3).symm
     let ⟨inCallPart, inVarPart⟩ := inIrElim inCond
     let pCEq: pC = eA := inVarElim inVarPart rfl
     let inUsmConst :=
@@ -334,7 +334,7 @@ namespace trisetEmbedHelpersDl
     ∃ e,
       And
         (e ∈ (uniSetMap.call t).getLane lane)
-        (p = .pair (.nat 0) (iFn.callEnc e))
+        (p = .pair (.nat 0) (iFn.indexCall e))
   :=
     match lane with
     | .defLane => embedStep_elim_def ins
@@ -345,7 +345,7 @@ namespace trisetEmbedHelpersDl
     Eq
       (((trisetEmbedHelpersDl.val "embedStep").call iFn).call t)
       (Set3.image
-        (fun e => .pair (.nat 0) (iFn.callEnc e))
+        (fun e => .pair (.nat 0) (iFn.indexCall e))
         (uniSetMap.call t))
   :=
     Set3.eq4
@@ -380,92 +380,92 @@ end TrisetEmbedding
 namespace trisetEmbedDl
   open Expr
   
-  /-- The `callEnc` constant of this deflist denotes `callEnc`. -/
-  theorem wfm_callEnc_eq:
-    trisetEmbedDl.val "callEnc" = opFixDl.val "callEnc"
+  /-- The `indexCall` constant of this deflist denotes `indexCall`. -/
+  theorem wfm_indexCall_eq:
+    trisetEmbedDl.val "indexCall" = opFixDl.val "indexCall"
   :=
-    trisetEmbedDl.extend_wfm_eq opFixDl "callEnc"
+    trisetEmbedDl.extend_wfm_eq opFixDl "indexCall"
   
-  /-- `embedOp` maps `iFn` to `embedStepIndex.callEnc iFn` (intro). -/
+  /-- `embedOp` maps `iFn` to `embedStepIndex.indexCall iFn` (intro). -/
   theorem embedOp_ins_def {iFn: Pair}:
     ((trisetEmbedDl.val "embedOp").call iFn).defMem.Mem
-      (TrisetEmbedding.embedStepIndex.callEnc iFn)
+      (TrisetEmbedding.embedStepIndex.indexCall iFn)
   :=
-    let inCallEncWfm:
-      (trisetEmbedDl.val "callEnc").defMem.Mem
+    let inIndexCallWfm:
+      (trisetEmbedDl.val "indexCall").defMem.Mem
         (.pair TrisetEmbedding.embedStepIndex
-          (.pair iFn (TrisetEmbedding.embedStepIndex.callEnc iFn)))
+          (.pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn)))
     :=
-      wfm_callEnc_eq ▸
-        opFixDl.callEnc_ins (kind := .basic) (tag := ()) (lane := .defLane)
+      wfm_indexCall_eq ▸
+        opFixDl.indexCall_ins (kind := .basic) (tag := ()) (lane := .defLane)
           TrisetEmbedding.embedStepIndex iFn
-    let inCallEnc:
+    let inIndexCall:
       Set.Mem
         ((Expr.const (kind := .basic) ()
-          (trisetEmbedDl.const "callEnc")).intp
+          (trisetEmbedDl.const "indexCall")).intp
           .defLane
           trisetEmbedDl.dl.wfm
           trisetEmbedDl.dl.wfm
-          [.pair iFn (TrisetEmbedding.embedStepIndex.callEnc iFn),
-          TrisetEmbedding.embedStepIndex.callEnc iFn,
+          [.pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn),
+          TrisetEmbedding.embedStepIndex.indexCall iFn,
           iFn])
         (.pair TrisetEmbedding.embedStepIndex
-          (.pair iFn (TrisetEmbedding.embedStepIndex.callEnc iFn)))
+          (.pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn)))
     :=
-      inCallEncWfm
+      inIndexCallWfm
     Set3.inCall (lane := .defLane) <|
     DefList.in_def_no_fv <|
     inArbUn iFn <|
     inProd (inVar rfl)
       (inCall
         (pA := iFn)
-        (pB := TrisetEmbedding.embedStepIndex.callEnc iFn)
+        (pB := TrisetEmbedding.embedStepIndex.indexCall iFn)
         (inCall
           (pA := TrisetEmbedding.embedStepIndex)
-          (pB := .pair iFn (TrisetEmbedding.embedStepIndex.callEnc iFn))
-          inCallEnc
+          (pB := .pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn))
+          inIndexCall
           (inToNamedExpr TrisetEmbedding.embedStepIndex))
         (inVar rfl))
   
   /-- The possible-membership variant of `embedOp_ins_def`. -/
   theorem embedOp_ins_pos {iFn: Pair}:
     ((trisetEmbedDl.val "embedOp").call iFn).posMem.Mem
-      (TrisetEmbedding.embedStepIndex.callEnc iFn)
+      (TrisetEmbedding.embedStepIndex.indexCall iFn)
   :=
-    let inCallEncWfm:
-      (trisetEmbedDl.val "callEnc").posMem.Mem
+    let inIndexCallWfm:
+      (trisetEmbedDl.val "indexCall").posMem.Mem
         (.pair TrisetEmbedding.embedStepIndex
-          (.pair iFn (TrisetEmbedding.embedStepIndex.callEnc iFn)))
+          (.pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn)))
     :=
-      wfm_callEnc_eq ▸
+      wfm_indexCall_eq ▸
       Set3.defToPos
-        (opFixDl.callEnc_ins (kind := .basic) (tag := ()) (lane := .defLane)
+        (opFixDl.indexCall_ins (kind := .basic) (tag := ()) (lane := .defLane)
           TrisetEmbedding.embedStepIndex iFn)
-    let inCallEnc:
+    let inIndexCall:
       Set.Mem
         ((Expr.const (kind := .basic) ()
-          (trisetEmbedDl.const "callEnc")).intp
+          (trisetEmbedDl.const "indexCall")).intp
           .posLane
           trisetEmbedDl.dl.wfm
           trisetEmbedDl.dl.wfm
-          [.pair iFn (TrisetEmbedding.embedStepIndex.callEnc iFn),
-          TrisetEmbedding.embedStepIndex.callEnc iFn,
+          [.pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn),
+          TrisetEmbedding.embedStepIndex.indexCall iFn,
           iFn])
         (.pair TrisetEmbedding.embedStepIndex
-          (.pair iFn (TrisetEmbedding.embedStepIndex.callEnc iFn)))
+          (.pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn)))
     :=
-      inCallEncWfm
+      inIndexCallWfm
     Set3.inCall (lane := .posLane) <|
     DefList.in_def_no_fv <|
     inArbUn iFn <|
     inProd (inVar rfl)
       (inCall
         (pA := iFn)
-        (pB := TrisetEmbedding.embedStepIndex.callEnc iFn)
+        (pB := TrisetEmbedding.embedStepIndex.indexCall iFn)
         (inCall
           (pA := TrisetEmbedding.embedStepIndex)
-          (pB := .pair iFn (TrisetEmbedding.embedStepIndex.callEnc iFn))
-          inCallEnc
+          (pB := .pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn))
+          inIndexCall
           (inToNamedExpr TrisetEmbedding.embedStepIndex))
         (inVar rfl))
   
@@ -473,7 +473,7 @@ namespace trisetEmbedDl
   theorem embedOp_elim_def {iFn s: Pair}
     (ins: s ∈ ((trisetEmbedDl.val "embedOp").call iFn).defMem)
   :
-    s = TrisetEmbedding.embedStepIndex.callEnc iFn
+    s = TrisetEmbedding.embedStepIndex.indexCall iFn
   :=
     let ins := Set3.inCallElim (lane := .defLane) ins
     let ins := DefList.in_def_body_no_fv (lane := .defLane) ins
@@ -486,19 +486,19 @@ namespace trisetEmbedDl
         h1
         (intp_toNamedExpr_eq_singleton TrisetEmbedding.embedStepIndex)
     let h2w:
-      (trisetEmbedDl.val "callEnc").defMem.Mem
+      (trisetEmbedDl.val "indexCall").defMem.Mem
         (.pair TrisetEmbedding.embedStepIndex (.pair iFnA s))
     :=
       h2
     let encEq :=
-      opFixDl.callEnc_elim (Set3.defToPos (wfm_callEnc_eq ▸ h2w))
+      opFixDl.indexCall_elim (Set3.defToPos (wfm_indexCall_eq ▸ h2w))
     iFnEq ▸ encEq.symm
   
   /-- `embedOp` is functional (elim, possible lane). -/
   theorem embedOp_elim_pos {iFn s: Pair}
     (ins: s ∈ ((trisetEmbedDl.val "embedOp").call iFn).posMem)
   :
-    s = TrisetEmbedding.embedStepIndex.callEnc iFn
+    s = TrisetEmbedding.embedStepIndex.indexCall iFn
   :=
     let ins := Set3.inCallElim (lane := .posLane) ins
     let ins := DefList.in_def_body_no_fv (lane := .posLane) ins
@@ -511,19 +511,19 @@ namespace trisetEmbedDl
         h1
         (intp_toNamedExpr_eq_singleton TrisetEmbedding.embedStepIndex)
     let h2w:
-      (trisetEmbedDl.val "callEnc").posMem.Mem
+      (trisetEmbedDl.val "indexCall").posMem.Mem
         (.pair TrisetEmbedding.embedStepIndex (.pair iFnA s))
     :=
       h2
     let encEq :=
-      opFixDl.callEnc_elim (wfm_callEnc_eq ▸ h2w)
+      opFixDl.indexCall_elim (wfm_indexCall_eq ▸ h2w)
     iFnEq ▸ encEq.symm
   
-  /-- `embedOp` denotes the function `callEnc embedStepIndex`. -/
+  /-- `embedOp` denotes the function `indexCall embedStepIndex`. -/
   theorem embedOp_call_eq (iFn: Pair):
     Eq
       ((trisetEmbedDl.val "embedOp").call iFn)
-      (Set3.just (TrisetEmbedding.embedStepIndex.callEnc iFn))
+      (Set3.just (TrisetEmbedding.embedStepIndex.indexCall iFn))
   :=
     Set3.eq4
       (fun _ din => embedOp_elim_def din)
@@ -546,7 +546,7 @@ namespace TrisetEmbedding
   theorem embedOpIndex_call_eq (iFn: Pair):
     Eq
       ((uniSetMap.call embedOpIndex).call iFn)
-      (Set3.just (embedStepIndex.callEnc iFn))
+      (Set3.just (embedStepIndex.indexCall iFn))
   :=
     (congrArg (·.call iFn) embedOpIndex_call).trans
       (trisetEmbedDl.embedOp_call_eq iFn)
@@ -558,18 +558,18 @@ namespace TrisetEmbedding
   theorem embedFixIndex_call_eq:
     uniSetMap.call embedFixIndex
       =
-    uniSetMap.call (embedStepIndex.callEnc embedFixIndex)
+    uniSetMap.call (embedStepIndex.indexCall embedFixIndex)
   :=
     indexFixIndex_fix_of_fn
       embedOpIndex
-      (fun x => embedStepIndex.callEnc x)
+      (fun x => embedStepIndex.indexCall x)
       embedOpIndex_call_eq
   
   /--
     The embedding map on triset indices: `embed t` is a triset whose
     members are the codes `(0, embed e)` of the embedded members of `t`.
   -/
-  def embed (t: Pair): Pair := embedFixIndex.callEnc t
+  def embed (t: Pair): Pair := embedFixIndex.indexCall t
   
   /-- The characteristic equation of `embed`. -/
   theorem embed_call_eq (t: Pair):
@@ -577,11 +577,11 @@ namespace TrisetEmbedding
       =
     Set3.image (fun e => .pair (.nat 0) (embed e)) (uniSetMap.call t)
   :=
-    (opFixDl.callEnc_correct embedFixIndex t).trans
+    (opFixDl.indexCall_correct embedFixIndex t).trans
       ((congrArg (·.call t) embedFixIndex_call_eq).trans
         ((congrArg
             (·.call t)
-            (opFixDl.callEnc_correct embedStepIndex embedFixIndex)).trans
+            (opFixDl.indexCall_correct embedStepIndex embedFixIndex)).trans
           ((congrArg
               (fun s => (s.call embedFixIndex).call t)
               embedStepIndex_call).trans

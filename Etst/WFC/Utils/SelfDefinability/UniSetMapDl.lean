@@ -65,8 +65,8 @@ namespace Etst
   
   - `(12, null)` represents the triset `uniSetMap` (without the index
     having to define it explicitly in its definition list), and
-  - `(13, b)` represents the singleton triset containing the encoding
-    of `b`. Eg. `(13, null)` represents `{ (4, null) }`.
+  - `(13, b)` represents the singleton triset `{ b.toExpr.encoding }`.
+    Eg. `(13, null)` represents `{ (4, null) }`.
   
   Although these are a conservative extension, we include them because
   they considerably reduce the size of the indices for some use cases
@@ -216,12 +216,6 @@ namespace uniSetMapDl
       & uniSetMap
     )
   
-  /-
-    `(13, b)` encodes the singleton triset `{ b.toExpr.encoding }`, ie.
-    the encoding of the expression that evaluates to `b`. As `b` may be
-    the value of a runtime variable, its encoding has to be computed
-    recursively, using the `(13, _)` case itself on the sub-pairs.
-  -/
   exposed def exprEncToEncoding :=
     p3(
       dl, fv, expr;

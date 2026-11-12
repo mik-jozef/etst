@@ -115,7 +115,7 @@ theorem trisetFixIndex_fix
     ((uniSetMap.call iFn).call (trisetFixIndex iFn))
 :=
   trisetFixIndex_eq iFn ▸
-  magic_call_eq iFn (magicIndex.callEnc iFn) ▸
+  magic_call_eq iFn (magicIndex.indexCall iFn) ▸
   rfl
 
 /-
@@ -135,7 +135,7 @@ theorem trisetFix_eq (iFn: Pair):
   indices to trisets.
 -/
 def indexFixIndex (iOp: Pair): Pair :=
-  opFixDl.trisetFixIndex (composeIndex iOp)
+  opFixDl.trisetFixIndex (opFixDl.composeIndex iOp)
 
 open opFixDl in
 theorem indexFixIndex_fix (iOp: Pair):
