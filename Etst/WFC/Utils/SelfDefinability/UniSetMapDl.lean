@@ -313,7 +313,6 @@ namespace uniSetMapDl
   exposed def exprEncListRaw := compileExprEnc exprEncList
   
   
-  
   -- Expose "const" in the namespace.
   exposed def cst
     (x: String)

@@ -37,13 +37,6 @@ namespace Pair
       []
       (((uniSetMapDl.cstExpr "uniSetMap").call fn.toExpr).call arg.toExpr)
   
-  theorem toExpr_IsClean {kind}:
-    (p: Pair) → (p.toExpr: Expr kind).IsClean
-  | .null => fun _ => id
-  | .pair left rite =>
-    fun x usesX =>
-      usesX.elim (toExpr_IsClean left x) (toExpr_IsClean rite x)
-  
 end Pair
 
 theorem Expr.encodeCall_eq

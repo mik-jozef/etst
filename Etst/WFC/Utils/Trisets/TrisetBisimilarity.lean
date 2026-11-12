@@ -254,8 +254,9 @@ theorem bisimDl.NonBisimDef.toDefMem {p q w}
 
 
 def bisimDl.NonBisimPos.cycle (x: Nat) (elem: Pair): Prop :=
-  x = bisimDl.const "NonBisim" ∧
-  ∃ p q w, elem = .pair p (.pair q w) ∧ ¬ bisimDl.NonBisimPos p q
+  And
+    (x = bisimDl.const "NonBisim")
+    (∃ p q w, elem = .pair p (.pair q w) ∧ ¬ bisimDl.NonBisimPos p q)
 
 theorem bisimDl.NonBisimPos.cycleIsEmpty
   {x elem}

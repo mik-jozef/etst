@@ -118,6 +118,13 @@ namespace Pair
   | .null => .null
   | .pair l r => .prod l.toExpr r.toExpr
   
+  theorem toExpr_IsClean {kind}:
+    (p: Pair) → (p.toExpr: Expr kind).IsClean
+  | .null => fun _ => id
+  | .pair left rite =>
+    fun x usesX =>
+      usesX.elim (toExpr_IsClean left x) (toExpr_IsClean rite x)
+  
 end Pair
 
 
