@@ -20,9 +20,9 @@ inductive Expr.LaneEq:
   (even odd: Option Set3.Lane) →
   Prop
 | constBasic {x even odd}:
-    (const (kind := .basic) () x).LaneEq even odd
+    (const .basic x).LaneEq even odd
 | constLaneNone {lane x odd}:
-    (const (kind := .lane) lane x).LaneEq .none odd
+    (const lane x).LaneEq .none odd
 | constLaneSome {lane x odd}:
     (const (kind := .lane) lane x).LaneEq (.some lane) odd
 | var {x even odd}:

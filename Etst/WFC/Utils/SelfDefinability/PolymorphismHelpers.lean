@@ -538,7 +538,7 @@ namespace opFixDl
     :=
       eqUni.symm ▸ (Set3.inCallElim (Set3.inCallElim ins))
     let insIndexCall:
-      _ ∈ (Expr.const (kind := .basic) () 4).intp lane _ _ _
+      _ ∈ (Expr.const .basic 4).intp lane _ _ _
     :=
       indexCall_ins iArg iArg
     let inMagicCall :=

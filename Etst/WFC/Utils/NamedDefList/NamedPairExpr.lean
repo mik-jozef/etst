@@ -490,11 +490,11 @@ macro_rules
   `(p3_inner( All $x, (?some ($x:ident & !$domain)) | $body ))
 -- Identifiers
 | `(p3_inner( $x:ident )) =>
-  `(.ident (kind := .basic) () $(quote x.getId.toString))
+  `(.ident .basic $(quote x.getId.toString))
 | `(p3_inner( . $x:ident )) =>
-  `(.ident (kind := .lane) Set3.Lane.posLane $(quote x.getId.toString))
+  `(.ident .posLane $(quote x.getId.toString))
 | `(p3_inner( : $x:ident )) =>
-  `(.ident (kind := .lane) Set3.Lane.defLane $(quote x.getId.toString))
+  `(.ident .defLane $(quote x.getId.toString))
 -- Numbers
 | `(p3_inner( $n:num )) => `(.nat $n)
 -- Null

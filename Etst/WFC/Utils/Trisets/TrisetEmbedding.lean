@@ -106,8 +106,8 @@ namespace trisetEmbedHelpersDl
       wfm_uniSetMap_eq ▸ Set3.inCallElim (lane := .defLane) ins
     let inUsm:
       Set.Mem
-        ((Expr.const (kind := .basic) ()
-          (trisetEmbedHelpersDl.const "uniSetMap")).intp
+        (Expr.intp
+          (const .basic (trisetEmbedHelpersDl.const "uniSetMap"))
           .defLane
           trisetEmbedHelpersDl.dl.wfm
           trisetEmbedHelpersDl.dl.wfm
@@ -124,8 +124,8 @@ namespace trisetEmbedHelpersDl
           iFn e
     let inIndexCall:
       Set.Mem
-        ((Expr.const (kind := .basic) ()
-          (trisetEmbedHelpersDl.const "indexCall")).intp
+        (Expr.intp
+          (const .basic (trisetEmbedHelpersDl.const "indexCall"))
           .defLane
           trisetEmbedHelpersDl.dl.wfm
           trisetEmbedHelpersDl.dl.wfm
@@ -397,12 +397,11 @@ namespace trisetEmbedDl
           (.pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn)))
     :=
       wfm_indexCall_eq ▸
-        opFixDl.indexCall_ins (kind := .basic) (tag := ()) (lane := .defLane)
+        opFixDl.indexCall_ins (tag := ()) (lane := .defLane)
           TrisetEmbedding.embedStepIndex iFn
     let inIndexCall:
       Set.Mem
-        ((Expr.const (kind := .basic) ()
-          (trisetEmbedDl.const "indexCall")).intp
+        ((Expr.const .basic (trisetEmbedDl.const "indexCall")).intp
           .defLane
           trisetEmbedDl.dl.wfm
           trisetEmbedDl.dl.wfm
@@ -439,12 +438,11 @@ namespace trisetEmbedDl
     :=
       wfm_indexCall_eq ▸
       Set3.defToPos
-        (opFixDl.indexCall_ins (kind := .basic) (tag := ()) (lane := .defLane)
+        (opFixDl.indexCall_ins (tag := ()) (lane := .defLane)
           TrisetEmbedding.embedStepIndex iFn)
     let inIndexCall:
       Set.Mem
-        ((Expr.const (kind := .basic) ()
-          (trisetEmbedDl.const "indexCall")).intp
+        ((Expr.const .basic (trisetEmbedDl.const "indexCall")).intp
           .posLane
           trisetEmbedDl.dl.wfm
           trisetEmbedDl.dl.wfm
