@@ -102,7 +102,10 @@ This relies on Lean internals that may change between versions, so re-run
 `NamespaceSpecialization/Test.lean` after toolchain upgrades:
 - copies of the private `consumeImplicits` and `addLValArg` of
   `Lean.Elab.App` (they may drift from Lean's behaviour),
-- the signature of `resolveName'` (already different on Lean `master`),
+- the signature of `resolveName'` and the number of arguments of
+  `Parser.Term.pipeProj` (gained an optional universe suffix),
+- `Core.Context` fields being stored redundantly (`optionFlags` must be
+  set with `Context.setOptions`),
 - custom elaborators for `ident`/`app`/`proj` being tried before the
   builtin ones,
 - the structure of `Scope` (the bare `namespace`/`end`) and of `cmd in cmd`.
@@ -438,7 +441,7 @@ def elabIdent
   let cands ←
     try pure (← resolveName' id [] expectedType?).2
     catch _ => throwUnsupportedSyntax
-  let [(f, fIdent, fields)] := cands | throwUnsupportedSyntax
+  let [(f, fIdent, fields, _)] := cands | throwUnsupportedSyntax
   unless ← fields.anyM isSpecFieldStx do throwUnsupportedSyntax
   checkDeprecated fIdent f
   let f ← addTermInfo fIdent f expectedType?
@@ -539,9 +542,9 @@ def elabApp
 @[term_elab pipeProj] def elabPipeProjSpec: TermElab := fun stx expectedType? => do
   if !isNsPath stx[0] && (getEntries (← getEnv)).isEmpty then throwUnsupportedSyntax
   match stx with
-  | `($base |>.$field:ident $_*) =>
+  | `($base |>.$field:ident $args*) =>
     universeConstraintsCheckpoint do
-      elabProjLike base field stx[3].getArgs false expectedType?
+      elabProjLike base field args false expectedType?
   | _ => throwUnsupportedSyntax
 
 @[term_elab nsPath] def elabNsPath: TermElab := fun stx expectedType? => do
@@ -683,8 +686,8 @@ def canonicalSegment (entry: Entry): MetaM String :=
       lctx := lctx.setUserName params[i] (.mkSimple s!"x{subscript (i + 1)}")
     let fmt ←
       withLCtx lctx (← getLocalInstances) do
-      withTheReader Core.Context (fun ctx => { ctx with
-        options := {}, currNamespace := entry.head.getPrefix, openDecls := [] }) do
+      withTheReader Core.Context (fun ctx => { (ctx.setOptions {}) with
+        currNamespace := entry.head.getPrefix, openDecls := [] }) do
         ppExpr body
     return s!"({fmt.pretty 10000})"
 

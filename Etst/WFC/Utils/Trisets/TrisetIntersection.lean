@@ -26,7 +26,7 @@ public import Etst.WFC.Utils.Trisets.TrisetMembership
 public section
 namespace Etst
 
-open SingleLaneExpr
+open Expr
 
 
 /-
@@ -41,26 +41,28 @@ open SingleLaneExpr
 
 namespace Pair.PreTriset
   
-  exposed def interExpr (a b: Pair): BasicExpr :=
+  exposed def interExpr (a b: Pair): Expr .basic :=
     .un
       (.ir
-        (.call (.const () isInDl.consts.uniSetMap) a.toExpr)
-        (.zth (.call (.const () isInDl.consts.IsIn) b.toExpr)))
+        (.call (.const () (isInDl.const "uniSetMap")) a.toExpr)
+        (.zth (.call (.const () (isInDl.const "IsIn")) b.toExpr)))
       (.ir
-        (.call (.const () isInDl.consts.uniSetMap) b.toExpr)
-        (.zth (.call (.const () isInDl.consts.IsIn) a.toExpr)))
+        (.call (.const () (isInDl.const "uniSetMap")) b.toExpr)
+        (.zth (.call (.const () (isInDl.const "IsIn")) a.toExpr)))
   
   exposed def inter (a b: Pair): Pair :=
     uniSetMapIndex
-      isInDl.toDefList
-      isInDl.size
+      isInDl.dl.toDefList
+      isInDl.dl.size
       []
       (interExpr a b)
   
   theorem inter_wfm_eq (a b: Pair):
-    uniSetMap.call (inter a b) = (interExpr a b).triIntp [] isInDl.wfm
+    uniSetMap.call (inter a b)
+      =
+    (interExpr a b).triIntp isInDl.dl.wfm isInDl.dl.wfm []
   :=
-    FiniteDefList.uniSetMapAt_eq isInDl [] (interExpr a b)
+    isInDl.dl.uniSetMapAt_eq [] (interExpr a b)
   
   theorem inter_defMem_iff {a b x: Pair}:
     Iff
@@ -91,7 +93,7 @@ namespace Pair.PreTriset
           inUnL (inIr
             (inCall
               (show
-                .pair a x ∈ (isInDl.wfm isInDl.consts.uniSetMap).defMem
+                .pair a x ∈ (isInDl.dl.wfm (isInDl.const "uniSetMap")).defMem
               from
                 isInDl.wfm_uniSetMap_eq ▸ hU)
               (inToExpr a))
@@ -100,7 +102,7 @@ namespace Pair.PreTriset
           inUnR (inIr
             (inCall
               (show
-                .pair b x ∈ (isInDl.wfm isInDl.consts.uniSetMap).defMem
+                .pair b x ∈ (isInDl.dl.wfm (isInDl.const "uniSetMap")).defMem
               from
                 isInDl.wfm_uniSetMap_eq ▸ hU)
               (inToExpr b))
@@ -135,7 +137,7 @@ namespace Pair.PreTriset
             inUnL (inIr
               (inCall
                 (show
-                  .pair a x ∈ (isInDl.wfm isInDl.consts.uniSetMap).posMem
+                  .pair a x ∈ (isInDl.dl.wfm (isInDl.const "uniSetMap")).posMem
                 from
                   isInDl.wfm_uniSetMap_eq ▸ hU)
                 (inToExpr a))
@@ -144,7 +146,7 @@ namespace Pair.PreTriset
             inUnR (inIr
               (inCall
                 (show
-                  .pair b x ∈ (isInDl.wfm isInDl.consts.uniSetMap).posMem
+                  .pair b x ∈ (isInDl.dl.wfm (isInDl.const "uniSetMap")).posMem
                 from
                   isInDl.wfm_uniSetMap_eq ▸ hU)
                 (inToExpr b))
