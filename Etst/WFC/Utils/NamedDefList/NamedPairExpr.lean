@@ -52,6 +52,13 @@ where
     (body: Expr kind)
   :
     NamedPairExpr kind vars
+-- Useful for defining free-standing expressions that are embeddable
+-- into larger expressions no matter the external context.
+| forget {varsIn varsOut}
+    (body: NamedPairExpr kind varsIn)
+    (isPrefix: varsIn <+: varsOut)
+  :
+    NamedPairExpr kind varsOut
 deriving DecidableEq
 
 exposed def NamedPairExpr.vars {kind vars}
@@ -76,6 +83,7 @@ exposed def NamedPairExpr.IsWF {kind vars}
       And
         (∀ x, body.UsesConst x → x < consts.length)
         (∀ x, body.UsesFreeVar x → x < vars.length)
+  | forget body _ => body.IsWF consts
 
 public abbrev WfNamedPairExpr kind vars consts :=
   { expr: NamedPairExpr kind vars // expr.IsWF consts }
@@ -245,6 +253,7 @@ namespace NamedPairExpr
     | compl body => .compl (body.compile consts)
     | arbIr _ body => .arbIr (body.compile consts)
     | raw body => body
+    | forget body _ => body.compile consts
   
   public theorem IsWF.compile_sat_lt {kind vars consts}
     {expr: NamedPairExpr kind vars}
@@ -280,6 +289,9 @@ namespace NamedPairExpr
       Nat.lt_of_succ_lt_succ
         (compile_sat_lt (expr := body) isWf (x + 1) isUsed)
     | raw body => isWf.right x isUsed
+    | forget body isPrefix =>
+      let inVarsIn := compile_sat_lt (expr := body) isWf x isUsed
+      Nat.lt_of_lt_of_le inVarsIn isPrefix.length_le
   
   public theorem compile_constsLt {kind vars consts}
     {expr: NamedPairExpr kind vars}
@@ -316,6 +328,8 @@ namespace NamedPairExpr
       compile_constsLt (expr := body) isWf x isUsed
     | raw body, isWf =>
       isWf.left x isUsed
+    | forget body isPrefix, isWf =>
+      compile_constsLt (expr := body) isWf x isUsed
   
 end NamedPairExpr
 
@@ -359,6 +373,7 @@ public instance NamedPairExpr.isWf {kind vars}:
       (And
         (b.ConstsLt consts.length)
         (b.FreeVarsSat (· < vars.length))))
+| .forget b _, consts => isWf b consts
 
 exposed def Pair.toNamedExpr {kind vars consts}:
   Pair → WfNamedPairExpr kind vars consts
@@ -464,6 +479,7 @@ syntax:90 "All " ident ": " p3_expr ", " P3Parser.body : p3_expr
 
 syntax "p3_inner(" P3Parser.expr ")" : term
 syntax "p3(" P3Parser.expr ")" : term
+syntax "p3(_;" P3Parser.expr ")" : term
 syntax "p3(" ident,* ";" P3Parser.expr ")" : term
 
 open Lean in
@@ -471,6 +487,8 @@ macro_rules
 -- Public entry points: ascribe once, then hand off to the inner rules
 | `(p3( $e:p3_expr )) =>
   `((p3_inner($e) : NamedPairExpr _ []))
+| `(p3(_; $e:p3_expr )) =>
+  `(p3_inner($e))
 | `(p3( $ids:ident,* ; $e:p3_expr )) => do
   let namesRev : Array (TSyntax `term) :=
     ids.getElems.map fun i => quote i.getId.toString
