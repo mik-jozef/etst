@@ -48,6 +48,10 @@ where
     (body: NamedPairExpr kind (x :: vars))
   :
     NamedPairExpr kind vars
+| raw {vars}
+    (body: Expr kind)
+  :
+    NamedPairExpr kind vars
 deriving DecidableEq
 
 exposed def NamedPairExpr.vars {kind vars}
@@ -55,6 +59,7 @@ exposed def NamedPairExpr.vars {kind vars}
 :=
   vars
 
+-- Whether all consts used in the expression are in a given list.
 exposed def NamedPairExpr.IsWF {kind vars}
   (expr: NamedPairExpr kind vars)
   (consts: List String)
@@ -67,6 +72,10 @@ exposed def NamedPairExpr.IsWF {kind vars}
   | full body => body.IsWF consts
   | compl body => body.IsWF consts
   | arbIr _ body => body.IsWF consts
+  | raw body =>
+      And
+        (∀ x, body.UsesConst x → x < consts.length)
+        (∀ x, body.UsesFreeVar x → x < vars.length)
 
 public abbrev WfNamedPairExpr kind vars consts :=
   { expr: NamedPairExpr kind vars // expr.IsWF consts }
@@ -235,10 +244,11 @@ namespace NamedPairExpr
     | full body => .full (body.compile consts)
     | compl body => .compl (body.compile consts)
     | arbIr _ body => .arbIr (body.compile consts)
+    | raw body => body
   
-  public theorem compile_sat_lt {kind vars}
-    (expr: NamedPairExpr kind vars)
-    (consts: List String)
+  public theorem IsWF.compile_sat_lt {kind vars consts}
+    {expr: NamedPairExpr kind vars}
+    (isWf: expr.IsWF consts)
   :
     (compile expr consts).FreeVarsSat (· < vars.length)
   :=
@@ -256,22 +266,23 @@ namespace NamedPairExpr
     | null => nomatch isUsed
     | prod left rite =>
       isUsed.elim
-        (fun isUsedL => compile_sat_lt left consts x isUsedL)
-        (fun isUsedR => compile_sat_lt rite consts x isUsedR)
+        (fun isUsedL => compile_sat_lt isWf.left x isUsedL)
+        (fun isUsedR => compile_sat_lt isWf.right x isUsedR)
     | ir left rite =>
       isUsed.elim
-        (fun isUsedL => compile_sat_lt left consts x isUsedL)
-        (fun isUsedR => compile_sat_lt rite consts x isUsedR)
+        (fun isUsedL => compile_sat_lt isWf.left x isUsedL)
+        (fun isUsedR => compile_sat_lt isWf.right x isUsedR)
     | full body =>
-      compile_sat_lt body consts x isUsed
+      compile_sat_lt (expr := body) isWf x isUsed
     | compl body =>
-      compile_sat_lt body consts x isUsed
+      compile_sat_lt (expr := body) isWf x isUsed
     | arbIr xB body =>
       Nat.lt_of_succ_lt_succ
-        (compile_sat_lt body consts (x + 1) isUsed)
+        (compile_sat_lt (expr := body) isWf (x + 1) isUsed)
+    | raw body => isWf.right x isUsed
   
   public theorem compile_constsLt {kind vars consts}
-    (expr: NamedPairExpr kind vars)
+    {expr: NamedPairExpr kind vars}
     (isWf: expr.IsWF consts)
   :
     (compile expr consts).ConstsLt consts.length
@@ -291,18 +302,20 @@ namespace NamedPairExpr
     | null, _ => nomatch isUsed
     | prod left rite, ⟨isWfL, isWfR⟩ =>
       isUsed.elim
-        (fun isUsedL => compile_constsLt left isWfL x isUsedL)
-        (fun isUsedR => compile_constsLt rite isWfR x isUsedR)
+        (fun isUsedL => compile_constsLt isWfL x isUsedL)
+        (fun isUsedR => compile_constsLt isWfR x isUsedR)
     | ir left rite, ⟨isWfL, isWfR⟩ =>
       isUsed.elim
-        (fun isUsedL => compile_constsLt left isWfL x isUsedL)
-        (fun isUsedR => compile_constsLt rite isWfR x isUsedR)
+        (fun isUsedL => compile_constsLt isWfL x isUsedL)
+        (fun isUsedR => compile_constsLt isWfR x isUsedR)
     | full body, isWf =>
-      compile_constsLt body isWf x isUsed
+      compile_constsLt (expr := body) isWf x isUsed
     | compl body, isWf =>
-      compile_constsLt body isWf x isUsed
+      compile_constsLt (expr := body) isWf x isUsed
     | arbIr xB body, isWf =>
-      compile_constsLt body isWf x isUsed
+      compile_constsLt (expr := body) isWf x isUsed
+    | raw body, isWf =>
+      isWf.left x isUsed
   
 end NamedPairExpr
 
@@ -313,14 +326,14 @@ public abbrev NamedExprTools.pair:
     fun {vars consts} expr =>
       NamedPairExpr.compile expr.val consts
   compiles_clean expr :=
-    let satLt := expr.val.compile_sat_lt expr.consts
+    let satLt := expr.property.compile_sat_lt
     let eq: (· < 0) = fun _ => False :=
       funext fun _ => propext (Iff.intro nofun nofun)
     by unfold Expr.IsClean; exact eq ▸ satLt
   compiles_constsLt expr := expr.val.compile_constsLt expr.property
 }
 
-public instance NamedPairExpr.isWF {kind vars}:
+public instance NamedPairExpr.isWf {kind vars}:
   (e: NamedPairExpr kind vars) →
   (consts: List String) →
   Decidable (e.IsWF consts)
@@ -328,18 +341,24 @@ public instance NamedPairExpr.isWF {kind vars}:
   inferInstanceAs (Decidable (x ∈ vars ∨ x ∈ consts))
 | .null, _ => inferInstanceAs (Decidable True)
 | .prod l r, consts =>
-  match isWF l consts, isWF r consts with
+  match isWf l consts, isWf r consts with
   | isTrue hl, isTrue hr => isTrue ⟨hl, hr⟩
   | isFalse hl, _ => isFalse fun ⟨h, _⟩ => hl h
   | _, isFalse hr => isFalse fun ⟨_, h⟩ => hr h
 | .ir l r, consts =>
-  match isWF l consts, isWF r consts with
+  match isWf l consts, isWf r consts with
   | isTrue hl, isTrue hr => isTrue ⟨hl, hr⟩
   | isFalse hl, _ => isFalse fun ⟨h, _⟩ => hl h
   | _, isFalse hr => isFalse fun ⟨_, h⟩ => hr h
-| .full b, consts => isWF b consts
-| .compl b, consts => isWF b consts
-| .arbIr _ b, consts => isWF b consts
+| .full b, consts => isWf b consts
+| .compl b, consts => isWf b consts
+| .arbIr _ b, consts => isWf b consts
+| .raw b, consts =>
+  inferInstanceAs
+    (Decidable
+      (And
+        (b.ConstsLt consts.length)
+        (b.FreeVarsSat (· < vars.length))))
 
 exposed def Pair.toNamedExpr {kind vars consts}:
   Pair → WfNamedPairExpr kind vars consts
