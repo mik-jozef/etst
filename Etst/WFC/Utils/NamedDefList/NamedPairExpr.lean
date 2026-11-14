@@ -500,7 +500,14 @@ macro_rules
 | `(p3_inner( ($expr) )) => `(p3_inner($expr))
 -- Function application
 | `(p3_inner( $fn $arg )) =>
-  `(p3_inner( Ex res, $fn & ($arg × res) then res ))
+  -- This works, but creates long hygienic names that slow down
+  -- `by decide` a *lot*.
+  -- `(p3_inner( Ex res, $fn & ($arg × res) then res ))
+  `(.arbUn "#"
+    (p3_inner(
+      $fn & ($arg × <[.ident () "#"]>) then <[.ident () "#"]>
+    ))
+  )
 -- Remove leading "|"
 | `(p3_inner( | $a | $b )) => `(p3_inner( $a | $b ))
 -- Remove leading "&"
