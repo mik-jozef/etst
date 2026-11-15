@@ -396,14 +396,6 @@ end Expr
 namespace DefList
   variable {dl: DefList}
   
-  theorem wfm_isModel_at
-    (dl: DefList)
-    (x: Nat)
-  :
-    dl.wfm x = dl.intpDefs dl.wfm dl.wfm x
-  :=
-    congr (DefList.wfm_isModel dl) rfl
-  
   theorem in_def_no_fv {x lane p}
     (inDefBody: p ∈ dl.intp (dl.getDef x) lane [])
   :
@@ -422,9 +414,9 @@ namespace DefList
     match lane with
     | .defLane =>
         show p ∈ (dl.intpDefs dl.wfm dl.wfm x).defMem from
-        dl.wfm_isModel_at x ▸ inDef
+        dl.wfm_eq_at x ▸ inDef
     | .posLane =>
         show p ∈ (dl.intpDefs dl.wfm dl.wfm x).posMem from
-        dl.wfm_isModel_at x ▸ inDef
+        dl.wfm_eq_at x ▸ inDef
   
 end DefList

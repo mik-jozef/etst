@@ -340,7 +340,7 @@ public theorem DefList.wfm_isModel
 :=
   operatorB.fp_is_model dl (wfm_isLfpB dl).left
 
-public theorem DefList.wfm_eq_def
+public theorem DefList.wfm_eq_at
   (dl: DefList)
   (x: Nat)
 :
