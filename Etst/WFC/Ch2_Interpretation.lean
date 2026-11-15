@@ -197,6 +197,10 @@ public inductive Pair where
 | null -- Null is considered an improper pair.
 | pair (a b: Pair)
 
+public protected theorem Pair.eq {l0 l1 r0 r1}:
+  l0 = l1 → r0 = r1 → pair l0 r0 = pair l1 r1
+| rfl, rfl => rfl
+
 
 exposed def Expr.intpVar
   (fv: List Pair)

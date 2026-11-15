@@ -41,7 +41,7 @@ namespace Expr
     lane.toggle_toggle ▸ inToggle
   
   
-  theorem intp_var_eq_empty
+  theorem var_empty
     (nlt: ¬ x < fv.length)
   :
     (var x).intp lane b c fv = {}
@@ -50,7 +50,7 @@ namespace Expr
     unfold intpVar
     rw [List.getElem?_eq_none_iff.mpr (le_of_not_gt nlt)]
   
-  theorem intp_var_eq_of_lt
+  theorem var_eq_of_lt
     (lt: x < fv.length)
   :
     (var x).intp lane b c fv = {fv[x]}
@@ -59,7 +59,7 @@ namespace Expr
     unfold intpVar
     rw [List.getElem?_eq_getElem lt]
   
-  theorem intp_var_eq_singleton
+  theorem var_singleton
     {fv: List Pair}
     {pBound: Pair}
     (eq: fv[x]? = .some pBound)
@@ -77,7 +77,7 @@ namespace Expr
   :
     pBound ∈ (var x).intp lane b c fv
   :=
-    intp_var_eq_singleton eq ▸ rfl
+    var_singleton eq ▸ rfl
   
   theorem inVarEq
     {fv: List Pair}
@@ -86,7 +86,7 @@ namespace Expr
   :
     (var x).intp lane b c fv = {pBound}
   :=
-    intp_var_eq_singleton eq
+    var_singleton eq
   
   theorem inVarElim
     (h: p ∈ (var x).intp lane b c fv)
@@ -94,7 +94,7 @@ namespace Expr
   :
     p = pBound
   := by
-    rw [intp_var_eq_singleton eq] at h
+    rw [var_singleton eq] at h
     exact Set.mem_singleton_iff.mp h
   
   theorem inVarElimLt
@@ -103,7 +103,7 @@ namespace Expr
   :
     fv[x] = p
   := by
-    rw [intp_var_eq_of_lt lt] at h
+    rw [var_eq_of_lt lt] at h
     exact Set.mem_singleton_iff.mp h.symm
   
   theorem inVarNope
@@ -113,7 +113,7 @@ namespace Expr
   :
     P
   := by
-    rw [intp_var_eq_empty nlt] at h
+    rw [var_empty nlt] at h
     exact h.elim
   
   
@@ -144,6 +144,11 @@ namespace Expr
     P
   :=
     (inNullElimNeq inNull pA pB rfl).elim
+  
+  theorem null_singleton:
+    (null.intp lane b c fv) = {.null}
+  :=
+    rfl
   
   
   theorem inProd
@@ -195,6 +200,22 @@ namespace Expr
   :=
     not_and_or.mp fun ⟨inL, inR⟩ =>
       ninProd ⟨pA, pB, rfl, inL, inR⟩
+  
+  theorem prod_singleton
+    (eqLeft: exprL.intp lane b c fv = {pA})
+    (eqRite: exprR.intp lane b c fv = {pB})
+  :
+    (prod exprL exprR).intp lane b c fv = {Pair.pair pA pB}
+  :=
+    Set.ext fun
+    | .null => Iff.intro nofun nofun
+    | .pair _ _ => Iff.intro
+      (fun inProd => by
+        let ⟨inL, inR⟩ := inProdElim inProd
+        rw [eqLeft] at inL
+        rw [eqRite] at inR
+        exact Pair.eq inL inR)
+      (fun pEq => pEq ▸ inProd (eqLeft ▸ rfl) (eqRite ▸ rfl))
   
   
   theorem inIr
@@ -420,3 +441,17 @@ namespace DefList
         dl.wfm_eq_at x ▸ inDef
   
 end DefList
+
+theorem Expr.const_singleton {x lane p fv}
+  {dl: DefList}
+  (intpBody: (dl.getDef x).intp lane dl.wfm dl.wfm [] = {p})
+:
+  (Expr.const () x).intp lane dl.wfm dl.wfm fv = {p}
+:=
+  Set.ext fun q => Iff.intro
+    (fun ins =>
+      (Set.ext_iff.mp intpBody q).mp <|
+      DefList.in_def_body_no_fv ins)
+    (fun qEq =>
+      DefList.in_def_no_fv <|
+      (Set.ext_iff.mp intpBody q).mpr qEq)

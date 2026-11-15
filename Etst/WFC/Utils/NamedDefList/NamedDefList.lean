@@ -189,6 +189,16 @@ namespace NamedDefList
   :=
     consts.idxOf const
   
+  exposed def constExpr {consts kind}
+    (_ndl: NamedDefList tools consts)
+    (tag: kind.ConstTag)
+    (const: String)
+    (_: const ∈ consts := by decide)
+  :
+    Expr kind
+  :=
+    .const tag (consts.idxOf const)
+  
   exposed def getDef {consts}
     (ndl: NamedDefList tools consts)
     (x: String)

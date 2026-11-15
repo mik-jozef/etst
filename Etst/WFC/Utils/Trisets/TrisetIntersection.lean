@@ -77,15 +77,15 @@ namespace Pair.PreTriset
         match inUnElim h with
         | .inl hIr =>
           let ⟨hCallU, hZth⟩ := inIrElim hIr
-          let hU := inCallElimSingle hCallU (intp_toExpr_eq_singleton a)
+          let hU := inCallElimSingle hCallU (toExpr_singleton a)
           let ⟨_, hC⟩ := inZthElim hZth
-          let hI := inCallElimSingle hC (intp_toExpr_eq_singleton b)
+          let hI := inCallElimSingle hC (toExpr_singleton b)
           .inl ⟨isInDl.wfm_uniSetMap_eq ▸ hU, isInDl.IsInDef_of_defMem hI⟩
         | .inr hIr =>
           let ⟨hCallU, hZth⟩ := inIrElim hIr
-          let hU := inCallElimSingle hCallU (intp_toExpr_eq_singleton b)
+          let hU := inCallElimSingle hCallU (toExpr_singleton b)
           let ⟨_, hC⟩ := inZthElim hZth
-          let hI := inCallElimSingle hC (intp_toExpr_eq_singleton a)
+          let hI := inCallElimSingle hC (toExpr_singleton a)
           .inr ⟨isInDl.wfm_uniSetMap_eq ▸ hU, isInDl.IsInDef_of_defMem hI⟩)
       (fun h =>
         match h with
@@ -121,15 +121,15 @@ namespace Pair.PreTriset
           match inUnElim h with
           | .inl hIr =>
             let ⟨hCallU, hZth⟩ := inIrElim hIr
-            let hU := inCallElimSingle hCallU (intp_toExpr_eq_singleton a)
+            let hU := inCallElimSingle hCallU (toExpr_singleton a)
             let ⟨_, hC⟩ := inZthElim hZth
-            let hI := inCallElimSingle hC (intp_toExpr_eq_singleton b)
+            let hI := inCallElimSingle hC (toExpr_singleton b)
             .inl ⟨isInDl.wfm_uniSetMap_eq ▸ hU, isInDl.IsInPos_of_posMem hI⟩
           | .inr hIr =>
             let ⟨hCallU, hZth⟩ := inIrElim hIr
-            let hU := inCallElimSingle hCallU (intp_toExpr_eq_singleton b)
+            let hU := inCallElimSingle hCallU (toExpr_singleton b)
             let ⟨_, hC⟩ := inZthElim hZth
-            let hI := inCallElimSingle hC (intp_toExpr_eq_singleton a)
+            let hI := inCallElimSingle hC (toExpr_singleton a)
             .inr ⟨isInDl.wfm_uniSetMap_eq ▸ hU, isInDl.IsInPos_of_posMem hI⟩)
         (fun h =>
           match h with

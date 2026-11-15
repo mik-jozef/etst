@@ -8,6 +8,11 @@
   Unlike the "proper" expression encodings, these do not correspond to
   any `BasicExpr`, so the theorems below are stated in terms of the
   pair-based `uniSetMapIndexEnc` instead of `uniSetMapIndex`.
+  
+  TODO: it would be nice to use this to futher reduce the size of
+  the deflists (and the generated indices) in `PolymorphismHelpers.lean`.
+  However, doing that properly would probably require some refactoring
+  of Ch6 utility files, and I'm disinclined to touch those.
 -/
 module
 public import Etst.WFC.Utils.SelfDefinability.UniSetMapHelpers
@@ -327,9 +332,9 @@ theorem uniSetMapIndexEnc_toEncodingEnc
   Set3.eq4
     (fun _ h => toEncodingEnc_elim (lane := .defLane) b h)
     (fun _ h => (Set3.just.inDefToEq h).symm ▸
-      toEncodingEnc_ins (dl := dl) (n := n) (fv := fv) (lane := .defLane) b)
+      toEncodingEnc_ins (lane := .defLane) b)
     (fun _ h => toEncodingEnc_elim (lane := .posLane) b h)
     (fun _ h => (Set3.just.inPosToEq h).symm ▸
-      toEncodingEnc_ins (dl := dl) (n := n) (fv := fv) (lane := .posLane) b)
+      toEncodingEnc_ins (lane := .posLane) b)
 
 end Etst.uniSetMapDl

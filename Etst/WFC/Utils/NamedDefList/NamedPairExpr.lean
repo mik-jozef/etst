@@ -417,7 +417,7 @@ namespace Expr
     rw [←p.toExpr_eq_named vars consts] at inExpr
     exact inToExprElim inExpr
   
-  public theorem intp_toNamedExpr_eq_singleton
+  public theorem toNamedExpr_singleton
     {kind lane b c fv consts vars}
     (p: Pair)
   :
@@ -425,7 +425,7 @@ namespace Expr
     intp ((p.toNamedExpr: T).val.compile consts) lane b c fv = {p}
   :=
     p.toExpr_eq_named vars consts ▸
-    intp_toExpr_eq_singleton p
+    toExpr_singleton p
   
 end Expr
 

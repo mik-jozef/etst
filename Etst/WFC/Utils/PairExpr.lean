@@ -445,6 +445,12 @@ namespace Expr
       let ⟨l, r⟩ := inProdElim inNatExpr
       (inNatElim l) ▸ (inNullElim r) ▸ rfl
   
+  theorem nat_singleton {kind lane fv}:
+    (n: Nat) →
+    (nat (kind := kind) n).intp lane b c fv = {Pair.nat n}
+  | 0 => rfl
+  | .succ n => prod_singleton (nat_singleton n) null_singleton
+  
   def inNatElimNope {P n m}
     (inNat: .nat m ∈ (nat n).intp lane b c fv)
     (neq: n ≠ m)
@@ -489,7 +495,7 @@ namespace Expr
       let ⟨inL, inR⟩ := inProdElim inExpr
       (Pair.eq (inToExprElim inL) (inToExprElim inR))
   
-  theorem intp_toExpr_eq_singleton
+  theorem toExpr_singleton
     (p: Pair)
   :
     (p.toExpr (kind := kind)).intp lane b c fv = {p}

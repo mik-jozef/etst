@@ -7,10 +7,6 @@ namespace Etst
 
 
 namespace Pair
-  protected theorem eq {l0 l1 r0 r1}:
-    l0 = l1 → r0 = r1 → pair l0 r0 = pair l1 r1
-  | rfl, rfl => rfl
-  
   /-
     `Pair.null` encodes the number zero, while `Pair.pair n zero`
     encodes the successor of `n`.
