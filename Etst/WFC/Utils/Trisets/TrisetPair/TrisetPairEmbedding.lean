@@ -27,7 +27,7 @@ namespace Pair
     :
       t.toPreTrisetPair.Ins e.toPreTrisetPair
     :=
-      embed_ins ins
+      embed_mem (lane := .defLane) ins
     
     -- The embedding preserves possible membership.
     theorem inw_toPreTrisetPair {t e: PreTriset}
@@ -35,7 +35,7 @@ namespace Pair
     :
       t.toPreTrisetPair.Inw e.toPreTrisetPair
     :=
-      embed_inw inw
+      embed_mem (lane := .posLane) inw
     
     -- Definitive members of an embedding are embeddings.
     theorem ins_toPreTrisetPair_elim {t: PreTriset} {e: PreTrisetPair}
@@ -43,7 +43,8 @@ namespace Pair
     :
       ∃ e0: PreTriset, t.Ins e0 ∧ e = e0.toPreTrisetPair
     :=
-      let ⟨e0, e0In, eq⟩ := embed_elim_def (t := t) (p := e.toPair) ins
+      let ⟨e0, e0In, eq⟩ :=
+        embed_elim (lane := .defLane) (t := t) (p := e.toPair) ins
       ⟨e0, e0In, PreTrisetPair.toPair_inj (b := toPreTrisetPair e0) eq⟩
     
     -- Possible members of an embedding are embeddings.
@@ -52,7 +53,8 @@ namespace Pair
     :
       ∃ e0: PreTriset, t.Inw e0 ∧ e = e0.toPreTrisetPair
     :=
-      let ⟨e0, e0In, eq⟩ := embed_elim_pos (t := t) (p := e.toPair) inw
+      let ⟨e0, e0In, eq⟩ :=
+        embed_elim (lane := .posLane) (t := t) (p := e.toPair) inw
       ⟨e0, e0In, PreTrisetPair.toPair_inj (b := toPreTrisetPair e0) eq⟩
     
     /-

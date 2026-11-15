@@ -215,6 +215,16 @@ namespace Set3
     posMem := f '' s.posMem
     defLePos := fun _ ⟨x, hx, eq⟩ => ⟨x, defToPos hx, eq⟩
   
+  /- Membership in the pointwise image, in either lane. -/
+  theorem image_mem_iff {D f s lane d}:
+    Iff
+      (d ∈ (image f s).getLane lane)
+      (∃ dd: D, dd ∈ s.getLane lane ∧ f dd = d)
+  :=
+    match lane with
+    | .defLane => Iff.rfl
+    | .posLane => Iff.rfl
+  
   
   instance unionInst (D: Type u): Union (Set3 D) where
     union := union
