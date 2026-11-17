@@ -375,18 +375,32 @@ public instance NamedPairExpr.isWf {kind vars}:
         (b.FreeVarsSat (· < vars.length))))
 | .forget b _, consts => isWf b consts
 
-exposed def Pair.toNamedExpr {kind vars consts}:
-  Pair → WfNamedPairExpr kind vars consts
+exposed def Pair.toNamedExpr {kind vars}:
+  Pair → NamedPairExpr kind vars
 | .null => .null
 | .pair l r => .prod l.toNamedExpr r.toNamedExpr
+
+public theorem Pair.toNamedExpr_wf {kind vars consts}:
+  (p: Pair) → (p.toNamedExpr: NamedPairExpr kind vars).IsWF consts
+| .null => trivial
+| .pair l r => And.intro l.toNamedExpr_wf r.toNamedExpr_wf
+
+exposed def Pair.toWfNamedExpr {kind vars consts}
+  (p: Pair)
+:
+  WfNamedPairExpr kind vars consts
+:= ⟨
+  p.toNamedExpr,
+  p.toNamedExpr_wf,
+⟩
 
 public theorem Pair.toExpr_eq_named
   (p: Pair)
   {kind: ExprKind}
   (vars consts: List String)
 :
-  let T := WfNamedPairExpr kind vars consts
-  p.toExpr = ((p.toNamedExpr: T)).val.compile consts
+  let T := NamedPairExpr kind vars
+  p.toExpr = (p.toNamedExpr: T).compile consts
 :=
   match p with
   | .null => rfl
@@ -400,8 +414,8 @@ namespace Expr
   public theorem inToNamedExpr {kind lane b c fv consts vars}
     (p: Pair)
   :
-    let T := WfNamedPairExpr kind vars consts
-    p ∈ ((p.toNamedExpr: T).val.compile consts).intp lane b c fv
+    let T := NamedPairExpr kind vars
+    p ∈ ((p.toNamedExpr: T).compile consts).intp lane b c fv
   :=
     p.toExpr_eq_named vars consts ▸
     inToExpr p
@@ -409,8 +423,8 @@ namespace Expr
   public theorem inToNamedExprElim {kind lane b c fv consts vars}
     {p pIn: Pair}
     (inExpr:
-      let T := WfNamedPairExpr kind vars consts
-      pIn ∈ ((p.toNamedExpr: T).val.compile consts).intp lane b c fv)
+      let T := NamedPairExpr kind vars
+      pIn ∈ ((p.toNamedExpr: T).compile consts).intp lane b c fv)
   :
     p = pIn
   := by
@@ -421,8 +435,8 @@ namespace Expr
     {kind lane b c fv consts vars}
     (p: Pair)
   :
-    let T := WfNamedPairExpr kind vars consts
-    intp ((p.toNamedExpr: T).val.compile consts) lane b c fv = {p}
+    let T := NamedPairExpr kind vars
+    intp ((p.toNamedExpr: T).compile consts) lane b c fv = {p}
   :=
     p.toExpr_eq_named vars consts ▸
     toExpr_singleton p

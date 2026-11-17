@@ -68,10 +68,10 @@ structure TriRelation (T: Type*) where
 
 structure TriRelation.Sat {T: Type*}
   (rel: TriRelation T)
-  (P: Set (T → T → Prop))
+  (P: (T → T → Prop) → Prop)
 where
-  satDef: rel.RelDef ∈ P
-  satPos: rel.RelPos ∈ P
+  satDef: P rel.RelDef
+  satPos: P rel.RelPos
 
 /--
   Witnesses that the relation `rel` on representatives holds for
