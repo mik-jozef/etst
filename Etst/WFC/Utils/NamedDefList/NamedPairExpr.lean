@@ -59,7 +59,7 @@ where
     (isPrefix: varsIn <+: varsOut)
   :
     NamedPairExpr kind varsOut
-deriving DecidableEq
+deriving DecidableEq, Repr
 
 exposed def NamedPairExpr.vars {kind vars}
   (_: NamedPairExpr kind vars)

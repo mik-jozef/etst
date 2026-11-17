@@ -59,7 +59,9 @@ end TrisetEmbedding
 -/
 exposed pairDefList trisetEmbedDl extends trisetEmbedHelpersDl
   p3 embedOp :=
-    Ex iFn, iFn × indexCall <[TrisetEmbedding.embedStepIndex.toNamedExpr]> iFn
+    Ex iFn,
+      × iFn
+      × indexCall <[TrisetEmbedding.embedStepIndex.toWfNamedExpr]> iFn
 pairDefList.
 
 

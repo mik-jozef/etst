@@ -25,6 +25,10 @@ instance: (kind: ExprKind) → DecidableEq kind.ConstTag
 | .basic => inferInstance
 | .lane  => inferInstance
 
+instance: (kind: ExprKind) → Repr kind.ConstTag
+| .basic => inferInstance
+| .lane  => inferInstance
+
 /-
   An expression is an inductive structure that (as we later define)
   can be evaluated to a triset.
@@ -41,7 +45,7 @@ public inductive Expr (kind: ExprKind) where
 | full (body: Expr kind)
 | compl (body: Expr kind)
 | arbIr (body: Expr kind)
-deriving DecidableEq
+deriving DecidableEq, Repr
 
 exposed section
 def Expr.un {kind} (left rite: Expr kind): Expr kind :=

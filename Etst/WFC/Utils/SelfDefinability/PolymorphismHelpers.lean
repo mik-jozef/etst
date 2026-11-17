@@ -102,7 +102,7 @@ theorem Expr.intp_const
 
 open opFixDl in
 exposed pairDefList opFixDl extends opFixHelpersDl
-  p3 ofhDlEnc := <[ofhDlEnc.toNamedExpr]>
+  p3 ofhDlEnc := <[ofhDlEnc.toWfNamedExpr]>
   
   p3 indexCall := indexCallUsm ofhDlEnc
   

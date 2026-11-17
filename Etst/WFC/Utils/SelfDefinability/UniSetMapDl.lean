@@ -471,7 +471,7 @@ exposed noncomputable def uniSetMapAt
 :=
   uniSetMap.call (uniSetMapIndex dl n fv expr)
 
-def uniSetMapIndex.emptyIndex: Pair :=
+exposed def uniSetMapIndex.emptyIndex: Pair :=
   uniSetMapIndex
     FiniteDefList.empty.toDefList
     FiniteDefList.empty.size
