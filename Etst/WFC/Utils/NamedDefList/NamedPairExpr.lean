@@ -54,7 +54,7 @@ where
     NamedPairExpr kind vars
 -- Useful for defining free-standing expressions that are embeddable
 -- into larger expressions no matter the external context.
-| forget {varsIn varsOut}
+| forgetVars {varsIn varsOut}
     (body: NamedPairExpr kind varsIn)
     (isPrefix: varsIn <+: varsOut)
   :
@@ -83,7 +83,7 @@ exposed def NamedPairExpr.IsWF {kind vars}
       And
         (∀ x, body.UsesConst x → x < consts.length)
         (∀ x, body.UsesFreeVar x → x < vars.length)
-  | forget body _ => body.IsWF consts
+  | forgetVars body _ => body.IsWF consts
 
 public abbrev WfNamedPairExpr kind vars consts :=
   { expr: NamedPairExpr kind vars // expr.IsWF consts }
@@ -253,7 +253,7 @@ namespace NamedPairExpr
     | compl body => .compl (body.compile consts)
     | arbIr _ body => .arbIr (body.compile consts)
     | raw body => body
-    | forget body _ => body.compile consts
+    | forgetVars body _ => body.compile consts
   
   public theorem IsWF.compile_sat_lt {kind vars consts}
     {expr: NamedPairExpr kind vars}
@@ -289,7 +289,7 @@ namespace NamedPairExpr
       Nat.lt_of_succ_lt_succ
         (compile_sat_lt (expr := body) isWf (x + 1) isUsed)
     | raw body => isWf.right x isUsed
-    | forget body isPrefix =>
+    | forgetVars body isPrefix =>
       let inVarsIn := compile_sat_lt (expr := body) isWf x isUsed
       Nat.lt_of_lt_of_le inVarsIn isPrefix.length_le
   
@@ -328,7 +328,7 @@ namespace NamedPairExpr
       compile_constsLt (expr := body) isWf x isUsed
     | raw body, isWf =>
       isWf.left x isUsed
-    | forget body isPrefix, isWf =>
+    | forgetVars body isPrefix, isWf =>
       compile_constsLt (expr := body) isWf x isUsed
   
 end NamedPairExpr
@@ -373,7 +373,7 @@ public instance NamedPairExpr.isWf {kind vars}:
       (And
         (b.ConstsLt consts.length)
         (b.FreeVarsSat (· < vars.length))))
-| .forget b _, consts => isWf b consts
+| .forgetVars b _, consts => isWf b consts
 
 exposed def Pair.toNamedExpr {kind vars}:
   Pair → NamedPairExpr kind vars
