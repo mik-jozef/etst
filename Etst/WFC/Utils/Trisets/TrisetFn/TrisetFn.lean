@@ -368,15 +368,6 @@ namespace Pair
         ∀ {lane a a' r}, a.IsBisim a' → f.HasEntry lane a r →
         ∃ r', f.HasEntry lane a' r' ∧ r.IsBisim r'
     
-    theorem hasEntry_iff_call {lane}
-      {graph a r: PreTrisetFn}
-    :
-      (fn graph.toPair).HasEntry lane a r
-        ↔
-      r.toPair ∈ ((uniSetMap.call graph.toPair).call a.toPair).getLane lane
-    :=
-      ⟨Set3.inCall, Set3.inCallElim⟩
-    
   end PreTrisetFn
   
   

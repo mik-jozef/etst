@@ -308,8 +308,9 @@ exposed def Cause.leastBackgroundApx
   Valuation D
 :=
   fun x => {
-    defMem := ∅
-    posMem := { d | ¬ cause.bout x d }
+    getLane
+    | .defLane => ∅
+    | .posLane => { d | ¬ cause.bout x d }
     defLePos := nofun
   }
 
@@ -323,8 +324,9 @@ exposed def Cause.leastContextApx
   Valuation D
 :=
   fun x => {
-    defMem := { d | cause.cins x d }
-    posMem := Set.univ
+    getLane
+    | .defLane => { d | cause.cins x d }
+    | .posLane => Set.univ
     defLePos _ _ := trivial
   }
 
@@ -350,8 +352,7 @@ exposed def Cause.maximalBackgroundApx
   Valuation D
 :=
   fun x => {
-    defMem := { d | ¬ cause.bout x d }
-    posMem := { d | ¬ cause.bout x d }
+    getLane _ := { d | ¬ cause.bout x d }
     defLePos _ := id
   }
 
@@ -365,8 +366,7 @@ exposed def Cause.maximalContextApx
   Valuation D
 :=
   fun x => {
-    defMem := { d | cause.cins x d }
-    posMem := { d | cause.cins x d }
+    getLane _ := { d | cause.cins x d }
     defLePos _ := id
   }
 
@@ -484,6 +484,7 @@ theorem Cause.IsWeakCauseFv.complProdElim {fv l r pL pR}
     Or.inl (fun _ _ isSat =>
       Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosL)
@@ -491,6 +492,7 @@ theorem Cause.IsWeakCauseFv.complProdElim {fv l r pL pR}
     Or.inr (fun _ _ isSat =>
       Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
@@ -541,6 +543,7 @@ theorem Cause.IsWeakCauseFv.complIrElim {fv l r p}
     Or.inl (fun _ _ isSat =>
       Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosL)
@@ -548,6 +551,7 @@ theorem Cause.IsWeakCauseFv.complIrElim {fv l r p}
     Or.inr (fun _ _ isSat =>
       Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         isPosR)
@@ -583,6 +587,7 @@ theorem Cause.IsWeakCauseFv.complFullElim {fv body p}
     ⟨pB, fun _ _ isSat =>
       Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         notDefBody⟩
@@ -643,6 +648,7 @@ theorem Cause.IsWeakCauseFv.complArbIrElim {fv body p}
     ⟨pX, fun _ _ isSat =>
       Expr.intp_mono_std_posMem
         (b0 := causeUn.maximalBackgroundApx)
+        (c0 := causeUn.maximalContextApx)
         (fun _ _ inDef inBout => isSat.boutSat inBout inDef)
         (fun _ _ inCins => isSat.cinsSat inCins)
         notDefBody⟩

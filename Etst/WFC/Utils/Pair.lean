@@ -103,8 +103,12 @@ namespace Pair
   :
     Set3 Pair
   := {
-    defMem := { p | ∃ p0 ∈ s0.defMem, ∃ p1 ∈ s1.defMem, p = Pair.pair p0 p1 },
-    posMem := { p | ∃ p0 ∈ s0.posMem, ∃ p1 ∈ s1.posMem, p = Pair.pair p0 p1 },
+    getLane lane := {
+      p |
+      ∃ p0 ∈ s0.getLane lane,
+      ∃ p1 ∈ s1.getLane lane,
+        p = Pair.pair p0 p1
+    },
     defLePos := fun _ ⟨p0, p0InDef, ⟨p1, p1InDef, pEq⟩⟩ =>
       ⟨p0, s0.defLePos p0InDef, p1, s1.defLePos p1InDef, pEq⟩
   }
@@ -121,16 +125,17 @@ namespace Pair
     fun x usesX =>
       usesX.elim (toExpr_IsClean left x) (toExpr_IsClean rite x)
   
+  
+  exposed def setCall
+    (fn: Set Pair)
+    (arg: Pair)
+  :
+    Set Pair
+  :=
+    { p | .pair arg p ∈ fn }
+  
 end Pair
 
-
-exposed def Pair.setCall
-  (fn: Set Pair)
-  (arg: Pair)
-:
-  Set Pair
-:=
-  { p | .pair arg p ∈ fn }
 
 /-
   `fn.call arg` is the triset of pairs `b` such that
@@ -145,49 +150,18 @@ exposed def Set3.call
 :
   Set3 Pair
 := {
-  defMem := Pair.setCall fn.defMem arg
-  posMem := Pair.setCall fn.posMem arg
+  getLane lane := Pair.setCall (fn.getLane lane) arg
   defLePos _ := defToPos
 }
 
 exposed def Set3.flatCall (fn args: Set3 Pair): Set3 Pair := {
-  defMem := { p | ∃ arg, arg ∈ args.defMem ∧ p ∈ (fn.call arg).defMem },
-  posMem := { p | ∃ arg, arg ∈ args.posMem ∧ p ∈ (fn.call arg).posMem },
+  getLane lane := {
+    p |
+    ∃ arg, arg ∈ args.getLane lane ∧ p ∈ (fn.call arg).getLane lane
+  },
   defLePos _ :=
     fun ⟨arg, hp, hq⟩ => ⟨arg, defToPos hp, defToPos hq⟩
 }
-
-exposed def Set3.PairMem
-  (s e: Set3 Pair)
-:
-  Prop
-:=
-  ∃ i: Pair, s.call i = e
-
-instance Set3.pairInstMem:
-  Membership (Set3 Pair) (Set3 Pair)
-:=
-  ⟨Set3.PairMem⟩
-
-
-theorem Set3.inCall {s lane arg res}
-  (inS: .pair arg res ∈ s.getLane lane)
-:
-  res ∈ (call s arg).getLane lane
-:=
-  match lane with
-  | .defLane => inS
-  | .posLane => inS
-
-theorem Set3.inCallElim {s lane arg res}
-  (inCall: res ∈ (call s arg).getLane lane)
-:
-  .pair arg res ∈ s.getLane lane
-:=
-  match lane with
-  | .defLane => inCall
-  | .posLane => inCall
-
 
 theorem Set3.inFlatCall {fn args lane arg res}
   (inArg: arg ∈ args.getLane lane)
@@ -216,3 +190,16 @@ theorem Set3.flatCall_just (fn: Set3 Pair) (p: Pair):
     (fun _ inFn => ⟨p, rfl, inFn⟩)
     (fun _ ⟨_, eq, inFn⟩ => eq ▸ inFn)
     (fun _ inFn => ⟨p, rfl, inFn⟩)
+
+
+exposed def Set3.PairMem
+  (s e: Set3 Pair)
+:
+  Prop
+:=
+  ∃ i: Pair, s.call i = e
+
+instance Set3.pairInstMem:
+  Membership (Set3 Pair) (Set3 Pair)
+:=
+  ⟨Set3.PairMem⟩

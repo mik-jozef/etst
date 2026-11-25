@@ -44,32 +44,23 @@ import Etst.WFC.Utils.General.PointwiseOrder
 
 namespace Etst
 
+public inductive Set3.Lane
+| posLane
+| defLane
+deriving DecidableEq, Repr
 
 -- The definition of trisets / three-valued sets.
 public structure Set3 (D: Type*) where
-  defMem: Set D -- The definitive members
-  posMem: Set D -- The possible members
-  defLePos: defMem ≤ posMem
+  getLane: Set3.Lane → Set D
+  defLePos: getLane .defLane ≤ getLane .posLane
 
 namespace Set3
-  public inductive Lane
-  | posLane
-  | defLane
-  deriving DecidableEq, Repr
+  exposed def defMem {D} (s: Set3 D): Set D := s.getLane .defLane
+  exposed def posMem {D} (s: Set3 D): Set D := s.getLane .posLane
   
   exposed def Lane.toggle: Lane → Lane
   | .posLane => .defLane
   | .defLane => .posLane
-  
-  exposed def getLane
-    {D} (s3: Set3 D)
-    (lane: Lane)
-  :
-    Set D
-  :=
-    match lane with
-    | .posLane => s3.posMem
-    | .defLane => s3.defMem
   
   -- A convenience function allowing us to use `isDef.toPos` on
   -- instances of `Set3.defMem s d`.
@@ -83,24 +74,29 @@ namespace Set3
   
   -- If two trisets have the same definitive and possible members,
   -- they are equal.
-  public protected theorem eq {D}:
-    {a b: Set3 D} →
-    a.defMem = b.defMem →
-    a.posMem = b.posMem
-  →
+  public protected theorem eq {D}
+    {a b: Set3 D}
+    (defEq: a.defMem = b.defMem)
+    (posEq: a.posMem = b.posMem)
+  :
     a = b
-  -- Thanks to answerers of https://proofassistants.stackexchange.com/q/1747
-  | ⟨_, _, _⟩, ⟨_, _, _⟩, rfl, rfl => rfl
-  
-  public theorem eq_def {D} {s0 s1: Set3 D} (eq: s0 = s1):
-    s0.defMem = s1.defMem
   :=
-    congrArg Set3.defMem eq
+    let getDefEq: a.getLane = b.getLane :=
+      funext fun | .defLane => defEq | .posLane => posEq
+    -- Thanks to answerers of
+    -- https://proofassistants.stackexchange.com/q/1747
+    match a, b, getDefEq with
+    | ⟨_, _⟩, ⟨_, _⟩, rfl => rfl
   
-  public theorem eq_pos {D} {s0 s1: Set3 D} (eq: s0 = s1):
-    s0.posMem = s1.posMem
-  :=
-    congrArg Set3.posMem eq
+  exposed def ofLanes {D}
+    (defLane posLane: Set D)
+    (defLePos: defLane ≤ posLane)
+  :
+    Set3 D
+  := ⟨
+    fun | .defLane => defLane | .posLane => posLane,
+    defLePos,
+  ⟩
   
   /-
     An element which is not a possible member is also not a
@@ -114,23 +110,22 @@ namespace Set3
   :=
     notPos ∘ defToPos
   
+  exposed def ofSet2 {D} (s: Set D): Set3 D := ⟨fun _ => s, le_rfl⟩
+  
   -- The empty triset contains no elements.
-  exposed def empty {D}: Set3 D := ⟨{}, {}, le_rfl⟩
+  exposed def empty {D}: Set3 D := ofSet2 {}
   
   /-
     The wholly undetermined triset possibly contains all
     elements of `D`, but has no definitive members.
   -/
-  exposed def undetermined {D}: Set3 D := ⟨{}, Set.univ, nofun⟩
+  exposed def undetermined {D}: Set3 D := ofLanes {} Set.univ nofun
   
   -- The universal triset contains all elements of `D`.
-  exposed def univ {D}: Set3 D := ⟨Set.univ, Set.univ, le_rfl⟩
+  exposed def univ {D}: Set3 D := ofSet2 Set.univ
   
   -- A triset containing a single element.
-  exposed def just {D} (d: D): Set3 D := ⟨{d}, {d}, le_rfl⟩
-  
-  exposed def ofSet2 {D} (s: Set D): Set3 D := ⟨s, s, le_rfl⟩
-  
+  exposed def just {D} (d: D): Set3 D := ofSet2 {d}
   
   /-
     The definition of the "less than or equal to" relation for

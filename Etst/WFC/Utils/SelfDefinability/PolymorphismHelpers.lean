@@ -514,12 +514,9 @@ namespace opFixDl
         let ⟨pB, ⟨inUsm, inFnMem⟩⟩ := inCallElim inInner
         let pBEq: pB = iFn := inVarElim inFnMem rfl
         let inUsm := pBEq ▸ inUsm
-        let inUsm := (mem_uniSetMap_const_iff cUsm).mp inUsm
-        Set3.inCall (Set3.inCall inUsm))
+        (mem_uniSetMap_const_iff cUsm).mp inUsm)
       (fun ins =>
-        let inArgMem := Set3.inCallElim ins
-        let inUsm := Set3.inCallElim inArgMem
-        let inUsm := (mem_uniSetMap_const_iff cUsm).mpr inUsm
+        let inUsm := (mem_uniSetMap_const_iff cUsm).mpr ins
         inCall (inCall inUsm (inVar rfl)) (inVar rfl))
   
   theorem indexCall_correct
@@ -611,12 +608,9 @@ namespace opFixDl
         let ⟨fnArg, ⟨inUsmMem, inFnArgMem⟩⟩ := inCallElim inFnApp
         let fnArgEq: fnArg = iFn := inVarElim inFnArgMem rfl
         let inUsmMem := fnArgEq ▸ inUsmMem
-        let inUsmMem := (mem_uniSetMap_const_iff usmEq).mp inUsmMem
-        Set3.inCall (Set3.inCall inUsmMem))
+        (mem_uniSetMap_const_iff usmEq).mp inUsmMem)
       (fun ins =>
-        let inUsmT :=
-          (mem_uniSetMap_const_iff usmEq).mpr <|
-          Set3.inCallElim (Set3.inCallElim ins)
+        let inUsmT := (mem_uniSetMap_const_iff usmEq).mpr ins
         let inFnApp := inCall inUsmT (inVar rfl)
         let inArgApp :=
           inCall
@@ -640,9 +634,6 @@ namespace opFixDl
         [iArg, iFn, opFixDl.ofhDlEnc]
     :=
       (magicUsmBodyExpr_iff iFn iArg p).mpr ins
-    Set3.inCall <|
-    Set3.inCall <|
-    Set3.inCall <|
     DefList.in_def_no_fv <|
     inArbUn opFixDl.ofhDlEnc <|
     inArbUn iFn <|
@@ -656,7 +647,6 @@ namespace opFixDl
   :
     p ∈ ((uniSetMap.call iFn).call (iArg.indexCall iArg)).getLane lane
   :=
-    let ins := Set3.inCallElim (Set3.inCallElim (Set3.inCallElim ins))
     let ins := DefList.in_def_body_no_fv ins
     let ⟨usmBound, ins⟩ := inArbUnElim ins
     let ⟨fnBound, ins⟩ := inArbUnElim ins
@@ -755,7 +745,7 @@ namespace opFixDl
       ((opFixDl.dl.wfm (opFixDl.const "uniSetMap")).getLane lane).Mem
         (.pair iOp (.pair iArg q))
     :=
-      eqUni.symm ▸ (Set3.inCallElim (Set3.inCallElim inQ))
+      eqUni.symm ▸ inQ
     let insOuter:
       Set.Mem
         ((opFixDl.dl.wfm (opFixDl.const "uniSetMap")).getLane lane)
@@ -770,8 +760,6 @@ namespace opFixDl
             insInner
             (inVar rfl))
           (inVar rfl))
-    Set3.inCall <|
-    Set3.inCall <|
     DefList.in_def_no_fv <|
     inArbUn iOp <|
     inArbUn iArg <|
@@ -789,7 +777,6 @@ namespace opFixDl
         lane)
       p
   :=
-    let ins := Set3.inCallElim (Set3.inCallElim ins)
     let ins := DefList.in_def_body_no_fv (lane := lane) ins
     let ⟨opAlias, ins⟩ := inArbUnElim ins
     let ⟨argAlias, ins⟩ := inArbUnElim ins
@@ -815,8 +802,7 @@ namespace opFixDl
     :=
       eqUni ▸ inOuterFn
     let inQ: qAlias ∈ ((uniSetMap.call iOp).call iArg).getLane lane :=
-      opEq ▸ argEq ▸ opAlias2Eq ▸ argAlias2Eq ▸
-        Set3.inCall (Set3.inCall inUsmConst)
+      opEq ▸ argEq ▸ opAlias2Eq ▸ argAlias2Eq ▸ inUsmConst
     Set3.inFlatCall inQ inOuterFn
   
   theorem composeOp_call_eq
@@ -917,16 +903,11 @@ namespace opFixDl
   :
     p ∈ ((opFixDl.val "trisetFix").call iFn).getLane lane
   :=
-    Set3.inCall <|
     DefList.in_def_no_fv <|
     inArbUn iFn <|
     inProd (inVar rfl) <|
     inCall
-      (inCall
-        (inCall
-          (Set3.inCallElim (Set3.inCallElim (Set3.inCallElim ins)))
-          (ofhDlEnc_ins (lane := lane)))
-        (inVar rfl))
+      (inCall (inCall ins ofhDlEnc_ins) (inVar rfl))
       (indexCallMagicIndex_eq ▸ rfl)
   
   theorem trisetFix_elim {lane p iFn}
@@ -934,7 +915,6 @@ namespace opFixDl
   :
     p ∈ (magic iFn (magicIndex.indexCall iFn)).getLane lane
   :=
-    let ins := Set3.inCallElim ins
     let ins := DefList.in_def_body_no_fv (lane := lane) ins
     let ⟨iOp, ins⟩ := inArbUnElim ins
     let ⟨inVarI, ins⟩ := inProdElim ins
@@ -944,7 +924,7 @@ namespace opFixDl
         (indexCallMagicIndex_eq (lane := lane) (iFn := iOp) (p := p))
     let ins := inCallElimSingle ins (var_singleton rfl)
     let ins := inCallElimSingle ins ofhDlEnc_singleton
-    iEq ▸ Set3.inCall (Set3.inCall (Set3.inCall ins))
+    iEq ▸ ins
   
   theorem trisetFix_call_eq
     (iFn: Pair)
@@ -995,28 +975,21 @@ namespace opFixDl
   :
     p ∈ ((opFixDl.val "indexFix").call iOp).getLane lane
   :=
-    Set3.inCall <|
     DefList.in_def_no_fv <|
     inArbUn iOp <|
     inProd (inVar rfl) <|
-    inCall
-      (Set3.inCallElim ins)
-      (indexCallComposeOpIndex_eq ▸ rfl)
+    inCall ins (indexCallComposeOpIndex_eq ▸ rfl)
   
   theorem indexFix_elim {iOp lane p}
     (ins: p ∈ ((opFixDl.val "indexFix").call iOp).getLane lane)
   :
     p ∈ ((opFixDl.val "trisetFix").call (composeIndex iOp)).getLane lane
   :=
-    let ins := Set3.inCallElim ins
     let ins := DefList.in_def_body_no_fv (lane := lane) ins
-    let ⟨iOpBound, ins⟩ := inArbUnElim ins
+    let ⟨_, ins⟩ := inArbUnElim ins
     let ⟨inVarI, ins⟩ := inProdElim ins
     let iEq := inVarElim inVarI rfl
-    let ins :=
-      inCallElimSingle ins
-        (indexCallComposeOpIndex_eq (lane := lane) (iOp := iOpBound) (p := p))
-    Set3.inCall (iEq ▸ ins)
+    iEq ▸ inCallElimSingle ins indexCallComposeOpIndex_eq
 
   
   theorem indexFix_call_eq
@@ -1027,9 +1000,9 @@ namespace opFixDl
       ((opFixDl.val "trisetFix").call (composeIndex iOp))
   :=
     Set3.eq4
-      (fun _ => indexFix_elim (lane := .defLane))
-      (fun _ => indexFix_ins (lane := .defLane))
-      (fun _ => indexFix_elim (lane := .posLane))
-      (fun _ => indexFix_ins (lane := .posLane))
+      (fun _ => indexFix_elim)
+      (fun _ => indexFix_ins)
+      (fun _ => indexFix_elim)
+      (fun _ => indexFix_ins)
   
 end opFixDl

@@ -105,7 +105,7 @@ namespace trisetEmbedHelpersDl
     let inUsmWfm:
       .pair t e ∈ (trisetEmbedHelpersDl.val "uniSetMap").getLane lane
     :=
-      wfm_uniSetMap_eq ▸ Set3.inCallElim (lane := lane) ins
+      wfm_uniSetMap_eq ▸ ins
     let inUsm:
       Set.Mem
         ((trisetEmbedHelpersDl.constExpr .basic "uniSetMap").intp
@@ -132,8 +132,6 @@ namespace trisetEmbedHelpersDl
         (.pair iFn (.pair e (iFn.indexCall e)))
     :=
       inIndexCallWfm
-    Set3.inCall (lane := lane) <|
-    Set3.inCall <|
     DefList.in_def_no_fv <|
     inArbUn iFn <|
     inArbUn t <|
@@ -165,9 +163,6 @@ namespace trisetEmbedHelpersDl
         (e ∈ (uniSetMap.call t).getLane lane)
         (p = .pair (.nat 0) (iFn.indexCall e))
   :=
-    let ins :=
-      Set3.inCallElim (lane := lane)
-        (Set3.inCallElim (lane := lane) ins)
     let ins := DefList.in_def_body_no_fv (lane := lane) ins
     let ⟨iFnA, ins⟩ := inArbUnElim ins
     let ⟨tA, ins⟩ := inArbUnElim ins
@@ -195,10 +190,7 @@ namespace trisetEmbedHelpersDl
       inCallElimSingle inCallPart (var_singleton rfl)
     let inUsmWfm: .pair tA pC ∈ uniSetMap.getLane lane :=
       wfm_uniSetMap_eq ▸ inUsmConst
-    let inUsmCall: eA ∈ (uniSetMap.call tA).getLane lane :=
-      pCEq ▸ Set3.inCall (lane := lane) inUsmWfm
-    ⟨eA, tEq ▸ inUsmCall, by
-      rw [pEq, pLEq, pREq, ←iFnEq]⟩
+    ⟨eA, tEq ▸ pCEq ▸ inUsmWfm, by rw [pEq, pLEq, pREq, ←iFnEq]⟩
   
   /-- The characteristic equation of `embedStep`. -/
   theorem embedStep_call_eq (iFn t: Pair):
@@ -272,16 +264,11 @@ namespace trisetEmbedDl
           (.pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn)))
     :=
       inIndexCallWfm
-    Set3.inCall (lane := lane) <|
     DefList.in_def_no_fv <|
     inArbUn iFn <|
     inProd (inVar rfl)
       (inCall
-        (pA := iFn)
-        (pB := TrisetEmbedding.embedStepIndex.indexCall iFn)
         (inCall
-          (pA := TrisetEmbedding.embedStepIndex)
-          (pB := .pair iFn (TrisetEmbedding.embedStepIndex.indexCall iFn))
           inIndexCall
           (inToNamedExpr TrisetEmbedding.embedStepIndex))
         (inVar rfl))
@@ -292,7 +279,6 @@ namespace trisetEmbedDl
   :
     s = TrisetEmbedding.embedStepIndex.indexCall iFn
   :=
-    let ins := Set3.inCallElim (lane := lane) ins
     let ins := DefList.in_def_body_no_fv (lane := lane) ins
     let ⟨iFnA, ins⟩ := inArbUnElim ins
     let ⟨inIFnV, inApp⟩ := inProdElim ins
@@ -303,12 +289,11 @@ namespace trisetEmbedDl
         h1
         (toNamedExpr_singleton TrisetEmbedding.embedStepIndex)
     let h2w:
-      (trisetEmbedDl.val "indexCall").getLane lane |>.Mem
+      ((trisetEmbedDl.val "indexCall").getLane lane).Mem
         (.pair TrisetEmbedding.embedStepIndex (.pair iFnA s))
     :=
       h2
-    let encEq :=
-      opFixDl.indexCall_elim (lane := lane) (wfm_indexCall_eq ▸ h2w)
+    let encEq := opFixDl.indexCall_elim (wfm_indexCall_eq ▸ h2w)
     iFnEq ▸ encEq.symm
   
   /-- `embedOp` denotes the function `indexCall embedStepIndex`. -/

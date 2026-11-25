@@ -30,7 +30,6 @@ theorem uniSetMapEnc_ins {p lane dl n fv}
 :
   p ∈ (uniSetMap.call (uniSetMapIndexEnc dl n fv (.pair (.nat 12) .null))).getLane lane
 :=
-  Set3.inCall <|
   DefList.in_def_no_fv <|
   isInMapEnc (isAtUniSetMap ins)
 
@@ -40,7 +39,6 @@ theorem uniSetMapEnc_elim {p lane dl n fv}
 :
   p ∈ uniSetMap.getLane lane
 :=
-  let ins := Set3.inCallElim ins
   let ins := DefList.in_def_body_no_fv ins
   let isAt:
     InUniSetMapAtEnc lane uniSetMapDl.dl.wfm uniSetMapDl.dl.wfm p
@@ -197,7 +195,7 @@ theorem toEncodingPairElimInr {dl n fv lane l r p bVal}
       (aEq2.trans (Pair.eq (inVarElim inFvVar rfl)
         (aEq3.trans (Pair.eq (inNatElim in13L) (inVarElim inLVar2 rfl))))))
   let qLEq: qL = l.toExpr.encoding :=
-    ihL (lValEq ▸ (idxLEq ▸ Set3.inCall inFnL))
+    ihL (lValEq ▸ (idxLEq ▸ inFnL))
   let ⟨aFnR, inFnR, inArgR⟩ := inCallElim inAppR
   let ⟨_, _, bEq1, inDlVar2, inRest3⟩ := inProdElimEx inArgR
   let ⟨_, _, bEq2, inFvVar2, inRest4⟩ := inProdElimEx inRest3
@@ -207,7 +205,7 @@ theorem toEncodingPairElimInr {dl n fv lane l r p bVal}
       (bEq2.trans (Pair.eq (inVarElim inFvVar2 rfl)
         (bEq3.trans (Pair.eq (inNatElim in13R) (inVarElim inLVar3 rfl))))))
   let qREq: qR = r.toExpr.encoding :=
-    ihR (rValEq ▸ (idxREq ▸ Set3.inCall inFnR))
+    ihR (rValEq ▸ (idxREq ▸ inFnR))
   pEq.trans (pQREq ▸ Pair.eq (inNatElim in5) (Pair.eq qLEq qREq))
 
 theorem toEncodingPairElim {dl n fv lane l r p}
@@ -243,31 +241,27 @@ theorem toEncodingPairElim {dl n fv lane l r p}
 
 theorem toEncodingEnc_ins {dl n fv lane}:
   (b: Pair) →
-    b.toExpr.encoding ∈
-      (uniSetMap.call (uniSetMapIndexEnc dl n fv (.pair (.nat 13) b))).getLane lane
+    Set.Mem
+      (Set3.getLane
+          (uniSetMap.call (uniSetMapIndexEnc dl n fv (.pair (.nat 13) b)))
+          lane)
+      (b.toExpr.encoding)
 | .null =>
-  Set3.inCall <|
   DefList.in_def_no_fv <|
   isInMapEnc <|
   isAtToEncodingNull
-    (dl := dl) (n := n) (fv := fv)
-    (b := uniSetMapDl.dl.wfm) (c := uniSetMapDl.dl.wfm) (lane := lane)
 | .pair l r =>
-  Set3.inCall <|
   DefList.in_def_no_fv <|
   isInMapEnc <|
   isAtToEncodingPair
-    (dl := dl) (n := n) (fv := fv)
-    (b := uniSetMapDl.dl.wfm) (c := uniSetMapDl.dl.wfm) (lane := lane)
-    (Set3.inCallElim (toEncodingEnc_ins (dl := dl) (n := n) (fv := fv) (lane := lane) l))
-    (Set3.inCallElim (toEncodingEnc_ins (dl := dl) (n := n) (fv := fv) (lane := lane) r))
+    (toEncodingEnc_ins l)
+    (toEncodingEnc_ins r)
 
 theorem toEncodingEnc_elim {dl n fv lane}:
   (b: Pair) → ∀ {p},
     p ∈ (uniSetMap.call (uniSetMapIndexEnc dl n fv (.pair (.nat 13) b))).getLane lane →
     p = b.toExpr.encoding
 | .null, p, ins =>
-  let ins := Set3.inCallElim ins
   let ins := DefList.in_def_body_no_fv ins
   let isAt:
     InUniSetMapAtEnc lane uniSetMapDl.dl.wfm uniSetMapDl.dl.wfm
@@ -295,7 +289,6 @@ theorem toEncodingEnc_elim {dl n fv lane}:
     (isAtUniSetMapNope · (by decide))
     toEncodingNullElim
 | .pair l r, p, ins =>
-  let ins := Set3.inCallElim ins
   let ins := DefList.in_def_body_no_fv ins
   let isAt:
     InUniSetMapAtEnc lane uniSetMapDl.dl.wfm uniSetMapDl.dl.wfm p

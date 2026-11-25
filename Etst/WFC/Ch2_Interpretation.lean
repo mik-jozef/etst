@@ -333,8 +333,7 @@ exposed def Expr.triIntp
 :
   Set3 Pair
 := {
-  defMem := expr.intp .defLane b c fv
-  posMem := expr.intp .posLane b c fv
+  getLane lane := expr.intp lane b c fv
   defLePos _ := triIntp_defLePos expr
 }
 -- Interpretation on definition lists is defined pointwise.

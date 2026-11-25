@@ -290,7 +290,6 @@ theorem MutIndDescriptor.isSound {dl}
         let inExpansion :=
           (desc[i].expansion.toLane_intp desc[i].lane dl.wfm
             predStage fv).symm ▸
-          Expr.triIntp_getLane_eq desc[i].expansion ▸
           leExp.memLe isMemFv
         premisesHold i (lePremise inExpansion))
   

@@ -104,8 +104,7 @@ namespace Set3
           (fun nope => False.elim nope)))
   
   exposed def union {D} (s0 s1: Set3 D): Set3 D := ⟨
-    s0.defMem ∪ s1.defMem,
-    s0.posMem ∪ s1.posMem,
+    fun lane => s0.getLane lane ∪ s1.getLane lane,
     fun _ => (Or.elim · (Or.inl ∘ defToPos) (Or.inr ∘ defToPos))
   ⟩
   
@@ -143,8 +142,7 @@ namespace Set3
   
   
   exposed def inter {D} (s0 s1: Set3 D): Set3 D := ⟨
-    s0.defMem ∩ s1.defMem,
-    s0.posMem ∩ s1.posMem,
+    fun lane => s0.getLane lane ∩ s1.getLane lane,
     fun _d dIn => ⟨defToPos dIn.left, defToPos dIn.right⟩
   ⟩
   
@@ -180,39 +178,33 @@ namespace Set3
   
   
   exposed def some {D} (s: Set3 D): Set3 D := {
-    defMem := { _any | ∃ d: D, d ∈ s.defMem }
-    posMem := { _any | ∃ d: D, d ∈ s.posMem }
+    getLane lane := { _any | ∃ d: D, d ∈ s.getLane lane }
     defLePos := fun _ ⟨d, dIn⟩ => ⟨d, defToPos dIn⟩
   }
   
   exposed def full {D} (s: Set3 D): Set3 D := {
-    defMem := { _any | ∀ d: D, d ∈ s.defMem }
-    posMem := { _any | ∀ d: D, d ∈ s.posMem }
+    getLane lane := { _any | ∀ d: D, d ∈ s.getLane lane }
     defLePos _ dIn d := defToPos (dIn d)
   }
   
   exposed def compl {D} (s: Set3 D): Set3 D := {
-    defMem := s.posMemᶜ
-    posMem := s.defMemᶜ
+    getLane lane := (s.getLane lane.toggle)ᶜ
     defLePos _ := not_def_of_not_pos
   }
   
   exposed def arbUn {D} (f: D → Set3 D): Set3 D := {
-    defMem := { d | ∃ dd: D, d ∈ (f dd).defMem }
-    posMem := { d | ∃ dd: D, d ∈ (f dd).posMem }
-    defLePos := fun _d ⟨dd, ddIn⟩ => ⟨dd, defToPos ddIn⟩
+    getLane lane := { d | ∃ dd: D, d ∈ (f dd).getLane lane }
+    defLePos := fun _ ⟨dd, ddIn⟩ => ⟨dd, defToPos ddIn⟩
   }
   
   exposed def arbIr {D} (f: D → Set3 D): Set3 D := {
-    defMem := { d | ∀ dd: D, d ∈ (f dd).defMem }
-    posMem := { d | ∀ dd: D, d ∈ (f dd).posMem }
+    getLane lane := { d | ∀ dd: D, d ∈ (f dd).getLane lane }
     defLePos _d ddIn dd := defToPos (ddIn dd)
   }
   
   /- The pointwise image of a triset under a function. -/
   exposed def image {D} (f: D → D) (s: Set3 D): Set3 D where
-    defMem := f '' s.defMem
-    posMem := f '' s.posMem
+    getLane lane := f '' s.getLane lane
     defLePos := fun _ ⟨x, hx, eq⟩ => ⟨x, defToPos hx, eq⟩
   
   /- Membership in the pointwise image. -/
@@ -254,25 +246,17 @@ namespace Set3
   :=
     dNin ∘ defToPos
   
-  structure without.DefMem
-    {D} (s: Set3 D)
+  structure without.GetLane {D}
+    (s: Set3 D)
+    (lane: Set3.Lane)
     (dWithout d: D)
   : Prop where
   intro ::
-    dIn: d ∈ s.defMem
-    neq: d ≠ dWithout
-  
-  structure without.PosMem
-    {D} (s: Set3 D)
-    (dWithout d: D)
-  : Prop where
-  intro ::
-    dIn: d ∈ s.posMem
+    dIn: d ∈ s.getLane lane
     neq: d ≠ dWithout
   
   def without {D} (s: Set3 D) (d: D): Set3 D := {
-    defMem := .ofPred (without.DefMem s d)
-    posMem := .ofPred (without.PosMem s d)
+    getLane lane := .ofPred (without.GetLane s lane d)
     defLePos :=
       fun _dd ddDef => {
         dIn := (defToPos ddDef.dIn)
@@ -318,71 +302,8 @@ namespace Set3
       (fun _dd ddInPos => ddInPos.dIn)
   
   
-  def withoutDef {D} (s: Set3 D) (d: D): Set3 D := {
-    defMem := .ofPred (without.DefMem s d)
-    posMem := s.posMem
-    defLePos _d dDef := defToPos dDef.dIn
-  }
-  
-  theorem withoutDef.ninDef {D}
-    (s: Set3 D)
-    (d: D)
-  :
-    d ∉ (s.withoutDef d).defMem
-  :=
-    fun dIn => dIn.neq rfl
-  
-  theorem withoutDef.preservesPos {D}
-    (s: Set3 D)
-    {d: D}
-    (dInPos: d ∈ s.posMem)
-  :
-    d ∈ (s.withoutDef d).posMem
-  :=
-    dInPos
-  
-  theorem withoutDef.ltStd {D} {s: Set3 D} {d} (dInS: d ∈ s.defMem):
-    s.withoutDef d < s
-  :=
-    LtStd.mk
-      (fun _dd ddIn => ddIn.dIn)
-      (fun _dd ddIn => ddIn)
-      (fun eq =>
-        let dNinSWithout: d ∉ (s.withoutDef d).defMem :=
-          Set3.withoutDef.ninDef _ _
-        let dNinS: d ∉ s.defMem := eq ▸ dNinSWithout
-        dNinS dInS)
-  
-  theorem withoutDef.ltApx {D} {s: Set3 D} {d: D} (dInS: d ∈ s.defMem):
-    s.withoutDef d ⊏ s
-  :=
-    LtApx.mk
-      (fun _dd ddIn => ddIn.dIn)
-      (fun _dd ddIn => ddIn)
-      (fun eq =>
-        let dNinSWithout: d ∉ (s.withoutDef d).defMem :=
-          Set3.withoutDef.ninDef _ _
-        let dNinS: d ∉ s.defMem := eq ▸ dNinSWithout
-        dNinS dInS)
-  
-  theorem withoutDef.leStd {D} (s: Set3 D) (d: D):
-    s.withoutDef d ≤ s
-  :=
-    LeStd.mk
-      (fun _dd ddInDef => ddInDef.dIn)
-      (fun _dd ddInPos => ddInPos)
-  
-  theorem withoutDef.leApx {D} (s: Set3 D) (d: D):
-    s.withoutDef d ⊑ s
-  :=
-    LeApx.mk
-      (fun _dd ddInDef => ddInDef.dIn)
-      (fun _dd ddInPos => ddInPos)
-  
-  
   exposed def _root_.Etst.Set3.with {D} (s: Set3 D) (d: D): Set3 D := {
-    defMem := s.defMem ∪ {d}
-    posMem := s.posMem ∪ {d}
+    getLane lane := s.getLane lane ∪ {d}
     defLePos _ := (Or.elim · (Or.inl ∘ defToPos) Or.inr)
   }
   
@@ -403,42 +324,6 @@ namespace Set3
           Set3.with.inPos _ _
         let dInS: d ∈ s.posMem := eq ▸ dInSWith
         dNinS dInS)
-  
-  
-  exposed def withPos {D} (s: Set3 D) (d: D): Set3 D := {
-    defMem := s.defMem
-    posMem := s.posMem ∪ {d}
-    defLePos _ := Or.inl ∘ defToPos
-  }
-  
-  theorem withPos_defMemEq {D} (s: Set3 D) (d: D):
-    s.defMem = (s.withPos d).defMem
-  :=
-    rfl
-  
-  theorem withPos_inPos {D}
-    (s: Set3 D)
-    (d: D)
-  :
-    d ∈ (s.withPos d).posMem
-  :=
-    Or.inr rfl
-  
-  theorem withPos_gtStd {D} {s: Set3 D} {d} (dNinS: d ∉ s.posMem):
-    s < s.withPos d
-  :=
-    LtStd.mk
-      (fun _dd ddIn => ddIn)
-      (fun _dd ddIn => Or.inl ddIn)
-      (fun eq => dNinS (eq ▸ (s.withPos_inPos d)))
-  
-  theorem withPos.ltApx {D} {s: Set3 D} {d} (dNinS: d ∉ s.posMem):
-     s.withPos d ⊏ s
-  :=
-    LtApx.mk
-      (fun _ => id)
-      (fun _ => Or.inl)
-      (fun eq => dNinS (eq ▸ s.withPos_inPos d))
   
   
   -- The approximation relation is antisymmetric.
@@ -600,8 +485,7 @@ namespace Set3
     are the union of the possible members.
   -/
   exposed def ordStd.sSup {D} (s: Set (Set3 D)): Set3 D := {
-    defMem := { d | ∃ s3 ∈ s, d ∈ s3.defMem }
-    posMem := { d | ∃ s3 ∈ s, d ∈ s3.posMem }
+    getLane lane := { d | ∃ s3 ∈ s, d ∈ s3.getLane lane }
     defLePos :=
       fun _ dDef =>
         let ⟨s, ⟨inS, isDef⟩⟩ := dDef
@@ -640,8 +524,9 @@ namespace Set3
   :
     Set3 D
   := {
-    defMem := { d | ∃ s3: s, d ∈ s3.val.defMem }
-    posMem := { d | ∀ s3: s, d ∈ s3.val.posMem }
+    getLane
+    | .defLane => { d | ∃ s3: s, d ∈ s3.val.defMem }
+    | .posLane => { d | ∀ s3: s, d ∈ s3.val.posMem }
     defLePos := fun d ⟨a, dIn⟩ => defLePos a ⟨d, dIn⟩
   }
   
@@ -726,8 +611,7 @@ namespace Set3
   
   
   def ordStd.sInf {D} (s: Set (Set3 D)): Set3 D := {
-    defMem := { d | ∀ s3: s, d ∈ s3.val.defMem }
-    posMem := { d | ∀ s3: s, d ∈ s3.val.posMem }
+    getLane lane := { d | ∀ s3: s, d ∈ s3.val.getLane lane }
     defLePos _d dDef s3 := defToPos (dDef s3)
   }
   
