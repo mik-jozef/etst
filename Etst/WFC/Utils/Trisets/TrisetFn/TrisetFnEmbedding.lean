@@ -19,40 +19,24 @@ namespace Pair
     theorem not_isFn_toPreTrisetFn (t: PreTriset): ¬ t.toPreTrisetFn.IsFn :=
       id
     
-    -- The embedding preserves definitive membership.
-    theorem ins_toPreTrisetFn {t e: PreTriset}
-      (ins: t.Ins e)
+    -- The embedding preserves membership.
+    theorem has_toPreTrisetFn {lane}
+      {t e: PreTriset}
+      (has: t.Has lane e)
     :
-      t.toPreTrisetFn.Ins e.toPreTrisetFn
+      t.toPreTrisetFn.Has lane e.toPreTrisetFn
     :=
-      embed_mem (lane := .defLane) ins
+      embed_mem has
     
-    -- The embedding preserves possible membership.
-    theorem inw_toPreTrisetFn {t e: PreTriset}
-      (inw: t.Inw e)
+    -- Members of an embedding are embeddings.
+    theorem has_toPreTrisetFn_elim {lane}
+      {t: PreTriset}
+      {e: PreTrisetFn}
+      (has: t.toPreTrisetFn.Has lane e)
     :
-      t.toPreTrisetFn.Inw e.toPreTrisetFn
+      ∃ e0: PreTriset, t.Has lane e0 ∧ e = e0.toPreTrisetFn
     :=
-      embed_mem (lane := .posLane) inw
-    
-    -- Definitive members of an embedding are embeddings.
-    theorem ins_toPreTrisetFn_elim {t: PreTriset} {e: PreTrisetFn}
-      (ins: t.toPreTrisetFn.Ins e)
-    :
-      ∃ e0: PreTriset, t.Ins e0 ∧ e = e0.toPreTrisetFn
-    :=
-      let ⟨e0, e0In, eq⟩ :=
-        embed_elim (lane := .defLane) (t := t) (p := e.toPair) ins
-      ⟨e0, e0In, PreTrisetFn.toPair_inj (b := toPreTrisetFn e0) eq⟩
-    
-    -- Possible members of an embedding are embeddings.
-    theorem inw_toPreTrisetFn_elim {t: PreTriset} {e: PreTrisetFn}
-      (inw: t.toPreTrisetFn.Inw e)
-    :
-      ∃ e0: PreTriset, t.Inw e0 ∧ e = e0.toPreTrisetFn
-    :=
-      let ⟨e0, e0In, eq⟩ :=
-        embed_elim (lane := .posLane) (t := t) (p := e.toPair) inw
+      let ⟨e0, e0In, eq⟩ := embed_elim has
       ⟨e0, e0In, PreTrisetFn.toPair_inj (b := toPreTrisetFn e0) eq⟩
     
     -- If two trisets are bisimilar, so are their embeddings.
@@ -70,31 +54,19 @@ namespace Pair
         let ⟨t0, t1, b, xEq, yEq⟩ := r
         ⟨t1, t0, PreTriset.setoid.iseqv.symm b, yEq, xEq⟩
       let sim: PreTrisetFn.transitionSystem.IsSimulation R := fun
-        | l, _, _, x', ⟨t0, t1, b, rfl, rfl⟩, st =>
-          match l, x', PreTrisetFn.Step.fromVal st with
-          | _, _, .inl ⟨_, rfl, rfl, ins⟩ =>
-            let ⟨e0, e0In, eEq⟩ := ins_toPreTrisetFn_elim ins
+        | _, _, _, x', ⟨t0, t1, b, rfl, rfl⟩, st =>
+          match st with
+          | .has has =>
+            let ⟨e0, e0In, eEq⟩ := has_toPreTrisetFn_elim has
             let ⟨e1, e1In, be⟩ :=
               PreTriset.transitionSystem.IsBisimilar_isSimulation
-                .ins t0 t1 e0 b e0In
+                _ t0 t1 e0 b e0In
             ⟨
               _,
-              .ins (ins_toPreTrisetFn (t := t1) (e := e1) e1In),
+              .has (has_toPreTrisetFn e1In),
               e0, e1, be, congrArg _ eEq, rfl,
             ⟩
-          | _, _, .inr (.inl ⟨_, rfl, rfl, inw⟩) =>
-            let ⟨e0, e0In, eEq⟩ := inw_toPreTrisetFn_elim inw
-            let ⟨e1, e1In, be⟩ :=
-              PreTriset.transitionSystem.IsBisimilar_isSimulation
-                .inw t0 t1 e0 b e0In
-            ⟨
-              _,
-              .inw (inw_toPreTrisetFn (t := t1) (e := e1) e1In),
-              e0, e1, be, congrArg _ eEq, rfl,
-            ⟩
-          | _, _, .inr (.inr (.inl ⟨_, _, _, _, ins⟩)) => ins.elim
-          | _, _, .inr (.inr (.inr (.inl ⟨_, _, _, _, inw⟩))) => inw.elim
-          | _, _, .inr (.inr (.inr (.inr ⟨_, _, isFn⟩))) => isFn.elim
+          | .hasEntry has => nomatch has
       ⟨
         R,
         LabeledTransitionSystem.isBisimulation_of_symm symm sim,
@@ -109,18 +81,11 @@ namespace Pair
     :=
       let R (a b: PreTriset): Prop :=
         a.toPreTrisetFn.IsBisim b.toPreTrisetFn
-      let sim: PreTriset.transitionSystem.IsSimulation R := fun
-        | .ins, _, _, e, rab, ins =>
-          let ⟨_, ins', be⟩ := PreTrisetFn.IsBisim.ins rab (ins_toPreTrisetFn ins)
-          let ⟨e1, e1In, eq⟩ := ins_toPreTrisetFn_elim ins'
-          ⟨
-            e1,
-            e1In,
-            show e.toPreTrisetFn.IsBisim e1.toPreTrisetFn from eq ▸ be,
-          ⟩
-        | .inw, _, _, e, rab, inw =>
-          let ⟨_, inw', be⟩ := PreTrisetFn.IsBisim.inw rab (inw_toPreTrisetFn inw)
-          let ⟨e1, e1In, eq⟩ := inw_toPreTrisetFn_elim inw'
+      let sim: PreTriset.transitionSystem.IsSimulation R :=
+        fun _ _ _ e rab ins =>
+          let ⟨_, ins', be⟩ :=
+            PreTrisetFn.IsBisim.has rab (has_toPreTrisetFn ins)
+          let ⟨e1, e1In, eq⟩ := has_toPreTrisetFn_elim ins'
           ⟨
             e1,
             e1In,
@@ -159,50 +124,42 @@ namespace Pair
         ts
         PreTriset.not_isFn_toPreTrisetFn
     
-    -- The embedding preserves definitive membership (PreTriset version).
-    theorem directIns_toTrisetFn_pre {t e: PreTriset} (ins: t.Ins e):
-      (toTrisetFn ⟦t⟧).DirectIns (toTrisetFn ⟦e⟧)
-    :=
-      ⟨t.toPreTrisetFn, e.toPreTrisetFn, rfl, rfl, PreTriset.ins_toPreTrisetFn ins⟩
-    
-    -- The embedding preserves possible membership (PreTriset version).
-    theorem directInw_toTrisetFn_pre {t e: PreTriset} (inw: t.Inw e):
-      (toTrisetFn ⟦t⟧).DirectInw (toTrisetFn ⟦e⟧)
-    :=
-      ⟨t.toPreTrisetFn, e.toPreTrisetFn, rfl, rfl, PreTriset.inw_toPreTrisetFn inw⟩
-    
-    -- The embedding preserves definitive membership.
-    theorem directIns_toTrisetFn {ts elem: Triset}
-      (ins: ts.DirectIns elem)
+    -- The embedding preserves membership (on representatives).
+    theorem directHas_toTrisetFn_pre {lane}
+      {t e: PreTriset}
+      (has: t.Has lane e)
     :
-      ts.toTrisetFn.DirectIns elem.toTrisetFn
+      (toTrisetFn ⟦t⟧).DirectHas lane (toTrisetFn ⟦e⟧)
     :=
-      let ⟨_, _, tsEq, elemEq, ins⟩ := ins
-      tsEq ▸ elemEq ▸ directIns_toTrisetFn_pre ins
+      let has := PreTriset.has_toPreTrisetFn has
+      ⟨t.toPreTrisetFn, e.toPreTrisetFn, rfl, rfl, has⟩
     
-    -- The embedding preserves possible membership.
-    theorem directInw_toTrisetFn {ts elem: Triset}
-      (inw: ts.DirectInw elem)
+    -- The embedding preserves membership.
+    theorem directHas_toTrisetFn {lane}
+      {ts elem: Triset}
+      (has: ts.DirectHas lane elem)
     :
-      ts.toTrisetFn.DirectInw elem.toTrisetFn
+      ts.toTrisetFn.DirectHas lane elem.toTrisetFn
     :=
-      let ⟨_, _, tsEq, elemEq, inw⟩ := inw
-      tsEq ▸ elemEq ▸ directInw_toTrisetFn_pre inw
+      let ⟨_, _, tsEq, elemEq, has⟩ := has
+      tsEq ▸ elemEq ▸ directHas_toTrisetFn_pre has
     
-    -- The embedding reflects definitive membership.
-    theorem directIns_of_toTrisetFn {ts elem: Triset}
-      (ins: ts.toTrisetFn.DirectIns elem.toTrisetFn)
+    -- The embedding reflects membership.
+    theorem directHas_of_toTrisetFn {lane}
+      {ts elem: Triset}
+      (has: ts.toTrisetFn.DirectHas lane elem.toTrisetFn)
     :
-      ts.DirectIns elem
+      ts.DirectHas lane elem
     :=
       Quotient.inductionOn₂
         (motive := fun (ts elem: Triset) =>
-          ts.toTrisetFn.DirectIns elem.toTrisetFn → ts.DirectIns elem)
+          ts.toTrisetFn.DirectHas lane elem.toTrisetFn →
+          ts.DirectHas lane elem)
         ts
         elem
-        (fun t _ ins =>
-          let ⟨_, ins', be⟩ := TrisetFn.directIns_mk_iff.mp ins
-          let ⟨e1, e1In, eq⟩ := PreTriset.ins_toPreTrisetFn_elim ins'
+        (fun t _ has =>
+          let ⟨_, has', be⟩ := TrisetFn.directHas_mk_iff.mp has
+          let ⟨e1, e1In, eq⟩ := PreTriset.has_toPreTrisetFn_elim has'
           ⟨
             t,
             e1,
@@ -211,41 +168,16 @@ namespace Pair
               (PreTriset.bisim_of_toPreTrisetFn_bisim (eq ▸ be)),
             e1In,
           ⟩)
-        ins
+        has
     
-    -- The embedding reflects possible membership.
-    theorem directInw_of_toTrisetFn {ts elem: Triset}
-      (inw: ts.toTrisetFn.DirectInw elem.toTrisetFn)
+    theorem directHas_iff_toTrisetFn {lane}
+      {ts elem: Triset}
     :
-      ts.DirectInw elem
+      Iff
+        (ts.DirectHas lane elem)
+        (ts.toTrisetFn.DirectHas lane elem.toTrisetFn)
     :=
-      Quotient.inductionOn₂
-        (motive := fun (ts elem: Triset) =>
-          ts.toTrisetFn.DirectInw elem.toTrisetFn → ts.DirectInw elem)
-        ts
-        elem
-        (fun t _ inw =>
-          let ⟨_, inw', be⟩ := TrisetFn.directInw_mk_iff.mp inw
-          let ⟨e1, e1In, eq⟩ := PreTriset.inw_toPreTrisetFn_elim inw'
-          ⟨
-            t,
-            e1,
-            rfl,
-            Quotient.sound
-              (PreTriset.bisim_of_toPreTrisetFn_bisim (eq ▸ be)),
-            e1In,
-          ⟩)
-        inw
-    
-    theorem directIns_iff_toTrisetFn {ts elem: Triset}:
-      ts.DirectIns elem ↔ ts.toTrisetFn.DirectIns elem.toTrisetFn
-    :=
-      ⟨directIns_toTrisetFn, directIns_of_toTrisetFn⟩
-    
-    theorem directInw_iff_toTrisetFn {ts elem: Triset}:
-      ts.DirectInw elem ↔ ts.toTrisetFn.DirectInw elem.toTrisetFn
-    :=
-      ⟨directInw_toTrisetFn, directInw_of_toTrisetFn⟩
+      ⟨directHas_toTrisetFn, directHas_of_toTrisetFn⟩
     
   end Triset
 end Pair

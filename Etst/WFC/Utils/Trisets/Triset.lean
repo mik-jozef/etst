@@ -61,17 +61,23 @@ public section
 namespace Etst
 
 
+/--
+  A relation with one component per membership lane, monotone in the
+  lane (definite membership is stronger than possible membership).
+-/
 structure TriRelation (T: Type*) where
-  RelDef: T → T → Prop
-  RelPos: T → T → Prop
-  def_le_pos: ∀ {a b: T}, RelDef a b → RelPos a b
+  Rel: Set3.Lane → T → T → Prop
+  rel_mono:
+    ∀ {laneA laneB: Set3.Lane} {a b: T},
+      Set3.Lane.Le laneA laneB →
+      Rel laneA a b →
+      Rel laneB a b
 
 structure TriRelation.Sat {T: Type*}
   (rel: TriRelation T)
   (P: (T → T → Prop) → Prop)
 where
-  satDef: P rel.RelDef
-  satPos: P rel.RelPos
+  satLane: ∀ lane, P (rel.Rel lane)
 
 /--
   Witnesses that the relation `rel` on representatives holds for
@@ -129,29 +135,82 @@ exposed def DirectRel₃
 :=
   ∃ preA preB preC, DirectRelStruct₃ rel a b c preA preB preC
 
+/-
+  A lane-indexed relation on the quotient, written in terms of a
+  relation on representatives that respects the setoid. This is the
+  generic shape of every `directHas_mk_iff` lemma.
+-/
+theorem DirectRel_mk_iff {T}
+  {st: Setoid T}
+  {Mem: T → Set3.Lane → T → Prop}
+  (hmatch:
+    ∀ {a b x: T} {lane: Set3.Lane},
+      st.r a b → Mem a lane x → ∃ y, Mem b lane y ∧ st.r x y)
+  {lane: Set3.Lane}
+  {a b: T}
+:
+  DirectRel (s := st) (fun x y => Mem x lane y) ⟦a⟧ ⟦b⟧ ↔
+    ∃ b', Mem a lane b' ∧ st.r b b'
+:=
+  Iff.intro
+    (fun ⟨_preA, _preB, aEq, bEq, has⟩ =>
+      let ⟨b', hasB, preBbisimB'⟩ := hmatch (Quotient.exact aEq.symm) has
+      ⟨b', hasB, st.iseqv.trans (Quotient.exact bEq) preBbisimB'⟩)
+    (fun ⟨b', hasB, bBisim⟩ =>
+      ⟨a, b', rfl, Quotient.sound bBisim, hasB⟩)
+
+/- The ternary variant of `DirectRel_mk_iff`. -/
+theorem DirectRel₃_mk_iff {T}
+  {st: Setoid T}
+  {R: T → Set3.Lane → T → T → Prop}
+  (hmatch:
+    ∀ {f f' a r: T} {lane: Set3.Lane},
+      st.r f f' → R f lane a r →
+      ∃ a' r', R f' lane a' r' ∧ st.r a a' ∧ st.r r r')
+  {lane: Set3.Lane}
+  {f a r: T}
+:
+  DirectRel₃ (s := st) (fun f a r => R f lane a r) ⟦f⟧ ⟦a⟧ ⟦r⟧ ↔
+    ∃ a' r', R f lane a' r' ∧ st.r a a' ∧ st.r r r'
+:=
+  Iff.intro
+    (fun ⟨_preF, _preA, _preR, fEq, aEq, rEq, has⟩ =>
+      let ⟨fA, fR, has', preAbisimA', preRbisimR'⟩ :=
+        hmatch (Quotient.exact fEq.symm) has
+      ⟨fA, fR, has',
+       st.iseqv.trans (Quotient.exact aEq) preAbisimA',
+       st.iseqv.trans (Quotient.exact rEq) preRbisimR'⟩)
+    (fun ⟨a', r', has, aBisim, rBisim⟩ =>
+      ⟨f, a', r', rfl, Quotient.sound aBisim, Quotient.sound rBisim, has⟩)
+
 
 namespace Pair
   exposed def PreTriset := Pair
   
   namespace PreTriset
+    -- Membership in a lane: `a ∈ b` (`defLane`) or `a ∈? b` (`posLane`).
+    exposed def Has (ts: PreTriset) (lane: Set3.Lane) (elem: PreTriset): Prop :=
+      elem ∈ (uniSetMap.call ts).getLane lane
+    
     -- Strong (a la "definite") membership, `a ∈ b`.
-    exposed def Ins (ts elem: PreTriset): Prop :=
-      elem ∈ (uniSetMap.call ts).defMem
+    exposed abbrev Ins (ts elem: PreTriset): Prop := ts.Has .defLane elem
     
     -- Weak (a la "possible") membership, `a ∈? b`.
-    exposed def Inw (ts elem: PreTriset): Prop :=
-      elem ∈ (uniSetMap.call ts).posMem
+    exposed abbrev Inw (ts elem: PreTriset): Prop := ts.Has .posLane elem
     
-    inductive TransitionLabels where
-    | ins
-    | inw
+    theorem Has.mono {ts elem: PreTriset} {laneA laneB}
+      (has: ts.Has laneA elem)
+      (le: Set3.Lane.Le laneA laneB := by decide)
+    :
+      ts.Has laneB elem
+    :=
+      Set3.Lane.Le.liftMem le has
     
     -- One can transition sets to their elements.
     exposed def transitionSystem:
-      LabeledTransitionSystem TransitionLabels PreTriset
-    := fun
-      | .ins, a, b => a.Ins b
-      | .inw, a, b => a.Inw b
+      LabeledTransitionSystem Set3.Lane PreTriset
+    :=
+      fun l a b => a.Has l b
     
     exposed def IsBisim := transitionSystem.IsBisimilar
     
@@ -163,6 +222,15 @@ namespace Pair
     exposed def empty: PreTriset := uniSetMapIndex.emptyIndex
     
     
+    -- Transporting a membership across an equality of `uniSetMap` images.
+    theorem Has.of_call_eq {u v elem: Pair} {lane: Set3.Lane}
+      (eq: uniSetMap.call u = uniSetMap.call v)
+      (has: Has u lane elem)
+    :
+      Has v lane elem
+    :=
+      Eq.mp (congrArg (fun s => elem ∈ s.getLane lane) eq) has
+    
     -- Equal `uniSetMap`-images are bisimilar.
     theorem isBisim_of_uniSetMap_call_eq {u v: Pair}
       (eq: uniSetMap.call u = uniSetMap.call v)
@@ -170,26 +238,10 @@ namespace Pair
       IsBisim u v
     :=
       ⟨fun uu vv => uniSetMap.call uu = uniSetMap.call vv,
-        ⟨fun l uu vv uu' eq trans =>
-          ⟨uu',
-           match l, trans with
-           | .ins, t =>
-             show uu' ∈ (uniSetMap.call vv).defMem from
-               eq ▸ (show uu' ∈ (uniSetMap.call uu).defMem from t)
-           | .inw, t =>
-             show uu' ∈ (uniSetMap.call vv).posMem from
-               eq ▸ (show uu' ∈ (uniSetMap.call uu).posMem from t),
-           rfl⟩,
-        fun l uu vv uu' eq trans =>
-          ⟨uu',
-           match l, trans with
-           | .ins, t =>
-             show uu' ∈ (uniSetMap.call vv).defMem from
-               eq ▸ (show uu' ∈ (uniSetMap.call uu).defMem from t)
-           | .inw, t =>
-             show uu' ∈ (uniSetMap.call vv).posMem from
-               eq ▸ (show uu' ∈ (uniSetMap.call uu).posMem from t),
-           rfl⟩⟩,
+        ⟨fun _ _uu _vv uu' uuEq trans =>
+            ⟨uu', Has.of_call_eq (u := _uu) (v := _vv) uuEq trans, rfl⟩,
+         fun _ _uu _vv uu' uuEq trans =>
+            ⟨uu', Has.of_call_eq (u := _uu) (v := _vv) uuEq.symm trans, rfl⟩⟩,
        eq⟩
     
   end PreTriset
@@ -197,31 +249,26 @@ namespace Pair
   exposed def Triset := Quotient PreTriset.setoid
   
   namespace Triset
-    -- `ts` is a triset with definite member `elem`.
-    exposed def DirectIns (ts elem: Triset): Prop :=
-      DirectRel PreTriset.Ins ts elem
-    
-    -- `ts` is a triset with possible member `elem`.
-    exposed def DirectInw (ts elem: Triset): Prop :=
-      DirectRel PreTriset.Inw ts elem
+    -- `ts` is a triset with `elem` as a member in the given lane.
+    exposed def DirectHas (lane: Set3.Lane) (ts elem: Triset): Prop :=
+      DirectRel (fun a b => a.Has lane b) ts elem
     
     exposed def DirectMem: TriRelation Triset where
-      RelDef := DirectIns
-      RelPos := DirectInw
-      def_le_pos
-      | ⟨preTs, preElem, ⟨tsEq, elemEq, ins⟩⟩ =>
-        ⟨preTs, preElem, ⟨tsEq, elemEq, Set3.defToPos ins⟩⟩
+      Rel := DirectHas
+      rel_mono := fun le h =>
+        let ⟨preTs, preElem, ⟨tsEq, elemEq, has⟩⟩ := h
+        ⟨preTs, preElem, ⟨tsEq, elemEq, has.mono le⟩⟩
     
     
     -- Not hereditarily classical.
     inductive Nhc: Triset → Prop
     | notClassical {ts elem: Triset}
-        (isPos: ts.DirectInw elem)
-        (notDef: ¬ ts.DirectIns elem)
+        (isPos: ts.DirectHas .posLane elem)
+        (notDef: ¬ ts.DirectHas .defLane elem)
       :
         Nhc ts
     | containsNhc {ts elem: Triset}
-        (isPos: ts.DirectInw elem)
+        (isPos: ts.DirectHas .posLane elem)
         (isNhc: Nhc elem)
       :
         Nhc ts

@@ -52,6 +52,25 @@ public structure Set3 (D: Type*) where
   defLePos: defMem ≤ posMem
 
 namespace Set3
+  public inductive Lane
+  | posLane
+  | defLane
+  deriving DecidableEq, Repr
+  
+  exposed def Lane.toggle: Lane → Lane
+  | .posLane => .defLane
+  | .defLane => .posLane
+  
+  exposed def getLane
+    {D} (s3: Set3 D)
+    (lane: Lane)
+  :
+    Set D
+  :=
+    match lane with
+    | .posLane => s3.posMem
+    | .defLane => s3.defMem
+  
   -- A convenience function allowing us to use `isDef.toPos` on
   -- instances of `Set3.defMem s d`.
   public theorem defToPos {D d}
@@ -118,16 +137,16 @@ namespace Set3
     the standard order.
   -/
   public structure LeStd {D} (a b: Set3 D): Prop where
-    defLe: a.defMem ≤ b.defMem
-    posLe: a.posMem ≤ b.posMem
+    defLe: a.getLane .defLane ≤ b.getLane .defLane
+    posLe: a.getLane .posLane ≤ b.getLane .posLane
   
   /-
     The definition of the "less than" relation for the standard
     order.
   -/
   public structure LtStd {D} (a b: Set3 D): Prop where
-    defLe: a.defMem ≤ b.defMem
-    posLe: a.posMem ≤ b.posMem
+    defLe: a.getLane .defLane ≤ b.getLane .defLane
+    posLe: a.getLane .posLane ≤ b.getLane .posLane
     neq: a ≠ b
   
   
@@ -136,16 +155,16 @@ namespace Set3
     the approximation order.
   -/
   public structure LeApx {D} (a b: Set3 D): Prop where
-    defLe: a.defMem ≤ b.defMem
-    posLe: b.posMem ≤ a.posMem
+    defLe: a.getLane .defLane ≤ b.getLane .defLane
+    posLe: b.getLane .posLane ≤ a.getLane .posLane
   
   /-
     The definition of the "less than" relation for the approximation
     order.
   -/
   public structure LtApx {D} (a b: Set3 D): Prop where
-    defLe: a.defMem ≤ b.defMem
-    posLe: b.posMem ≤ a.posMem
+    defLe: a.getLane .defLane ≤ b.getLane .defLane
+    posLe: b.getLane .posLane ≤ a.getLane .posLane
     neq: a ≠ b
   
   
@@ -184,25 +203,5 @@ namespace Set3
   -- Support for the `⊏` symbol (approximation `lt`).
   public instance sqltInst {D}: SqLT (Set3 D) where
     lt := LtApx
-  
-  
-  public inductive Lane
-  | posLane
-  | defLane
-  deriving DecidableEq, Repr
-  
-  exposed def Lane.toggle: Lane → Lane
-  | .posLane => .defLane
-  | .defLane => .posLane
-  
-  exposed def getLane
-    {D} (s3: Set3 D)
-    (lane: Lane)
-  :
-    Set D
-  :=
-    match lane with
-    | .posLane => s3.posMem
-    | .defLane => s3.defMem
   
 end Set3

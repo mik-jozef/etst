@@ -43,27 +43,26 @@ namespace Pair
           exact congrArg₂ pair (toPair_inj h0) (toPair_inj h1)
     
     
-    -- Strong (a la "definite") membership, `a ∈ b`.
-    exposed def Ins: PreTrisetPair → PreTrisetPair → Prop
-    | set ts, elem => ts.Ins elem.toPair
-    | _, _ => False
+    -- Membership in a lane, `a ∈ b` (`defLane`) or `a ∈? b` (`posLane`).
+    exposed def Has: PreTrisetPair → Set3.Lane → PreTrisetPair → Prop
+    | set ts, lane, elem => ts.Has lane elem.toPair
+    | _, _, _ => False
     
-    -- Weak (a la "possible") membership, `a ∈? b`.
-    exposed def Inw: PreTrisetPair → PreTrisetPair → Prop
-    | set ts, elem => ts.Inw elem.toPair
-    | _, _ => False
-    
-    -- Definite membership implies possible membership.
-    theorem insLeInw {elem: PreTrisetPair}:
-      (ts: PreTrisetPair) → ts.Ins elem → ts.Inw elem
-    | set _, ins => Set3.defToPos ins
-    | .null, ins => ins.elim
-    | pair _ _, ins => ins.elim
+    theorem Has.mono {laneA laneB}
+      {ts elem: PreTrisetPair}
+      (has: ts.Has laneA elem)
+      (le: Set3.Lane.Le laneA laneB := by decide)
+    :
+      ts.Has laneB elem
+    :=
+      match ts with
+      | .set _ => Pair.PreTriset.Has.mono has le
+      | .null => has
+      | .pair _ _ => has
     
     
     inductive TransitionLabels where
-    | ins -- definite member of a triset
-    | inw -- possible member of a triset
+    | has (lane: Set3.Lane) -- member of a triset, in the given lane
     | zth -- zeroth element of a pair
     | fst -- first element of a pair
     | isNull -- self loop that identifies null values
@@ -75,8 +74,7 @@ namespace Pair
     exposed def transitionSystem:
       LabeledTransitionSystem TransitionLabels PreTrisetPair
     := fun
-      | .ins, a, b => a.Ins b
-      | .inw, a, b => a.Inw b
+      | .has lane, a, b => a.Has lane b
       | .zth, a, b => ∃ a1, a = pair b a1
       | .fst, a, b => ∃ a0, a = pair a0 b
       | .isNull, a, b => a = .null ∧ b = .null
@@ -101,23 +99,15 @@ namespace Pair
     :=
       transitionSystem.IsBisimilar_is_equivalence.trans h0 h1
     
-    -- Bisimilar values have matching definitive members.
-    theorem IsBisim.ins {a b e: PreTrisetPair}
+    -- Bisimilar values have matching members, in either lane.
+    theorem IsBisim.has {a b e: PreTrisetPair}
+      {lane: Set3.Lane}
       (bisim: a.IsBisim b)
-      (ins: a.Ins e)
+      (has: a.Has lane e)
     :
-      ∃ e', b.Ins e' ∧ e.IsBisim e'
+      ∃ e', b.Has lane e' ∧ e.IsBisim e'
     :=
-      transitionSystem.IsBisimilar_isSimulation .ins a b e bisim ins
-    
-    -- Bisimilar values have matching possible members.
-    theorem IsBisim.inw {a b e: PreTrisetPair}
-      (bisim: a.IsBisim b)
-      (inw: a.Inw e)
-    :
-      ∃ e', b.Inw e' ∧ e.IsBisim e'
-    :=
-      transitionSystem.IsBisimilar_isSimulation .inw a b e bisim inw
+      transitionSystem.IsBisimilar_isSimulation (.has lane) a b e bisim has
     
   end PreTrisetPair
   
@@ -133,13 +123,9 @@ namespace Pair
       DirectRel (PreTrisetPair.transitionSystem label) a b
     
     
-    -- `ts` is a triset with definite member `elem`.
-    exposed def DirectIns (ts elem: TrisetPair): Prop :=
-      DirectTrans .ins ts elem
-    
-    -- `ts` is a triset with possible member `elem`.
-    exposed def DirectInw (ts elem: TrisetPair): Prop :=
-      DirectTrans .inw ts elem
+    -- `ts` has `elem` as a member in the given lane.
+    exposed def DirectHas (lane: Set3.Lane) (ts elem: TrisetPair): Prop :=
+      DirectTrans (.has lane) ts elem
     
     -- `p` is a pair with zeroth component `zth`.
     exposed def DirectZth (p zth: TrisetPair): Prop :=
@@ -155,38 +141,16 @@ namespace Pair
     
     
     exposed def DirectMem: TriRelation TrisetPair where
-      RelDef := DirectIns
-      RelPos := DirectInw
-      def_le_pos
-      | ⟨preA, preB, ⟨aEq, bEq, ins⟩⟩ =>
-        ⟨preA, preB, ⟨aEq, bEq, PreTrisetPair.insLeInw preA ins⟩⟩
+      Rel := DirectHas
+      rel_mono := fun le h =>
+        let ⟨preA, preB, ⟨aEq, bEq, has⟩⟩ := h
+        ⟨preA, preB, ⟨aEq, bEq, has.mono le⟩⟩
     
-    
-    -- ## The direct relations on representatives
-    
-    theorem directIns_mk_iff {s e: PreTrisetPair}:
-      DirectIns ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Ins e' ∧ e.IsBisim e'
+    theorem directHas_mk_iff {lane: Set3.Lane} {s e: PreTrisetPair}:
+      DirectHas lane ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Has lane e' ∧ e.IsBisim e'
     :=
-      ⟨
-        fun ⟨_, _, aEq, bEq, ins⟩ =>
-          let sB: s.IsBisim _ := Quotient.exact aEq
-          let eB: e.IsBisim _ := Quotient.exact bEq
-          let ⟨e', ins', b⟩ := sB.symm.ins ins
-          ⟨e', ins', eB.trans b⟩,
-        fun ⟨e', ins', b⟩ => ⟨s, e', rfl, Quotient.sound b, ins'⟩,
-      ⟩
-    
-    theorem directInw_mk_iff {s e: PreTrisetPair}:
-      DirectInw ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Inw e' ∧ e.IsBisim e'
-    :=
-      ⟨
-        fun ⟨_, _, aEq, bEq, inw⟩ =>
-          let sB: s.IsBisim _ := Quotient.exact aEq
-          let eB: e.IsBisim _ := Quotient.exact bEq
-          let ⟨e', inw', b⟩ := sB.symm.inw inw
-          ⟨e', inw', eB.trans b⟩,
-        fun ⟨e', inw', b⟩ => ⟨s, e', rfl, Quotient.sound b, inw'⟩,
-      ⟩
+      DirectRel_mk_iff (st := PreTrisetPair.setoid) (Mem := PreTrisetPair.Has)
+        (fun h => PreTrisetPair.IsBisim.has h)
     
   end TrisetPair
 end Pair

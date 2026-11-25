@@ -379,16 +379,15 @@ namespace TrisetEmbedding
               embedStepIndex_call).trans
             (trisetEmbedHelpersDl.embedStep_call_eq embedFixIndex t))))
   
-  /-- Members of `t` embed to members of `embed t`, in either lane. -/
-  theorem embed_mem {t e: Pair} {lane: Set3.Lane}
+  /-- Members of `t` embed to members of `embed t`. -/
+  theorem embed_mem {t e} {lane: Set3.Lane}
     (ins: e ∈ (uniSetMap.call t).getLane lane)
   :
     .pair (.nat 0) (embed e) ∈ (uniSetMap.call (embed t)).getLane lane
   :=
     embed_call_eq t ▸ Set3.image_mem_iff.mpr ⟨e, ins, rfl⟩
   
-  /-- Members of `embed t` are embeddings of members of `t`, in either
-  lane. -/
+  /-- Members of `embed t` are embeddings of members of `t`. -/
   theorem embed_elim {t p: Pair} {lane: Set3.Lane}
     (ins: p ∈ (uniSetMap.call (embed t)).getLane lane)
   :

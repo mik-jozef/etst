@@ -83,48 +83,52 @@ namespace Pair
     | fn _ => True
     | set _ => False
     
-    exposed def Ins: PreTrisetFn → PreTrisetFn → Prop
-    | set ts, e => ts.Ins e.toPair
-    | fn _, _ => False
+    -- Membership in a lane, `a ∈ b` (`defLane`) or `a ∈? b` (`posLane`).
+    exposed def Has: PreTrisetFn → Set3.Lane → PreTrisetFn → Prop
+    | set ts, lane, e => ts.Has lane e.toPair
+    | .fn _, _, _ => False
     
-    exposed def Inw: PreTrisetFn → PreTrisetFn → Prop
-    | set ts, e => ts.Inw e.toPair
-    | fn _, _ => False
+    -- `(a, r)` is an entry of the graph of `f`, in the given lane.
+    exposed def HasEntry: PreTrisetFn → Set3.Lane → PreTrisetFn → PreTrisetFn → Prop
+    | fn graph, lane, a, r => graph.Has lane (.pair a.toPair r.toPair)
+    | .set _, _, _, _ => False
     
-    -- `(a, r)` is a definite entry of the graph of `f`.
-    exposed def InsEntry: PreTrisetFn → PreTrisetFn → PreTrisetFn → Prop
-    | fn graph, a, r => graph.Ins (.pair a.toPair r.toPair)
-    | set _, _, _ => False
-    
-    -- `(a, r)` is a possible entry of the graph of `f`.
-    exposed def InwEntry: PreTrisetFn → PreTrisetFn → PreTrisetFn → Prop
-    | fn graph, a, r => graph.Inw (.pair a.toPair r.toPair)
-    | set _, _, _ => False
-    
-    theorem insLeInw {s e: PreTrisetFn} (ins: s.Ins e): s.Inw e :=
-      match s with
-      | set _ => Set3.defToPos ins
-    
-    theorem insEntryLeInwEntry {f a r: PreTrisetFn}
-      (ins: f.InsEntry a r)
+    theorem Has.mono {laneA laneB}
+      {s e: PreTrisetFn}
+      (has: s.Has laneA e)
+      (le: Set3.Lane.Le laneA laneB := by decide)
     :
-      f.InwEntry a r
+      s.Has laneB e
+    :=
+      match s with
+      | set _ => Pair.PreTriset.Has.mono has le
+      | .fn _ => has
+    
+    theorem HasEntry.mono {laneA laneB}
+      {f a r: PreTrisetFn}
+      (has: f.HasEntry laneA a r)
+      (le: Set3.Lane.Le laneA laneB := by decide)
+    :
+      f.HasEntry laneB a r
     :=
       match f with
-      | fn _ => Set3.defToPos ins
+      | fn _ => Pair.PreTriset.Has.mono has le
+      | .set _ => has
     
-    theorem not_inwEntry_of_not_isFn {f a r: PreTrisetFn}
+    theorem not_hasEntry_of_not_isFn {lane a r}
+      {f: PreTrisetFn}
       (notFn: ¬ f.IsFn)
-      (ins: f.InwEntry a r)
+      (has: f.HasEntry lane a r)
     :
       False
     :=
       match f with
       | fn _ => notFn trivial
     
-    theorem not_inw_of_isFn {s e: PreTrisetFn}
+    theorem not_has_of_isFn {lane e}
+      {s: PreTrisetFn}
       (isFn: s.IsFn)
-      (inw: s.Inw e)
+      (has: s.Has lane e)
     :
       False
     :=
@@ -138,52 +142,30 @@ namespace Pair
     | entry (arg res: PreTrisetFn)
     
     inductive TransitionLabels where
-    | ins
-    | inw
-    | insEntry
-    | inwEntry
+    | has (lane: Set3.Lane) -- member of a triset, in the given lane
+    | hasEntry (lane: Set3.Lane) -- entry of a function graph
     | arg
     | res
     | isFn -- self loop that distinguishes functions from trisets
     
-    inductive Step: TransitionLabels → Node → Node → Prop
-    | ins {s e} (h: Ins s e): Step .ins (.val s) (.val e)
-    | inw {s e} (h: Inw s e): Step .inw (.val s) (.val e)
-    | insEntry {f a r} (h: InsEntry f a r): Step .insEntry (.val f) (.entry a r)
-    | inwEntry {f a r} (h: InwEntry f a r): Step .inwEntry (.val f) (.entry a r)
+    inductive Step: LabeledTransitionSystem TransitionLabels Node
+    | has {lane s e}
+        (h: s.Has lane e)
+      :
+        Step (.has lane) (.val s) (.val e)
+    | hasEntry {lane f a r}
+        (h: f.HasEntry lane a r)
+      :
+        Step (.hasEntry lane) (.val f) (.entry a r)
     | arg (a r): Step .arg (.entry a r) (.val a)
     | res (a r): Step .res (.entry a r) (.val r)
     | isFn (graph): Step .isFn (.val (.fn graph)) (.val (.fn graph))
     
-    abbrev transitionSystem:
-      LabeledTransitionSystem TransitionLabels Node
-    :=
-      Step
+    abbrev transitionSystem := Step
     
     theorem Step.ofIsFn {v: PreTrisetFn} (isFn: v.IsFn): Step .isFn (.val v) (.val v) :=
       match v with
       | fn graph => .isFn graph
-    
-    theorem Step.fromVal {l v x'} (st: Step l (.val v) x'):
-      Or (∃ e, l = .ins ∧ x' = .val e ∧ Ins v e) <|
-      Or (∃ e, l = .inw ∧ x' = .val e ∧ Inw v e) <|
-      Or (∃ a r, l = .insEntry ∧ x' = .entry a r ∧ InsEntry v a r) <|
-      Or (∃ a r, l = .inwEntry ∧ x' = .entry a r ∧ InwEntry v a r)
-        (l = .isFn ∧ x' = .val v ∧ IsFn v)
-    :=
-      match st with
-      | .ins h => .inl ⟨_, rfl, rfl, h⟩
-      | .inw h => .inr (.inl ⟨_, rfl, rfl, h⟩)
-      | .insEntry h => .inr (.inr (.inl ⟨_, _, rfl, rfl, h⟩))
-      | .inwEntry h => .inr (.inr (.inr (.inl ⟨_, _, rfl, rfl, h⟩)))
-      | .isFn _ => .inr (.inr (.inr (.inr ⟨rfl, rfl, trivial⟩)))
-    
-    theorem Step.fromEntry {l a r x'} (st: Step l (.entry a r) x'):
-      Or (l = .arg ∧ x' = .val a) (l = .res ∧ x' = .val r)
-    :=
-      match st with
-      | .arg _ _ => .inl ⟨rfl, rfl⟩
-      | .res _ _ => .inr ⟨rfl, rfl⟩
     
     exposed def IsBisim (a b: PreTrisetFn): Prop :=
       transitionSystem.IsBisimilar (.val a) (.val b)
@@ -247,85 +229,64 @@ namespace Pair
       transitionSystem.IsBisimilar (.entry a r) (.entry a' r')
     :=
       isBisimilar_of_steps
-        (fun l x' st =>
-          match l, x', Step.fromEntry st with
-          | _, _, .inl ⟨rfl, rfl⟩ => ⟨_, .arg a' r', .inl ha⟩
-          | _, _, .inr ⟨rfl, rfl⟩ => ⟨_, .res a' r', .inl hr⟩)
-        (fun l y' st =>
-          match l, y', Step.fromEntry st with
-          | _, _, .inl ⟨rfl, rfl⟩ => ⟨_, .arg a r, .inl ha⟩
-          | _, _, .inr ⟨rfl, rfl⟩ => ⟨_, .res a r, .inl hr⟩)
+        (fun _ _ st =>
+          match st with
+          | .arg _ _ => ⟨_, .arg a' r', .inl ha⟩
+          | .res _ _ => ⟨_, .res a' r', .inl hr⟩)
+        (fun _ _ st =>
+          match st with
+          | .arg _ _ => ⟨_, .arg a r, .inl ha⟩
+          | .res _ _ => ⟨_, .res a r, .inl hr⟩)
     
     theorem IsBisim.entryArg {a r a' r': PreTrisetFn}
       (h: transitionSystem.IsBisimilar (.entry a r) (.entry a' r'))
     :
       a.IsBisim a'
     :=
-      let ⟨y', st, hy⟩ :=
+      let ⟨_, st, hy⟩ :=
         transitionSystem.IsBisimilar_isSimulation .arg _ _ _ h (.arg a r)
-      match y', Step.fromEntry st, hy with
-      | _, .inl ⟨_, rfl⟩, hy => hy
+      match st with
+      | .arg _ _ => hy
     
     theorem IsBisim.entryRes {a r a' r': PreTrisetFn}
       (h: transitionSystem.IsBisimilar (.entry a r) (.entry a' r'))
     :
       r.IsBisim r'
     :=
-      let ⟨y', st, hy⟩ :=
+      let ⟨_, st, hy⟩ :=
         transitionSystem.IsBisimilar_isSimulation .res _ _ _ h (.res a r)
-      match y', Step.fromEntry st, hy with
-      | _, .inr ⟨_, rfl⟩, hy => hy
+      match st with
+      | .res _ _ => hy
     
     
-    -- ## Bisimilar values have matching members, entries and kinds
-    
-    theorem IsBisim.ins {s s' e: PreTrisetFn}
+    -- Bisimilar values have matching members.
+    theorem IsBisim.has {lane}
+      {s s' e: PreTrisetFn}
       (b: s.IsBisim s')
-      (ins: s.Ins e)
+      (has: s.Has lane e)
     :
-      ∃ e', s'.Ins e' ∧ e.IsBisim e'
-    :=
-      let ⟨y', st, hy⟩ :=
-        transitionSystem.IsBisimilar_isSimulation .ins _ _ _ b (.ins ins)
-      match y', Step.fromVal st, hy with
-      | _, .inl ⟨e', _, rfl, ins'⟩, hy => ⟨e', ins', hy⟩
-    
-    theorem IsBisim.inw {s s' e: PreTrisetFn}
-      (b: s.IsBisim s')
-      (inw: s.Inw e)
-    :
-      ∃ e', s'.Inw e' ∧ e.IsBisim e'
-    :=
-      let ⟨y', st, hy⟩ :=
-        transitionSystem.IsBisimilar_isSimulation .inw _ _ _ b (.inw inw)
-      match y', Step.fromVal st, hy with
-      | _, .inr (.inl ⟨e', _, rfl, inw'⟩), hy => ⟨e', inw', hy⟩
-    
-    theorem IsBisim.insEntry {f f' a r: PreTrisetFn}
-      (b: f.IsBisim f')
-      (ins: f.InsEntry a r)
-    :
-      ∃ a' r', f'.InsEntry a' r' ∧ a.IsBisim a' ∧ r.IsBisim r'
+      ∃ e', s'.Has lane e' ∧ e.IsBisim e'
     :=
       let ⟨y', st, hy⟩ :=
         transitionSystem.IsBisimilar_isSimulation
-          .insEntry _ _ _ b (.insEntry ins)
-      match y', Step.fromVal st, hy with
-      | _, .inr (.inr (.inl ⟨a', r', _, rfl, ins'⟩)), hy =>
-        ⟨a', r', ins', IsBisim.entryArg hy, IsBisim.entryRes hy⟩
+          (.has lane) _ _ _ b (.has has)
+      match y', st, hy with
+      | _, .has has', hy => ⟨_, has', hy⟩
     
-    theorem IsBisim.inwEntry {f f' a r: PreTrisetFn}
+    -- Bisimilar values have matching graph entries.
+    theorem IsBisim.hasEntry {lane}
+      {f f' a r: PreTrisetFn}
       (b: f.IsBisim f')
-      (inw: f.InwEntry a r)
+      (has: f.HasEntry lane a r)
     :
-      ∃ a' r', f'.InwEntry a' r' ∧ a.IsBisim a' ∧ r.IsBisim r'
+      ∃ a' r', f'.HasEntry lane a' r' ∧ a.IsBisim a' ∧ r.IsBisim r'
     :=
       let ⟨y', st, hy⟩ :=
         transitionSystem.IsBisimilar_isSimulation
-          .inwEntry _ _ _ b (.inwEntry inw)
-      match y', Step.fromVal st, hy with
-      | _, .inr (.inr (.inr (.inl ⟨a', r', _, rfl, inw'⟩))), hy =>
-        ⟨a', r', inw', IsBisim.entryArg hy, IsBisim.entryRes hy⟩
+          (.hasEntry lane) _ _ _ b (.hasEntry has)
+      match y', st, hy with
+      | _, .hasEntry has', hy =>
+        ⟨_, _, has', IsBisim.entryArg hy, IsBisim.entryRes hy⟩
     
     theorem IsBisim.isFn {v v': PreTrisetFn}
       (b: v.IsBisim v')
@@ -336,8 +297,8 @@ namespace Pair
       let ⟨_, st, _⟩ :=
         transitionSystem.IsBisimilar_isSimulation
           .isFn _ _ _ b (Step.ofIsFn isFn)
-      match Step.fromVal st with
-      | .inr (.inr (.inr (.inr ⟨_, _, isFn'⟩))) => isFn'
+      match st with
+      | .isFn _ => trivial
     
     
     -- ## Extensionality on representatives
@@ -345,90 +306,56 @@ namespace Pair
     theorem isBisim_of_members {s t: PreTrisetFn}
       (sNotFn: ¬ s.IsFn)
       (tNotFn: ¬ t.IsFn)
-      (insST: ∀ e, s.Ins e → ∃ e', t.Ins e' ∧ e.IsBisim e')
-      (insTS: ∀ e, t.Ins e → ∃ e', s.Ins e' ∧ e'.IsBisim e)
-      (inwST: ∀ e, s.Inw e → ∃ e', t.Inw e' ∧ e.IsBisim e')
-      (inwTS: ∀ e, t.Inw e → ∃ e', s.Inw e' ∧ e'.IsBisim e)
+      (hasST: ∀ {lane e}, s.Has lane e → ∃ e', t.Has lane e' ∧ e.IsBisim e')
+      (hasTS: ∀ {lane e}, t.Has lane e → ∃ e', s.Has lane e' ∧ e'.IsBisim e)
     :
       s.IsBisim t
     :=
       isBisimilar_of_steps
-        (fun l x' st =>
-          match l, x', Step.fromVal st with
-          | _, _, .inl ⟨e, rfl, rfl, ins⟩ =>
-            let ⟨_, ins', b⟩ := insST e ins
-            ⟨_, .ins ins', .inl b⟩
-          | _, _, .inr (.inl ⟨e, rfl, rfl, inw⟩) =>
-            let ⟨_, inw', b⟩ := inwST e inw
-            ⟨_, .inw inw', .inl b⟩
-          | _, _, .inr (.inr (.inl ⟨_, _, _, _, ins⟩)) =>
-            (not_inwEntry_of_not_isFn sNotFn (insEntryLeInwEntry ins)).elim
-          | _, _, .inr (.inr (.inr (.inl ⟨_, _, _, _, inw⟩))) =>
-            (not_inwEntry_of_not_isFn sNotFn inw).elim
-          | _, _, .inr (.inr (.inr (.inr ⟨_, _, isFn⟩))) =>
-            (sNotFn isFn).elim)
-        (fun l y' st =>
-          match l, y', Step.fromVal st with
-          | _, _, .inl ⟨e, rfl, rfl, ins⟩ =>
-            let ⟨_, ins', b⟩ := insTS e ins
-            ⟨_, .ins ins', .inl b⟩
-          | _, _, .inr (.inl ⟨e, rfl, rfl, inw⟩) =>
-            let ⟨_, inw', b⟩ := inwTS e inw
-            ⟨_, .inw inw', .inl b⟩
-          | _, _, .inr (.inr (.inl ⟨_, _, _, _, ins⟩)) =>
-            (not_inwEntry_of_not_isFn tNotFn (insEntryLeInwEntry ins)).elim
-          | _, _, .inr (.inr (.inr (.inl ⟨_, _, _, _, inw⟩))) =>
-            (not_inwEntry_of_not_isFn tNotFn inw).elim
-          | _, _, .inr (.inr (.inr (.inr ⟨_, _, isFn⟩))) =>
-            (tNotFn isFn).elim)
+        (fun _ _ st =>
+          match st with
+          | .has has =>
+            let ⟨_, has', b⟩ := hasST has
+            ⟨_, .has has', .inl b⟩
+          | .hasEntry has =>
+            (not_hasEntry_of_not_isFn sNotFn has).elim
+          | .isFn _ => (sNotFn trivial).elim)
+        (fun _ _ st =>
+          match st with
+          | .has has =>
+            let ⟨_, has', b⟩ := hasTS has
+            ⟨_, .has has', .inl b⟩
+          | .hasEntry has =>
+            (not_hasEntry_of_not_isFn tNotFn has).elim
+          | .isFn _ => (tNotFn trivial).elim)
     
     theorem isBisim_of_entries {f g: PreTrisetFn}
       (fFn: f.IsFn)
       (gFn: g.IsFn)
-      (insFG:
-        ∀ a r, f.InsEntry a r →
-        ∃ a' r', g.InsEntry a' r' ∧ a.IsBisim a' ∧ r.IsBisim r')
-      (insGF:
-        ∀ a r, g.InsEntry a r →
-        ∃ a' r', f.InsEntry a' r' ∧ a'.IsBisim a ∧ r'.IsBisim r)
-      (inwFG:
-        ∀ a r, f.InwEntry a r →
-        ∃ a' r', g.InwEntry a' r' ∧ a.IsBisim a' ∧ r.IsBisim r')
-      (inwGF:
-        ∀ a r, g.InwEntry a r →
-        ∃ a' r', f.InwEntry a' r' ∧ a'.IsBisim a ∧ r'.IsBisim r)
+      (hasFG:
+        ∀ {lane a r}, f.HasEntry lane a r →
+        ∃ a' r', g.HasEntry lane a' r' ∧ a.IsBisim a' ∧ r.IsBisim r')
+      (hasGF:
+        ∀ {lane a r}, g.HasEntry lane a r →
+        ∃ a' r', f.HasEntry lane a' r' ∧ a'.IsBisim a ∧ r'.IsBisim r)
     :
       f.IsBisim g
     :=
       isBisimilar_of_steps
-        (fun l x' st =>
-          match l, x', Step.fromVal st with
-          | _, _, .inl ⟨_, _, _, ins⟩ =>
-            (not_inw_of_isFn fFn (insLeInw ins)).elim
-          | _, _, .inr (.inl ⟨_, _, _, inw⟩) =>
-            (not_inw_of_isFn fFn inw).elim
-          | _, _, .inr (.inr (.inl ⟨a, r, rfl, rfl, ins⟩)) =>
-            let ⟨_, _, ins', ba, br⟩ := insFG a r ins
-            ⟨_, .insEntry ins', .inl (isBisimilar_entry ba br)⟩
-          | _, _, .inr (.inr (.inr (.inl ⟨a, r, rfl, rfl, inw⟩))) =>
-            let ⟨_, _, inw', ba, br⟩ := inwFG a r inw
-            ⟨_, .inwEntry inw', .inl (isBisimilar_entry ba br)⟩
-          | _, _, .inr (.inr (.inr (.inr ⟨rfl, rfl, _⟩))) =>
-            ⟨_, Step.ofIsFn gFn, .inr ⟨rfl, rfl⟩⟩)
-        (fun l y' st =>
-          match l, y', Step.fromVal st with
-          | _, _, .inl ⟨_, _, _, ins⟩ =>
-            (not_inw_of_isFn gFn (insLeInw ins)).elim
-          | _, _, .inr (.inl ⟨_, _, _, inw⟩) =>
-            (not_inw_of_isFn gFn inw).elim
-          | _, _, .inr (.inr (.inl ⟨a, r, rfl, rfl, ins⟩)) =>
-            let ⟨_, _, ins', ba, br⟩ := insGF a r ins
-            ⟨_, .insEntry ins', .inl (isBisimilar_entry ba br)⟩
-          | _, _, .inr (.inr (.inr (.inl ⟨a, r, rfl, rfl, inw⟩))) =>
-            let ⟨_, _, inw', ba, br⟩ := inwGF a r inw
-            ⟨_, .inwEntry inw', .inl (isBisimilar_entry ba br)⟩
-          | _, _, .inr (.inr (.inr (.inr ⟨rfl, rfl, _⟩))) =>
-            ⟨_, Step.ofIsFn fFn, .inr ⟨rfl, rfl⟩⟩)
+        (fun _ _ st =>
+          match st with
+          | .has has => (not_has_of_isFn fFn has).elim
+          | .hasEntry has =>
+            let ⟨_, _, has', ba, br⟩ := hasFG has
+            ⟨_, .hasEntry has', .inl (isBisimilar_entry ba br)⟩
+          | .isFn _ => ⟨_, Step.ofIsFn gFn, .inr ⟨rfl, rfl⟩⟩)
+        (fun _ _ st =>
+          match st with
+          | .has has => (not_has_of_isFn gFn has).elim
+          | .hasEntry has =>
+            let ⟨_, _, has', ba, br⟩ := hasGF has
+            ⟨_, .hasEntry has', .inl (isBisimilar_entry ba br)⟩
+          | .isFn _ => ⟨_, Step.ofIsFn fFn, .inr ⟨rfl, rfl⟩⟩)
     
     
     /-
@@ -437,26 +364,18 @@ namespace Pair
       (ie. `Expr.call`) computes the application.
     -/
     structure Saturated (f: PreTrisetFn): Prop where
-      ins:
-        ∀ {a a' r}, a.IsBisim a' → f.InsEntry a r →
-        ∃ r', f.InsEntry a' r' ∧ r.IsBisim r'
-      inw:
-        ∀ {a a' r}, a.IsBisim a' → f.InwEntry a r →
-        ∃ r', f.InwEntry a' r' ∧ r.IsBisim r'
+      has:
+        ∀ {lane a a' r}, a.IsBisim a' → f.HasEntry lane a r →
+        ∃ r', f.HasEntry lane a' r' ∧ r.IsBisim r'
     
-    theorem insEntry_iff_call {graph a r: PreTrisetFn}:
-      (fn graph.toPair).InsEntry a r
+    theorem hasEntry_iff_call {lane}
+      {graph a r: PreTrisetFn}
+    :
+      (fn graph.toPair).HasEntry lane a r
         ↔
-      r.toPair ∈ ((uniSetMap.call graph.toPair).call a.toPair).defMem
+      r.toPair ∈ ((uniSetMap.call graph.toPair).call a.toPair).getLane lane
     :=
-      Iff.rfl
-    
-    theorem inwEntry_iff_call {graph a r: PreTrisetFn}:
-      (fn graph.toPair).InwEntry a r
-        ↔
-      r.toPair ∈ ((uniSetMap.call graph.toPair).call a.toPair).posMem
-    :=
-      Iff.rfl
+      ⟨Set3.inCall, Set3.inCallElim⟩
     
   end PreTrisetFn
   
@@ -470,217 +389,143 @@ namespace Pair
       Quotient.lift PreTrisetFn.IsFn fun _ _ b =>
         propext ⟨IsBisim.isFn b, IsBisim.isFn (IsBisim.symm b)⟩
     
-    -- `ts` is a triset with a definite member `elem`.
-    exposed def DirectIns (ts elem: TrisetFn): Prop :=
-      DirectRel PreTrisetFn.Ins ts elem
-    
-    -- `ts` is a triset with a possible member `elem`.
-    exposed def DirectInw (ts elem: TrisetFn): Prop :=
-      DirectRel PreTrisetFn.Inw ts elem
+    -- `ts` has `elem` as a member in the given lane.
+    exposed def DirectHas (lane: Set3.Lane) (ts elem: TrisetFn): Prop :=
+      DirectRel (fun a b => a.Has lane b) ts elem
     
     exposed def DirectMem: TriRelation TrisetFn where
-      RelDef := DirectIns
-      RelPos := DirectInw
-      def_le_pos
-      | ⟨preTs, preElem, ⟨tsEq, elemEq, ins⟩⟩ =>
-        ⟨preTs, preElem, ⟨tsEq, elemEq, insLeInw ins⟩⟩
+      Rel := DirectHas
+      rel_mono := fun le h =>
+        let ⟨preTs, preElem, ⟨tsEq, elemEq, has⟩⟩ := h
+        ⟨preTs, preElem, ⟨tsEq, elemEq, has.mono le⟩⟩
     
-    -- `res` is a definite member of the result of applying `f` to `arg`.
-    exposed def DirectCallIns (f arg res: TrisetFn): Prop :=
-      DirectRel₃ PreTrisetFn.InsEntry f arg res
+    -- `res` is a member of the result of applying `f` to `arg`, in the
+    -- given lane.
+    exposed def DirectCallHas (lane: Set3.Lane) (f arg res: TrisetFn): Prop :=
+      DirectRel₃ (fun f a r => f.HasEntry lane a r) f arg res
     
-    -- `res` is a possible member of the result of applying `f` to `arg`.
-    exposed def DirectCallInw (f arg res: TrisetFn): Prop :=
-      DirectRel₃ PreTrisetFn.InwEntry f arg res
-    
-    theorem DirectCallIns.toInw {f arg res: TrisetFn}
-      (ins: f.DirectCallIns arg res)
+    theorem DirectCallHas.mono {laneA laneB}
+      {f arg res: TrisetFn}
+      (has: f.DirectCallHas laneA arg res)
+      (le: Set3.Lane.Le laneA laneB := by decide)
     :
-      f.DirectCallInw arg res
+      f.DirectCallHas laneB arg res
     :=
-      let ⟨preF, preArg, preRes, fEq, argEq, resEq, ins⟩ := ins
-      ⟨preF, preArg, preRes, fEq, argEq, resEq, insEntryLeInwEntry ins⟩
+      let ⟨preF, preArg, preRes, fEq, argEq, resEq, has⟩ := has
+      ⟨preF, preArg, preRes, fEq, argEq, resEq, has.mono le⟩
     
     
     -- ## The direct relations on representatives
     
-    theorem directIns_mk_iff {s e: PreTrisetFn}:
-      DirectIns ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Ins e' ∧ e.IsBisim e'
+    theorem directHas_mk_iff {lane s e}:
+      DirectHas lane ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Has lane e' ∧ e.IsBisim e'
     :=
-      ⟨
-        fun ⟨_, _, sEq, eEq, ins⟩ =>
-          let sB: s.IsBisim _ := Quotient.exact sEq
-          let eB: e.IsBisim _ := Quotient.exact eEq
-          let ⟨e', ins', b⟩ := sB.symm.ins ins
-          ⟨e', ins', eB.trans b⟩,
-        fun ⟨e', ins', b⟩ => ⟨s, e', rfl, Quotient.sound b, ins'⟩,
-      ⟩
+      DirectRel_mk_iff
+        (st := PreTrisetFn.setoid)
+        (Mem := PreTrisetFn.Has)
+        (fun h => PreTrisetFn.IsBisim.has h)
     
-    theorem directInw_mk_iff {s e: PreTrisetFn}:
-      DirectInw ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Inw e' ∧ e.IsBisim e'
-    :=
-      ⟨
-        fun ⟨_, _, sEq, eEq, inw⟩ =>
-          let sB: s.IsBisim _ := Quotient.exact sEq
-          let eB: e.IsBisim _ := Quotient.exact eEq
-          let ⟨e', inw', b⟩ := sB.symm.inw inw
-          ⟨e', inw', eB.trans b⟩,
-        fun ⟨e', inw', b⟩ => ⟨s, e', rfl, Quotient.sound b, inw'⟩,
-      ⟩
-    
-    theorem directCallIns_mk_iff {f a r: PreTrisetFn}:
-      DirectCallIns ⟦f⟧ ⟦a⟧ ⟦r⟧
+    theorem directCallHas_mk_iff {lane f a r}:
+      DirectCallHas lane ⟦f⟧ ⟦a⟧ ⟦r⟧
         ↔
-      ∃ a' r', f.InsEntry a' r' ∧ a.IsBisim a' ∧ r.IsBisim r'
+      ∃ a' r', f.HasEntry lane a' r' ∧ a.IsBisim a' ∧ r.IsBisim r'
     :=
-      ⟨
-        fun ⟨_, _, _, fEq, aEq, rEq, ins⟩ =>
-          let fB: f.IsBisim _ := Quotient.exact fEq
-          let aB: a.IsBisim _ := Quotient.exact aEq
-          let rB: r.IsBisim _ := Quotient.exact rEq
-          let ⟨a', r', ins', ba, br⟩ := fB.symm.insEntry ins
-          ⟨a', r', ins', aB.trans ba, rB.trans br⟩,
-        fun ⟨a', r', ins', ba, br⟩ =>
-          ⟨f, a', r', rfl, Quotient.sound ba, Quotient.sound br, ins'⟩,
-      ⟩
-    
-    theorem directCallInw_mk_iff {f a r: PreTrisetFn}:
-      DirectCallInw ⟦f⟧ ⟦a⟧ ⟦r⟧
-        ↔
-      ∃ a' r', f.InwEntry a' r' ∧ a.IsBisim a' ∧ r.IsBisim r'
-    :=
-      ⟨
-        fun ⟨_, _, _, fEq, aEq, rEq, inw⟩ =>
-          let fB: f.IsBisim _ := Quotient.exact fEq
-          let aB: a.IsBisim _ := Quotient.exact aEq
-          let rB: r.IsBisim _ := Quotient.exact rEq
-          let ⟨a', r', inw', ba, br⟩ := fB.symm.inwEntry inw
-          ⟨a', r', inw', aB.trans ba, rB.trans br⟩,
-        fun ⟨a', r', inw', ba, br⟩ =>
-          ⟨f, a', r', rfl, Quotient.sound ba, Quotient.sound br, inw'⟩,
-      ⟩
+      DirectRel₃_mk_iff
+        (st := PreTrisetFn.setoid)
+        (R := PreTrisetFn.HasEntry)
+        (fun h => PreTrisetFn.IsBisim.hasEntry h)
     
     -- For saturated graphs, the exact code of the argument suffices.
-    theorem directCallIns_mk_iff_of_saturated {f a r: PreTrisetFn}
+    theorem directCallHas_mk_iff_of_saturated {lane}
+      {f a r: PreTrisetFn}
       (sat: f.Saturated)
     :
-      DirectCallIns ⟦f⟧ ⟦a⟧ ⟦r⟧ ↔ ∃ r', f.InsEntry a r' ∧ r.IsBisim r'
+      DirectCallHas lane ⟦f⟧ ⟦a⟧ ⟦r⟧
+        ↔
+      ∃ r', f.HasEntry lane a r' ∧ r.IsBisim r'
     :=
       ⟨
         fun h =>
-          let ⟨_, _, ins, ba, br⟩ := directCallIns_mk_iff.mp h
-          let ⟨r'', ins', br'⟩ := sat.ins ba.symm ins
-          ⟨r'', ins', br.trans br'⟩,
-        fun ⟨r', ins, br⟩ =>
-          directCallIns_mk_iff.mpr ⟨a, r', ins, IsBisim.refl a, br⟩,
-      ⟩
-    
-    theorem directCallInw_mk_iff_of_saturated {f a r: PreTrisetFn}
-      (sat: f.Saturated)
-    :
-      DirectCallInw ⟦f⟧ ⟦a⟧ ⟦r⟧ ↔ ∃ r', f.InwEntry a r' ∧ r.IsBisim r'
-    :=
-      ⟨
-        fun h =>
-          let ⟨_, _, inw, ba, br⟩ := directCallInw_mk_iff.mp h
-          let ⟨r'', inw', br'⟩ := sat.inw ba.symm inw
-          ⟨r'', inw', br.trans br'⟩,
-        fun ⟨r', inw, br⟩ =>
-          directCallInw_mk_iff.mpr ⟨a, r', inw, IsBisim.refl a, br⟩,
+          let ⟨_, _, has, ba, br⟩ := directCallHas_mk_iff.mp h
+          let ⟨r'', has', br'⟩ := sat.has ba.symm has
+          ⟨r'', has', br.trans br'⟩,
+        fun ⟨r', has, br⟩ =>
+          directCallHas_mk_iff.mpr ⟨a, r', has, IsBisim.refl a, br⟩,
       ⟩
     
     
     -- ## Extensionality
     
     -- Trisets with the same members are equal.
-    theorem eq_of_directMem {s t: TrisetFn}
+    theorem eq_of_directMem
+      {s t: TrisetFn}
       (sNotFn: ¬ s.IsFn)
       (tNotFn: ¬ t.IsFn)
-      (ins: ∀ e, s.DirectIns e ↔ t.DirectIns e)
-      (inw: ∀ e, s.DirectInw e ↔ t.DirectInw e)
+      (has: ∀ lane e, s.DirectHas lane e ↔ t.DirectHas lane e)
     :
       s = t
     :=
       Quotient.inductionOn₂
         (motive := fun (s t: TrisetFn) =>
           ¬ s.IsFn → ¬ t.IsFn →
-          (∀ e, s.DirectIns e ↔ t.DirectIns e) →
-          (∀ e, s.DirectInw e ↔ t.DirectInw e) →
+          (∀ lane e, s.DirectHas lane e ↔ t.DirectHas lane e) →
           s = t)
         s
         t
-        (fun _ _ sNotFn tNotFn ins inw =>
+        (fun _ _ sNotFn tNotFn has =>
           Quotient.sound
             (isBisim_of_members sNotFn tNotFn
-              (fun e h =>
-                directIns_mk_iff.mp
-                  ((ins ⟦e⟧).mp (directIns_mk_iff.mpr ⟨e, h, .refl e⟩)))
-              (fun e h =>
+              (fun {lane} e h =>
+                directHas_mk_iff.mp
+                  ((has lane ⟦e⟧).mp
+                    (directHas_mk_iff.mpr ⟨e, h, .refl e⟩)))
+              (fun {lane} e h =>
                 let ⟨e', h', b⟩ :=
-                  directIns_mk_iff.mp
-                    ((ins ⟦e⟧).mpr (directIns_mk_iff.mpr ⟨e, h, .refl e⟩))
-                ⟨e', h', b.symm⟩)
-              (fun e h =>
-                directInw_mk_iff.mp
-                  ((inw ⟦e⟧).mp (directInw_mk_iff.mpr ⟨e, h, .refl e⟩)))
-              (fun e h =>
-                let ⟨e', h', b⟩ :=
-                  directInw_mk_iff.mp
-                    ((inw ⟦e⟧).mpr (directInw_mk_iff.mpr ⟨e, h, .refl e⟩))
+                  directHas_mk_iff.mp
+                    ((has lane ⟦e⟧).mpr
+                      (directHas_mk_iff.mpr ⟨e, h, .refl e⟩))
                 ⟨e', h', b.symm⟩)))
         sNotFn
         tNotFn
-        ins
-        inw
+        has
     
     -- Functions with the same input-output behavior are equal.
-    theorem eq_of_directCall {f g: TrisetFn}
+    theorem eq_of_directCall
+      {f g: TrisetFn}
       (fFn: f.IsFn)
       (gFn: g.IsFn)
-      (ins: ∀ a r, f.DirectCallIns a r ↔ g.DirectCallIns a r)
-      (inw: ∀ a r, f.DirectCallInw a r ↔ g.DirectCallInw a r)
+      (has:
+        ∀ {lane a r},
+        f.DirectCallHas lane a r ↔ g.DirectCallHas lane a r)
     :
       f = g
     :=
       Quotient.inductionOn₂
         (motive := fun (f g: TrisetFn) =>
           f.IsFn → g.IsFn →
-          (∀ a r, f.DirectCallIns a r ↔ g.DirectCallIns a r) →
-          (∀ a r, f.DirectCallInw a r ↔ g.DirectCallInw a r) →
+          (∀ {lane a r},
+            f.DirectCallHas lane a r ↔ g.DirectCallHas lane a r) →
           f = g)
         f
         g
-        (fun _ _ fFn gFn ins inw =>
+        (fun _ _ fFn gFn has =>
           Quotient.sound
             (isBisim_of_entries fFn gFn
-              (fun a r h =>
-                directCallIns_mk_iff.mp
-                  ((ins ⟦a⟧ ⟦r⟧).mp
-                    (directCallIns_mk_iff.mpr
+              (fun {_ a r} h =>
+                directCallHas_mk_iff.mp
+                  (has.mp
+                    (directCallHas_mk_iff.mpr
                       ⟨a, r, h, .refl a, .refl r⟩)))
-              (fun a r h =>
+              (fun {_ a r} h =>
                 let ⟨a', r', h', ba, br⟩ :=
-                  directCallIns_mk_iff.mp
-                    ((ins ⟦a⟧ ⟦r⟧).mpr
-                      (directCallIns_mk_iff.mpr
-                        ⟨a, r, h, .refl a, .refl r⟩))
-                ⟨a', r', h', ba.symm, br.symm⟩)
-              (fun a r h =>
-                directCallInw_mk_iff.mp
-                  ((inw ⟦a⟧ ⟦r⟧).mp
-                    (directCallInw_mk_iff.mpr
-                      ⟨a, r, h, .refl a, .refl r⟩)))
-              (fun a r h =>
-                let ⟨a', r', h', ba, br⟩ :=
-                  directCallInw_mk_iff.mp
-                    ((inw ⟦a⟧ ⟦r⟧).mpr
-                      (directCallInw_mk_iff.mpr
+                  directCallHas_mk_iff.mp
+                    (has.mpr
+                      (directCallHas_mk_iff.mpr
                         ⟨a, r, h, .refl a, .refl r⟩))
                 ⟨a', r', h', ba.symm, br.symm⟩)))
         fFn
         gFn
-        ins
-        inw
+        has
     
   end TrisetFn
 end Pair

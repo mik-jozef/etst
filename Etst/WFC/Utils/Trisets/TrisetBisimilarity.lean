@@ -521,18 +521,18 @@ theorem bisimDl.NonBisimDef.respectsBisim:
   NonBisimDef p' q'
 |
   _p, _q, _p', _q', .ofP pp insP allQ, ⟨R, isBisimP, Rpp'⟩, qBisim =>
-    let ⟨pp', insP', RppPp'⟩ := isBisimP.left .ins _ _ pp Rpp' insP
+    let ⟨pp', insP', RppPp'⟩ := isBisimP.left .defLane _ _ pp Rpp' insP
     .ofP pp' insP' fun qq' inwQ' =>
       let ⟨Rq, isBisimQ, Rqq'⟩ := qBisim
-      let ⟨qq, inwQ, RqqQq'⟩ := isBisimQ.right .inw _ _ qq' Rqq' inwQ'
+      let ⟨qq, inwQ, RqqQq'⟩ := isBisimQ.right .posLane _ _ qq' Rqq' inwQ'
       (allQ qq inwQ).respectsBisim
         ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
 |
   _p, _q, _p', _q', .ofQ qq insQ allP, pBisim, ⟨Rq, isBisimQ, Rqq'⟩ =>
-    let ⟨qq', insQ', RqqQq'⟩ := isBisimQ.left .ins _ _ qq Rqq' insQ
+    let ⟨qq', insQ', RqqQq'⟩ := isBisimQ.left .defLane _ _ qq Rqq' insQ
     .ofQ qq' insQ' fun pp' inwP' =>
       let ⟨R, isBisimP, Rpp'⟩ := pBisim
-      let ⟨pp, inwP, RppPp'⟩ := isBisimP.right .inw _ _ pp' Rpp' inwP'
+      let ⟨pp, inwP, RppPp'⟩ := isBisimP.right .posLane _ _ pp' Rpp' inwP'
       (allP pp inwP).respectsBisim
         ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
 
@@ -544,53 +544,49 @@ theorem bisimDl.NonBisimPos.respectsBisim:
   NonBisimPos p' q'
 |
   _p, _q, _p', _q', .ofP pp inwP allQ, ⟨R, isBisimP, Rpp'⟩, qBisim =>
-    let ⟨pp', inwP', RppPp'⟩ := isBisimP.left .inw _ _ pp Rpp' inwP
+    let ⟨pp', inwP', RppPp'⟩ := isBisimP.left .posLane _ _ pp Rpp' inwP
     .ofP pp' inwP' fun qq' insQ' =>
       let ⟨Rq, isBisimQ, Rqq'⟩ := qBisim
-      let ⟨qq, insQ, RqqQq'⟩ := isBisimQ.right .ins _ _ qq' Rqq' insQ'
+      let ⟨qq, insQ, RqqQq'⟩ := isBisimQ.right .defLane _ _ qq' Rqq' insQ'
       (allQ qq insQ).respectsBisim
         ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
 |
   _p, _q, _p', _q', .ofQ qq inwQ allP, pBisim, ⟨Rq, isBisimQ, Rqq'⟩ =>
-    let ⟨qq', inwQ', RqqQq'⟩ := isBisimQ.left .inw _ _ qq Rqq' inwQ
+    let ⟨qq', inwQ', RqqQq'⟩ := isBisimQ.left .posLane _ _ qq Rqq' inwQ
     .ofQ qq' inwQ' fun pp' insP' =>
       let ⟨R, isBisimP, Rpp'⟩ := pBisim
-      let ⟨pp, insP, RppPp'⟩ := isBisimP.right .ins _ _ pp' Rpp' insP'
+      let ⟨pp, insP, RppPp'⟩ := isBisimP.right .defLane _ _ pp' Rpp' insP'
       (allP pp insP).respectsBisim
         ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
 
 
-exposed def Triset.NonBisimDef (a b: Pair.Triset) :=
-  let respects
-    a0 b0 a1 b1
-    (aBisim: Pair.PreTriset.setoid.r a0 a1)
-    (bBisim: Pair.PreTriset.setoid.r b0 b1)
-  :
-    bisimDl.NonBisimDef a0 b0 = bisimDl.NonBisimDef a1 b1
-  :=
-    propext (Iff.intro
-      (fun nbi => nbi.respectsBisim aBisim bBisim)
-      (fun nbi =>
-        nbi.respectsBisim
-          (Pair.PreTriset.setoid.iseqv.symm aBisim)
-          (Pair.PreTriset.setoid.iseqv.symm bBisim)))
-  Quotient.lift₂ bisimDl.NonBisimDef respects a b
+-- Lifting a relation on representatives to the bisimilarity quotient.
+exposed def Triset.liftBisim (P: Pair → Pair → Prop)
+  (respects:
+    ∀ {a0 b0 a1 b1},
+      Pair.PreTriset.setoid.r a0 a1 →
+      Pair.PreTriset.setoid.r b0 b1 →
+      P a0 b0 → P a1 b1)
+:
+  Pair.Triset → Pair.Triset → Prop
+:=
+  Quotient.lift₂ P
+    (fun _a0 _b0 _a1 _b1 aBisim bBisim =>
+      propext (Iff.intro
+        (fun p => respects aBisim bBisim p)
+        (fun p =>
+          respects
+            (Pair.PreTriset.setoid.iseqv.symm aBisim)
+            (Pair.PreTriset.setoid.iseqv.symm bBisim)
+            p)))
 
-exposed def Triset.NonBisimPos (a b: Pair.Triset) :=
-  let respects
-    a0 b0 a1 b1
-    (aBisim: Pair.PreTriset.setoid.r a0 a1)
-    (bBisim: Pair.PreTriset.setoid.r b0 b1)
-  :
-    bisimDl.NonBisimPos a0 b0 = bisimDl.NonBisimPos a1 b1
-  :=
-    propext (Iff.intro
-      (fun nbi => nbi.respectsBisim aBisim bBisim)
-      (fun nbi =>
-        nbi.respectsBisim
-          (Pair.PreTriset.setoid.iseqv.symm aBisim)
-          (Pair.PreTriset.setoid.iseqv.symm bBisim)))
-  Quotient.lift₂ bisimDl.NonBisimPos respects a b
+exposed def Triset.NonBisimDef: Pair.Triset → Pair.Triset → Prop :=
+  Triset.liftBisim bisimDl.NonBisimDef
+    (fun aBisim bBisim nbi => nbi.respectsBisim aBisim bBisim)
+
+exposed def Triset.NonBisimPos: Pair.Triset → Pair.Triset → Prop :=
+  Triset.liftBisim bisimDl.NonBisimPos
+    (fun aBisim bBisim nbi => nbi.respectsBisim aBisim bBisim)
 
 
 /-
@@ -627,37 +623,69 @@ theorem bisimDl.IsBisimPos.respectsBisim {p q p' q': Pair}
         (Pair.PreTriset.setoid.iseqv.symm qBisim))
 
 
-exposed def Triset.IsBisimDef (a b: Pair.Triset) :=
-  let respects
-    a0 b0 a1 b1
-    (aBisim: Pair.PreTriset.setoid.r a0 a1)
-    (bBisim: Pair.PreTriset.setoid.r b0 b1)
-  :
-    bisimDl.IsBisimDef a0 b0 = bisimDl.IsBisimDef a1 b1
-  :=
-    propext (Iff.intro
-      (fun isB => isB.respectsBisim aBisim bBisim)
-      (fun isB =>
-        isB.respectsBisim
-          (Pair.PreTriset.setoid.iseqv.symm aBisim)
-          (Pair.PreTriset.setoid.iseqv.symm bBisim)))
-  Quotient.lift₂ bisimDl.IsBisimDef respects a b
+/- The lane-indexed version of the Lean-native bisimilarity. -/
+exposed def bisimDl.IsBisimAt (lane: Set3.Lane) (p q: Pair): Prop :=
+  match lane with
+  | .defLane => IsBisimDef p q
+  | .posLane => IsBisimPos p q
 
-exposed def Triset.IsBisimPos (a b: Pair.Triset) :=
-  let respects
-    a0 b0 a1 b1
-    (aBisim: Pair.PreTriset.setoid.r a0 a1)
-    (bBisim: Pair.PreTriset.setoid.r b0 b1)
-  :
-    bisimDl.IsBisimPos a0 b0 = bisimDl.IsBisimPos a1 b1
-  :=
-    propext (Iff.intro
-      (fun isB => isB.respectsBisim aBisim bBisim)
-      (fun isB =>
-        isB.respectsBisim
-          (Pair.PreTriset.setoid.iseqv.symm aBisim)
-          (Pair.PreTriset.setoid.iseqv.symm bBisim)))
-  Quotient.lift₂ bisimDl.IsBisimPos respects a b
+theorem bisimDl.IsBisimAt_of_mem {lane p q w}
+  (h: w ∈ (((bisimDl.val "IsBisim").call p).call q).getLane lane)
+:
+  bisimDl.IsBisimAt lane p q
+:=
+  match lane with
+  | .defLane => bisimDl.IsBisimDef_of_defMem h
+  | .posLane => bisimDl.IsBisimPos_of_posMem h
+
+theorem bisimDl.IsBisimAt.toMem {lane p q w}
+  (isB: bisimDl.IsBisimAt lane p q)
+:
+  w ∈ (((bisimDl.val "IsBisim").call p).call q).getLane lane
+:=
+  match lane with
+  | .defLane => bisimDl.IsBisimDef.toDefMem isB
+  | .posLane => bisimDl.IsBisimPos.toPosMem isB
+
+theorem bisimDl.IsBisimAt.respectsBisim {lane: Set3.Lane} {p q p' q': Pair}
+  (isB: bisimDl.IsBisimAt lane p q)
+  (pBisim: Pair.PreTriset.IsBisim p p')
+  (qBisim: Pair.PreTriset.IsBisim q q')
+:
+  bisimDl.IsBisimAt lane p' q'
+:=
+  match lane with
+  | .defLane => bisimDl.IsBisimDef.respectsBisim isB pBisim qBisim
+  | .posLane => bisimDl.IsBisimPos.respectsBisim isB pBisim qBisim
+
+/-
+  The pair form of the memberships. With a variable lane, `getLane` does
+  not reduce, so `(((x).call p).call q)` cannot be folded into `x` by
+  unification; these lemmas do the case split once.
+  TODO maybe the deduped version should leave out Set3.call?
+-/
+theorem bisimDl.IsBisimAt_of_pair_mem {lane: Set3.Lane} {p q w: Pair}
+  (h: .pair p (.pair q w) ∈ (bisimDl.val "IsBisim").getLane lane)
+:
+  bisimDl.IsBisimAt lane p q
+:=
+  bisimDl.IsBisimAt_of_mem (Set3.inCall (Set3.inCall h))
+
+theorem bisimDl.IsBisimAt.toPairMem {lane: Set3.Lane} {p q w: Pair}
+  (isB: bisimDl.IsBisimAt lane p q)
+:
+  .pair p (.pair q w) ∈ (bisimDl.val "IsBisim").getLane lane
+:=
+  Set3.inCallElim (Set3.inCallElim isB.toMem)
+
+
+exposed def Triset.IsBisimDef: Pair.Triset → Pair.Triset → Prop :=
+  Triset.liftBisim bisimDl.IsBisimDef
+    (fun aBisim bBisim isB => isB.respectsBisim aBisim bBisim)
+
+exposed def Triset.IsBisimPos: Pair.Triset → Pair.Triset → Prop :=
+  Triset.liftBisim bisimDl.IsBisimPos
+    (fun aBisim bBisim isB => isB.respectsBisim aBisim bBisim)
 
 
 /-
@@ -701,21 +729,21 @@ theorem bisimDl.IsBisimDef.toBisim {p q: Pair}
     ⟨
       fun l _ _ _ isB trans =>
         match l, trans with
-        | .ins, trans =>
+        | .defLane, trans =>
           let ⟨b', defB, isB'⟩ :=
             bisimDl.IsBisimDef.matchDef isB (Set3.defToPos trans)
           ⟨b', defB, isB'⟩
-        | .inw, trans =>
+        | .posLane, trans =>
           let ⟨b', defB, isB'⟩ :=
             bisimDl.IsBisimDef.matchDef isB trans
           ⟨b', Set3.defToPos defB, isB'⟩,
       fun l _ _ _ isB trans =>
         match l, trans with
-        | .ins, trans =>
+        | .defLane, trans =>
           let ⟨b', defB, isB'⟩ :=
             bisimDl.IsBisimDef.matchDef' isB (Set3.defToPos trans)
           ⟨b', defB, isB'⟩
-        | .inw, trans =>
+        | .posLane, trans =>
           let ⟨b', defB, isB'⟩ :=
             bisimDl.IsBisimDef.matchDef' isB trans
           ⟨b', Set3.defToPos defB, isB'⟩,
@@ -750,7 +778,7 @@ theorem Triset.IsBisimDef.toEq {ts0 ts1: Pair.Triset}
     `Hc ts0 → Hc ts1 → (IsBisimPos ts0 ts1 ↔ IsBisimDef ts0 ts1 ↔ ts0 = ts1)`.
 -/
 
--- Transporting a definite/possible transition across a bisimulation.
+-- Transporting a membership across a bisimulation.
 theorem Pair.PreTriset.IsBisim.symm {a b: Pair.PreTriset}
   (bisim: Pair.PreTriset.IsBisim a b)
 :
@@ -758,25 +786,16 @@ theorem Pair.PreTriset.IsBisim.symm {a b: Pair.PreTriset}
 :=
   Pair.PreTriset.setoid.iseqv.symm bisim
 
-theorem Pair.PreTriset.IsBisim.ins {a b x: Pair.PreTriset}
-  (bisim: Pair.PreTriset.IsBisim a b)
-  (ins: Pair.PreTriset.Ins a x)
+theorem Pair.PreTriset.IsBisim.has {lane}
+  {a b x: Pair.PreTriset}
+  (bisim: a.IsBisim b)
+  (has: a.Has lane x)
 :
-  ∃ y, Pair.PreTriset.Ins b y ∧ Pair.PreTriset.IsBisim x y
+  ∃ y, b.Has lane y ∧ Pair.PreTriset.IsBisim x y
 :=
   let ⟨R, isBisim, Rab⟩ := bisim
-  let ⟨y, insY, Rxy⟩ := isBisim.left .ins a b x Rab ins
-  ⟨y, insY, R, isBisim, Rxy⟩
-
-theorem Pair.PreTriset.IsBisim.inw {a b x: Pair.PreTriset}
-  (bisim: Pair.PreTriset.IsBisim a b)
-  (inw: Pair.PreTriset.Inw a x)
-:
-  ∃ y, Pair.PreTriset.Inw b y ∧ Pair.PreTriset.IsBisim x y
-:=
-  let ⟨R, isBisim, Rab⟩ := bisim
-  let ⟨y, inwY, Rxy⟩ := isBisim.left .inw a b x Rab inw
-  ⟨y, inwY, R, isBisim, Rxy⟩
+  let ⟨y, hasY, Rxy⟩ := isBisim.left lane a b x Rab has
+  ⟨y, hasY, R, isBisim, Rxy⟩
 
 
 -- `NonBisimDef` is the stronger lane: it always entails `NonBisimPos`.
@@ -805,10 +824,10 @@ theorem bisimDl.IsBisimDef.toIsBisimPos {p q: Pair}
 theorem bisimDl.NonBisimDef.not_bisim:
   {p q: Pair} → NonBisimDef p q → ¬ Pair.PreTriset.IsBisim p q
 | _, _, .ofP _p' inP allQ, bisim =>
-    let ⟨q', insQ', bisimP'Q'⟩ := bisim.ins inP
+    let ⟨q', insQ', bisimP'Q'⟩ := bisim.has (lane := .defLane) inP
     (allQ q' (Set3.defToPos insQ')).not_bisim bisimP'Q'
 | _, _, .ofQ _q' inQ allP, bisim =>
-    let ⟨p', insP', bisimQ'P'⟩ := bisim.symm.ins inQ
+    let ⟨p', insP', bisimQ'P'⟩ := bisim.symm.has (lane := .defLane) inQ
     (allP p' (Set3.defToPos insP')).not_bisim bisimQ'P'.symm
 
 theorem bisimDl.IsBisimPos.of_bisim {p q: Pair}
@@ -835,7 +854,7 @@ theorem Pair.Triset.hc_ins_of_inw {p p': Pair.PreTriset}
         let ⟨preTs, preElem, tsEq, elemEq, ins⟩ := exIns
         let bisimPre: Pair.PreTriset.IsBisim p preTs := Quotient.exact tsEq
         let bisimElem: Pair.PreTriset.IsBisim p' preElem := Quotient.exact elemEq
-        let ⟨p'', insP'', bisimPreElem⟩ := bisimPre.symm.ins ins
+        let ⟨p'', insP'', bisimPreElem⟩ := bisimPre.symm.has ins
         h ⟨p'', insP'',
           Pair.PreTriset.setoid.iseqv.trans bisimElem bisimPreElem⟩)
 
