@@ -73,7 +73,6 @@ namespace Pair.PreTriset
   :=
     Iff.of_eq
       (congrArg (fun s => x ∈ s.getLane lane) (inter_wfm_eq a b)) |>.trans
-    (Expr.mem_triIntp_getLane (interExpr a b) |>.trans
       (Iff.intro
         (fun h =>
           match inUnElim h with
@@ -83,7 +82,7 @@ namespace Pair.PreTriset
             let ⟨_, hC⟩ := inZthElim hZth
             let hI := inCallElimSingle hC (toExpr_singleton b)
             .inl ⟨
-              Set3.inCall (isInDl.wfm_uniSetMap_eq ▸ hU),
+              isInDl.wfm_uniSetMap_eq ▸ hU,
               isInDl.IsIn_of_mem hI,
             ⟩
           | .inr hIr =>
@@ -92,7 +91,7 @@ namespace Pair.PreTriset
             let ⟨_, hC⟩ := inZthElim hZth
             let hI := inCallElimSingle hC (toExpr_singleton a)
             .inr ⟨
-              Set3.inCall (isInDl.wfm_uniSetMap_eq ▸ hU),
+              isInDl.wfm_uniSetMap_eq ▸ hU,
               isInDl.IsIn_of_mem hI,
             ⟩)
         (fun h =>
@@ -107,7 +106,7 @@ namespace Pair.PreTriset
                       lane)
                     (.pair a x)
                 from
-                  isInDl.wfm_uniSetMap_eq ▸ Set3.inCallElim hU)
+                  isInDl.wfm_uniSetMap_eq ▸ hU)
                 (inToExpr a))
               (inZth (inCall (hI.toMem (w := .null)) (inToExpr b))))
           | .inr ⟨hU, hI⟩ =>
@@ -120,9 +119,9 @@ namespace Pair.PreTriset
                       lane)
                     (.pair b x)
                 from
-                  isInDl.wfm_uniSetMap_eq ▸ (Set3.inCallElim hU))
+                  isInDl.wfm_uniSetMap_eq ▸ hU)
                 (inToExpr b))
-              (inZth (inCall (hI.toMem (w := .null)) (inToExpr a)))))))
+              (inZth (inCall (hI.toMem (w := .null)) (inToExpr a))))))
   
   /-
     The fuzzy characteristic equation, definite lane.

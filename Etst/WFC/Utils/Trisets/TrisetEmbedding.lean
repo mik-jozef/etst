@@ -103,7 +103,7 @@ namespace trisetEmbedHelpersDl
       ∈ (((trisetEmbedHelpersDl.val "embedStep").call iFn).call t).getLane lane
   :=
     let inUsmWfm:
-      .pair t e ∈ (trisetEmbedHelpersDl.val "uniSetMap").getLane lane
+      e ∈ ((trisetEmbedHelpersDl.val "uniSetMap").call t).getLane lane
     :=
       wfm_uniSetMap_eq ▸ ins
     let inUsm:

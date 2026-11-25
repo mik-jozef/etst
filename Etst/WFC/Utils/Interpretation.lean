@@ -265,13 +265,6 @@ theorem DefList.intpDefs_mono_apx
   fun _ => Expr.triIntp_mono_apx bLe cLe
 
 
-theorem Expr.mem_triIntp_getLane {b c fv lane p}
-  (expr: Expr .basic)
-:
-  p ∈ (expr.triIntp b c fv).getLane lane ↔ p ∈ expr.intp lane b c fv
-:=
-  Iff.of_eq (congrArg (fun s => p ∈ s) rfl)
-
 /-
   `Expr.toLane` only changes the shape of constants, so interpreting
   `expr.toLane lane` at the trivial lane agrees with interpreting

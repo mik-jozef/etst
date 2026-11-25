@@ -38,50 +38,43 @@ exposed pairDefList bisimDl extends uniSetMapDl
   p3 IsBisim := Ex p q, p × q × (!NonBisim p q)
 pairDefList.
 
--- A Lean-native definition of `NonBisim`'s possible-membership lane.
-inductive bisimDl.NonBisimDef: (p q: Pair) → Prop where
+-- A Lean-native definition of `NonBisim`.
+inductive bisimDl.NonBisim (lane: Set3.Lane): (p q: Pair) → Prop where
 | ofP {p q}
     (p': Pair)
-    (inP: p' ∈ (uniSetMap.call p).defMem)
+    (inP: p' ∈ (uniSetMap.call p).getLane lane)
     (allQ:
       ∀ q',
-        q' ∈ (uniSetMap.call q).posMem →
-        bisimDl.NonBisimDef p' q')
+        q' ∈ (uniSetMap.call q).getLane lane.toggle →
+        bisimDl.NonBisim lane p' q')
   :
-    bisimDl.NonBisimDef p q
+    bisimDl.NonBisim lane p q
 | ofQ {p q}
     (q': Pair)
-    (inQ: q' ∈ (uniSetMap.call q).defMem)
+    (inQ: q' ∈ (uniSetMap.call q).getLane lane)
     (allP:
       ∀ p',
-        p' ∈ (uniSetMap.call p).posMem →
-        bisimDl.NonBisimDef p' q')
+        p' ∈ (uniSetMap.call p).getLane lane.toggle →
+        bisimDl.NonBisim lane p' q')
   :
-    bisimDl.NonBisimDef p q
+    bisimDl.NonBisim lane p q
 
--- A Lean-native definition of `NonBisim`'s definite-membership lane.
-inductive bisimDl.NonBisimPos: (p q: Pair) → Prop where
-| ofP {p q}
-    (p': Pair)
-    (inP: p' ∈ (uniSetMap.call p).posMem)
-    (allQ:
-      ∀ q',
-        q' ∈ (uniSetMap.call q).defMem →
-        bisimDl.NonBisimPos p' q')
-  :
-    bisimDl.NonBisimPos p q
-| ofQ {p q}
-    (q': Pair)
-    (inQ: q' ∈ (uniSetMap.call q).posMem)
-    (allP:
-      ∀ p',
-        p' ∈ (uniSetMap.call p).defMem →
-        bisimDl.NonBisimPos p' q')
-  :
-    bisimDl.NonBisimPos p q
+-- `NonBisim`'s definite-membership lane.
+abbrev bisimDl.NonBisimDef := bisimDl.NonBisim .defLane
 
-exposed def bisimDl.IsBisimDef (p q: Pair): Prop := ¬ NonBisimPos p q
-exposed def bisimDl.IsBisimPos (p q: Pair): Prop := ¬ NonBisimDef p q
+-- `NonBisim`'s possible-membership lane.
+abbrev bisimDl.NonBisimPos := bisimDl.NonBisim .posLane
+
+/-
+  The two `IsBisim` lanes are the complements of `NonBisim` at the
+  *opposite* lane: `!NonBisim` sits behind a complement, which flips
+  the lane.
+-/
+exposed def bisimDl.IsBisimAt (lane: Set3.Lane) (p q: Pair): Prop :=
+  ¬ bisimDl.NonBisim lane.toggle p q
+
+abbrev bisimDl.IsBisimDef (p q: Pair): Prop := IsBisimAt .defLane p q
+abbrev bisimDl.IsBisimPos (p q: Pair): Prop := IsBisimAt .posLane p q
 
 /-
   ## Section: proving equivalence of the Lean-native WFM defs
@@ -95,12 +88,6 @@ theorem bisimDl.wfm_uniSetMap_eq:
 
 /-
   `wfm_uniSetMap_eq` in the shape the proofs below actually need.
-
-  `▸` only finds the sides of an equality *syntactically*, so it cannot
-  transport between `uniSetMap` and `bisimDl.dl.wfm (bisimDl.const
-  "uniSetMap")` (nor between the `mem`/`posMem` projections of the two
-  lanes). Stating the transport as an `Iff`, which is applied explicitly,
-  keeps these steps cheap.
 -/
 theorem bisimDl.mem_uniSetMap {lane p}:
   p ∈ (bisimDl.dl.wfm (bisimDl.const "uniSetMap")).getLane lane ↔
@@ -141,7 +128,7 @@ theorem bisimDl.NonBisimDef_of_Ins {cst index p q w}
       let ⟨insVar, insCall⟩ := inIrElim insIr
       let p'AliasEq: p'Alias = p' := inVarElim insVar rfl
       let insAtP := pEq ▸ p'AliasEq ▸ inCallElimSingle insCall rfl
-      let inP: p.pair p' ∈ uniSetMap.defMem :=
+      let inP: p' ∈ (uniSetMap.call p).defMem :=
         (bisimDl.mem_uniSetMap (lane := .defLane)).mp
           (cinsSat insAtP).isSound
       .ofP p' inP fun q' inQ =>
@@ -149,9 +136,7 @@ theorem bisimDl.NonBisimDef_of_Ins {cst index p q w}
         | .inl ins =>
           let notBout inBout :=
             (boutSat inBout).isSound
-              ((bisimDl.mem_uniSetMap (lane := .posLane)).mpr
-                (show Pair.pair qAlias q' ∈ uniSetMap.posMem from
-                  qEq ▸ inQ))
+              (bisimDl.mem_uniSetMap.mpr (qEq ▸ inQ))
           False.elim <|
           ins (inSome q' (inIr rfl (inCall notBout rfl)))
         | .inr ins =>
@@ -165,7 +150,7 @@ theorem bisimDl.NonBisimDef_of_Ins {cst index p q w}
       let ⟨insVar, insCall⟩ := inIrElim insIr
       let q'AliasEq: q'Alias = q' := inVarElim insVar rfl
       let insAtQ := qEq ▸ q'AliasEq ▸ inCallElimSingle insCall rfl
-      let inQ: q.pair q' ∈ uniSetMap.defMem :=
+      let inQ: q' ∈ (uniSetMap.call q).defMem :=
         (bisimDl.mem_uniSetMap (lane := .defLane)).mp
           (cinsSat insAtQ).isSound
       .ofQ q' inQ fun p' inP =>
@@ -173,9 +158,7 @@ theorem bisimDl.NonBisimDef_of_Ins {cst index p q w}
         | .inl ins =>
           let notBout inBout :=
             (boutSat inBout).isSound
-              ((bisimDl.mem_uniSetMap (lane := .posLane)).mpr
-                (show Pair.pair pAlias p' ∈ uniSetMap.posMem from
-                  pEq ▸ inP))
+              (bisimDl.mem_uniSetMap.mpr (pEq ▸ inP))
           False.elim <|
           ins (inSome p' (inIr rfl (inCall notBout rfl)))
         | .inr ins =>
@@ -190,12 +173,12 @@ theorem bisimDl.NonBisimDef_of_defMem {p q w}
 :=
   NonBisimDef_of_Ins (DefList.Ins.isComplete ins) rfl rfl
 
-theorem bisimDl.NonBisimDef.toDefMem {p q w}
-  (nbi: bisimDl.NonBisimDef p q)
+theorem bisimDl.NonBisim.toMem {lane: Set3.Lane} {p q w}
+  (nbi: bisimDl.NonBisim lane p q)
 :
-  w ∈ (((bisimDl.val "NonBisim").call p).call q).defMem
+  w ∈ (((bisimDl.val "NonBisim").call p).call q).getLane lane
 :=
-  DefList.in_def_no_fv (lane := .defLane)
+  DefList.in_def_no_fv (lane := lane)
   (inArbUn p
   (inArbUn q
   (inProd (inVar rfl)
@@ -208,11 +191,7 @@ theorem bisimDl.NonBisimDef.toDefMem {p q w}
       (inSome p'
         (inIr (inVar rfl)
           (inCall
-            (show
-              (bisimDl.dl.wfm (bisimDl.const "uniSetMap")).defMem.Mem
-                (Pair.pair p p')
-            from
-              wfm_uniSetMap_eq ▸ inP)
+            (bisimDl.mem_uniSetMap.mpr inP)
             (inVar rfl))))
       (inArbIr fun q' =>
         inImpl fun hLhs =>
@@ -221,10 +200,10 @@ theorem bisimDl.NonBisimDef.toDefMem {p q w}
           let eqE: pE = q' := inVarElim hVar rfl
           let ⟨pA, hFn, hA⟩ := inCallElim (eqE ▸ hUni)
           let eqA: pA = q := inVarElim hA rfl
-          let inPos: q' ∈ (uniSetMap.call q).posMem :=
-            wfm_uniSetMap_eq ▸ (eqA ▸ hFn)
+          let inOther: q' ∈ (uniSetMap.call q).getLane lane.toggle :=
+            (bisimDl.mem_uniSetMap (lane := lane.toggle)).mp (eqA ▸ hFn)
           inCall
-            (inCall (allQ q' inPos).toDefMem (inVar rfl))
+            (inCall (allQ q' inOther).toMem (inVar rfl))
             (inVar rfl))))
   | .ofQ q' inQ allP =>
     inUnR
@@ -233,11 +212,7 @@ theorem bisimDl.NonBisimDef.toDefMem {p q w}
       (inSome q'
         (inIr (inVar rfl)
           (inCall
-            (show
-              (bisimDl.dl.wfm (bisimDl.const "uniSetMap")).defMem.Mem
-                (Pair.pair q q')
-            from
-              wfm_uniSetMap_eq ▸ inQ)
+            ((bisimDl.mem_uniSetMap (lane := lane)).mpr inQ)
             (inVar rfl))))
       (inArbIr fun p' =>
         inImpl fun hLhs =>
@@ -246,10 +221,10 @@ theorem bisimDl.NonBisimDef.toDefMem {p q w}
           let eqE: pE = p' := inVarElim hVar rfl
           let ⟨pA, hFn, hA⟩ := inCallElim (eqE ▸ hUni)
           let eqA: pA = p := inVarElim hA rfl
-          let inPos: p' ∈ (uniSetMap.call p).posMem :=
-            wfm_uniSetMap_eq ▸ (eqA ▸ hFn)
+          let inOther: p' ∈ (uniSetMap.call p).getLane lane.toggle :=
+            (bisimDl.mem_uniSetMap (lane := lane.toggle)).mp (eqA ▸ hFn)
           inCall
-            (inCall (allP p' inPos).toDefMem (inVar rfl))
+            (inCall (allP p' inOther).toMem (inVar rfl))
             (inVar rfl)))))))))
 
 
@@ -301,7 +276,7 @@ theorem bisimDl.NonBisimPos.cycleIsEmpty
       let notAll:
         ¬ ∀ q' ∈ (uniSetMap.call Q).defMem, NonBisimPos p' q'
       :=
-        fun allQ => notNbi (NonBisimPos.ofP p' posP' allQ)
+        fun allQ => notNbi (bisimDl.NonBisim.ofP p' posP' allQ)
       let ⟨q', hq⟩ := Classical.not_forall.mp notAll
       let ⟨defQ, notNbi'⟩ := Classical.not_imp.mp hq
       match inUnElim (inArbIrElim insArbIr q') with
@@ -311,8 +286,7 @@ theorem bisimDl.NonBisimPos.cycleIsEmpty
             ins (inSome q' (inIr rfl (inCall notBout rfl)))
         .blockedBout bout
           (DefList.Ins.isComplete
-            ((bisimDl.mem_uniSetMap (lane := .defLane)).mpr
-              (show Pair.pair qAlias q' ∈ uniSetMap.defMem from qEq ▸ defQ)))
+            (bisimDl.mem_uniSetMap.mpr (qEq ▸ defQ)))
       | .inr ins =>
         let ins := inCallElimSingle ins rfl
         let ins := inCallElimSingle ins rfl
@@ -334,7 +308,7 @@ theorem bisimDl.NonBisimPos.cycleIsEmpty
       let notAll:
         ¬ ∀ p' ∈ (uniSetMap.call P).defMem, NonBisimPos p' q'
       :=
-        fun allP => notNbi (NonBisimPos.ofQ q' posQ' allP)
+        fun allP => notNbi (bisimDl.NonBisim.ofQ q' posQ' allP)
       let ⟨p', hp⟩ := Classical.not_forall.mp notAll
       let ⟨defP, notNbi'⟩ := Classical.not_imp.mp hp
       match inUnElim (inArbIrElim insArbIr p') with
@@ -344,8 +318,7 @@ theorem bisimDl.NonBisimPos.cycleIsEmpty
             ins (inSome p' (inIr rfl (inCall notBout rfl)))
         .blockedBout bout
           (DefList.Ins.isComplete
-            ((bisimDl.mem_uniSetMap (lane := .defLane)).mpr
-              (show Pair.pair pAlias p' ∈ uniSetMap.defMem from pEq ▸ defP)))
+            (bisimDl.mem_uniSetMap.mpr (pEq ▸ defP)))
       | .inr ins =>
         let ins := inCallElimSingle ins rfl
         let ins := inCallElimSingle ins rfl
@@ -366,77 +339,26 @@ theorem bisimDl.NonBisimPos_of_posMem {p q w}
         ⟨rfl, p, q, w, rfl, notNbi⟩
     out.isSound ins
 
-theorem bisimDl.NonBisimPos.toPosMem {p q w}
-  (nbi: NonBisimPos p q)
+/-
+  `NonBisim.toMem` above is lane-generic, but this direction is not:
+  `Ins` is only complete for the definite lane, so the possible lane has
+  to go through the `Out.intro3` cycle instead.
+-/
+theorem bisimDl.NonBisim_of_mem {lane: Set3.Lane} {p q w}
+  (h: w ∈ (((bisimDl.val "NonBisim").call p).call q).getLane lane.toggle)
 :
-  w ∈ (((bisimDl.val "NonBisim").call p).call q).posMem
+  bisimDl.NonBisim lane.toggle p q
 :=
-  DefList.in_def_no_fv (lane := .posLane)
-  (inArbUn p
-  (inArbUn q
-  (inProd (inVar rfl)
-  (inProd (inVar rfl)
-  (match nbi with
-  | .ofP p' inP allQ =>
-    inUnL
-      (inArbUn p'
-        (inIr
-          (inSome p'
-            (inIr (inVar rfl)
-              (inCall
-                (show
-                  (bisimDl.dl.wfm (bisimDl.const "uniSetMap")).posMem.Mem
-                    (Pair.pair p p')
-                from
-                  wfm_uniSetMap_eq ▸ inP)
-                (inVar rfl))))
-          (inArbIr fun q' =>
-            inImpl fun hLhs =>
-              let ⟨pE, hIr⟩ := inSomeElim hLhs
-              let ⟨hVar, hUni⟩ := inIrElim hIr
-              let eqE: pE = q' := inVarElim hVar rfl
-              let ⟨pA, hFn, hA⟩ := inCallElim (eqE ▸ hUni)
-              let eqA: pA = q := inVarElim hA rfl
-              let inDef := wfm_uniSetMap_eq ▸ (eqA ▸ hFn)
-              inCall
-                (inCall (allQ q' inDef).toPosMem (inVar rfl))
-                (inVar rfl))))
-  | .ofQ q' inQ allP =>
-    inUnR
-      (inArbUn q'
-        (inIr
-          (inSome q'
-            (inIr (inVar rfl)
-              (inCall
-                (show
-                  (bisimDl.dl.wfm (bisimDl.const "uniSetMap")).posMem.Mem
-                    (Pair.pair q q')
-                from
-                  wfm_uniSetMap_eq ▸ inQ)
-                (inVar rfl))))
-          (inArbIr fun p' =>
-            inImpl fun hLhs =>
-              let ⟨pE, hIr⟩ := inSomeElim hLhs
-              let ⟨hVar, hUni⟩ := inIrElim hIr
-              let eqE: pE = p' := inVarElim hVar rfl
-              let ⟨pA, hFn, hA⟩ := inCallElim (eqE ▸ hUni)
-              let eqA: pA = p := inVarElim hA rfl
-              let inDef :=
-                wfm_uniSetMap_eq ▸ (eqA ▸ hFn)
-              inCall
-                (inCall (allP p' inDef).toPosMem (inVar rfl))
-                (inVar rfl)))))))))
+  match lane with
+  | .defLane => bisimDl.NonBisimPos_of_posMem h
+  | .posLane => bisimDl.NonBisimDef_of_defMem h
 
-
-theorem bisimDl.IsBisimDef_of_defMem {p q w}
-  (h: w ∈ (((bisimDl.val "IsBisim").call p).call q).defMem)
+theorem bisimDl.IsBisimAt_of_mem {lane p q w}
+  (h: w ∈ (((bisimDl.val "IsBisim").call p).call q).getLane lane)
 :
-  bisimDl.IsBisimDef p q
+  bisimDl.IsBisimAt lane p q
 :=
-  let h2 :=
-    DefList.in_def_body_no_fv (lane := .defLane)
-      (Set3.inCallElim (lane := .defLane)
-        (Set3.inCallElim (lane := .defLane) h))
+  let h2 := DefList.in_def_body_no_fv (lane := lane) h
   let ⟨pA, h2⟩ := inArbUnElim h2
   let ⟨qA, h2⟩ := inArbUnElim h2
   let ⟨hP, h2⟩ := inProdElim h2
@@ -444,121 +366,60 @@ theorem bisimDl.IsBisimDef_of_defMem {p q w}
   let pEq: pA = p := (inVarElim hP rfl).symm
   let qEq: qA = q := (inVarElim hQ rfl).symm
   fun nbp =>
-    let hPos := pEq ▸ qEq ▸ nbp.toPosMem
-    hCompl (inCall (inCall hPos (inVar rfl)) (inVar rfl))
+    hCompl (inCall (inCall
+      (pEq.symm ▸ qEq.symm ▸ nbp.toMem (w := w))
+      (inVar rfl)) (inVar rfl))
 
-theorem bisimDl.IsBisimDef.toDefMem {p q w}
-  (isB: bisimDl.IsBisimDef p q)
+theorem bisimDl.IsBisimAt.toMem {lane p q w}
+  (isB: bisimDl.IsBisimAt lane p q)
 :
-  w ∈ (((bisimDl.val "IsBisim").call p).call q).defMem
+  w ∈ (((bisimDl.val "IsBisim").call p).call q).getLane lane
 :=
-  DefList.in_def_no_fv (lane := .defLane)
-    (inArbUn p
-      (inArbUn q
-        (inProd (inVar rfl)
-          (inProd (inVar rfl)
-            (inCompl fun hMem =>
-              let ⟨pA1, hFn, hArg⟩ := inCallElim hMem
-              let pA1Eq: pA1 = q := inVarElim hArg rfl
-              let ⟨pA2, hFn2, hArg2⟩ := inCallElim (pA1Eq ▸ hFn)
-              let pA2Eq: pA2 = p := inVarElim hArg2 rfl
-              let hPos :=
-                pA2Eq ▸ hFn2
-              isB (NonBisimPos_of_posMem hPos))))))
-
-theorem bisimDl.IsBisimPos_of_posMem {p q w}
-  (h: w ∈ (((bisimDl.val "IsBisim").call p).call q).posMem)
-:
-  bisimDl.IsBisimPos p q
-:=
-  let h2 :=
-    DefList.in_def_body_no_fv (lane := .posLane)
-      (Set3.inCallElim (lane := .posLane)
-        (Set3.inCallElim (lane := .posLane) h))
-  let ⟨pA, h2⟩ := inArbUnElim h2
-  let ⟨qA, h2⟩ := inArbUnElim h2
-  let ⟨hP, h2⟩ := inProdElim h2
-  let ⟨hQ, hCompl⟩ := inProdElim h2
-  let pEq: pA = p := (inVarElim hP rfl).symm
-  let qEq: qA = q := (inVarElim hQ rfl).symm
-  fun nbd =>
-    let hDef := pEq ▸ qEq ▸ nbd.toDefMem
-    hCompl (inCall (inCall hDef (inVar rfl)) (inVar rfl))
-
-theorem bisimDl.IsBisimPos.toPosMem {p q w}
-  (isB: bisimDl.IsBisimPos p q)
-:
-  w ∈ (((bisimDl.val "IsBisim").call p).call q).posMem
-:=
-  DefList.in_def_no_fv (lane := .posLane)
+  DefList.in_def_no_fv (lane := lane)
   (inArbUn p
   (inArbUn q
   (inProd (inVar rfl)
   (inProd (inVar rfl)
   (inCompl fun hMem =>
-  let ⟨pA1, hFn, hArg⟩ := inCallElim hMem
-  let pA1Eq: pA1 = q := inVarElim hArg rfl
-  let ⟨pA2, hFn2, hArg2⟩ := inCallElim (pA1Eq ▸ hFn)
-  let pA2Eq: pA2 = p := inVarElim hArg2 rfl
-  let hDef := pA2Eq ▸ hFn2
-  isB (NonBisimDef_of_defMem hDef))))))
+    let ⟨pA1, hFn, hArg⟩ := inCallElim hMem
+    let pA1Eq: pA1 = q := inVarElim hArg rfl
+    let ⟨pA2, hFn2, hArg2⟩ := inCallElim (pA1Eq ▸ hFn)
+    let pA2Eq: pA2 = p := inVarElim hArg2 rfl
+    let hNbi := pA2Eq ▸ hFn2
+    isB (NonBisim_of_mem hNbi))))))
+
+theorem bisimDl.NonBisim.respectsBisim {lane: Set3.Lane}:
+  {p q p' q': Pair} →
+  bisimDl.NonBisim lane p q →
+  Pair.PreTriset.IsBisim p p' →
+  Pair.PreTriset.IsBisim q q' →
+  bisimDl.NonBisim lane p' q'
+|
+  _p, _q, _p', _q', .ofP pp insP allQ, ⟨R, isBisimP, Rpp'⟩, qBisim =>
+    let ⟨pp', insP', RppPp'⟩ := isBisimP.left lane _ _ pp Rpp' insP
+    .ofP pp' insP' fun qq' insQ' =>
+      let ⟨Rq, isBisimQ, Rqq'⟩ := qBisim
+      let ⟨qq, insQ, RqqQq'⟩ :=
+        isBisimQ.right lane.toggle _ _ qq' Rqq' insQ'
+      (allQ qq insQ).respectsBisim
+        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
+|
+  _p, _q, _p', _q', .ofQ qq insQ allP, pBisim, ⟨Rq, isBisimQ, Rqq'⟩ =>
+    let ⟨qq', insQ', RqqQq'⟩ := isBisimQ.left lane _ _ qq Rqq' insQ
+    .ofQ qq' insQ' fun pp' insP' =>
+      let ⟨R, isBisimP, Rpp'⟩ := pBisim
+      let ⟨pp, insP, RppPp'⟩ :=
+        isBisimP.right lane.toggle _ _ pp' Rpp' insP'
+      (allP pp insP).respectsBisim
+        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
 
 
 /-
   ## Section: lifting the Lean-native defs to the bisimilarity quotient
 
-  Since bisimilar pre-trisets have matching definite and possible
-  elements (up to bisimilarity), and `NonBisimDef` only inspects
-  membership through those two lanes, it respects bisimilarity in
-  both arguments.
+  Since bisimilar pre-trisets have matching elements in either lane (up
+  to bisimilarity), `NonBisim` respects bisimilarity in both arguments.
 -/
-
-theorem bisimDl.NonBisimDef.respectsBisim:
-  {p q p' q': Pair} →
-  NonBisimDef p q →
-  Pair.PreTriset.IsBisim p p' →
-  Pair.PreTriset.IsBisim q q' →
-  NonBisimDef p' q'
-|
-  _p, _q, _p', _q', .ofP pp insP allQ, ⟨R, isBisimP, Rpp'⟩, qBisim =>
-    let ⟨pp', insP', RppPp'⟩ := isBisimP.left .defLane _ _ pp Rpp' insP
-    .ofP pp' insP' fun qq' inwQ' =>
-      let ⟨Rq, isBisimQ, Rqq'⟩ := qBisim
-      let ⟨qq, inwQ, RqqQq'⟩ := isBisimQ.right .posLane _ _ qq' Rqq' inwQ'
-      (allQ qq inwQ).respectsBisim
-        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
-|
-  _p, _q, _p', _q', .ofQ qq insQ allP, pBisim, ⟨Rq, isBisimQ, Rqq'⟩ =>
-    let ⟨qq', insQ', RqqQq'⟩ := isBisimQ.left .defLane _ _ qq Rqq' insQ
-    .ofQ qq' insQ' fun pp' inwP' =>
-      let ⟨R, isBisimP, Rpp'⟩ := pBisim
-      let ⟨pp, inwP, RppPp'⟩ := isBisimP.right .posLane _ _ pp' Rpp' inwP'
-      (allP pp inwP).respectsBisim
-        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
-
-theorem bisimDl.NonBisimPos.respectsBisim:
-  {p q p' q': Pair} →
-  NonBisimPos p q →
-  Pair.PreTriset.IsBisim p p' →
-  Pair.PreTriset.IsBisim q q' →
-  NonBisimPos p' q'
-|
-  _p, _q, _p', _q', .ofP pp inwP allQ, ⟨R, isBisimP, Rpp'⟩, qBisim =>
-    let ⟨pp', inwP', RppPp'⟩ := isBisimP.left .posLane _ _ pp Rpp' inwP
-    .ofP pp' inwP' fun qq' insQ' =>
-      let ⟨Rq, isBisimQ, Rqq'⟩ := qBisim
-      let ⟨qq, insQ, RqqQq'⟩ := isBisimQ.right .defLane _ _ qq' Rqq' insQ'
-      (allQ qq insQ).respectsBisim
-        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
-|
-  _p, _q, _p', _q', .ofQ qq inwQ allP, pBisim, ⟨Rq, isBisimQ, Rqq'⟩ =>
-    let ⟨qq', inwQ', RqqQq'⟩ := isBisimQ.left .posLane _ _ qq Rqq' inwQ
-    .ofQ qq' inwQ' fun pp' insP' =>
-      let ⟨R, isBisimP, Rpp'⟩ := pBisim
-      let ⟨pp, insP, RppPp'⟩ := isBisimP.right .defLane _ _ pp' Rpp' insP'
-      (allP pp insP).respectsBisim
-        ⟨R, isBisimP, RppPp'⟩ ⟨Rq, isBisimQ, RqqQq'⟩
-
 
 -- Lifting a relation on representatives to the bisimilarity quotient.
 exposed def Triset.liftBisim (P: Pair → Pair → Prop)
@@ -596,57 +457,6 @@ exposed def Triset.NonBisimPos: Pair.Triset → Pair.Triset → Prop :=
   is preserved under negation, so both lanes lift to the quotient.
 -/
 
-theorem bisimDl.IsBisimDef.respectsBisim {p q p' q': Pair}
-  (isB: IsBisimDef p q)
-  (pBisim: Pair.PreTriset.IsBisim p p')
-  (qBisim: Pair.PreTriset.IsBisim q q')
-:
-  IsBisimDef p' q'
-:=
-  fun nbi =>
-    isB
-      (nbi.respectsBisim
-        (Pair.PreTriset.setoid.iseqv.symm pBisim)
-        (Pair.PreTriset.setoid.iseqv.symm qBisim))
-
-theorem bisimDl.IsBisimPos.respectsBisim {p q p' q': Pair}
-  (isB: IsBisimPos p q)
-  (pBisim: Pair.PreTriset.IsBisim p p')
-  (qBisim: Pair.PreTriset.IsBisim q q')
-:
-  IsBisimPos p' q'
-:=
-  fun nbi =>
-    isB
-      (nbi.respectsBisim
-        (Pair.PreTriset.setoid.iseqv.symm pBisim)
-        (Pair.PreTriset.setoid.iseqv.symm qBisim))
-
-
-/- The lane-indexed version of the Lean-native bisimilarity. -/
-exposed def bisimDl.IsBisimAt (lane: Set3.Lane) (p q: Pair): Prop :=
-  match lane with
-  | .defLane => IsBisimDef p q
-  | .posLane => IsBisimPos p q
-
-theorem bisimDl.IsBisimAt_of_mem {lane p q w}
-  (h: w ∈ (((bisimDl.val "IsBisim").call p).call q).getLane lane)
-:
-  bisimDl.IsBisimAt lane p q
-:=
-  match lane with
-  | .defLane => bisimDl.IsBisimDef_of_defMem h
-  | .posLane => bisimDl.IsBisimPos_of_posMem h
-
-theorem bisimDl.IsBisimAt.toMem {lane p q w}
-  (isB: bisimDl.IsBisimAt lane p q)
-:
-  w ∈ (((bisimDl.val "IsBisim").call p).call q).getLane lane
-:=
-  match lane with
-  | .defLane => bisimDl.IsBisimDef.toDefMem isB
-  | .posLane => bisimDl.IsBisimPos.toPosMem isB
-
 theorem bisimDl.IsBisimAt.respectsBisim {lane: Set3.Lane} {p q p' q': Pair}
   (isB: bisimDl.IsBisimAt lane p q)
   (pBisim: Pair.PreTriset.IsBisim p p')
@@ -654,30 +464,11 @@ theorem bisimDl.IsBisimAt.respectsBisim {lane: Set3.Lane} {p q p' q': Pair}
 :
   bisimDl.IsBisimAt lane p' q'
 :=
-  match lane with
-  | .defLane => bisimDl.IsBisimDef.respectsBisim isB pBisim qBisim
-  | .posLane => bisimDl.IsBisimPos.respectsBisim isB pBisim qBisim
-
-/-
-  The pair form of the memberships. With a variable lane, `getLane` does
-  not reduce, so `(((x).call p).call q)` cannot be folded into `x` by
-  unification; these lemmas do the case split once.
-  TODO maybe the deduped version should leave out Set3.call?
--/
-theorem bisimDl.IsBisimAt_of_pair_mem {lane: Set3.Lane} {p q w: Pair}
-  (h: .pair p (.pair q w) ∈ (bisimDl.val "IsBisim").getLane lane)
-:
-  bisimDl.IsBisimAt lane p q
-:=
-  bisimDl.IsBisimAt_of_mem (Set3.inCall (Set3.inCall h))
-
-theorem bisimDl.IsBisimAt.toPairMem {lane: Set3.Lane} {p q w: Pair}
-  (isB: bisimDl.IsBisimAt lane p q)
-:
-  .pair p (.pair q w) ∈ (bisimDl.val "IsBisim").getLane lane
-:=
-  Set3.inCallElim (Set3.inCallElim isB.toMem)
-
+  fun nbi =>
+    isB
+      (nbi.respectsBisim
+        (Pair.PreTriset.setoid.iseqv.symm pBisim)
+        (Pair.PreTriset.setoid.iseqv.symm qBisim))
 
 exposed def Triset.IsBisimDef: Pair.Triset → Pair.Triset → Prop :=
   Triset.liftBisim bisimDl.IsBisimDef
@@ -697,30 +488,30 @@ exposed def Triset.IsBisimPos: Pair.Triset → Pair.Triset → Prop :=
 
 -- Every possible element of `p` is matched, via `IsBisimDef`, by some
 -- definite element of `q`. (Contrapositive of `NonBisimPos.ofP`.)
-theorem bisimDl.IsBisimDef.matchDef {p q p': Pair}
-  (isBD: IsBisimDef p q)
+theorem bisimDl.IsBisimAt.matchDef {p q p': Pair}
+  (isBD: IsBisimAt .defLane p q)
   (posP: p' ∈ (uniSetMap.call p).posMem)
 :
-  ∃ q' ∈ (uniSetMap.call q).defMem, IsBisimDef p' q'
+  ∃ q' ∈ (uniSetMap.call q).defMem, IsBisimAt .defLane p' q'
 :=
   Classical.byContradiction fun h =>
-    isBD (NonBisimPos.ofP p' posP fun q' defQ =>
+    isBD (bisimDl.NonBisim.ofP p' posP fun q' defQ =>
       Classical.byContradiction fun notNbi => h ⟨q', defQ, notNbi⟩)
 
 -- The symmetric statement. (Contrapositive of `NonBisimPos.ofQ`.)
-theorem bisimDl.IsBisimDef.matchDef' {p q q': Pair}
-  (isBD: IsBisimDef p q)
+theorem bisimDl.IsBisimAt.matchDef' {p q q': Pair}
+  (isBD: IsBisimAt .defLane p q)
   (posQ: q' ∈ (uniSetMap.call q).posMem)
 :
-  ∃ p' ∈ (uniSetMap.call p).defMem, IsBisimDef p' q'
+  ∃ p' ∈ (uniSetMap.call p).defMem, IsBisimAt .defLane p' q'
 :=
   Classical.byContradiction fun h =>
-    isBD (NonBisimPos.ofQ q' posQ fun p' defP =>
+    isBD (bisimDl.NonBisim.ofQ q' posQ fun p' defP =>
       Classical.byContradiction fun notNbi => h ⟨p', defP, notNbi⟩)
 
 -- `IsBisimDef` is itself a bisimulation, so it is contained in `Bisim`.
-theorem bisimDl.IsBisimDef.toBisim {p q: Pair}
-  (isBD: IsBisimDef p q)
+theorem bisimDl.IsBisimAt.toBisim {p q: Pair}
+  (isBD: IsBisimAt .defLane p q)
 :
   Pair.PreTriset.IsBisim p q
 :=
@@ -731,21 +522,21 @@ theorem bisimDl.IsBisimDef.toBisim {p q: Pair}
         match l, trans with
         | .defLane, trans =>
           let ⟨b', defB, isB'⟩ :=
-            bisimDl.IsBisimDef.matchDef isB (Set3.defToPos trans)
+            bisimDl.IsBisimAt.matchDef isB (Set3.defToPos trans)
           ⟨b', defB, isB'⟩
         | .posLane, trans =>
           let ⟨b', defB, isB'⟩ :=
-            bisimDl.IsBisimDef.matchDef isB trans
+            bisimDl.IsBisimAt.matchDef isB trans
           ⟨b', Set3.defToPos defB, isB'⟩,
       fun l _ _ _ isB trans =>
         match l, trans with
         | .defLane, trans =>
           let ⟨b', defB, isB'⟩ :=
-            bisimDl.IsBisimDef.matchDef' isB (Set3.defToPos trans)
+            bisimDl.IsBisimAt.matchDef' isB (Set3.defToPos trans)
           ⟨b', defB, isB'⟩
         | .posLane, trans =>
           let ⟨b', defB, isB'⟩ :=
-            bisimDl.IsBisimDef.matchDef' isB trans
+            bisimDl.IsBisimAt.matchDef' isB trans
           ⟨b', Set3.defToPos defB, isB'⟩,
     ⟩,
     isBD,
@@ -760,7 +551,7 @@ theorem Triset.IsBisimDef.toEq {ts0 ts1: Pair.Triset}
   Quotient.inductionOn₂
     (motive := fun t0 t1 => Triset.IsBisimDef t0 t1 → t0 = t1)
     ts0 ts1
-    (fun _p _q isBD => Quot.sound (bisimDl.IsBisimDef.toBisim isBD))
+    (fun _p _q isBD => Quot.sound (bisimDl.IsBisimAt.toBisim isBD))
     isBisim
 
 
@@ -799,7 +590,7 @@ theorem Pair.PreTriset.IsBisim.has {lane}
 
 
 -- `NonBisimDef` is the stronger lane: it always entails `NonBisimPos`.
-theorem bisimDl.NonBisimDef.toNonBisimPos:
+theorem bisimDl.NonBisim.toNonBisimPos:
   {p q: Pair} → NonBisimDef p q → NonBisimPos p q
 | _, _, .ofP p' inP allQ =>
     .ofP
@@ -812,16 +603,16 @@ theorem bisimDl.NonBisimDef.toNonBisimPos:
       (Set3.defToPos inQ)
       fun p' defP => (allP p' (Set3.defToPos defP)).toNonBisimPos
 
-theorem bisimDl.IsBisimDef.toIsBisimPos {p q: Pair}
-  (isBD: IsBisimDef p q)
+theorem bisimDl.IsBisimAt.toIsBisimPos {p q: Pair}
+  (isBD: IsBisimAt .defLane p q)
 :
-  IsBisimPos p q
+  IsBisimAt .posLane p q
 :=
   fun nbd => isBD nbd.toNonBisimPos
 
 
 -- Bisimilar pre-trisets are never `NonBisimDef`, so `IsBisim ⊆ IsBisimPos`.
-theorem bisimDl.NonBisimDef.not_bisim:
+theorem bisimDl.NonBisim.not_bisim:
   {p q: Pair} → NonBisimDef p q → ¬ Pair.PreTriset.IsBisim p q
 | _, _, .ofP _p' inP allQ, bisim =>
     let ⟨q', insQ', bisimP'Q'⟩ := bisim.has (lane := .defLane) inP
@@ -870,7 +661,7 @@ theorem Pair.Triset.hc_hered {p p': Pair.PreTriset}
 
 
 -- On Hc trisets possible non-bisimilarity implies the definite one.
-theorem bisimDl.NonBisimPos.toNonBisimDef:
+theorem bisimDl.NonBisim.toNonBisimDef:
   {p q: Pair} →
   NonBisimPos p q →
   Pair.Triset.Hc (Quotient.mk Pair.PreTriset.setoid p) →
@@ -921,7 +712,7 @@ theorem Triset.IsBisimDef.toIsBisimPos {ts0 ts1: Pair.Triset}
     (motive :=
       fun t0 t1 => Triset.IsBisimDef t0 t1 → Triset.IsBisimPos t0 t1)
     ts0 ts1
-    (fun _p _q h => bisimDl.IsBisimDef.toIsBisimPos h)
+    (fun _p _q h => bisimDl.IsBisimAt.toIsBisimPos h)
     isBD
 
 theorem Triset.IsBisimPos.toIsBisimDef {ts0 ts1: Pair.Triset}

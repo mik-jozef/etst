@@ -73,9 +73,7 @@ theorem isInDl.wfm_isBisim_eq:
 -/
 
 theorem isInDl.IsIn_of_mem {lane: Set3.Lane} {set elem w}
-  -- TODO restore when Set3 has mem: Lane → Set D and call is lane uniform?
-  -- (h: w ∈ (((isInDl.val "IsIn").call set).call elem).getLane lane)
-  (h: .pair set (.pair elem w) ∈ (isInDl.val "IsIn").getLane lane)
+  (h: w ∈ (((isInDl.val "IsIn").call set).call elem).getLane lane)
 :
   isInDl.IsIn lane set elem
 :=
@@ -95,7 +93,7 @@ theorem isInDl.IsIn_of_mem {lane: Set3.Lane} {set elem w}
   let hIsBW: _ ∈ (isInDl.val "IsBisim").getLane lane :=
     elemEq ▸ pA2Eq ▸ hFn2
   let isB: bisimDl.IsBisimAt lane elem elemX :=
-    bisimDl.IsBisimAt_of_pair_mem (wfm_isBisim_eq ▸ hIsBW)
+    bisimDl.IsBisimAt_of_mem (wfm_isBisim_eq ▸ hIsBW)
   let ⟨w', hP⟩ := inSomeElim hSome
   let ⟨hVarX, hCall⟩ := inIrElim hP
   let w'Eq: w' = elemX := inVarElim hVarX rfl
@@ -103,21 +101,19 @@ theorem isInDl.IsIn_of_mem {lane: Set3.Lane} {set elem w}
   let pA3Eq: pA3 = setA := inVarElim hArg3 rfl
   let hU := w'Eq ▸ pA3Eq ▸ hFn3
   let ins: elemX ∈ (uniSetMap.call set).getLane lane :=
-    setEq ▸ wfm_uniSetMap_eq ▸ Set3.inCall (lane := lane) hU
+    setEq ▸ wfm_uniSetMap_eq ▸ hU
   ⟨elemX, isB, ins⟩
 
 theorem isInDl.IsIn.toMem {lane: Set3.Lane} {set elem w}
   (isIn: isInDl.IsIn lane set elem)
 :
-  -- TODO restore when Set3 has mem: Lane → Set D and call is lane uniform?
-  -- w ∈ (((isInDl.val "IsIn").call set).call elem).getLane lane
-  .pair set (.pair elem w) ∈ (isInDl.val "IsIn").getLane lane
+  w ∈ (((isInDl.val "IsIn").call set).call elem).getLane lane
 :=
   let ⟨elemX, isB, ins⟩ := isIn
-  let hIsB: .pair elem (.pair elemX w) ∈ (isInDl.val "IsBisim").getLane lane :=
-    wfm_isBisim_eq.symm ▸ isB.toPairMem
-  let hUni: .pair set elemX ∈ (isInDl.val "uniSetMap").getLane lane :=
-    wfm_uniSetMap_eq.symm ▸ Set3.inCallElim ins
+  let hIsB: w ∈ (((isInDl.val "IsBisim").call elem).call elemX).getLane lane :=
+    wfm_isBisim_eq.symm ▸ isB.toMem
+  let hUni: elemX ∈ ((isInDl.val "uniSetMap").call set).getLane lane :=
+    wfm_uniSetMap_eq.symm ▸ ins
   DefList.in_def_no_fv <|
   inArbUn set
     (inArbUn elem
