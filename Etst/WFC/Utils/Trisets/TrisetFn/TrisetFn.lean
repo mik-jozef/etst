@@ -1,13 +1,27 @@
 /-
-  An extension of `Triset` that includes functional values. See
-  `Triset.lean` for context.
+  A `TrisetFn` value is either a triset whose members are values,
+  or a function from values to values. Equivalently, `TrisetFn` is
+  an extension of `Triset` that includes functional values. There is
+  an embedding (`Triset.toTrisetFn`) of `Triset` into `TrisetFn`.
+  See `Triset.lean` for additional context.
   
-  A value is either a triset whose members are values, or a function from
-  values to values. Function application is definable in WFC using
-  `Expr.call` on those codes that are total and bisimilarity-preserving.
+  While `Triset` values are represented with `uniSetMap` indices directly,
+  the codes representing `TrisetFn` values are tagged:
+  * `(0, i)` encodes a triset,
+  * `(1, g)` encodes a function.
   
-  Note: I have serious doubts about this approach for functions, as it
-  suffers from two issues:
+  The body of a code is a `uniSetMap` index:
+  * the `i` of `(0, i)` — an index such that `uniSetMap.call i` is the
+    triset of the *codes* of the members.
+  * the `g` of `(1, g)` — an index such that `uniSetMap.call g` is the
+    triset of the pairs `(a, r)` of codes such that `f` sends `a` to `r`.
+  
+  Function application is definable in WFC using `Expr.call` on those
+  codes that are total and bisimilarity preserving. 
+  
+  ## Notes
+  I have some doubts about this approach for functions, as it suffers from
+  two issues:
   0. Not only is function application not WFC-definable for every code,
     but there are functions for which no code has a WFC-definable appli-
     cation. Take a code F whose domain is exactly one code C, where C
