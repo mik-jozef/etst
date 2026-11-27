@@ -329,7 +329,8 @@ namespace TrisetEmbedding
       (trisetEmbedDl.embedOp_call_eq iFn)
   
   /- The fixed point of the embedding operator. -/
-  exposed def embedFixIndex: Pair := indexFixIndex embedOpIndex
+  exposed def embedFixIndex: Pair :=
+    opFixDl.indexFixIndex embedOpIndex
   
   /-- The fixed point equation of `embedFixIndex`. -/
   theorem embedFixIndex_call_eq:

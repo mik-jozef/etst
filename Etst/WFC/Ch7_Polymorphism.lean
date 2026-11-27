@@ -134,7 +134,7 @@ theorem trisetFix_eq (iFn: Pair):
   A version of the above for operators on indices instead of maps from
   indices to trisets.
 -/
-def indexFixIndex (iOp: Pair): Pair :=
+def opFixDl.indexFixIndex (iOp: Pair): Pair :=
   opFixDl.trisetFixIndex (opFixDl.composeIndex iOp)
 
 open opFixDl in
@@ -164,6 +164,7 @@ theorem indexFix_eq (iOp: Pair):
   the fixed point input: if its output there is a single index `p`,
   then `indexFixIndex iOp` and `p` denote the same triset.
 -/
+open opFixDl in
 theorem indexFixIndex_fix_of_just
   (iOp: Pair)
   {p: Pair}
@@ -181,6 +182,7 @@ theorem indexFixIndex_fix_of_just
   `f: Pair → Pair`. Then `indexFixIndex iOp` denotes the same
   triset as `f` applied to it.
 -/
+open opFixDl in
 theorem indexFixIndex_fix_of_fn
   (iOp: Pair)
   (f: Pair → Pair)
