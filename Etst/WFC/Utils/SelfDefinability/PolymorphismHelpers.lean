@@ -85,21 +85,6 @@ theorem Expr.encoding_call_eq
 :=
   rfl
 
-/-
-  A constant denotes its value; neither the background valuation,
-  nor the free variables, nor the lane matter.
-  TODO
--/
-theorem Expr.intp_const
-  {kind: ExprKind} {b c: Valuation Pair} {lane fv}
-  {tag: kind.ConstTag} {x: Nat}
-:
-  Eq
-    ((Expr.const tag x).intp lane b c fv)
-    ((c x).getLane (tag.getLane lane))
-:=
-  rfl
-
 open opFixDl in
 exposed pairDefList opFixDl extends opFixHelpersDl
   p3 ofhDlEnc := <[ofhDlEnc.toWfNamedExpr]>

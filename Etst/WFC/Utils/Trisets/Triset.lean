@@ -55,7 +55,6 @@
 module
 public import Etst.WFC.Ch7_Polymorphism
 public import Etst.WFC.Utils.General.Bisimilarity
-import Etst.WFC.Utils.General.Bisimilarity
 
 public section
 namespace Etst

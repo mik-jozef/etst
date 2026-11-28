@@ -510,6 +510,9 @@ macro_rules
 
 open Lean in
 macro_rules
+-- Any and none
+| `(p3_inner( any )) => `(.raw (.any))
+| `(p3_inner( none )) => `(.raw (.none))
 -- Parentheses removal
 | `(p3_inner( ($expr) )) => `(p3_inner($expr))
 -- Function application

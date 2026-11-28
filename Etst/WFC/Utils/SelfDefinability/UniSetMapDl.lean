@@ -478,6 +478,13 @@ exposed def uniSetMapIndex.emptyIndex: Pair :=
     []
     .none
 
+exposed def uniSetMapIndex.univIndex: Pair :=
+  uniSetMapIndex
+    FiniteDefList.empty.toDefList
+    FiniteDefList.empty.size
+    []
+    .any
+
 
 theorem uniSetMapIndex_nnf_eq {dl n fv expr}:
   uniSetMapIndex dl n fv expr =
