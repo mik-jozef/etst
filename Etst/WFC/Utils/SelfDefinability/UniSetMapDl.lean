@@ -471,19 +471,39 @@ exposed noncomputable def uniSetMapAt
 :=
   uniSetMap.call (uniSetMapIndex dl n fv expr)
 
-exposed def uniSetMapIndex.emptyIndex: Pair :=
+abbrev UniSetMapIndex := Pair
+
+exposed def UniSetMapIndex.emptyIndex: Pair :=
   uniSetMapIndex
     FiniteDefList.empty.toDefList
     FiniteDefList.empty.size
     []
     .none
 
-exposed def uniSetMapIndex.univIndex: Pair :=
+exposed def UniSetMapIndex.univIndex: Pair :=
   uniSetMapIndex
     FiniteDefList.empty.toDefList
     FiniteDefList.empty.size
     []
     .any
+
+exposed def UniSetMapIndex.Has
+  (i: UniSetMapIndex)
+  (lane: Set3.Lane)
+  (elem: Pair)
+:
+  Prop
+:=
+  elem ∈ (uniSetMap.call i).getLane lane
+
+theorem UniSetMapIndex.Has.mono {laneA laneB elem}
+  {i: UniSetMapIndex}
+  (has: i.Has laneA elem)
+  (le: Set3.Lane.Le laneA laneB := by decide)
+:
+  i.Has laneB elem
+:=
+  le.liftMem has
 
 
 theorem uniSetMapIndex_nnf_eq {dl n fv expr}:

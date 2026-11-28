@@ -120,7 +120,7 @@ namespace Pair
     :
       Prop
     :=
-      DirectRel (PreTrisetPair.transitionSystem label) a b
+      LiftRelEx (PreTrisetPair.transitionSystem label) a b
     
     
     -- `ts` has `elem` as a member in the given lane.
@@ -149,7 +149,7 @@ namespace Pair
     theorem directHas_mk_iff {lane: Set3.Lane} {s e: PreTrisetPair}:
       DirectHas lane ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Has lane e' ∧ e.IsBisim e'
     :=
-      DirectRel_mk_iff (st := PreTrisetPair.setoid) (Mem := PreTrisetPair.Has)
+      LiftRelEx_mk_iff (st := PreTrisetPair.setoid) (Mem := PreTrisetPair.Has)
         (fun h => PreTrisetPair.IsBisim.has h)
     
   end TrisetPair

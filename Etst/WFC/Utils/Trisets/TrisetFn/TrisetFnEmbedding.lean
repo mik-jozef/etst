@@ -3,6 +3,7 @@
   `set (embed t)`, whose members are again embedded trisets.
 -/
 module
+public import Etst.WFC.Utils.Trisets.Triset
 public import Etst.WFC.Utils.Trisets.TrisetEmbedding
 public import Etst.WFC.Utils.Trisets.TrisetFn.TrisetFn
 

@@ -58,7 +58,9 @@
   is also a type universe of Triset (when functions are coded).
 -/
 module
-public import Etst.WFC.Utils.Trisets.Triset
+public import Etst.WFC.Ch7_Polymorphism
+public import Etst.WFC.Utils.General.Bisimilarity
+public import Etst.WFC.Utils.LiftRelEx
 
 public section
 namespace Etst
@@ -66,8 +68,8 @@ namespace Etst
 
 namespace Pair
   inductive PreTrisetFn where
-  | set (ts: PreTriset)
-  | fn (graph: PreTriset)
+  | set (ts: UniSetMapIndex)
+  | fn (graph: UniSetMapIndex)
   
   namespace PreTrisetFn
     exposed def toPair: PreTrisetFn → Pair
@@ -101,7 +103,7 @@ namespace Pair
       s.Has laneB e
     :=
       match s with
-      | set _ => Pair.PreTriset.Has.mono has le
+      | set _ => UniSetMapIndex.Has.mono has le
       | .fn _ => has
     
     theorem HasEntry.mono {laneA laneB}
@@ -112,7 +114,7 @@ namespace Pair
       f.HasEntry laneB a r
     :=
       match f with
-      | fn _ => Pair.PreTriset.Has.mono has le
+      | fn _ => UniSetMapIndex.Has.mono has le
       | .set _ => has
     
     theorem not_hasEntry_of_not_isFn {lane a r}
@@ -382,7 +384,7 @@ namespace Pair
     
     -- `ts` has `elem` as a member in the given lane.
     exposed def DirectHas (lane: Set3.Lane) (ts elem: TrisetFn): Prop :=
-      DirectRel (fun a b => a.Has lane b) ts elem
+      LiftRelEx (fun a b => a.Has lane b) ts elem
     
     exposed def DirectMem: TriRelation TrisetFn where
       Rel := DirectHas
@@ -393,7 +395,7 @@ namespace Pair
     -- `res` is a member of the result of applying `f` to `arg`, in the
     -- given lane.
     exposed def DirectCallHas (lane: Set3.Lane) (f arg res: TrisetFn): Prop :=
-      DirectRel₃ (fun f a r => f.HasEntry lane a r) f arg res
+      LiftRelEx₃ (fun f a r => f.HasEntry lane a r) f arg res
     
     theorem DirectCallHas.mono {laneA laneB}
       {f arg res: TrisetFn}
@@ -411,7 +413,7 @@ namespace Pair
     theorem directHas_mk_iff {lane s e}:
       DirectHas lane ⟦s⟧ ⟦e⟧ ↔ ∃ e', s.Has lane e' ∧ e.IsBisim e'
     :=
-      DirectRel_mk_iff
+      LiftRelEx_mk_iff
         (st := PreTrisetFn.setoid)
         (Mem := PreTrisetFn.Has)
         (fun h => PreTrisetFn.IsBisim.has h)
@@ -421,7 +423,7 @@ namespace Pair
         ↔
       ∃ a' r', f.HasEntry lane a' r' ∧ a.IsBisim a' ∧ r.IsBisim r'
     :=
-      DirectRel₃_mk_iff
+      LiftRelEx₃_mk_iff
         (st := PreTrisetFn.setoid)
         (R := PreTrisetFn.HasEntry)
         (fun h => PreTrisetFn.IsBisim.hasEntry h)
