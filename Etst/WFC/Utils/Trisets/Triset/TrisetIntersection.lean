@@ -21,7 +21,7 @@
 -/
 module
 public import Etst.WFC.Ch6_SelfDefinability
-public import Etst.WFC.Utils.Trisets.TrisetMembership
+public import Etst.WFC.Utils.Trisets.Triset.TrisetMembership
 
 public section
 namespace Etst

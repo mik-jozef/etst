@@ -3,7 +3,7 @@
   in WFC).
 -/
 module
-public import Etst.WFC.Utils.Trisets.TrisetEmbedding
+public import Etst.WFC.Utils.Trisets.Triset.TrisetEmbedding
 public import Etst.WFC.Utils.Trisets.TrisetPair.TrisetPair
 
 public section

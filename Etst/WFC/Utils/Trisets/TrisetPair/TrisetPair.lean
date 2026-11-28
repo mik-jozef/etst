@@ -2,7 +2,7 @@
   See `Triset.lean`.
 -/
 module
-public import Etst.WFC.Utils.Trisets.Triset
+public import Etst.WFC.Utils.Trisets.Triset.Triset
 
 public section
 namespace Etst

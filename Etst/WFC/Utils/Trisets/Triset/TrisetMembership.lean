@@ -15,7 +15,7 @@
   `TrisetBisimilarity.lean`.
 -/
 module
-public import Etst.WFC.Utils.Trisets.TrisetBisimilarity
+public import Etst.WFC.Utils.Trisets.Triset.TrisetBisimilarity
 
 public section
 namespace Etst

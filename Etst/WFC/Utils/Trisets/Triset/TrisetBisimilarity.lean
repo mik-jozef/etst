@@ -14,7 +14,7 @@
 -/
 module
 public import Etst.WFC.Utils.MembershipPs.OutIntro3
-public import Etst.WFC.Utils.Trisets.Triset
+public import Etst.WFC.Utils.Trisets.Triset.Triset
 import Etst.WFC.Ch7_Polymorphism
 import Etst.WFC.Utils.Cause
 
